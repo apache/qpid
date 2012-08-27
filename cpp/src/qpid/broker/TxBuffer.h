@@ -108,9 +108,6 @@ namespace qpid {
              * commit
              */
             QPID_BROKER_EXTERN bool commitLocal(TransactionalStore* const store);
-
-            // Used by cluster to replicate transaction status.
-            void accept(TxOpConstVisitor& v) const;
         };
     }
 }

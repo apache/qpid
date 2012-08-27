@@ -19,6 +19,7 @@
 
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueSettings.h"
 #include "unit_test.h"
 #include <string>
 
@@ -36,31 +37,21 @@ QPID_AUTO_TEST_CASE(testDeclare)
     QueueRegistry reg;
     std::pair<Queue::shared_ptr,  bool> qc;
 
-    qc = reg.declare(foo, false, 0, 0);
+    qc = reg.declare(foo, QueueSettings());
     Queue::shared_ptr q = qc.first;
     BOOST_CHECK(q);
     BOOST_CHECK(qc.second); // New queue
     BOOST_CHECK_EQUAL(foo, q->getName());
 
-    qc = reg.declare(foo, false, 0, 0);
+    qc = reg.declare(foo, QueueSettings());
     BOOST_CHECK_EQUAL(q, qc.first);
     BOOST_CHECK(!qc.second);
 
-    qc = reg.declare(bar, false, 0, 0);
+    qc = reg.declare(bar, QueueSettings());
     q = qc.first;
     BOOST_CHECK(q);
     BOOST_CHECK_EQUAL(true, qc.second);
     BOOST_CHECK_EQUAL(bar, q->getName());
-}
-
-QPID_AUTO_TEST_CASE(testDeclareTmp)
-{
-    QueueRegistry reg;
-    std::pair<Queue::shared_ptr,  bool> qc;
-
-    qc = reg.declare(std::string(), false, 0, 0);
-    BOOST_CHECK(qc.second);
-    BOOST_CHECK_EQUAL(std::string("tmp_1"), qc.first->getName());
 }
 
 QPID_AUTO_TEST_CASE(testFind)
@@ -72,8 +63,8 @@ QPID_AUTO_TEST_CASE(testFind)
 
     BOOST_CHECK(reg.find(foo) == 0);
 
-    reg.declare(foo, false, 0, 0);
-    reg.declare(bar, false, 0, 0);
+    reg.declare(foo, QueueSettings());
+    reg.declare(bar, QueueSettings());
     Queue::shared_ptr q = reg.find(bar);
     BOOST_CHECK(q);
     BOOST_CHECK_EQUAL(bar, q->getName());
@@ -85,7 +76,7 @@ QPID_AUTO_TEST_CASE(testDestroy)
     QueueRegistry reg;
     std::pair<Queue::shared_ptr,  bool> qc;
 
-    qc = reg.declare(foo, false, 0, 0);
+    qc = reg.declare(foo, QueueSettings());
     reg.destroy(foo);
     // Queue is gone from the registry.
     BOOST_CHECK(reg.find(foo) == 0);

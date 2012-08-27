@@ -25,6 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Message.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
@@ -74,7 +75,7 @@ protected:
     mutable qpid::sys::Mutex sequenceLock;
     int64_t sequenceNo;
     bool ive;
-    boost::intrusive_ptr<Message> lastMsg;
+    Message lastMsg;
 
     class PreRoute{
     public:
@@ -196,7 +197,7 @@ public:
     virtual bool bind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool isBound(boost::shared_ptr<Queue> queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
-    QPID_BROKER_EXTERN virtual void setProperties(const boost::intrusive_ptr<Message>&);
+    //QPID_BROKER_EXTERN virtual void setProperties(Message&);
     virtual void route(Deliverable& msg) = 0;
 
     //PersistableExchange:

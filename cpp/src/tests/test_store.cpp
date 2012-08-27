@@ -34,6 +34,7 @@
 
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Plugin.h"
@@ -95,7 +96,7 @@ class TestStore : public NullMessageStore {
                  const boost::intrusive_ptr<PersistableMessage>& pmsg,
                  const PersistableQueue& )
     {
-        Message* msg = dynamic_cast<Message*>(pmsg.get());
+        qpid::broker::amqp_0_10::MessageTransfer* msg = dynamic_cast<qpid::broker::amqp_0_10::MessageTransfer*>(pmsg.get());
         assert(msg);
 
         // Dump the message if there is a dump file.

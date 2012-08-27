@@ -78,7 +78,9 @@ namespace acl {
         PROP_SCHEMACLASS,
         PROP_POLICYTYPE,
         PROP_MAXQUEUESIZE,
-        PROP_MAXQUEUECOUNT };
+        PROP_MAXQUEUECOUNT,
+        PROPERTYSIZE           // PROPERTYSIZE must be last in list
+    };
 
     // Property used in ACL spec file
     // Note for properties common to file processing/rule storage and to
@@ -144,6 +146,10 @@ namespace broker {
          *  per-user.
          */
         virtual bool approveConnection (const Connection& connection)=0;
+
+        /** Change connection's counted userId
+         */
+        virtual void setUserId(const Connection& connection, const std::string& username)=0;
 
         virtual ~AclModule() {};
     };

@@ -37,6 +37,7 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
         m_arq(arq)
 {}
 
+/*
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      boost::intrusive_ptr<PersistableMessage> msg,
                                      AsyncResultCallback rcb,
@@ -46,6 +47,7 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
         m_rcb(rcb),
         m_arq(arq)
 {}
+*/
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      SimpleTxnBuffer* tb,
@@ -59,6 +61,7 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
     assert(m_q.get() != 0);
 }
 
+/*
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      boost::intrusive_ptr<PersistableMessage> msg,
                                      SimpleTxnBuffer* tb,
@@ -73,6 +76,7 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
     assert(m_q.get() != 0);
     assert(m_msg.get() != 0);
 }
+*/
 
 QueueAsyncContext::~QueueAsyncContext()
 {}
@@ -83,11 +87,13 @@ QueueAsyncContext::getQueue() const
     return m_q;
 }
 
+/*
 boost::intrusive_ptr<PersistableMessage>
 QueueAsyncContext::getMessage() const
 {
     return m_msg;
 }
+*/
 
 SimpleTxnBuffer*
 QueueAsyncContext::getTxnBuffer() const {

@@ -28,6 +28,17 @@
 namespace qpid  {
 namespace broker {
 
+SimpleMessage::SimpleMessage() {}
+
+SimpleMessage::SimpleMessage(const char* msgData,
+                             const uint32_t msgSize,
+                             boost::intrusive_ptr<PersistableMessage> persistentContext) :
+        m_msg(msgData, static_cast<size_t>(msgSize)),
+        m_persistentContext(persistentContext)
+{}
+
+
+/*
 SimpleMessage::SimpleMessage(const char* msgData,
                              const uint32_t msgSize) :
         m_persistenceId(0ULL),
@@ -44,24 +55,28 @@ SimpleMessage::SimpleMessage(const char* msgData,
         m_store(store),
         m_msgHandle(store ? store->createMessageHandle(this) : MessageHandle())
 {}
+*/
 
 SimpleMessage::~SimpleMessage() {}
 
+/*
 const MessageHandle&
 SimpleMessage::getHandle() const {
-    return m_msgHandle;
+    return m_persistentContext.getHandle();
 }
 
 MessageHandle&
 SimpleMessage::getHandle() {
-    return m_msgHandle;
+    return m_persistentContext.getHandle();
 }
+*/
 
 uint64_t
 SimpleMessage::contentSize() const {
     return  static_cast<uint64_t>(m_msg.size());
 }
 
+/*
 void
 SimpleMessage::setPersistenceId(uint64_t id) const {
     m_persistenceId = id;
@@ -89,11 +104,17 @@ uint32_t
 SimpleMessage::encodedHeaderSize() const {
     return 0;
 }
-
+*/
 bool
 SimpleMessage::isPersistent() const {
-    return m_store != 0;
+    return m_persistentContext.get() != 0;
 }
+
+boost::intrusive_ptr<PersistableMessage>
+SimpleMessage::getPersistentContext() const {
+    return m_persistentContext;
+}
+
 
 uint64_t
 SimpleMessage::getSize() {

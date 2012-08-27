@@ -296,6 +296,47 @@ bool ConnectionCounter::approveConnection(const broker::Connection& connection)
     }
 }
 
+
+//
+// setUserId
+//  On cluster shadow connections, track a new user id for this connection.
+//
+void ConnectionCounter::setUserId(const broker::Connection& connection,
+                                  const std::string& username)
+{
+    Mutex::ScopedLock locker(dataLock);
+
+    connectCountsMap_t::iterator eRef = connectProgressMap.find(connection.getMgmtId());
+    if (eRef != connectProgressMap.end()) {
+        if ((*eRef).second == C_OPENED){
+            // Connection has been opened so that current user has been counted
+            if (connection.isShadow()) {
+                // This is a shadow connection and therefore receives userId changes
+                QPID_LOG(debug, "Changing User ID for cluster connection: "
+                    << connection.getMgmtId() << ", old user:'" << connection.getUserId()
+                    << "', new user:'" << username << "'");
+
+                // Decrement user in-use count for old userId
+                releaseLH(connectByNameMap,
+                        connection.getUserId(),
+                        nameLimit);
+                // Increment user in-use count for new userId
+                (void) countConnectionLH(connectByNameMap, username, nameLimit, false);
+            } else {
+                QPID_LOG(warning, "Changing User ID for non-cluster connections is not supported: "
+                    << connection.getMgmtId() << ", old user " << connection.getUserId()
+                    << ", new user " << username);
+            }
+        } else {
+            // connection exists  but has not been opened.
+            // setUserId is called in normal course. The user gets counted when connection is opened.
+        }
+    } else {
+        // Connection does not exist.
+    }
+}
+
+
 //
 // getClientIp - given a connection's mgmtId return the client host part.
 //

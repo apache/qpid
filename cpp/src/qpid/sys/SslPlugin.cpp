@@ -191,7 +191,7 @@ void SslEstablished(Poller::shared_ptr poller, const qpid::sys::SslSocket& s,
                                  boost::bind(&qpid::sys::ssl::SslHandler::nobuffs, async, _1),
                                  boost::bind(&qpid::sys::ssl::SslHandler::idle, async, _1));
 
-    async->init(aio,timer, maxTime, 4);
+    async->init(aio,timer, maxTime);
     aio->start(poller);
 }
 
@@ -247,7 +247,7 @@ void SslMuxProtocolFactory::established(Poller::shared_ptr poller, const Socket&
        boost::bind(&AsynchIOHandler::nobuffs, async, _1),
        boost::bind(&AsynchIOHandler::idle, async, _1));
 
-    async->init(aio, brokerTimer, maxNegotiateTime, 4);
+    async->init(aio, brokerTimer, maxNegotiateTime);
     aio->start(poller);
 }
 

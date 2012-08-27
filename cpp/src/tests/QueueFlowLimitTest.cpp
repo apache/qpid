@@ -23,8 +23,8 @@
 #include "unit_test.h"
 #include "test_tools.h"
 
-#include "qpid/broker/QueuePolicy.h"
 #include "qpid/broker/QueueFlowLimit.h"
+#include "qpid/broker/QueueSettings.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldValue.h"
@@ -66,21 +66,19 @@ public:
         return new TestFlow(flowStopCount, flowResumeCount, flowStopSize, flowResumeSize);
     }
 
-    static QueueFlowLimit *getQueueFlowLimit(const qpid::framing::FieldTable& settings)
+    static QueueFlowLimit *getQueueFlowLimit(const qpid::framing::FieldTable& arguments)
     {
+        QueueSettings settings;
+        settings.populate(arguments, settings.storeSettings);
         return QueueFlowLimit::createLimit(0, settings);
     }
 };
 
-
-
-QueuedMessage createMessage(uint32_t size)
+Message createMessage(uint32_t size)
 {
     static uint32_t seqNum;
-    QueuedMessage msg;
-    msg.payload = MessageUtils::createMessage();
-    msg.position = ++seqNum;
-    MessageUtils::addContent(msg.payload, std::string (size, 'x'));
+    Message msg = MessageUtils::createMessage(qpid::types::Variant::Map(), std::string (size, 'x'));
+    msg.setSequence(++seqNum);
     return msg;
 }
 }
@@ -100,7 +98,7 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     BOOST_CHECK(!flow->isFlowControlActive());
     BOOST_CHECK(flow->monitorFlowControl());
 
-    std::deque<QueuedMessage> msgs;
+    std::deque<Message> msgs;
     for (size_t i = 0; i < 6; i++) {
         msgs.push_back(createMessage(10));
         flow->enqueued(msgs.back());
@@ -135,7 +133,6 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     BOOST_CHECK(!flow->isFlowControlActive());  // 4 on queue, OFF
 }
 
-
 QPID_AUTO_TEST_CASE(testFlowSize)
 {
     FieldTable args;
@@ -151,7 +148,7 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     BOOST_CHECK(!flow->isFlowControlActive());
     BOOST_CHECK(flow->monitorFlowControl());
 
-    std::deque<QueuedMessage> msgs;
+    std::deque<Message> msgs;
     for (size_t i = 0; i < 6; i++) {
         msgs.push_back(createMessage(10));
         flow->enqueued(msgs.back());
@@ -161,14 +158,14 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     BOOST_CHECK_EQUAL(6u, flow->getFlowCount());
     BOOST_CHECK_EQUAL(60u, flow->getFlowSize());
 
-    QueuedMessage msg_9 = createMessage(9);
+    Message msg_9 = createMessage(9);
     flow->enqueued(msg_9);
     BOOST_CHECK(!flow->isFlowControlActive());  // 69 on queue
-    QueuedMessage tinyMsg_1 = createMessage(1);
+    Message tinyMsg_1 = createMessage(1);
     flow->enqueued(tinyMsg_1);
     BOOST_CHECK(!flow->isFlowControlActive());   // 70 on queue
 
-    QueuedMessage tinyMsg_2 = createMessage(1);
+    Message tinyMsg_2 = createMessage(1);
     flow->enqueued(tinyMsg_2);
     BOOST_CHECK(flow->isFlowControlActive());   // 71 on queue, ON
     msgs.push_back(createMessage(10));
@@ -233,12 +230,12 @@ QPID_AUTO_TEST_CASE(testFlowCombo)
     args.setUInt64(QueueFlowLimit::flowStopSizeKey, 200);
     args.setUInt64(QueueFlowLimit::flowResumeSizeKey, 100);
 
-    std::deque<QueuedMessage> msgs_1;
-    std::deque<QueuedMessage> msgs_10;
-    std::deque<QueuedMessage> msgs_50;
-    std::deque<QueuedMessage> msgs_100;
+    std::deque<Message> msgs_1;
+    std::deque<Message> msgs_10;
+    std::deque<Message> msgs_50;
+    std::deque<Message> msgs_100;
 
-    QueuedMessage msg;
+    Message msg;
 
     std::auto_ptr<TestFlow> flow(TestFlow::createTestFlow(args));
     BOOST_CHECK(!flow->isFlowControlActive());        // count:0  size:0
@@ -457,7 +454,6 @@ QPID_AUTO_TEST_CASE(testFlowDisable)
         BOOST_CHECK(!ptr);
     }
 }
-
 
 QPID_AUTO_TEST_SUITE_END()
 

@@ -51,6 +51,7 @@ set (asyncStore_SOURCES
 	qpid/asyncStore/EventHandleImpl.cpp
 	qpid/asyncStore/MessageHandleImpl.cpp
 	qpid/asyncStore/OperationQueue.cpp
+	qpid/asyncStore/PersistableMessageContext.cpp
 	qpid/asyncStore/Plugin.cpp
 	qpid/asyncStore/QueueHandleImpl.cpp
 	qpid/asyncStore/RunState.cpp

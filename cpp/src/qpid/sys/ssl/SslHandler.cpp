@@ -33,15 +33,6 @@ namespace sys {
 namespace ssl {
 
 
-// Buffer definition
-struct Buff : public SslIO::BufferBase {
-    Buff() :
-        SslIO::BufferBase(new char[65536], 65536)
-    {}
-    ~Buff()
-    { delete [] bytes;}
-};
-
 struct ProtocolTimeoutTask : public sys::TimerTask {
     SslHandler& handler;
     std::string id;
@@ -78,7 +69,7 @@ SslHandler::~SslHandler() {
     delete codec;
 }
 
-void SslHandler::init(SslIO* a, Timer& timer, uint32_t maxTime, int numBuffs) {
+void SslHandler::init(SslIO* a, Timer& timer, uint32_t maxTime) {
     aio = a;
 
     // Start timer for this connection
@@ -86,17 +77,14 @@ void SslHandler::init(SslIO* a, Timer& timer, uint32_t maxTime, int numBuffs) {
     timer.add(timeoutTimerTask);
 
     // Give connection some buffers to use
-    for (int i = 0; i < numBuffs; i++) {
-        aio->queueReadBuffer(new Buff);
-    }
+    aio->createBuffers();
 }
 
 void SslHandler::write(const framing::ProtocolInitiation& data)
 {
     QPID_LOG(debug, "SENT [" << identifier << "]: INIT(" << data << ")");
     SslIO::BufferBase* buff = aio->getQueuedBuffer();
-    if (!buff)
-        buff = new Buff;
+    assert(buff);
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
     buff->dataCount = data.encodedSize();
@@ -205,10 +193,11 @@ void SslHandler::idle(SslIO&){
         return;
     }
     if (codec == 0) return;
-    if (codec->canEncode()) {
-        // Try and get a queued buffer if not then construct new one
-        SslIO::BufferBase* buff = aio->getQueuedBuffer();
-        if (!buff) buff = new Buff;
+    if (!codec->canEncode()) {
+        return;
+    }
+    SslIO::BufferBase* buff = aio->getQueuedBuffer();
+    if (buff) {
         size_t encoded=codec->encode(buff->bytes, buff->byteCount);
         buff->dataCount = encoded;
         aio->queueWrite(buff);

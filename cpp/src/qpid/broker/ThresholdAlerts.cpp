@@ -20,7 +20,8 @@
  */
 #include "qpid/broker/ThresholdAlerts.h"
 #include "qpid/broker/Queue.h"
-#include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
@@ -30,21 +31,20 @@ namespace qpid {
 namespace broker {
 namespace {
 const qmf::org::apache::qpid::broker::EventQueueThresholdExceeded EVENT("dummy", 0, 0);
-bool isQMFv2(const boost::intrusive_ptr<Message> message)
+bool isQMFv2(const Message& message)
 {
-    const qpid::framing::MessageProperties* props = message->getProperties<qpid::framing::MessageProperties>();
+    const qpid::framing::MessageProperties* props = qpid::broker::amqp_0_10::MessageTransfer::get(message).getProperties<qpid::framing::MessageProperties>();
     return props && props->getAppId() == "qmf2";
 }
 
-bool isThresholdEvent(const boost::intrusive_ptr<Message> message)
+bool isThresholdEvent(const Message& message)
 {
-    if (message->getIsManagementMessage()) {
+    if (message.getIsManagementMessage()) {
         //is this a qmf event? if so is it a threshold event?
         if (isQMFv2(message)) {
-            const qpid::framing::FieldTable* headers = message->getApplicationHeaders();
-            if (headers && headers->getAsString("qmf.content") == "_event") {
+            if (message.getPropertyAsString("qmf.content") == "_event") {
                 //decode as list
-                std::string content = message->getFrames().getContent();
+                std::string content = qpid::broker::amqp_0_10::MessageTransfer::get(message).getFrames().getContent();
                 qpid::types::Variant::List list;
                 qpid::amqp_0_10::ListCodec::decode(content, list);
                 if (list.empty() || list.front().getType() != qpid::types::VAR_MAP) return false;
@@ -57,7 +57,7 @@ bool isThresholdEvent(const boost::intrusive_ptr<Message> message)
                 }
             }
         } else {
-            std::string content = message->getFrames().getContent();
+            std::string content = qpid::broker::amqp_0_10::MessageTransfer::get(message).getFrames().getContent();
             qpid::framing::Buffer buffer(const_cast<char*>(content.data()), content.size());
             if (buffer.getOctet() == 'A' && buffer.getOctet() == 'M' && buffer.getOctet() == '2' && buffer.getOctet() == 'e') {
                 buffer.getLong();//sequence
@@ -83,9 +83,9 @@ ThresholdAlerts::ThresholdAlerts(const std::string& n,
       repeatInterval(repeat ? repeat*qpid::sys::TIME_SEC : 0),
       count(0), size(0), lastAlert(qpid::sys::EPOCH) {}
 
-void ThresholdAlerts::enqueued(const QueuedMessage& m)
+void ThresholdAlerts::enqueued(const Message& m)
 {
-    size += m.payload->contentSize();
+    size += m.getContentSize();
     ++count;
     if ((countThreshold && count >= countThreshold) || (sizeThreshold && size >= sizeThreshold)) {
         if ((repeatInterval == 0 && lastAlert == qpid::sys::EPOCH)
@@ -94,7 +94,7 @@ void ThresholdAlerts::enqueued(const QueuedMessage& m)
             //enqueued on queues; it may even be that this event
             //causes a message to be enqueued on the queue we are
             //tracking, and so we need to avoid recursing
-            if (isThresholdEvent(m.payload)) return;
+            if (isThresholdEvent(m)) return;
             lastAlert = qpid::sys::now();
             agent.raiseEvent(qmf::org::apache::qpid::broker::EventQueueThresholdExceeded(name, count, size));
             QPID_LOG(info, "Threshold event triggered for " << name << ", count=" << count << ", size=" << size);
@@ -102,9 +102,9 @@ void ThresholdAlerts::enqueued(const QueuedMessage& m)
     }
 }
 
-void ThresholdAlerts::dequeued(const QueuedMessage& m)
+void ThresholdAlerts::dequeued(const Message& m)
 {
-    size -= m.payload->contentSize();
+    size -= m.getContentSize();
     --count;
     if ((countThreshold && count < countThreshold) || (sizeThreshold && size < sizeThreshold)) {
         lastAlert = qpid::sys::EPOCH;
@@ -127,65 +127,14 @@ void ThresholdAlerts::observe(Queue& queue, qpid::management::ManagementAgent& a
 }
 
 void ThresholdAlerts::observe(Queue& queue, qpid::management::ManagementAgent& agent,
-                              const qpid::framing::FieldTable& settings, uint16_t limitRatio)
-
+                              const QueueSettings& settings, uint16_t limitRatio)
 {
-    qpid::types::Variant::Map map;
-    qpid::amqp_0_10::translate(settings, map);
-    observe(queue, agent, map, limitRatio);
-}
-
-template <class T>
-class Option
-{
-  public:
-    Option(const std::string& name, T d) : defaultValue(d) { names.push_back(name); }
-    void addAlias(const std::string& name) { names.push_back(name); }
-    T get(const qpid::types::Variant::Map& settings) const
-    {
-        T value(defaultValue);
-        for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
-            if (get(settings, *i, value)) break;
-        }
-        return value;
-    }
-  private:
-    std::vector<std::string> names;
-    T defaultValue;
-
-    bool get(const qpid::types::Variant::Map& settings, const std::string& name, T& value) const
-    {
-        qpid::types::Variant::Map::const_iterator i = settings.find(name);
-        if (i != settings.end()) {
-            try {
-                value = (T) i->second;
-            } catch (const qpid::types::InvalidConversion&) {
-                QPID_LOG(warning, "Bad value for" << name << ": " << i->second);
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-};
-
-void ThresholdAlerts::observe(Queue& queue, qpid::management::ManagementAgent& agent,
-                              const qpid::types::Variant::Map& settings, uint16_t limitRatio)
-
-{
-    //Note: aliases are keys defined by java broker
-    Option<int64_t> repeatInterval("qpid.alert_repeat_gap", 60);
-    repeatInterval.addAlias("x-qpid-minimum-alert-repeat-gap");
-
     //If no explicit threshold settings were given use specified
     //percentage of any limit from the policy.
-    const QueuePolicy* policy = queue.getPolicy();
-    Option<uint32_t> countThreshold("qpid.alert_count", (uint32_t) (policy && limitRatio ? (policy->getMaxCount()*limitRatio/100) : 0));
-    countThreshold.addAlias("x-qpid-maximum-message-count");
-    Option<uint64_t> sizeThreshold("qpid.alert_size", (uint64_t) (policy && limitRatio ? (policy->getMaxSize()*limitRatio/100) : 0));
-    sizeThreshold.addAlias("x-qpid-maximum-message-size");
+    uint32_t countThreshold = settings.alertThreshold.hasCount() ? settings.alertThreshold.getCount() : (settings.maxDepth.getCount()*limitRatio/100);
+    uint32_t sizeThreshold = settings.alertThreshold.hasSize() ? settings.alertThreshold.getSize() : (settings.maxDepth.getSize()*limitRatio/100);
 
-    observe(queue, agent, countThreshold.get(settings), sizeThreshold.get(settings), repeatInterval.get(settings));
+    observe(queue, agent, countThreshold, sizeThreshold, settings.alertRepeatInterval);
 }
 
 }}

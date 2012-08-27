@@ -101,15 +101,15 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
     // Called via QueueGuard::dequeued.
     //@return true if the message requires completion.
-    void dequeued(const broker::QueuedMessage& qm);
+    void dequeued(const broker::Message&);
 
     // Called during initial scan for dequeues.
     void dequeued(framing::SequenceNumber first, framing::SequenceNumber last);
 
     // Consumer overrides.
-    bool deliver(broker::QueuedMessage& msg);
+    bool deliver(const broker::QueueCursor& cursor, const broker::Message& msg);
     void cancel();
-    void acknowledged(const broker::QueuedMessage&);
+    void acknowledged(const broker::DeliveryRecord&);
     bool browseAcquired() const { return true; }
     // Hide the "queue deleted" error for a ReplicatingSubscription when a
     // queue is deleted, this is normal and not an error.
@@ -127,8 +127,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
   private:
     std::string logPrefix;
-    boost::shared_ptr<broker::Queue> dummy; // Used to send event messages
     framing::SequenceSet dequeues;
+    framing::SequenceNumber position;
     framing::SequenceNumber backupPosition;
     bool ready;
     BrokerInfo info;

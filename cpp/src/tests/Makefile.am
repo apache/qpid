@@ -96,6 +96,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ExchangeTest.cpp \
 	HeadersExchangeTest.cpp \
 	MessageTest.cpp \
+	QueueDepth.cpp \
 	QueueRegistryTest.cpp \
 	QueuePolicyTest.cpp \
 	QueueFlowLimitTest.cpp \
@@ -105,19 +106,15 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	TimerTest.cpp \
 	TopicExchangeTest.cpp \
 	TxBufferTest.cpp \
-	TxPublishTest.cpp \
-	MessageBuilderTest.cpp \
 	ConnectionOptions.h \
 	ForkedBroker.h \
 	ForkedBroker.cpp \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
-	QueueEvents.cpp \
 	ProxyTest.cpp \
 	RetryList.cpp \
 	FrameDecoder.cpp \
-	ReplicationTest.cpp \
 	ClientMessageTest.cpp \
 	PollableCondition.cpp \
 	Variant.cpp \
@@ -142,7 +139,6 @@ test_store_la_SOURCES = test_store.cpp
 test_store_la_LIBADD = $(lib_broker)
 test_store_la_LDFLAGS = -module
 
-include cluster.mk
 include sasl.mk
 if SSL
 include ssl.mk
@@ -338,7 +334,6 @@ EXTRA_DIST +=								\
   dynamic_log_level_test						\
   qpid-ctrl								\
   CMakeLists.txt							\
-  cluster.cmake								\
   windows/DisableWin32ErrorWindows.cpp					\
   background.ps1							\
   find_prog.ps1								\
@@ -371,14 +366,6 @@ LONG_TESTS+=start_broker \
  run_msg_group_tests_soak \
  stop_broker \
  run_long_federation_sys_tests
-
-if HAVE_LIBCPG
-
-LONG_TESTS+=	federated_cluster_test_with_node_failure	\
-		run_failover_soak				\
-		reliable_replication_test
-
-endif HAVE_LIBCPG
 
 EXTRA_DIST+=						\
 	fanout_perftest					\

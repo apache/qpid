@@ -22,6 +22,7 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -38,6 +39,7 @@ import javax.management.MBeanServer;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.RuntimeErrorException;
 import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXPrincipal;
 import javax.management.remote.MBeanServerForwarder;
@@ -48,6 +50,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -157,77 +160,98 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
             // Save the subject
             SecurityManager.setThreadSubject(subject);
-
-            // Get the component, type and impact, which may be null
-            String type = getType(method, args);
-            String vhost = getVirtualHost(method, args);
-            int impact = getImpact(method, args);
-
-            // Get the security manager for the virtual host (if set)
-            SecurityManager security;
-            if (vhost == null)
-            {
-                security = _appRegistry.getSecurityManager();
-            }
-            else
-            {
-                security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
-            }
-
-            methodName = getMethodName(method, args);
-            if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
-            {
-                // Check for read-only method invocation permission
-                if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
-                {
-                    throw new SecurityException("Permission denied: Access " + methodName);
-                }
-            }
-            else
-            {
-                // Check for setting properties permission
-                if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
-                {
-                    throw new SecurityException("Permission denied: Update " + methodName);
-                }
-            }
-
-            boolean oldAccessChecksDisabled = false;
-            if(_managementRightsInferAllAccess)
-            {
-                oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
-            }
-
+            CurrentActor.set(_logActor);
             try
             {
-                return doInvokeWrappingWithManagementActor(method, args);
+                return authoriseAndInvoke(method, args);
             }
             finally
             {
-                if(_managementRightsInferAllAccess)
-                {
-                    SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
-                }
+                CurrentActor.remove();
             }
         }
         catch (InvocationTargetException e)
         {
-            throw e.getTargetException();
+            Throwable targetException =  e.getCause();
+            logTargetException(method, args, targetException);
+            throw targetException;
         }
     }
 
-    private Object doInvokeWrappingWithManagementActor(Method method,
-            Object[] args) throws IllegalAccessException,
-            InvocationTargetException
+    private void logTargetException(Method method, Object[] args, Throwable targetException)
     {
+        Throwable error = null;
+        if (targetException instanceof RuntimeErrorException)
+        {
+            error = ((RuntimeErrorException)targetException).getCause();
+        }
+        else if (targetException instanceof Error)
+        {
+            error = targetException;
+        }
+        if (error == null)
+        {
+            _logger.debug("Exception was thrown on invoking of " + method + " with arguments " + Arrays.toString(args), targetException);
+        }
+        else
+        {
+            _logger.error("Unexpected error occured on invoking of " + method + " with arguments " + Arrays.toString(args), targetException);
+        }
+    }
+
+    private Object authoriseAndInvoke(Method method, Object[] args) throws IllegalAccessException, InvocationTargetException
+    {
+        String methodName;
+        // Get the component, type and impact, which may be null
+        String type = getType(method, args);
+        String vhost = getVirtualHost(method, args);
+        int impact = getImpact(method, args);
+
+        // Get the security manager for the virtual host (if set)
+        SecurityManager security;
+        if (vhost == null)
+        {
+            security = _appRegistry.getSecurityManager();
+        }
+        else
+        {
+            security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
+        }
+
+        methodName = getMethodName(method, args);
+        if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
+        {
+            // Check for read-only method invocation permission
+            if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
+            {
+                throw new SecurityException("Permission denied: Access " + methodName);
+            }
+        }
+        else
+        {
+            // Check for setting properties permission
+            if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
+            {
+                throw new SecurityException("Permission denied: Update " + methodName);
+            }
+        }
+
+        boolean oldAccessChecksDisabled = false;
+        if(_managementRightsInferAllAccess)
+        {
+            oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
+        }
+
         try
         {
-            CurrentActor.set(_logActor);
             return method.invoke(_mbs, args);
         }
         finally
         {
-            CurrentActor.remove();
+            if(_managementRightsInferAllAccess)
+            {
+                SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
+            }
         }
     }
 
@@ -368,14 +392,17 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             user = splitConnectionId[1];
         }
 
+        // use a separate instance of actor as subject is not set on connect/disconnect
+        // we need to pass principal name explicitly into log actor
+        LogActor logActor = new ManagementActor(_appRegistry.getRootMessageLogger(), user);
         if (JMXConnectionNotification.OPENED.equals(type))
         {
-            _logActor.message(ManagementConsoleMessages.OPEN(user));
+            logActor.message(ManagementConsoleMessages.OPEN(user));
         }
         else if (JMXConnectionNotification.CLOSED.equals(type) ||
                  JMXConnectionNotification.FAILED.equals(type))
         {
-            _logActor.message(ManagementConsoleMessages.CLOSE(user));
+            logActor.message(ManagementConsoleMessages.CLOSE(user));
         }
     }
 }

@@ -167,7 +167,7 @@ inherit_value ("winver_LEGAL_COPYRIGHT"      "")
 
 
 # check if we generate source as part of the build
-#   - rubygen generates the amqp spec and clustering
+#   - rubygen generates the amqp spec
 #   - managementgen generates the broker management code
 #
 # rubygen subdir is excluded from stable distributions
@@ -186,7 +186,7 @@ if (EXISTS ${AMQP_SPEC})
     message(FATAL_ERROR "Can't locate python, needed to generate source files.")
   endif (NOT PYTHON_EXECUTABLE)
 
-  set(specs ${AMQP_SPEC} ${qpid-cpp_SOURCE_DIR}/xml/cluster.xml)
+  set(specs ${AMQP_SPEC})
   set(regen_amqp OFF)
   set(rgen_dir ${qpid-cpp_SOURCE_DIR}/rubygen)
   file(GLOB_RECURSE rgen_progs ${rgen_dir}/*.rb)
@@ -207,7 +207,6 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
 
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/cluster/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
@@ -672,9 +671,6 @@ if (BUILD_HA)
              COMPONENT ${QPID_COMPONENT_BROKER})
 endif (BUILD_HA)
 
-# Check for optional cluster support requirements
-include (cluster.cmake)
-
 # Check for optional RDMA support requirements
 include (rdma.cmake)
 
@@ -1117,7 +1113,6 @@ set (qpidbroker_SOURCES
      qpid/broker/Exchange.cpp
      qpid/broker/ExpiryPolicy.cpp
      qpid/broker/Fairshare.cpp
-     qpid/broker/LegacyLVQ.cpp
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp
      qpid/broker/PriorityQueue.cpp
@@ -1144,17 +1139,22 @@ set (qpidbroker_SOURCES
      qpid/broker/HeadersExchange.cpp
      qpid/broker/Link.cpp
      qpid/broker/LinkRegistry.cpp
+     qpid/broker/LossyQueue.cpp
+     qpid/broker/Lvq.cpp
      qpid/broker/Message.cpp
      qpid/broker/MessageAdapter.cpp
      qpid/broker/MessageBuilder.cpp
+     qpid/broker/MessageHandle.cpp
      qpid/broker/MessageStoreModule.cpp
      qpid/broker/NameGenerator.cpp
      qpid/broker/NullMessageStore.cpp
      qpid/broker/QueueBindings.cpp
      qpid/broker/QueuedMessage.cpp
-     qpid/broker/QueueEvents.cpp
-     qpid/broker/QueuePolicy.cpp
+     qpid/broker/QueueCursor.cpp
+     qpid/broker/QueueDepth.cpp
+     qpid/broker/QueueFactory.cpp
      qpid/broker/QueueRegistry.cpp
+     qpid/broker/QueueSettings.cpp
      qpid/broker/QueueFlowLimit.cpp
      qpid/broker/RecoveryManagerImpl.cpp
      qpid/broker/RecoveredEnqueue.cpp
@@ -1177,8 +1177,8 @@ set (qpidbroker_SOURCES
      qpid/broker/TopicExchange.cpp
      qpid/broker/TxAccept.cpp
      qpid/broker/TxBuffer.cpp
-     qpid/broker/TxPublish.cpp
      qpid/broker/Vhost.cpp
+     qpid/broker/amqp_0_10/MessageTransfer.cpp
      qpid/management/ManagementAgent.cpp
      qpid/management/ManagementDirectExchange.cpp
      qpid/management/ManagementTopicExchange.cpp
@@ -1433,45 +1433,6 @@ install (FILES ${qmfconsole_HEADERS}
          COMPONENT ${QPID_COMPONENT_QMF})
 install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 
-# A queue event listener plugin that creates messages on a replication
-# queue corresponding to enqueue and dequeue events:
-set (replicating_listener_SOURCES
-     qpid/replication/constants.h
-     qpid/replication/ReplicatingEventListener.cpp
-     qpid/replication/ReplicatingEventListener.h
-    )
-add_msvc_version (replicating_listener library dll)
-add_library (replicating_listener MODULE ${replicating_listener_SOURCES})
-target_link_libraries (replicating_listener qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-set_target_properties (replicating_listener PROPERTIES PREFIX "")
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set_target_properties(replicating_listener PROPERTIES
-                        LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
-endif (CMAKE_COMPILER_IS_GNUCXX)
-install (TARGETS replicating_listener
-         DESTINATION ${QPIDD_MODULE_DIR}
-         COMPONENT ${QPID_COMPONENT_BROKER})
-
-# A custom exchange plugin that allows an exchange to be created that
-# can process the messages from a replication queue (populated on the
-# source system by the replicating listener plugin above) and take the
-# corresponding action on the local queues
-set (replication_exchange_SOURCES
-     qpid/replication/constants.h
-     qpid/replication/ReplicationExchange.cpp
-     qpid/replication/ReplicationExchange.h
-    )
-add_msvc_version (replication_exchange library dll)
-add_library (replication_exchange MODULE ${replication_exchange_SOURCES})
-target_link_libraries (replication_exchange qpidbroker)
-set_target_properties (replication_exchange PROPERTIES PREFIX "")
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set_target_properties(replication_exchange PROPERTIES
-                        LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
-endif (CMAKE_COMPILER_IS_GNUCXX)
-install (TARGETS replication_exchange
-         DESTINATION ${QPIDD_MODULE_DIR}
-         COMPONENT ${QPID_COMPONENT_BROKER})
 
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h

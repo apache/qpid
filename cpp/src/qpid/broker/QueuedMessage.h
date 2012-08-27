@@ -22,8 +22,8 @@
 #define _QueuedMessage_
 
 #include "qpid/broker/Message.h"
-#include "BrokerImportExport.h"
-#include <iosfwd>
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
 namespace broker {
@@ -32,20 +32,19 @@ class Queue;
 
 struct QueuedMessage
 {
-    boost::intrusive_ptr<Message> payload;
+    Message message;
     framing::SequenceNumber position;
-    typedef enum { AVAILABLE, ACQUIRED, DELETED, REMOVED } Status;
-    Status status;
+    enum {AVAILABLE, ACQUIRED, DELETED, REMOVED} status;
     Queue* queue;
 
-    QueuedMessage(Queue* q=0,
-                  boost::intrusive_ptr<Message> msg=0,
-                  framing::SequenceNumber sn=0,
-                  Status st=AVAILABLE
-    ) :  payload(msg), position(sn), status(st), queue(q) {}
+    QueuedMessage() : queue(0) {}
+    QueuedMessage(Queue* q, Message msg, framing::SequenceNumber sn) :
+        message(msg), position(sn), queue(q) {}
+    QueuedMessage(Queue* q) : queue(q) {}
 };
 
-inline bool operator<(const QueuedMessage& a, const QueuedMessage& b) {
+inline bool operator<(const QueuedMessage& a, const QueuedMessage& b)
+{
     return a.position < b.position;
 }
 

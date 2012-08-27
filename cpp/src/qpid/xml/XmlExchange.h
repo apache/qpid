@@ -65,7 +65,7 @@ class XmlExchange : public virtual Exchange {
 
     qpid::sys::RWlock lock;
 
-    bool matches(Query& query, Deliverable& msg, const qpid::framing::FieldTable* args, bool parse_message_content);
+    bool matches(Query& query, Deliverable& msg, bool parse_message_content);
 
   public:
     static const std::string typeName;

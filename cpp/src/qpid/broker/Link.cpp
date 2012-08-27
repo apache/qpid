@@ -92,10 +92,10 @@ public:
 
     // Process messages sent from the remote's amq.failover exchange by extracting the failover URLs
     // and saving them should the Link need to reconnect.
-    void route(broker::Deliverable& msg)
+    void route(broker::Deliverable& /*msg*/)
     {
         if (!link) return;
-        const framing::FieldTable* headers = msg.getMessage().getApplicationHeaders();
+        const framing::FieldTable* headers = 0;//TODO: msg.getMessage().getApplicationHeaders();
         framing::Array addresses;
         if (headers && headers->getArray(FAILOVER_HEADER_KEY, addresses)) {
             // convert the Array of addresses to a single Url container for used with setUrl():

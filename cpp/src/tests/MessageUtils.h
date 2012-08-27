@@ -20,9 +20,11 @@
  */
 
 #include "qpid/broker/Message.h"
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/types/Variant.h"
 
 using namespace qpid;
 using namespace broker;
@@ -33,11 +35,46 @@ namespace tests {
 
 struct MessageUtils
 {
-    static boost::intrusive_ptr<Message> createMessage(const std::string& exchange="", const std::string& routingKey="",
-                                                       const bool durable = false, const Uuid& messageId=Uuid(true),
-                                                       uint64_t contentSize = 0)
+    static Message createMessage(const qpid::types::Variant::Map& properties, const std::string& content="", const std::string& destination = "")
     {
-        boost::intrusive_ptr<broker::Message> msg(new broker::Message());
+        boost::intrusive_ptr<broker::amqp_0_10::MessageTransfer> msg(new broker::amqp_0_10::MessageTransfer());
+
+        AMQFrame method(( MessageTransferBody(ProtocolVersion(), destination, 0, 0)));
+        AMQFrame header((AMQHeaderBody()));
+
+        msg->getFrames().append(method);
+        msg->getFrames().append(header);
+        if (content.size()) {
+            msg->getFrames().getHeaders()->get<MessageProperties>(true)->setContentLength(content.size());
+            AMQFrame data((AMQContentBody(content)));
+            msg->getFrames().append(data);
+        }
+        for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            if (i->first == "routing-key" && !i->second.isVoid()) {
+                msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(i->second);
+            } else if (i->first == "message-id" && !i->second.isVoid()) {
+                qpid::types::Uuid id = i->second;
+                qpid::framing::Uuid id2(id.data());
+                msg->getFrames().getHeaders()->get<MessageProperties>(true)->setMessageId(id2);
+            } else if (i->first == "ttl" && !i->second.isVoid()) {
+                msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setTtl(i->second);
+            } else if (i->first == "priority" && !i->second.isVoid()) {
+                msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setPriority(i->second);
+            } else if (i->first == "durable" && !i->second.isVoid()) {
+                msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setDeliveryMode(i->second.asBool() ? 2 : 1);
+            } else {
+                msg->getFrames().getHeaders()->get<MessageProperties>(true)->getApplicationHeaders().setString(i->first, i->second);
+            }
+        }
+        return Message(msg, msg);
+    }
+
+
+    static Message createMessage(const std::string& exchange="", const std::string& routingKey="",
+                                 uint64_t ttl = 0, bool durable = false, const Uuid& messageId=Uuid(true),
+                                 const std::string& content="")
+    {
+        boost::intrusive_ptr<broker::amqp_0_10::MessageTransfer> msg(new broker::amqp_0_10::MessageTransfer());
 
         AMQFrame method(( MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
         AMQFrame header((AMQHeaderBody()));
@@ -45,18 +82,18 @@ struct MessageUtils
         msg->getFrames().append(method);
         msg->getFrames().append(header);
         MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-        props->setContentLength(contentSize);
+        props->setContentLength(content.size());
         props->setMessageId(messageId);
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
         if (durable)
             msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setDeliveryMode(2);
-        return msg;
-    }
-
-    static void addContent(boost::intrusive_ptr<Message> msg, const std::string& data)
-    {
-        AMQFrame content((AMQContentBody(data)));
-        msg->getFrames().append(content);
+        if (ttl)
+            msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setTtl(ttl);
+        if (content.size()) {
+            AMQFrame data((AMQContentBody(content)));
+            msg->getFrames().append(data);
+        }
+        return Message(msg, msg);
     }
 };
 

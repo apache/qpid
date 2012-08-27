@@ -111,9 +111,11 @@ class HaBroker(Broker):
     def wait_status(self, status):
         def try_get_status():
             # Ignore ConnectionError, the broker may not be up yet.
-            try: return self.ha_status() == status;
+            try:
+                self._status = self.ha_status()
+                return self._status == status;
             except ConnectionError: return False
-        assert retry(try_get_status, timeout=20), "%s status != %r"%(self, status)
+        assert retry(try_get_status, timeout=20), "%s %r != %r"%(self, self._status, status)
 
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
@@ -581,15 +583,7 @@ class ReplicationTests(BrokerTest):
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5, 'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
-
-        # FIXME aconway 2012-02-22: there is a bug in priority ring
-        # queues that allows a low priority message to displace a high
-        # one. The following commented-out assert_browse is for the
-        # correct result, the uncommented one is for the actualy buggy
-        # result.  See https://issues.apache.org/jira/browse/QPID-3866
-        #
-        # expect = sorted(priorities,reverse=True)[0:5]
-        expect = [9,9,9,9,2]
+        expect = sorted(priorities,reverse=True)[0:5]
         primary.assert_browse("q", expect, transform=lambda m: m.priority)
         backup.assert_browse_backup("q", expect, transform=lambda m: m.priority)
 
@@ -963,7 +957,7 @@ class RecoveryTests(BrokerTest):
         """
         cluster = HaCluster(self, 3, args=["--ha-backup-timeout=0.5"]);
         cluster[0].wait_status("active") # Primary ready
-        for b in cluster[1:4]: b.wait_status("ready") # Backups ready
+        for b in cluster[1:3]: b.wait_status("ready") # Backups ready
         for i in [0,1]: cluster.kill(i, False)
         cluster[2].promote()    # New primary, backups will be 1 and 2
         cluster[2].wait_status("recovering")

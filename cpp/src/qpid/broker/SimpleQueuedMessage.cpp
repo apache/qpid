@@ -40,7 +40,7 @@ SimpleQueuedMessage::SimpleQueuedMessage(SimpleQueue* q,
         m_msg(msg)
 {
     if (m_queue->getStore()) {
-        m_enqHandle = q->getStore()->createEnqueueHandle(msg->getHandle(), q->getHandle());
+        m_enqHandle = q->getStore()->createEnqueueHandle(msg->getPersistentContext()->getMessageHandle(), q->getHandle());
     }
 }
 

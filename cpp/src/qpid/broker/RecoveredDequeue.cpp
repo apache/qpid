@@ -22,10 +22,9 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/RecoveredDequeue.h"
 
-using boost::intrusive_ptr;
 using namespace qpid::broker;
 
-RecoveredDequeue::RecoveredDequeue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg)
+RecoveredDequeue::RecoveredDequeue(Queue::shared_ptr _queue, Message _msg) : queue(_queue), msg(_msg)
 {
     queue->recoverPrepared(msg);
 }
@@ -38,11 +37,11 @@ bool RecoveredDequeue::prepare(TransactionContext*) throw()
 
 void RecoveredDequeue::commit() throw()
 {
-    queue->enqueueAborted(msg);
+    queue->dequeueCommited(msg);
 }
 
 void RecoveredDequeue::rollback() throw()
 {
-    queue->process(msg);
+    queue->dequeueAborted(msg);
 }
 

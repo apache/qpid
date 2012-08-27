@@ -42,12 +42,10 @@ ManagementTopicExchange::ManagementTopicExchange(const std::string& _name,
 void ManagementTopicExchange::route(Deliverable&      msg)
 {
     bool routeIt = true;
-    const std::string& routingKey = msg.getMessage().getRoutingKey();
-    const FieldTable* args = msg.getMessage().getApplicationHeaders();
 
     // Intercept management agent commands
     if (managementAgent)
-        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, true, qmfVersion);
+        routeIt = managementAgent->dispatchCommand(msg, msg.getMessage().getRoutingKey(), 0/*args - TODO*/, true, qmfVersion);
 
     if (routeIt)
         TopicExchange::route(msg);

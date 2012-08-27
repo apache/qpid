@@ -62,6 +62,7 @@ public:
         boost::shared_ptr<topicTester> pTTest;
         bool                  pubExchNameInRule;
         std::string           pubExchName;
+        std::vector<bool>     ruleHasUserSub;
 
         Rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p) :
             rawRuleNum(ruleNum),
@@ -71,7 +72,8 @@ public:
             pubRoutingKey(),
             pTTest(boost::shared_ptr<topicTester>(new topicTester())),
             pubExchNameInRule(false),
-            pubExchName()
+            pubExchName(),
+            ruleHasUserSub(PROPERTYSIZE, false)
             {}
 
 
@@ -132,6 +134,17 @@ public:
 
     bool matchProp(const std::string & src, const std::string& src1);
     void clear ();
+    static const std::string USER_SUBSTITUTION_KEYWORD;
+    static const std::string DOMAIN_SUBSTITUTION_KEYWORD;
+    static const std::string USERDOMAIN_SUBSTITUTION_KEYWORD;
+    void substituteString(std::string& targetString,
+                          const std::string& placeholder,
+                          const std::string& replacement);
+    std::string normalizeUserId(const std::string& userId);
+    void substituteUserId(std::string& ruleString,
+                          const std::string& userId);
+    void substituteKeywords(std::string& ruleString,
+                            const std::string& userId);
 
     AclData();
     virtual ~AclData();

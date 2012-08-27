@@ -47,6 +47,7 @@ namespace broker {
         LinkMap   links;    /** indexed by name of Link */
         BridgeMap bridges;  /** indexed by name of Bridge */
         ConnectionMap   connections;  /** indexed by connection identifier, gives link name */
+        LinkMap   pendingLinks;  /** pending connection, indexed by name of Link */
 
         qpid::sys::Mutex lock;
         Broker* broker;

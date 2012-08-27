@@ -34,7 +34,6 @@
 #include "qpid/broker/LinkRegistry.h"
 #include "qpid/broker/SessionManager.h"
 #include "qpid/broker/QueueCleaner.h"
-#include "qpid/broker/QueueEvents.h"
 #include "qpid/broker/Vhost.h"
 #include "qpid/broker/System.h"
 #include "qpid/broker/ExpiryPolicy.h"
@@ -76,7 +75,7 @@ namespace broker {
 class ConnectionState;
 class ExpiryPolicy;
 class Message;
-
+struct QueueSettings;
 static const  uint16_t DEFAULT_PORT=5672;
 
 struct NoSuchTransportException : qpid::Exception
@@ -118,7 +117,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
         bool requireEncrypted;
         std::string knownHosts;
         std::string saslConfigPath;
-        bool asyncQueueEvents;
         bool qmf2Support;
         bool qmf1Support;
         uint queueFlowStopRatio;    // producer flow control: on
@@ -178,11 +176,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
     QueueCleaner queueCleaner;
-    QueueEvents queueEvents;
     std::vector<Url> knownBrokers;
     std::vector<Url> getKnownBrokersImpl();
     bool deferDeliveryImpl(const std::string& queue,
-                           const boost::intrusive_ptr<Message>& msg);
+                           const Message& msg);
     std::string federationTag;
     bool recovery;
     bool inCluster, clusterUpdatee;
@@ -227,7 +224,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
     Options& getOptions() { return config; }
-    QueueEvents& getQueueEvents() { return queueEvents; }
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
@@ -309,7 +305,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
      * context.
      *@return true if delivery of a message should be deferred.
      */
-    boost::function<bool (const std::string& queue, const boost::intrusive_ptr<Message>& msg)> deferDelivery;
+    boost::function<bool (const std::string& queue,
+                          const Message& msg)> deferDelivery;
 
     bool isAuthenticating ( ) { return config.auth; }
     bool isTimestamping() { return config.timestampRcvMsgs; }
@@ -318,11 +315,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Queue>, bool> createQueue(
         const std::string& name,
-        bool durable,
-        bool autodelete,
+        const QueueSettings& settings,
         const OwnershipToken* owner,
         const std::string& alternateExchange,
-        const qpid::framing::FieldTable& arguments,
         const std::string& userId,
         const std::string& connectionId);
 

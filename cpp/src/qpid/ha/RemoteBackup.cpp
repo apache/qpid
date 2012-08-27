@@ -23,6 +23,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
+#include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 
 namespace qpid {
@@ -32,7 +33,7 @@ using sys::Mutex;
 using boost::bind;
 
 RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con) :
-    logPrefix("Primary remote backup "+info.getLogId()+": "),
+    logPrefix("Primary: Remote backup "+info.getLogId()+": "),
     brokerInfo(info), replicationTest(rt), connected(con), reportedReady(false)
 {}
 

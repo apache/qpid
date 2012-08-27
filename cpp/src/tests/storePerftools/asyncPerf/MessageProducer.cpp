@@ -25,6 +25,7 @@
 
 #include "TestOptions.h"
 
+#include "qpid/asyncStore/PersistableMessageContext.h"
 #include "qpid/broker/SimpleMessage.h"
 #include "qpid/broker/SimpleQueue.h"
 #include "qpid/broker/SimpleTxnBuffer.h"
@@ -65,7 +66,10 @@ MessageProducer::runProducers() {
         tb = new qpid::broker::SimpleTxnBuffer(m_resultQueue);
     }
     for (uint32_t numMsgs=0; numMsgs<m_perfTestParams.m_numMsgs && !m_stopFlag; ++numMsgs) {
-        boost::intrusive_ptr<qpid::broker::SimpleMessage> msg(new qpid::broker::SimpleMessage(m_msgData, m_perfTestParams.m_msgSize, m_store));
+        boost::intrusive_ptr<qpid::asyncStore::PersistableMessageContext> msgCtxt(new qpid::asyncStore::PersistableMessageContext(m_store));
+        boost::intrusive_ptr<qpid::broker::AsyncCompletion> ingressCompl(new qpid::broker::AsyncCompletion);
+        msgCtxt->setIngressCompletion(ingressCompl);
+        boost::intrusive_ptr<qpid::broker::SimpleMessage> msg(new qpid::broker::SimpleMessage(m_msgData, m_perfTestParams.m_msgSize, msgCtxt));
         if (useTxns) {
             boost::shared_ptr<qpid::broker::SimpleTxnPublish> op(new qpid::broker::SimpleTxnPublish(msg));
             op->deliverTo(m_queue);

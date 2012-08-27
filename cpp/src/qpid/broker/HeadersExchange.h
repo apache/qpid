@@ -73,9 +73,6 @@ class HeadersExchange : public virtual Exchange {
 
     Bindings bindings;
     qpid::sys::Mutex lock;
-
-    static std::string getMatch(const framing::FieldTable* args);
-
   protected:
     void getNonFedArgs(const framing::FieldTable* args,
                        framing::FieldTable& nonFedArgs);

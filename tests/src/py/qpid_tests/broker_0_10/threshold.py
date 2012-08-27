@@ -41,7 +41,7 @@ class ThresholdTests (Base):
             snd.send(m)
             count = count + 1
             size = size + len(m.content)
-        event = rcv.fetch()
+        event = rcv.fetch(timeout=1)
         schema = event.content[0]["_schema_id"]
         assert schema["_class_name"] == "queueThresholdExceeded"
         values = event.content[0]["_values"]

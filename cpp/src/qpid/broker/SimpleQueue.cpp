@@ -171,7 +171,7 @@ SimpleQueue::enqueue(SimpleTxnBuffer* tb,
         return false;
     }
     if (qm->payload()->isPersistent() && m_store) {
-        qm->payload()->enqueueAsync(shared_from_this(), m_store);
+        qm->payload()->getPersistentContext()->enqueueAsync(shared_from_this(), m_store);
         return asyncEnqueue(tb, qm);
     }
     return false;
@@ -190,7 +190,7 @@ SimpleQueue::dequeue(SimpleTxnBuffer* tb,
         return false;
     }
     if (qm->payload()->isPersistent() && m_store) {
-        qm->payload()->dequeueAsync(shared_from_this(), m_store);
+        qm->payload()->getPersistentContext()->dequeueAsync(shared_from_this(), m_store);
         return asyncDequeue(tb, qm);
     }
     return true;
@@ -316,7 +316,7 @@ SimpleQueue::asyncEnqueue(SimpleTxnBuffer* tb,
                           boost::shared_ptr<SimpleQueuedMessage> qm) {
     assert(qm.get());
     boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
-                                                                   qm->payload(),
+                                                                   /*qm->payload(),*/
                                                                    tb,
                                                                    &handleAsyncEnqueueResult,
                                                                    &m_resultQueue));
@@ -353,7 +353,7 @@ SimpleQueue::asyncDequeue(SimpleTxnBuffer* tb,
                           boost::shared_ptr<SimpleQueuedMessage> qm) {
     assert(qm.get());
     boost::shared_ptr<QueueAsyncContext> qac(new QueueAsyncContext(shared_from_this(),
-                                                                   qm->payload(),
+                                                                   /*qm->payload(),*/
                                                                    tb,
                                                                    &handleAsyncDequeueResult,
                                                                    &m_resultQueue));

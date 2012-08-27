@@ -19,7 +19,8 @@
  *
  */
 #include "qpid/broker/Fairshare.h"
-#include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/QueueSettings.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
@@ -83,17 +84,6 @@ bool Fairshare::setState(uint p, uint c)
     return true;
 }
 
-bool Fairshare::findFrontLevel(uint& p, PriorityLevels& messages)
-{
-    const uint start = p = currentLevel();
-    do {
-        if (!messages[p].empty()) return true;
-    } while ((p = nextLevel()) != start);
-    return false;
-}
-
-
-
 bool Fairshare::getState(const Messages& m, uint& priority, uint& count)
 {
     const Fairshare* fairshare = dynamic_cast<const Fairshare*>(&m);
@@ -106,82 +96,30 @@ bool Fairshare::setState(Messages& m, uint priority, uint count)
     return fairshare && fairshare->setState(priority, count);
 }
 
-int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::vector<std::string>& keys)
+PriorityQueue::Priority Fairshare::firstLevel()
 {
-    qpid::framing::FieldTable::ValuePtr v;
-    std::vector<std::string>::const_iterator i = keys.begin(); 
-    while (!v && i != keys.end()) {
-        v = settings.get(*i++);
-    }
+    return Priority(currentLevel());
+}
 
-    if (!v) {
-        return 0;
-    } else if (v->convertsTo<int>()) {
-        return v->get<int>();
-    } else if (v->convertsTo<std::string>()){
-        std::string s = v->get<std::string>();
-        try {
-            return boost::lexical_cast<int>(s);
-        } catch(const boost::bad_lexical_cast&) {
-            QPID_LOG(warning, "Ignoring invalid integer value for " << *i << ": " << s);
-            return 0;
-        }
+bool Fairshare::nextLevel(Priority& p)
+{
+    int next = nextLevel();
+    if (next == p.start) {
+        return false;
     } else {
-        QPID_LOG(warning, "Ignoring invalid integer value for " << *i << ": " << *v);
-        return 0;
+        p.current = next;
+        return true;
     }
 }
 
-int getIntegerSettingForKey(const qpid::framing::FieldTable& settings, const std::string& key)
+std::auto_ptr<Messages> Fairshare::create(const QueueSettings& settings)
 {
-    return getIntegerSetting(settings, boost::assign::list_of<std::string>(key));
-}
-
-int getSetting(const qpid::framing::FieldTable& settings, const std::vector<std::string>& keys, int minvalue, int maxvalue)
-{
-    return std::max(minvalue,std::min(getIntegerSetting(settings, keys), maxvalue));
-}
-
-std::auto_ptr<Fairshare> getFairshareForKey(const qpid::framing::FieldTable& settings, uint levels, const std::string& key)
-{
-    uint defaultLimit = getIntegerSettingForKey(settings, key);
-    std::auto_ptr<Fairshare> fairshare(new Fairshare(levels, defaultLimit));
-    for (uint i = 0; i < levels; i++) {
-        std::string levelKey = (boost::format("%1%-%2%") % key % i).str();
-        if(settings.isSet(levelKey)) {
-            fairshare->setLimit(i, getIntegerSettingForKey(settings, levelKey));
-        }
+    std::auto_ptr<Fairshare> fairshare(new Fairshare(settings.priorities, settings.defaultFairshare));
+    for (uint i = 0; i < settings.priorities; i++) {
+        std::map<uint32_t,uint32_t>::const_iterator l = settings.fairshare.find(i);
+        if (l != settings.fairshare.end()) fairshare->setLimit(i, l->second);
     }
-    if (!fairshare->isNull()) {
-        return fairshare;
-    } else {
-        return std::auto_ptr<Fairshare>();
-    }
-}
-
-std::auto_ptr<Fairshare> getFairshare(const qpid::framing::FieldTable& settings,
-                                      uint levels,
-                                      const std::vector<std::string>& keys)
-{
-    std::auto_ptr<Fairshare> fairshare;
-    for (std::vector<std::string>::const_iterator i = keys.begin(); i != keys.end() && !fairshare.get(); ++i) {
-        fairshare = getFairshareForKey(settings, levels, *i);
-    }
-    return fairshare;
-}
-
-std::auto_ptr<Messages> Fairshare::create(const qpid::framing::FieldTable& settings)
-{
-    using boost::assign::list_of;
-    std::auto_ptr<Messages> result;
-    size_t levels = getSetting(settings, list_of<std::string>("qpid.priorities")("x-qpid-priorities"), 0, 100);
-    if (levels) {
-        std::auto_ptr<Fairshare> fairshare =
-            getFairshare(settings, levels, list_of<std::string>("qpid.fairshare")("x-qpid-fairshare"));
-        if (fairshare.get()) result = fairshare;
-        else result = std::auto_ptr<Messages>(new PriorityQueue(levels));
-    }
-    return result;
+    return std::auto_ptr<Messages>(fairshare.release());
 }
 
 }} // namespace qpid::broker

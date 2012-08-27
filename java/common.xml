@@ -97,7 +97,8 @@
   <property name="ivy.jar.dir"         value="${project.root}/lib/ivy" />
   <property name="ivy.install.version" value="2.2.0" />
   <property name="ivy.jar.file"        value="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
-  <property name="ivy.repo.url"        value="http://repo1.maven.org/maven2/org/apache/ivy/ivy"/>
+  <property name="ivy.m2repo.url"      value="http://repo1.maven.org/maven2"/>
+  <property name="ivy.repo.url"        value="${ivy.m2repo.url}/org/apache/ivy/ivy"/>
   <property name="ivy.jar.url"         value="${ivy.repo.url}/${ivy.install.version}/ivy-${ivy.install.version}.jar"/>
 
   <available property="ivy.jar.file.exists" file="${ivy.jar.file}"/>

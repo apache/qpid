@@ -18,6 +18,7 @@
 #
 
 ### EXAMPLE ACL V2 FILE
+### NOTE: Rules are considered from top to bottom, and the first matching rule governs the decision.
 
 ### DEFINE GROUPS ###
 
@@ -27,30 +28,30 @@ GROUP messaging-users client server
 #Define a group for management web console users
 GROUP webadmins webadmin
 
-### MANAGEMENT ####
+### JMX MANAGEMENT ####
 
 # Allow everyone to perform read operations on the ServerInformation mbean
 # This is used for items such as querying the management API and broker release versions.
-ACL ALLOW-LOG ALL ACCESS METHOD component="ServerInformation"
+ACL ALLOW ALL ACCESS METHOD component="ServerInformation"
 
-# Allow 'admin' all management operations
+# Allow 'admin' all management operations. To reduce log file noise, only non-read-only operations are logged.
+ACL ALLOW admin ACCESS METHOD
 ACL ALLOW-LOG admin ALL METHOD
 
+# Allow 'guest' to view logger levels, and use getter methods on LoggingManagement
+ACL ALLOW guest ACCESS METHOD component="LoggingManagement" name="viewEffectiveRuntimeLoggerLevels"
+ACL ALLOW guest ACCESS METHOD component="LoggingManagement" name="get*"
+
 # Deny access to Shutdown, UserManagement, ConfigurationManagement and LoggingManagement for all other users
-# You could grant specific users access to these beans by adding ALLOW-LOG rules above for them
+# You could grant specific users access to these beans by adding rules above to allow them
 ACL DENY-LOG ALL ACCESS METHOD component="Shutdown"
 ACL DENY-LOG ALL ACCESS METHOD component="UserManagement"
 ACL DENY-LOG ALL ACCESS METHOD component="ConfigurationManagement"
 ACL DENY-LOG ALL ACCESS METHOD component="LoggingManagement"
 
-# Allow 'guest' to view logger levels, and use getter methods on LoggingManagement
-# These are examples of redundant rules! The DENY-LOG rule above will be invoked
-# first and will deny the access to all methods of LoggingManagement for guest
-ACL ALLOW-LOG guest ACCESS METHOD component="LoggingManagement" name="viewEffectiveRuntimeLoggerLevels"
-ACL ALLOW-LOG guest ACCESS METHOD component="LoggingManagement" name="get*"
-
-# Allow everyone to perform all read operations on the mbeans not listened in the DENY-LOG rules above
-ACL ALLOW-LOG ALL ACCESS METHOD
+# Allow everyone to perform all read operations (using ALLOW rather than ALLOW-LOG to reduce log file noise)
+# on the mbeans not listed in the DENY rules above
+ACL ALLOW ALL ACCESS METHOD
 
 ### MESSAGING ###
 

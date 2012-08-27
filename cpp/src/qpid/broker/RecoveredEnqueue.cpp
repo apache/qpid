@@ -22,10 +22,9 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/RecoveredEnqueue.h"
 
-using boost::intrusive_ptr;
 using namespace qpid::broker;
 
-RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg)
+RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, Message _msg) : queue(_queue), msg(_msg)
 {
     queue->recoverPrepared(msg);
 }
@@ -36,7 +35,7 @@ bool RecoveredEnqueue::prepare(TransactionContext*) throw(){
 }
 
 void RecoveredEnqueue::commit() throw(){
-    queue->process(msg);
+    queue->enqueueCommited(msg);
 }
 
 void RecoveredEnqueue::rollback() throw(){

@@ -2443,6 +2443,8 @@ class Broker(Thread):
       uid = self.conn.user_id
       if uid.__class__ == tuple and len(uid) == 2:
         self.saslUser = uid[1]
+      elif type(uid) is str:
+        self.saslUser = uid;
       else:
         self.saslUser = None
 

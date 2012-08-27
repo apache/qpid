@@ -32,7 +32,7 @@ using namespace std;
 using namespace qpid::sys;
 
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
-    : amqp_0_10::SessionHandler(&c.getOutput(), ch),
+    : qpid::amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c),
       proxy(out),
       clusterOrderProxy(c.getClusterOrderOutput() ?
@@ -75,7 +75,7 @@ ConnectionState& SessionHandler::getConnection() { return connection; }
 const ConnectionState& SessionHandler::getConnection() const { return connection; }
 
 void SessionHandler::handleDetach() {
-    amqp_0_10::SessionHandler::handleDetach();
+    qpid::amqp_0_10::SessionHandler::handleDetach();
     assert(&connection.getChannel(channel.get()) == this);
     if (session.get())
         connection.getBroker().getSessionManager().detach(session);
@@ -125,7 +125,7 @@ void SessionHandler::attached(const std::string& name)
 {
     if (session.get()) {
         session->addManagementObject(); // Delayed from attachAs()
-        amqp_0_10::SessionHandler::attached(name);
+        qpid::amqp_0_10::SessionHandler::attached(name);
     } else {
         SessionId id(connection.getUserId(), name);
         SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();

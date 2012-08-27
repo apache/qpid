@@ -25,6 +25,7 @@
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/AclModule.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/ClusterSafe.h"
 
@@ -278,6 +279,13 @@ void Connection::notifyConnectionForced(const string& text)
 
 void Connection::setUserId(const string& userId)
 {
+    // Account for changing userId
+    AclModule* acl = broker.getAcl();
+    if (acl)
+    {
+        acl->setUserId(*this, userId);
+    }
+
     ConnectionState::setUserId(userId);
     // In a cluster, the cluster code will raise the connect event
     // when the connection is replicated to the cluster.

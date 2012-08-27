@@ -36,7 +36,7 @@ class BackupConnectionExcluder : public broker::ConnectionObserver
 {
   public:
     void opened(broker::Connection& connection) {
-        QPID_LOG(debug, "Backup broker rejected connection "+connection.getMgmtId());
+        QPID_LOG(debug, "Backup: Rejected connection "+connection.getMgmtId());
         connection.abort();
     }
 

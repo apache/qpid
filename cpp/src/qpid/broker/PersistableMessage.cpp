@@ -30,163 +30,58 @@ using namespace qpid::broker;
 namespace qpid {
 namespace broker {
 
+PersistableMessage::PersistableMessage() : ingressCompletion(0), persistenceId(0) {}
 PersistableMessage::~PersistableMessage() {}
 
-PersistableMessage::PersistableMessage() :
-    asyncDequeueCounter(0),
-    store(0),
-    asyncStore(0)
-{}
+void PersistableMessage::setIngressCompletion(boost::intrusive_ptr<AsyncCompletion> i)
+{
+    ingressCompletion = i.get();
+    /**
+     * What follows is a hack to account for the fact that the
+     * AsyncCompletion to use may be, but is not always, this same
+     * object.
+     *
+     * This is hopefully temporary, and allows the store interface to
+     * remain unchanged without requiring another object to be allocated
+     * for every message.
+     *
+     * The case in question is where a message previously passed to
+     * the store is modified by some other queue onto which it is
+     * pushed, and then again persisted to the store. These will be
+     * two separate PersistableMessage instances (since the latter now
+     * has different content), but need to share the same
+     * AsyncCompletion (since they refer to the same incoming transfer
+     * command).
+     */
+    if (static_cast<RefCounted*>(ingressCompletion) != static_cast<RefCounted*>(this)) {
+        holder = i;
+    }
+}
+
 
 void PersistableMessage::flush()
 {
-    syncList copy;
-    {
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-	if (store) {
-	    copy = synclist;
-	} else {
-            return;//early exit as nothing to do
-	}
-    }
-    for (syncList::iterator i = copy.begin(); i != copy.end(); ++i) {
-        PersistableQueue::shared_ptr q(i->lock());
-        if (q) {
-            q->flush();
-        }
-    } 
+    //TODO: is this really the right place for this?
 }
 
-void PersistableMessage::setContentReleased()
+// deprecated
+void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, MessageStore*)
 {
-    contentReleaseState.released = true;
-}
-
-bool PersistableMessage::isContentReleased() const
-{ 
-    return contentReleaseState.released;
-}
-       
-
-bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
-    if (store && (queue->getPersistenceId()!=0)) {
-        for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-            PersistableQueue::shared_ptr q(i->lock());
-            if (q && q->getPersistenceId() == queue->getPersistenceId())  return true;
-        } 
-    }            
-    return false;
-}
-
-// deprecated
-void PersistableMessage::addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store) {
-    if (_store){
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        store = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
-    }
-}
-
-void PersistableMessage::addToSyncList(PersistableQueue::shared_ptr queue, AsyncStore* _store) {
-    if (_store){
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        asyncStore = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
-    }
-}
-
-// deprecated
-void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) {
-    addToSyncList(queue, _store);
     enqueueStart();
 }
 
-void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, AsyncStore* _store) {
-    addToSyncList(queue, _store);
+void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, AsyncStore*)
+{
     enqueueStart();
 }
 
-bool PersistableMessage::isDequeueComplete() { 
-    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-    return asyncDequeueCounter == 0;
-}
-    
-void PersistableMessage::dequeueComplete() { 
-    bool notify = false;
-    {
-        sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-        if (asyncDequeueCounter > 0) {
-            if (--asyncDequeueCounter == 0) {
-                notify = true;
-            }
-        }
-    }
-    if (notify) allDequeuesComplete();
-}
-
 // deprecated
-void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) {
-    if (_store){
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        store = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
-    }
-    dequeueAsync();
-}
+void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
 
-void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, AsyncStore* _store) {
-    if (_store){
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        asyncStore = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
-    }
-    dequeueAsync();
-}
+void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, AsyncStore*) {}
 
-void PersistableMessage::dequeueAsync() { 
-    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-    asyncDequeueCounter++; 
-}
-
-PersistableMessage::ContentReleaseState::ContentReleaseState() : blocked(false), requested(false), released(false) {}
-
-// deprecated
-void PersistableMessage::setStore(MessageStore* s)
-{
-    store = s;
-}
-
-void PersistableMessage::setStore(AsyncStore* s)
-{
-    asyncStore = s;
-}
-
-void PersistableMessage::requestContentRelease()
-{
-    contentReleaseState.requested = true;
-}
-void PersistableMessage::blockContentRelease()
-{ 
-    contentReleaseState.blocked = true;
-}
-bool PersistableMessage::checkContentReleasable()
-{ 
-    return contentReleaseState.requested && !contentReleaseState.blocked;
-}
-
-bool PersistableMessage::isContentReleaseBlocked()
-{
-    return contentReleaseState.blocked;
-}
-
-bool PersistableMessage::isContentReleaseRequested()
-{
-    return contentReleaseState.requested;
-}
+bool PersistableMessage::isDequeueComplete() { return false; }
+void PersistableMessage::dequeueComplete() {}
 
 }}
 

@@ -126,6 +126,7 @@ set(unit_tests_to_build
     ExchangeTest
     HeadersExchangeTest
     MessageTest
+    QueueDepth
     QueueRegistryTest
     QueuePolicyTest
     QueueFlowLimitTest
@@ -135,16 +136,12 @@ set(unit_tests_to_build
     TimerTest
     TopicExchangeTest
     TxBufferTest
-    TxPublishTest
-    MessageBuilderTest
     ManagementTest
     MessageReplayTracker
     ConsoleTest
-    QueueEvents
     ProxyTest
     RetryList
     FrameDecoder
-    ReplicationTest
     ClientMessageTest
     PollableCondition
     Variant
@@ -164,10 +161,6 @@ target_link_libraries (unit_test
 remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
-
-if (BUILD_CLUSTER)
-  include (cluster.cmake)
-endif (BUILD_CLUSTER)
 
 # FIXME aconway 2009-11-30: enable SSL
 #if SSL

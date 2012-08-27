@@ -29,33 +29,20 @@ import java.util.Map;
 
 public class Model
 {
-    private static final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>
-            PARENTS = new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
+    private static final Model MODEL_INSTANCE = new Model();
 
+    private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>
+            _parents = new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
 
-    private static final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>
-            CHILDREN = new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
+    private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>
+            _children = new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
 
-    static void addRelationship(Class<? extends ConfiguredObject> parent, Class<? extends ConfiguredObject> child)
+    public static Model getInstance()
     {
-        Collection<Class<? extends ConfiguredObject>> parents = PARENTS.get(child);
-        if(parents == null)
-        {
-            parents = new ArrayList<Class<? extends ConfiguredObject>>();
-            PARENTS.put(child, parents);
-        }
-        parents.add(parent);
-
-        Collection<Class<? extends ConfiguredObject>> children = CHILDREN.get(parent);
-        if(children == null)
-        {
-            children = new ArrayList<Class<? extends ConfiguredObject>>();
-            CHILDREN.put(parent, children);
-        }
-        children.add(child);
+        return MODEL_INSTANCE;
     }
 
-    static
+    private Model()
     {
         addRelationship(Broker.class, VirtualHost.class);
         addRelationship(Broker.class, Port.class);
@@ -78,20 +65,39 @@ public class Model
 
         addRelationship(Session.class, Consumer.class);
         addRelationship(Session.class, Publisher.class);
-
     }
 
-    public static Collection<Class<? extends ConfiguredObject>> getParentTypes(Class<? extends ConfiguredObject> child)
+    public Collection<Class<? extends ConfiguredObject>> getParentTypes(Class<? extends ConfiguredObject> child)
     {
-        Collection<Class<? extends ConfiguredObject>> parentTypes = PARENTS.get(child);
-        return parentTypes == null ? Collections.EMPTY_LIST
+        Collection<Class<? extends ConfiguredObject>> parentTypes = _parents.get(child);
+        return parentTypes == null ? Collections.<Class<? extends ConfiguredObject>>emptyList()
                                    : Collections.unmodifiableCollection(parentTypes);
     }
 
-    public static Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent)
+    public Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent)
     {
-        Collection<Class<? extends ConfiguredObject>> childTypes = CHILDREN.get(parent);
-        return childTypes == null ? Collections.EMPTY_LIST
+        Collection<Class<? extends ConfiguredObject>> childTypes = _children.get(parent);
+        return childTypes == null ? Collections.<Class<? extends ConfiguredObject>>emptyList()
                                   : Collections.unmodifiableCollection(childTypes);
     }
+
+    private void addRelationship(Class<? extends ConfiguredObject> parent, Class<? extends ConfiguredObject> child)
+    {
+        Collection<Class<? extends ConfiguredObject>> parents = _parents.get(child);
+        if(parents == null)
+        {
+            parents = new ArrayList<Class<? extends ConfiguredObject>>();
+            _parents.put(child, parents);
+        }
+        parents.add(parent);
+
+        Collection<Class<? extends ConfiguredObject>> children = _children.get(parent);
+        if(children == null)
+        {
+            children = new ArrayList<Class<? extends ConfiguredObject>>();
+            _children.put(parent, children);
+        }
+        children.add(child);
+    }
+
 }
