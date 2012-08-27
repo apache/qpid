@@ -64,6 +64,7 @@ public class AuthenticationResult
     private final byte[] _challenge;
     private final Exception _cause;
     private final Set<Principal> _principals = new HashSet<Principal>();
+    private final Principal _mainPrincipal;
 
     public AuthenticationResult(final AuthenticationStatus status)
     {
@@ -81,6 +82,7 @@ public class AuthenticationResult
         _principals.addAll(otherPrincipals);
         _principals.remove(mainPrincipal);
         _principals.add(specialQpidAuthenticatedPrincipal);
+        _mainPrincipal = mainPrincipal;
 
         _status = AuthenticationStatus.SUCCESS;
         _challenge = null;
@@ -92,6 +94,7 @@ public class AuthenticationResult
         _challenge = challenge;
         _status = status;
         _cause = null;
+        _mainPrincipal = null;
     }
 
     public AuthenticationResult(final AuthenticationStatus error, final Exception cause)
@@ -99,6 +102,7 @@ public class AuthenticationResult
         _status = error;
         _challenge = null;
         _cause = cause;
+        _mainPrincipal = null;
     }
 
     public AuthenticationResult(final byte[] challenge, final AuthenticationStatus status, final Exception cause)
@@ -108,9 +112,10 @@ public class AuthenticationResult
             throw new IllegalArgumentException("Successful authentication requires at least one principal");
         }
 
-        this._status = status;
-        this._challenge = challenge;
-        this._cause = cause;
+        _status = status;
+        _challenge = challenge;
+        _cause = cause;
+        _mainPrincipal = null;
     }
 
     public Exception getCause()
@@ -131,5 +136,10 @@ public class AuthenticationResult
     public Set<Principal> getPrincipals()
     {
         return _principals;
+    }
+
+    public Principal getMainPrincipal()
+    {
+        return _mainPrincipal;
     }
 }
