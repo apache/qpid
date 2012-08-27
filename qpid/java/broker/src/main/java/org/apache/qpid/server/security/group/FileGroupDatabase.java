@@ -192,7 +192,18 @@ public class FileGroupDatabase implements GroupDatabase
         _groupToUserMap.clear();
         _userToGroupMap.clear();
         Properties propertiesFile = new Properties();
-        propertiesFile.load(new FileInputStream(groupFile));
+        FileInputStream fileInputStream = new FileInputStream(groupFile);
+        try
+        {
+            propertiesFile.load(fileInputStream);
+        }
+        finally
+        {
+            if(fileInputStream != null)
+            {
+                fileInputStream.close();
+            }
+        }
 
         for (String propertyName : propertiesFile.stringPropertyNames())
         {
@@ -233,7 +244,18 @@ public class FileGroupDatabase implements GroupDatabase
         }
 
         String comment = "Written " + new Date();
-        propertiesFile.store(new FileOutputStream(groupFile), comment);
+        FileOutputStream fileOutputStream = new FileOutputStream(groupFile);
+        try
+        {
+            propertiesFile.store(fileOutputStream, comment);
+        }
+        finally
+        {
+            if(fileOutputStream != null)
+            {
+                fileOutputStream.close();
+            }
+        }
     }
 
     private void validatePropertyNameIsGroupName(String propertyName)
