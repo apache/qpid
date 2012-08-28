@@ -109,7 +109,7 @@ class RdmaConnector : public Connector, public sys::Codec
     const qpid::sys::SecuritySettings* getSecuritySettings() { return 0; }
 
     size_t decode(const char* buffer, size_t size);
-    size_t encode(const char* buffer, size_t size);
+    size_t encode(char* buffer, size_t size);
     bool canEncode();
 
 public:
@@ -371,9 +371,9 @@ bool RdmaConnector::canEncode()
     return aio->writable() && (lastEof || currentSize >= maxFrameSize);
 }
 
-size_t RdmaConnector::encode(const char* buffer, size_t size)
+size_t RdmaConnector::encode(char* buffer, size_t size)
 {
-    framing::Buffer out(const_cast<char*>(buffer), size);
+    framing::Buffer out(buffer, size);
     size_t bytesWritten(0);
     {
         Mutex::ScopedLock l(lock);
