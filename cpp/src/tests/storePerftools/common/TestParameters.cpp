@@ -21,7 +21,7 @@
  * \file TestParameters.cpp
  */
 
-#include "TestParameters.h"
+#include "tests/storePerftools/common/TestParameters.h"
 
 #include <cstdlib> // std::atoi, std::atol
 

@@ -21,15 +21,14 @@
  * \file MessageProducer.cpp
  */
 
-#include "MessageProducer.h"
-
-#include "TestOptions.h"
+#include "tests/storePerftools/asyncPerf/MessageProducer.h"
 
 #include "qpid/asyncStore/PersistableMessageContext.h"
 #include "qpid/broker/SimpleMessage.h"
 #include "qpid/broker/SimpleQueue.h"
 #include "qpid/broker/SimpleTxnBuffer.h"
 #include "qpid/broker/SimpleTxnPublish.h"
+#include "tests/storePerftools/asyncPerf/TestOptions.h"
 
 #include <stdint.h> // uint32_t
 

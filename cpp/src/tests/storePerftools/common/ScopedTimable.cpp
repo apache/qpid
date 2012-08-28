@@ -21,7 +21,7 @@
  * \file ScopedTimable.cpp
  */
 
-#include "ScopedTimable.h"
+#include "tests/storePerftools/common/ScopedTimable.h"
 
 namespace tests {
 namespace storePerftools {

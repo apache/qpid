@@ -24,7 +24,7 @@
 #ifndef tests_storePerftools_common_TestParameters_h_
 #define tests_storePerftools_common_TestParameters_h_
 
-#include "Parameters.h"
+#include "tests/storePerftools/common/Parameters.h"
 
 #include <stdint.h>  // uint16_t, uint32_t
 

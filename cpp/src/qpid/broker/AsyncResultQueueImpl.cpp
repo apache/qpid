@@ -21,10 +21,9 @@
  * \file AsyncResultQueueImpl.cpp
  */
 
-#include "AsyncResultQueueImpl.h"
+#include "qpid/broker/AsyncResultQueueImpl.h"
 
-#include "AsyncResultHandle.h"
-
+#include "qpid/broker/AsyncResultHandle.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {

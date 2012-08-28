@@ -24,7 +24,7 @@
 #ifndef qpid_broker_Plugin_h_
 #define qpid_broker_Plugin_h_
 
-#include "AsyncStoreOptions.h"
+#include "qpid/asyncStore/AsyncStoreOptions.h"
 
 #include "qpid/Plugin.h"
 

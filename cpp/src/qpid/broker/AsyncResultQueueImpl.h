@@ -24,8 +24,7 @@
 #ifndef qpid_broker_AsyncResultQueueImpl_h_
 #define qpid_broker_AsyncResultQueueImpl_h_
 
-#include "AsyncStore.h"
-
+#include "qpid/broker/AsyncStore.h"
 #include "qpid/sys/PollableQueue.h"
 
 namespace qpid {

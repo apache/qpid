@@ -21,7 +21,7 @@
  * \file OperationQueue.cpp
  */
 
-#include "OperationQueue.h"
+#include "qpid/asyncStore/OperationQueue.h"
 
 #include "qpid/broker/AsyncResultHandle.h"
 #include "qpid/broker/AsyncResultHandleImpl.h"

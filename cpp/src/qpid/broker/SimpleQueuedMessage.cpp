@@ -21,10 +21,10 @@
  * \file SimpleQueuedMessage.cpp
  */
 
-#include "SimpleQueuedMessage.h"
+#include "qpid/broker/SimpleQueuedMessage.h"
 
-#include "SimpleMessage.h"
-#include "SimpleQueue.h"
+#include "qpid/broker/SimpleMessage.h"
+#include "qpid/broker/SimpleQueue.h"
 
 namespace qpid {
 namespace broker {

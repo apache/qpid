@@ -24,8 +24,7 @@
 #ifndef qpid_broker_AsyncResultHandleImpl_h_
 #define qpid_broker_AsyncResultHandleImpl_h_
 
-#include "AsyncStore.h"
-
+#include "qpid/broker/AsyncStore.h"
 #include "qpid/RefCounted.h"
 
 namespace qpid {

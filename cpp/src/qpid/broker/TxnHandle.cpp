@@ -21,11 +21,10 @@
  * \file TxnHandle.cpp
  */
 
-#include "TxnHandle.h"
-
-#include "PrivateImplRef.h"
+#include "qpid/broker/TxnHandle.h"
 
 #include "qpid/asyncStore/TxnHandleImpl.h"
+#include "qpid/broker/PrivateImplRef.h"
 
 namespace qpid {
 namespace broker {

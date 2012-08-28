@@ -21,9 +21,9 @@
  * \file ScopedLock.cpp
  */
 
-#include "ScopedLock.h"
+#include "qpid/asyncStore/jrnl2/ScopedLock.h"
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <cerrno> // EBUSY
 #include <cstring> // std::strerror

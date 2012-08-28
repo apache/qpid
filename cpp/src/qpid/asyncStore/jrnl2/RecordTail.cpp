@@ -22,9 +22,9 @@
  */
 
 
-#include "RecordTail.h"
+#include "qpid/asyncStore/jrnl2/RecordTail.h"
 
-#include "RecordHeader.h"
+#include "qpid/asyncStore/jrnl2/RecordHeader.h"
 
 namespace qpid {
 namespace asyncStore {

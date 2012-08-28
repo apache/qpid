@@ -21,7 +21,7 @@
  * \file EnqueueHeader.cpp
  */
 
-#include "EnqueueHeader.h"
+#include "qpid/asyncStore/jrnl2/EnqueueHeader.h"
 
 namespace qpid {
 namespace asyncStore {

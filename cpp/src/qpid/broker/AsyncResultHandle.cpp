@@ -21,10 +21,10 @@
  * \file AsyncResultHandle.cpp
  */
 
-#include "AsyncResultHandle.h"
+#include "qpid/broker/AsyncResultHandle.h"
 
-#include "AsyncResultHandleImpl.h"
-#include "PrivateImplRef.h"
+#include "qpid/broker/AsyncResultHandleImpl.h"
+#include "qpid/broker/PrivateImplRef.h"
 
 namespace qpid {
 namespace broker {

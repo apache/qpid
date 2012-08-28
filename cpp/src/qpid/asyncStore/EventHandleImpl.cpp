@@ -21,7 +21,7 @@
  * \file EventHandleImpl.cpp
  */
 
-#include "EventHandleImpl.h"
+#include "qpid/asyncStore/EventHandleImpl.h"
 
 namespace qpid {
 namespace asyncStore {

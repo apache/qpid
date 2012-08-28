@@ -24,7 +24,7 @@
 #ifndef qpid_asyncStore_jrnl2_JournalError_hpp_
 #define qpid_asyncStore_jrnl2_JournalError_hpp_
 
-#include "Streamable.h"
+#include "qpid/asyncStore/jrnl2/Streamable.h"
 
 #include <map>
 #include <stdexcept> // std::runtime_error

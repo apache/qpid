@@ -21,9 +21,9 @@
  * \file RecordHeader.cpp
  */
 
-#include "RecordHeader.h"
+#include "qpid/asyncStore/jrnl2/RecordHeader.h"
 
-#include "Configuration.h"
+#include "qpid/asyncStore/jrnl2/Configuration.h"
 
 namespace qpid {
 namespace asyncStore {

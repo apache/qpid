@@ -21,12 +21,12 @@
  * \file SimpleDeliveryRecord.cpp
  */
 
-#include "SimpleDeliveryRecord.h"
+#include "qpid/broker/SimpleDeliveryRecord.h"
 
-#include "SimpleConsumer.h"
-#include "SimpleMessage.h"
-#include "SimpleQueue.h"
-#include "SimpleQueuedMessage.h"
+#include "qpid/broker/SimpleConsumer.h"
+#include "qpid/broker/SimpleMessage.h"
+#include "qpid/broker/SimpleQueue.h"
+#include "qpid/broker/SimpleQueuedMessage.h"
 
 namespace qpid  {
 namespace broker {

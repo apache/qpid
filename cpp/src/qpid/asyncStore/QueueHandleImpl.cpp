@@ -21,7 +21,7 @@
  * \file QueueHandleImpl.cpp
  */
 
-#include "QueueHandleImpl.h"
+#include "qpid/asyncStore/QueueHandleImpl.h"
 
 namespace qpid {
 namespace asyncStore {

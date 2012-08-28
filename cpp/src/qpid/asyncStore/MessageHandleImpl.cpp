@@ -21,7 +21,7 @@
  * \file MessageHandleImpl.cpp
  */
 
-#include "MessageHandleImpl.h"
+#include "qpid/asyncStore/MessageHandleImpl.h"
 
 namespace qpid {
 namespace asyncStore {

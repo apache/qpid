@@ -21,7 +21,7 @@
  * \file ConfigHandleImpl.cpp
  */
 
-#include "ConfigHandleImpl.h"
+#include "qpid/asyncStore/ConfigHandleImpl.h"
 
 namespace qpid {
 namespace asyncStore {

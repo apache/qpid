@@ -24,8 +24,7 @@
 #ifndef qpid_broker_SimpleTxnBuffer_h_
 #define qpid_broker_SimpleTxnBuffer_h_
 
-#include "TxnHandle.h"
-
+#include "qpid/broker/TxnHandle.h"
 #include "qpid/sys/Mutex.h"
 
 #include <boost/shared_ptr.hpp>

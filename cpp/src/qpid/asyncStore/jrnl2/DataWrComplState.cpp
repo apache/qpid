@@ -21,9 +21,9 @@
  * \file DataWrComplState.cpp
  */
 
-#include "DataWrComplState.h"
+#include "qpid/asyncStore/jrnl2/DataWrComplState.h"
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <sstream> // std::ostringstream
 

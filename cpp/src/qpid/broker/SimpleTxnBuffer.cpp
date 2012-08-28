@@ -21,12 +21,11 @@
  * \file SimpleTxnBuffer.cpp
  */
 
-#include "SimpleTxnBuffer.h"
+#include "qpid/broker/SimpleTxnBuffer.h"
 
-#include "AsyncResultHandle.h"
-#include "SimpleTxnOp.h"
-#include "TxnAsyncContext.h"
-
+#include "qpid/broker/AsyncResultHandle.h"
+#include "qpid/broker/SimpleTxnOp.h"
+#include "qpid/broker/TxnAsyncContext.h"
 #include "qpid/log/Statement.h"
 
 #include <uuid/uuid.h>

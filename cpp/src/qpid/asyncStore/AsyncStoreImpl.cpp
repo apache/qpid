@@ -21,16 +21,15 @@
  * \file AsyncStoreImpl.cpp
  */
 
-#include "AsyncStoreImpl.h"
+#include "qpid/asyncStore/AsyncStoreImpl.h"
 
-#include "AsyncOperation.h"
-#include "ConfigHandleImpl.h"
-#include "EnqueueHandleImpl.h"
-#include "EventHandleImpl.h"
-#include "MessageHandleImpl.h"
-#include "QueueHandleImpl.h"
-#include "TxnHandleImpl.h"
-
+#include "qpid/asyncStore/AsyncOperation.h"
+#include "qpid/asyncStore/ConfigHandleImpl.h"
+#include "qpid/asyncStore/EnqueueHandleImpl.h"
+#include "qpid/asyncStore/EventHandleImpl.h"
+#include "qpid/asyncStore/MessageHandleImpl.h"
+#include "qpid/asyncStore/QueueHandleImpl.h"
+#include "qpid/asyncStore/TxnHandleImpl.h"
 #include "qpid/broker/ConfigHandle.h"
 #include "qpid/broker/EnqueueHandle.h"
 #include "qpid/broker/EventHandle.h"

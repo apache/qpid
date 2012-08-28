@@ -21,7 +21,7 @@
  * \file TestResult.cpp
  */
 
-#include "TestResult.h"
+#include "tests/storePerftools/asyncPerf/TestResult.h"
 
 namespace tests {
 namespace storePerftools {

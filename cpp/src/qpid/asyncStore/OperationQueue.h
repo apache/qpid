@@ -24,8 +24,7 @@
 #ifndef qpid_asyncStore_OperationQueue_h_
 #define qpid_asyncStore_OperationQueue_h_
 
-#include "AsyncOperation.h"
-
+#include "qpid/asyncStore/AsyncOperation.h"
 #include "qpid/sys/PollableQueue.h"
 
 namespace qpid {

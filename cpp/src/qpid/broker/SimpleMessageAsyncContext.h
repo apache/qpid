@@ -24,7 +24,7 @@
 #ifndef qpid_broker_SimpleMessageAsyncContext_h_
 #define qpid_broker_SimpleMessageAsyncContext_h_
 
-#include "AsyncStore.h" // BrokerAsyncContext
+#include "qpid/broker/AsyncStore.h" // BrokerAsyncContext
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>

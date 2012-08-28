@@ -29,7 +29,7 @@
 #ifndef qpid_broker_SimpleMessageDeque_h_
 #define qpid_broker_SimpleMessageDeque_h_
 
-#include "SimpleMessages.h"
+#include "qpid/broker/SimpleMessages.h"
 
 #include "qpid/sys/Mutex.h"
 

@@ -21,7 +21,7 @@
  * \file TestOptions.cpp
  */
 
-#include "TestOptions.h"
+#include "tests/storePerftools/common/TestOptions.h"
 
 namespace tests {
 namespace storePerftools {

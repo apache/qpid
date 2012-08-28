@@ -24,7 +24,7 @@
 #ifndef qpid_asyncStore_jrnl2_RecordCounter_h_
 #define qpid_asyncStore_jrnl2_RecordCounter_h_
 
-#include "AtomicCounter.h"
+#include "qpid/asyncStore/jrnl2/AtomicCounter.h"
 
 #include <stdint.h> // uint64_t
 

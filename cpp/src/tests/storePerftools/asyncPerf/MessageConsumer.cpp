@@ -21,14 +21,13 @@
  * \file MessageConsumer.cpp
  */
 
-#include "MessageConsumer.h"
-
-#include "TestOptions.h"
+#include "tests/storePerftools/asyncPerf/MessageConsumer.h"
 
 #include "qpid/broker/SimpleDeliveryRecord.h"
 #include "qpid/broker/SimpleQueue.h"
 #include "qpid/broker/SimpleTxnAccept.h"
 #include "qpid/broker/SimpleTxnBuffer.h"
+#include "tests/storePerftools/asyncPerf/TestOptions.h"
 
 #include <stdint.h> // uint32_t
 

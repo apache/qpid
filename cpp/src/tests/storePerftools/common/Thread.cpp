@@ -21,9 +21,9 @@
  * \file Thread.cpp
  */
 
-#include "Thread.h"
+#include "tests/storePerftools/common/Thread.h"
 
-#include "PerftoolError.h"
+#include "tests/storePerftools/common/PerftoolError.h"
 
 namespace tests {
 namespace storePerftools {

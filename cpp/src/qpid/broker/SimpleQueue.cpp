@@ -21,16 +21,16 @@
  * \file SimpleQueue.cpp
  */
 
-#include "SimpleQueue.h"
+#include "qpid/broker/SimpleQueue.h"
 
-#include "AsyncResultHandle.h"
-#include "QueueAsyncContext.h"
-#include "SimpleConsumer.h"
-#include "SimpleDeliveryRecord.h"
-#include "SimpleMessage.h"
-#include "SimpleMessageDeque.h"
-#include "SimpleQueuedMessage.h"
-#include "SimpleTxnBuffer.h"
+#include "qpid/broker/AsyncResultHandle.h"
+#include "qpid/broker/QueueAsyncContext.h"
+#include "qpid/broker/SimpleConsumer.h"
+#include "qpid/broker/SimpleDeliveryRecord.h"
+#include "qpid/broker/SimpleMessage.h"
+#include "qpid/broker/SimpleMessageDeque.h"
+#include "qpid/broker/SimpleQueuedMessage.h"
+#include "qpid/broker/SimpleTxnBuffer.h"
 
 #include <string.h> // memcpy()
 

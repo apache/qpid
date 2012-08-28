@@ -24,11 +24,10 @@
 #ifndef qpid_asyncStore_AsyncStoreImpl_h_
 #define qpid_asyncStore_AsyncStoreImpl_h_
 
-#include "AsyncStoreOptions.h"
-#include "RunState.h"
-#include "OperationQueue.h"
-
+#include "qpid/asyncStore/AsyncStoreOptions.h"
 #include "qpid/asyncStore/jrnl2/RecordIdCounter.h"
+#include "qpid/asyncStore/RunState.h"
+#include "qpid/asyncStore/OperationQueue.h"
 #include "qpid/broker/AsyncStore.h"
 
 namespace qpid {

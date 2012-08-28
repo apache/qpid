@@ -21,9 +21,9 @@
  * \file SimpleMessageAsyncContext.cpp
  */
 
-#include "SimpleMessageAsyncContext.h"
+#include "qpid/broker/SimpleMessageAsyncContext.h"
 
-#include "SimpleMessage.h"
+#include "qpid/broker/SimpleMessage.h"
 
 #include <cassert>
 

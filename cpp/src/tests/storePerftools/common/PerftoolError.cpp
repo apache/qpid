@@ -21,7 +21,7 @@
  * \file PerftoolError.cpp
  */
 
-#include "PerftoolError.h"
+#include "tests/storePerftools/common/PerftoolError.h"
 
 #include <iomanip> // std::setfill(), std::setw()
 

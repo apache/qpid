@@ -21,14 +21,12 @@
  * \file PerfTest.cpp
  */
 
-#include "PerfTest.h"
-
-#include "MessageConsumer.h"
-#include "MessageProducer.h"
-
-#include "tests/storePerftools/version.h"
+#include "tests/storePerftools/asyncPerf/MessageConsumer.h"
+#include "tests/storePerftools/asyncPerf/MessageProducer.h"
+#include "tests/storePerftools/asyncPerf/PerfTest.h"
 #include "tests/storePerftools/common/ScopedTimer.h"
 #include "tests/storePerftools/common/Thread.h"
+#include "tests/storePerftools/version.h"
 
 #include "qpid/Modules.h" // Use with loading store as module
 #include "qpid/asyncStore/AsyncStoreImpl.h"

@@ -24,15 +24,13 @@
 #ifndef qpid_broker_SimpleMessage_h_
 #define qpid_broker_SimpleMessage_h_
 
-#include "AsyncStore.h" // DataSource
-//#include "MessageHandle.h"
-#include "PersistableMessage.h"
+#include "qpid/broker/AsyncStore.h" // DataSource
+#include "qpid/broker/PersistableMessage.h"
 
 namespace qpid  {
 namespace broker {
 
-class SimpleMessage: /*public PersistableMessage,*/
-                     public DataSource,
+class SimpleMessage: public DataSource,
                      public RefCounted
 {
 public:
@@ -41,19 +39,7 @@ public:
                   const uint32_t msgSize,
                   boost::intrusive_ptr<PersistableMessage> persistentContext);
     virtual ~SimpleMessage();
-//    const MessageHandle& getHandle() const;
-//    MessageHandle& getHandle();
     uint64_t contentSize() const;
-
-//    // --- Interface Persistable ---
-//    virtual void setPersistenceId(uint64_t id) const;
-//    virtual uint64_t getPersistenceId() const;
-//    virtual void encode(qpid::framing::Buffer& buffer) const;
-//    virtual uint32_t encodedSize() const;
-//
-//    // --- Interface PersistableMessage ---
-//    virtual void allDequeuesComplete();
-//    virtual uint32_t encodedHeaderSize() const;
 
     // Persistent operations
     bool isPersistent() const;
@@ -64,12 +50,8 @@ public:
     virtual void write(char* target);
 
 private:
-//    mutable uint64_t m_persistenceId;
     const std::string m_msg;
     boost::intrusive_ptr<PersistableMessage> m_persistentContext;
-//    AsyncStore* m_store;
-
-//    MessageHandle m_msgHandle;
 };
 
 }} // namespace qpid::broker

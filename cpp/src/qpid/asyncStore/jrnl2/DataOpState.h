@@ -24,7 +24,7 @@
 #ifndef qpid_asyncStore_jrnl2_DataOpState_h_
 #define qpid_asyncStore_jrnl2_DataOpState_h_
 
-#include "State.h"
+#include "qpid/asyncStore/jrnl2/State.h"
 
 namespace qpid {
 namespace asyncStore {

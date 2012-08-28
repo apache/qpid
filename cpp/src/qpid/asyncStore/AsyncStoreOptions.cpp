@@ -21,7 +21,7 @@
  * \file AsyncStoreOptions.cpp
  */
 
-#include "AsyncStoreOptions.h"
+#include "qpid/asyncStore/AsyncStoreOptions.h"
 
 namespace qpid {
 namespace asyncStore {

@@ -21,7 +21,7 @@
  * \file TransactionAsyncContext.cpp
  */
 
-#include "TxnAsyncContext.h"
+#include "qpid/broker/TxnAsyncContext.h"
 
 namespace qpid {
 namespace broker {

@@ -21,9 +21,9 @@
  * \file EventHeader.cpp
  */
 
-#include "EventHeader.h"
+#include "qpid/asyncStore/jrnl2/EventHeader.h"
 
-#include "RecordTail.h"
+#include "qpid/asyncStore/jrnl2/RecordTail.h"
 
 namespace qpid {
 namespace asyncStore {

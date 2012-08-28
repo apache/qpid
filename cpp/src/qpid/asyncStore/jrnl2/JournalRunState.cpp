@@ -21,9 +21,9 @@
  * \file JournalRunState.cpp
  */
 
-#include "JournalRunState.h"
+#include "qpid/asyncStore/jrnl2/JournalRunState.h"
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <sstream>
 

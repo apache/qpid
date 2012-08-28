@@ -21,7 +21,7 @@
  * \file Streamable.cpp
  */
 
-#include "Streamable.h"
+#include "qpid/asyncStore/jrnl2/Streamable.h"
 
 #include <sstream>
 

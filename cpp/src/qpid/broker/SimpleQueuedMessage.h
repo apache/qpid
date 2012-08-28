@@ -24,8 +24,8 @@
 #ifndef qpid_broker_SimpleQueuedMessage_h_
 #define qpid_broker_SimpleQueuedMessage_h_
 
-#include "AsyncStore.h"
-#include "EnqueueHandle.h"
+#include "qpid/broker/AsyncStore.h"
+#include "qpid/broker/EnqueueHandle.h"
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/intrusive_ptr.hpp>

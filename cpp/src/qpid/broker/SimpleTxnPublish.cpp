@@ -21,14 +21,12 @@
  * \file SimpleTxnPublish.cpp
  */
 
-#include "SimpleTxnPublish.h"
+#include "qpid/broker/SimpleTxnPublish.h"
 
-#include "SimpleMessage.h"
-#include "SimpleQueue.h"
-#include "SimpleQueuedMessage.h"
-
+#include "qpid/broker/SimpleMessage.h"
+#include "qpid/broker/SimpleQueue.h"
+#include "qpid/broker/SimpleQueuedMessage.h"
 #include "qpid/log/Statement.h"
-#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace broker {

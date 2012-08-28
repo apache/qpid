@@ -24,7 +24,7 @@
 #ifndef tests_storePerftools_asyncPerf_SimpleTxnAccept_h_
 #define tests_storePerftools_asyncPerf_SimpleTxnAccept_h_
 
-#include "SimpleTxnOp.h"
+#include "qpid/broker/SimpleTxnOp.h"
 
 #include "boost/shared_ptr.hpp"
 #include <deque>

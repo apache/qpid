@@ -21,10 +21,9 @@
  * \file Plugin.cpp
  */
 
-#include "Plugin.h"
+#include "qpid/asyncStore/Plugin.h"
 
-#include "AsyncStoreImpl.h"
-
+#include "qpid/asyncStore/AsyncStoreImpl.h"
 #include "qpid/broker/Broker.h"
 
 namespace qpid {

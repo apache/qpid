@@ -21,11 +21,10 @@
  * \file EventHandle.cpp
  */
 
-#include "EventHandle.h"
-
-#include "PrivateImplRef.h"
+#include "qpid/broker/EventHandle.h"
 
 #include "qpid/asyncStore/EventHandleImpl.h"
+#include "qpid/broker/PrivateImplRef.h"
 
 namespace qpid {
 namespace broker {

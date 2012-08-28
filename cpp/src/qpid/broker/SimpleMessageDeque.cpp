@@ -21,9 +21,9 @@
  * \file SimpleMessageDeque.cpp
  */
 
-#include "SimpleMessageDeque.h"
+#include "qpid/broker/SimpleMessageDeque.h"
 
-#include "SimpleQueuedMessage.h"
+#include "qpid/broker/SimpleQueuedMessage.h"
 
 namespace qpid  {
 namespace broker {

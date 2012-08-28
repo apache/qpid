@@ -21,7 +21,7 @@
  * \file DataToken.cpp
  */
 
-#include "DataToken.h"
+#include "qpid/asyncStore/jrnl2/DataToken.h"
 
 namespace qpid {
 namespace asyncStore {

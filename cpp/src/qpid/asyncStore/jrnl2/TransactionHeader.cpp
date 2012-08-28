@@ -21,8 +21,9 @@
  * \file TransactionHeader.cpp
  */
 
-#include "RecordTail.h"
-#include "TransactionHeader.h"
+#include "qpid/asyncStore/jrnl2/TransactionHeader.h"
+
+#include "qpid/asyncStore/jrnl2/RecordTail.h"
 
 namespace qpid {
 namespace asyncStore {

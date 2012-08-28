@@ -21,7 +21,7 @@
  * \file SimpleDeliverable.cpp
  */
 
-#include "SimpleDeliverable.h"
+#include "qpid/broker/SimpleDeliverable.h"
 
 namespace qpid {
 namespace broker {

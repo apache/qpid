@@ -21,9 +21,9 @@
  * \file DequeueHeader.cpp
  */
 
-#include "DequeueHeader.h"
+#include "qpid/asyncStore/jrnl2/DequeueHeader.h"
 
-#include "RecordTail.h"
+#include "qpid/asyncStore/jrnl2/RecordTail.h"
 
 namespace qpid {
 namespace asyncStore {

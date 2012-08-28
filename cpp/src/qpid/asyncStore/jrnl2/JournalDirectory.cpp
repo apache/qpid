@@ -20,9 +20,9 @@
 /**
  * \file JournalDirectory.cpp
  */
-#include "JournalDirectory.h"
+#include "qpid/asyncStore/jrnl2/JournalDirectory.h"
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <cstring>
 #include <dirent.h>

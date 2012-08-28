@@ -24,8 +24,8 @@
 #ifndef qpid_broker_SimpleTxnPublish_h_
 #define qpid_broker_SimpleTxnPublish_h_
 
-#include "SimpleDeliverable.h"
-#include "SimpleTxnOp.h"
+#include "qpid/broker/SimpleDeliverable.h"
+#include "qpid/broker/SimpleTxnOp.h"
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>

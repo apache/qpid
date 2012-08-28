@@ -24,7 +24,7 @@
 #ifndef qpid_asyncStore_jrnl2_State_h_
 #define qpid_asyncStore_jrnl2_State_h_
 
-#include "Streamable.h"
+#include "qpid/asyncStore/jrnl2/Streamable.h"
 
 namespace qpid {
 namespace asyncStore {

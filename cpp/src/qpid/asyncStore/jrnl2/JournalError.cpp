@@ -21,7 +21,7 @@
  * \file JournalError.cpp
  */
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <iomanip> // std::setfill(), std::setw()
 #include <sstream> // std::ostringstream

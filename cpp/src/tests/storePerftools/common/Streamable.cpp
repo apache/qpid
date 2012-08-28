@@ -21,7 +21,7 @@
  * \file Streamable.cpp
  */
 
-#include "Streamable.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 #include <sstream>
 

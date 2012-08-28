@@ -24,7 +24,7 @@
 #ifndef qpid_asyncStore_jrnl2_AtomicCounter_h_
 #define qpid_asyncStore_jrnl2_AtomicCounter_h_
 
-#include "ScopedLock.h"
+#include "qpid/asyncStore/jrnl2/ScopedLock.h"
 
 namespace qpid {
 namespace asyncStore {

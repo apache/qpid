@@ -21,7 +21,7 @@
  * \file RunState.cpp
  */
 
-#include "RunState.h"
+#include "qpid/asyncStore/RunState.h"
 
 #include "qpid/Exception.h"
 

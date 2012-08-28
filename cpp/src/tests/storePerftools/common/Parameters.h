@@ -24,7 +24,7 @@
 #ifndef tests_storePerftools_common_Parameters_h_
 #define tests_storePerftools_common_Parameters_h_
 
-#include "Streamable.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 namespace tests {
 namespace storePerftools {

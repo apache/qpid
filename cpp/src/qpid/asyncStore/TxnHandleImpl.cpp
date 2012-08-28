@@ -21,7 +21,7 @@
  * \file TxnHandleImpl.cpp
  */
 
-#include "TxnHandleImpl.h"
+#include "qpid/asyncStore/TxnHandleImpl.h"
 
 namespace qpid {
 namespace asyncStore {

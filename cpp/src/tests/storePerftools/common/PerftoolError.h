@@ -24,7 +24,7 @@
 #ifndef tests_storePerftools_common_PerftoolError_h_
 #define tests_storePerftools_common_PerftoolError_h_
 
-#include "Streamable.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 #include <map>
 #include <stdexcept> // std::runtime_error

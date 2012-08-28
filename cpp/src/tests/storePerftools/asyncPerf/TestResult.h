@@ -24,8 +24,7 @@
 #ifndef tests_storePerftools_asyncPerf_TestResult_h_
 #define tests_storePerftools_asyncPerf_TestResult_h_
 
-#include "TestOptions.h"
-
+#include "tests/storePerftools/asyncPerf/TestOptions.h"
 #include "tests/storePerftools/common/TestResult.h"
 
 namespace tests {

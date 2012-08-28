@@ -21,10 +21,9 @@
  * \file SimpleTxnAccept.cpp
  */
 
-#include "SimpleTxnAccept.h"
+#include "qpid/broker/SimpleTxnAccept.h"
 
-#include "SimpleDeliveryRecord.h"
-
+#include "qpid/broker/SimpleDeliveryRecord.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {

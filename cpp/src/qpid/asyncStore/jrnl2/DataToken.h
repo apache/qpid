@@ -24,9 +24,9 @@
 #ifndef qpid_jrnl2_asyncStore_DataToken_h_
 #define qpid_jrnl2_asyncStore_DataToken_h_
 
-#include "DataOpState.h"
-#include "DataWrComplState.h"
-#include "RecordIdCounter.h"
+#include "qpid/asyncStore/jrnl2/DataOpState.h"
+#include "qpid/asyncStore/jrnl2/DataWrComplState.h"
+#include "qpid/asyncStore/jrnl2/RecordIdCounter.h"
 
 #include <string>
 #include <stdint.h> // uint64_t

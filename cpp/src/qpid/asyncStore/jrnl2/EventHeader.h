@@ -54,7 +54,7 @@
 #ifndef qpid_asyncStore_jrnl2_EventHeader_h_
 #define qpid_asyncStore_jrnl2_EventHeader_h_
 
-#include "RecordHeader.h"
+#include "qpid/asyncStore/jrnl2/RecordHeader.h"
 
 namespace qpid {
 namespace asyncStore {

@@ -24,7 +24,7 @@
 #ifndef qpid_broker_AsyncResultHandle_h_
 #define qpid_broker_AsyncResultHandle_h_
 
-#include "Handle.h"
+#include "qpid/broker/Handle.h"
 
 #include <boost/shared_ptr.hpp>
 #include <string>

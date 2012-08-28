@@ -24,9 +24,8 @@
 #ifndef qpid_broker_EventHandle_h_
 #define qpid_broker_EventHandle_h_
 
-#include "Handle.h"
-
 #include "qpid/asyncStore/AsyncStoreHandle.h"
+#include "qpid/broker/Handle.h"
 
 #include <string>
 

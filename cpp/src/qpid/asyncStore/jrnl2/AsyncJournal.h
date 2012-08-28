@@ -24,9 +24,9 @@
 #ifndef qpid_asyncStore_jrnl2_AsyncJournal_h_
 #define qpid_asyncStore_jrnl2_AsyncJournal_h_
 
-#include "JournalDirectory.h"
-#include "JournalRunState.h"
-#include "ScopedLock.h"
+#include "qpid/asyncStore/jrnl2/JournalDirectory.h"
+#include "qpid/asyncStore/jrnl2/JournalRunState.h"
+#include "qpid/asyncStore/jrnl2/ScopedLock.h"
 
 #include <string>
 #include <stdint.h> // uint64_t, uint32_t, etc.

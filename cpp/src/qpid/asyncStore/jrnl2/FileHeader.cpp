@@ -21,9 +21,9 @@
  * \file FileHeader.cpp
  */
 
-#include "FileHeader.h"
+#include "qpid/asyncStore/jrnl2/FileHeader.h"
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <cerrno>
 #include <cstring>

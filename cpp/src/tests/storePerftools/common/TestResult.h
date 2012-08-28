@@ -24,8 +24,8 @@
 #ifndef tests_storePerftools_common_TestResult_h_
 #define tests_storePerftools_common_TestResult_h_
 
-#include "ScopedTimable.h"
-#include "Streamable.h"
+#include "tests/storePerftools/common/ScopedTimable.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 namespace tests {
 namespace storePerftools {

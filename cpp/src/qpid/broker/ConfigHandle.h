@@ -24,9 +24,8 @@
 #ifndef qpid_broker_ConfigHandle_h_
 #define qpid_broker_ConfigHandle_h_
 
-#include "Handle.h"
-
 #include "qpid/asyncStore/AsyncStoreHandle.h"
+#include "qpid/broker/Handle.h"
 
 namespace qpid {
 namespace asyncStore {

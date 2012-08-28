@@ -21,10 +21,9 @@
  * \file ConfigHandle.cpp
  */
 
-#include "ConfigHandle.h"
+#include "qpid/broker/ConfigHandle.h"
 
-#include "PrivateImplRef.h"
-
+#include "qpid/broker/PrivateImplRef.h"
 #include "qpid/asyncStore/ConfigHandleImpl.h"
 
 namespace qpid {

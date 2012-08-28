@@ -21,9 +21,9 @@
  * \file DataOpState.cpp
  */
 
-#include "DataOpState.h"
+#include "qpid/asyncStore/jrnl2/DataOpState.h"
 
-#include "JournalError.h"
+#include "qpid/asyncStore/jrnl2/JournalError.h"
 
 #include <sstream> // std::ostringstream
 

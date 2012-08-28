@@ -24,9 +24,8 @@
 #ifndef qpid_broker_TxnAsyncContext_h_
 #define qpid_broker_TxnAsyncContext_h_
 
-#include "AsyncStore.h" // qpid::broker::BrokerAsyncContext
-
 #include "qpid/asyncStore/AsyncOperation.h"
+#include "qpid/broker/AsyncStore.h" // qpid::broker::BrokerAsyncContext
 
 namespace qpid {
 namespace broker {

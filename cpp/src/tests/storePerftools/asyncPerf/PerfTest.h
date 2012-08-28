@@ -24,13 +24,11 @@
 #ifndef tests_storePerftools_asyncPerf_PerfTest_h_
 #define tests_storePerftools_asyncPerf_PerfTest_h_
 
-#include "TestResult.h"
-
-#include "tests/storePerftools/common/Streamable.h"
-
 #include "qpid/broker/AsyncResultQueueImpl.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Thread.h"
+#include "tests/storePerftools/asyncPerf/TestResult.h"
+#include "tests/storePerftools/common/Streamable.h"
 
 #include <boost/shared_ptr.hpp>
 #include <deque>

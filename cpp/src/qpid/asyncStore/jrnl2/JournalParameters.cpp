@@ -21,7 +21,7 @@
  * \file JournalParameters.cpp
  */
 
-#include "JournalParameters.h"
+#include "qpid/asyncStore/jrnl2/JournalParameters.h"
 
 #include <sstream>
 

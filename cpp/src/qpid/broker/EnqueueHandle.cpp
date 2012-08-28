@@ -21,11 +21,10 @@
  * \file EnqueueHandle.cpp
  */
 
-#include "EnqueueHandle.h"
-
-#include "PrivateImplRef.h"
+#include "qpid/broker/EnqueueHandle.h"
 
 #include "qpid/asyncStore/EnqueueHandleImpl.h"
+#include "qpid/broker/PrivateImplRef.h"
 
 namespace qpid {
 namespace broker {
