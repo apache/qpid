@@ -99,7 +99,7 @@ class SslConnector : public Connector
     void socketClosed(qpid::sys::ssl::SslIO&, const qpid::sys::ssl::SslSocket&);
 
     size_t decode(const char* buffer, size_t size);
-    size_t encode(const char* buffer, size_t size);
+    size_t encode(char* buffer, size_t size);
     bool canEncode();
 
 public:
@@ -285,9 +285,9 @@ bool SslConnector::canEncode()
 }
 
 // Called in IO thread.
-size_t SslConnector::encode(const char* buffer, size_t size)
+size_t SslConnector::encode(char* buffer, size_t size)
 {
-    framing::Buffer out(const_cast<char*>(buffer), size);
+    framing::Buffer out(buffer, size);
     size_t bytesWritten(0);
     {
         Mutex::ScopedLock l(lock);
