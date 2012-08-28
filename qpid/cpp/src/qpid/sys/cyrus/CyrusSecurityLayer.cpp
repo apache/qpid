@@ -68,7 +68,7 @@ size_t CyrusSecurityLayer::decode(const char* input, size_t size)
     return size;
 }
 
-size_t CyrusSecurityLayer::encode(const char* buffer, size_t size)
+size_t CyrusSecurityLayer::encode(char* buffer, size_t size)
 {
     size_t processed = 0;//records how many bytes have been written to buffer
     do {
@@ -92,12 +92,12 @@ size_t CyrusSecurityLayer::encode(const char* buffer, size_t size)
             //can't fit all encrypted data in the buffer we've
             //been given, copy in what we can and hold on to the
             //rest until the next call
-            ::memcpy(const_cast<char*>(buffer + processed), encrypted, remaining);
+            ::memcpy(buffer + processed, encrypted, remaining);
             processed += remaining;
             encrypted += remaining;
             encryptedSize -= remaining;
         } else {
-            ::memcpy(const_cast<char*>(buffer + processed), encrypted, encryptedSize);
+            ::memcpy(buffer + processed, encrypted, encryptedSize);
             processed += encryptedSize;
             encrypted = 0; 
             encryptedSize = 0;

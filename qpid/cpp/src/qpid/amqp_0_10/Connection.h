@@ -61,7 +61,7 @@ class Connection  : public sys::ConnectionCodec,
     QPID_BROKER_EXTERN Connection(sys::OutputControl&, const std::string& id, bool isClient);
     QPID_BROKER_EXTERN void setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c);
     size_t decode(const char* buffer, size_t size);
-    size_t encode(const char* buffer, size_t size);
+    size_t encode(char* buffer, size_t size);
     bool isClosed() const;
     bool canEncode();
     void abort();

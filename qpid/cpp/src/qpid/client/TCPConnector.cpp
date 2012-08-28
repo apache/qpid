@@ -245,9 +245,9 @@ bool TCPConnector::canEncode()
 }
 
 // Called in IO thread.
-size_t TCPConnector::encode(const char* buffer, size_t size)
+size_t TCPConnector::encode(char* buffer, size_t size)
 {
-    framing::Buffer out(const_cast<char*>(buffer), size);
+    framing::Buffer out(buffer, size);
     size_t bytesWritten(0);
     {
         Mutex::ScopedLock l(lock);
