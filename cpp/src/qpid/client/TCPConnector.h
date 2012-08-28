@@ -90,7 +90,7 @@ class TCPConnector : public Connector, public sys::Codec
     const qpid::sys::SecuritySettings* getSecuritySettings() { return 0; }
 
     size_t decode(const char* buffer, size_t size);
-    size_t encode(const char* buffer, size_t size);
+    size_t encode(char* buffer, size_t size);
     bool canEncode();
 
 protected:
