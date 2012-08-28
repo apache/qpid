@@ -56,6 +56,7 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-Log4j-CompositeRolling-Appender.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-the-Broker-via-config.xml.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-the-Virtual-Hosts-via-virtualhosts.xml.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-AuthenticationProviders.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Debug-using-log4j.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How-to-Tune-M3-Java-Broker-Performance.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-Build-How-To.xml"/>
