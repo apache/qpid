@@ -43,7 +43,7 @@ size_t SecureConnection::decode(const char* buffer, size_t size)
     }
 }
 
-size_t SecureConnection::encode(const char* buffer, size_t size)
+size_t SecureConnection::encode(char* buffer, size_t size)
 {
     if (secured) {
         return securityLayer->encode(buffer, size);
