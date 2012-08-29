@@ -21,7 +21,9 @@ package org.apache.qpid.disttest.controller;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.results.aggregation.ITestResult;
+import org.apache.qpid.disttest.results.aggregation.TestResultAggregator;
 
 public class ResultsForAllTests
 {
@@ -45,5 +47,24 @@ public class ResultsForAllTests
     public boolean hasErrors()
     {
         return _hasErrors;
+    }
+
+    public ResultsForAllTests getAllParticipantsResult()
+    {
+        ResultsForAllTests summaryResultsForAllTests = new ResultsForAllTests();
+
+        for (ITestResult testResult : _results)
+        {
+            for(ParticipantResult participantResult : testResult.getParticipantResults())
+            {
+                if(TestResultAggregator.ALL_CONSUMER_PARTICIPANTS_NAME.equals(participantResult.getParticipantName()))
+                {
+                    TestResult summaryTestResult = new TestResult(testResult.getName());
+                    summaryTestResult.addParticipantResult(participantResult);
+                    summaryResultsForAllTests.add(summaryTestResult);
+                }
+            }
+        }
+        return summaryResultsForAllTests;
     }
 }
