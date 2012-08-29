@@ -184,7 +184,7 @@ void SslConnector::connect(const std::string& host, const std::string& port){
                        boost::bind(&SslConnector::writebuff, this, _1));
 
     aio->createBuffers(maxFrameSize);
-    identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
+    identifier = str(format("[%1%]") % socket.getFullAddress());
     ProtocolInitiation init(version);
     writeDataBlock(init);
     aio->start(poller);

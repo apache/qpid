@@ -76,9 +76,6 @@ public:
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
-    uint16_t getLocalPort() const;
-    uint16_t getRemotePort() const;
-
     int getKeyLen() const;
     std::string getClientAuthId() const;
 
