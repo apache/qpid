@@ -303,14 +303,12 @@ int SslSocket::write(const void *buf, size_t count) const
     return PR_Write(socket, buf, count);
 }
 
-void SslSocket::setTcpNoDelay(bool nodelay) const
+void SslSocket::setTcpNoDelay() const
 {
-    if (nodelay) {
-        PRSocketOptionData option;
-        option.option = PR_SockOpt_NoDelay;
-        option.value.no_delay = true;
-        PR_SetSocketOption(socket, &option);
-    }
+    PRSocketOptionData option;
+    option.option = PR_SockOpt_NoDelay;
+    option.value.no_delay = true;
+    PR_SetSocketOption(socket, &option);
 }
 
 void SslSocket::setCertName(const std::string& name)
