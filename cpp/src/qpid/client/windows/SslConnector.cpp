@@ -79,7 +79,6 @@ public:
                  ConnectionImpl*);
     virtual void connect(const std::string& host, const std::string& port);
     virtual void connected(const Socket&);
-    unsigned int getSSF();
 };
 
 // Static constructor which registers connector here
@@ -171,11 +170,6 @@ void SslConnector::connected(const Socket& s) {
                                                      boost::bind(&SslConnector::negotiationDone, this, _1));
     start(shim);
 	shim->start(poller);
-}
-
-unsigned int SslConnector::getSSF()
-{
-    return shim->getSslKeySize();
 }
 
 }}} // namespace qpid::client::windows
