@@ -18,6 +18,9 @@
  */
 package org.apache.qpid.disttest.results.aggregation;
 
+import java.util.List;
+
+import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
@@ -102,5 +105,25 @@ public class TestResultAggregator
         aggregatedAllResult.setNumberOfMessagesProcessed(aggregatedConsumerResult.getNumberOfMessagesProcessed());
         aggregatedAllResult.setTotalPayloadProcessed(aggregatedConsumerResult.getTotalPayloadProcessed());
         aggregatedAllResult.setThroughput(aggregatedConsumerResult.getThroughput());
+    }
+
+    /**
+     * Produces a single {@link ResultsForAllTests} from the supplied list, only containing
+     * the "All participants" results.
+     */
+    public ResultsForAllTests aggregateTestResults(List<ResultsForAllTests> allResultsList)
+    {
+        ResultsForAllTests retVal = new ResultsForAllTests();
+
+        for (ResultsForAllTests resultsForAllTests : allResultsList)
+        {
+            ResultsForAllTests allParticipantsResult = resultsForAllTests.getAllParticipantsResult();
+            for (ITestResult testResult : allParticipantsResult.getTestResults())
+            {
+                retVal.add(testResult);
+            }
+        }
+
+        return retVal;
     }
 }

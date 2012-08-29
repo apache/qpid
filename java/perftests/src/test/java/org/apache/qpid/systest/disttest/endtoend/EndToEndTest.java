@@ -76,10 +76,10 @@ public class EndToEndTest extends QpidBrokerTestCase
         String[] cells = csvLine.split(",", DONT_STRIP_EMPTY_LAST_FIELD_FLAG);
         // All attributes become cells in the CSV, so this will be true
         assertEquals("Unexpected number of cells in CSV line " + csvLine, ParticipantAttribute.values().length, cells.length);
-        assertEquals("Unexpected test name in CSV line " + csvLine, testName, cells[0]);
-        assertEquals("Unexpected client name in CSV line " + csvLine, clientName, cells[2]);
-        assertEquals("Unexpected participant name in CSV line " + csvLine, participantName, cells[3]);
-        assertEquals("Unexpected number of messages processed in CSV line " + csvLine, String.valueOf(expectedNumberOfMessagesProcessed), cells[4]);
+        assertEquals("Unexpected test name in CSV line " + csvLine, testName, cells[ParticipantAttribute.TEST_NAME.ordinal()]);
+        assertEquals("Unexpected client name in CSV line " + csvLine, clientName, cells[ParticipantAttribute.CONFIGURED_CLIENT_NAME.ordinal()]);
+        assertEquals("Unexpected participant name in CSV line " + csvLine, participantName, cells[ParticipantAttribute.PARTICIPANT_NAME.ordinal()]);
+        assertEquals("Unexpected number of messages processed in CSV line " + csvLine, String.valueOf(expectedNumberOfMessagesProcessed), cells[ParticipantAttribute.NUMBER_OF_MESSAGES_PROCESSED.ordinal()]);
 
     }
 

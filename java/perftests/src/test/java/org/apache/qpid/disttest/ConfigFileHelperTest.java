@@ -39,14 +39,6 @@ public class ConfigFileHelperTest extends QpidTestCase
         _testDir = TestFileUtils.createTestDirectory();
     }
 
-    public void testGenerateOutputCsvNameFrom()
-    {
-        String outputDir = "/tmp/outputDir";
-
-        assertEquals("/tmp/outputDir/my.json.file.csv", _configFileHelper.generateOutputCsvNameFrom("/tmp/my.json.file.json", outputDir));
-        assertEquals("/tmp/outputDir/my.js.file.csv", _configFileHelper.generateOutputCsvNameFrom("/tmp/my.js.file.js", outputDir));
-    }
-
     public void testGetTestConfigFilesForDirectory() throws Exception
     {
         String jsFile = createFile("file1.js");

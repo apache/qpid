@@ -18,11 +18,15 @@
  */
 package org.apache.qpid.disttest.results.aggregation;
 
+import static org.mockito.Mockito.*;
+
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
@@ -30,16 +34,13 @@ import org.apache.qpid.disttest.message.ProducerParticipantResult;
 
 public class TestResultAggregatorTest extends TestCase
 {
-
     private static final String TEST1_NAME = "TEST1_NAME";
     private static final int TEST1_ITERATION_NUMBER = 1;
-
 
     private static final String CONSUMER_PARTICIPANT_NAME1 = "CONSUMER_PARTICIPANT_NAME1";
     private static final String CONSUMER_PARTICIPANT_NAME2 = "CONSUMER_PARTICIPANT_NAME2";
 
     private static final String PRODUCER_PARTICIPANT_NAME = "PRODUCER_PARTICIPANT_NAME";
-
 
     private static final long CONSUMER1_STARTDATE = 50;
     private static final long CONSUMER1_ENDDATE = 20000;
@@ -63,6 +64,33 @@ public class TestResultAggregatorTest extends TestCase
     private static final int BATCH_SIZE = 3;
 
     private TestResultAggregator _aggregator = new TestResultAggregator();
+
+    public void testAggregateTestResults()
+    {
+        ResultsForAllTests resultsForAllTests1 = mock(ResultsForAllTests.class);
+        ResultsForAllTests resultsForAllTests2 = mock(ResultsForAllTests.class);
+
+        ResultsForAllTests summaryResult1 = mock(ResultsForAllTests.class);
+        ResultsForAllTests summaryResult2 = mock(ResultsForAllTests.class);
+
+        when(resultsForAllTests1.getAllParticipantsResult()).thenReturn(summaryResult1);
+        when(resultsForAllTests2.getAllParticipantsResult()).thenReturn(summaryResult2);
+
+        ITestResult testResult1 = mock(ITestResult.class);
+        ITestResult testResult2 = mock(ITestResult.class);
+
+        when(summaryResult1.getTestResults()).thenReturn(Arrays.asList(testResult1));
+        when(summaryResult2.getTestResults()).thenReturn(Arrays.asList(testResult2));
+
+        ResultsForAllTests actualSummaryResults = _aggregator.aggregateTestResults(Arrays.asList(
+                resultsForAllTests1,
+                resultsForAllTests2));
+
+        assertEquals(
+                "Summary results should contain the all the 'all participants' test results",
+                Arrays.asList(testResult1, testResult2),
+                actualSummaryResults.getTestResults());
+    }
 
     public void testAggregateResultsForTwoConsumerAndOneProducer() throws Exception
     {
@@ -197,4 +225,5 @@ public class TestResultAggregatorTest extends TestCase
         participantResult.setEndDate(new Date(end));
         participantResult.setBatchSize(batchSize);
     }
+
 }

@@ -22,10 +22,8 @@ import java.util.List;
 
 import org.apache.qpid.disttest.message.ParticipantResult;
 
-// TODO rename me!!
 public interface ITestResult
 {
-
     // TODO  should weaken to Collection
     List<ParticipantResult> getParticipantResults();
 

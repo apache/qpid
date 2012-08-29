@@ -59,13 +59,13 @@ import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ParticipantAttribute;
 import org.apache.qpid.disttest.message.ParticipantResult;
 
-public class CSVFormaterTest extends TestCase
+public class CSVFormatterTest extends TestCase
 {
     private static final String TEST1 = "TEST1";
     private static final String PARTICIPANT = "PARTICIPANT";
     private static final String CONFIGURED_CLIENT1 = "CONFIGURED_CLIENT1";
 
-    private CSVFormater _formatter = new CSVFormater();
+    private CSVFormatter _formatter = new CSVFormatter();
 
     public void testResultsFileWithWithOneRow() throws Exception
     {
@@ -115,12 +115,12 @@ public class CSVFormaterTest extends TestCase
         participantAttributes.put(TOTAL_NUMBER_OF_CONSUMERS, 1);
         participantAttributes.put(TOTAL_NUMBER_OF_PRODUCERS, 2);
         participantAttributes.put(TOTAL_PAYLOAD_PROCESSED, 1024);
-        participantAttributes.put(THROUGHPUT, 2048);
+        participantAttributes.put(THROUGHPUT, 2048.49);
         participantAttributes.put(TIME_TAKEN, 1000);
         participantAttributes.put(ERROR_MESSAGE, "error");
         participantAttributes.put(MIN_LATENCY, 2l);
         participantAttributes.put(MAX_LATENCY, 9l);
-        participantAttributes.put(AVERAGE_LATENCY, 5.0f);
+        participantAttributes.put(AVERAGE_LATENCY, 4.6f);
         participantAttributes.put(LATENCY_STANDARD_DEVIATION, 2.0f);
         return participantAttributes;
     }
@@ -142,5 +142,4 @@ public class CSVFormaterTest extends TestCase
 
         return output.toString();
     }
-
 }
