@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.configuration.ConfiguredObject;
-
 public enum State
 {
     /** The initial state of the store.  In practice, the store immediately transitions to the subsequent states. */
@@ -30,7 +28,7 @@ public enum State
     INITIALISING,
     /**
      * The initial set-up of the store has completed.
-     * If the store is persistent, it has not yet loaded configuration for {@link ConfiguredObject}'s from disk.
+     * If the store is persistent, it has not yet loaded configuration from disk.
      *
      * From the point of view of the user, the store is essentially stopped.
      */

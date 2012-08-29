@@ -23,9 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.ExchangeConfigType;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
@@ -86,8 +83,6 @@ public abstract class AbstractExchange implements Exchange
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
-    private UUID _qmfId;
-
     public AbstractExchange(final ExchangeType<? extends Exchange> type)
     {
         _type = type;
@@ -113,17 +108,10 @@ public abstract class AbstractExchange implements Exchange
         _ticket = ticket;
 
         _id = id;
-        _qmfId = getConfigStore().createId();
-        getConfigStore().addConfiguredObject(this);
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // Log Exchange creation
         CurrentActor.get().message(ExchangeMessages.CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return getVirtualHost().getConfigStore();
     }
 
     public boolean isDurable()
@@ -146,7 +134,6 @@ public abstract class AbstractExchange implements Exchange
 
         if(_closed.compareAndSet(false,true))
         {
-            getConfigStore().removeConfiguredObject(this);
             if(_alternateExchange != null)
             {
                 _alternateExchange.removeReference(this);
@@ -298,28 +285,10 @@ public abstract class AbstractExchange implements Exchange
         return _id;
     }
 
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
-    }
-
-    public ExchangeConfigType getConfigType()
-    {
-        return ExchangeConfigType.getInstance();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return _virtualHost;
-    }
-
     public long getBindingCount()
     {
         return getBindings().size();
     }
-
-
 
     public final List<? extends BaseQueue> route(final InboundMessage message)
     {

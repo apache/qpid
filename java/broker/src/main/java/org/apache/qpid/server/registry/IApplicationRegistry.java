@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.qpid.qmf.QMFService;
-import org.apache.qpid.server.configuration.BrokerConfig;
-import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -96,19 +93,9 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     public UUID getBrokerId();
 
-    QMFService getQMFService();
-
-    void setBrokerConfig(BrokerConfig broker);
-
-    BrokerConfig getBrokerConfig();
-
     Broker getBroker();
 
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
-
-    ConfigStore getConfigStore();
-
-    void setConfigStore(ConfigStore store);
 
     void initialiseStatisticsReporting();
 

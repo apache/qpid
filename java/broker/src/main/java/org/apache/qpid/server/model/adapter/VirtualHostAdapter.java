@@ -754,10 +754,6 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         {
             return _virtualHost.getConfiguration().isDeadLetterQueueEnabled();
         }
-        else if(FEDERATION_TAG.equals(name))
-        {
-            return _virtualHost.getFederationTag();
-        }
         else if(HOUSEKEEPING_CHECK_PERIOD.equals(name))
         {
             return _virtualHost.getConfiguration().getHousekeepingCheckPeriod();

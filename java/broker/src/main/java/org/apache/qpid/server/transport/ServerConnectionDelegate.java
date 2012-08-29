@@ -28,12 +28,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
@@ -61,7 +60,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN, SubjectCreator subjectCreator)
     {
-        this(createConnectionProperties(appRegistry.getBrokerConfig()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN, subjectCreator);
+        this(createConnectionProperties(appRegistry), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN, subjectCreator);
     }
 
     private ServerConnectionDelegate(Map<String, Object> properties,
@@ -78,11 +77,23 @@ public class ServerConnectionDelegate extends ServerDelegate
         _subjectCreator = subjectCreator;
     }
 
-    private static Map<String, Object> createConnectionProperties(final BrokerConfig brokerConfig)
+    private static List<String> getFeatures(IApplicationRegistry appRegistry)
+    {
+        final List<String> features = new ArrayList<String>();
+        if (!appRegistry.getConfiguration().getDisabledFeatures().contains(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR))
+        {
+            features.add(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
+        }
+
+        return Collections.unmodifiableList(features);
+    }
+
+    private static Map<String, Object> createConnectionProperties(final IApplicationRegistry applicationRegistry)
     {
         final Map<String,Object> map = new HashMap<String,Object>(2);
-        map.put(ServerPropertyNames.FEDERATION_TAG, brokerConfig.getFederationTag());
-        final List<String> features = brokerConfig.getFeatures();
+        // Federation tag is used by the client to identify the broker instance
+        map.put(ServerPropertyNames.FEDERATION_TAG, applicationRegistry.getBrokerId().toString());
+        final List<String> features = getFeatures(applicationRegistry);
         if (features != null && features.size() > 0)
         {
             map.put(ServerPropertyNames.QPID_FEATURES, features);
@@ -174,7 +185,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             sconn.setVirtualHost(vhost);
 
-            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, ((ProtocolEngine) sconn.getConfig()).getRemoteAddress()))
+            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getRemoteAddress()))
             {
                 sconn.setState(Connection.State.CLOSING);
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));

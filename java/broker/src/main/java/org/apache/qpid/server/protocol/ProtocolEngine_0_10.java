@@ -21,11 +21,6 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.ConnectionConfig;
-import org.apache.qpid.server.configuration.ConnectionConfigType;
-import org.apache.qpid.server.configuration.VirtualHostConfig;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ServerConnection;
@@ -39,7 +34,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine, ConnectionConfig
+public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
 
@@ -47,7 +42,6 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _readBytes;
     private long _writtenBytes;
     private ServerConnection _connection;
-    private final UUID _qmfId;
     private final IApplicationRegistry _appRegistry;
     private long _createTime = System.currentTimeMillis();
 
@@ -57,9 +51,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     {
         super(new Assembler(conn));
         _connection = conn;
-        _connection.setConnectionConfig(this);
 
-        _qmfId = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
 
         if(network != null)
@@ -67,14 +59,6 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
             setNetworkConnection(network);
         }
 
-
-        _connection.onOpen(new Runnable()
-        {
-            public void run()
-            {
-                getConfigStore().addConfiguredObject(ProtocolEngine_0_10.this);
-            }
-        });
 
     }
 
@@ -130,70 +114,14 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         //Todo
     }
 
-    public VirtualHostConfig getVirtualHost()
-    {
-        return _connection.getVirtualHost();
-    }
-
     public String getAddress()
     {
         return getRemoteAddress().toString();
     }
 
-    public Boolean isIncoming()
-    {
-        return true;
-    }
-
-    public Boolean isSystemConnection()
-    {
-        return false;
-    }
-
-    public Boolean isFederationLink()
-    {
-        return false;
-    }
-
     public String getAuthId()
     {
         return _connection.getAuthorizedPrincipal() == null ? null : _connection.getAuthorizedPrincipal().getName();
-    }
-
-    public String getRemoteProcessName()
-    {
-        return null;
-    }
-
-    public Integer getRemotePID()
-    {
-        return null;
-    }
-
-    public Integer getRemoteParentPID()
-    {
-        return null;
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return _appRegistry.getConfigStore();
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
-    }
-
-    public ConnectionConfigType getConfigType()
-    {
-        return ConnectionConfigType.getInstance();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return getVirtualHost();
     }
 
     public boolean isDurable()
@@ -205,22 +133,11 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     public void closed()
     {
         super.closed();
-        getConfigStore().removeConfiguredObject(this);
     }
 
     public long getCreateTime()
     {
         return _createTime;
-    }
-
-    public Boolean isShadow()
-    {
-        return false;
-    }
-
-    public void mgmtClose()
-    {
-        _connection.mgmtClose();
     }
 
     public long getConnectionId()

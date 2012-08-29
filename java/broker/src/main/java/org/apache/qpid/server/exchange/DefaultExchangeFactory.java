@@ -27,7 +27,6 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.qmf.ManagementExchange;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -54,7 +53,6 @@ public class DefaultExchangeFactory implements ExchangeFactory
         registerExchangeType(TopicExchange.TYPE);
         registerExchangeType(HeadersExchange.TYPE);
         registerExchangeType(FanoutExchange.TYPE);
-        registerExchangeType(ManagementExchange.TYPE);
     }
 
     public void registerExchangeType(ExchangeType<? extends Exchange> type)
@@ -72,10 +70,6 @@ public class DefaultExchangeFactory implements ExchangeFactory
         Collection<ExchangeType<? extends Exchange>> publicTypes = 
                                 new ArrayList<ExchangeType<? extends Exchange>>();
         publicTypes.addAll(_exchangeClassMap.values());
-        
-        //Remove the ManagementExchange type if present, as these 
-        //are private and cannot be created by external means
-        publicTypes.remove(ManagementExchange.TYPE);
         
         return publicTypes;
     }

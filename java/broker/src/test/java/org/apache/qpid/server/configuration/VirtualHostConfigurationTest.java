@@ -238,12 +238,11 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         VirtualHost vhost =
                 ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
 
-        assertEquals("Default houseKeeping task count incorrect.", 2,
+        assertEquals("Default houseKeeping task count incorrect.", 1,
                      vhost.getHouseKeepingTaskCount());
 
-        // Currently the two are tasks:
-        // ExpiredMessageTask from VirtualHost
-        // UpdateTask from the QMF ManagementExchange
+        // Currently the task is:
+        // ExpiredMessageTask from VirtualHostC
     }
 
     /**

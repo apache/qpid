@@ -52,10 +52,6 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.ConnectionConfig;
-import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -82,7 +78,7 @@ import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
 
-public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSession, ConnectionConfig
+public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSession
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
@@ -143,8 +139,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private long _maxFrameSize;
     private final AtomicBoolean _closing = new AtomicBoolean(false);
-    private final UUID _qmfId;
-    private final ConfigStore _configStore;
     private long _createTime = System.currentTimeMillis();
 
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
@@ -170,9 +164,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
         _logSubject = new ConnectionLogSubject(this);
-
-        _configStore = virtualHostRegistry.getConfigStore();
-        _qmfId = _configStore.createId();
 
         _actor.message(ConnectionMessages.OPEN(null, null, null, false, false, false));
 
@@ -797,8 +788,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
                 closeAllChannels();
 
-                getConfigStore().removeConfiguredObject(this);
-
                 for (Task task : _taskList)
                 {
                     task.doTask(this);
@@ -984,7 +973,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
-        _configStore.addConfiguredObject(this);
     }
 
     public void addSessionCloseTask(Task task)
@@ -1186,30 +1174,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return null;
     }
 
-    public ConfigStore getConfigStore()
-    {
-        return _configStore;
-    }
-
-    public ConnectionConfigType getConfigType()
-    {
-        return ConnectionConfigType.getInstance();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return getVirtualHost();
-    }
-
     public boolean isDurable()
     {
         return false;
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
     }
 
     public long getConnectionId()

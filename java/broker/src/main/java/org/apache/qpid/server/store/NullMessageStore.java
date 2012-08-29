@@ -24,8 +24,6 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.federation.Bridge;
-import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.queue.AMQQueue;
 
 public abstract class NullMessageStore implements MessageStore
@@ -74,26 +72,6 @@ public abstract class NullMessageStore implements MessageStore
 
     @Override
     public void updateQueue(AMQQueue queue) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void createBridge(final Bridge bridge) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void deleteBridge(final Bridge bridge) throws AMQStoreException
     {
     }
 

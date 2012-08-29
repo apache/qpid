@@ -36,8 +36,7 @@ import org.apache.qpid.server.queue.SimpleAMQQueue;
  */
 public interface AMQSessionModel extends Comparable<AMQSessionModel>
 {
-    /** Unique session ID across entire broker*/
-    public UUID getQMFId();
+    public UUID getId();
 
     public AMQConnectionModel getConnectionModel();
 

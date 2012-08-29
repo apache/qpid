@@ -26,7 +26,6 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.ExchangeConfig;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -38,8 +37,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public interface Exchange extends ExchangeReferrer, ExchangeConfig
+public interface Exchange extends ExchangeReferrer
 {
+
+    String getName();
+
+    ExchangeType getType();
+
+    long getBindingCount();
+
+    long getByteDrops();
+
+    long getByteReceives();
+
+    long getMsgDrops();
+
+    long getMsgReceives();
 
     public interface BindingListener
     {

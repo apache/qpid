@@ -60,7 +60,6 @@ public interface VirtualHost extends ConfiguredObject
     String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "alertThresholdQueueDepthBytes";
     String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "alertThresholdQueueDepthMessages";
     String DEAD_LETTER_QUEUE_ENABLED            = "deadLetterQueueEnabled";
-    String FEDERATION_TAG                       = "federationTag";
     String HOUSEKEEPING_CHECK_PERIOD            = "housekeepingCheckPeriod";
     String MAXIMUM_DELIVERY_ATTEMPTS            = "maximumDeliveryAttempts";
     String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queueFlowControlSizeBytes";
@@ -96,7 +95,6 @@ public interface VirtualHost extends ConfiguredObject
                             SUPPORTED_EXCHANGE_TYPES,
                             SUPPORTED_QUEUE_TYPES,
                             DEAD_LETTER_QUEUE_ENABLED,
-                            FEDERATION_TAG,
                             HOUSEKEEPING_CHECK_PERIOD,
                             MAXIMUM_DELIVERY_ATTEMPTS,
                             QUEUE_FLOW_CONTROL_SIZE_BYTES,

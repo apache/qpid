@@ -23,7 +23,6 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.QueueConfig;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
@@ -39,9 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue,
-                                  QueueConfig
+public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue
 {
+    String getName();
+
     public interface NotificationListener
     {
         void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);
@@ -314,5 +314,19 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
      * Gets the free text description of this queue.
      */
     String getDescription();
+
+    long getPersistentByteDequeues();
+
+    long getPersistentMsgDequeues();
+
+    long getPersistentByteEnqueues();
+
+    long getPersistentMsgEnqueues();
+
+    long getTotalDequeueSize();
+
+    long getTotalEnqueueSize();
+
+    long getUnackedMessageCount();
 
 }
