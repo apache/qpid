@@ -47,7 +47,7 @@ public:
     void setNonblocking() const;
 
     /** Set tcp-nodelay */
-    void setTcpNoDelay(bool nodelay) const;
+    void setTcpNoDelay() const;
 
     /** Set SSL cert-name. Allows the cert-name to be set per
      * connection, overriding global cert-name settings from

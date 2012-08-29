@@ -174,7 +174,7 @@ void SslEstablished(Poller::shared_ptr poller, const qpid::sys::SslSocket& s,
     qpid::sys::ssl::SslHandler* async = new qpid::sys::ssl::SslHandler(s.getFullAddress(), f, nodict);
 
     if (tcpNoDelay) {
-        s.setTcpNoDelay(tcpNoDelay);
+        s.setTcpNoDelay();
         QPID_LOG(info, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
     }
 
