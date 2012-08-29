@@ -32,7 +32,7 @@ import org.apache.qpid.disttest.results.aggregation.ITestResult;
 /**
  * produces CSV output using the ordered enums in {@link ParticipantAttribute}
  */
-public class CSVFormater
+public class CSVFormatter
 {
     public String format(ResultsForAllTests results)
     {
@@ -66,7 +66,9 @@ public class CSVFormater
         List<Object> attributeValues = new ArrayList<Object>();
         for (ParticipantAttribute attribute : ParticipantAttribute.values())
         {
-            attributeValues.add(attributeValueMap.get(attribute));
+            Object attributeValue = attributeValueMap.get(attribute);
+            String attributeValueFormatted = attribute.format(attributeValue);
+            attributeValues.add(attributeValueFormatted);
         }
 
         String row = StringUtils.join(attributeValues.toArray(), ",");

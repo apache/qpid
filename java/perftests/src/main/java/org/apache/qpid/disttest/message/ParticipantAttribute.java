@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.disttest.message;
 
+import java.text.DecimalFormat;
+
 import org.apache.qpid.disttest.client.Participant;
 
 /**
@@ -31,6 +33,8 @@ public enum ParticipantAttribute
 {
     TEST_NAME("testName"),
     ITERATION_NUMBER("iterationNumber"),
+    THROUGHPUT("throughputKbPerS", "#"),
+    AVERAGE_LATENCY("averageLatency", "#"),
     CONFIGURED_CLIENT_NAME("clientName"),
     PARTICIPANT_NAME("participantName"),
     NUMBER_OF_MESSAGES_PROCESSED("numberOfMessages"),
@@ -52,24 +56,55 @@ public enum ParticipantAttribute
     TOTAL_NUMBER_OF_CONSUMERS("totalNumberOfConsumers"),
     TOTAL_NUMBER_OF_PRODUCERS("totalNumberOfProducers"),
     TOTAL_PAYLOAD_PROCESSED("totalPayloadProcessedB"),
-    THROUGHPUT("throughputKbPerS"),
     TIME_TAKEN("timeTakenMs"),
     ERROR_MESSAGE("errorMessage"),
     MIN_LATENCY("minLatency"),
     MAX_LATENCY("maxLatency"),
-    AVERAGE_LATENCY("averageLatency"),
     LATENCY_STANDARD_DEVIATION("latencyStandardDeviation")
     ;
 
     private String _displayName;
+    private String _decimalFormat;
 
     ParticipantAttribute(String displayName)
     {
         _displayName = displayName;
     }
 
+    ParticipantAttribute(String displayName, String decimalFormat)
+    {
+        _displayName = displayName;
+        _decimalFormat = decimalFormat;
+    }
+
+    public String getDecimalFormat()
+    {
+        return _decimalFormat;
+    }
+
     public String getDisplayName()
     {
         return _displayName;
+    }
+
+    public String format(Object attributeValue)
+    {
+        if(attributeValue == null)
+        {
+            return null;
+        }
+
+        String attributeAsString = String.valueOf(attributeValue);
+
+        if(_decimalFormat != null)
+        {
+            DecimalFormat decimalFormat = new DecimalFormat(_decimalFormat);
+            double attributeAsDoule = Double.valueOf(attributeAsString);
+            return decimalFormat.format(attributeAsDoule);
+        }
+        else
+        {
+            return attributeAsString;
+        }
     }
 }
