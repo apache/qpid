@@ -103,7 +103,6 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
                  ConnectFailedCallback failed);
 
     uint16_t getPort() const;
-    bool supports(const std::string& capability);
 
   private:
     void connectFailed(const qpid::sys::Socket&,
@@ -335,18 +334,6 @@ void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
                                         this, poller, _1, fact, true),
                             boost::bind(&SslProtocolFactory::connectFailed,
                                         this, _1, _2, _3));
-}
-
-namespace
-{
-const std::string SSL = "ssl";
-}
-
-bool SslProtocolFactory::supports(const std::string& capability)
-{
-    std::string s = capability;
-    transform(s.begin(), s.end(), s.begin(), tolower);
-    return s == SSL;
 }
 
 }}} // namespace qpid::sys::windows

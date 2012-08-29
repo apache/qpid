@@ -86,7 +86,6 @@ class SslProtocolFactoryTmpl : public ProtocolFactory {
                  boost::function2<void, int, std::string> failed);
 
     uint16_t getPort() const;
-    bool supports(const std::string& capability);
 
   private:
     void established(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*,
@@ -268,27 +267,6 @@ void SslProtocolFactoryTmpl<T>::connect(
     new SslConnector(*socket, poller, host, port,
                      boost::bind(&SslProtocolFactoryTmpl<T>::established, this, poller, _1, fact, true),
                      failed);
-}
-
-namespace
-{
-const std::string SSL = "ssl";
-}
-
-template <>
-bool SslProtocolFactory::supports(const std::string& capability)
-{
-    std::string s = capability;
-    transform(s.begin(), s.end(), s.begin(), tolower);
-    return s == SSL;
-}
-
-template <>
-bool SslMuxProtocolFactory::supports(const std::string& capability)
-{
-    std::string s = capability;
-    transform(s.begin(), s.end(), s.begin(), tolower);
-    return s == SSL || s == "tcp";
 }
 
 }} // namespace qpid::sys
