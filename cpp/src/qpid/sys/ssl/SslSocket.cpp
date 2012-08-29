@@ -52,28 +52,6 @@ namespace sys {
 namespace ssl {
 
 namespace {
-std::string getService(int fd, bool local)
-{
-    ::sockaddr_storage name; // big enough for any socket address
-    ::socklen_t namelen = sizeof(name);
-
-    int result = -1;
-    if (local) {
-        result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
-    } else {
-        result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
-    }
-
-    QPID_POSIX_CHECK(result);
-
-    char servName[NI_MAXSERV];
-    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, 0, 0,
-                                 servName, sizeof(servName),
-                                 NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-        throw QPID_POSIX_ERROR(rc);
-    return servName;
-}
-
 const std::string DOMAIN_SEPARATOR("@");
 const std::string DC_SEPARATOR(".");
 const std::string DC("DC");
@@ -101,7 +79,6 @@ std::string getDomainFromSubject(std::string subject)
     }
     return domain;
 }
-
 }
 
 SslSocket::SslSocket() : socket(0), prototype(0)
@@ -324,16 +301,6 @@ int SslSocket::read(void *buf, size_t count) const
 int SslSocket::write(const void *buf, size_t count) const
 {
     return PR_Write(socket, buf, count);
-}
-
-uint16_t SslSocket::getLocalPort() const
-{
-    return std::atoi(getService(impl->fd, true).c_str());
-}
-
-uint16_t SslSocket::getRemotePort() const
-{
-    return atoi(getService(impl->fd, true).c_str());
 }
 
 void SslSocket::setTcpNoDelay(bool nodelay) const
