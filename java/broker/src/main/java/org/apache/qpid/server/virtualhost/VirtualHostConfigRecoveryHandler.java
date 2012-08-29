@@ -35,7 +35,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -65,7 +64,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                                                         ConfigurationRecoveryHandler.QueueRecoveryHandler,
                                                         ConfigurationRecoveryHandler.ExchangeRecoveryHandler,
                                                         ConfigurationRecoveryHandler.BindingRecoveryHandler,
-                                                        ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler,
                                                         MessageStoreRecoveryHandler,
                                                         MessageStoreRecoveryHandler.StoredMessageRecoveryHandler,
                                                         TransactionLogRecoveryHandler,
@@ -187,19 +185,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     }
 
     public void completeMessageRecovery()
-    {
-    }
-
-    public BridgeRecoveryHandler brokerLink(final UUID id,
-                                            final long createTime,
-                                            final Map<String, String> arguments)
-    {
-        BrokerLink blink = _virtualHost.createBrokerConnection(id, createTime, arguments);
-        return new BridgeRecoveryHandlerImpl(blink);
-        
-    }
-
-    public void completeBrokerLinkRecovery()
     {
     }
 
@@ -412,9 +397,8 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     }
 
-    public BrokerLinkRecoveryHandler completeBindingRecovery()
+    public void completeBindingRecovery()
     {
-        return this;
     }
 
     public void complete()
@@ -529,22 +513,4 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         }
     }
 
-    private class BridgeRecoveryHandlerImpl implements BridgeRecoveryHandler
-    {
-        private final BrokerLink _blink;
-
-        public BridgeRecoveryHandlerImpl(final BrokerLink blink)
-        {
-            _blink = blink;
-        }
-
-        public void bridge(final UUID id, final long createTime, final Map<String, String> arguments)
-        {
-            _blink.createBridge(id, createTime, arguments);
-        }
-
-        public void completeBridgeRecoveryForLink()
-        {
-        }
-    }
 }

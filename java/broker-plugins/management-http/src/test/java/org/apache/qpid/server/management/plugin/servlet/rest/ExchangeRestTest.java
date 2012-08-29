@@ -44,7 +44,7 @@ public class ExchangeRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange/test");
         assertNotNull("Users cannot be null", exchanges);
-        assertEquals("Unexpected number of exchanges", 6, EXPECTED_EXCHANGES.length);
+        assertEquals("Unexpected number of exchanges", exchanges.size(), EXPECTED_EXCHANGES.length);
         for (String exchangeName : EXPECTED_EXCHANGES)
         {
             Map<String, Object> exchange = getRestTestHelper().find(Exchange.NAME, exchangeName, exchanges);

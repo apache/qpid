@@ -24,11 +24,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.configuration.SubscriptionConfig;
-import org.apache.qpid.server.configuration.SubscriptionConfigType;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.flow.CreditCreditManager;
@@ -86,7 +81,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, SubscriptionConfig, LogSubject
+public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, LogSubject
 {
     private final long _subscriptionID;
 
@@ -125,7 +120,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private LogActor _logActor;
     private final Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
-    private UUID _qmfId;
     private String _traceExclude;
     private String _trace;
     private final long _createTime = System.currentTimeMillis();
@@ -192,8 +186,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         Map<String, Object> arguments = queue.getArguments();
         _traceExclude = (String) arguments.get("qpid.trace.exclude");
         _trace = (String) arguments.get("qpid.trace.id");
-        _qmfId = getConfigStore().createId();
-        getConfigStore().addConfiguredObject(this);
         String filterLogString = null;
 
         _logActor = GenericActor.getInstance(this);
@@ -283,7 +275,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 }
             }
             _creditManager.removeListener(this);
-            getConfigStore().removeConfiguredObject(this);
             CurrentActor.get().message(getLogSubject(), SubscriptionMessages.CLOSE());
         }
         finally
@@ -293,11 +284,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
 
 
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return getQueue().getConfigStore();
     }
 
     public Long getDelivered()
@@ -970,12 +956,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _session;
     }
 
-
-    public SessionConfig getSessionConfig()
-    {
-        return getSessionModel();
-    }
-
     public boolean isBrowsing()
     {
         return _acquireMode == MessageAcquireMode.NOT_ACQUIRED;
@@ -986,20 +966,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return getQueue().hasExclusiveSubscriber();
     }
 
-    public ConfiguredObject getParent()
-    {
-        return getSessionConfig();
-    }
-
     public boolean isDurable()
     {
         return false;
     }
 
-    public SubscriptionConfigType getConfigType()
-    {
-        return SubscriptionConfigType.getInstance();
-    }
 
     public boolean isExplicitAcknowledge()
     {
@@ -1009,12 +980,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public String getCreditMode()
     {
         return _flowMode.toString();
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
     }
 
     public String getName()

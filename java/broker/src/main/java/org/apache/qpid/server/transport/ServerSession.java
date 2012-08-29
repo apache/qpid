@@ -44,11 +44,6 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.TransactionTimeoutHelper;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.ConnectionConfig;
-import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.configuration.SessionConfigType;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -91,7 +86,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_F
 import static org.apache.qpid.util.Serial.gt;
 
 public class ServerSession extends Session
-        implements AuthorizationHolder, SessionConfig,
+        implements AuthorizationHolder,
                    AMQSessionModel, LogSubject, AsyncAutoCommitTransaction.FutureRecorder
 {
     private static final Logger _logger = LoggerFactory.getLogger(ServerSession.class);
@@ -100,8 +95,7 @@ public class ServerSession extends Session
     private static final int PRODUCER_CREDIT_TOPUP_THRESHOLD = 1 << 30;
     private static final int UNFINISHED_COMMAND_QUEUE_THRESHOLD = 500;
 
-    private final UUID _id;
-    private ConnectionConfig _connectionConfig;
+    private final UUID _id = UUID.randomUUID();
     private long _createTime = System.currentTimeMillis();
     private LogActor _actor = GenericActor.getInstance(this);
 
@@ -147,19 +141,12 @@ public class ServerSession extends Session
 
     private final TransactionTimeoutHelper _transactionTimeoutHelper;
 
-    ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
-    {
-        this(connection, delegate, name, expiry, ((ServerConnection)connection).getConfig());
-    }
 
-    public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
+    public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         super(connection, delegate, name, expiry);
-        _connectionConfig = connConfig;
         _transaction = new AsyncAutoCommitTransaction(this.getMessageStore(),this);
         _logSubject = new ChannelLogSubject(this);
-        _id = getConfigStore().createId();
-        getConfigStore().addConfiguredObject(this);
 
         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject);
     }
@@ -183,12 +170,6 @@ public class ServerSession extends Session
         invoke(new MessageSetFlowMode("", MessageFlowMode.CREDIT));
         invoke(new MessageStop(""));
     }
-
-    private ConfigStore getConfigStore()
-    {
-        return getConnectionConfig().getConfigStore();
-    }
-
 
     @Override
     protected boolean isFull(int id)
@@ -388,8 +369,6 @@ public class ServerSession extends Session
             listener.onRelease(true);
         }
         _messageDispositionListenerMap.clear();
-
-        getConfigStore().removeConfiguredObject(this);
 
         for (Task task : _taskList)
         {
@@ -682,23 +661,7 @@ public class ServerSession extends Session
 
     public VirtualHost getVirtualHost()
     {
-        return (VirtualHost) _connectionConfig.getVirtualHost();
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _id;
-    }
-
-    public SessionConfigType getConfigType()
-    {
-        return SessionConfigType.getInstance();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return getVirtualHost();
+        return getConnection().getVirtualHost();
     }
 
     public boolean isDurable()
@@ -706,44 +669,16 @@ public class ServerSession extends Session
         return false;
     }
 
-    public boolean isAttached()
-    {
-        return true;
-    }
-
-    public long getDetachedLifespan()
-    {
-        return 0;
-    }
-
-    public Long getExpiryTime()
-    {
-        return null;
-    }
-
-    public Long getMaxClientRate()
-    {
-        return null;
-    }
-
-    public ConnectionConfig getConnectionConfig()
-    {
-        return _connectionConfig;
-    }
-
-    public String getSessionName()
-    {
-        return getName().toString();
-    }
 
     public long getCreateTime()
     {
         return _createTime;
     }
 
-    public void mgmtClose()
+    @Override
+    public UUID getId()
     {
-        close();
+        return _id;
     }
 
     public AMQConnectionModel getConnectionModel()
@@ -878,9 +813,7 @@ public class ServerSession extends Session
                             ? getConnection().getConnectionId()
                             : -1;
 
-        String remoteAddress = _connectionConfig instanceof ProtocolEngine
-                                ? ((ProtocolEngine) _connectionConfig).getRemoteAddress().toString()
-                                : "";
+        String remoteAddress = String.valueOf(getConnection().getRemoteAddress());
         return "[" +
                MessageFormat.format(CHANNEL_FORMAT,
                                     connectionId,
@@ -1065,14 +998,16 @@ public class ServerSession extends Session
         super.setClose(close);
     }
 
-    public int compareTo(AMQSessionModel session)
-    {
-        return getQMFId().compareTo(session.getQMFId());
-    }
-
     @Override
     public int getConsumerCount()
     {
         return _subscriptions.values().size();
     }
+
+    @Override
+    public int compareTo(AMQSessionModel o)
+    {
+        return getId().compareTo(o.getId());
+    }
+
 }

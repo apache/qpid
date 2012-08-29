@@ -48,7 +48,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/virtualhost/");
         assertNotNull("Hosts data cannot be null", hosts);
-        assertEquals("Unexpected number of hosts", 3, hosts.size());
+        assertEquals("Unexpected number of hosts", EXPECTED_HOSTS.length, hosts.size());
         for (String hostName : EXPECTED_HOSTS)
         {
             Map<String, Object> host = getRestTestHelper().find("name", hostName, hosts);
@@ -67,15 +67,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) hostDetails.get(Asserts.STATISTICS_ATTRIBUTE);
-        assertEquals("Unexpected number of exchanges in statistics", 6, statistics.get(VirtualHost.EXCHANGE_COUNT));
-        assertEquals("Unexpected number of queues in statistics", 2, statistics.get(VirtualHost.QUEUE_COUNT));
+        assertEquals("Unexpected number of exchanges in statistics", EXPECTED_EXCHANGES.length, statistics.get(VirtualHost.EXCHANGE_COUNT));
+        assertEquals("Unexpected number of queues in statistics", EXPECTED_QUEUES.length, statistics.get(VirtualHost.QUEUE_COUNT));
         assertEquals("Unexpected number of connections in statistics", 1, statistics.get(VirtualHost.CONNECTION_COUNT));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_EXCHANGES_ATTRIBUTE);
-        assertEquals("Unexpected number of exchanges", 6, exchanges.size());
+        assertEquals("Unexpected number of exchanges", EXPECTED_EXCHANGES.length, exchanges.size());
         Asserts.assertDurableExchange("amq.fanout", "fanout", getRestTestHelper().find(Exchange.NAME, "amq.fanout", exchanges));
-        Asserts.assertDurableExchange("qpid.management", "management", getRestTestHelper().find(Exchange.NAME, "qpid.management", exchanges));
         Asserts.assertDurableExchange("amq.topic", "topic", getRestTestHelper().find(Exchange.NAME, "amq.topic", exchanges));
         Asserts.assertDurableExchange("amq.direct", "direct", getRestTestHelper().find(Exchange.NAME, "amq.direct", exchanges));
         Asserts.assertDurableExchange("amq.match", "headers", getRestTestHelper().find(Exchange.NAME, "amq.match", exchanges));
@@ -83,7 +82,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_QUEUES_ATTRIBUTE);
-        assertEquals("Unexpected number of queues", 2, queues.size());
+        assertEquals("Unexpected number of queues", EXPECTED_QUEUES.length, queues.size());
         Map<String, Object> queue = getRestTestHelper().find(Queue.NAME,  "queue", queues);
         Map<String, Object> ping = getRestTestHelper().find(Queue.NAME, "ping", queues);
         Asserts.assertQueue("queue", "standard", queue);

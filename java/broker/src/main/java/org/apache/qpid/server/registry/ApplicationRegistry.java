@@ -27,13 +27,8 @@ import org.osgi.framework.BundleContext;
 
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.qmf.QMFService;
-import org.apache.qpid.server.configuration.BrokerConfig;
-import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.SystemConfig;
-import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.BrokerActor;
@@ -97,15 +92,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private CompositeStartupMessageLogger _startupMessageLogger;
 
-    private UUID _brokerId = UUID.randomUUID();
-
-    private QMFService _qmfService;
-
-    private BrokerConfig _brokerConfig;
-
     private Broker _broker;
-
-    private ConfigStore _configStore;
 
     private Timer _reportingTimer;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
@@ -164,21 +151,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _startupMessageLogger = startupMessageLogger;
     }
 
-    protected void setBrokerId(UUID brokerId)
-    {
-        _brokerId = brokerId;
-    }
-
-    protected QMFService getQmfService()
-    {
-        return _qmfService;
-    }
-
-    protected void setQmfService(QMFService qmfService)
-    {
-        _qmfService = qmfService;
-    }
-
     public static void initialise(IApplicationRegistry instance) throws Exception
     {
         if(instance == null)
@@ -194,16 +166,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _logger.info("Initialising Application Registry(" + instance + ")");
 
 
-        final ConfigStore store = ConfigStore.newInstance();
-        store.setRoot(new SystemConfigImpl(store));
-        instance.setConfigStore(store);
-
-        final BrokerConfig brokerConfig = new BrokerConfigAdapter(instance);
-
-        final SystemConfig system = store.getRoot();
-        system.addBroker(brokerConfig);
-        instance.setBrokerConfig(brokerConfig);
-
         try
         {
             instance.initialise();
@@ -213,27 +175,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _instance.set(null);
 
             //remove the Broker instance, then re-throw
-            try
-            {
-                system.removeBroker(brokerConfig);
-            }
-            catch(Throwable t)
-            {
-                //ignore
-            }
 
             throw e;
         }
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return _configStore;
-    }
-
-    public void setConfigStore(final ConfigStore configStore)
-    {
-        _configStore = configStore;
     }
 
     public static boolean isConfigured()
@@ -318,8 +262,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _broker = new BrokerAdapter(this);
 
             configure();
-
-            _qmfService = new QMFService(getConfigStore(), this);
 
             logStartupMessages(CurrentActor.get());
 
@@ -534,15 +476,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             close(_authenticationManagerRegistry);
 
-            close(_qmfService);
-
             close(_pluginManager);
-
-            BrokerConfig broker = getBrokerConfig();
-            if(broker != null)
-            {
-                broker.getSystem().removeBroker(broker);
-            }
 
             CurrentActor.get().message(BrokerMessages.STOPPED());
         }
@@ -656,29 +590,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public UUID getBrokerId()
     {
-        return _brokerId;
-    }
-
-    public QMFService getQMFService()
-    {
-        return _qmfService;
-    }
-
-    public BrokerConfig getBrokerConfig()
-    {
-        return _brokerConfig;
-    }
-
-    public void setBrokerConfig(final BrokerConfig broker)
-    {
-        _brokerConfig = broker;
+        return getBroker().getId();
     }
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
         VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
-        getBrokerConfig().addVirtualHost(virtualHost);
         return virtualHost;
     }
 

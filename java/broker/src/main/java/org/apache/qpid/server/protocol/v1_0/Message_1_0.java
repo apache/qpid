@@ -25,7 +25,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageMetaData_1_0;
 import org.apache.qpid.server.message.MessageReference;
@@ -134,11 +133,6 @@ public class Message_1_0 implements ServerMessage, InboundMessage
         buf.limit(getContent(buf, offset));
 
         return buf;
-    }
-
-    public SessionConfig getSessionConfig()
-    {
-        return null;  //TODO
     }
 
     public List<ByteBuffer> getFragments()

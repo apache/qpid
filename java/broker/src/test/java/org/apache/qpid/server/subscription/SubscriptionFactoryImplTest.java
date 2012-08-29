@@ -71,10 +71,9 @@ public class SubscriptionFactoryImplTest extends InternalBrokerBaseCase
         ServerConnection conn = new ServerConnection(1);
         ProtocolEngine_0_10 engine = new ProtocolEngine_0_10(conn, new TestNetworkConnection(), getRegistry());
         conn.setVirtualHost(getVirtualHost());
-        conn.setConnectionConfig(engine);
         ServerSessionDelegate sesDel = new ServerSessionDelegate();
         Binary name = new Binary(new byte[]{new Byte("1")});
-        ServerSession session = new ServerSession(conn, sesDel, name, 0, engine);
+        ServerSession session = new ServerSession(conn, sesDel, name, 0);
 
         Subscription sub_0_10 = SubscriptionFactoryImpl.INSTANCE.createSubscription(session, "1", MessageAcceptMode.EXPLICIT,
                 MessageAcquireMode.PRE_ACQUIRED, MessageFlowMode.WINDOW, new WindowCreditManager(), null, null);

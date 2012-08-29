@@ -294,17 +294,12 @@ public class MockSubscription implements Subscription
 
     private static class MockSessionModel implements AMQSessionModel
     {
+        private final UUID _id = UUID.randomUUID();
 
         @Override
-        public int compareTo(AMQSessionModel o)
+        public UUID getId()
         {
-            return 0;
-        }
-
-        @Override
-        public UUID getQMFId()
-        {
-            return null;
+            return _id;
         }
 
         @Override
@@ -408,6 +403,12 @@ public class MockSubscription implements Subscription
         public int getConsumerCount()
         {
             return 0;
+        }
+
+        @Override
+        public int compareTo(AMQSessionModel o)
+        {
+            return getId().compareTo(o.getId());
         }
     }
 

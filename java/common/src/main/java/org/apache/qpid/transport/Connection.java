@@ -74,7 +74,6 @@ public class Connection extends ConnectionInvoker
     public static final int MAX_CHANNEL_MAX = 0xFFFF;
     public static final int MIN_USABLE_CHANNEL_NUM = 0;
 
-
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
     static class DefaultConnectionListener implements ConnectionListener
@@ -233,8 +232,8 @@ public class Connection extends ConnectionInvoker
             }
 
             NetworkConnection network = transport.connect(settings, secureReceiver, null);
-            _remoteAddress = network.getRemoteAddress();
-            _localAddress = network.getLocalAddress();
+            setRemoteAddress(network.getRemoteAddress());
+            setLocalAddress(network.getLocalAddress());
 
             final Sender<ByteBuffer> secureSender = securityLayer.sender(network.getSender());
             if(secureSender instanceof ConnectionListener)
@@ -727,6 +726,17 @@ public class Connection extends ConnectionInvoker
     {
         return _localAddress;
     }
+
+    protected void setRemoteAddress(SocketAddress remoteAddress)
+    {
+        _remoteAddress = remoteAddress;
+    }
+
+    protected void setLocalAddress(SocketAddress localAddress)
+    {
+        _localAddress = localAddress;
+    }
+
 
     private void invokeSessionDetached(int channel, SessionDetachCode sessionDetachCode)
     {

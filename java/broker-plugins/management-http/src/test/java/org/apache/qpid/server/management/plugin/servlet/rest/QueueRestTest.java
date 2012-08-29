@@ -131,7 +131,7 @@ public class QueueRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName();
         String bindingName = queueName + 2;
-        String[] exchanges = { "amq.direct", "amq.fanout", "amq.topic", "amq.match", "qpid.management", "<<default>>" };
+        String[] exchanges = { "amq.direct", "amq.fanout", "amq.topic", "amq.match", "<<default>>" };
 
         for (int i = 0; i < exchanges.length; i++)
         {
