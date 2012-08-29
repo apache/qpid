@@ -35,12 +35,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.BindingFactory;
-import org.apache.qpid.server.configuration.BrokerConfig;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfigType;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
@@ -49,7 +45,6 @@ import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -79,23 +74,17 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
-    private final UUID _qmfId;
-
     private final String _name;
 
     private final UUID _id;
 
     private final long _createTime = System.currentTimeMillis();
 
-    private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
-
     private final ScheduledThreadPoolExecutor _houseKeepingTasks;
 
     private final IApplicationRegistry _appRegistry;
 
     private final SecurityManager _securityManager;
-
-    private final BrokerConfig _brokerConfig;
 
     private final VirtualHostConfiguration _vhostConfig;
 
@@ -133,12 +122,10 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
 
         _appRegistry = appRegistry;
-        _brokerConfig = _appRegistry.getBrokerConfig();
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
 
-        _qmfId = _appRegistry.getConfigStore().createId();
         _id = UUIDGenerator.generateVhostUUID(_name);
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
@@ -185,22 +172,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     public UUID getId()
     {
         return _id;
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
-    }
-
-    public VirtualHostConfigType getConfigType()
-    {
-        return VirtualHostConfigType.getInstance();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return getBroker();
     }
 
     public boolean isDurable()
@@ -468,16 +439,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         return _name;
     }
 
-    public BrokerConfig getBroker()
-    {
-        return _brokerConfig;
-    }
-
-    public String getFederationTag()
-    {
-        return _brokerConfig.getFederationTag();
-    }
-
     public long getCreateTime()
     {
         return _createTime;
@@ -604,51 +565,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _dataReceived = new StatisticsCounter("bytes-received-" + getName());
     }
 
-    public BrokerLink createBrokerConnection(UUID id, long createTime, Map<String,String> arguments)
-    {
-        BrokerLink blink = new BrokerLink(this, id, createTime, arguments);
-        // TODO - cope with duplicate broker link creation requests
-        _links.putIfAbsent(blink,blink);
-        getConfigStore().addConfiguredObject(blink);
-        return blink;
-    }
-
-    public void createBrokerConnection(final String transport,
-                                       final String host,
-                                       final int port,
-                                       final String vhost,
-                                       final boolean durable,
-                                       final String authMechanism,
-                                       final String username,
-                                       final String password)
-    {
-        BrokerLink blink = new BrokerLink(this, transport, host, port, vhost, durable, authMechanism, username, password);
-
-        // TODO - cope with duplicate broker link creation requests
-        _links.putIfAbsent(blink,blink);
-        getConfigStore().addConfiguredObject(blink);
-
-    }
-
-    public void removeBrokerConnection(final String transport,
-                                       final String host,
-                                       final int port,
-                                       final String vhost)
-    {
-        removeBrokerConnection(new BrokerLink(this, transport, host, port, vhost, false, null,null,null));
-
-    }
-
-    public void removeBrokerConnection(BrokerLink blink)
-    {
-        blink = _links.get(blink);
-        if(blink != null)
-        {
-            blink.close();
-            getConfigStore().removeConfiguredObject(blink);
-        }
-    }
-
     public synchronized LinkRegistry getLinkRegistry(String remoteContainerId)
     {
         LinkRegistry linkRegistry = _linkRegistry.get(remoteContainerId);
@@ -658,11 +574,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             _linkRegistry.put(remoteContainerId, linkRegistry);
         }
         return linkRegistry;
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return getApplicationRegistry().getConfigStore();
     }
 
     public DtxRegistry getDtxRegistry()

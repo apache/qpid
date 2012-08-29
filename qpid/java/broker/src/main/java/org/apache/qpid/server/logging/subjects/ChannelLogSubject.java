@@ -76,7 +76,7 @@ public class ChannelLogSubject extends AbstractLogSubject
             setLogStringWithFormat(CHANNEL_FORMAT,
                                    connection == null ? -1L : connection.getConnectionId(),
                                    session.getAuthorizedPrincipal() == null ? "?" : session.getAuthorizedPrincipal().getName(),
-                                   (connection == null || connection.getConfig() == null) ? "?" : connection.getConfig().getAddress(),
+                                   (connection == null || connection.getRemoteAddressString() == null) ? "?" : connection.getRemoteAddressString(),
                                    session.getVirtualHost().getName(),
                                    session.getChannel());
         }

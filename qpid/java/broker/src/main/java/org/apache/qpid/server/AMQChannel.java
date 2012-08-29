@@ -53,11 +53,6 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.ConnectionConfig;
-import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.configuration.SessionConfigType;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
@@ -97,7 +92,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TransportException;
 
-public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoCommitTransaction.FutureRecorder
+public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.FutureRecorder
 {
     public static final int DEFAULT_PREFETCH = 4096;
 
@@ -169,12 +164,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     private List<QueueEntry> _resendList = new ArrayList<QueueEntry>();
     private static final
     AMQShortString IMMEDIATE_DELIVERY_REPLY_TEXT = new AMQShortString("Immediate delivery is not possible.");
-    private final UUID _qmfId;
     private long _createTime = System.currentTimeMillis();
 
     private final ClientDeliveryMethod _clientDeliveryMethod;
 
     private final TransactionTimeoutHelper _transactionTimeoutHelper;
+    private final UUID _id = UUID.randomUUID();
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
@@ -184,10 +179,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
         _actor = new AMQPChannelActor(this, session.getLogActor().getRootMessageLogger());
         _logSubject = new ChannelLogSubject(this);
-        _qmfId = getConfigStore().createId();
         _actor.message(ChannelMessages.CREATE());
-
-        getConfigStore().addConfiguredObject(this);
 
         _messageStore = messageStore;
 
@@ -197,11 +189,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
          _clientDeliveryMethod = session.createDeliveryMethod(_channelId);
 
          _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject);
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return getVirtualHost().getConfigStore();
     }
 
     /** Sets this channel to be part of a local transaction */
@@ -556,9 +543,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         {
             _logger.error("Caught TransportException whilst attempting to requeue:" + e);
         }
-
-        getConfigStore().removeConfiguredObject(this);
-
     }
 
     private void unsubscribeAllConsumers() throws AMQException
@@ -1153,6 +1137,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
 
     }
 
+    @Override
+    public UUID getId()
+    {
+        return _id;
+    }
+
     public AMQConnectionModel getConnectionModel()
     {
         return _session;
@@ -1166,6 +1156,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
     public LogSubject getLogSubject()
     {
         return _logSubject;
+    }
+
+    @Override
+    public int compareTo(AMQSessionModel o)
+    {
+        return getId().compareTo(o.getId());
     }
 
     private class MessageDeliveryAction implements ServerTransaction.Action
@@ -1469,61 +1465,14 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         return getProtocolSession().getVirtualHost();
     }
 
-
-    public ConfiguredObject getParent()
-    {
-        return getVirtualHost();
-    }
-
-    public SessionConfigType getConfigType()
-    {
-        return SessionConfigType.getInstance();
-    }
-
     public int getChannel()
     {
         return getChannelId();
     }
 
-    public boolean isAttached()
-    {
-        return true;
-    }
-
-    public long getDetachedLifespan()
-    {
-        return 0;
-    }
-
-    public ConnectionConfig getConnectionConfig()
-    {
-        return (AMQProtocolEngine)getProtocolSession();
-    }
-
-    public Long getExpiryTime()
-    {
-        return null;
-    }
-
-    public Long getMaxClientRate()
-    {
-        return null;
-    }
-
     public boolean isDurable()
     {
         return false;
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
-    }
-
-    public String getSessionName()
-    {
-        return getConnectionConfig().getAddress() + "/" + getChannelId();
     }
 
     public long getCreateTime()
@@ -1681,10 +1630,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel, AsyncAutoComm
         }
     }
 
-    public int compareTo(AMQSessionModel session)
-    {
-        return getQMFId().compareTo(session.getQMFId());
-    }
 
     @Override
     public int getConsumerCount()

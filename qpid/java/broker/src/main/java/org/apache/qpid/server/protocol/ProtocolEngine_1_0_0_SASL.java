@@ -40,8 +40,6 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -53,7 +51,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 {
        private long _readBytes;
        private long _writtenBytes;
-       private final UUID _id;
        private final IApplicationRegistry _appRegistry;
        private long _createTime = System.currentTimeMillis();
        private ConnectionEndpoint _conn;
@@ -116,7 +113,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry,
                                      long id)
     {
-        _id = appRegistry.getConfigStore().createId();
         _connectionId = id;
         _appRegistry = appRegistry;
 
@@ -214,22 +210,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     public String getAddress()
     {
         return getRemoteAddress().toString();
-    }
-
-
-    public ConfigStore getConfigStore()
-    {
-        return _appRegistry.getConfigStore();
-    }
-
-    public UUID getId()
-    {
-        return _id;
-    }
-
-    public ConnectionConfigType getConfigType()
-    {
-        return ConnectionConfigType.getInstance();
     }
 
     public boolean isDurable()

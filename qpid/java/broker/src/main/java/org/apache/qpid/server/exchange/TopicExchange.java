@@ -291,7 +291,7 @@ public class TopicExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
     {
-        Binding binding = new Binding(null, null, routingKey.toString(), queue, this, FieldTable.convertToMap(arguments));
+        Binding binding = new Binding(null, routingKey.toString(), queue, this, FieldTable.convertToMap(arguments));
         
         if (arguments == null)
         {
@@ -314,7 +314,7 @@ public class TopicExchange extends AbstractExchange
 
     public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
     {
-        Binding binding = new Binding(null, null, bindingKey, queue, this, arguments);
+        Binding binding = new Binding(null, bindingKey, queue, this, arguments);
         if (arguments == null)
         {
             return _bindings.containsKey(binding);

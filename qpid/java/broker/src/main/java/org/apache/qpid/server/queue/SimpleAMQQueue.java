@@ -41,9 +41,6 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.QueueConfigType;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
@@ -185,7 +182,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
-    private UUID _qmfId;
     private ConfigurationPlugin _queueConfiguration;
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
@@ -243,7 +239,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         _arguments = arguments == null ? new HashMap<String, Object>() : new HashMap<String, Object>(arguments);
 
         _id = id;
-        _qmfId = getConfigStore().createId();
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
         _logSubject = new QueueLogSubject(this);
@@ -258,8 +253,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                                                          autoDelete,
                                                          durable, !durable,
                                                          _entries.getPriorities() > 0));
-
-        getConfigStore().addConfiguredObject(this);
 
         if(arguments != null && arguments.containsKey(QPID_GROUP_HEADER_KEY))
         {
@@ -329,22 +322,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public UUID getId()
     {
         return _id;
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
-    }
-
-    public QueueConfigType getConfigType()
-    {
-        return QueueConfigType.getInstance();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return getVirtualHost();
     }
 
     public boolean isDurable()
@@ -1383,7 +1360,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             }
 
             _virtualHost.getQueueRegistry().unregisterQueue(_name);
-            getConfigStore().removeConfiguredObject(this);
 
             List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
             {
@@ -2187,11 +2163,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public ConfigurationPlugin getConfiguration()
     {
         return _queueConfiguration;
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return getVirtualHost().getConfigStore();
     }
 
     public long getMessageDequeueCount()

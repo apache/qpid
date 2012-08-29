@@ -27,11 +27,6 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.configuration.SubscriptionConfig;
-import org.apache.qpid.server.configuration.SubscriptionConfigType;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager;
@@ -61,8 +56,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Encapsulation of a supscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
  * that was given out by the broker and the channel id. <p/>
  */
-public abstract class SubscriptionImpl implements Subscription, FlowCreditManager.FlowCreditManagerListener,
-                                                  SubscriptionConfig
+public abstract class SubscriptionImpl implements Subscription, FlowCreditManager.FlowCreditManagerListener
 {
 
     private StateListener _stateListener = new StateListener()
@@ -91,7 +85,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final long _subscriptionID;
     private LogSubject _logSubject;
     private LogActor _logActor;
-    private UUID _qmfId;
     private final AtomicLong _deliveredCount = new AtomicLong(0);
     private final AtomicLong _deliveredBytes = new AtomicLong(0);
 
@@ -373,11 +366,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _channel;
     }
 
-    public ConfigStore getConfigStore()
-    {
-        return getQueue().getConfigStore();
-    }
-
     public Long getDelivered()
     {
         return _deliveredCount.get();
@@ -390,9 +378,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
-
-        _qmfId = getConfigStore().createId();
-        getConfigStore().addConfiguredObject(this);
 
         _logSubject = new SubscriptionLogSubject(this);
         _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
@@ -547,8 +532,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         {
             _stateChangeLock.unlock();
         }
-        getConfigStore().removeConfiguredObject(this);
-
         //Log Subscription closed
         CurrentActor.get().message(_logSubject, SubscriptionMessages.CLOSE());
     }
@@ -752,11 +735,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return "WINDOW";
     }
 
-    public SessionConfig getSessionConfig()
-    {
-        return getChannel();
-    }
-
     public boolean isBrowsing()
     {
         return isBrowser();
@@ -767,30 +745,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return true;
     }
 
-    @Override
-    public UUID getQMFId()
-    {
-        return _qmfId;
-    }
-
     public boolean isDurable()
     {
         return false;
     }
 
-    public SubscriptionConfigType getConfigType()
-    {
-        return SubscriptionConfigType.getInstance();
-    }
-
     public boolean isExclusive()
     {
         return getQueue().hasExclusiveSubscriber();
-    }
-
-    public ConfiguredObject getParent()
-    {
-        return getSessionConfig();
     }
 
     public String getName()

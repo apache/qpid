@@ -65,7 +65,7 @@ public class Asserts
         @SuppressWarnings("unchecked")
         Collection<String> exchangeTypes = (Collection<String>) virtualHost.get(VirtualHost.SUPPORTED_EXCHANGE_TYPES);
         assertEquals("Unexpected value of attribute " + VirtualHost.SUPPORTED_EXCHANGE_TYPES,
-                new HashSet<String>(Arrays.asList("headers", "topic", "direct", "fanout", "management")),
+                new HashSet<String>(Arrays.asList("headers", "topic", "direct", "fanout")),
                 new HashSet<String>(exchangeTypes));
 
         @SuppressWarnings("unchecked")

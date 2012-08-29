@@ -35,13 +35,15 @@ public class Binding
     private final Exchange _exchange;
     private final Map<String, Object> _arguments;
     private final UUID _id;
-    private final UUID _qmfId;
     private final AtomicLong _matches = new AtomicLong();
 
-    public Binding(UUID id, UUID qmfId, final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
+    public Binding(UUID id,
+                   final String bindingKey,
+                   final AMQQueue queue,
+                   final Exchange exchange,
+                   final Map<String, Object> arguments)
     {
         _id = id;
-        _qmfId = qmfId;
         _bindingKey = bindingKey;
         _queue = queue;
         _exchange = exchange;
@@ -51,11 +53,6 @@ public class Binding
     public UUID getId()
     {
         return _id;
-    }
-
-    public UUID getQMFId()
-    {
-        return _qmfId;
     }
 
     public String getBindingKey()

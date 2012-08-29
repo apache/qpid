@@ -21,7 +21,6 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -109,11 +108,6 @@ public class VirtualHostRegistry implements Closeable
     public ApplicationRegistry getApplicationRegistry()
     {
         return _applicationRegistry;
-    }
-
-    public ConfigStore getConfigStore()
-    {
-        return _applicationRegistry.getConfigStore();
     }
 
     public void close()

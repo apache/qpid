@@ -456,8 +456,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     {
     }
 
+
     @Override
-    public UUID getQMFId()
+    public UUID getId()
     {
         return _id;
     }
@@ -580,13 +581,6 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
         return 0;
     }
 
-    @Override
-    public int compareTo(AMQSessionModel o)
-    {
-        return getQMFId().compareTo(o.getQMFId());
-    }
-
-
 
     public String toLogString()
     {
@@ -604,4 +598,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
             + "] ";
     }
 
+    @Override
+    public int compareTo(AMQSessionModel o)
+    {
+        return getId().compareTo(o.getId());
+    }
 }

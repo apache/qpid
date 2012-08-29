@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,13 +15,9 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package org.apache.qpid.server.transport;
 
-import java.util.UUID;
-
-import org.apache.qpid.server.configuration.MockConnectionConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -43,25 +38,19 @@ public class ServerSessionTest extends InternalBrokerBaseCase
     public void testCompareTo() throws Exception
     {
         ServerConnection connection = new ServerConnection(1);
-        connection.setConnectionConfig(createConnectionConfig());
+        connection.setVirtualHost(_virtualHost);
         ServerSession session1 = new ServerSession(connection, new ServerSessionDelegate(),
-                new Binary(getName().getBytes()), 0 , connection.getConfig());
+                new Binary(getName().getBytes()), 0);
 
         // create a session with the same name but on a different connection
         ServerConnection connection2 = new ServerConnection(2);
-        connection2.setConnectionConfig(createConnectionConfig());
+        connection2.setVirtualHost(_virtualHost);
         ServerSession session2 = new ServerSession(connection2, new ServerSessionDelegate(),
-                new Binary(getName().getBytes()), 0 , connection2.getConfig());
+                new Binary(getName().getBytes()), 0);
 
         assertFalse("Unexpected compare result", session1.compareTo(session2) == 0);
         assertEquals("Unexpected compare result", 0, session1.compareTo(session1));
     }
 
-    private MockConnectionConfig createConnectionConfig()
-    {
-        return new MockConnectionConfig(UUID.randomUUID(), null, null,
-                false, 1, _virtualHost, "address", Boolean.TRUE, Boolean.TRUE, Boolean.TRUE,
-                "authid", "remoteProcessName", new Integer(1967), new Integer(1970), _virtualHost.getConfigStore(), Boolean.FALSE);
-    }
 
 }
