@@ -29,10 +29,10 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 {
     public void testManagementStartup()
     {
-        _logMessage = ManagementConsoleMessages.STARTUP();
+        _logMessage = ManagementConsoleMessages.STARTUP("My");
         List<Object> log = performLog();
 
-        String[] expected = {"Startup"};
+        String[] expected = {"My Management Startup"};
 
         validateLogMessage(log, "MNG-1001", expected);
     }
@@ -65,29 +65,20 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 
     public void testManagementReady()
     {
-        _logMessage = ManagementConsoleMessages.READY(false);
+        _logMessage = ManagementConsoleMessages.READY("My");
         List<Object> log = performLog();
 
-        String[] expected = {"Ready"};
-
-        validateLogMessage(log, "MNG-1004", expected);
-        
-        _logger.clearLogMessages();
-        
-        _logMessage = ManagementConsoleMessages.READY(true);
-        log = performLog();
-
-        expected = new String[]{"Ready : Using the platform JMX Agent"};
+        String[] expected = {"My Management Ready"};
 
         validateLogMessage(log, "MNG-1004", expected);
     }
 
     public void testManagementStopped()
     {
-        _logMessage = ManagementConsoleMessages.STOPPED();
+        _logMessage = ManagementConsoleMessages.STOPPED("My");
         List<Object> log = performLog();
 
-        String[] expected = {"Stopped"};
+        String[] expected = {"My Management Stopped"};
 
         validateLogMessage(log, "MNG-1005", expected);
     }

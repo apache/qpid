@@ -79,6 +79,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
     private static final Logger _log = Logger.getLogger(JMXManagedObjectRegistry.class);
 
+    private static final String OPERATIONAL_LOGGING_NAME = "JMX";
+
     private final MBeanServer _mbeanServer;
     private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
@@ -108,12 +110,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     public void start() throws IOException, ConfigurationException
     {
 
-        CurrentActor.get().message(ManagementConsoleMessages.STARTUP());
+        CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
         //check if system properties are set to use the JVM's out-of-the-box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
         {
-            CurrentActor.get().message(ManagementConsoleMessages.READY(true));
+            CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
             return;
         }
 
@@ -359,7 +361,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         String connectorServer = (sslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
         CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, _jmxPortConnectorServer));
 
-        CurrentActor.get().message(ManagementConsoleMessages.READY(false));
+        CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
     /*
@@ -492,7 +494,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
         }
 
-        CurrentActor.get().message(ManagementConsoleMessages.STOPPED());
+        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
 }
