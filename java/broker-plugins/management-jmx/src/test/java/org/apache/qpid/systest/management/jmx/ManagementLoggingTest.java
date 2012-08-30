@@ -36,11 +36,11 @@ import java.util.List;
  *
  * This suite of tests validate that the management console messages occur correctly and according to the following format:
  *
- * MNG-1001 : Startup
+ * MNG-1001 : <type> Management Startup
  * MNG-1002 : Starting : <service> : Listening on port <Port>
  * MNG-1003 : Shutting down : <service> : port <Port>
- * MNG-1004 : Ready
- * MNG-1005 : Stopped
+ * MNG-1004 : <type> Management Ready
+ * MNG-1005 : <type> Management Stopped
  * MNG-1006 : Using SSL Keystore : <path>
  * MNG-1007 : Open : User <username>
  * MNG-1008 : Close : User <username>
@@ -105,7 +105,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
                          2, results.size());
 
             //3
-            assertEquals("Startup log message is not 'Startup'.", "Startup",
+            assertEquals("Startup log message is not 'Startup'.", "JMX Management Startup",
                          getMessageString(log));
         }
     }

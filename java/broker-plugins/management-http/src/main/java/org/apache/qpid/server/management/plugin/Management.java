@@ -28,6 +28,8 @@ import java.util.Collection;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
@@ -56,6 +58,7 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -66,12 +69,13 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class Management
 {
+    private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
     private final Logger _logger = Logger.getLogger(Management.class);
 
-    private Broker _broker;
+    private final Broker _broker;
 
-    private Collection<Server> _servers = new ArrayList<Server>();
+    private final Collection<Server> _servers = new ArrayList<Server>();
 
     public Management() throws ConfigurationException, IOException
     {
@@ -206,28 +210,34 @@ public class Management
 
     public void start() throws Exception
     {
+        CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
+
         for (Server server : _servers)
         {
             server.start();
+
+            logOperationalListenMessages(server);
         }
+
+        CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
     public void stop() throws Exception
     {
         for (Server server : _servers)
         {
+            logOperationalShutdownMessage(server);
+
             server.stop();
         }
+
+        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
     private String getKeyStorePath(IApplicationRegistry appRegistry) throws ConfigurationException, FileNotFoundException
     {
-        String keyStorePath = null;
-        if (System.getProperty("javax.net.ssl.keyStore") != null)
-        {
-            keyStorePath = System.getProperty("javax.net.ssl.keyStore");
-        }
-        else
+        String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+        if (keyStorePath == null)
         {
             keyStorePath = appRegistry.getConfiguration().getManagementKeyStorePath();
         }
@@ -250,5 +260,37 @@ public class Management
         }
         return keyStorePath;
     }
+
+    private void logOperationalListenMessages(Server server)
+    {
+        Connector[] connectors = server.getConnectors();
+        for (Connector connector : connectors)
+        {
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING(stringifyConnectorScheme(connector), connector.getPort()));
+            if (connector instanceof SslSocketConnector)
+            {
+                SslContextFactory sslContextFactory = ((SslSocketConnector)connector).getSslContextFactory();
+                if (sslContextFactory != null && sslContextFactory.getKeyStorePath() != null)
+                {
+                    CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(sslContextFactory.getKeyStorePath()));
+                }
+            }
+        }
+    }
+
+    private void logOperationalShutdownMessage(Server server)
+    {
+        Connector[] connectors = server.getConnectors();
+        for (Connector connector : connectors)
+        {
+            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN(stringifyConnectorScheme(connector), connector.getPort()));
+        }
+    }
+
+    private String stringifyConnectorScheme(Connector connector)
+    {
+        return connector instanceof SslSocketConnector ? "HTTPS" : "HTTP";
+    }
+
 
 }
