@@ -22,6 +22,7 @@
  */
 
 #include "Journal.h"
+#include <unistd.h> // ::usleep()
 
 #ifdef JOURNAL2
 #   include "qpid/asyncStore/jrnl2/DataToken.h"

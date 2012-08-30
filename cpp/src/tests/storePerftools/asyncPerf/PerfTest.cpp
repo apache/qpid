@@ -50,7 +50,7 @@ PerfTest::PerfTest(const TestOptions& to,
         m_resultQueue(m_poller),
         m_store(0)
 {
-    std::memset((void*)m_msgData, 0, (size_t)to.m_msgSize);
+    std::memset(m_msgData, 0, (size_t)to.m_msgSize);
 }
 
 PerfTest::~PerfTest() {

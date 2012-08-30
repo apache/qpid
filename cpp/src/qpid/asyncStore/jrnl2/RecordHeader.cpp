@@ -97,9 +97,9 @@ RecordHeader::getHeaderSize() {
 uint32_t
 RecordHeader::getCheckSum(uint32_t initialValue) const {
     uint32_t cs = initialValue;
-    for (unsigned char* p = (unsigned char*)this;
-                        p < (unsigned char*)this + getHeaderSize() + getBodySize();
-                        p++) {
+    for (unsigned char const * p = reinterpret_cast<unsigned char const *>(this);
+                               p < reinterpret_cast<unsigned char const *>(this) + getHeaderSize() + getBodySize();
+                               p++) {
         cs ^= (uint32_t)(*p);
         bool carry = cs & uint32_t(0x80000000);
         cs <<= 1;

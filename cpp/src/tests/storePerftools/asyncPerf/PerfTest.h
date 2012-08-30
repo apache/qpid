@@ -68,7 +68,7 @@ private:
     const qpid::asyncStore::AsyncStoreOptions& m_storeOpts;
     TestResult m_testResult;
     qpid::framing::FieldTable m_queueArgs;
-    const char* m_msgData;
+    char* m_msgData;
     boost::shared_ptr<qpid::sys::Poller> m_poller;
     qpid::sys::Thread m_pollingThread;
     qpid::broker::AsyncResultQueueImpl m_resultQueue;
