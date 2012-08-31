@@ -29,9 +29,18 @@
 
   <property name="module.resources" value="src/main/resources"/>
 
-  <target name="rar" depends="jar">
-      <!--Note we need to do this as we need to keep the ra in the name of the artificats but we can't override the module.jar property which is based on the directory name-->
+  <target name="rar" depends="jar.nomanifest">
+
+      <!--Note we need to do this as we need to keep the ra in the name of the artificats but we can't override the module.jar property which is based on the directory name. Also, we re-jar to avoid duplicate *.xml files in the jar and the rar which is causing EAP deployment issues in later versions.-->
+    <delete file="${build.lib}/${project.name}-${module.name}-${project.version}.jar"/>
+
+    <jar destfile="${module.jar}" basedir="${module.classes}">
+       <metainf dir="${module.metainf}" >
+	  <exclude name="**/*.xml"/>
+       </metainf>
+    </jar>
     <move file="${build.lib}/${project.name}-${module.name}-${project.version}.jar" tofile="${build.lib}/${project.name}-ra-${project.version}.jar"/>
+
     <jar destfile="${module.rar}">
       <fileset dir="${module.resources}">
         <include name="**/*.xml"/>
