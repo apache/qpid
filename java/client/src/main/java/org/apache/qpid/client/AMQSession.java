@@ -49,13 +49,11 @@ import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.thread.Threading;
@@ -648,12 +646,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     public abstract void acknowledgeMessage(long deliveryTag, boolean multiple);
-
-    public MethodRegistry getMethodRegistry()
-    {
-        MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
-        return methodRegistry;
-    }
 
     /**
      * Binds the named queue, with the specified routing key, to the named exchange.
@@ -1550,7 +1542,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public void declareExchange(AMQShortString name, AMQShortString type, boolean nowait) throws AMQException
     {
-        declareExchange(name, type, getProtocolHandler(), nowait);
+        declareExchange(name, type, nowait, false, false, false);
     }
 
     abstract public void sync() throws AMQException;
@@ -1690,8 +1682,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws
             AMQException
     {
-        AMQProtocolHandler protocolHandler = getProtocolHandler();
-        declareExchange(amqd, protocolHandler, false);
+        declareExchange(amqd, false);
         AMQShortString queueName = declareQueue(amqd, false);
         bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName(), amqd);
     }
@@ -2582,11 +2573,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Register to consume from the queue.
-     *
      * @param queueName
      */
-    private void consumeFromQueue(C consumer, AMQShortString queueName,
-                                  AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException, FailoverException
+    private void consumeFromQueue(C consumer, AMQShortString queueName, boolean nowait) throws AMQException, FailoverException
     {
         int tagId = _nextTag++;
 
@@ -2603,7 +2592,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
-            sendConsume(consumer, queueName, protocolHandler, nowait, tagId);
+            sendConsume(consumer, queueName, nowait, tagId);
         }
         catch (AMQException e)
         {
@@ -2614,7 +2603,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract void sendConsume(C consumer, AMQShortString queueName,
-                                     AMQProtocolHandler protocolHandler, boolean nowait, int tag) throws AMQException, FailoverException;
+                                     boolean nowait, int tag) throws AMQException, FailoverException;
 
     private P createProducerImpl(final Destination destination, final Boolean mandatory, final Boolean immediate)
             throws JMSException
@@ -2648,9 +2637,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract P createMessageProducer(final Destination destination, final Boolean mandatory,
                                             final Boolean immediate, final long producerId) throws JMSException;
 
-    private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException
+    private void declareExchange(AMQDestination amqd, boolean nowait) throws AMQException
     {
-        declareExchange(amqd.getExchangeName(), amqd.getExchangeClass(), protocolHandler, nowait);
+        declareExchange(amqd.getExchangeName(), amqd.getExchangeClass(), nowait, amqd.isExchangeDurable(),
+                        amqd.isExchangeAutoDelete(), amqd.isExchangeInternal());
     }
 
     /**
@@ -2707,33 +2697,29 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      *
      * @param name            The name of the exchange to declare.
      * @param type            The type of the exchange to declare.
-     * @param protocolHandler The protocol handler to process the communication through.
      * @param nowait
-     *
+     * @param durable
+     * @param autoDelete
+     * @param internal
      * @throws AMQException If the exchange cannot be declared for any reason.
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     private void declareExchange(final AMQShortString name, final AMQShortString type,
-                                 final AMQProtocolHandler protocolHandler, final boolean nowait) throws AMQException
+                                 final boolean nowait, final boolean durable,
+                                 final boolean autoDelete, final boolean internal) throws AMQException
     {
         new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
         {
             public Object execute() throws AMQException, FailoverException
             {
-                sendExchangeDeclare(name, type, protocolHandler, nowait);
+                sendExchangeDeclare(name, type, nowait, durable, autoDelete, internal);
                 return null;
             }
         }, _connection).execute();
     }
 
-    public abstract void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
-                                             final boolean nowait) throws AMQException, FailoverException;
-
-
-    void declareQueuePassive(AMQDestination queue) throws AMQException
-    {
-        declareQueue(queue,false,false,true);
-    }
+    public abstract void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final boolean nowait,
+                                             boolean durable, boolean autoDelete, boolean internal) throws AMQException, FailoverException;
 
     /**
      * Declares a queue for a JMS destination.
@@ -2768,31 +2754,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return declareQueue(amqd, noLocal, nowait, false);
     }
 
-    protected AMQShortString declareQueue(final AMQDestination amqd,
-                                          final boolean noLocal, final boolean nowait, final boolean passive)
-            throws AMQException
-    {
-        final AMQProtocolHandler protocolHandler = getProtocolHandler();
-        return new FailoverNoopSupport<AMQShortString, AMQException>(
-                new FailoverProtectedOperation<AMQShortString, AMQException>()
-                {
-                    public AMQShortString execute() throws AMQException, FailoverException
-                    {
-                        // Generate the queue name if the destination indicates that a client generated name is to be used.
-                        if (amqd.isNameRequired())
-                        {
-                            amqd.setQueueName(protocolHandler.generateQueueName());
-                        }
-
-                        sendQueueDeclare(amqd, protocolHandler, nowait, passive);
-
-                        return amqd.getAMQQueueName();
-                    }
-                }, _connection).execute();
-    }
-
-    public abstract void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
-                                          final boolean nowait, boolean passive) throws AMQException, FailoverException;
+    protected abstract AMQShortString declareQueue(final AMQDestination amqd,
+                                          final boolean noLocal, final boolean nowait, final boolean passive) throws AMQException;
 
     /**
      * Undeclares the specified queue.
@@ -2843,21 +2806,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private long getNextProducerId()
     {
         return ++_nextProducerId;
-    }
-
-    protected AMQProtocolHandler getProtocolHandler()
-    {
-        return _connection.getProtocolHandler();
-    }
-
-    public byte getProtocolMajorVersion()
-    {
-        return getProtocolHandler().getProtocolMajorVersion();
-    }
-
-    public byte getProtocolMinorVersion()
-    {
-        return getProtocolHandler().getProtocolMinorVersion();
     }
 
     protected boolean hasMessageListeners()
@@ -2918,8 +2866,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         AMQDestination amqd = consumer.getDestination();
 
-        AMQProtocolHandler protocolHandler = getProtocolHandler();
-
         if (amqd.getDestSyntax() == DestSyntax.ADDR)
         {
             handleAddressBasedDestination(amqd,true,consumer.isNoLocal(),nowait);
@@ -2928,7 +2874,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             if (_declareExchanges)
             {
-                declareExchange(amqd, protocolHandler, nowait);
+                declareExchange(amqd, nowait);
             }
     
             if (_delareQueues || amqd.isNameRequired())
@@ -2973,7 +2919,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
-            consumeFromQueue(consumer, queueName, protocolHandler, nowait);
+            consumeFromQueue(consumer, queueName, nowait);
         }
         catch (FailoverException e)
         {

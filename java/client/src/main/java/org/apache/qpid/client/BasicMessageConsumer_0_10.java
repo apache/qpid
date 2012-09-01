@@ -28,7 +28,6 @@ import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.Session;
@@ -82,13 +81,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
 
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
-                                        AMQSession<?,?> session, AMQProtocolHandler protocolHandler,
-                                        FieldTable rawSelector, int prefetchHigh, int prefetchLow,
-                                        boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose)
+                                        AMQSession<?,?> session, FieldTable rawSelector,
+                                        int prefetchHigh, int prefetchLow, boolean exclusive,
+                                        int acknowledgeMode, boolean browseOnly, boolean autoClose)
             throws JMSException
     {
-        super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, protocolHandler,
-                rawSelector, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, browseOnly, autoClose);
+        super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, rawSelector,
+                prefetchHigh, prefetchLow, exclusive, acknowledgeMode, browseOnly, autoClose);
         _0_10session = (AMQSession_0_10) session;
 
         _serverJmsSelectorSupport = connection.isSupportedServerFeature(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
