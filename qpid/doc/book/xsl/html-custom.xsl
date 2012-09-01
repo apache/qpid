@@ -125,7 +125,7 @@
      <DIV class="menu_box_body">
        <H3>Documentation</H3>
        <UL>
-         <LI><A href="http://qpid.apache.org/documentation.html#doc-release">0.14 Release</A></LI>
+         <LI><A href="http://qpid.apache.org/documentation.html#doc-release">Latest Release</A></LI>
          <LI><A href="http://qpid.apache.org/documentation.html#doc-trunk">Trunk</A></LI>
          <LI><A href="http://qpid.apache.org/documentation.html#doc-archives">Archive</A></LI>
        </UL>
