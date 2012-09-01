@@ -29,7 +29,6 @@ import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_8;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQFrame;
@@ -52,12 +51,12 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
     protected BasicMessageConsumer_0_8(int channelId, AMQConnection connection, AMQDestination destination,
                                        String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession_0_8 session,
-                                       AMQProtocolHandler protocolHandler, FieldTable rawSelector, int prefetchHigh, int prefetchLow,
-                                       boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
+                                       FieldTable rawSelector, int prefetchHigh, int prefetchLow, boolean exclusive,
+                                       int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
         super(channelId, connection, destination,messageSelector,noLocal,messageFactory,session,
-              protocolHandler, rawSelector, prefetchHigh, prefetchLow, exclusive,
-              acknowledgeMode, browseOnly, autoClose);
+              rawSelector, prefetchHigh, prefetchLow, exclusive, acknowledgeMode,
+              browseOnly, autoClose);
         final FieldTable consumerArguments = getArguments();
         if (isAutoClose())
         {
@@ -93,13 +92,19 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         }
     }
 
+    @Override
+    public AMQSession_0_8 getSession()
+    {
+        return (AMQSession_0_8) super.getSession();
+    }
+
     void sendCancel() throws AMQException, FailoverException
     {
         BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(new AMQShortString(String.valueOf(getConsumerTag())), false);
 
         final AMQFrame cancelFrame = body.generateFrame(getChannelId());
 
-        getProtocolHandler().syncWrite(cancelFrame, BasicCancelOkBody.class);
+        getConnection().getProtocolHandler().syncWrite(cancelFrame, BasicCancelOkBody.class);
 
         if (_logger.isDebugEnabled())
         {

@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
@@ -359,9 +360,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         }
     }    
 
-    @Override public void sendConsume(BasicMessageConsumer_0_8 consumer,
+    @Override
+    public void sendConsume(BasicMessageConsumer_0_8 consumer,
                                       AMQShortString queueName,
-                                      AMQProtocolHandler protocolHandler,
                                       boolean nowait,
                                       int tag) throws AMQException, FailoverException
     {
@@ -380,27 +381,29 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
         if (nowait)
         {
-            protocolHandler.writeFrame(jmsConsume);
+            getProtocolHandler().writeFrame(jmsConsume);
         }
         else
         {
-            protocolHandler.syncWrite(jmsConsume, BasicConsumeOkBody.class);
+            getProtocolHandler().syncWrite(jmsConsume, BasicConsumeOkBody.class);
         }
     }
 
-    public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
-            final boolean nowait) throws AMQException, FailoverException
+    @Override
+    public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final boolean nowait,
+            boolean durable, boolean autoDelete, boolean internal) throws AMQException, FailoverException
     {
+        //The 'noWait' parameter is only used on the 0-10 path, it is ignored on the 0-8/0-9/0-9-1 path
+
         ExchangeDeclareBody body = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,
                                                                                  name.toString().startsWith("amq."),
-                                                                                 false,false,false,false,null);
+                                                                                 durable, autoDelete, internal, false, null);
         AMQFrame exchangeDeclare = body.generateFrame(getChannelId());
 
-        protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
+        getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
     }
 
-    public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
-                                 final boolean nowait, boolean passive) throws AMQException, FailoverException
+    private void sendQueueDeclare(final AMQDestination amqd, boolean passive) throws AMQException, FailoverException
     {
         QueueDeclareBody body =
                 getMethodRegistry().createQueueDeclareBody(getTicket(),
@@ -414,7 +417,32 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
         AMQFrame queueDeclare = body.generateFrame(getChannelId());
 
-        protocolHandler.syncWrite(queueDeclare, QueueDeclareOkBody.class);
+        getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
+    }
+
+    @Override
+    protected AMQShortString declareQueue(final AMQDestination amqd, final boolean noLocal,
+                                          final boolean nowait, final boolean passive) throws AMQException
+    {
+        //The 'noWait' parameter is only used on the 0-10 path, it is ignored on the 0-8/0-9/0-9-1 path
+
+        final AMQProtocolHandler protocolHandler = getProtocolHandler();
+        return new FailoverNoopSupport<AMQShortString, AMQException>(
+                new FailoverProtectedOperation<AMQShortString, AMQException>()
+                {
+                    public AMQShortString execute() throws AMQException, FailoverException
+                    {
+                        // Generate the queue name if the destination indicates that a client generated name is to be used.
+                        if (amqd.isNameRequired())
+                        {
+                            amqd.setQueueName(protocolHandler.generateQueueName());
+                        }
+
+                        sendQueueDeclare(amqd, passive);
+
+                        return amqd.getAMQQueueName();
+                    }
+                }, getAMQConnection()).execute();
     }
 
     public void sendQueueDelete(final AMQShortString queueName) throws AMQException, FailoverException
@@ -440,10 +468,8 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             final int prefetchLow, final boolean noLocal, final boolean exclusive, String messageSelector, final FieldTable arguments,
             final boolean noConsume, final boolean autoClose)  throws JMSException
     {
-
-        final AMQProtocolHandler protocolHandler = getProtocolHandler();
        return new BasicMessageConsumer_0_8(getChannelId(), getAMQConnection(), destination, messageSelector, noLocal,
-               getMessageFactoryRegistry(),this, protocolHandler, arguments, prefetchHigh, prefetchLow,
+               getMessageFactoryRegistry(),this, arguments, prefetchHigh, prefetchLow,
                                  exclusive, getAcknowledgeMode(), noConsume, autoClose);
     }
 
@@ -662,14 +688,23 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                             queueName == null ? null : new AMQShortString(queueName),
                             bindingKey == null ? null : new AMQShortString(bindingKey));
     }
-  
+
+    private AMQProtocolHandler getProtocolHandler()
+    {
+        return getAMQConnection().getProtocolHandler();
+    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
+        return methodRegistry;
+    }
 
     public AMQException getLastException()
     {
         // if the Connection has closed then we should throw any exception that
         // has occurred that we were not waiting for
-        AMQStateManager manager = getAMQConnection().getProtocolHandler()
-                .getStateManager();
+        AMQStateManager manager = getProtocolHandler().getStateManager();
         
         Exception e = manager.getLastException();
         if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED)

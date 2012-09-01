@@ -27,7 +27,6 @@ import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.messaging.address.Link.Reliability;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
@@ -60,10 +59,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     private byte[] userIDBytes;
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                              AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                              Boolean immediate, Boolean mandatory) throws AMQException
+                              AMQSession session, long producerId, Boolean immediate, Boolean mandatory) throws AMQException
     {
-        super(_logger, connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
+        super(_logger, connection, destination, transacted, channelId, session, producerId, immediate, mandatory);
         
         userIDBytes = Strings.toUTF8(getUserID());
     }
@@ -79,7 +77,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 	                (name,
 	                 destination.getExchangeClass().toString(),
 	                 null, null,
-	                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+	                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE,
+	                 destination.isExchangeDurable() ? Option.DURABLE : Option.NONE,
+	                 destination.isExchangeAutoDelete() ? Option.AUTO_DELETE : Option.NONE);
         	}
         }
         else

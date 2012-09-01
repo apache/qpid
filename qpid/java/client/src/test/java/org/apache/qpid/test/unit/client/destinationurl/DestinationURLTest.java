@@ -193,6 +193,126 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getQueueName().equals("test:testQueueD"));
     }
 
+    public void testExchangeOptionsNotPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_DURABLE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_AUTODELETE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_INTERNAL));
+
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertFalse(dest.isExchangeAutoDelete());
+        assertFalse(dest.isExchangeDurable());
+        assertFalse(dest.isExchangeInternal());
+    }
+
+    public void testExchangeAutoDeleteOptionPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue?" + BindingURL.OPTION_EXCHANGE_AUTODELETE + "='true'";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+
+        assertEquals("true", burl.getOption(BindingURL.OPTION_EXCHANGE_AUTODELETE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_DURABLE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_INTERNAL));
+
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertTrue(dest.isExchangeAutoDelete());
+        assertFalse(dest.isExchangeDurable());
+        assertFalse(dest.isExchangeInternal());
+    }
+
+    public void testExchangeDurableOptionPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue?" + BindingURL.OPTION_EXCHANGE_DURABLE + "='true'";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+
+        assertEquals("true", burl.getOption(BindingURL.OPTION_EXCHANGE_DURABLE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_AUTODELETE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_INTERNAL));
+
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertTrue(dest.isExchangeDurable());
+        assertFalse(dest.isExchangeAutoDelete());
+        assertFalse(dest.isExchangeInternal());
+    }
+
+    public void testExchangeInternalOptionPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue?" + BindingURL.OPTION_EXCHANGE_INTERNAL + "='true'";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+
+        assertEquals("true", burl.getOption(BindingURL.OPTION_EXCHANGE_INTERNAL));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_AUTODELETE));
+        assertNull(burl.getOption(BindingURL.OPTION_EXCHANGE_DURABLE));
+
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertTrue(dest.isExchangeInternal());
+        assertFalse(dest.isExchangeDurable());
+        assertFalse(dest.isExchangeAutoDelete());
+    }
+
     public void testRejectBehaviourPresent() throws URISyntaxException
     {
         String url = "exchangeClass://exchangeName/Destination/Queue?rejectbehaviour='server'";

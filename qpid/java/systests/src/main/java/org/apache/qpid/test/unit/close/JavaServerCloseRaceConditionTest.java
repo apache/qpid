@@ -21,7 +21,7 @@
 package org.apache.qpid.test.unit.close;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
@@ -81,7 +81,7 @@ public class JavaServerCloseRaceConditionTest extends QpidBrokerTestCase
 
         AMQConnection connection = (AMQConnection) getConnection();
 
-        AMQSession session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQSession_0_8 session = (AMQSession_0_8) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // Set no wait true so that we block the connection
         // Also set a different exchange class string so the attempt to declare
