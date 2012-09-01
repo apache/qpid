@@ -36,6 +36,9 @@ public interface BindingURL
     public static final String OPTION_SUBSCRIPTION = "subscription";
     public static final String OPTION_ROUTING_KEY = "routingkey";
     public static final String OPTION_BINDING_KEY = "bindingkey";
+    public static final String OPTION_EXCHANGE_AUTODELETE = "exchangeautodelete";
+    public static final String OPTION_EXCHANGE_DURABLE = "exchangedurable";
+    public static final String OPTION_EXCHANGE_INTERNAL = "exchangeinternal";
 
     /**
      * This option is only applicable for 0-8/0-9/0-9-1 protocols connection

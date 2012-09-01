@@ -31,7 +31,6 @@ import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.CloseConsumerMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.client.filter.JMSSelectorFilter;
 import org.apache.qpid.framing.AMQShortString;
@@ -87,8 +86,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     private final AMQSession _session;
 
-    private final AMQProtocolHandler _protocolHandler;
-
     /**
      * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
      */
@@ -140,9 +137,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
-                                   AMQSession session, AMQProtocolHandler protocolHandler,
-                                   FieldTable rawSelector, int prefetchHigh, int prefetchLow,
-                                   boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
+                                   AMQSession session, FieldTable rawSelector,
+                                   int prefetchHigh, int prefetchLow, boolean exclusive,
+                                   int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
         _channelId = channelId;
         _connection = connection;
@@ -150,7 +147,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _destination = destination;
         _messageFactory = messageFactory;
         _session = session;
-        _protocolHandler = protocolHandler;
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
@@ -1042,10 +1038,4 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         return _messageFactory;
     }
-
-    protected AMQProtocolHandler getProtocolHandler()
-    {
-        return _protocolHandler;
-    }
-
 }

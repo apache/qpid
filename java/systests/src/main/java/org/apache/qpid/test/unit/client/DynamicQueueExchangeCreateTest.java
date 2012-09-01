@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.test.unit.client;
 
+import java.io.IOException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -32,12 +35,6 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-/**
- * QPID-155
- *
- * Test to validate that setting the respective qpid.declare_queues,
- * qpid.declare_exchanges system properties functions as expected.
- */
 public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
 {
     private JMXTestUtils _jmxUtils;
@@ -67,6 +64,11 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
             super.tearDown();
         }
     }
+
+    /*
+     * Tests to validate that setting the respective qpid.declare_queues,
+     * qpid.declare_exchanges system properties functions as expected.
+     */
 
     public void testQueueNotDeclaredDuringConsumerCreation() throws Exception
     {
@@ -161,5 +163,72 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
         assertNotNull("Linked exception should have been set", linked);
         assertTrue("Linked exception should be an AMQException", linked instanceof AMQException);
         assertEquals("Error code should be " + code.getCode(), code, ((AMQException) linked).getErrorCode());
+    }
+
+    /*
+     * Tests to validate that the custom exchanges declared by the client during
+     * consumer and producer creation have the expected properties.
+     */
+
+    public void testPropertiesOfCustomExchangeDeclaredDuringProducerCreation() throws Exception
+    {
+        implTestPropertiesOfCustomExchange(true, false);
+    }
+
+    public void testPropertiesOfCustomExchangeDeclaredDuringConsumerCreation() throws Exception
+    {
+        implTestPropertiesOfCustomExchange(false, true);
+    }
+
+    private void implTestPropertiesOfCustomExchange(boolean createProducer, boolean createConsumer) throws Exception
+    {
+        Connection connection = getConnection();
+
+        Session session1 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String exchangeName1 = getTestQueueName() + "1";
+        String queueName1 = getTestQueueName() + "1";
+
+        Queue queue = session1.createQueue("direct://" + exchangeName1 + "/" + queueName1 + "/" + queueName1 + "?" + BindingURL.OPTION_EXCHANGE_AUTODELETE + "='true'");
+        if(createProducer)
+        {
+            session1.createProducer(queue);
+        }
+
+        if(createConsumer)
+        {
+            session1.createConsumer(queue);
+        }
+        session1.close();
+
+        //verify the exchange was declared to expectation
+        verifyDeclaredExchange(exchangeName1, true, false);
+
+        Session session2 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String exchangeName2 = getTestQueueName() + "2";
+        String queueName2 = getTestQueueName() + "2";
+
+        Queue queue2 = session2.createQueue("direct://" + exchangeName2 + "/" + queueName2 + "/" + queueName2 + "?" + BindingURL.OPTION_EXCHANGE_DURABLE + "='true'");
+        if(createProducer)
+        {
+            session2.createProducer(queue2);
+        }
+
+        if(createConsumer)
+        {
+            session2.createConsumer(queue2);
+        }
+        session2.close();
+
+        //verify the exchange was declared to expectation
+        verifyDeclaredExchange(exchangeName2, false, true);
+    }
+
+    private void verifyDeclaredExchange(String exchangeName, boolean isAutoDelete, boolean isDurable) throws IOException
+    {
+        String exchangeObjectName = _jmxUtils.getExchangeObjectName("test", exchangeName);
+        assertTrue("exchange should exist", _jmxUtils.doesManagedObjectExist(exchangeObjectName));
+        ManagedExchange exchange = _jmxUtils.getManagedExchange(exchangeName);
+        assertEquals(isAutoDelete, exchange.isAutoDelete());
+        assertEquals(isDurable,exchange.isDurable());
     }
 }

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -36,12 +35,10 @@ import javax.jms.Topic;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
@@ -69,18 +66,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private int _deliveryMode = DeliveryMode.PERSISTENT;
 
     private AMQDestination _destination;
-
-    /**
-     * Default encoding used for messages produced by this producer.
-     */
-    private String _encoding;
-
-    /**
-     * Default encoding used for message produced by this producer.
-     */
-    private String _mimeType;
-
-    private AMQProtocolHandler _protocolHandler;
 
     /**
      * True if this producer was created from a transacted session
@@ -135,14 +120,12 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(Logger logger,AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                                   Boolean immediate, Boolean mandatory) throws AMQException
+                                   AMQSession session, long producerId, Boolean immediate, Boolean mandatory) throws AMQException
     {
     	_logger = logger;
     	_connection = connection;
         _destination = destination;
         _transacted = transacted;
-        _protocolHandler = protocolHandler;
         _channelId = channelId;
         _session = session;
         _producerId = producerId;
@@ -161,6 +144,11 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
         _userID = connection.getUsername();
         setPublishMode();
+    }
+
+    protected AMQConnection getConnection()
+    {
+        return _connection;
     }
 
     void setPublishMode()
@@ -558,18 +546,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    public void setMimeType(String mimeType) throws JMSException
-    {
-        checkNotClosed();
-        _mimeType = mimeType;
-    }
-
-    public void setEncoding(String encoding) throws JMSException, UnsupportedEncodingException
-    {
-        checkNotClosed();
-        _encoding = encoding;
-    }
-
     private void checkPreConditions() throws javax.jms.IllegalStateException, JMSException
     {
         checkNotClosed();
@@ -643,16 +619,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     protected void setDestination(AMQDestination destination)
     {
         _destination = destination;
-    }
-
-    protected AMQProtocolHandler getProtocolHandler()
-    {
-        return _protocolHandler;
-    }
-
-    protected void setProtocolHandler(AMQProtocolHandler protocolHandler)
-    {
-        _protocolHandler = protocolHandler;
     }
 
     protected int getChannelId()

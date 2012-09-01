@@ -48,7 +48,7 @@ public class BasicMessageConsumer_0_8_Test extends TestCase
 
         TestAMQSession testSession = new TestAMQSession(conn);
         BasicMessageConsumer_0_8 consumer =
-                new BasicMessageConsumer_0_8(0, conn, queue, "", false, null, testSession, null, null, 10, 5, false, Session.SESSION_TRANSACTED, false, false);
+                new BasicMessageConsumer_0_8(0, conn, queue, "", false, null, testSession, null, 10, 5, false, Session.SESSION_TRANSACTED, false, false);
 
         assertEquals("Reject behaviour was was not as expected", RejectBehaviour.SERVER, consumer.getRejectBehaviour());
     }
@@ -68,7 +68,7 @@ public class BasicMessageConsumer_0_8_Test extends TestCase
 
         final TestAMQSession testSession = new TestAMQSession(conn);
         final BasicMessageConsumer_0_8 consumer =
-                new BasicMessageConsumer_0_8(0, conn, queue, "", false, null, testSession, null, null, 10, 5, false, Session.SESSION_TRANSACTED, false, false);
+                new BasicMessageConsumer_0_8(0, conn, queue, "", false, null, testSession, null, 10, 5, false, Session.SESSION_TRANSACTED, false, false);
 
         assertEquals("Reject behaviour was was not as expected", RejectBehaviour.NORMAL, consumer.getRejectBehaviour());
     }
@@ -94,7 +94,7 @@ public class BasicMessageConsumer_0_8_Test extends TestCase
 
         TestAMQSession testSession = new TestAMQSession(conn);
         BasicMessageConsumer_0_8 consumer =
-                new BasicMessageConsumer_0_8(0, conn, queue, "", false, null, testSession, null, null, 10, 5, false, Session.SESSION_TRANSACTED, false, false);
+                new BasicMessageConsumer_0_8(0, conn, queue, "", false, null, testSession, null, 10, 5, false, Session.SESSION_TRANSACTED, false, false);
 
         assertEquals("Reject behaviour was was not as expected", RejectBehaviour.NORMAL, consumer.getRejectBehaviour());
     }
