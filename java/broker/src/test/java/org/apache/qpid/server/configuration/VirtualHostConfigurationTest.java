@@ -319,4 +319,49 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
                      ce.getMessage());
          }
      }
+
+     /*
+      * Tests that the queues with dots in the names are fully supported. The XML configuration
+      * had problems with handling the tags containing dots due to the design of the Apache Commons
+      * Configuration library. The dots need to be escaped when accessing the XML configuration.
+      */
+     public void testDotsInQueueName() throws Exception
+     {
+         // Set up vhosts and queue
+         getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues(-1).queue(-1).name", "dot.in.a.name");
+         // Add a single property which is inside the <dot.in.a.name> queue tag - the maximum delivery count
+         getConfigXml().addProperty("virtualhosts.virtualhost." + getName() + ".queues.queue.dot..in..a..name.maximumDeliveryCount", 5);
+
+         // Start the broker now.
+         super.createBroker();
+
+         // Get vhosts
+         VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+
+         // Check, that the property stored within the <dot.in.a.name> tag has been properly loaded
+         assertEquals("queue with dots in its name has been properly loaded", 5, test.getConfiguration().getQueueConfiguration("dot.in.a.name").getMaxDeliveryCount());
+     }
+
+     /*
+      * Tests that the virtual hosts with dots in the names are fully supported. The XML
+      * configuration had problems with handling the tags containing dots due to the design
+      * of the Apache Commons Configuration library. The dots need to be escaped when
+      * accessing the XML configuration.
+      */
+     public void testDotsInVirtualHostName() throws Exception
+     {
+         // Set up vhosts
+         getConfigXml().addProperty("virtualhosts.virtualhost.name", "dot.in.a.name");
+         // Add a single property which is inside the <dot.in.a.name> virtual host tag - the message store
+         getConfigXml().addProperty("virtualhosts.virtualhost.dot..in..a..name.store.class", TestableMemoryMessageStore.class.getName());
+
+         // Start the broker now.
+         super.createBroker();
+
+         // Get vhosts
+         VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("dot.in.a.name");
+
+         // Check, that the property stored within the <dot.in.a.name> tag has been properly loaded
+         assertEquals("virtual host with dots in the name has been properly loaded", TestableMemoryMessageStore.class.getName(), test.getMessageStore().getClass().getName());
+     }
 }
