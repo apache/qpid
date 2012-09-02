@@ -50,6 +50,7 @@ public class GroupRestACLTest extends QpidRestTestCase
     {
         _groupFile = createTemporaryGroupFile();
 
+        setConfigurationProperty("management.http.basic-auth", "true");
         setConfigurationProperty("security.file-group-manager.attributes.attribute.name", "groupFile");
         setConfigurationProperty("security.file-group-manager.attributes.attribute.value", _groupFile.getAbsolutePath());
 

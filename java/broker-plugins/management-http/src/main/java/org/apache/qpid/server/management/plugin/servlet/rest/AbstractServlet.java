@@ -255,17 +255,18 @@ public abstract class AbstractServlet extends HttpServlet
         {
             String header = request.getHeader("Authorization");
 
-            /*
-             * TODO - Should configure whether basic authentication is allowed... and in particular whether it
-             * should be allowed over non-ssl connections
-             * */
-
             if (header != null)
             {
                 String[] tokens = header.split("\\s");
                 if(tokens.length >= 2
                         && "BASIC".equalsIgnoreCase(tokens[0]))
                 {
+                    if(!isBasicAuthSupported(request))
+                    {
+                        //TODO: write a return response indicating failure?
+                        throw new IllegalArgumentException("BASIC Authorization is not enabled.");
+                    }
+
                     String[] credentials = (new String(Base64.decodeBase64(tokens[1].getBytes()))).split(":",2);
                     if(credentials.length == 2)
                     {
@@ -297,6 +298,12 @@ public abstract class AbstractServlet extends HttpServlet
         }
 
         return subject;
+    }
+
+    private boolean isBasicAuthSupported(HttpServletRequest req)
+    {
+        return req.isSecure()  ? ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementBasicAuth()
+                               : ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementBasicAuth();
     }
 
     private HttpManagementActor getLogActorAndCacheInSession(HttpServletRequest req)
