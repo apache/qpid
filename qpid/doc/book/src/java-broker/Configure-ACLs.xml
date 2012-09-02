@@ -79,11 +79,10 @@
     </title>
 
     <para>
-      The ACL file consists of a series of rules and group definitions.  Each rule grants or denies specific rights to a user or group. Group
-      definitions declare groups of users and serve to make the ACL file more concise.
+      The ACL file consists of a series of rules associating behaviour for a user or group. Use of groups can serve to make the ACL file more concise. See <link linkend="Configuring-Group-Providers">Configuring Group Providers</link> for more information on defining groups.
     </para>
     <para>
-      Each ACL rule grants (or denies) a particular action on a object to a user.  The rule may be augmented with one or more properties, restricting
+      Each ACL rule grants (or denies) a particular action on a object to a user/group.  The rule may be augmented with one or more properties, restricting
       the rule's applicability.
     </para>
     <programlisting>
@@ -136,13 +135,6 @@
     </programlisting>
 
     <para>
-       GROUP definitions must follow this syntax:
-    </para>
-    <programlisting>
-     GROUP {group name} {username 1}..{username n} # Where username is a username, or a groupname.
-    </programlisting>
-
-    <para>
        Comments may be introduced with the hash (#) character and are ignored.  Long lines can be broken with the slash (\) character.
     </para>
     <programlisting>
@@ -150,8 +142,6 @@
       ACL ALLOW admin CREATE ALL # Also a comment
       ACL DENY guest \
       ALL ALL   # A broken line
-      GROUP securegroup bob \
-      alice # Another broker line
     </programlisting>
   </section>
   <table id="tabl-ConfigureACLs-Syntax_permissions">
@@ -385,13 +375,10 @@
         Worked example 2 - User maintainer group
       </title>
       <para>
-         Suppose you wish to restrict User Management operations to users belonging to a group 'usermaint'.  No other user
-         is allowed to perform user maintainence  This example illustrates the permissioning of a individual component 
-         and a group definition.
+         Suppose you wish to restrict User Management operations to users belonging to a <link linkend="Configuring-Group-Providers">group</link> 'usermaint'.  No other user
+         is allowed to perform user maintainence  This example illustrates the permissioning of an individual component.
       </para>
       <programlisting>
-        # Create a group usermaint with members bob and alice
-        GROUP usermaint bob alice
         # Give operator permission to execute all JMX Methods
         ACL ALLOW usermaint ALL METHOD component="UserManagement"
         ACL DENY ALL ALL METHOD component="UserManagement"

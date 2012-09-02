@@ -52,6 +52,7 @@
 
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Add-New-Users.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-ACLs.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-Group-Providers.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-Java-Qpid-to-use-a-SSL-connection.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-Log4j-CompositeRolling-Appender.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-the-Broker-via-config.xml.xml"/>
