@@ -21,7 +21,7 @@
  
 -->
 
-<section>
+<section id="Configuring-Authentication-Mechanisms">
   <title>Configuring Authentication Mechanisms</title>
   <para>
     In order to successfully establish a connection to the Java Broker, the connection must be

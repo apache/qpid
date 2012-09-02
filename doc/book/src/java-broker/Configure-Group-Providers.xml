@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Configuring-Group-Providers">
+  <title>Configuring Group Providers</title>
+  <para>
+    The Java broker utilises GroupProviders to allow assigning users to groups for use in <link linkend="Configuring-ACLS">ACLs</link>. Following authentication by a given <link linkend="Configuring-Authentication-Mechanisms">Authentication Provider</link>, the configured Group Providers are consulted to allowing assignment of GroupPrincipals for a given authenticated user. 
+  </para>
+
+
+  <section role="h3" id="File-Group-Manager">
+    <title>FileGroupManager</title>
+    <para>
+      The FileGroupManager allows specifying group membership in a flat file on disk, and is also exposed for inspection and update through the brokers HTTP management interface.
+    </para>
+    <para>
+      To enable the FileGroupManager, add the following configuration to the config.xml, adjusting the groupFile attribute value to match your desired groups file location.
+    </para>
+
+    <programlisting><![CDATA[
+    ...
+    <security>
+        <file-group-manager>
+            <attributes>
+              <attribute>
+                <name>groupFile</name>
+                 <value>${conf}/groups</value>
+              </attribute>
+            </attributes>
+        </file-group-manager>
+    </security>]]>
+    ...
+</programlisting>
+
+	<section role="h4" id="File-Group-Manager-FileFormat">
+       <title>File Format</title>
+	  <para>
+            The groups file has the following format:
+          </para>
+            <programlisting>
+    # &lt;GroupName&gt;.users = &lt;comma deliminated user list&gt;
+    # For example:
+
+    administrators.users = admin,manager
+</programlisting>
+          <para>
+            Only users can be added to a group currently, not other groups. Usernames can't contain commas.
+          </para><para>
+            Lines starting with a '#' are treated as comments when opening the file, but these are not preserved when the broker updates the file due to changes made through the management interface.
+          </para>
+     </section>
+  </section>
+</section>
