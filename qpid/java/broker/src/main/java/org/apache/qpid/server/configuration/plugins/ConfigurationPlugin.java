@@ -479,6 +479,11 @@ public abstract class ConfigurationPlugin
         return super.toString();
     }
 
+    public String escapeTagName(String name)
+    {
+        return name.replaceAll("\\.", "\\.\\.");
+    }
+
     protected void setConfig(Configuration config)
     {
         _config = config;

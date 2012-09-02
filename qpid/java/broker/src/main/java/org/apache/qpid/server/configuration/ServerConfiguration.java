@@ -349,7 +349,7 @@ public class ServerConfiguration extends ConfigurationPlugin
             String name = (String) hosts.get(j);
 
             // Add the virtual hosts to the server configuration
-            VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + name));
+            VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)));
             _virtualHosts.put(virtualhost.getName(), virtualhost);
         }
     }
@@ -506,7 +506,7 @@ public class ServerConfiguration extends ConfigurationPlugin
             for (String hostName : _virtualHosts.keySet())
             {
                 VirtualHost vhost = vhostRegistry.getVirtualHost(hostName);
-                Configuration vhostConfig = newVhosts.subset("virtualhost." + hostName);
+                Configuration vhostConfig = newVhosts.subset("virtualhost." + escapeTagName(hostName));
                 vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig);
                 vhost.getSecurityManager().configureGlobalPlugins(this);
                 vhost.getSecurityManager().configureHostPlugins(vhost.getConfiguration());

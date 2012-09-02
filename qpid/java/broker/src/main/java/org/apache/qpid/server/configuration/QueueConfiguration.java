@@ -39,7 +39,7 @@ public class QueueConfiguration extends ConfigurationPlugin
         _name = name;
 
         CompositeConfiguration mungedConf = new CompositeConfiguration();
-        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + name));
+        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + escapeTagName(name)));
         mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues"));
 
         setConfiguration("virtualhosts.virtualhost.queues.queue", mungedConf);
