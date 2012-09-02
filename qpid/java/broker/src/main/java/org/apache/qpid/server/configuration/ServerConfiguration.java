@@ -585,6 +585,11 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getIntValue("management.http.port", DEFAULT_HTTP_MANAGEMENT_PORT);
     }
 
+    public boolean getHTTPManagementBasicAuth()
+    {
+        return getBooleanValue("management.http.basic-auth", false);
+    }
+
     public boolean getHTTPSManagementEnabled()
     {
         return getBooleanValue("management.https.enabled", false);
@@ -593,6 +598,11 @@ public class ServerConfiguration extends ConfigurationPlugin
     public int getHTTPSManagementPort()
     {
         return getIntValue("management.https.port", DEFAULT_HTTPS_MANAGEMENT_PORT);
+    }
+
+    public boolean getHTTPSManagementBasicAuth()
+    {
+        return getBooleanValue("management.https.basic-auth", true);
     }
 
     public String[] getVirtualHosts()
