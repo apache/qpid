@@ -65,11 +65,4 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How-to-Use-SlowConsumerDisconnect.xml"/>
 </chapter>
 
-
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-JMX-Management-Console.xml"/>
-
-<chapter id="QpidJavaBroker-ManagementTools">
-<title>Management Tools</title>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-Broker-Management-CLI.xml"/>
-</chapter>
 </book>
