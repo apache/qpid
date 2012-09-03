@@ -171,25 +171,14 @@ define(["dojo/_base/xhr",
            {
 
                var that = this;
-               
-               console.log("updater called ");
-               console.dir(that);
-               
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                   .then(function(data) {
                       that.groupMemberData = data;
 
-               console.log("updater data ");
-               console.dir(that.groupMemberData);
-               
-
                       util.flattenStatistics( that.groupMemberData );
 
                       that.groupMembersUpdatableStore.update(that.groupMemberData);
-                      
-                                     console.log("updated grid");
-                                     console.dir(that.groupMembersUpdatableStore.grid);
                   });
            };
 
