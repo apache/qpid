@@ -32,8 +32,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
-import org.apache.qpid.server.management.plugin.servlet.api.ExchangesServlet;
-import org.apache.qpid.server.management.plugin.servlet.api.VhostsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
@@ -158,9 +156,6 @@ public class Management
         root.setContextPath("/");
         server.setHandler(root);
 
-        root.addServlet(new ServletHolder(new VhostsServlet(_broker)), "/api/vhosts/*");
-        root.addServlet(new ServletHolder(new ExchangesServlet(_broker)), "/api/exchanges/*");
-
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
         addRestServlet(root, "authenticationprovider", AuthenticationProvider.class);
@@ -183,7 +178,7 @@ public class Management
 
         root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
 
-        root.addServlet(new ServletHolder(new DefinedFileServlet("management.html")), "/management");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), "/management");
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");

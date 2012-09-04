@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.external.ExternalSaslServer;
 
 public class ExternalAuthenticationManager implements AuthenticationManager
@@ -159,7 +160,7 @@ public class ExternalAuthenticationManager implements AuthenticationManager
     @Override
     public AuthenticationResult authenticate(String username, String password)
     {
-        return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR);
+        return new AuthenticationResult(new UsernamePrincipal(username));
     }
 
     @Override
