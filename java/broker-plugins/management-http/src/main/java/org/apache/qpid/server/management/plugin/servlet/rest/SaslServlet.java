@@ -124,6 +124,8 @@ public class SaslServlet extends AbstractServlet
     @Override
     protected void doPostWithSubjectAndActor(final HttpServletRequest request, final HttpServletResponse response) throws IOException
     {
+        checkSaslAuthEnabled(request);
+
         try
         {
             response.setContentType("application/json");
@@ -190,7 +192,24 @@ public class SaslServlet extends AbstractServlet
             LOGGER.error("Error processing SASL request", e);
             throw e;
         }
+    }
 
+    private void checkSaslAuthEnabled(HttpServletRequest request)
+    {
+        boolean saslAuthEnabled;
+        if (request.isSecure())
+        {
+            saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementSaslAuthEnabled();
+        }
+        else
+        {
+            saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementSaslAuthEnabled();
+        }
+
+        if (!saslAuthEnabled)
+        {
+            throw new RuntimeException("Sasl authentication disabled.");
+        }
     }
 
     private void evaluateSaslResponse(final HttpServletResponse response,

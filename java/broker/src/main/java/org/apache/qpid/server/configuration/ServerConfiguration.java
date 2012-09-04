@@ -620,6 +620,16 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("management.https.basic-auth", true);
     }
 
+    public boolean getHTTPManagementSaslAuthEnabled()
+    {
+        return getBooleanValue("management.http.sasl-auth", true);
+    }
+
+    public boolean getHTTPSManagementSaslAuthEnabled()
+    {
+        return getBooleanValue("management.https.sasl-auth", true);
+    }
+
     public String[] getVirtualHosts()
     {
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
@@ -1052,5 +1062,6 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         _qpidHome = path;
     }
+
 
 }
