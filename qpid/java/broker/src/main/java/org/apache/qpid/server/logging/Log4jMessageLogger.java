@@ -20,15 +20,11 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.configuration.ServerConfiguration;
 
 public class Log4jMessageLogger extends AbstractRootMessageLogger
 {
-    public static final Level LEVEL = Level.toLevel("INFO");
-    
     public Log4jMessageLogger()
     {
         super();
@@ -51,7 +47,7 @@ public class Log4jMessageLogger extends AbstractRootMessageLogger
         if(isEnabled())
         {
             Logger logger = Logger.getLogger(logHierarchy);
-            return logger.isEnabledFor(LEVEL);
+            return logger.isInfoEnabled();
         }
         else
         {
@@ -69,7 +65,6 @@ public class Log4jMessageLogger extends AbstractRootMessageLogger
     public void rawMessage(String message, Throwable throwable, String logHierarchy)
     {
         Logger logger = Logger.getLogger(logHierarchy);
-        
-        logger.log(LEVEL, message, throwable);
+        logger.info(message, throwable);
     }
 }

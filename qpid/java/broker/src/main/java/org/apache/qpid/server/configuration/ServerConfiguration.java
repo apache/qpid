@@ -67,6 +67,8 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
     public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
     public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
+    public static final String SKIP_SIGHUP_HANDLER_REGISTRATION = "qpid.skip_sighup_handler_registration";
+    public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = "qpid.use_custom_rmi_socket_factory";
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -156,6 +158,18 @@ public class ServerConfiguration extends ConfigurationPlugin
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
 
+        if(!Boolean.getBoolean(SKIP_SIGHUP_HANDLER_REGISTRATION))
+        {
+            registerSigHupHandler();
+        }
+        else
+        {
+            _logger.info("Skipping registration of Signal HUP handler.");
+        }
+    }
+
+    private void registerSigHupHandler()
+    {
         SignalHandlerTask hupReparseTask = new SignalHandlerTask()
         {
             public void handle()
@@ -562,7 +576,8 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public boolean getUseCustomRMISocketFactory()
     {
-        return getBooleanValue(MGMT_CUSTOM_REGISTRY_SOCKET, true);
+        return getBooleanValue(MGMT_CUSTOM_REGISTRY_SOCKET,
+                               Boolean.parseBoolean(System.getProperty(USE_CUSTOM_RMI_SOCKET_FACTORY, "true")));
     }
 
     public void setUseCustomRMISocketFactory(boolean bool)

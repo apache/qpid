@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -218,7 +219,14 @@ public abstract class AbstractServlet extends HttpServlet
         }
         finally
         {
-            org.apache.qpid.server.security.SecurityManager.setThreadSubject(null);
+            try
+            {
+                org.apache.qpid.server.security.SecurityManager.setThreadSubject(null);
+            }
+            finally
+            {
+                AMQShortString.clearLocalCache();
+            }
         }
     }
 
