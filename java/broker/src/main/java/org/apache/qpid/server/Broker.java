@@ -29,6 +29,7 @@ import java.util.*;
 import javax.net.ssl.SSLContext;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
@@ -73,7 +74,14 @@ public class Broker
         }
         finally
         {
-            ApplicationRegistry.remove();
+            try
+            {
+                ApplicationRegistry.remove();
+            }
+            finally
+            {
+                clearAMQShortStringCache();
+            }
         }
     }
 
@@ -84,15 +92,22 @@ public class Broker
 
     public void startup(final BrokerOptions options) throws Exception
     {
+        CurrentActor.set(new BrokerActor(new SystemOutMessageLogger()));
         try
         {
-            CurrentActor.set(new BrokerActor(new SystemOutMessageLogger()));
             startupImpl(options);
             addShutdownHook();
         }
         finally
         {
-            CurrentActor.remove();
+            try
+            {
+                CurrentActor.remove();
+            }
+            finally
+            {
+                clearAMQShortStringCache();
+            }
         }
     }
 
@@ -368,7 +383,7 @@ public class Broker
 
         if (!configFile.exists() && throwOnFileNotFound)
         {
-            String error = "File " + fileName + " could not be found. Check the file exists and is readable.";
+            String error = "File " + configFile + " could not be found. Check the file exists and is readable.";
 
             if (qpidHome == null)
             {
@@ -539,5 +554,15 @@ public class Broker
             LOGGER.debug("Shutdown hook running");
             Broker.this.shutdown();
         }
+    }
+
+    /**
+     * Workaround that prevents AMQShortStrings cache from being left in the thread local. This is important
+     * when embedding the Broker in containers where the starting thread may not belong to Qpid.
+     * The long term solution here is to stop our use of AMQShortString outside the AMQP transport layer.
+     */
+    private void clearAMQShortStringCache()
+    {
+        AMQShortString.clearLocalCache();
     }
 }

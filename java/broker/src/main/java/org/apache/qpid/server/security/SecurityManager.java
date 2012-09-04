@@ -69,13 +69,8 @@ public class SecurityManager
     
     /** Container for the {@link java.security.Principal} that is using to this thread. */
     private static final ThreadLocal<Subject> _subject = new ThreadLocal<Subject>();
-    private static final ThreadLocal<Boolean> _accessChecksDisabled = new ThreadLocal<Boolean>()
-    {
-        protected Boolean initialValue()
-        {
-            return false;
-        }
-    };
+
+    public static final ThreadLocal<Boolean> _accessChecksDisabled = new ClearingThreadLocal(false);
 
     private PluginManager _pluginManager;
     private Map<String, SecurityPluginFactory> _pluginFactories = new HashMap<String, SecurityPluginFactory>();
@@ -114,6 +109,50 @@ public class SecurityManager
         }
     }
 
+    /**
+     * A special ThreadLocal, which calls remove() on itself whenever the value is
+     * the default, to avoid leaving a default value set after its use has passed.
+     */
+    private static final class ClearingThreadLocal extends ThreadLocal<Boolean>
+    {
+        private Boolean _defaultValue;
+
+        public ClearingThreadLocal(Boolean defaultValue)
+        {
+            super();
+            _defaultValue = defaultValue;
+        }
+
+        @Override
+        protected Boolean initialValue()
+        {
+            return _defaultValue;
+        }
+
+        @Override
+        public void set(Boolean value)
+        {
+            if (value == _defaultValue)
+            {
+                super.remove();
+            }
+            else
+            {
+                super.set(value);
+            }
+        }
+
+        @Override
+        public Boolean get()
+        {
+            Boolean value = super.get();
+            if (value == _defaultValue)
+            {
+                super.remove();
+            }
+            return value;
+        }
+    }
 
     public SecurityManager(SecurityManager parent) throws ConfigurationException
     {

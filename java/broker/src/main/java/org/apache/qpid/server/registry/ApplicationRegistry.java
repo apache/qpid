@@ -479,6 +479,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             close(_pluginManager);
 
             CurrentActor.get().message(BrokerMessages.STOPPED());
+
+            _logRecorder.closeLogRecorder();
         }
         finally
         {
