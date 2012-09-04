@@ -211,10 +211,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         System.setProperty("java.rmi.server.randomIDs", "true");
         if(_useCustomSocketFactory)
         {
+            _log.debug("Using custom RMIServerSocketFactory");
             _rmiRegistry = LocateRegistry.createRegistry(_jmxPortRegistryServer, null, new CustomRMIServerSocketFactory());
         }
         else
         {
+            _log.debug("Using default RMIServerSocketFactory");
             _rmiRegistry = LocateRegistry.createRegistry(_jmxPortRegistryServer, null, null);
         }
 
@@ -235,7 +237,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
             /**
              * Override makeClient so we can cache the username of the client in a Map keyed by connectionId.
-             * ConnectionId is guaranteed to be unique per client connection, according to the JMS spec.
+             * ConnectionId is guaranteed to be unique per client connection, according to the JMX spec.
              * An instance of NotificationListener (mapCleanupListener) will be responsible for removing these Map
              * entries.
              *

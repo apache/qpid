@@ -110,7 +110,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
                 {
                     return new LinkedHashMap<AMQShortString, AMQShortString>()
                     {
-
+                        @Override
                         protected boolean removeEldestEntry(Map.Entry<AMQShortString, AMQShortString> eldest)
                         {
                             return size() > LOCAL_INTERN_CACHE_SIZE;
@@ -845,22 +845,15 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return internString;
     }
 
-
-    public static void main(String args[])
-    {
-        AMQShortString s = new AMQShortString("a.b.c.d.e.f.g.h.i.j.k");
-        AMQShortString s2 = s.substring(2, 7);
-
-        AMQShortStringTokenizer t = s2.tokenize((byte) '.');
-        while(t.hasMoreTokens())
-        {
-            System.err.println(t.nextToken());
-        }
-    }
-
     public static String toString(AMQShortString amqShortString)
     {
         return amqShortString == null ? null : amqShortString.asString();
+    }
+
+    public static void clearLocalCache()
+    {
+        _localInternMap.remove();
+        _localStringMap.remove();
     }
 
 }

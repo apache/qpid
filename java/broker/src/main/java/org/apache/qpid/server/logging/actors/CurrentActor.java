@@ -105,6 +105,11 @@ public class CurrentActor
     {
         Stack<LogActor> stack = _currentActor.get();
         stack.pop();
+
+        if (stack.isEmpty())
+        {
+            _currentActor.remove();
+        }
     }
 
     /**
