@@ -257,7 +257,7 @@ public abstract class AbstractServlet extends HttpServlet
         String remoteUser = request.getRemoteUser();
         if(remoteUser != null)
         {
-            subject = subjectCreator.createSubjectWithGroups(remoteUser);
+            subject = authenticateUserAndGetSubject(subjectCreator, remoteUser, null);
         }
         else
         {
@@ -278,13 +278,7 @@ public abstract class AbstractServlet extends HttpServlet
                     String[] credentials = (new String(Base64.decodeBase64(tokens[1].getBytes()))).split(":",2);
                     if(credentials.length == 2)
                     {
-                        SubjectAuthenticationResult authResult = subjectCreator.authenticate(credentials[0], credentials[1]);
-                        if( authResult.getStatus() != AuthenticationStatus.SUCCESS)
-                        {
-                            //TODO: write a return response indicating failure?
-                            throw new AccessControlException("Incorrect username or password");
-                        }
-                        subject = authResult.getSubject();
+                        subject = authenticateUserAndGetSubject(subjectCreator, credentials[0], credentials[1]);
                     }
                     else
                     {
@@ -305,6 +299,18 @@ public abstract class AbstractServlet extends HttpServlet
             subject = subjectCreator.createSubjectWithGroups(AnonymousAuthenticationManager.ANONYMOUS_USERNAME);
         }
 
+        return subject;
+    }
+
+    private Subject authenticateUserAndGetSubject(SubjectCreator subjectCreator, String username, String password)
+    {
+        SubjectAuthenticationResult authResult = subjectCreator.authenticate(username, password);
+        if( authResult.getStatus() != AuthenticationStatus.SUCCESS)
+        {
+            //TODO: write a return response indicating failure?
+            throw new AccessControlException("Incorrect username or password");
+        }
+        Subject subject = authResult.getSubject();
         return subject;
     }
 

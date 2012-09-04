@@ -300,6 +300,45 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getJMXManagementEnabled());
     }
 
+    public void testGetHTTPManagementEnabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getHTTPManagementEnabled());
+
+        // Check value we set
+        _config.setProperty("management.http.enabled", false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.getHTTPManagementEnabled());
+    }
+
+    public void testGetHTTPManagementSaslAuthEnabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getHTTPManagementSaslAuthEnabled());
+
+        // Check value we set
+        _config.setProperty("management.http.sasl-auth", false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.getHTTPManagementSaslAuthEnabled());
+    }
+
+    public void testGetHTTPSManagementSaslAuthEnabled() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(true, _serverConfig.getHTTPSManagementSaslAuthEnabled());
+
+        // Check value we set
+        _config.setProperty("management.https.sasl-auth", false);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(false, _serverConfig.getHTTPSManagementSaslAuthEnabled());
+    }
+
     public void testGetManagementRightsInferAllAccess() throws Exception
     {
         _serverConfig.initialise();

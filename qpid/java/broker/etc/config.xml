@@ -48,7 +48,7 @@
             <registryServer>8999</registryServer>
             <!--
              If unspecified, connectorServer defaults to 100 + registryServer port.
-            <connectorServer>9099</connectionServer>
+            <connectorServer>9099</connectorServer>
             -->
         </jmxport>
         <ssl>
