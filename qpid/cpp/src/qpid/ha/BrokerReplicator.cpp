@@ -93,6 +93,7 @@ const string EXCHANGE("exchange");
 const string EXNAME("exName");
 const string EXTYPE("exType");
 const string KEY("key");
+const string BINDING_KEY("bindingKey");
 const string NAME("name");
 const string QNAME("qName");
 const string QUEUE("queue");
@@ -508,7 +509,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
         queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
     {
-        string key = values[KEY].asString();
+        string key = values[BINDING_KEY].asString();
         QPID_LOG(debug, logPrefix << "Bind response: exchange:" << exName
                  << " queue:" << qName
                  << " key:" << key);
