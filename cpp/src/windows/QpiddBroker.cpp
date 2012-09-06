@@ -249,7 +249,7 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
     if (all_argc > 0) {
       int i = 0;
       all_argv[i++] = argc > 0 ? argv[0] : svcName.c_str();
-      for (int j = 0; j < cmdline_args.size(); ++j)
+      for (size_t j = 0; j < cmdline_args.size(); ++j)
         all_argv[i++] = cmdline_args[j].c_str();
       for (DWORD k = 1; k < argc; ++k)
         all_argv[i++] = argv[k];
