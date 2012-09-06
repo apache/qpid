@@ -170,13 +170,13 @@ var updateAuthentication = function updateAuthentication()
                 if(data.user)
                 {
                     dojo.byId("authenticatedUser").innerHTML = data.user;
-                    dojo.style(button.domNode, {visibility: 'hidden'});
-                    dojo.style(usernameSpan, {visibility: 'visible'});
+                    dojo.style(button.domNode, {display: 'none'});
+                    dojo.style(usernameSpan, {display: 'block'});
                 }
                 else
                 {
-                    dojo.style(button.domNode, {visibility: 'visible'});
-                    dojo.style(usernameSpan, {visibility: 'hidden'});
+                    dojo.style(button.domNode, {display: 'block'});
+                    dojo.style(usernameSpan, {display: 'none'});
                 }
             }
         );
@@ -198,13 +198,13 @@ require(["dijit/form/DropDownButton", "dijit/TooltipDialog", "dijit/form/TextBox
         dropDown: dialog
     });
 
-    usernameSpan = domConstruct.create("span", { innerHTML: '<strong>User: </strong><span id="authenticatedUser"></span>',
-                                                     style: { visibility: "hidden" }});
+    usernameSpan = domConstruct.create("span", { innerHTML: '<strong>User: </strong> <span id="authenticatedUser"></span><a href="logout">[logout]</a>',
+                                                     style: { display: "none" }});
 
 
     var loginDiv = dom.byId("login");
-    loginDiv.appendChild(button.domNode);
     loginDiv.appendChild(usernameSpan);
+    loginDiv.appendChild(button.domNode);
 
 
 
