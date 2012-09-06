@@ -130,7 +130,7 @@ Broker::Options::Options(const std::string& name) :
     timestampRcvMsgs(false),    // set the 0.10 timestamp delivery property
     linkMaintenanceInterval(2),
     linkHeartbeatInterval(120),
-    maxNegotiateTime(2000)      // 2s
+    maxNegotiateTime(10000)     // 10s
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -171,7 +171,7 @@ Broker::Options::Options(const std::string& name) :
         ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.")
         ("link-maintenace-interval", optValue(linkMaintenanceInterval, "SECONDS"))
         ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"))
-        ("max-negotiate-time", optValue(maxNegotiateTime, "MilliSeconds"), "Maximum time a connection can take to send the initial protocol negotiation")
+        ("max-negotiate-time", optValue(maxNegotiateTime, "MILLISECONDS"), "Maximum time a connection can take to send the initial protocol negotiation")
         ("federation-tag", optValue(fedTag, "NAME"), "Override the federation tag")
         ;
 }
