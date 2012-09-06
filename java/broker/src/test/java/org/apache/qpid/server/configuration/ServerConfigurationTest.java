@@ -313,6 +313,19 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getHTTPManagementEnabled());
     }
 
+    public void testGetHTTPManagementSessionTimeout() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        assertEquals(60 * 15, _serverConfig.getHTTPManagementSessionTimeout());
+
+        // Check value we set
+        _config.setProperty("management.http.session-timeout", 60);
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals(60, _serverConfig.getHTTPManagementSessionTimeout());
+    }
+
     public void testGetHTTPManagementSaslAuthEnabled() throws ConfigurationException
     {
         // Check default

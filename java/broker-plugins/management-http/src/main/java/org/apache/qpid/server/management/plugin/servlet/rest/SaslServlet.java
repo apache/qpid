@@ -146,7 +146,7 @@ public class SaslServlet extends AbstractServlet
                 if(id == null)
                 {
                     SaslServer saslServer = subjectCreator.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
-                    evaluateSaslResponse(response, session, saslResponse, saslServer, subjectCreator);
+                    evaluateSaslResponse(request, response, session, saslResponse, saslServer, subjectCreator);
                 }
                 else
                 {
@@ -163,7 +163,7 @@ public class SaslServlet extends AbstractServlet
                     if(id.equals(session.getAttribute(ATTR_ID)) && System.currentTimeMillis() < (Long) session.getAttribute(ATTR_EXPIRY))
                     {
                         SaslServer saslServer = (SaslServer) session.getAttribute(ATTR_SASL_SERVER);
-                        evaluateSaslResponse(response, session, saslResponse, saslServer, subjectCreator);
+                        evaluateSaslResponse(request, response, session, saslResponse, saslServer, subjectCreator);
                     }
                     else
                     {
@@ -212,9 +212,9 @@ public class SaslServlet extends AbstractServlet
         }
     }
 
-    private void evaluateSaslResponse(final HttpServletResponse response,
-                                      final HttpSession session,
-                                      final String saslResponse, final SaslServer saslServer, SubjectCreator subjectCreator) throws IOException
+    private void evaluateSaslResponse(final HttpServletRequest request,
+                                      final HttpServletResponse response,
+                                      final HttpSession session, final String saslResponse, final SaslServer saslServer, SubjectCreator subjectCreator) throws IOException
     {
         final String id;
         byte[] challenge;
@@ -236,7 +236,8 @@ public class SaslServlet extends AbstractServlet
         {
             Subject subject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
 
-            setSubjectInSession(subject, session);
+            setSubjectInSession(subject, request, session);
+
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);

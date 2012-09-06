@@ -605,6 +605,14 @@ public class ServerConfiguration extends ConfigurationPlugin
         return getBooleanValue("management.http.basic-auth", false);
     }
 
+    /**
+     * @return value in seconds
+     */
+    public int getHTTPManagementSessionTimeout()
+    {
+        return getIntValue("management.http.session-timeout", 60 * 15);
+    }
+
     public boolean getHTTPSManagementEnabled()
     {
         return getBooleanValue("management.https.enabled", false);
@@ -1062,6 +1070,7 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         _qpidHome = path;
     }
+
 
 
 }
