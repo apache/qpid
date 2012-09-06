@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
@@ -41,6 +40,7 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.HttpManagementActor;
+import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -50,6 +50,8 @@ import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManag
 
 public abstract class AbstractServlet extends HttpServlet
 {
+    private static final String ATTR_LOGIN_LOGOUT_REPORTER = "attrLoginLogoutReporter";
+
     private static final Logger LOGGER = Logger.getLogger(AbstractServlet.class);
 
     protected static final String ATTR_SUBJECT = "subject";
@@ -292,7 +294,7 @@ public abstract class AbstractServlet extends HttpServlet
 
         if (subject != null)
         {
-            setSubjectInSession(subject, session);
+            setSubjectInSession(subject, request, session);
         }
         else
         {
@@ -327,7 +329,7 @@ public abstract class AbstractServlet extends HttpServlet
         HttpManagementActor actor = (HttpManagementActor) session.getAttribute(ATTR_LOG_ACTOR);
         if(actor == null)
         {
-            actor = new HttpManagementActor(_rootLogger, req.getRemoteAddr(), req.getRemotePort());
+            actor = createHttpManagementActor(req);
             session.setAttribute(ATTR_LOG_ACTOR, actor);
         }
 
@@ -339,9 +341,13 @@ public abstract class AbstractServlet extends HttpServlet
         return (Subject)session.getAttribute(ATTR_SUBJECT);
     }
 
-    protected void setSubjectInSession(Subject subject, final HttpSession session)
+    protected void setSubjectInSession(Subject subject, HttpServletRequest request, final HttpSession session)
     {
         session.setAttribute(ATTR_SUBJECT, subject);
+
+        LogActor logActor = createHttpManagementActor(request);
+        // Cause the user logon to be logged.
+        session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER, new LoginLogoutReporter(logActor, subject));
     }
 
     protected Broker getBroker()
@@ -353,4 +359,10 @@ public abstract class AbstractServlet extends HttpServlet
     {
         return InetSocketAddress.createUnresolved(request.getServerName(), request.getServerPort());
     }
+
+    private HttpManagementActor createHttpManagementActor(HttpServletRequest request)
+    {
+        return new HttpManagementActor(_rootLogger, request.getRemoteAddr(), request.getRemotePort());
+    }
+
 }

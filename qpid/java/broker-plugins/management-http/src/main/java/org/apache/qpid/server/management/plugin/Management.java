@@ -33,6 +33,7 @@ import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
@@ -67,9 +68,11 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class Management
 {
-    private static final String OPERATIONAL_LOGGING_NAME = "Web";
-
     private final Logger _logger = Logger.getLogger(Management.class);
+
+    public static final String ENTRY_POINT_PATH = "/management";
+
+    private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
     private final Broker _broker;
 
@@ -125,6 +128,7 @@ public class Management
                     + (sslPort == -1 ? "" : " HTTPS port " + sslPort));
         }
 
+        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         Server server = new Server();
 
         if (port != -1)
@@ -140,7 +144,6 @@ public class Management
 
         if (sslPort != -1)
         {
-            IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
             String keyStorePath = getKeyStorePath(appRegistry);
 
             SslContextFactory factory = new SslContextFactory();
@@ -178,7 +181,8 @@ public class Management
 
         root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
 
-        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), "/management");
+        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), ENTRY_POINT_PATH);
+        root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
@@ -193,7 +197,7 @@ public class Management
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
 
-        sessionManager.setMaxInactiveInterval(60 * 15);
+        sessionManager.setMaxInactiveInterval(appRegistry.getConfiguration().getHTTPManagementSessionTimeout());
 
         return server;
     }
