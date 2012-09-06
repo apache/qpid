@@ -49,7 +49,11 @@ public class ConnectionStartProperties
 
     public static final String SESSION_FLOW = "qpid.session_flow";
 
-    public static int getPID()
+    public static int _pid;
+
+    public static final String _platformInfo;
+
+    static
     {
         RuntimeMXBean rtb = ManagementFactory.getRuntimeMXBean();
         String processName = rtb.getName();
@@ -57,23 +61,20 @@ public class ConnectionStartProperties
         {
             try
             {
-                return Integer.parseInt(processName.substring(0,processName.indexOf('@')));
+                _pid = Integer.parseInt(processName.substring(0,processName.indexOf('@')));
             }
             catch(Exception e)
             {
                 LOGGER.warn("Unable to get the PID due to error",e);
-                return -1;
+                _pid = -1;
             }
         }
         else
         {
             LOGGER.warn("Unable to get the PID due to unsupported format : " + processName);
-            return -1;
+            _pid = -1;
         }
-    }
 
-    public static String getPlatformInfo()
-    {
         StringBuilder fullSystemInfo = new StringBuilder(System.getProperty("java.runtime.name"));
         fullSystemInfo.append(", ");
         fullSystemInfo.append(System.getProperty("java.runtime.version"));
@@ -88,6 +89,16 @@ public class ConnectionStartProperties
         fullSystemInfo.append(", ");
         fullSystemInfo.append(System.getProperty("sun.os.patch.level"));
 
-        return fullSystemInfo.toString();
+        _platformInfo = fullSystemInfo.toString();
+    }
+
+    public static int getPID()
+    {
+        return _pid;
+    }
+
+    public static String getPlatformInfo()
+    {
+        return _platformInfo;
     }
 }
