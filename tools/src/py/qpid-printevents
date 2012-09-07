@@ -72,7 +72,7 @@ class EventReceiver(Thread):
     isOpen = False
     while self.running:
       try:
-        conn = Connection.establish(self.url, **options)
+        conn = Connection.establish(self.url, **self.options)
         isOpen = True
         self.printer.pr(strftime("%c", gmtime(time())) + " NOTIC qpid-printevents:brokerConnected broker=%s" % self.url)
 
