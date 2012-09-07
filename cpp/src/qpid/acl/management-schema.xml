@@ -28,7 +28,7 @@
     <property name="maxQueuesPerUser"      type="uint16"  access="RO"       desc="Maximum allowed queues"/>
     <statistic name="aclDenyCount"         type="count64" unit="request"    desc="Number of ACL requests denied"/>
     <statistic name="connectionDenyCount"  type="count64" unit="connection" desc="Number of connections denied"/>
-    <statistic name="queueQuotaDenyCount"  type="count64" unit="connection" desc="Number of queue creations denied"/>
+    <statistic name="queueQuotaDenyCount"  type="count64" unit="queue"      desc="Number of queue creations denied"/>
 
     <method name="reloadACLFile" desc="Reload the ACL file"/>
 
