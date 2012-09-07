@@ -20,6 +20,7 @@
 package org.apache.qpid.disttest.client;
 
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -69,8 +70,8 @@ public class ParticipantExecutorTest extends TestCase
         InOrder inOrder = inOrder(_participant, _client);
 
         inOrder.verify(_participant).doIt(CLIENT_NAME);
-        inOrder.verify(_client).sendResults(_mockResult);
         inOrder.verify(_participant).releaseResources();
+        inOrder.verify(_client).sendResults(_mockResult);
     }
 
     public void testParticipantThrowsException() throws Exception
@@ -82,13 +83,28 @@ public class ParticipantExecutorTest extends TestCase
         InOrder inOrder = inOrder(_participant, _client);
 
         inOrder.verify(_participant).doIt(CLIENT_NAME);
-        inOrder.verify(_client).sendResults(argThat(HAS_ERROR));
         inOrder.verify(_participant).releaseResources();
+        inOrder.verify(_client).sendResults(argThat(HAS_ERROR));
+    }
+
+    public void testReleaseResourcesThrowsException() throws Exception
+    {
+        when(_participant.doIt(CLIENT_NAME)).thenReturn(_mockResult);
+        doThrow(DistributedTestException.class).when(_participant).releaseResources();
+
+        _participantExecutor.start(_client);
+
+        InOrder inOrder = inOrder(_participant, _client);
+
+        inOrder.verify(_participant).doIt(CLIENT_NAME);
+        inOrder.verify(_participant).releaseResources();
+
+        // check that sendResults is called even though releaseResources threw an exception
+        inOrder.verify(_client).sendResults(_mockResult);
     }
 
     public void testThreadNameAndDaemonness() throws Exception
     {
-
         ThreadPropertyReportingParticipant participant = new ThreadPropertyReportingParticipant(PARTICIPANT_NAME);
         _participantExecutor = new ParticipantExecutor(participant);
 
