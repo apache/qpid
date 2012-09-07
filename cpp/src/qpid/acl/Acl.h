@@ -98,7 +98,6 @@ public:
 
     // Resource quota tracking
     virtual bool approveConnection(const broker::Connection& connection);
-    virtual void setUserId(const broker::Connection& connection, const std::string& username);
     virtual bool approveCreateQueue(const std::string& userId, const std::string& queueName);
     virtual void recordDestroyQueue(const std::string& queueName);
 

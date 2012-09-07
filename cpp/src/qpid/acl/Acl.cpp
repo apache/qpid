@@ -141,13 +141,6 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
     return connectionCounter->approveConnection(conn);
 }
 
-
-void Acl::setUserId(const qpid::broker::Connection& connection, const std::string& username)
-{
-    connectionCounter->setUserId(connection, username);
-}
-
-
 bool Acl::approveCreateQueue(const std::string& userId, const std::string& queueName)
 {
     return resourceCounter->approveCreateQueue(userId, queueName);
