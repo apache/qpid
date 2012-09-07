@@ -199,6 +199,16 @@ namespace acl {
                                     lookupParamItr = params->find(PROP_MAXQUEUESIZE);
                                     break;
 
+                                case acl::SPECPROP_MAXFILECOUNTUPPERLIMIT:
+                                case acl::SPECPROP_MAXFILECOUNTLOWERLIMIT:
+                                    lookupParamItr = params->find(PROP_MAXFILECOUNT);
+                                    break;
+
+                                case acl::SPECPROP_MAXFILESIZEUPPERLIMIT:
+                                case acl::SPECPROP_MAXFILESIZELOWERLIMIT:
+                                    lookupParamItr = params->find(PROP_MAXFILESIZE);
+                                    break;
+
                                 default:
                                     lookupParamItr = params->find((Property)rulePropMapItr->first);
                                     break;
@@ -222,6 +232,8 @@ namespace acl {
                                     {
                                     case acl::SPECPROP_MAXQUEUECOUNTUPPERLIMIT:
                                     case acl::SPECPROP_MAXQUEUESIZEUPPERLIMIT:
+                                    case acl::SPECPROP_MAXFILECOUNTUPPERLIMIT:
+                                    case acl::SPECPROP_MAXFILESIZEUPPERLIMIT:
                                         limitChecked &=
                                             compareIntMax(
                                                 rulePropMapItr->first,
@@ -231,6 +243,8 @@ namespace acl {
 
                                     case acl::SPECPROP_MAXQUEUECOUNTLOWERLIMIT:
                                     case acl::SPECPROP_MAXQUEUESIZELOWERLIMIT:
+                                    case acl::SPECPROP_MAXFILECOUNTLOWERLIMIT:
+                                    case acl::SPECPROP_MAXFILESIZELOWERLIMIT:
                                         limitChecked &=
                                             compareIntMin(
                                                 rulePropMapItr->first,

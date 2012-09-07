@@ -33,6 +33,8 @@ namespace broker {
 namespace {
 const std::string MAX_COUNT("qpid.max_count");
 const std::string MAX_SIZE("qpid.max_size");
+const std::string MAX_FILE_COUNT("qpid.file_count");
+const std::string MAX_FILE_SIZE("qpid.file_size");
 const std::string POLICY_TYPE("qpid.policy_type");
 const std::string POLICY_TYPE_REJECT("reject");
 const std::string POLICY_TYPE_RING("ring");
@@ -163,6 +165,12 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
     } else if (key == ALERT_SIZE) {
         alertThreshold.setSize(value);
         return true;
+    } else if (key == MAX_FILE_COUNT && value.asUint64() > 0) {
+        maxFileCount = value.asUint64();
+        return false; // 'handle' here and also pass to store
+    } else if (key == MAX_FILE_SIZE && value.asUint64() > 0) {
+        maxFileSize = value.asUint64();
+        return false; // 'handle' here and also pass to store
     } else {
         return false;
     }
