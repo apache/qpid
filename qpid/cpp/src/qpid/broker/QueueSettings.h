@@ -71,6 +71,10 @@ struct QueueSettings
     QueueDepth alertThreshold;
     int64_t alertRepeatInterval;
 
+    //file limits checked by Acl and shared with storeSettings
+    uint64_t maxFileSize;
+    uint64_t maxFileCount;
+
     //yuck, yuck
     qpid::framing::FieldTable storeSettings;
     std::map<std::string, qpid::types::Variant> original;
