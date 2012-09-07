@@ -71,6 +71,8 @@ class SslConnector : public qpid::client::TCPConnector
     void redirectReadbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void redirectWritebuff(qpid::sys::AsynchIO&);
     void redirectEof(qpid::sys::AsynchIO&);
+    void redirectDisconnect(qpid::sys::AsynchIO&);
+    void redirectSocketClosed(qpid::sys::AsynchIO&, const qpid::sys::Socket&);
 
 public:
     SslConnector(boost::shared_ptr<qpid::sys::Poller>,
@@ -123,6 +125,14 @@ void SslConnector::redirectEof(qpid::sys::AsynchIO& a) {
     eof(a);
 }
 
+void SslConnector::redirectDisconnect(qpid::sys::AsynchIO& a) {
+    disconnected(a);
+}
+
+void SslConnector::redirectSocketClosed(qpid::sys::AsynchIO& a, const qpid::sys::Socket& s) {
+    socketClosed(a, s);
+}
+
 SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
                            framing::ProtocolVersion ver,
                            const ConnectionSettings& settings,
@@ -163,8 +173,8 @@ void SslConnector::connected(const Socket& s) {
                                                      credHandle,
                                                      boost::bind(&SslConnector::redirectReadbuff, this, _1, _2),
                                                      boost::bind(&SslConnector::redirectEof, this, _1),
-                                                     boost::bind(&SslConnector::redirectEof, this, _1),
-                                                     0, // closed
+                                                     boost::bind(&SslConnector::redirectDisconnect, this, _1),
+                                                     boost::bind(&SslConnector::redirectSocketClosed, this, _1, _2),
                                                      0, // nobuffs
                                                      boost::bind(&SslConnector::redirectWritebuff, this, _1),
                                                      boost::bind(&SslConnector::negotiationDone, this, _1));
