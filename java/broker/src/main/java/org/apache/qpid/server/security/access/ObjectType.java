@@ -41,6 +41,7 @@ public enum ObjectType
 {
     ALL(Operation.ALL),
     VIRTUALHOST(Operation.ALL, ACCESS),
+    MANAGEMENT(Operation.ALL, ACCESS),
     QUEUE(Operation.ALL, CREATE, DELETE, PURGE, CONSUME),
     EXCHANGE(Operation.ALL, ACCESS, CREATE, DELETE, BIND, UNBIND, PUBLISH),
     LINK, // Not allowed in the Java broker

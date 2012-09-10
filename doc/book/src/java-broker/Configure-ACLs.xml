@@ -215,36 +215,40 @@
     <tgroup cols="2">
       <tbody>
         <row>
+          <entry> <command>VIRTUALHOST</command> </entry>
+          <entry> <para>A virtualhost (Java Broker only)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>MANAGEMENT </command> </entry>
+          <entry> <para>Management - for web and JMX (Java Broker only)</para> </entry>
+        </row>
+        <row>
           <entry> <command>QUEUE</command> </entry>
-          <entry> <para> A queue </para> </entry>
+          <entry> <para>A queue </para> </entry>
         </row>
         <row>
           <entry> <command>EXCHANGE</command> </entry>
-        <entry> <para> An exchange </para> </entry>
-        </row>
-        <row>
-          <entry> <command>VIRTUALHOST</command> </entry>
-          <entry> <para> A virtualhost (Java Broker only)</para> </entry>
+        <entry> <para>An exchange </para> </entry>
         </row>
         <row>
           <entry> <command>USER</command> </entry>
-          <entry> <para> A user (Java Broker only)</para> </entry>
+          <entry> <para>A user (Java Broker only)</para> </entry>
         </row>
         <row>
           <entry> <command>GROUP</command> </entry>
-          <entry> <para> A group (Java Broker only)</para> </entry>
+          <entry> <para>A group (Java Broker only)</para> </entry>
         </row>
         <row>
           <entry> <command>METHOD</command> </entry>
-          <entry> <para> Management or agent or broker method (Java Broker only)</para> </entry>
-        </row>
-        <row>
-          <entry> <command>BROKER</command> </entry>
-        <entry> <para> The broker (not currently used in Java Broker)</para> </entry>
+          <entry> <para>Management or agent or broker method (Java Broker only)</para> </entry>
         </row>
         <row>
           <entry> <command>LINK</command> </entry>
-          <entry> <para> A federation or inter-broker link (not currently used in Java Broker)</para> </entry>
+          <entry> <para>A federation or inter-broker link (not currently used in Java Broker)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>BROKER</command> </entry>
+          <entry> <para>The broker (not currently used in Java Broker)</para> </entry>
         </row>
       </tbody>
     </tgroup>
@@ -387,8 +391,9 @@
          is allowed to perform user maintainence  This example illustrates the permissioning of an individual component.
       </para>
       <programlisting>
-        # Give usermaint permission to execute all JMX Methods on the
+        # Give usermaint access to management and permission to execute all JMX Methods on the
         # UserManagement MBean and perform all actions for USER objects
+        ACL ALLOW usermaint ACCESS MANAGEMENT
         ACL ALLOW usermaint ALL METHOD component="UserManagement"
         ACL ALLOW usermaint ALL USER
         ACL DENY ALL ALL METHOD component="UserManagement"
