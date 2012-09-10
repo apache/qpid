@@ -373,19 +373,15 @@
       </envConfig>
       ...
     </store>]]></programlisting>
-      <para>And to override the BDB replication configuration options <varname>je.rep.insufficientReplicasTimeout</varname>.</para>
+      <para>And to override the BDB replication configuration options <varname>je.rep.electionsPrimaryRetries</varname>.</para>
       <programlisting language="xml"><![CDATA[
          ...
       </highAvailability>
       ...
       <repConfig>
-        <name>je.rep.insufficientReplicasTimeout</name>
-        <value>2</value>
-      </envConfig>
-      <envConfig>
-        <name>je.txn.timeout</name>
-        <value>10 s</value>
-      </envConfig>
+        <name>je.rep.electionsPrimaryRetries</name>
+        <value>3</value>
+      </repConfig>
       ...
     </store>]]></programlisting>
     </section>
