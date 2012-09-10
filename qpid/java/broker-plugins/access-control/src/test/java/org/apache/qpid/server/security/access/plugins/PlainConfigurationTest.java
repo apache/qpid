@@ -438,6 +438,15 @@ public class PlainConfigurationTest extends TestCase
         }
     }
 
+    public void testManagementRuleParsing() throws Exception
+    {
+        validateRule(writeACLConfig("ACL ALLOW user1 ALL MANAGEMENT"),
+                "user1", Operation.ALL, ObjectType.MANAGEMENT, ObjectProperties.EMPTY);
+
+        validateRule(writeACLConfig("ACL ALLOW user1 ACCESS MANAGEMENT"),
+                "user1", Operation.ACCESS, ObjectType.MANAGEMENT, ObjectProperties.EMPTY);
+    }
+
     private void validateRule(final PlainConfiguration config, String username, Operation operation, ObjectType objectType, ObjectProperties objectProperties)
     {
         final RuleSet rs = config.getConfiguration();

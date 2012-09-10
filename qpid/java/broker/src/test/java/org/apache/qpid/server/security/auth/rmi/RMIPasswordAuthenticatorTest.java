@@ -31,10 +31,12 @@ import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
+import org.apache.qpid.server.security.SecurityManager;
 
 /**
  * Tests the RMIPasswordAuthenticator and its collaboration with the AuthenticationManager.
@@ -42,17 +44,25 @@ import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
  */
 public class RMIPasswordAuthenticatorTest extends TestCase
 {
-    private static final Subject SUBJECT = new Subject();
-    private final String USERNAME = "guest";
-    private final String PASSWORD = "guest";
+    private static final String USERNAME = "guest";
+    private static final String PASSWORD = "password";
+
+    private final ApplicationRegistry _applicationRegistry = mock(ApplicationRegistry.class);
+    private final SecurityManager _securityManager = mock(SecurityManager.class);
+    private final InetSocketAddress _jmxSocketAddress = new InetSocketAddress(8999);
+    private final Subject _loginSubject = new Subject();
+    private final String[] _credentials = new String[] {USERNAME, PASSWORD};
+
     private RMIPasswordAuthenticator _rmipa;
-    private String[] _credentials;
+
+    private SubjectCreator _usernamePasswordOkaySuvjectCreator = createMockSubjectCreator(true, null);
+    private SubjectCreator _badPasswordSubjectCreator = createMockSubjectCreator(false, null);
 
     protected void setUp() throws Exception
     {
-        _rmipa = new RMIPasswordAuthenticator(new InetSocketAddress(5672));
+        _rmipa = new RMIPasswordAuthenticator(_applicationRegistry, _jmxSocketAddress);
 
-        _credentials = new String[] {USERNAME, PASSWORD};
+        when(_applicationRegistry.getSecurityManager()).thenReturn(_securityManager);
     }
 
     /**
@@ -60,10 +70,11 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testAuthenticationSuccess()
     {
-        _rmipa.setSubjectCreator(createMockSubjectCreator(true, null));
+        when(_applicationRegistry.getSubjectCreator(_jmxSocketAddress)).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_securityManager.accessManagement()).thenReturn(true);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
-        assertSame("Subject must be unchanged", SUBJECT, newSubject);
+        assertSame("Subject must be unchanged", _loginSubject, newSubject);
     }
 
     /**
@@ -71,7 +82,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testUsernameOrPasswordInvalid()
     {
-        _rmipa.setSubjectCreator(createMockSubjectCreator(false, null));
+        when(_applicationRegistry.getSubjectCreator(_jmxSocketAddress)).thenReturn(_badPasswordSubjectCreator);
 
         try
         {
@@ -82,17 +93,31 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         {
             assertEquals("Unexpected exception message",
                     RMIPasswordAuthenticator.INVALID_CREDENTIALS, se.getMessage());
-
         }
     }
 
-    /**
-     * Tests case where authentication system itself fails.
-     */
-    public void testAuthenticationFailure()
+    public void testAuthorisationFailure()
+    {
+        when(_applicationRegistry.getSubjectCreator(_jmxSocketAddress)).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_securityManager.accessManagement()).thenReturn(false);
+
+        try
+        {
+            _rmipa.authenticate(_credentials);
+            fail("Exception not thrown");
+        }
+        catch (SecurityException se)
+        {
+            assertEquals("Unexpected exception message",
+                    RMIPasswordAuthenticator.USER_NOT_AUTHORISED_FOR_MANAGEMENT, se.getMessage());
+        }
+    }
+
+    public void testSubjectCreatorInternalFailure()
     {
         final Exception mockAuthException = new Exception("Mock Auth system failure");
-        _rmipa.setSubjectCreator(createMockSubjectCreator(false, mockAuthException));
+        SubjectCreator subjectCreator = createMockSubjectCreator(false, mockAuthException);
+        when(_applicationRegistry.getSubjectCreator(_jmxSocketAddress)).thenReturn(subjectCreator);
 
         try
         {
@@ -105,13 +130,13 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         }
     }
 
-
     /**
      * Tests case where authentication manager is not set.
      */
-    public void testNullAuthenticationManager() throws Exception
+    public void testNullSubjectCreator() throws Exception
     {
-        _rmipa.setSubjectCreator(null);
+        when(_applicationRegistry.getSubjectCreator(_jmxSocketAddress)).thenReturn(null);
+
         try
         {
             _rmipa.authenticate(_credentials);
@@ -120,7 +145,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.UNABLE_TO_LOOKUP, se.getMessage());
+                    "Can't get subject creator for 0.0.0.0/0.0.0.0:8999", se.getMessage());
         }
     }
 
@@ -148,11 +173,13 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testWithIllegalNumberOfArguments()
     {
+        String[] credentials;
+
         // Test handling of incorrect number of credentials
         try
         {
-            _credentials = new String[]{USERNAME, PASSWORD, PASSWORD};
-            _rmipa.authenticate(_credentials);
+            credentials = new String[]{USERNAME, PASSWORD, PASSWORD};
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to supplying wrong number of credentials");
         }
         catch (SecurityException se)
@@ -165,8 +192,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         try
         {
             //send a null array
-            _credentials = null;
-            _rmipa.authenticate(_credentials);
+            credentials = null;
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to not supplying an array of credentials");
         }
         catch (SecurityException se)
@@ -178,8 +205,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         try
         {
             //send a null password
-            _credentials = new String[]{USERNAME, null};
-            _rmipa.authenticate(_credentials);
+            credentials = new String[]{USERNAME, null};
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to sending a null password");
         }
         catch (SecurityException se)
@@ -191,8 +218,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         try
         {
             //send a null username
-            _credentials = new String[]{null, PASSWORD};
-            _rmipa.authenticate(_credentials);
+            credentials = new String[]{null, PASSWORD};
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to sending a null username");
         }
         catch (SecurityException se)
@@ -217,7 +244,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         {
 
             subjectAuthenticationResult = new SubjectAuthenticationResult(
-                    new AuthenticationResult(mock(Principal.class)), SUBJECT);
+                    new AuthenticationResult(mock(Principal.class)), _loginSubject);
         }
         else
         {

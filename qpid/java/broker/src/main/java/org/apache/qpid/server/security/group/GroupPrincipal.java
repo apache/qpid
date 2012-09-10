@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security.group;
 
+import java.io.Serializable;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.util.Enumeration;
@@ -30,7 +31,7 @@ import java.util.Enumeration;
  * methods etc throw {@link UnsupportedOperationException}.
  *
  */
-public class GroupPrincipal implements Group
+public class GroupPrincipal implements Group, Serializable
 {
     /** Name of the group */
     private final String _groupName;

@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.server.security.auth;
 
+import java.io.Serializable;
 import java.security.Principal;
 import java.util.Set;
 
@@ -30,7 +31,7 @@ import org.apache.qpid.server.security.auth.UsernamePrincipal;
  * by calling {@link Subject#getPrincipals(Class)}, passing in {@link AuthenticatedPrincipal}.class,
  * e.g. when logging.
  */
-public final class AuthenticatedPrincipal implements Principal
+public final class AuthenticatedPrincipal implements Principal, Serializable
 {
     private final Principal _wrappedPrincipal;
 

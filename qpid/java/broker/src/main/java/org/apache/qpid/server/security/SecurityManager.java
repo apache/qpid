@@ -29,6 +29,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
@@ -355,6 +356,17 @@ public class SecurityManager
 	                properties.put(ObjectProperties.Property.COMPONENT, componentName);
                 }
                 return plugin.authorise(operation, METHOD, properties);
+            }
+        });
+    }
+
+    public boolean accessManagement()
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(SecurityPlugin plugin)
+            {
+                return plugin.access(ObjectType.MANAGEMENT, null);
             }
         });
     }
