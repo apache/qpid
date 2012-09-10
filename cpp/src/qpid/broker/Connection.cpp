@@ -142,7 +142,7 @@ Connection::~Connection()
         // In a cluster, Connections destroyed during shutdown are in
         // a cluster-unsafe context. Don't raise an event in that case.
         if (!link && isClusterSafe())
-            agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId()));
+            agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId(), mgmtObject->get_remoteProperties()));
         QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
             << " rhost:" << mgmtId );
     }
@@ -287,7 +287,7 @@ void Connection::setUserId(const string& userId)
 void Connection::raiseConnectEvent() {
     if (mgmtObject != 0) {
         mgmtObject->set_authIdentity(userId);
-        agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId));
+        agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId, mgmtObject->get_remoteProperties()));
     }
 
     QPID_LOG_CAT(debug, model, "Create connection. user:" << userId

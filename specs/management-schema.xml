@@ -357,6 +357,7 @@
     <property name="shadow"             type="bool"   access="RO" desc="True for shadow connections"/>
     <property name="saslMechanism"      type="sstr"   access="RO" desc="SASL mechanism"/>
     <property name="saslSsf"            type="uint16"   access="RO" desc="SASL security strength factor"/>
+    <property name="remoteProperties"   type="map"    access="RO" desc="optional map of identifying information sent by the remote"/>
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
@@ -496,11 +497,12 @@
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
     <arg name="msgDepth" type="count64" desc="Current size of queue in messages"/>
     <arg name="byteDepth" type="count64" desc="Current size of queue in bytes"/>
+    <arg name="properties" type="map" desc="optional identifying information sent by the remote"/>
   </eventArguments>
 
-  <event name="clientConnect"     sev="inform" args="rhost, user"/>
-  <event name="clientConnectFail" sev="warn"   args="rhost, user, reason"/>
-  <event name="clientDisconnect"  sev="inform" args="rhost, user"/>
+  <event name="clientConnect"     sev="inform" args="rhost, user, properties"/>
+  <event name="clientConnectFail" sev="warn"   args="rhost, user, reason, properties"/>
+  <event name="clientDisconnect"  sev="inform" args="rhost, user, properties"/>
   <event name="brokerLinkUp"      sev="inform" args="rhost"/>
   <event name="brokerLinkDown"    sev="warn"   args="rhost"/>
   <event name="queueDeclare"      sev="inform" args="rhost, user, qName, durable, excl, autoDel, altEx, args, disp"/>
