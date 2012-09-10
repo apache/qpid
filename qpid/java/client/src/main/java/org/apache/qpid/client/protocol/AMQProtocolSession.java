@@ -48,6 +48,8 @@ import org.apache.qpid.transport.TransportException;
 
 import javax.jms.JMSException;
 import javax.security.sasl.SaslClient;
+
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -370,6 +372,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             //ignore such exceptions, they were already logged
             //and this is a forcible close.
         }
+    }
+
+    public Sender<ByteBuffer> getSender()
+    {
+        return _protocolHandler.getSender();
     }
 
     public void failover(String host, int port)

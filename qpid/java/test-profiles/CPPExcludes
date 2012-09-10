@@ -184,3 +184,6 @@ org.apache.qpid.disttest.*
 // Exclude java broker REST API tests
 org.apache.qpid.server.management.plugin.servlet.rest.*
 org.apache.qpid.systest.rest.acl.*
+
+// Exclude failover tests requiring virtual host functionality
+org.apache.qpid.client.failover.MultipleBrokersFailoverTest#*

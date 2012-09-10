@@ -82,28 +82,7 @@ public class InternalBrokerHolder implements BrokerHolder
     @Override
     public String dumpThreads()
     {
-        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
-        StringBuilder dump = new StringBuilder();
-        dump.append(String.format("%n"));
-        for (ThreadInfo threadInfo : threadInfos)
-        {
-            dump.append(threadInfo);
-        }
-
-        long[] deadLocks = threadMXBean.findDeadlockedThreads();
-        if (deadLocks != null && deadLocks.length > 0)
-        {
-            ThreadInfo[] deadlockedThreads = threadMXBean.getThreadInfo(deadLocks);
-            dump.append(String.format("%n"));
-            dump.append("Deadlock is detected!");
-            dump.append(String.format("%n"));
-            for (ThreadInfo threadInfo : deadlockedThreads)
-            {
-                dump.append(threadInfo);
-            }
-        }
-        return dump.toString();
+        return TestUtils.dumpThreads();
     }
 
     @Override
