@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client.handler;
 
+import java.nio.ByteBuffer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.transport.Sender;
 
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener<ConnectionCloseBody>
 {
@@ -91,18 +94,15 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
         }
         finally
         {
+            Sender<ByteBuffer> sender = session.getSender();
 
             if (error != null)
             {
                 session.notifyError(error);
-            }            
+            }
 
-            // Close the protocol Session, including any open TCP connections 
-            session.closeProtocolSession();
-
-            // Closing the session should not introduce a race condition as this thread will continue to propgate any
-            // exception in to the exceptionCaught method of the SessionHandler.
-            // Any sessionClosed event should occur after this.
+            // Close the open TCP connection
+            sender.close();
         }
     }
 

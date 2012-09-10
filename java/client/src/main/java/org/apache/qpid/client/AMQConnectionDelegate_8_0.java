@@ -90,11 +90,12 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
     {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Connecting to broker:" + brokerDetail);
+        }
         final Set<AMQState> openOrClosedStates =
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
-
-
-        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
 
         ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
@@ -126,6 +127,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
         NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()), sslContext);
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
+
+        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
         _conn.getProtocolHandler().getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up

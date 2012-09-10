@@ -1080,7 +1080,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _started;
     }
 
-    protected final boolean isConnected()
+    public final boolean isConnected()
     {
         return _connected;
     }
