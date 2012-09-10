@@ -32,6 +32,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qmf/org/apache/qpid/broker/EventClientConnectFail.h"
 
 using namespace qpid;
@@ -148,6 +149,24 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProp
 
 void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
 {
+    const framing::FieldTable& clientProperties = body.getClientProperties();
+    qmf::org::apache::qpid::broker::Connection* mgmtObject = connection.getMgmtObject();
+
+    if (mgmtObject != 0) {
+        string procName = clientProperties.getAsString(CLIENT_PROCESS_NAME);
+        uint32_t pid = clientProperties.getAsInt(CLIENT_PID);
+        uint32_t ppid = clientProperties.getAsInt(CLIENT_PPID);
+
+        types::Variant::Map properties;
+        amqp_0_10::translate(clientProperties, properties);
+        mgmtObject->set_remoteProperties(properties);
+        if (!procName.empty())
+            mgmtObject->set_remoteProcessName(procName);
+        if (pid != 0)
+            mgmtObject->set_remotePid(pid);
+        if (ppid != 0)
+            mgmtObject->set_remoteParentPid(ppid);
+    }
     try {
         authenticator->start(body.getMechanism(), body.hasResponse() ? &body.getResponse() : 0);
     } catch (std::exception& /*e*/) {
@@ -160,8 +179,9 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
             string uid;
             authenticator->getError(error);
             authenticator->getUid(uid);
-            if (agent) {
-                agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+            if (agent && mgmtObject) {
+                agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error,
+                                                               mgmtObject->get_remoteProperties()));
             }
             QPID_LOG_CAT(debug, model, "Failed connection. rhost:" << connection.getMgmtId()
                 << " user:" << uid
@@ -169,9 +189,8 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
         }
         throw;
     }
-    const framing::FieldTable& clientProperties = body.getClientProperties();
-    connection.setClientProperties(clientProperties);
 
+    connection.setClientProperties(clientProperties);
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
     if (clientProperties.isSet(QPID_FED_TAG)) {
         connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
@@ -186,19 +205,6 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
             return;
         }
         QPID_LOG(info, "Connection is a federation link");
-    }
-
-    if (connection.getMgmtObject() != 0) {
-        string procName = clientProperties.getAsString(CLIENT_PROCESS_NAME);
-        uint32_t pid = clientProperties.getAsInt(CLIENT_PID);
-        uint32_t ppid = clientProperties.getAsInt(CLIENT_PPID);
-
-        if (!procName.empty())
-            connection.getMgmtObject()->set_remoteProcessName(procName);
-        if (pid != 0)
-            connection.getMgmtObject()->set_remotePid(pid);
-        if (ppid != 0)
-            connection.getMgmtObject()->set_remoteParentPid(ppid);
     }
 }
 
@@ -216,8 +222,9 @@ void ConnectionHandler::Handler::secureOk(const string& response)
             string uid;
             authenticator->getError(error);
             authenticator->getUid(uid);
-            if (agent) {
-                agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+            if (agent && connection.getMgmtObject()) {
+                agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error,
+                                                               connection.getMgmtObject()->get_remoteProperties()));
             }
             QPID_LOG_CAT(debug, model, "Failed connection. rhost:" << connection.getMgmtId()
                 << " user:" << uid
