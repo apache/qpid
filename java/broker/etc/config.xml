@@ -42,6 +42,7 @@
         <socketReceiveBuffer>262144</socketReceiveBuffer>
         <socketSendBuffer>262144</socketSendBuffer>
     </connector>
+
     <management>
         <enabled>true</enabled>
         <jmxport>
@@ -57,10 +58,14 @@
             <keyStorePath>${conf}/qpid.keystore</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
+        <http>
+            <enabled>true</enabled>
+        </http>
         <https>
             <enabled>false</enabled>
         </https>
     </management>
+
     <advanced>
         <framesize>65535</framesize>
         <locale>en_US</locale>	
