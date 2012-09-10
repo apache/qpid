@@ -43,6 +43,7 @@ import org.apache.qpid.server.logging.actors.HttpManagementActor;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
@@ -50,11 +51,10 @@ import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManag
 
 public abstract class AbstractServlet extends HttpServlet
 {
-    private static final String ATTR_LOGIN_LOGOUT_REPORTER = "attrLoginLogoutReporter";
-
     private static final Logger LOGGER = Logger.getLogger(AbstractServlet.class);
 
-    protected static final String ATTR_SUBJECT = "subject";
+    private static final String ATTR_LOGIN_LOGOUT_REPORTER = "AbstractServlet.loginLogoutReporter";
+    private static final String ATTR_SUBJECT = "AbstractServlet.subject";
     private static final String ATTR_LOG_ACTOR = "AbstractServlet.logActor";
 
     private final Broker _broker;
@@ -193,9 +193,18 @@ public abstract class AbstractServlet extends HttpServlet
                     final HttpServletRequest request,
                     final HttpServletResponse resp)
     {
-        Subject subject = getAndCacheAuthorizedSubject(request);
-        org.apache.qpid.server.security.SecurityManager.setThreadSubject(subject);
+        Subject subject;
+        try
+        {
+            subject = getAndCacheAuthorizedSubject(request);
+        }
+        catch (AccessControlException e)
+        {
+            sendError(resp, HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
 
+        SecurityManager.setThreadSubject(subject);
         try
         {
             HttpManagementActor logActor = getLogActorAndCacheInSession(request);
@@ -223,7 +232,7 @@ public abstract class AbstractServlet extends HttpServlet
         {
             try
             {
-                org.apache.qpid.server.security.SecurityManager.setThreadSubject(null);
+                SecurityManager.setThreadSubject(null);
             }
             finally
             {
@@ -247,7 +256,7 @@ public abstract class AbstractServlet extends HttpServlet
     private Subject getAndCacheAuthorizedSubject(HttpServletRequest request)
     {
         HttpSession session = request.getSession();
-        Subject subject = getSubjectFromSession(session);
+        Subject subject = getAuthorisedSubjectFromSession(session);
 
         if(subject != null)
         {
@@ -255,6 +264,65 @@ public abstract class AbstractServlet extends HttpServlet
         }
 
         SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
+        subject = authenticate(request, subjectCreator);
+        if (subject != null)
+        {
+            authoriseManagement(request, subject);
+            setAuthorisedSubjectInSession(subject, request, session);
+        }
+        else
+        {
+            subject = subjectCreator.createSubjectWithGroups(AnonymousAuthenticationManager.ANONYMOUS_USERNAME);
+        }
+
+        return subject;
+    }
+
+    protected void authoriseManagement(HttpServletRequest request, Subject subject)
+    {
+        // TODO: We should eliminate SecurityManager.setThreadSubject in favour of Subject.doAs
+        SecurityManager.setThreadSubject(subject);  // Required for accessManagement check
+        LogActor actor = createHttpManagementActor(request);
+        CurrentActor.set(actor);
+        try
+        {
+            try
+            {
+                Subject.doAs(subject, new PrivilegedExceptionAction<Void>() // Required for proper logging of Subject
+                {
+                    @Override
+                    public Void run() throws Exception
+                    {
+                        boolean allowed = ApplicationRegistry.getInstance().getSecurityManager().accessManagement();
+                        if (!allowed)
+                        {
+                            throw new AccessControlException("User is not authorised for management");
+                        }
+                        return null;
+                    }
+                });
+            }
+            catch (PrivilegedActionException e)
+            {
+                throw new RuntimeException("Unable to perform access check", e);
+            }
+        }
+        finally
+        {
+            try
+            {
+                CurrentActor.remove();
+            }
+            finally
+            {
+                SecurityManager.setThreadSubject(null);
+            }
+        }
+    }
+
+    private Subject authenticate(HttpServletRequest request, SubjectCreator subjectCreator)
+    {
+        Subject subject = null;
 
         String remoteUser = request.getRemoteUser();
         if(remoteUser != null)
@@ -268,8 +336,7 @@ public abstract class AbstractServlet extends HttpServlet
             if (header != null)
             {
                 String[] tokens = header.split("\\s");
-                if(tokens.length >= 2
-                        && "BASIC".equalsIgnoreCase(tokens[0]))
+                if(tokens.length >= 2 && "BASIC".equalsIgnoreCase(tokens[0]))
                 {
                     if(!isBasicAuthSupported(request))
                     {
@@ -277,30 +344,27 @@ public abstract class AbstractServlet extends HttpServlet
                         throw new IllegalArgumentException("BASIC Authorization is not enabled.");
                     }
 
-                    String[] credentials = (new String(Base64.decodeBase64(tokens[1].getBytes()))).split(":",2);
-                    if(credentials.length == 2)
-                    {
-                        subject = authenticateUserAndGetSubject(subjectCreator, credentials[0], credentials[1]);
-                    }
-                    else
-                    {
-                        //TODO: write a return response indicating failure?
-                        throw new AccessControlException("Invalid number of credentials supplied: "
-                                                        + credentials.length);
-                    }
+                    subject = performBasicAuth(subject, subjectCreator, tokens[1]);
                 }
             }
         }
 
-        if (subject != null)
+        return subject;
+    }
+
+    private Subject performBasicAuth(Subject subject,SubjectCreator subjectCreator, String base64UsernameAndPassword)
+    {
+        String[] credentials = (new String(Base64.decodeBase64(base64UsernameAndPassword.getBytes()))).split(":",2);
+        if(credentials.length == 2)
         {
-            setSubjectInSession(subject, request, session);
+            subject = authenticateUserAndGetSubject(subjectCreator, credentials[0], credentials[1]);
         }
         else
         {
-            subject = subjectCreator.createSubjectWithGroups(AnonymousAuthenticationManager.ANONYMOUS_USERNAME);
+            //TODO: write a return response indicating failure?
+            throw new AccessControlException("Invalid number of credentials supplied: "
+                                            + credentials.length);
         }
-
         return subject;
     }
 
@@ -336,12 +400,12 @@ public abstract class AbstractServlet extends HttpServlet
         return actor;
     }
 
-    protected Subject getSubjectFromSession(HttpSession session)
+    protected Subject getAuthorisedSubjectFromSession(HttpSession session)
     {
         return (Subject)session.getAttribute(ATTR_SUBJECT);
     }
 
-    protected void setSubjectInSession(Subject subject, HttpServletRequest request, final HttpSession session)
+    protected void setAuthorisedSubjectInSession(Subject subject, HttpServletRequest request, final HttpSession session)
     {
         session.setAttribute(ATTR_SUBJECT, subject);
 
@@ -360,9 +424,22 @@ public abstract class AbstractServlet extends HttpServlet
         return InetSocketAddress.createUnresolved(request.getServerName(), request.getServerPort());
     }
 
+    protected void sendError(final HttpServletResponse resp, int errorCode)
+    {
+        try
+        {
+            resp.sendError(errorCode);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Failed to send error response code " + errorCode, e);
+        }
+    }
+
     private HttpManagementActor createHttpManagementActor(HttpServletRequest request)
     {
         return new HttpManagementActor(_rootLogger, request.getRemoteAddr(), request.getRemotePort());
     }
+
 
 }

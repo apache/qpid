@@ -23,9 +23,12 @@
 
 ### JMX MANAGEMENT ####
 
-# Allow everyone to perform read operations on the ServerInformation mbean
-# This is used for items such as querying the management API and broker release versions.
-ACL ALLOW ALL ACCESS METHOD component="ServerInformation"
+# To use JMX management, first give the user/group ACCESS MANAGEMENT permission
+ACL ALLOW administrators ACCESS MANAGEMENT
+ACL ALLOW guest ACCESS MANAGEMENT
+
+# Allow guest to perform read operations on the ServerInformation mbean
+ACL ALLOW guest ACCESS METHOD component="ServerInformation"
 
 # Allow 'administrators' all management operations. To reduce log file noise, only non-read-only operations are logged.
 ACL ALLOW administrators ACCESS METHOD
@@ -42,33 +45,13 @@ ACL DENY-LOG ALL ACCESS METHOD component="UserManagement"
 ACL DENY-LOG ALL ACCESS METHOD component="ConfigurationManagement"
 ACL DENY-LOG ALL ACCESS METHOD component="LoggingManagement"
 
-# Allow everyone to perform all read operations (using ALLOW rather than ALLOW-LOG to reduce log file noise)
-# on the mbeans not listed in the DENY rules above
+# Allow everyone to perform all read operations on the mbeans not listed in the DENY rules above
 ACL ALLOW ALL ACCESS METHOD
 
-### MESSAGING ###
+### WEB MANAGEMENT ####
 
-#Example permissions for request-response based messaging.
-
-#Allow 'messaging-users' group to connect to the virtualhost
-ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST
-
-# Client side
-# Allow the 'client' user to publish requests to the request queue and create, consume from, and delete temporary reply queues.
-ACL ALLOW-LOG client CREATE QUEUE temporary="true"
-ACL ALLOW-LOG client CONSUME QUEUE temporary="true"
-ACL ALLOW-LOG client DELETE QUEUE temporary="true"
-ACL ALLOW-LOG client BIND EXCHANGE name="amq.direct" temporary="true"
-ACL ALLOW-LOG client UNBIND EXCHANGE name="amq.direct" temporary="true"
-ACL ALLOW-LOG client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
-
-# Server side
-# Allow the 'server' user to create and consume from the request queue and publish a response to the temporary response queue created by
-# client.
-ACL ALLOW-LOG server CREATE QUEUE name="example.RequestQueue"
-ACL ALLOW-LOG server CONSUME QUEUE name="example.RequestQueue"
-ACL ALLOW-LOG server BIND EXCHANGE
-ACL ALLOW-LOG server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+# To use web management, first give the user/group ACCESS MANAGEMENT permission
+ACL ALLOW webadmins ACCESS MANAGEMENT
 
 # ACL for web management console admins
 # All rules below are required for console admin users
@@ -93,6 +76,34 @@ ACL ALLOW-LOG webadmins UPDATE METHOD
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
+
+### MESSAGING ###
+
+#Example permissions for request-response based messaging.
+
+#Allow 'messaging-users' group to connect to all virtualhosts
+ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST
+# Deny messaging-users management
+ACL DENY-LOG messaging-users ACCESS MANAGEMENT
+
+
+# Client side
+# Allow the 'client' user to publish requests to the request queue and create, consume from, and delete temporary reply queues.
+ACL ALLOW-LOG client CREATE QUEUE temporary="true"
+ACL ALLOW-LOG client CONSUME QUEUE temporary="true"
+ACL ALLOW-LOG client DELETE QUEUE temporary="true"
+ACL ALLOW-LOG client BIND EXCHANGE name="amq.direct" temporary="true"
+ACL ALLOW-LOG client UNBIND EXCHANGE name="amq.direct" temporary="true"
+ACL ALLOW-LOG client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
+
+# Server side
+# Allow the 'server' user to create and consume from the request queue and publish a response to the temporary response queue created by
+# client.
+ACL ALLOW-LOG server CREATE QUEUE name="example.RequestQueue"
+ACL ALLOW-LOG server CONSUME QUEUE name="example.RequestQueue"
+ACL ALLOW-LOG server BIND EXCHANGE
+ACL ALLOW-LOG server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+
 
 ### DEFAULT ###
 

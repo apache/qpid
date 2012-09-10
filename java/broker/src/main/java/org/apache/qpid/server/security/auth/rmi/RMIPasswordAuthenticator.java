@@ -22,7 +22,8 @@ package org.apache.qpid.server.security.auth.rmi;
 
 import java.net.SocketAddress;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
@@ -37,23 +38,33 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String SHOULD_HAVE_2_ELEMENTS = "User details should have 2 elements, username, password";
     static final String SHOULD_BE_NON_NULL = "Supplied username and password should be non-null";
     static final String INVALID_CREDENTIALS = "Invalid user details supplied";
+    static final String USER_NOT_AUTHORISED_FOR_MANAGEMENT = "User not authorised for management";
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
-    		            "Please ensure you are using an up to date management console to connect.";
+                        "Please ensure you are using an up to date management console to connect.";
 
-    private SubjectCreator _subjectCreator = null;
-    private SocketAddress _socketAddress;
+    private final IApplicationRegistry _appRegistry;
+    private final SocketAddress _socketAddress;
 
-    public RMIPasswordAuthenticator(SocketAddress socketAddress)
+    public RMIPasswordAuthenticator(IApplicationRegistry appRegistry, SocketAddress socketAddress)
     {
+        _appRegistry = appRegistry;
         _socketAddress = socketAddress;
     }
 
-    public void setSubjectCreator(final SubjectCreator subjectCreator)
+    public Subject authenticate(Object credentials) throws SecurityException
     {
-        _subjectCreator = subjectCreator;
+        validateCredentials(credentials);
+
+        final String[] userCredentials = (String[]) credentials;
+        final String username = (String) userCredentials[0];
+        final String password = (String) userCredentials[1];
+
+        final Subject authenticatedSubject = doAuthentication(username, password);
+        doManagementAuthorisation(authenticatedSubject);
+        return authenticatedSubject;
     }
 
-    public Subject authenticate(Object credentials) throws SecurityException
+    private void validateCredentials(Object credentials)
     {
         // Verify that credential's are of type String[].
         if (!(credentials instanceof String[]))
@@ -69,41 +80,27 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         }
 
         // Verify that required number of credentials.
-        final String[] userCredentials = (String[]) credentials;
-        if (userCredentials.length != 2)
+        if (((String[])credentials).length != 2)
         {
             throw new SecurityException(SHOULD_HAVE_2_ELEMENTS);
         }
+    }
 
-        final String username = (String) userCredentials[0];
-        final String password = (String) userCredentials[1];
-
+    private Subject doAuthentication(final String username, final String password)
+    {
         // Verify that all required credentials are actually present.
         if (username == null || password == null)
         {
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        // Verify that an SubjectCreator has been set.
-        if (_subjectCreator == null)
+        SubjectCreator subjectCreator = _appRegistry.getSubjectCreator(_socketAddress);
+        if (subjectCreator == null)
         {
-            try
-            {
-                if(ApplicationRegistry.getInstance().getSubjectCreator(_socketAddress) != null)
-                {
-                    _subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(_socketAddress);
-                }
-                else
-                {
-                    throw new SecurityException(UNABLE_TO_LOOKUP);
-                }
-            }
-            catch(IllegalStateException e)
-            {
-                throw new SecurityException(UNABLE_TO_LOOKUP);
-            }
+            throw new SecurityException("Can't get subject creator for " + _socketAddress);
         }
-        final SubjectAuthenticationResult result = _subjectCreator.authenticate(username, password);
+
+        final SubjectAuthenticationResult result = subjectCreator.authenticate(username, password);
 
         if (AuthenticationStatus.ERROR.equals(result.getStatus()))
         {
@@ -118,5 +115,22 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(INVALID_CREDENTIALS);
         }
     }
+
+    private void doManagementAuthorisation(Subject authenticatedSubject)
+    {
+        SecurityManager.setThreadSubject(authenticatedSubject);
+        try
+        {
+            if (!_appRegistry.getSecurityManager().accessManagement())
+            {
+                throw new SecurityException(USER_NOT_AUTHORISED_FOR_MANAGEMENT);
+            }
+        }
+        finally
+        {
+            SecurityManager.setThreadSubject(null);
+        }
+    }
+
 
 }

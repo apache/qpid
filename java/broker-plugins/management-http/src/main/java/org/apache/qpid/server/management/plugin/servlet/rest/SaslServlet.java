@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -85,7 +86,7 @@ public class SaslServlet extends AbstractServlet
         String[] mechanisms = subjectCreator.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
 
-        final Subject subject = getSubjectFromSession(session);
+        final Subject subject = getAuthorisedSubjectFromSession(session);
         if(subject != null)
         {
             Principal principal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
@@ -236,8 +237,17 @@ public class SaslServlet extends AbstractServlet
         {
             Subject subject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
 
-            setSubjectInSession(subject, request, session);
+            try
+            {
+                authoriseManagement(request, subject);
+            }
+            catch (AccessControlException ace)
+            {
+                sendError(response, HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
 
+            setAuthorisedSubjectInSession(subject, request, session);
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);

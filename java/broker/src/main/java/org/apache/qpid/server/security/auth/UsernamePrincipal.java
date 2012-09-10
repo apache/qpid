@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.security.auth;
 
+import java.io.Serializable;
 import java.security.Principal;
 
 /** A principal that is just a wrapper for a simple username. */
-public class UsernamePrincipal implements Principal
+public class UsernamePrincipal implements Principal, Serializable
 {
     private final String _name;
 

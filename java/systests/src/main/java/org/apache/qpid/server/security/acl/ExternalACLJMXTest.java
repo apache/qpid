@@ -54,15 +54,14 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         super.tearDown();
     }
 
-    /**
-     * Ensure an empty ACL defaults to DENY ALL.
-     */
-    public void setUpDenyAllIsDefault() throws Exception
+    public void setUpDenyAllIsCatchAllRule() throws Exception
     {
-        writeACLFile(null, "#Empty ACL file");
+        writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
+                "#No more rules, default catch all (deny all) should apply");
     }
 
-    public void testDenyAllIsDefault() throws Exception
+    public void testDenyAllIsCatchAllRule() throws Exception
     {
         //try a broker-level method
         ServerInformation info = _jmx.getServerInformation();
@@ -115,6 +114,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUpVhostAllowOverridesGlobalDeny() throws Exception
     {
         writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
                 "ACL DENY admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
         writeACLFile(TEST_VHOST,
                 "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
@@ -144,6 +144,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUpUpdateComponentOnlyAllow() throws Exception
     {
         writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
                 "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager'");
     }
 
@@ -162,6 +163,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUpUpdateMethodOnlyAllow() throws Exception
     {
         writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
                 "ACL ALLOW admin UPDATE METHOD");
     }
 
@@ -179,8 +181,8 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
      */
     public void setUpCreateQueueSuccess() throws Exception
     {
-        writeACLFile(TEST_VHOST,
-                "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
+        writeACLFile(null, "ACL ALLOW admin ACCESS MANAGEMENT");
+        writeACLFile(TEST_VHOST, "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
     }
 
     public void testCreateQueueSuccess() throws Exception
@@ -194,6 +196,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
      */
     public void setUpCreateQueueSuccessNoAMQPRights() throws Exception
     {
+        writeACLFile(null, "ACL ALLOW admin ACCESS MANAGEMENT");
         writeACLFile(TEST_VHOST,
                 "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'",
                 "ACL DENY admin CREATE QUEUE");
@@ -210,6 +213,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
      */
     public void setUpCreateQueueDenied() throws Exception
     {
+        writeACLFile(null, "ACL ALLOW admin ACCESS MANAGEMENT");
         writeACLFile(TEST_VHOST,
                 "ACL DENY admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
     }
@@ -234,6 +238,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUpServerInformationUpdateDenied() throws Exception
     {
         writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
                 "ACL DENY admin UPDATE METHOD component='ServerInformation' name='resetStatistics'");
     }
 
@@ -258,6 +263,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUpServerInformationAccessGranted() throws Exception
     {
         writeACLFile(null,
+        "ACL ALLOW admin ACCESS MANAGEMENT",
         "ACL ALLOW-LOG admin ACCESS METHOD component='ServerInformation' name='getManagementApiMajorVersion'");
     }
 
@@ -284,6 +290,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUpServerInformationUpdateMethodPermission() throws Exception
     {
         writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
                 "ACL ALLOW admin UPDATE METHOD component='ServerInformation' name='resetStatistics'");
     }
 
@@ -300,7 +307,9 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
      */
     public void setUpServerInformationAllMethodPermissions() throws Exception
     {
-        writeACLFile(null, "ACL ALLOW admin ALL METHOD component='ServerInformation'");
+        writeACLFile(null,
+                "ACL ALLOW admin ACCESS MANAGEMENT",
+                "ACL ALLOW admin ALL METHOD component='ServerInformation'");
     }
 
     public void testServerInformationAllMethodPermissions() throws Exception
