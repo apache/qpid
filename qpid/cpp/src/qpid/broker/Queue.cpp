@@ -206,6 +206,10 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
                 brokerMgmtObject->inc_queueCount();
         }
     }
+    
+    if ( settings.isBrowseOnly ) {
+        QPID_LOG ( info, "Queue " << name << " is browse-only." );
+    }
 }
 
 Queue::~Queue()
@@ -483,6 +487,11 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive)
         // Check for exclusivity of acquiring consumers.
         size_t acquiringConsumers = consumerCount - browserCount;
         if (c->preAcquires()) {
+            if(settings.isBrowseOnly) {
+                throw NotAllowedException(
+                    QPID_MSG("Queue " << name << " is browse only.  Refusing acquiring consumer."));
+            }
+
             if(exclusive) {
                 throw ResourceLockedException(
                     QPID_MSG("Queue " << getName()
