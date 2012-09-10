@@ -20,7 +20,7 @@
 
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math, unittest
 import traceback
-from qpid.messaging import Message, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED
+from qpid.messaging import Message, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty
 from qpid.datatypes import uuid4
 from brokertest import *
 from threading import Thread, Lock, Condition
@@ -36,7 +36,6 @@ class QmfAgent(object):
         self._connection = Connection.establish(
             address, client_properties={"qpid.ha-admin":1}, **kwargs)
         self._agent = BrokerAgent(self._connection)
-        assert self._agent.getHaBroker(), "HA module not loaded in broker at: %s"%(address)
 
     def __getattr__(self, name):
         a = getattr(self._agent, name)
@@ -804,6 +803,21 @@ acl deny all all
         cluster[2].wait_backup("q")
         cluster.bounce(1)
         verify(cluster[2])
+
+    def test_priority_reroute(self):
+        """Regression test for QPID-4262, rerouting messages from a priority queue
+        to itself causes a crash"""
+        cluster = HaCluster(self, 2)
+        primary = cluster[0]
+        session = primary.connect().session()
+        s = session.sender("pq; {create:always, node:{x-declare:{arguments:{'qpid.priorities':10}},x-bindings:[{exchange:'amq.fanout',queue:pq}]}}")
+        for m in xrange(100): s.send(Message(str(m), priority=m%10))
+        pq =  QmfAgent(primary.host_port()).getQueue("pq")
+        pq.reroute(request=0, useAltExchange=False, exchange="amq.fanout")
+        # Verify that consuming is in priority order
+        expect = [str(10*i+p) for p in xrange(9,-1,-1) for i in xrange(0,10) ]
+        actual = [m.content for m in primary.get_messages("pq", 100)]
+        self.assertEqual(expect, actual)
 
 def fairshare(msgs, limit, levels):
     """
