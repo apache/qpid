@@ -204,7 +204,7 @@ public class HATestClusterCreator
 
     public void stopNode(final int brokerPortNumber)
     {
-        _testcase.stopBroker(brokerPortNumber);
+        _testcase.killBroker(brokerPortNumber);
     }
 
     public void stopCluster() throws Exception

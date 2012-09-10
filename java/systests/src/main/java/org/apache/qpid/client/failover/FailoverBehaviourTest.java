@@ -1313,7 +1313,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
      * @param acknowledgeMode session acknowledge mode
      * @throws JMSException
      */
-    private void sessionCloseWhileFailoverImpl(int acknowledgeMode) throws JMSException
+    private void sessionCloseWhileFailoverImpl(int acknowledgeMode) throws Exception
     {
         initDelayedFailover(acknowledgeMode);
 
@@ -1324,8 +1324,13 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
 
         failBroker(getFailingPort());
 
+        // wait until failover is started
+        _failoverStarted.await(5, TimeUnit.SECONDS);
+
         // test whether session#close blocks while failover is in progress
         _consumerSession.close();
+
+        assertTrue("Failover has not completed yet but session was closed", _failoverComplete.await(5, TimeUnit.SECONDS));
 
         assertFailoverException();
     }
@@ -1360,10 +1365,8 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
      * @param acknowledgeMode session acknowledge mode
      * @throws JMSException
      */
-    private void browserCloseWhileFailoverImpl(int acknowledgeMode) throws JMSException
+    private void browserCloseWhileFailoverImpl(int acknowledgeMode) throws Exception
     {
-        setDelayedFailoverPolicy();
-
         QueueBrowser browser = prepareQueueBrowser(acknowledgeMode);
 
         @SuppressWarnings("unchecked")
@@ -1373,7 +1376,12 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
 
         failBroker(getFailingPort());
 
+        // wait until failover is started
+        _failoverStarted.await(5, TimeUnit.SECONDS);
+
         browser.close();
+
+        assertTrue("Failover has not completed yet but browser was closed", _failoverComplete.await(5, TimeUnit.SECONDS));
 
         assertFailoverException();
     }
@@ -1402,5 +1410,11 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         ((AMQConnection) _connection).setFailoverPolicy(failoverPolicy);
         return failoverPolicy;
     }
-    
+
+    @Override
+    public void failBroker(int port)
+    {
+        killBroker(port);
+    }
+
 }

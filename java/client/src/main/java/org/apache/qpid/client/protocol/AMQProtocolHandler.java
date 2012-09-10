@@ -67,6 +67,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AMQProtocolHandler is the client side protocol handler for AMQP, it handles all protocol events received from the
@@ -210,48 +211,67 @@ public class AMQProtocolHandler implements ProtocolEngine
         }
         else
         {
-            _logger.debug("Session closed called with failover state currently " + _failoverState);
-
-            // reconnetablility was introduced here so as not to disturb the client as they have made their intentions
-            // known through the policy settings.
-
-            if ((_failoverState != FailoverState.IN_PROGRESS) && _connection.failoverAllowed())
+            // Use local variable to keep flag whether fail-over allowed or not,
+            // in order to execute AMQConnection#exceptionRecievedout out of synchronization block,
+            // otherwise it might deadlock with failover mutex
+            boolean failoverNotAllowed = false;
+            synchronized (this)
             {
-                _logger.debug("FAILOVER STARTING");
-                if (_failoverState == FailoverState.NOT_STARTED)
-                {
-                    _failoverState = FailoverState.IN_PROGRESS;
-                    startFailoverThread();
-                }
-                else
-                {
-                    _logger.debug("Not starting failover as state currently " + _failoverState);
-                }
-            }
-            else
-            {
-                _logger.debug("Failover not allowed by policy."); // or already in progress?
-
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug(_connection.getFailoverPolicy().toString());
+                    _logger.debug("Session closed called with failover state " + _failoverState);
                 }
 
-                if (_failoverState != FailoverState.IN_PROGRESS)
+                // reconnetablility was introduced here so as not to disturb the client as they have made their intentions
+                // known through the policy settings.
+                if (_failoverState == FailoverState.NOT_STARTED)
                 {
-                    _logger.debug("sessionClose() not allowed to failover");
-                    _connection.exceptionReceived(new AMQDisconnectedException(
-                            "Server closed connection and reconnection " + "not permitted.",
-                            _stateManager.getLastException()));
+                    // close the sender
+                    try
+                    {
+                        _sender.close();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.warn("Exception occured on closing the sender", e);
+                    }
+                    if (_connection.failoverAllowed())
+                    {
+                        _failoverState = FailoverState.IN_PROGRESS;
+
+                        _logger.debug("FAILOVER STARTING");
+                        startFailoverThread();
+                    }
+                    else if (_connection.isConnected())
+                    {
+                        failoverNotAllowed = true;
+                        if (_logger.isDebugEnabled())
+                        {
+                            _logger.debug("Failover not allowed by policy:" + _connection.getFailoverPolicy());
+                        }
+                    }
+                    else
+                    {
+                        _logger.debug("We are in process of establishing the initial connection");
+                    }
                 }
                 else
                 {
-                    _logger.debug("sessionClose() failover in progress");
+                    _logger.debug("Not starting the failover thread as state currently " + _failoverState);
                 }
+            }
+
+            if (failoverNotAllowed)
+            {
+                _connection.exceptionReceived(new AMQDisconnectedException(
+                        "Server closed connection and reconnection not permitted.", _stateManager.getLastException()));
             }
         }
 
-        _logger.debug("Protocol Session [" + this + "] closed");
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Protocol Session [" + this + "] closed");
+        }
     }
 
     /** See {@link FailoverHandler} to see rationale for separate thread. */
@@ -297,14 +317,17 @@ public class AMQProtocolHandler implements ProtocolEngine
      */
     public void exception(Throwable cause)
     {
-        if (_failoverState == FailoverState.NOT_STARTED)
+        boolean connectionClosed = (cause instanceof AMQConnectionClosedException || cause instanceof IOException);
+        if (connectionClosed)
         {
-            if ((cause instanceof AMQConnectionClosedException) || cause instanceof IOException)
+            _network.close();
+        }
+        FailoverState state = getFailoverState();
+        if (state == FailoverState.NOT_STARTED)
+        {
+            if (connectionClosed)
             {
                 _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
-                // this will attempt failover
-                _network.close();
-                closed();
             }
             else
             {
@@ -319,7 +342,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         }
         // we reach this point if failover was attempted and failed therefore we need to let the calling app
         // know since we cannot recover the situation
-        else if (_failoverState == FailoverState.FAILED)
+        else if (state == FailoverState.FAILED)
         {
             _logger.error("Exception caught by protocol handler: " + cause, cause);
 
@@ -328,6 +351,10 @@ public class AMQProtocolHandler implements ProtocolEngine
             AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
             propagateExceptionToAllWaiters(amqe);
             _connection.exceptionReceived(cause);
+        }
+        else
+        {
+            _logger.warn("Exception caught by protocol handler: " + cause, cause);
         }
     }
 
@@ -792,14 +819,14 @@ public class AMQProtocolHandler implements ProtocolEngine
         return _protocolSession;
     }
 
-    FailoverState getFailoverState()
+    synchronized FailoverState getFailoverState()
     {
         return _failoverState;
     }
 
-    public void setFailoverState(FailoverState failoverState)
+    public synchronized void setFailoverState(FailoverState failoverState)
     {
-        _failoverState = failoverState;
+        _failoverState= failoverState;
     }
 
     public byte getProtocolMajorVersion()
@@ -841,6 +868,11 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         _network = network;
         _sender = sender;
+    }
+
+    protected Sender<ByteBuffer> getSender()
+    {
+        return _sender;
     }
 
     /** @param delay delay in seconds (not ms) */
