@@ -59,6 +59,7 @@ struct QueueSettings
     bool dropMessagesAtLimit;//aka ring queue policy
 
     bool noLocal;
+    bool isBrowseOnly;
     std::string traceId;
     std::string traceExcludes;
     uint64_t autoDeleteDelay;//queueTtl?

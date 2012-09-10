@@ -39,6 +39,7 @@ const std::string POLICY_TYPE("qpid.policy_type");
 const std::string POLICY_TYPE_REJECT("reject");
 const std::string POLICY_TYPE_RING("ring");
 const std::string NO_LOCAL("no-local");
+const std::string BROWSE_ONLY("browse-only");
 const std::string TRACE_ID("qpid.trace.id");
 const std::string TRACE_EXCLUDES("qpid.trace.exclude");
 const std::string LVQ_KEY("qpid.last_value_queue_key");
@@ -82,6 +83,7 @@ QueueSettings::QueueSettings(bool d, bool a) :
     addTimestamp(false),
     dropMessagesAtLimit(false),
     noLocal(false),
+    isBrowseOnly(false),
     autoDeleteDelay(0),
     alertRepeatInterval(60)
 {}
@@ -107,6 +109,9 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
         }
     } else if (key == NO_LOCAL) {
         noLocal = value;
+        return true;
+    } else if (key == BROWSE_ONLY) {
+        isBrowseOnly = value;
         return true;
     } else if (key == TRACE_ID) {
         traceId = value.asString();
