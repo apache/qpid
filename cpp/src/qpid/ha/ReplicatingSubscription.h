@@ -85,10 +85,10 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
      *@return false if queue is empty.
      */
     static bool getFront(broker::Queue&, framing::SequenceNumber& result);
-    /** Get next message after from in queue.
+    /** Get next message after position in queue.
      *@return false if none found.
      */
-    static bool getNext(broker::Queue&, framing::SequenceNumber from,
+    static bool getNext(broker::Queue&, framing::SequenceNumber position,
                         framing::SequenceNumber& result);
 
     ReplicatingSubscription(broker::SemanticState* parent,
