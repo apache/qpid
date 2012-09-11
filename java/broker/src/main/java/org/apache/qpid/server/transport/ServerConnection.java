@@ -25,7 +25,6 @@ import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
@@ -39,6 +38,7 @@ import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
@@ -385,7 +385,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         else
         {
             _authorizedSubject = authorizedSubject;
-            _authorizedPrincipal = authorizedSubject.getPrincipals().iterator().next();
+            _authorizedPrincipal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(authorizedSubject);
         }
     }
 

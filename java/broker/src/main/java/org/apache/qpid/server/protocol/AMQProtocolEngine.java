@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -1006,7 +1005,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public Principal getAuthorizedPrincipal()
     {
-        return _authorizedSubject == null ? null : _authorizedSubject.getPrincipals(AuthenticatedPrincipal.class).iterator().next();
+        return _authorizedSubject == null ? null : AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(_authorizedSubject);
     }
 
     public SocketAddress getRemoteAddress()
