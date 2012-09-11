@@ -99,10 +99,10 @@ bool getSequence(const Message& message, SequenceNumber& result)
 }
 }
 bool ReplicatingSubscription::getNext(
-    broker::Queue& q, SequenceNumber from, SequenceNumber& result)
+    broker::Queue& q, SequenceNumber position, SequenceNumber& result)
 {
     QueueCursor cursor(REPLICATOR);
-    return q.seek(cursor, boost::bind(&getSequence, _1, boost::ref(result)), from);
+    return q.seek(cursor, boost::bind(&getSequence, _1, boost::ref(result)), position+1);
 }
 
 bool ReplicatingSubscription::getFront(broker::Queue& q, SequenceNumber& front) {

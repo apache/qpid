@@ -120,10 +120,10 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     settings.setTable(ReplicatingSubscription::QPID_BROKER_INFO,
                       brokerInfo.asFieldTable());
     SequenceNumber front;
-    if (ReplicatingSubscription::getFront(*queue, front)) {
+    if (ReplicatingSubscription::getFront(*queue, front))
         settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
-        QPID_LOG(debug, "QPID_FRONT for " << queue->getName() << " is " << front);
-    }
+    QPID_LOG(debug, logPrefix << " subscribe with settings  " << settings);
+
     peer.getMessage().subscribe(
         args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
         false/*exclusive*/, "", 0, settings);
@@ -177,7 +177,8 @@ void QueueReplicator::route(Deliverable& msg)
             // Verify that there are no messages after the new position in the queue.
             SequenceNumber next;
             if (ReplicatingSubscription::getNext(*queue, position, next))
-                throw Exception("Invalid position move, preceeds messages");
+                throw Exception(QPID_MSG(logPrefix << "Invalid position " << position
+                                         << " preceeds message at " << next));
             queue->setPosition(position);
         }
         // Ignore unknown event keys, may be introduced in later versions.
