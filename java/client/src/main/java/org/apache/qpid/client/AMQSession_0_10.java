@@ -1410,6 +1410,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return _qpidSession.isFlowBlocked();
     }
 
+    @Override
+    public void setFlowControl(boolean active)
+    {
+        // Supported by 0-8..0-9-1 only
+        throw new UnsupportedOperationException("Operation not supported by this protocol");
+    }
+
     private void cancelTimerTask()
     {
         if (flushTask != null)

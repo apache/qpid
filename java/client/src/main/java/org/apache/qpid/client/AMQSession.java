@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_FAILURE;
-import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
-import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE;
-import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,19 +114,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /** Immediate message prefetch default. */
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
-
-    /**
-     * The period to wait while flow controlled before sending a log message confirming that the session is still
-     * waiting on flow control being revoked
-     */
-    private final long _flowControlWaitPeriod = Long.getLong(QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD,
-                                                                 DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD);
-
-    /**
-     * The period to wait while flow controlled before declaring a failure
-     */
-    private final long _flowControlWaitFailure = Long.getLong(QPID_FLOW_CONTROL_WAIT_FAILURE,
-                                                                  DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
 
     private final boolean _delareQueues =
         Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_DECLARE_QUEUES_PROP_NAME, "true"));
@@ -262,11 +244,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private boolean _dirty;
     /** Has failover occured on this session with outstanding actions to commit? */
     private boolean _failedOverDirty;
-
-    /** Flow control */
-    private FlowControlIndicator _flowControl = new FlowControlIndicator();
-
-
 
     /** Holds the highest received delivery tag. */
     protected AtomicLong getHighestDeliveryTag()
@@ -403,22 +380,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 _fastAccessConsumers[i] = null;
             }
-        }
-    }
-
-    private static final class FlowControlIndicator
-    {
-        private volatile boolean _flowControl = true;
-
-        public synchronized void setFlowControl(boolean flowControl)
-        {
-            _flowControl = flowControl;
-            notify();
-        }
-
-        public boolean getFlowControl()
-        {
-            return _flowControl;
         }
     }
 
@@ -3087,47 +3048,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _ticket = ticket;
     }
 
-    public boolean isFlowBlocked()
-    {
-        synchronized (_flowControl)
-        {
-            return !_flowControl.getFlowControl();
-        }
-    }
+    /**
+     * Tests whether flow to this session is blocked.
+     *
+     * @return true if flow is blocked or false otherwise.
+     */
+    public abstract boolean isFlowBlocked();
 
-    public void setFlowControl(final boolean active)
-    {
-        _flowControl.setFlowControl(active);
-        if (_logger.isInfoEnabled())
-        {
-            _logger.info("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
-        }
-    }
-
-    public void checkFlowControl() throws InterruptedException, JMSException
-    {
-        long expiryTime = 0L;
-        synchronized (_flowControl)
-        {
-            while (!_flowControl.getFlowControl() &&
-                   (expiryTime == 0L ? (expiryTime = System.currentTimeMillis() + _flowControlWaitFailure)
-                                     : expiryTime) >= System.currentTimeMillis() )
-            {
-
-                _flowControl.wait(_flowControlWaitPeriod);
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
-                }
-            }
-            if(!_flowControl.getFlowControl())
-            {
-                _logger.error("Message send failed due to timeout waiting on broker enforced flow control");
-                throw new JMSException("Unable to send message for " + _flowControlWaitFailure /1000 + " seconds due to broker enforced flow control");
-            }
-        }
-
-    }
+    public abstract void setFlowControl(final boolean active);
 
     public interface Dispatchable
     {
