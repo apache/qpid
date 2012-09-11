@@ -36,7 +36,7 @@
 	<OutputName>qpidc</OutputName>
 	<OutputType>Package</OutputType>
 	<WixToolPath>C:\Program Files (x86)\Windows Installer XML v3.5\bin</WixToolPath>
-        <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.5\wix.targets</WixTargetsPath>
+        <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\wix.targets</WixTargetsPath>
     </PropertyGroup>
 
     <Choose>
@@ -175,10 +175,10 @@
 
     <Target Name="BuildDotNetBindings"><!-- DependsOnTargets="BuildCpp;BuildCppDebug" -->
         <MSBuild
-            Projects="$(source_root)\cpp\bindings\qpid\dotnet\org.apache.qpid.messaging.sessionreceiver.sln"
+            Projects="$(source_root)\cpp\bindings\qpid\dotnet\msvc9\org.apache.qpid.messaging.sessionreceiver.sln"
             Properties="Configuration=Debug;Platform=$(Architecture)" />
         <MSBuild
-            Projects="$(source_root)\cpp\bindings\qpid\dotnet\org.apache.qpid.messaging.sessionreceiver.sln"
+            Projects="$(source_root)\cpp\bindings\qpid\dotnet\msvc9\org.apache.qpid.messaging.sessionreceiver.sln"
             Properties="Configuration=Release;Platform=$(Architecture)" />
     </Target>
 
