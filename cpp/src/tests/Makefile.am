@@ -303,7 +303,7 @@ system_tests = qpid-client-test quick_perftest quick_topictest run_header_test q
   run_msg_group_tests
 TESTS += start_broker $(system_tests) python_tests stop_broker \
   run_ha_tests run_federation_tests run_federation_sys_tests \
-  run_acl_tests run_cli_tests replication_test dynamic_log_level_test \
+  run_acl_tests run_cli_tests dynamic_log_level_test \
   run_queue_flow_limit_tests ipv6_test
 
 EXTRA_DIST +=								\
@@ -327,7 +327,6 @@ EXTRA_DIST +=								\
   MessageUtils.h							\
   TestMessageStore.h							\
   TxMocks.h								\
-  replication_test							\
   run_perftest								\
   ring_queue_test							\
   run_ring_queue_test							\
@@ -373,7 +372,6 @@ EXTRA_DIST+=						\
 	multiq_perftest					\
 	topic_perftest					\
 	run_failover_soak				\
-	reliable_replication_test			\
 	federated_cluster_test_with_node_failure        \
 	sasl_test_setup.sh                              \
 	run_msg_group_tests_soak			\
