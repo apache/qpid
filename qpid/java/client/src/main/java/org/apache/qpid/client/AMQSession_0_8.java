@@ -21,6 +21,11 @@
 package org.apache.qpid.client;
 
 
+import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_FAILURE;
+import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
+import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE;
+import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +63,22 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 {
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
+
+    /**
+     * The period to wait while flow controlled before sending a log message confirming that the session is still
+     * waiting on flow control being revoked
+     */
+    private final long _flowControlWaitPeriod = Long.getLong(QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD,
+                                                                 DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD);
+
+    /**
+     * The period to wait while flow controlled before declaring a failure
+     */
+    private final long _flowControlWaitFailure = Long.getLong(QPID_FLOW_CONTROL_WAIT_FAILURE,
+                                                                  DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
+
+    /** Flow control */
+    private FlowControlIndicator _flowControl = new FlowControlIndicator();
 
     /**
      * Creates a new session on a connection.
@@ -728,6 +749,49 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         }
     }
 
+    public boolean isFlowBlocked()
+    {
+        synchronized (_flowControl)
+        {
+            return !_flowControl.getFlowControl();
+        }
+    }
+
+    public void setFlowControl(final boolean active)
+    {
+        _flowControl.setFlowControl(active);
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
+        }
+    }
+
+    void checkFlowControl() throws InterruptedException, JMSException
+    {
+        long expiryTime = 0L;
+        synchronized (_flowControl)
+        {
+            while (!_flowControl.getFlowControl() &&
+                   (expiryTime == 0L ? (expiryTime = System.currentTimeMillis() + _flowControlWaitFailure)
+                                     : expiryTime) >= System.currentTimeMillis() )
+            {
+
+                _flowControl.wait(_flowControlWaitPeriod);
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
+                }
+            }
+            if(!_flowControl.getFlowControl())
+            {
+                _logger.error("Message send failed due to timeout waiting on broker enforced flow control");
+                throw new JMSException("Unable to send message for " + _flowControlWaitFailure /1000 + " seconds due to broker enforced flow control");
+            }
+        }
+    }
+
+
+
     public abstract static class DestinationCache<T extends AMQDestination>
     {
         private final Map<AMQShortString, Map<AMQShortString, T>> cache = new HashMap<AMQShortString, Map<AMQShortString, T>>();
@@ -772,6 +836,22 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         protected AMQQueue newDestination(AMQShortString exchangeName, AMQShortString routingKey)
         {
             return new AMQQueue(exchangeName, routingKey, routingKey);
+        }
+    }
+
+    private static final class FlowControlIndicator
+    {
+        private volatile boolean _flowControl = true;
+
+        public synchronized void setFlowControl(boolean flowControl)
+        {
+            _flowControl = flowControl;
+            notify();
+        }
+
+        public boolean getFlowControl()
+        {
+            return _flowControl;
         }
     }
 
