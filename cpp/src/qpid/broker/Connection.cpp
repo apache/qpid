@@ -138,13 +138,13 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 Connection::~Connection()
 {
     if (mgmtObject != 0) {
-        mgmtObject->resourceDestroy();
         // In a cluster, Connections destroyed during shutdown are in
         // a cluster-unsafe context. Don't raise an event in that case.
         if (!link && isClusterSafe())
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId(), mgmtObject->get_remoteProperties()));
         QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
             << " rhost:" << mgmtId );
+        mgmtObject->resourceDestroy();
     }
     broker.getConnectionObservers().closed(*this);
 
