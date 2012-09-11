@@ -65,8 +65,6 @@ exportmodule() { test -f $moduledir/$2 && eval "export $1=$moduledir/$2"; }
 exportmodule ACL_LIB acl.so
 exportmodule CLUSTER_LIB cluster.so
 exportmodule HA_LIB ha.so
-exportmodule REPLICATING_LISTENER_LIB replicating_listener.so
-exportmodule REPLICATION_EXCHANGE_LIB replication_exchange.so
 exportmodule SSLCONNECTOR_LIB sslconnector.so
 exportmodule SSL_LIB ssl.so
 exportmodule WATCHDOG_LIB watchdog.so
