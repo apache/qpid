@@ -55,6 +55,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -328,11 +329,10 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
         String owner = null;
         if(exclusive)
         {
-            Set<Principal> principals =
-                    SecurityManager.getThreadSubject().getPrincipals();
-            if(principals != null && !principals.isEmpty())
+            Principal authenticatedPrincipal = AuthenticatedPrincipal.getOptionalAuthenticatedPrincipalFromSubject(SecurityManager.getThreadSubject());
+            if(authenticatedPrincipal != null)
             {
-                owner = principals.iterator().next().getName();
+                owner = authenticatedPrincipal.getName();
             }
         }
         try
