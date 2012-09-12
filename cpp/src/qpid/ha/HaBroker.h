@@ -32,7 +32,6 @@
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/types/Variant.h"
-#include <memory>
 #include <set>
 #include <boost/shared_ptr.hpp>
 
@@ -122,8 +121,8 @@ class HaBroker : public management::Manageable
 
     mutable sys::Mutex lock;
     boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
-    std::auto_ptr<Backup> backup;
-    std::auto_ptr<Primary> primary;
+    boost::shared_ptr<Backup> backup;
+    boost::shared_ptr<Primary> primary;
     qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
