@@ -435,7 +435,7 @@ public class MessageServlet extends AbstractServlet
             }
             else
             {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             }
         }
         catch(RuntimeException e)
@@ -473,7 +473,7 @@ public class MessageServlet extends AbstractServlet
         }
         else
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
     }

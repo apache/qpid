@@ -73,7 +73,7 @@ public class DefinedFileServlet extends HttpServlet
         }
         else
         {
-            response.sendError(404, "unknown file: "+ _filename);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "unknown file: "+ _filename);
         }
     }
 }
