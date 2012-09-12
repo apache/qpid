@@ -126,14 +126,16 @@ HaBroker::~HaBroker() {
     broker.getConnectionObservers().remove(observer);
 }
 
+// Called from ManagementMethod on promote.
 void HaBroker::recover() {
-    auto_ptr<Backup> b;
+    boost::shared_ptr<Backup> b;
     {
         Mutex::ScopedLock l(lock);
         // No longer replicating, close link. Note: link must be closed before we
         // setStatus(RECOVERING) as that will remove our broker info from the
         // outgoing link properties so we won't recognize self-connects.
         b = backup;
+        backup.reset();         // Reset in lock.
     }
     b.reset();                  // Call destructor outside of lock.
     BrokerInfo::Set backups;
@@ -224,14 +226,18 @@ void HaBroker::updateClientUrl(Mutex::ScopedLock&) {
 }
 
 void HaBroker::setBrokerUrl(const Url& url) {
-    Mutex::ScopedLock l(lock);
-    if (url.empty()) throw Url::Invalid("HA broker URL is empty");
-    brokerUrl = url;
-    mgmtObject->set_brokersUrl(brokerUrl.str());
-    QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
-    if (backup.get()) backup->setBrokerUrl(brokerUrl);
-    // Updating broker URL also updates defaulted client URL:
-    if (clientUrl.empty()) updateClientUrl(l);
+    boost::shared_ptr<Backup> b;
+    {
+        Mutex::ScopedLock l(lock);
+        if (url.empty()) throw Url::Invalid("HA broker URL is empty");
+        brokerUrl = url;
+        mgmtObject->set_brokersUrl(brokerUrl.str());
+        QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
+        // Updating broker URL also updates defaulted client URL:
+        if (clientUrl.empty()) updateClientUrl(l);
+        b = backup;
+    }
+    if (b) b->setBrokerUrl(url); // Oustside lock, avoid deadlock
 }
 
 std::vector<Url> HaBroker::getKnownBrokers() const {
@@ -302,17 +308,21 @@ void HaBroker::membershipUpdated(Mutex::ScopedLock&) {
 }
 
 void HaBroker::setMembership(const Variant::List& brokers) {
-    Mutex::ScopedLock l(lock);
-    membership.assign(brokers);
-    QPID_LOG(info, logPrefix << "Membership update: " <<  membership);
-    BrokerInfo info;
-    // Update my status to what the primary says it is.  The primary can toggle
-    // status between READY and CATCHUP based on the state of our subscriptions.
-    if (membership.get(systemId, info) && status != info.getStatus()) {
-        setStatus(info.getStatus(), l);
-        if (backup.get()) backup->setStatus(status);
+    boost::shared_ptr<Backup> b;
+    {
+        Mutex::ScopedLock l(lock);
+        membership.assign(brokers);
+        QPID_LOG(info, logPrefix << "Membership update: " <<  membership);
+        BrokerInfo info;
+        // Update my status to what the primary says it is.  The primary can toggle
+        // status between READY and CATCHUP based on the state of our subscriptions.
+        if (membership.get(systemId, info) && status != info.getStatus()) {
+            setStatus(info.getStatus(), l);
+            b = backup;
+        }
+        membershipUpdated(l);
     }
-    membershipUpdated(l);
+    if (b) b->setStatus(status); // Oustside lock, avoid deadlock
 }
 
 void HaBroker::resetMembership(const BrokerInfo& b) {
