@@ -105,7 +105,7 @@ public class UserRestACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        getRestTestHelper().createOrUpdateUser(newUser, password, HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().createOrUpdateUser(newUser, password, HttpServletResponse.SC_FORBIDDEN);
         assertUserDoesNotExist(newUser);
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
@@ -126,7 +126,7 @@ public class UserRestACLTest extends QpidRestTestCase
         assertUserExists(OTHER_USER);
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        getRestTestHelper().removeUser(OTHER_USER, HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().removeUser(OTHER_USER, HttpServletResponse.SC_FORBIDDEN);
         assertUserExists(OTHER_USER);
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
@@ -149,7 +149,7 @@ public class UserRestACLTest extends QpidRestTestCase
         checkPassword(OTHER_USER, OTHER_USER, true);
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        getRestTestHelper().createOrUpdateUser(OTHER_USER, newPassword, HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().createOrUpdateUser(OTHER_USER, newPassword, HttpServletResponse.SC_FORBIDDEN);
 
         checkPassword(OTHER_USER, newPassword, false);
 

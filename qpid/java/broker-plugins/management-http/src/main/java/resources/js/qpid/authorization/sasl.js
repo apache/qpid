@@ -71,7 +71,7 @@ var saslPlain = function saslPlain(user, password)
             },
             function(error)
             {
-                if(error.status == 401)
+                if(error.status == 403)
                 {
                     alert("Authentication Failed");
                 }
@@ -127,7 +127,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
                                         },
                                         function(error)
                                         {
-                                            if(error.status == 401)
+                                            if(error.status == 403)
                                             {
                                                 alert("Authentication Failed");
                                             }
@@ -141,7 +141,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
             },
             function(error)
             {
-                if(error.status == 401)
+                if(error.status == 403)
                 {
                     alert("Authentication Failed");
                 }

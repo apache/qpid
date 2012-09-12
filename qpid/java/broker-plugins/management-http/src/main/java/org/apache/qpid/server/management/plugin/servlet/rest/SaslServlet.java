@@ -228,7 +228,7 @@ public class SaslServlet extends AbstractServlet
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
             return;
         }
