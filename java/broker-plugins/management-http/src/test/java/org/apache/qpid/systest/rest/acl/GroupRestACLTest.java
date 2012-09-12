@@ -107,8 +107,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        //TODO: the expected response code needs changed when we overhaul the brokers error handling
-        getRestTestHelper().createGroup("anotherNewGroup", FILE_GROUP_MANAGER, HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().createGroup("anotherNewGroup", FILE_GROUP_MANAGER, HttpServletResponse.SC_FORBIDDEN);
 
         data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 4);
@@ -128,8 +127,7 @@ public class GroupRestACLTest extends QpidRestTestCase
         Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 3);
 
-        //TODO: the expected response code needs changed when we overhaul the brokers error handling
-        getRestTestHelper().removeGroup(OTHER_GROUP, FILE_GROUP_MANAGER, HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().removeGroup(OTHER_GROUP, FILE_GROUP_MANAGER, HttpServletResponse.SC_FORBIDDEN);
 
         data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 3);
@@ -155,7 +153,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
         assertNumberOfGroupMembers(OTHER_GROUP, 1);
 
-        getRestTestHelper().createNewGroupMember(FILE_GROUP_MANAGER, OTHER_GROUP, "newGroupMember", HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().createNewGroupMember(FILE_GROUP_MANAGER, OTHER_GROUP, "newGroupMember", HttpServletResponse.SC_FORBIDDEN);
         assertNumberOfGroupMembers(OTHER_GROUP, 1);
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
@@ -176,7 +174,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
         assertNumberOfGroupMembers(OTHER_GROUP, 1);
 
-        getRestTestHelper().removeMemberFromGroup(FILE_GROUP_MANAGER, OTHER_GROUP, OTHER_USER, HttpServletResponse.SC_CONFLICT);
+        getRestTestHelper().removeMemberFromGroup(FILE_GROUP_MANAGER, OTHER_GROUP, OTHER_USER, HttpServletResponse.SC_FORBIDDEN);
         assertNumberOfGroupMembers(OTHER_GROUP, 1);
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);

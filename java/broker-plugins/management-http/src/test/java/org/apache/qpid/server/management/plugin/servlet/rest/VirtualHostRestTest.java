@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.jms.Session;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
@@ -189,7 +190,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName() + "-sorted";
         int responseCode = tryCreateQueue(queueName, "sorted", null);
-        assertEquals("Unexpected response code", 409, responseCode);
+        assertEquals("Unexpected response code", HttpServletResponse.SC_CONFLICT, responseCode);
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 
@@ -234,7 +235,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName();
         int responseCode = tryCreateQueue(queueName, "unsupported", null);
-        assertEquals("Unexpected response code", 409, responseCode);
+        assertEquals("Unexpected response code", HttpServletResponse.SC_CONFLICT, responseCode);
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
 

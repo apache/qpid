@@ -19,6 +19,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.security.AccessControlException;
 import java.util.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -465,10 +466,13 @@ public class RestServlet extends AbstractServlet
 
     private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException
     {
-        if (e.getCause() instanceof AMQSecurityException)
+        if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
         {
-            LOGGER.debug("Caught AMQSecurityException", e);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Caught security exception, sending " + HttpServletResponse.SC_FORBIDDEN, e);
+            }
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
         else
         {
