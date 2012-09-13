@@ -29,7 +29,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/broker/SessionState.h"
-#include "qpid/sys/ClusterSafe.h"
 
 #include "qmf/org/apache/qpid/broker/Queue.h"
 
