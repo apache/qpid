@@ -35,7 +35,6 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/IsInSequenceSet.h"
 #include "qpid/log/Statement.h"
-#include "qpid/sys/ClusterSafe.h"
 #include "qpid/ptr_map.h"
 #include "qpid/broker/AclModule.h"
 
@@ -345,7 +344,6 @@ bool SemanticState::ConsumerImpl::deliver(const QueueCursor& cursor, const Messa
 }
 bool SemanticState::ConsumerImpl::deliver(const QueueCursor& cursor, const Message& msg, boost::shared_ptr<Consumer> consumer)
 {
-    assertClusterSafe();
     allocateCredit(msg);
     DeliveryRecord record(cursor, msg.getSequence(), queue, getTag(),
                           consumer, acquire, !ackExpected, credit.isWindowMode(), amqp_0_10::MessageTransfer::getRequiredCredit(msg));
@@ -376,7 +374,6 @@ bool SemanticState::ConsumerImpl::filter(const Message&)
 
 bool SemanticState::ConsumerImpl::accept(const Message& msg)
 {
-    assertClusterSafe();
     // TODO aconway 2009-06-08: if we have byte & message credit but
     // checkCredit fails because the message is to big, we should
     // remain on queue's listener list for possible smaller messages
@@ -400,7 +397,6 @@ ostream& operator<<(ostream& o, const ConsumerName& pc) {
 
 void SemanticState::ConsumerImpl::allocateCredit(const Message& msg)
 {
-    assertClusterSafe();
     Credit original = credit;
     credit.consume(1, qpid::broker::amqp_0_10::MessageTransfer::getRequiredCredit(msg));
     QPID_LOG(debug, "Credit allocated for " << ConsumerName(*this)
@@ -492,7 +488,6 @@ void SemanticState::requestDispatch()
 
 void SemanticState::ConsumerImpl::requestDispatch()
 {
-    assertClusterSafe();
     if (blocked) {
         parent->session.getConnection().outputTasks.addOutputTask(this);
         parent->session.getConnection().outputTasks.activateOutput();
@@ -593,7 +588,6 @@ void SemanticState::stop(const std::string& destination)
 
 void SemanticState::ConsumerImpl::setWindowMode()
 {
-    assertClusterSafe();
     credit.setWindowMode(true);
     if (mgmtObject){
         mgmtObject->set_creditMode("WINDOW");
@@ -602,7 +596,6 @@ void SemanticState::ConsumerImpl::setWindowMode()
 
 void SemanticState::ConsumerImpl::setCreditMode()
 {
-    assertClusterSafe();
     credit.setWindowMode(false);
     if (mgmtObject){
         mgmtObject->set_creditMode("CREDIT");
@@ -611,13 +604,11 @@ void SemanticState::ConsumerImpl::setCreditMode()
 
 void SemanticState::ConsumerImpl::addByteCredit(uint32_t value)
 {
-    assertClusterSafe();
     credit.addByteCredit(value);
 }
 
 void SemanticState::ConsumerImpl::addMessageCredit(uint32_t value)
 {
-    assertClusterSafe();
     credit.addMessageCredit(value);
 }
 
@@ -645,7 +636,6 @@ void SemanticState::ConsumerImpl::flush()
 
 void SemanticState::ConsumerImpl::stop()
 {
-    assertClusterSafe();
     credit.cancel();
 }
 
@@ -711,7 +701,6 @@ bool SemanticState::ConsumerImpl::doOutput()
 void SemanticState::ConsumerImpl::enableNotify()
 {
     Mutex::ScopedLock l(lock);
-    assertClusterSafe();
     notifyEnabled = true;
 }
 
@@ -729,7 +718,6 @@ bool SemanticState::ConsumerImpl::isNotifyEnabled() const {
 void SemanticState::ConsumerImpl::notify()
 {
     Mutex::ScopedLock l(lock);
-    assertClusterSafe();
     if (notifyEnabled) {
         parent->session.getConnection().outputTasks.addOutputTask(this);
         parent->session.getConnection().outputTasks.activateOutput();
@@ -754,7 +742,6 @@ isInSequenceSetAnd(const SequenceSet& s, Predicate p) {
 }
 
 void SemanticState::accepted(const SequenceSet& commands) {
-    assertClusterSafe();
     if (txBuffer.get()) {
         //in transactional mode, don't dequeue or remove, just
         //maintain set of acknowledged messages:

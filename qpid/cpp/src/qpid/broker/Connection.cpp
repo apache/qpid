@@ -26,7 +26,6 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/sys/SecuritySettings.h"
-#include "qpid/sys/ClusterSafe.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
@@ -140,7 +139,7 @@ Connection::~Connection()
     if (mgmtObject != 0) {
         // In a cluster, Connections destroyed during shutdown are in
         // a cluster-unsafe context. Don't raise an event in that case.
-        if (!link && isClusterSafe())
+        if (!link)
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId(), mgmtObject->get_remoteProperties()));
         QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
             << " rhost:" << mgmtId );
@@ -188,7 +187,7 @@ bool isMessage(const AMQMethodBody* method)
 void Connection::recordFromServer(const framing::AMQFrame& frame)
 {
     // Don't record management stats in cluster-unsafe contexts
-    if (mgmtObject != 0 && isClusterSafe())
+    if (mgmtObject != 0)
     {
         qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
         cStats->framesToClient += 1;
@@ -203,7 +202,7 @@ void Connection::recordFromServer(const framing::AMQFrame& frame)
 void Connection::recordFromClient(const framing::AMQFrame& frame)
 {
     // Don't record management stats in cluster-unsafe contexts
-    if (mgmtObject != 0 && isClusterSafe())
+    if (mgmtObject != 0)
     {
         qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
         cStats->framesFromClient += 1;
@@ -358,7 +357,6 @@ void Connection::doIoCallbacks() {
     ScopedLock<Mutex> l(ioCallbackLock);
     // Although IO callbacks execute in the connection thread context, they are
     // not cluster safe because they are queued for execution in non-IO threads.
-    ClusterUnsafeScope cus;
     while (!ioCallbacks.empty()) {
         boost::function0<void> cb = ioCallbacks.front();
         ioCallbacks.pop();

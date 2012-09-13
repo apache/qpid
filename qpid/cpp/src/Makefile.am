@@ -462,8 +462,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/AtomicValue_gcc.h			\
   qpid/sys/AtomicValue_mutex.h			\
   qpid/sys/BlockingQueue.h			\
-  qpid/sys/ClusterSafe.h    			\
-  qpid/sys/ClusterSafe.cpp  			\
   qpid/sys/Codec.h				\
   qpid/sys/ConnectionCodec.h			\
   qpid/sys/ConnectionInputHandler.h		\
