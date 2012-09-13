@@ -20,7 +20,6 @@
  */
 #include "Lvq.h"
 #include "MessageMap.h"
-#include "qpid/sys/ClusterSafe.h"
 #include "qpid/sys/Monitor.h"
 
 namespace qpid {
@@ -33,7 +32,6 @@ Lvq::Lvq(const std::string& n, std::auto_ptr<MessageMap> m, const QueueSettings&
 
 void Lvq::push(Message& message, bool isRecovery)
 {
-    qpid::sys::assertClusterSafe();
     QueueListeners::NotificationSet copy;
     Message old;
     bool removed;

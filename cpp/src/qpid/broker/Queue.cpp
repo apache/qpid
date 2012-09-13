@@ -43,7 +43,6 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
-#include "qpid/sys/ClusterSafe.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
 #include "qpid/types/Variant.h"
@@ -306,7 +305,6 @@ void Queue::process(Message& msg)
 
 void Queue::release(const QueueCursor& position, bool markRedelivered)
 {
-    assertClusterSafe();
     QueueListeners::NotificationSet copy;
     {
         Mutex::ScopedLock locker(messageLock);
@@ -332,7 +330,6 @@ bool Queue::dequeueMessageAt(const SequenceNumber& position)
     boost::intrusive_ptr<PersistableMessage> pmsg;
     {
         Mutex::ScopedLock locker(messageLock);
-        assertClusterSafe();
         QPID_LOG(debug, "Attempting to dequeue message at " << position);
         QueueCursor cursor;
         Message* msg = messages->find(position, &cursor);
@@ -352,7 +349,6 @@ bool Queue::dequeueMessageAt(const SequenceNumber& position)
 bool Queue::acquire(const QueueCursor& position, const std::string& consumer)
 {
     Mutex::ScopedLock locker(messageLock);
-    assertClusterSafe();
     Message* msg;
 
     msg = messages->find(position);
@@ -479,7 +475,6 @@ bool Queue::find(SequenceNumber pos, Message& msg) const
 
 void Queue::consume(Consumer::shared_ptr c, bool requestExclusive)
 {
-    assertClusterSafe();
     {
         Mutex::ScopedLock locker(messageLock);
         // NOTE: consumerCount is actually a count of all
@@ -737,7 +732,6 @@ uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty,
 
 void Queue::push(Message& message, bool /*isRecovery*/)
 {
-    assertClusterSafe();
     QueueListeners::NotificationSet copy;
     {
         Mutex::ScopedLock locker(messageLock);
