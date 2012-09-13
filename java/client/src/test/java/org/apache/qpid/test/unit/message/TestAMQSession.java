@@ -189,14 +189,6 @@ public class TestAMQSession extends AMQSession_0_8
     {
     }
 
-    public void handleAddressBasedDestination(AMQDestination dest, 
-                                              boolean isConsumer, 
-                                              boolean noWait) throws AMQException
-    {
-        throw new UnsupportedOperationException("The new addressing based sytanx is "
-                + "not supported for AMQP 0-8/0-9 versions");
-    }
-
     @Override
     protected void flushAcknowledgments()
     {      
