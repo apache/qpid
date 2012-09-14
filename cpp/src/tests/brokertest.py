@@ -565,7 +565,7 @@ class NumberedSender(Thread):
 
     def __init__(self, broker, max_depth=None, queue="test-queue",
                  connection_options=Cluster.CONNECTION_OPTIONS,
-                 failover_updates=True, url=None):
+                 failover_updates=True, url=None, args=[]):
         """
         max_depth: enable flow control, ensure sent - received <= max_depth.
         Requires self.notify_received(n) to be called each time messages are received.
@@ -576,7 +576,7 @@ class NumberedSender(Thread):
                "--address", "%s;{create:always}"%queue,
                "--connection-options", "{%s}"%(connection_options),
                "--content-stdin"
-               ]
+               ] + args
         if failover_updates: cmd += ["--failover-updates"]
         self.sender = broker.test.popen(
             cmd, expect=EXPECT_RUNNING, stdin=PIPE)

@@ -342,9 +342,12 @@ void HaBroker::addBroker(const BrokerInfo& b) {
 
 void HaBroker::removeBroker(const Uuid& id) {
     Mutex::ScopedLock l(lock);
-    membership.remove(id);
-    QPID_LOG(debug, logPrefix << "Membership remove: " <<  id);
-    membershipUpdated(l);
+    BrokerInfo info;
+    if (membership.get(id, info)) {
+        membership.remove(id);
+        QPID_LOG(debug, logPrefix << "Membership remove: " <<  info);
+        membershipUpdated(l);
+    }
 }
 
 void HaBroker::setLinkProperties(Mutex::ScopedLock&) {
