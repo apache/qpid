@@ -24,6 +24,7 @@ package org.apache.qpid.test.client.failover;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.test.utils.FailoverBaseCase;
 
@@ -35,7 +36,6 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import javax.naming.NamingException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +75,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         failoverComplete = new CountDownLatch(1);
     }
 
-    protected void init(boolean transacted, int mode) throws JMSException, NamingException
+    private void init(boolean transacted, int mode) throws Exception
     {
         consumerSession = connection.createSession(transacted, mode);
         queue = consumerSession.createQueue(getName()+System.currentTimeMillis());
@@ -125,7 +125,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         }
     }
 
-    private void sendMessages(int startIndex,int endIndex, boolean transacted) throws JMSException
+    private void sendMessages(int startIndex,int endIndex, boolean transacted) throws Exception
     {
         _logger.debug("**************** Send (Start: " + startIndex + ", End:" + endIndex + ")***********************");
         
@@ -143,6 +143,10 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         if (transacted)
         {
             producerSession.commit();
+        }
+        else
+        {
+            ((AMQSession<?, ?>)producerSession).sync();
         }
     }
 
@@ -163,13 +167,13 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     {
         if (CLUSTERED)
         {    
-            testP2PFailover(numMessages, false,true, false);
+            testP2PFailover(numMessages, false, true, false);
         }
     }    
      
     public void testP2PFailoverTransacted() throws Exception
     {
-        testP2PFailover(numMessages, true,true, false);
+        testP2PFailover(numMessages, true,true, true);
     }
 
     public void testP2PFailoverTransactedWithMessagesLeftToConsumeAndProduce() throws Exception
@@ -177,17 +181,16 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         // Currently the cluster does not support transactions that span a failover
         if (CLUSTERED)
         {
-            testP2PFailover(numMessages, false,false, false);
+            testP2PFailover(numMessages, false, false, false);
         }
     }
-
-    private void testP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws JMSException, NamingException
+    private void testP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws Exception
     {        
         init(transacted, Session.AUTO_ACKNOWLEDGE);
         runP2PFailover(totalMessages,consumeAll, produceAll , transacted);
     } 
-    
-    protected void runP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws JMSException, NamingException
+
+    private void runP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws Exception
     {
         int toProduce = totalMessages;
         
@@ -254,7 +257,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
             //evil ignore IE.
         }
     }
-   
+
     public void testClientAckFailover() throws Exception
     {
         init(false, Session.CLIENT_ACKNOWLEDGE);
