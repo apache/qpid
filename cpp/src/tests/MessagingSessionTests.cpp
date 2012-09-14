@@ -1164,6 +1164,38 @@ QPID_AUTO_TEST_CASE(testAlternateExchangeInLinkDeclare)
     }
 }
 
+QPID_AUTO_TEST_CASE(testBrowseOnly)
+{
+    /* Set up a queue browse-only, and try to receive
+       the same messages twice with two different receivers. 
+       This works because the browse-only queue does not
+       allow message acquisition. */
+
+    QueueFixture fix;
+    std::string addr = "q; {create:always, node:{type:queue, durable:false, x-declare:{arguments:{browse-only:1}}}}";
+    Sender sender = fix.session.createSender(addr);
+    Message out("test-message");
+
+    int count = 10;
+    for ( int i = 0; i < count; ++ i ) {
+        sender.send(out);
+    }
+
+    Message m;
+
+    Receiver receiver_1 = fix.session.createReceiver(addr);
+    for ( int i = 0; i < count; ++ i ) {
+      BOOST_CHECK(receiver_1.fetch(m, Duration::SECOND));
+    }
+
+    Receiver receiver_2 = fix.session.createReceiver(addr);
+    for ( int i = 0; i < count; ++ i ) {
+      BOOST_CHECK(receiver_2.fetch(m, Duration::SECOND));
+    }
+
+    fix.session.acknowledge();
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
