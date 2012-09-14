@@ -225,19 +225,20 @@ void Primary::opened(broker::Connection& connection) {
 }
 
 void Primary::closed(broker::Connection& connection) {
-    // NOTE: It is possible for a backup connection to be rejected while we are
-    // a backup, but closed() is called after we have become primary.
-    //
-    // For this reason we do not remove from the backups map here, the backups
-    // map holds all the backups we know about whether connected or not.
-    //
-    Mutex::ScopedLock l(lock);
     BrokerInfo info;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
-        QPID_LOG(debug, logPrefix << "Backup disconnected: " << info);
-        haBroker.removeBroker(info.getSystemId());
+        Mutex::ScopedLock l(lock);
         BackupMap::iterator i = backups.find(info.getSystemId());
-        if (i != backups.end()) i->second->setConnected(false);
+        // NOTE: It is possible for a backup connection to be rejected while we
+        // are a backup, but closed() is called after we have become primary.
+        // Checking  isConnected() lets us ignore such spurious closes.
+        if (i != backups.end() && i->second->isConnected()) {
+            QPID_LOG(info, logPrefix << "Backup disconnected: " << info);
+            haBroker.removeBroker(info.getSystemId());
+            expectedBackups.erase(i->second);
+            backups.erase(i);
+            checkReady(l);
+        }
     }
 }
 
