@@ -95,13 +95,12 @@ class Primary
     bool active;
     /**
      * Set of expected backups that must be ready before we declare ourselves
-     * active
+     * active. These are backups that were known before the primary crashed. As
+     * new primary we expect them to re-connect.
      */
     BackupSet expectedBackups;
     /**
-     * Map of all the remote backups we know about: any expected backups plus
-     * all actual backups that have connected. We do not remove entries when a
-     * backup disconnects. @see Primary::closed()
+     * Map of all the expected backups plus all connected backups.
      */
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
