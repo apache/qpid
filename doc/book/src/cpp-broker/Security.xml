@@ -319,63 +319,95 @@ com.sun.security.jgss.initiate {
 		</para>
 
 <screen>
-$ qpidd --acl-file <replaceable>./aclfilename.acl</replaceable></screen>
+    $ qpidd --acl-file <replaceable>./aclfilename.acl</replaceable></screen>
 		 <para>
 			Each line in an ACL file grants or denies specific rights to a user. If the last line in an ACL file is <literal>acl deny all all</literal>, the ACL uses <firstterm>deny mode</firstterm>, and only those rights that are explicitly allowed are granted:
 		</para>
 
 <programlisting>
-acl allow rajith@QPID all all
-acl deny all all
+    acl allow rajith@QPID all all
+    acl deny all all
 </programlisting>
 		 <para>
 			On this server, <literal>rajith@QPID</literal> can perform any action, but nobody else can. Deny mode is the default, so the previous example is equivalent to the following ACL file:
 		</para>
 
 <programlisting>
-acl allow rajith@QPID all all
+    acl allow rajith@QPID all all
 </programlisting>
+		 <para>
+		   Alternatively the ACL file may use <firstterm>allow mode</firstterm> by placing:
+		</para>
+<programlisting>
+    acl allow all all
+</programlisting>
+		 <para>
+			as the final line in the ACL file. In <emphasis>allow mode</emphasis> all actions by all users are allowed unless otherwise denied by specific ACL rules.
+			The ACL rule which selects <emphasis>deny mode</emphasis> or <emphasis>allow mode</emphasis> must be the last line in the ACL rule file.
+		</para>
 		 <para>
 			ACL syntax allows fine-grained access rights for specific actions:
 		</para>
 
 <programlisting>
-acl allow carlt@QPID create exchange name=carl.*
-acl allow fred@QPID create all
-acl allow all consume queue
-acl allow all bind exchange
-acl deny all all
+    acl allow carlt@QPID create exchange name=carl.*
+    acl allow fred@QPID create all
+    acl allow all consume queue
+    acl allow all bind exchange
+    acl deny all all
 </programlisting>
 		 <para>
 			An ACL file can define user groups, and assign permissions to them:
 		</para>
 
 <programlisting>
-group admin ted@QPID martin@QPID
-acl allow admin create all
-acl deny all all
+    group admin ted@QPID martin@QPID
+    acl allow admin create all
+    acl deny all all
 </programlisting>
+
+		 <para>
+			Performance Note: Most ACL queries are performed infrequently. The overhead associated with 
+			ACL passing an allow or deny decision on the creation of a queue is negligible
+			compared to actually creating and using the queue. One notable exception is the <command>publish exchange</command>
+			query. ACL files with no <emphasis>publish exchange</emphasis> rules are noted and the broker short circuits the logic 
+			associated with the per-messsage <emphasis>publish exchange</emphasis> ACL query. 
+			However, if an ACL file has any <emphasis>publish exchange</emphasis> rules
+			then the broker is required to perform a <emphasis>publish exchange</emphasis> query for each message published.
+			Users with performance critical applications are encouraged to structure exchanges, queues, and bindings so that
+			the <emphasis>publish exchange</emphasis> ACL rules are unnecessary.
+		</para>
+              
 		 <!--          ########          --> <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntax">
 			<title>ACL Syntax</title>
 			 <para>
 				ACL rules must be on a single line and follow this syntax:
 <programlisting><![CDATA[
-user = username[/domain[@realm]]
-user-list = user1 user2 user3 ...
-group-name-list = group1 group2 group3 ...
-
-group <group-name> = [user-list] [group-name-list]
-
-permission = [allow|allow-log|deny|deny-log]
-action = [consume|publish|create|access|bind|unbind|delete|purge|update]
-object = [virtualhost|queue|exchange|broker|link|route|method]
-property = [name|durable|owner|routingkey|autodelete|exclusive|
-            type|alternate|queuename|schemapackage|schemaclass|
-            queuemaxsizelowerlimit|queuemaxsizeupperlimit|
-            queuemaxcountlowerlimit|queuemaxcountupperlimit]
-
-acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all" 
-            [property=<property-value> ...]]
+    user = username[/domain[@realm]]
+    user-list = user1 user2 user3 ...
+    group-name-list = group1 group2 group3 ...
+    
+    group <group-name> = [user-list] [group-name-list]
+    
+    permission = [allow | allow-log | deny | deny-log]
+    action = [consume | publish | create | access | 
+              bind | unbind | delete | purge | update]
+    object = [queue | exchange | broker | link | method]
+    property = [name | durable | owner | routingkey | 
+                autodelete | exclusive |type | 
+		alternate | queuename | 
+		schemapackage | schemaclass | 
+		queuemaxsizelowerlimit  | 
+		queuemaxsizeupperlimit  |
+                queuemaxcountlowerlimit | 
+		queuemaxcountupperlimit |
+                filemaxsizelowerlimit   | 
+		filemaxsizeupperlimit   |
+                filemaxcountlowerlimit  | 
+		filemaxcountupperlimit ]
+    
+    acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all" 
+                [property=<property-value> ...]]
 ]]></programlisting>
 
 				 ACL rules can also include a single object name (or the keyword <parameter>all</parameter>) and one or more property name value pairs in the form <command>property=value</command>
@@ -463,7 +495,9 @@ acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all"
 							</entry>
 							 <entry>
 								<para>
-									Applied on a per message basis on publish message transfers, this rule consumes the most resources
+									Applied on a per message basis
+									to verify that the user has rights to publish to the given
+									exchange with the given routingkey. 
 								</para>
 
 							</entry>
@@ -647,49 +681,49 @@ acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all"
 				       <entry> <command>name</command> </entry>
 				       <entry>String</entry>
 				       <entry>Object name, such as a queue name or exchange name.</entry>
-				       <entry>.</entry>
+				       <entry></entry>
 				     </row>
 				     <row>
 				       <entry> <command>durable</command> </entry>
 				       <entry>Boolean</entry>
 				       <entry>Indicates the object is durable</entry>
-				       <entry>CREATE QUEUE, CREATE EXCHANGE</entry>
+				       <entry>CREATE QUEUE, CREATE EXCHANGE, ACCESS QUEUE, ACCESS EXCHANGE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>routingkey</command> </entry>
 				       <entry>String</entry>
 				       <entry>Specifies routing key</entry>
-				       <entry>BIND EXCHANGE, UNBIND EXCHANGE, ACCESS EXCHANGE</entry>
+				       <entry>BIND EXCHANGE, UNBIND EXCHANGE, ACCESS EXCHANGE, PUBLISH EXCHANGE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>autodelete</command> </entry>
 				       <entry>Boolean</entry>
 				       <entry>Indicates whether or not the object gets deleted when the connection is closed</entry>
-				       <entry>CREATE QUEUE</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>exclusive</command> </entry>
 				       <entry>Boolean</entry>
 				       <entry>Indicates the presence of an <parameter>exclusive</parameter> flag</entry>
-				       <entry>CREATE QUEUE</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>type</command> </entry>
 				       <entry>String</entry>
 				       <entry>Type of exchange, such as topic, fanout, or xml</entry>
-				       <entry>CREATE EXCHANGE</entry>
+				       <entry>CREATE EXCHANGE, ACCESS EXCHANGE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>alternate</command> </entry>
 				       <entry>String</entry>
 				       <entry>Name of the alternate exchange</entry>
-				       <entry>CREATE EXCHANGE, CREATE QUEUE</entry>
+				       <entry>CREATE EXCHANGE, CREATE QUEUE, ACCESS EXCHANGE, ACCESS QUEUE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>queuename</command> </entry>
 				       <entry>String</entry>
 				       <entry>Name of the queue</entry>
-				       <entry>ACCESS EXCHANGE</entry>
+				       <entry>ACCESS EXCHANGE, BIND EXCHANGE, UNBIND EXCHANGE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>schemapackage</command> </entry>
@@ -706,119 +740,518 @@ acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all"
 				     <row>
 				       <entry> <command>queuemaxsizelowerlimit</command> </entry>
 				       <entry>Integer</entry>
-				       <entry>Minimum value for queue.max_size</entry>
-				       <entry>CREATE QUEUE</entry>
+				       <entry>Minimum value for queue.max_size (memory bytes)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>queuemaxsizeupperlimit</command> </entry>
 				       <entry>Integer</entry>
-				       <entry>Maximum value for queue.max_size</entry>
-				       <entry>CREATE QUEUE</entry>
+				       <entry>Maximum value for queue.max_size (memory bytes)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>queuemaxcountlowerlimit</command> </entry>
 				       <entry>Integer</entry>
-				       <entry>Minimum value for queue.max_count</entry>
-				       <entry>CREATE QUEUE</entry>
+				       <entry>Minimum value for queue.max_count (messages)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
 				     <row>
 				       <entry> <command>queuemaxcountupperlimit</command> </entry>
 				       <entry>Integer</entry>
-				       <entry>Maximum value for queue.max_count</entry>
-				       <entry>CREATE QUEUE</entry>
+				       <entry>Maximum value for queue.max_count (messages)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
-				     
+				     <row>
+				       <entry> <command>filemaxsizelowerlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Minimum value for file.max_size (64kb pages)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>filemaxsizeupperlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Maximum value for file.max_size (64kb pages)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>filemaxcountlowerlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Minimum value for file.max_count (files)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
+				     </row>
+				     <row>
+				       <entry> <command>filemaxcountupperlimit</command> </entry>
+				       <entry>Integer</entry>
+				       <entry>Maximum value for file.max_count (files)</entry>
+				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
+				     </row>
 				   </tbody>
-
 				</tgroup>
-
+			</table>
+			
+			Not every ACL action is applicable to every ACL object. 
+			The following table enumerates which action and object pairs are allowed.
+			The table also lists which optional ACL properties are allowed to qualify action-object pairs.
+			<table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_ActionObject_properties">
+			  <title>ACL Properties Allowed for each Action and Object</title>
+			  <tgroup cols="3">
+			    <thead>
+			      <row>
+				<entry>Action</entry>
+				<entry>Object</entry>
+				<entry>Properties</entry>
+			      </row>
+			    </thead>
+			    <tbody>
+			      <row>
+				<entry>access</entry>
+				<entry>broker</entry>
+				<entry></entry>
+			      </row>
+			      <row>
+				<entry>access</entry>
+				<entry>exchange</entry>
+				<entry>name type alternate durable queuename routingkey</entry>
+			      </row>
+			      <row>
+				<entry>access</entry>
+				<entry>method</entry>
+				<entry>name schemapackage schemaclass</entry>
+			      </row>
+			      <row>
+				<entry>access</entry>
+				<entry>queue</entry>
+				<entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
+			      </row>
+			      <row>
+				<entry>bind</entry>
+				<entry>exchange</entry>
+				<entry>name queuename routingkey</entry>
+			      </row>
+			      <row>
+				<entry>consume</entry>
+				<entry>queue</entry>
+				<entry>name</entry>
+			      </row>
+			      <row>
+				<entry>create</entry>
+				<entry>exchange</entry>
+				<entry>name type alternate durable</entry>
+			      </row>
+			      <row>
+				<entry>create</entry>
+				<entry>link</entry>
+				<entry>name</entry>
+			      </row>
+			      <row>
+				<entry>create</entry>
+				<entry>queue</entry>
+				<entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
+			      </row>
+			      <row>
+				<entry>delete</entry>
+				<entry>exchange</entry>
+				<entry>name</entry>
+			      </row>
+			      <row>
+				<entry>delete</entry>
+				<entry>queue</entry>
+				<entry>name</entry>
+			      </row>
+			      <row>
+				<entry>publish</entry>
+				<entry>exchange</entry>
+				<entry>name routingkey</entry>
+			      </row>
+			      <row>
+				<entry>purge</entry>
+				<entry>queue</entry>
+				<entry>name</entry>
+			      </row>
+			      <row>
+				<entry>unbind</entry>
+				<entry>exchange</entry>
+				<entry>name queuename routingkey</entry>
+			      </row>
+			      <row>
+				<entry>update</entry>
+				<entry>broker</entry>
+				<entry></entry>
+			      </row>
+			    </tbody>
+			  </tgroup>
 			</table>
 
 		</section>
 
 		 <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions">
 			<title>ACL Syntactic Conventions</title>
-			 <para>
-				In ACL files, the following syntactic conventions apply:
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-comments">
+			  <title>Comments</title>
+			  <para>
+			    <itemizedlist>
+			      <listitem>
+				<para>
+				  A line starting with the <command>#</command> character is considered a comment and is ignored.
+				</para>
+			      </listitem>
+			      <listitem>
+				<para>
+				  Embedded comments and trailing comments are not allowed. The <command>#</command> is commonly found in routing keys and other AMQP literals which occur naturally in ACL rule specifications. 
+				</para>
+			      </listitem>
+			    </itemizedlist>
+			  </para>
+			</section>
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-whitespace">
+			  <title>White Space</title>
+			  <itemizedlist>
+			    <listitem>
+			      <para>
+				Empty lines and lines that contain only whitespace (' ', '\f', '\n', '\r', '\t', '\v') are ignored.
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				Additional whitespace between and after tokens is allowed.
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				Group and Acl definitions must start with <command>group</command> and <command>acl</command> respectively and with no preceding whitespace.
+			      </para>
+			    </listitem>
+			  </itemizedlist>
+			</section>
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-characterset">
+			  <title>Character Set</title>
+			  <itemizedlist>
+			    <listitem>
+			      <para>
+				ACL files use 7-bit ASCII characters only
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				Group names may contain only
 				<itemizedlist>
-					<listitem>
-						<para>
-							A line starting with the <command>#</command> character is considered a comment and is ignored.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Empty lines and lines that contain only whitespace (' ', '\f', '\n', '\r', '\t', '\v') are ignored.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							All tokens are case sensitive. <parameter>name1</parameter> is not the same as <parameter>Name1</parameter> and <parameter>create</parameter> is not the same as <parameter>CREATE</parameter>.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Group lists can be extended to the following line by terminating the line with the <command>\</command> character.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Additional whitespace - that is, where there is more than one whitespace character - between and after tokens is ignored. Group and ACL definitions must start with either <command>group</command> or <command>acl</command> and with no preceding whitespace.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							All ACL rules are limited to a single line of at most 1024 characters.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Rules are interpreted from the top of the file down until a matching rule is obtained. The matching rule then controls the allow or deny decision.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							The keyword <parameter>all</parameter> is reserved and may be used in ACL rules to match all individuals and groups, all actions, or all objects.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							By default ACL files are in 'Deny Mode' and deny all actions by all users. That is, there is an implicit <parameter>acl deny all all</parameter> rule appended to the ACL rule list.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Group names may contain only <parameter>a-z</parameter>, <parameter>A-Z</parameter>, <parameter>0-9</parameter>, <parameter>- hyphen</parameter> and <parameter>_ underscore</parameter>.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Individual user names may contain only <parameter>a-z</parameter>, <parameter>A-Z</parameter>, <parameter>0-9</parameter>, <parameter>- hyphen</parameter>, <parameter>_ underscore</parameter>, <parameter>. period</parameter>, <parameter>@ ampersand</parameter>, and  <parameter>/ slash</parameter>.
-						</para>
-
-					</listitem>
-					 <listitem>
-						<para>
-							Rules must be preceded by any group definitions they can use. Any name not defined as a group will be assumed to be that of an individual.
-						</para>
-
-					</listitem>
-
+				  <listitem><command>[a-z]</command></listitem>
+				  <listitem><command>[A-Z]</command></listitem>
+				  <listitem><command>[0-9]</command></listitem>
+				  <listitem><command>'-'</command> hyphen</listitem>
+				  <listitem><command>'_'</command> underscore</listitem>
 				</itemizedlist>
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				Individual user names may contain only
+				<itemizedlist>
+				  <listitem><command>[a-z]</command></listitem>
+				  <listitem><command>[A-Z]</command></listitem>
+				  <listitem><command>[0-9]</command></listitem>
+				  <listitem><command>'-'</command> hyphen</listitem>
+				  <listitem><command>'_'</command> underscore</listitem>
+				  <listitem><command>'.'</command> period</listitem>
+				  <listitem><command>'@'</command> ampersand</listitem>
+				  <listitem><command>'/'</command> slash</listitem>
+				</itemizedlist>
+			      </para>
+			    </listitem>
+			  </itemizedlist>
+			</section>
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-casesensitivity">
+			  <title>Case Sensitivity</title>
+			  <itemizedlist>
+			    <listitem>
+			      <para>
+				All tokens are case sensitive. <parameter>name1</parameter> is not the same as <parameter>Name1</parameter> and <parameter>create</parameter> is not the same as <parameter>CREATE</parameter>.
+			      </para>
+			    </listitem>
+			  </itemizedlist>
+			</section>
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-linecontinuation">
+			  <title>Line Continuation</title>
+			  <itemizedlist>
+			    <listitem>
+			      <para>
+				Group lists can be extended to the following line by terminating the line with the <command>'\'</command> character. No other ACL file lines may be continued.
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				Group specification lines may be continued only after the group name or any of the user names included in the group. See example below.
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				Lines consisting solely of a <command>'\'</command> character are not permitted.
+			      </para>
+			    </listitem>
+			    <listitem>
+			      <para>
+				The <command>'\'</command> continuation character is recognized only if it is the last character in the line. Any characters after the <command>'\'</command> are not permitted.
+			      </para>
+			    </listitem>
+			  </itemizedlist>
+<programlisting><![CDATA[
+    #
+    # Examples of extending group lists using a trailing '\' character
+    #
+    group group1 name1 name2 \
+    name3 name4 \
+    name5
 
-			</para>
+    group group2 \
+                 group1 \
+                 name6
+    #
+    # The following are illegal:
+    #
+    # '\' must be after group name
+    #
+    group \
+          group3 name7 name8
+    #
+    # No empty extension line
+    #
+    group group4 name9 \
+                       \
+                 name10
+]]></programlisting>
 
-		</section>
+			</section>
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-linelength">
+			  <title>Line Length</title>
+			  <itemizedlist>
+			    <listitem>
+			      <para>
+				ACL file lines are limited to 1024 characters.
+			      </para>
+			    </listitem>
+			  </itemizedlist>
+			</section>
+			
+			
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-keywords">
+			  <title>ACL File Keywords</title>
+			  ACL reserves several words for convenience and for context sensitive substitution.
+			  
+			  <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-keywords-all">
+			    <title>The <command>all</command> Keyword</title>
+			    The keyword <command>all</command> is reserved. It may be used in ACL rules to match all individuals and groups, all actions, or all objects.
+			    <itemizedlist>
+			      <listitem>acl allow all create queue</listitem>
+			      <listitem>acl allow bob@QPID all queue</listitem>
+			      <listitem>acl allow bob@QPID create all</listitem>
+			    </itemizedlist>
+			  </section>
+			  
+			  <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-keywords-userdomain">
+			    <title>User Name and Domain Name Keywords</title>
+			    <para>
+			      In the C++ Broker 0.20 a simple set of user name and domain name substitution variable keyword tokens is defined. This provides administrators with an easy way to describe private or shared resources.
+			    </para>
+			    <para>
+			      Symbol substitution is allowed in the ACL file anywhere that text is supplied for a property value.
+			    </para>
+			    <para>
+			      In the following table an authenticated user named bob.user@QPID.COM has his substitution keywords expanded.
+			      
+			      <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_UsernameSubstitution">
+				<title>ACL User Name and Domain Name Substitution Keywords</title>
+				<tgroup cols="2">
+				  <thead>
+				    <row>
+				      <entry>Keyword</entry>
+				      <entry>Expansion</entry>
+				    </row>
+				  </thead>
+				  <tbody>
+				    <row>
+				      <entry> <command>${userdomain}</command> </entry>
+				      <entry>bob_user_QPID_COM</entry>
+				    </row>
+				    <row>
+				      <entry> <command>${user}</command> </entry>
+				      <entry>bob_user</entry>
+				    </row>
+				    <row>
+				      <entry> <command>${domain}</command> </entry>
+				      <entry>QPID_COM</entry>
+				    </row>
+				  </tbody>
+				</tgroup>
+			      </table>
+			    </para>
+			    
+			    <para>
+			      <itemizedlist>
+				<listitem>
+				  The original user name has the period “.” and ampersand “@” characters translated into underscore “_”. This allows substitution to work when the substitution keyword is used in a routingkey in the Acl file.
+				</listitem>
+				<listitem>
+				  The Acl processing matches ${userdomain} before matching either ${user} or ${domain}. Rules that specify the combination ${user}_${domain} will never match.
+				</listitem>
+			      </itemizedlist>
+			    </para>
+			    
+<programlisting><![CDATA[
+  # Example:
+  # 
+  # Administrators can set up Acl rule files that allow every user to create a
+  # private exchange, a private queue, and a private binding between them. 
+  # In this example the users are also allowed to create private backup exchanges, 
+  # queues and bindings. This effectively provides limits to user's exchange, 
+  # queue, and binding creation and guarantees that each user gets exclusive 
+  # access to these resources.
+  # 
+  #
+  # Create primary queue and exchange:
+  #
+  acl allow all create  queue    name=$\{user}-work alternate=$\{user}-work2
+  acl deny  all create  queue    name=$\{user}-work alternate=*
+  acl allow all create  queue    name=$\{user}-work
+  acl allow all create  exchange name=$\{user}-work alternate=$\{user}-work2
+  acl deny  all create  exchange name=$\{user}-work alternate=*
+  acl allow all create  exchange name=$\{user}-work
+  #
+  # Create backup queue and exchange
+  #
+  acl deny  all create  queue    name=$\{user}-work2 alternate=*
+  acl allow all create  queue    name=$\{user}-work2
+  acl deny  all create  exchange name=$\{user}-work2 alternate=*
+  acl allow all create  exchange name=$\{user}-work2
+  #
+  # Bind/unbind primary exchange
+  #
+  acl allow all bind   exchange name=$\{user}-work routingkey=$\{user} queuename=$\{user}-work
+  acl allow all unbind exchange name=$\{user}-work routingkey=$\{user} queuename=$\{user}-work
+  #
+  # Bind/unbind backup exchange
+  #
+  acl allow all bind   exchange name=$\{user}-work2 routingkey=$\{user} queuename=$\{user}-work2
+  acl allow all unbind exchange name=$\{user}-work2 routingkey=$\{user} queuename=$\{user}-work2
+  #
+  # Access primary exchange
+  #
+  acl allow all access exchange name=$\{user}-work routingkey=$\{user} queuename=$\{user}-work
+  #
+  # Access backup exchange
+  #
+  acl allow all access exchange name=$\{user}-work2 routingkey=$\{user} queuename=$\{user}-work2
+  #
+  # Publish primary exchange
+  #
+  acl allow all publish exchange name=$\{user}-work routingkey=$\{user}
+  #
+  # Publish backup exchange
+  #
+  acl allow all publish exchange name=$\{user}-work2 routingkey=$\{user}
+  #
+  # deny mode
+  #
+  acl deny all all
+]]></programlisting>
+                          </section>
+			  
+			</section>
+			
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntatic_Conventions-wildcards">
+			  <title>Wildcards</title>
+			  ACL privides two types of wildcard matching to provide flexibility in writing rules.
+
+			  <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntatic_Conventions-wildcards-asterisk">
+			    <title>Property Value Wildcard</title>
+			    <para>
+			      Text specifying a property value may end with a single trailing <command>*</command> character.
+			      This is a simple wildcard match indicating that strings which match up to that point are matches for the ACL property rule.
+			      An ACL rule such as
+			    </para>
+			    <para>
+			      <command>acl allow bob@QPID create queue name=bob*</command>
+			    </para>
+			    <para>
+			      allow user bob@QPID to create queues named bob1, bob2, bobQueue3, and so on.
+			    </para>
+			  </section>
+
+			  <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntatic_Conventions-wildcards-topickey">
+			    <title>Topic Routing Key Wildcard</title>
+			    <para>
+			      In the C++ Broker 0.20 the logic governing the ACL Match has changed for each ACL rule that contains a routingkey property.
+			      The routingkey property is matched according to Topic Exchange match logic the broker uses when it distributes messages published to a topic exchange.
+			    </para>
+			    <para>
+			      Routing keys are hierarchical where each level is separated by a period:
+			      <itemizedlist>
+				<listitem>weather.usa</listitem>
+				<listitem>weather.europe.germany</listitem>
+				<listitem>weather.europe.germany.berlin</listitem>
+				<listitem>company.engineering.repository</listitem>
+			      </itemizedlist>
+			    </para>
+			    <para>
+			      Within the routing key hierarchy two wildcard characters are defined.
+			      <itemizedlist>
+				<listitem><command>*</command> matches one field</listitem>
+				<listitem><command>#</command> matches zero or more fields</listitem>
+			      </itemizedlist>
+			    </para>
+			    <para>
+			      Suppose an ACL rule file is:
+			    </para>
+			    <para>
+			      <programlisting>
+    acl allow-log uHash1@COMPANY publish exchange name=X routingkey=a.#.b
+    acl deny all all
+			      </programlisting>
+			    </para>
+			    <para>
+			      When user uHash1@COMPANY attempts to publish to exchange X the ACL will return these results:
+
+			      <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_TopicExchangeMatch">
+				<title>Topic Exchange Wildcard Match Examples</title>
+				<tgroup cols="2">
+				  <thead>
+				    <row>
+				      <entry>routingkey in publish to exchange X</entry>
+				      <entry>result</entry>
+				    </row>
+				  </thead>
+				  <tbody>
+				    <row>
+				      <entry> <command>a.b</command> </entry>
+				      <entry>allow-log</entry>
+				    </row>
+				    <row>
+				      <entry> <command>a.x.b</command> </entry>
+				      <entry>allow-log</entry>
+				    </row>
+				    <row>
+				      <entry> <command>a.x.y.zz.b</command> </entry>
+				      <entry>allow-log</entry>
+				    </row>
+				    <row>
+				      <entry> <command>a.b.</command> </entry>
+				      <entry>deny</entry>
+				    </row>
+				    <row>
+				      <entry> <command>q.x.b</command> </entry>
+				      <entry>deny</entry>
+				    </row>
+				  </tbody>
+				</tgroup>
+			      </table>
+
+			    </para>
+			  </section>
+
+			</section>
+			
+		      
+			
+		      </section>
 
 		 <section id="sect-Messaging_User_Guide-Authorization-ACL_Rule_Matching">
 			<title>ACL Rule Matching</title>
@@ -839,51 +1272,51 @@ acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all"
 			 <para>
 			   The following illustration shows how ACL rules are processed to find matching rules.
 <programlisting><![CDATA[
-# Example of rule matching
-#
-# Using this ACL file content:
-
-(1)  acl deny bob create exchange name=test durable=true passive=true
-(2)  acl deny bob create exchange name=myEx type=direct
-(3)  acl allow all all
-
-#
-# Lookup 1. id:bob action:create objectType:exchange name=test 
-#           {durable=false passive=false type=direct alternate=}
-#
-# ACL Match Processing:
-#  1. Rule 1 passes minimum criteria with user bob, action create, 
-#     and object exchange.
-#  2. Rule 1 matches name=test.
-#  3. Rule 1 does not match the rule's durable=true with the requested 
-#     lookup of durable=false.
-#  4. Rule 1 does not control the decision and processing continues 
-#     to Rule 2.
-#  5. Rule 2 passes minimum criteria with user bob, action create, 
-#     and object exchange.
-#  6. Rule 2 does not match the rule's name=myEx with the requested 
-#     lookup of name=test.
-#  7. Rule 2 does not control the decision and processing continues 
-#     to Rule 3.
-#  8. Rule 3 matches everything and the decision is 'allow'.
-#
-# Lookup 2. id:bob action:create objectType:exchange name=myEx 
-#           {durable=true passive=true type=direct alternate=}
-#
-# ACL Match Processing:
-#  1. Rule 1 passes minimum criteria with user bob, action create, 
-#     and object exchange.
-#  6. Rule 1 does not match the rule's name=test with the requested 
-#     lookup of name=myEx.
-#  4. Rule 1 does not control the decision and processing continues
-#     to Rule 2.
-#  5. Rule 2 passes minimum criteria with user bob, action create, 
-#     and object exchange.
-#  2. Rule 2 matches name=myEx.
-#  3. Rule 2 matches the rule's type=direct with the requested 
-#     lookup of type=direct.
-#  8. Rule 2 is the matching rule and the decision is 'deny'.
-#
+    # Example of rule matching
+    #
+    # Using this ACL file content:
+    
+    (1)  acl deny bob create exchange name=test durable=true passive=true
+    (2)  acl deny bob create exchange name=myEx type=direct
+    (3)  acl allow all all
+    
+    #
+    # Lookup 1. id:bob action:create objectType:exchange name=test 
+    #           {durable=false passive=false type=direct alternate=}
+    #
+    # ACL Match Processing:
+    #  1. Rule 1 passes minimum criteria with user bob, action create, 
+    #     and object exchange.
+    #  2. Rule 1 matches name=test.
+    #  3. Rule 1 does not match the rule's durable=true with the requested 
+    #     lookup of durable=false.
+    #  4. Rule 1 does not control the decision and processing continues 
+    #     to Rule 2.
+    #  5. Rule 2 passes minimum criteria with user bob, action create, 
+    #     and object exchange.
+    #  6. Rule 2 does not match the rule's name=myEx with the requested 
+    #     lookup of name=test.
+    #  7. Rule 2 does not control the decision and processing continues 
+    #     to Rule 3.
+    #  8. Rule 3 matches everything and the decision is 'allow'.
+    #
+    # Lookup 2. id:bob action:create objectType:exchange name=myEx 
+    #           {durable=true passive=true type=direct alternate=}
+    #
+    # ACL Match Processing:
+    #  1. Rule 1 passes minimum criteria with user bob, action create, 
+    #     and object exchange.
+    #  2. Rule 1 does not match the rule's name=test with the requested 
+    #     lookup of name=myEx.
+    #  3. Rule 1 does not control the decision and processing continues
+    #     to Rule 2.
+    #  4. Rule 2 passes minimum criteria with user bob, action create, 
+    #     and object exchange.
+    #  5. Rule 2 matches name=myEx.
+    #  6. Rule 2 matches the rule's type=direct with the requested 
+    #     lookup of type=direct.
+    #  7. Rule 2 is the matching rule and the decision is 'deny'.
+    #
 ]]></programlisting>
 			 </para>
 
@@ -892,38 +1325,38 @@ acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all"
 		 <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Permissions">
 			<title>Specifying ACL Permissions</title>
 			 <para>
-				Now that we have seen the ACL syntax, we will provide representative examples and guidelines for ACL files.
+			   Now that we have seen the ACL syntax, we will provide representative examples and guidelines for ACL files.
 			</para>
 			 <para>
 				Most ACL files begin by defining groups:
 			</para>
 
 <programlisting>
-group admin ted@QPID martin@QPID
-group user-consume martin@QPID ted@QPID
-group group2 kim@QPID user-consume rob@QPID
-group publisher group2 \
-tom@QPID andrew@QPID debbie@QPID
+    group admin ted@QPID martin@QPID
+    group user-consume martin@QPID ted@QPID
+    group group2 kim@QPID user-consume rob@QPID
+    group publisher group2 \
+    tom@QPID andrew@QPID debbie@QPID
 </programlisting>
 			 <para>
 				Rules in an ACL file grant or deny specific permissions to users or groups:
 			</para>
 
 <programlisting>
-acl allow carlt@QPID create exchange name=carl.*
-acl allow rob@QPID create queue
-acl allow guest@QPID bind exchange name=amq.topic routingkey=stocks.rht.#
-acl allow user-consume create queue name=tmp.*
+    acl allow carlt@QPID create exchange name=carl.*
+    acl allow rob@QPID create queue
+    acl allow guest@QPID bind exchange name=amq.topic routingkey=stocks.rht.#
+    acl allow user-consume create queue name=tmp.*
 
-acl allow publisher publish all durable=false
-acl allow publisher create queue name=RequestQueue
-acl allow consumer consume queue durable=true
-acl allow fred@QPID create all
-acl allow bob@QPID all queue
-acl allow admin all
-acl allow all consume queue
-acl allow all bind exchange
-acl deny all all
+    acl allow publisher publish all durable=false
+    acl allow publisher create queue name=RequestQueue
+    acl allow consumer consume queue durable=true
+    acl allow fred@QPID create all
+    acl allow bob@QPID all queue
+    acl allow admin all
+    acl allow all consume queue
+    acl allow all bind exchange
+    acl deny all all
 </programlisting>
 			 <para>
 				In the previous example, the last line, <literal>acl deny all all</literal>, denies all authorizations that have not been specifically granted. This is the default, but it is useful to include it explicitly on the last line for the sake of clarity. If you want to grant all rights by default, you can specify <literal>acl allow all all</literal> in the last line.
@@ -933,10 +1366,10 @@ acl deny all all
 			</para>
 			<para>
 <programlisting>
-group users alice@QPID bob@QPID charlie@QPID
-acl deny  charlie@QPID create queue
-acl allow users        create queue
-acl deny all all
+    group users alice@QPID bob@QPID charlie@QPID
+    acl deny  charlie@QPID create queue
+    acl allow users        create queue
+    acl deny all all
 </programlisting>
 			</para>
 			<para>
@@ -947,40 +1380,73 @@ acl deny all all
 			</para>
 
 <programlisting>
-group allUsers guest@QPID
-....
-acl deny-log allUsers create link
-acl deny-log allUsers access method name=connect
-acl deny-log allUsers access method name=echo
-acl allow all all
+    group allUsers guest@QPID
+    ...
+    acl deny-log allUsers create link
+    acl deny-log allUsers access method name=connect
+    acl deny-log allUsers access method name=echo
+    acl allow all all
 </programlisting>
 
 		</section>
 
-		 <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Limits">
-			<title>Specifying ACL Connection Limits</title>
-			 <para>
-			   The ACL module creates two broker command line switches that set limits on the number of connections allowed per user or per client host address. These settings are not specified in the ACL file.
-			 </para>
-			 <para>
+		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Quotas">
+		  <title>Specifying ACL Quotas</title>
+		  The ACL module enforces various quotas and thereby limits user activity.
+
+		  <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Limits">
+		    <title>Connection Limits</title>
+		    <para>
+		      The ACL module creates broker command line switches that set limits on the number of concurrent connections allowed per user or per client host address. These settings are not specified in the ACL file.
+		    </para>
+		    <para>
 <programlisting>
---acl-max-connect-per-user N_USER
---acl-max-connect-per-ip N_IP
+    --max-connections          N
+    --max-connections-per-user N
+    --max-connections-per-ip   N
 </programlisting>
-			 </para>
-			 <para>
-			   If either of these switches is not specified or the value specified is zero then the corresponding connection limit is not enforced.
-			 </para>
-			 <para>
-			   If a limit is set for user connections then all users are limited to that number of connections regardless of the client IP address the users are coming from.
-			 </para>
-			 <para>
-			   If a limit is set for IP connections then connections for a given IP address are limited regardless of the user credentials presented with the connection.
-			 </para>
-			 <para>
-			   Note that addresses using different transports are counted separately even though the host is actually the same physical machine. In the setting illustrated above a host would allow N_IP connections from [::1] IPv6 transport localhost and another N_IP connections from [127.0.0.1] IPv4 transport localhost.
-			 </para>
-		 </section>
+		    </para>
+		    <para>
+		      If a switch is not specified or the value specified is zero then the corresponding connection limit is not enforced.
+		    </para>
+		    <para>
+		      <command>max-connections</command> specifies an upper limit for all user connections.
+		    </para>
+		    <para>
+		      <command>max-connections-per-user</command> specifies an upper limit for each user based on the authenticated user name. This limit is enforced regardless of the client IP address from which the connection originates.
+		    </para>
+		    <para>
+		      <command>max-connections-per-ip</command> specifies an upper limit for connections for all users based on the originating client IP address. This limit is enforced regardless of the user credentials presented with the connection.
+		      <itemizedlist>
+			<listitem>
+			  Note that addresses using different transports are counted separately even though the originating host is actually the same physical machine. In the setting illustrated above a host would allow N_IP connections from [::1] IPv6 transport localhost and another N_IP connections from [127.0.0.1] IPv4 transport localhost.
+			</listitem>
+			<listitem>
+			  The max-connections-per-ip and max-connections-per-user counts are active simultaneously. From a given client system users may be denied access to the broker by either connection limit.
+			</listitem>
+		      </itemizedlist>
+		    </para>
+		  </section>
+
+		  <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Queue_Limits">
+		    <title>Queue Limits</title>
+		    <para>
+		      The ACL module creates a broker command line switch that set limits on the number of queues each user is allowed to create. This settings is not specified in the ACL file.
+		    </para>
+		    <para>
+<programlisting>
+    --max-queues-per-user N
+</programlisting>
+		    </para>
+		    <para>
+		      If this switch is not specified or the value specified is zero then the queue limit is not enforced.
+		    </para>
+		    <para>
+		      The queue limt is set for all users on the broker based on the authenticated user name.
+		    </para>
+		  </section>
+
+		</section>
 
 	</section>
 
