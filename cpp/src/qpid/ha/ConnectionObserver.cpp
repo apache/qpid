@@ -30,7 +30,7 @@ namespace qpid {
 namespace ha {
 
 ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
-    : haBroker(hb), logPrefix("Connections: "), self(uuid) {}
+    : haBroker(hb), logPrefix("Backup: "), self(uuid) {}
 
 bool ConnectionObserver::getBrokerInfo(const broker::Connection& connection, BrokerInfo& info) {
     framing::FieldTable ft;
@@ -41,9 +41,11 @@ bool ConnectionObserver::getBrokerInfo(const broker::Connection& connection, Bro
     return false;
 }
 
-void ConnectionObserver::setObserver(const ObserverPtr& o){
+void ConnectionObserver::setObserver(const ObserverPtr& o, const std::string& newlogPrefix)
+{
     sys::Mutex::ScopedLock l(lock);
     observer = o;
+    logPrefix = newlogPrefix;
 }
 
 ConnectionObserver::ObserverPtr ConnectionObserver::getObserver() {

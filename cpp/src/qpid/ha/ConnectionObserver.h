@@ -55,7 +55,7 @@ class ConnectionObserver : public broker::ConnectionObserver
 
     ConnectionObserver(HaBroker& haBroker, const types::Uuid& self);
 
-    void setObserver(const ObserverPtr&);
+    void setObserver(const ObserverPtr&, const std::string& logPrefix);
     ObserverPtr getObserver();
 
     void opened(broker::Connection& connection);
