@@ -37,7 +37,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
-import org.apache.qpid.server.virtualhost.ManagedVirtualHost;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -132,11 +131,10 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         final int brokerPortNumber = getBrokerPortNumbers().iterator().next();
 
         ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(brokerPortNumber);
+        awaitAllNodesJoiningGroup(storeBean, NUMBER_OF_NODES);
+
         final TabularData groupMembers = storeBean.getAllNodesInGroup();
         assertNotNull(groupMembers);
-
-        final int numberOfDataRows = groupMembers.size();
-        assertEquals("Unexpected number of data rows", NUMBER_OF_NODES ,numberOfDataRows);
 
         for(int bdbPortNumber : _clusterCreator.getBdbPortNumbers())
         {
@@ -155,8 +153,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         final int brokerPortNumberToMakeObservation = brokerPortNumberIterator.next();
         final int brokerPortNumberToBeRemoved = brokerPortNumberIterator.next();
         final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(brokerPortNumberToMakeObservation);
-        final int numberOfDataRows = storeBean.getAllNodesInGroup().size();
-        assertEquals("Unexpected number of data rows before test", NUMBER_OF_NODES ,numberOfDataRows);
+        awaitAllNodesJoiningGroup(storeBean, NUMBER_OF_NODES);
 
         final String removedNodeName = _clusterCreator.getNodeNameForNodeAt(_clusterCreator.getBdbPortForBrokerPort(brokerPortNumberToBeRemoved));
         _clusterCreator.stopNode(brokerPortNumberToBeRemoved);
@@ -265,5 +262,28 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         _jmxUtils.open(brokerPortNumber);
 
         return _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+    }
+
+    private void awaitAllNodesJoiningGroup(ManagedBDBHAMessageStore storeBean, int expectedNumberOfNodes) throws Exception
+    {
+        long totalTimeWaited = 0l;
+        long waitInterval = 100l;
+        long maxWaitTime = 10000;
+
+        int currentNumberOfNodes = storeBean.getAllNodesInGroup().size();
+        while (expectedNumberOfNodes > currentNumberOfNodes || totalTimeWaited > maxWaitTime)
+        {
+            LOGGER.debug("Still awaiting nodes to join group; expecting "
+                + expectedNumberOfNodes + " node(s) but only have " + currentNumberOfNodes
+                + " after " + totalTimeWaited + " ms.");
+
+            totalTimeWaited += waitInterval;
+            Thread.sleep(waitInterval);
+
+            currentNumberOfNodes = storeBean.getAllNodesInGroup().size();
+        }
+
+        assertEquals("Unexpected number of nodes in group after " + totalTimeWaited + " ms",
+                expectedNumberOfNodes ,currentNumberOfNodes);
     }
 }
