@@ -54,6 +54,7 @@ using namespace std;
 using types::Variant;
 using types::Uuid;
 using sys::Mutex;
+using boost::shared_ptr;
 
 // Called in Plugin::earlyInitialize
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
@@ -72,8 +73,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     // initialize()
     if (settings.cluster) {
         QPID_LOG(debug, logPrefix << "Rejecting client connections.");
-        observer->setObserver(boost::shared_ptr<broker::ConnectionObserver>(
-                              new BackupConnectionExcluder));
+        shared_ptr<broker::ConnectionObserver> excluder(new BackupConnectionExcluder);
+        observer->setObserver(excluder, "Backup: ");
         broker.getConnectionObservers().add(observer);
     }
 }

@@ -97,6 +97,7 @@ void QueueGuard::completeRange(Delayed::iterator begin, Delayed::iterator end) {
 }
 
 void QueueGuard::cancel() {
+    QPID_LOG(debug, logPrefix << "Cancelled");
     queue.removeObserver(observer);
     Delayed removed;
     {
