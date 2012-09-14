@@ -109,7 +109,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     checkReady(l);
     // Allow client connections
     connectionObserver.reset(new PrimaryConnectionObserver(*this));
-    haBroker.getObserver()->setObserver(connectionObserver);
+    haBroker.getObserver()->setObserver(connectionObserver, logPrefix);
 }
 
 Primary::~Primary() {

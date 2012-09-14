@@ -222,9 +222,7 @@ ReplicatingSubscription::ReplicatingSubscription(
     }
 }
 
-ReplicatingSubscription::~ReplicatingSubscription() {
-    QPID_LOG(debug, logPrefix << "Detroyed replicating subscription");
-}
+ReplicatingSubscription::~ReplicatingSubscription() {}
 
 // Called in subscription's connection thread when the subscription is created.
 // Called separate from ctor because sending events requires
@@ -292,6 +290,7 @@ void ReplicatingSubscription::setReady() {
 // Called in the subscription's connection thread.
 void ReplicatingSubscription::cancel()
 {
+    QPID_LOG(debug, logPrefix << "Cancelled");
     guard->cancel();
     ConsumerImpl::cancel();
 }
