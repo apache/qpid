@@ -79,6 +79,13 @@ class Consumer : public QueueCursor {
      */
     virtual bool hideDeletedError() { return false; }
 
+    /** If false, the consumer is not counted for purposes of auto-deletion or
+     * immediate messages. This is used for "system" consumers that are created
+     * by the broker for internal purposes as opposed to consumers that are
+     * created by normal clients.
+     */
+    virtual bool isCounted() { return true; }
+
   protected:
     //framing::SequenceNumber position;
 
