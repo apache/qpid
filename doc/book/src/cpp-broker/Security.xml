@@ -315,7 +315,10 @@ com.sun.security.jgss.initiate {
 	 <!--          ###################################################          --> <section id="sect-Messaging_User_Guide-Security-Authorization">
 		<title>Authorization</title>
 		 <para>
-			In Qpid, Authorization specifies which actions can be performed by each authenticated user using an Access Control List (ACL). Use the <command>--acl-file</command> command to load the access control list. The filename should have a <filename>.acl</filename> extension:
+		   In Qpid, Authorization specifies which actions can be performed by each authenticated user using an Access Control List (ACL). 
+		 </para>
+		 <para>
+		   Use the <command>--acl-file</command> command to load the access control list. The filename should have a <filename>.acl</filename> extension:
 		</para>
 
 <screen>
@@ -789,99 +792,152 @@ com.sun.security.jgss.initiate {
 				</tgroup>
 			</table>
 			
-			Not every ACL action is applicable to every ACL object. 
-			The following table enumerates which action and object pairs are allowed.
-			The table also lists which optional ACL properties are allowed to qualify action-object pairs.
-			<table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_ActionObject_properties">
-			  <title>ACL Properties Allowed for each Action and Object</title>
-			  <tgroup cols="3">
-			    <thead>
-			      <row>
-				<entry>Action</entry>
-				<entry>Object</entry>
-				<entry>Properties</entry>
-			      </row>
-			    </thead>
-			    <tbody>
-			      <row>
-				<entry>access</entry>
-				<entry>broker</entry>
-				<entry></entry>
-			      </row>
-			      <row>
-				<entry>access</entry>
-				<entry>exchange</entry>
-				<entry>name type alternate durable queuename routingkey</entry>
-			      </row>
-			      <row>
-				<entry>access</entry>
-				<entry>method</entry>
-				<entry>name schemapackage schemaclass</entry>
-			      </row>
-			      <row>
-				<entry>access</entry>
-				<entry>queue</entry>
-				<entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
-			      </row>
-			      <row>
-				<entry>bind</entry>
-				<entry>exchange</entry>
-				<entry>name queuename routingkey</entry>
-			      </row>
-			      <row>
-				<entry>consume</entry>
-				<entry>queue</entry>
-				<entry>name</entry>
-			      </row>
-			      <row>
-				<entry>create</entry>
-				<entry>exchange</entry>
-				<entry>name type alternate durable</entry>
-			      </row>
-			      <row>
-				<entry>create</entry>
-				<entry>link</entry>
-				<entry>name</entry>
-			      </row>
-			      <row>
-				<entry>create</entry>
-				<entry>queue</entry>
-				<entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
-			      </row>
-			      <row>
-				<entry>delete</entry>
-				<entry>exchange</entry>
-				<entry>name</entry>
-			      </row>
-			      <row>
-				<entry>delete</entry>
-				<entry>queue</entry>
-				<entry>name</entry>
-			      </row>
-			      <row>
-				<entry>publish</entry>
-				<entry>exchange</entry>
-				<entry>name routingkey</entry>
-			      </row>
-			      <row>
-				<entry>purge</entry>
-				<entry>queue</entry>
-				<entry>name</entry>
-			      </row>
-			      <row>
-				<entry>unbind</entry>
-				<entry>exchange</entry>
-				<entry>name queuename routingkey</entry>
-			      </row>
-			      <row>
-				<entry>update</entry>
-				<entry>broker</entry>
-				<entry></entry>
-			      </row>
-			    </tbody>
-			  </tgroup>
-			</table>
+			<section id="sect-Messaging_User_Guide-Authorization-ACL_ActionObjectPropertyTuples">
+			  <title>ACL Action-Object-Property Tuples</title>
+			  <para>
+			    Not every ACL action is applicable to every ACL object. Furthermore, not every property may be
+			    specified for every action-object pair.
+			    The following table enumerates which action and object pairs are allowed.
+			    The table also lists which optional ACL properties are allowed to qualify 
+			    action-object pairs.
+			  </para>
+			  <para>
+			    The <emphasis>access</emphasis> action is called with different argument 
+			    lists for the <emphasis>exchange</emphasis> and <emphasis>queue</emphasis> objects.
+			    A separate column shows the AMQP 0.10 method that the Access ACL rule is satisfying. 
+			    Write separate rules with the additional arguments for the <emphasis>declare</emphasis>
+			    and <emphasis>bind</emphasis> methods and include these rules in the ACL file
+			    before the rules for the <emphasis>query</emphasis> method.
+			    <!-- The exact sequence of calling these methods is a product of the client
+			    library. The user might not know anything about a 'declare' or a 'query' or
+			    a passive declaration. -->
+			  </para>
+			  <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_ActionObject_properties">
+			    <title>ACL Properties Allowed for each Action and Object</title>
+			    <tgroup cols="4">
+			      <thead>
+				<row>
+				  <entry>Action</entry>
+				  <entry>Object</entry>
+				  <entry>Properties</entry>
+				  <entry>Method</entry>
+				</row>
+			      </thead>
+			      <tbody>
+				<row>
+				  <entry>access</entry>
+				  <entry>broker</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>access</entry>
+				  <entry>exchange</entry>
+				  <entry>name type alternate durable</entry>
+				  <entry>declare</entry>
+				</row>
+				<row>
+				  <entry>access</entry>
+				  <entry>exchange</entry>
+				  <entry>name queuename routingkey</entry>
+				  <entry>bound</entry>
+				</row>
+				<row>
+				  <entry>access</entry>
+				  <entry>exchange</entry>
+				  <entry>name</entry>
+				  <entry>query</entry>
+				</row>
+				<row>
+				  <entry>access</entry>
+				  <entry>method</entry>
+				  <entry>name schemapackage schemaclass</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>access</entry>
+				  <entry>queue</entry>
+				  <entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
+				  <entry>declare</entry>
+				</row>
+				<row>
+				  <entry>access</entry>
+				  <entry>queue</entry>
+				  <entry>name</entry>
+				  <entry>query</entry>
+				</row>
+				<row>
+				  <entry>bind</entry>
+				  <entry>exchange</entry>
+				  <entry>name queuename routingkey</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>consume</entry>
+				  <entry>queue</entry>
+				  <entry>name</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>create</entry>
+				  <entry>exchange</entry>
+				  <entry>name type alternate durable</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>create</entry>
+				  <entry>link</entry>
+				  <entry>name</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>create</entry>
+				  <entry>queue</entry>
+				  <entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>delete</entry>
+				  <entry>exchange</entry>
+				  <entry>name</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>delete</entry>
+				  <entry>queue</entry>
+				  <entry>name</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>publish</entry>
+				  <entry>exchange</entry>
+				  <entry>name routingkey</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>purge</entry>
+				  <entry>queue</entry>
+				  <entry>name</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>unbind</entry>
+				  <entry>exchange</entry>
+				  <entry>name queuename routingkey</entry>
+				  <entry></entry>
+				</row>
+				<row>
+				  <entry>update</entry>
+				  <entry>broker</entry>
+				  <entry></entry>
+				  <entry></entry>
+				</row>
+			      </tbody>
+			    </tgroup>
+			  </table>
+			  <para>
 
+			  </para>
+			</section>
 		</section>
 
 		 <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions">
@@ -1169,7 +1225,7 @@ com.sun.security.jgss.initiate {
 			      An ACL rule such as
 			    </para>
 			    <para>
-			      <command>acl allow bob@QPID create queue name=bob*</command>
+			      <programlisting>    acl allow bob@QPID create queue name=bob*</programlisting>
 			    </para>
 			    <para>
 			      allow user bob@QPID to create queues named bob1, bob2, bobQueue3, and so on.
@@ -1389,66 +1445,65 @@ com.sun.security.jgss.initiate {
 </programlisting>
 
 		</section>
+	      </section>
 
-		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Quotas">
-		  <title>Specifying ACL Quotas</title>
-		  The ACL module enforces various quotas and thereby limits user activity.
-
-		  <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Limits">
-		    <title>Connection Limits</title>
-		    <para>
-		      The ACL module creates broker command line switches that set limits on the number of concurrent connections allowed per user or per client host address. These settings are not specified in the ACL file.
-		    </para>
-		    <para>
-<programlisting>
+	      <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Quotas">
+		<title>User Connection and Queue Quotas</title>
+		The ACL module enforces various quotas and thereby limits user activity.
+		
+		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Limits">
+		  <title>Connection Limits</title>
+		  <para>
+		    The ACL module creates broker command line switches that set limits on the number of concurrent connections allowed per user or per client host address. These settings are not specified in the ACL file.
+		  </para>
+		  <para>
+		    <programlisting>
     --max-connections          N
     --max-connections-per-user N
     --max-connections-per-ip   N
-</programlisting>
-		    </para>
-		    <para>
-		      If a switch is not specified or the value specified is zero then the corresponding connection limit is not enforced.
-		    </para>
-		    <para>
-		      <command>max-connections</command> specifies an upper limit for all user connections.
-		    </para>
-		    <para>
-		      <command>max-connections-per-user</command> specifies an upper limit for each user based on the authenticated user name. This limit is enforced regardless of the client IP address from which the connection originates.
-		    </para>
-		    <para>
-		      <command>max-connections-per-ip</command> specifies an upper limit for connections for all users based on the originating client IP address. This limit is enforced regardless of the user credentials presented with the connection.
-		      <itemizedlist>
-			<listitem>
-			  Note that addresses using different transports are counted separately even though the originating host is actually the same physical machine. In the setting illustrated above a host would allow N_IP connections from [::1] IPv6 transport localhost and another N_IP connections from [127.0.0.1] IPv4 transport localhost.
-			</listitem>
-			<listitem>
-			  The max-connections-per-ip and max-connections-per-user counts are active simultaneously. From a given client system users may be denied access to the broker by either connection limit.
-			</listitem>
-		      </itemizedlist>
-		    </para>
-		  </section>
-
-		  <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Queue_Limits">
-		    <title>Queue Limits</title>
-		    <para>
-		      The ACL module creates a broker command line switch that set limits on the number of queues each user is allowed to create. This settings is not specified in the ACL file.
-		    </para>
-		    <para>
-<programlisting>
-    --max-queues-per-user N
-</programlisting>
-		    </para>
-		    <para>
-		      If this switch is not specified or the value specified is zero then the queue limit is not enforced.
-		    </para>
-		    <para>
-		      The queue limt is set for all users on the broker based on the authenticated user name.
-		    </para>
-		  </section>
-
+		    </programlisting>
+		  </para>
+		  <para>
+		    If a switch is not specified or the value specified is zero then the corresponding connection limit is not enforced.
+		  </para>
+		  <para>
+		    <command>max-connections</command> specifies an upper limit for all user connections.
+		  </para>
+		  <para>
+		    <command>max-connections-per-user</command> specifies an upper limit for each user based on the authenticated user name. This limit is enforced regardless of the client IP address from which the connection originates.
+		  </para>
+		  <para>
+		    <command>max-connections-per-ip</command> specifies an upper limit for connections for all users based on the originating client IP address. This limit is enforced regardless of the user credentials presented with the connection.
+		    <itemizedlist>
+		      <listitem>
+			Note that addresses using different transports are counted separately even though the originating host is actually the same physical machine. In the setting illustrated above a host would allow N_IP connections from [::1] IPv6 transport localhost and another N_IP connections from [127.0.0.1] IPv4 transport localhost.
+		      </listitem>
+		      <listitem>
+			The max-connections-per-ip and max-connections-per-user counts are active simultaneously. From a given client system users may be denied access to the broker by either connection limit.
+		      </listitem>
+		    </itemizedlist>
+		  </para>
 		</section>
-
-	</section>
+		
+		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Queue_Limits">
+		  <title>Queue Limits</title>
+		  <para>
+		    The ACL module creates a broker command line switch that set limits on the number of queues each user is allowed to create. This settings is not specified in the ACL file.
+		  </para>
+		  <para>
+		    <programlisting>
+    --max-queues-per-user N
+		    </programlisting>
+		  </para>
+		  <para>
+		    If this switch is not specified or the value specified is zero then the queue limit is not enforced.
+		  </para>
+		  <para>
+		    The queue limit is set for all users on the broker based on the authenticated user name.
+		  </para>
+		</section>
+		
+	      </section>
 
 	 <!--          ###########################          --> <section id="sect-Messaging_User_Guide-Security-Encryption_using_SSL">
 		<title>Encryption using SSL</title>
