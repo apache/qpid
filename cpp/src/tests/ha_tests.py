@@ -677,20 +677,26 @@ class ReplicationTests(BrokerTest):
 
     def test_auto_delete_exclusive(self):
         """Verify that we ignore auto-delete, exclusive, non-auto-delete-timeout queues"""
-        cluster = HaCluster(self,2)
-        s = cluster[0].connect().session()
-        s.receiver("exad;{create:always,node:{x-declare:{exclusive:True,auto-delete:True}}}")
-        s.receiver("ex;{create:always,node:{x-declare:{exclusive:True}}}")
-        s.receiver("ad;{create:always,node:{x-declare:{auto-delete:True}}}")
-        s.receiver("time;{create:always,node:{x-declare:{exclusive:True,auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
-        s.receiver("q;{create:always}")
+        cluster = HaCluster(self, 2)
+        s0 = cluster[0].connect().session()
+        s0.receiver("exad;{create:always,node:{x-declare:{exclusive:True,auto-delete:True}}}")
+        s0.receiver("ex;{create:always,node:{x-declare:{exclusive:True}}}")
+        ad = s0.receiver("ad;{create:always,node:{x-declare:{auto-delete:True}}}")
+        s0.receiver("time;{create:always,node:{x-declare:{exclusive:True,auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
+        s0.receiver("q;{create:always}")
 
-        s = cluster[1].connect_admin().session()
+        s1 = cluster[1].connect_admin().session()
         cluster[1].wait_backup("q")
-        assert not valid_address(s, "exad")
-        assert valid_address(s, "ex")
-        assert valid_address(s, "ad")
-        assert valid_address(s, "time")
+        assert not valid_address(s1, "exad")
+        assert valid_address(s1, "ex")
+        assert valid_address(s1, "ad")
+        assert valid_address(s1, "time")
+
+        # Verify that auto-delete queues are not kept alive by
+        # replicating subscriptions
+        ad.close()
+        s0.sync()
+        assert not valid_address(s0, "ad")
 
     def test_broker_info(self):
         """Check that broker information is correctly published via management"""

@@ -501,22 +501,29 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive)
                 }
             }
         }
-        else
+        else if(c->isCounted()) {
             browserCount++;
-        consumerCount++;
-        //reset auto deletion timer if necessary
-        if (settings.autoDeleteDelay && autoDeleteTask) {
-            autoDeleteTask->cancel();
         }
-        observeConsumerAdd(*c, locker);
+        if(c->isCounted()) {
+            consumerCount++;
+
+            //reset auto deletion timer if necessary
+            if (settings.autoDeleteDelay && autoDeleteTask) {
+                autoDeleteTask->cancel();
+            }
+
+            observeConsumerAdd(*c, locker);
+        }
     }
-    if (mgmtObject != 0)
-        mgmtObject->inc_consumerCount ();
+    if (mgmtObject != 0 && c->isCounted()) {
+        mgmtObject->inc_consumerCount();
+    }
 }
 
 void Queue::cancel(Consumer::shared_ptr c)
 {
     removeListener(c);
+    if(c->isCounted())
     {
         Mutex::ScopedLock locker(messageLock);
         consumerCount--;
@@ -524,8 +531,9 @@ void Queue::cancel(Consumer::shared_ptr c)
         if(exclusive) exclusive = 0;
         observeConsumerRemove(*c, locker);
     }
-    if (mgmtObject != 0)
-        mgmtObject->dec_consumerCount ();
+    if (mgmtObject != 0 && c->isCounted()) {
+        mgmtObject->dec_consumerCount();
+    }
 }
 
 /**
