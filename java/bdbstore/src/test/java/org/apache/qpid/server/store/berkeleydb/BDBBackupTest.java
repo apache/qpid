@@ -63,7 +63,7 @@ public class BDBBackupTest extends QpidBrokerTestCase
 
         // It would be preferable to lookup the store path using #getConfigurationStringProperty("virtualhosts...")
         // but the config as known to QBTC does not pull-in the virtualhost section from its separate source file
-        _backupFromDir = new File(qpidWork + "/bdbstore/" + TEST_VHOST + "-store");
+        _backupFromDir = new File(qpidWork + File.separator + TEST_VHOST + "-store");
         boolean fromDirExistsAndIsDir = _backupFromDir.isDirectory();
         assertTrue("backupFromDir " + _backupFromDir + " should already exist", fromDirExistsAndIsDir);
     }

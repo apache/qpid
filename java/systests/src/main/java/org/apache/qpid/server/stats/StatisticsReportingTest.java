@@ -45,10 +45,14 @@ import javax.jms.TextMessage;
  */
 public class StatisticsReportingTest extends QpidBrokerTestCase
 {
+    private static final String VHOST_NAME1 = "vhost1";
+    private static final String VHOST_NAME2 = "vhost2";
+    private static final String VHOST_NAME3 = "vhost3";
+
     protected LogMonitor _monitor;
     protected static final String USER = "admin";
 
-    protected Connection _test, _dev, _local;
+    protected Connection _conToVhost1, _conToVhost2, _conToVhost3;
     protected String _queueName = "statistics";
     protected Destination _queue;
     protected String _brokerUrl;
@@ -56,6 +60,10 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
+        createTestVirtualHost(VHOST_NAME1);
+        createTestVirtualHost(VHOST_NAME2);
+        createTestVirtualHost(VHOST_NAME3);
+
         setConfigurationProperty("statistics.generation.broker", "true");
         setConfigurationProperty("statistics.generation.virtualhosts", "true");
 
@@ -69,22 +77,21 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
         super.setUp();
 
         _brokerUrl = getBroker().toString();
-        _test = new AMQConnection(_brokerUrl, USER, USER, "clientid", "test");
-        _dev = new AMQConnection(_brokerUrl, USER, USER, "clientid", "development");
-        _local = new AMQConnection(_brokerUrl, USER, USER, "clientid", "localhost");
+        _conToVhost1 = new AMQConnection(_brokerUrl, USER, USER, "clientid", VHOST_NAME1);
+        _conToVhost2 = new AMQConnection(_brokerUrl, USER, USER, "clientid", VHOST_NAME2);
+        _conToVhost3 = new AMQConnection(_brokerUrl, USER, USER, "clientid", VHOST_NAME3);
 
-        _test.start();
-        _dev.start();
-        _local.start();
-
+        _conToVhost1.start();
+        _conToVhost2.start();
+        _conToVhost3.start();
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        _test.close();
-        _dev.close();
-        _local.close();
+        _conToVhost1.close();
+        _conToVhost2.close();
+        _conToVhost3.close();
 
         super.tearDown();
     }
@@ -94,9 +101,9 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
      */
     public void testEnabledStatisticsReporting() throws Exception
     {
-        sendUsing(_test, 10, 100);
-        sendUsing(_dev, 20, 100);
-        sendUsing(_local, 15, 100);
+        sendUsing(_conToVhost1, 10, 100);
+        sendUsing(_conToVhost2, 20, 100);
+        sendUsing(_conToVhost3, 15, 100);
 
         Thread.sleep(10 * 1000); // 15s
 
@@ -116,9 +123,9 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
      */
     public void testNotEnabledStatisticsReporting() throws Exception
     {
-        sendUsing(_test, 10, 100);
-        sendUsing(_dev, 20, 100);
-        sendUsing(_local, 15, 100);
+        sendUsing(_conToVhost1, 10, 100);
+        sendUsing(_conToVhost2, 20, 100);
+        sendUsing(_conToVhost3, 15, 100);
 
         Thread.sleep(10 * 1000); // 15s
 

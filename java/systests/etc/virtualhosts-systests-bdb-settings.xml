@@ -20,37 +20,13 @@
  -
  -->
 <virtualhosts>
-    <work>${QPID_WORK}</work>
-
-    <virtualhost>
-        <name>localhost</name>
-        <localhost>
-            <store>
-                <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                <environment-path>${work}/bdbstore/localhost-store</environment-path>
-            </store>
-        </localhost>
-    </virtualhost>
-
-    <virtualhost>
-        <name>development</name>
-        <development>
-            <store>
-                <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                <environment-path>${work}/bdbstore/development-store</environment-path>
-            </store>
-        </development>
-    </virtualhost>
-
     <virtualhost>
         <name>test</name>
         <test>
             <store>
                 <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                <environment-path>${work}/bdbstore/test-store</environment-path>
+                <environment-path>${QPID_WORK}/test-store</environment-path>
             </store>
         </test>
     </virtualhost>
 </virtualhosts>
-
-

@@ -44,7 +44,7 @@ public class StructureRestTest extends QpidRestTestCase
         List<Map<String, Object>> providers = (List<Map<String, Object>>) structure.get("authenticationproviders");
         assertEquals("Unexpected number of authentication providers", 1, providers.size());
 
-        for (String hostName : EXPECTED_HOSTS)
+        for (String hostName : EXPECTED_VIRTUALHOSTS)
         {
             Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
             assertNotNull("Host " + hostName + " is not found ", host);

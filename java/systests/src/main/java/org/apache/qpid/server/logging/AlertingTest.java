@@ -22,10 +22,6 @@ package org.apache.qpid.server.logging;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.util.FileUtils;
 
 import javax.jms.Connection;
 import javax.jms.Queue;
@@ -44,11 +40,10 @@ public class AlertingTest extends AbstractTestLogging
 
     public void setUp() throws Exception
     {
-        // Update the configuration to make our virtualhost Persistent.
-        makeVirtualHostPersistent(VIRTUALHOST);
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "5000");
-
         _numMessages = 50;
+
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", String.valueOf(ALERT_LOG_WAIT_PERIOD));
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", String.valueOf(_numMessages));
 
         // Then we do the normal setup stuff like starting the broker, getting a connection etc.
         super.setUp();
@@ -56,17 +51,8 @@ public class AlertingTest extends AbstractTestLogging
         setupConnection();
     }
 
-    @Override
-    public void tearDown() throws Exception
-    {
-        // Ensure queue is clean for next run.
-        drainQueue(_destination);
-        super.tearDown();
-    }
-
-
     /**
-     * Create a new connection and ensure taht our destination queue is created
+     * Create a new connection and ensure that our destination queue is created
      * and bound.
      *
      * Note that the tests here that restart the broker rely on persistence.
@@ -102,20 +88,6 @@ public class AlertingTest extends AbstractTestLogging
         if (!waitForMessage(MESSAGE_COUNT_ALERT, ALERT_LOG_WAIT_PERIOD))
         {
             StringBuffer message = new StringBuffer("Could not find 'MESSAGE_COUNT_ALERT' in log file: " + _monitor.getMonitoredFile().getAbsolutePath());
-            message.append("\n");
-
-            // Add the current contents of the log file to test output
-            message.append(_monitor.readFile());
-
-            // Write the test config file to test output
-            message.append("Server configuration overrides in use:\n");
-            message.append(FileUtils.readFileAsString(getTestConfigFile()));
-
-            message.append("\nVirtualhost maxMessageCount:\n");
-            ServerConfiguration config = new ServerConfiguration(_configFile);
-            config.initialise();
-            message.append(config.getVirtualHostConfig(VIRTUALHOST).getMaximumMessageCount());
-
             fail(message.toString());
         }
     }
@@ -148,9 +120,6 @@ public class AlertingTest extends AbstractTestLogging
      * Test sends two messages to the broker then restarts the broker with new
      * configuration.
      *
-     * If the test is running inVM the test validates that the new configuration
-     * has been applied.
-     *
      * Validates that we only have two messages on the queue and then sends
      * enough messages to trigger the alert.
      *
@@ -176,27 +145,20 @@ public class AlertingTest extends AbstractTestLogging
 
         startBroker();
 
-        if (isInternalBroker())
-        {
-            assertEquals("Alert Max Msg Count is not correct", 5, ApplicationRegistry.getInstance().getVirtualHostRegistry().
-                    getVirtualHost(VIRTUALHOST).getQueueRegistry().getQueue(new AMQShortString(_destination.getQueueName())).
-                    getMaximumMessageCount());
-        }
-
         setupConnection();
 
         // Validate the queue depth is as expected
         long messageCount = ((AMQSession<?, ?>) _session).getQueueDepth((AMQDestination) _destination);
         assertEquals("Broker has invalid message count for test", 2, messageCount);
 
-        // Ensure the alert has not occured yet
+        // Ensure the alert has not occurred yet
         assertLoggingNotYetOccured(MESSAGE_COUNT_ALERT);
 
         // Trigger the new value
         sendMessage(_session, _destination, 3);
         _session.commit();
 
-        // Validate that the alert occured.
+        // Validate that the alert occurred.
         wasAlertFired();
     }
 }
