@@ -36,42 +36,48 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class StatisticsTest extends QpidBrokerTestCase
 {
+    private static final String TEST_VIRTUALHOST1 = "test1";
+    private static final String TEST_VIRTUALHOST2 = "test2";
+
     private static final String TEST_USER = "admin";
     private static final String TEST_PASSWORD = "admin";
     private static final int MESSAGE_COUNT_TEST = 5;
     private static final int MESSAGE_COUNT_DEV = 9;
 
     private JMXTestUtils _jmxUtils;
-    private Connection _test1, _dev;
-    private Session _testSession, _developmentSession;
-    private Queue _developmentQueue, _testQueue;
+    private Connection _vhost1Connection, _vhost2Connection;
+    private Session _vhost1Session, _vhost2Session;
+    private Queue _vhost1Queue, _vhost2Queue;
     protected String _brokerUrl;
 
     @Override
     public void setUp() throws Exception
     {
+        createTestVirtualHost(TEST_VIRTUALHOST1);
+        createTestVirtualHost(TEST_VIRTUALHOST2);
+
         _jmxUtils = new JMXTestUtils(this, TEST_USER, TEST_PASSWORD);
         _jmxUtils.setUp();
 
         super.setUp();
 
         _brokerUrl = getBroker().toString();
-        _test1 = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", "test");
-        _dev = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", "development");
-        _test1.start();
-        _dev.start();
+        _vhost1Connection = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", TEST_VIRTUALHOST1);
+        _vhost2Connection = new AMQConnection(_brokerUrl, TEST_USER, TEST_PASSWORD, "clientid", TEST_VIRTUALHOST2);
+        _vhost1Connection.start();
+        _vhost2Connection.start();
 
-        _testSession = _test1.createSession(true, Session.SESSION_TRANSACTED);
-        _developmentSession = _dev.createSession(true, Session.SESSION_TRANSACTED);
+        _vhost1Session = _vhost1Connection.createSession(true, Session.SESSION_TRANSACTED);
+        _vhost2Session = _vhost2Connection.createSession(true, Session.SESSION_TRANSACTED);
 
-        _developmentQueue = _developmentSession.createQueue(getTestQueueName());
-        _testQueue = _testSession.createQueue(getTestQueueName());
+        _vhost1Queue = _vhost2Session.createQueue(getTestQueueName());
+        _vhost2Queue = _vhost1Session.createQueue(getTestQueueName());
 
         //Create queues by opening and closing consumers
-        final MessageConsumer testConsumer = _testSession.createConsumer(_testQueue);
-        testConsumer.close();
-        final MessageConsumer developmentConsumer = _developmentSession.createConsumer(_developmentQueue);
-        developmentConsumer.close();
+        final MessageConsumer vhost1Consumer = _vhost1Session.createConsumer(_vhost2Queue);
+        vhost1Consumer.close();
+        final MessageConsumer vhost2Consumer = _vhost2Session.createConsumer(_vhost1Queue);
+        vhost2Consumer.close();
 
         _jmxUtils.open();
     }
@@ -87,63 +93,63 @@ public class StatisticsTest extends QpidBrokerTestCase
     public void testInitialStatisticValues() throws Exception
     {
         //Check initial values
-        checkSingleConnectionOnVHostStatistics("test", 0, 0, 0, 0);
-        checkVHostStatistics("test", 0, 0, 0, 0);
-        checkSingleConnectionOnVHostStatistics("development", 0, 0, 0, 0);
-        checkVHostStatistics("development", 0, 0, 0, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST1, 0, 0, 0, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST1, 0, 0, 0, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST2, 0, 0, 0, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST2, 0, 0, 0, 0);
         checkBrokerStatistics(0, 0, 0, 0);
     }
 
     public void testSendOnSingleVHost() throws Exception
     {
-        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+        sendMessagesAndSync(_vhost1Session, _vhost2Queue, MESSAGE_COUNT_TEST);
 
         //Check values
-        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
-        checkVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
-        checkSingleConnectionOnVHostStatistics("development", 0, 0, 0, 0);
-        checkVHostStatistics("development", 0, 0, 0, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST2, 0, 0, 0, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST2, 0, 0, 0, 0);
         checkBrokerStatistics(MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
     }
 
     public void testSendOnTwoVHosts() throws Exception
     {
-        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
-        sendMessagesAndSync(_developmentSession, _developmentQueue, MESSAGE_COUNT_DEV);
+        sendMessagesAndSync(_vhost1Session, _vhost2Queue, MESSAGE_COUNT_TEST);
+        sendMessagesAndSync(_vhost2Session, _vhost1Queue, MESSAGE_COUNT_DEV);
 
         //Check values
-        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
-        checkVHostStatistics("test", MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
-        checkSingleConnectionOnVHostStatistics("development",  MESSAGE_COUNT_DEV, 0, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, 0);
-        checkVHostStatistics("development",  MESSAGE_COUNT_DEV, 0, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, 0, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST2,  MESSAGE_COUNT_DEV, 0, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST2,  MESSAGE_COUNT_DEV, 0, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, 0);
         checkBrokerStatistics(MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV, 0, (MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV) * DEFAULT_MESSAGE_SIZE, 0);
     }
 
     public void testSendAndConsumeOnSingleVHost() throws Exception
     {
-        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
-        consumeMessages(_testSession, _testQueue, MESSAGE_COUNT_TEST);
+        sendMessagesAndSync(_vhost1Session, _vhost2Queue, MESSAGE_COUNT_TEST);
+        consumeMessages(_vhost1Session, _vhost2Queue, MESSAGE_COUNT_TEST);
 
         //Check values
-        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
-        checkVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
-        checkSingleConnectionOnVHostStatistics("development", 0, 0, 0, 0);
-        checkVHostStatistics("development", 0, 0, 0, 0);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST2, 0, 0, 0, 0);
+        checkVHostStatistics(TEST_VIRTUALHOST2, 0, 0, 0, 0);
         checkBrokerStatistics(MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
     }
 
     public void testSendAndConsumeOnTwoVHosts() throws Exception
     {
-        sendMessagesAndSync(_testSession, _testQueue, MESSAGE_COUNT_TEST);
-        sendMessagesAndSync(_developmentSession, _developmentQueue, MESSAGE_COUNT_DEV);
-        consumeMessages(_testSession, _testQueue, MESSAGE_COUNT_TEST);
-        consumeMessages(_developmentSession, _developmentQueue, MESSAGE_COUNT_DEV);
+        sendMessagesAndSync(_vhost1Session, _vhost2Queue, MESSAGE_COUNT_TEST);
+        sendMessagesAndSync(_vhost2Session, _vhost1Queue, MESSAGE_COUNT_DEV);
+        consumeMessages(_vhost1Session, _vhost2Queue, MESSAGE_COUNT_TEST);
+        consumeMessages(_vhost2Session, _vhost1Queue, MESSAGE_COUNT_DEV);
 
         //Check values
-        checkSingleConnectionOnVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
-        checkVHostStatistics("test", MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
-        checkSingleConnectionOnVHostStatistics("development",  MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE);
-        checkVHostStatistics("development",  MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkVHostStatistics(TEST_VIRTUALHOST1, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_TEST * DEFAULT_MESSAGE_SIZE);
+        checkSingleConnectionOnVHostStatistics(TEST_VIRTUALHOST2,  MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE);
+        checkVHostStatistics(TEST_VIRTUALHOST2,  MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE, MESSAGE_COUNT_DEV * DEFAULT_MESSAGE_SIZE);
         checkBrokerStatistics(MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV, MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV, (MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV) * DEFAULT_MESSAGE_SIZE, (MESSAGE_COUNT_TEST + MESSAGE_COUNT_DEV) * DEFAULT_MESSAGE_SIZE);
     }
 

@@ -70,7 +70,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         assertNotNull("QPID_WORK must be set", QPID_WORK_ORIG);
-        _storeLocation = getWorkDirBaseDir() + "/bdbstore/test-store";
+        _storeLocation = getWorkDirBaseDir() + File.separator + "test-store";
 
         //Clear the two target directories if they exist.
         File directory = new File(_storeLocation);

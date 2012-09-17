@@ -33,14 +33,19 @@ import java.lang.management.RuntimeMXBean;
  */
 public class ExternalACLJMXTest extends AbstractACLTestCase
 {
+
     private JMXTestUtils _jmx;
 
     private static final String TEST_QUEUE_OWNER = "admin";
     private static final String TEST_VHOST = "test";
+    private static final String TEST2_VHOST = "test2";
 
     @Override
     public void setUp() throws Exception
     {
+        createTestVirtualHost(TEST_VHOST);
+        createTestVirtualHost(TEST2_VHOST);
+
         _jmx = new JMXTestUtils(this);
         _jmx.setUp();
         super.setUp();
@@ -128,7 +133,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         //try a vhost-level method on a different vhost
         try
         {
-            _jmx.createQueue("development", getTestQueueName(), TEST_QUEUE_OWNER, true);
+            _jmx.createQueue(TEST2_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
             fail("Exception not thrown");
         }
         catch (SecurityException e)
