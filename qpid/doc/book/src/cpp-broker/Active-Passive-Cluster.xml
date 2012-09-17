@@ -55,30 +55,45 @@ under the License.
       <title>Avoiding message loss</title>
       <para>
 	In order to avoid message loss, the primary broker <emphasis>delays
-	acknowledgment</emphasis> of messages received from clients until the
-	message has been replicated to and acknowledged by all of the back-up
+	acknowledgment</emphasis> of messages received from clients until the message has
+	been replicated to and acknowledged by all of the back-up brokers. This means that
+	all <emphasis>acknowledged</emphasis> messages are safely stored on all the backup
 	brokers.
       </para>
       <para>
-	Clients buffer unacknowledged messages and re-send them in the event of
-	a fail-over.
+	Clients keep <emphasis>unacknowledged</emphasis> messages in a buffer
+	<footnote>
+	  <para>
+	    You can control the maximum number of messages in the buffer by setting the
+	    client's <literal>capacity</literal>. For details of how to set the capacity
+	    in client code see &#34;Using the Qpid Messaging API&#34; in
+	    <citetitle>Programming in Apache Qpid</citetitle>.
+	  </para>
+	</footnote>
+	until they are acknowledged by the primary. If the primary fails, clients will
+	fail-over to the new primary and <emphasis>re-send</emphasis> all their
+	unacknowledged messages.
 	<footnote>
 	  <para>
 	  Clients must use "at-least-once" reliability to enable re-send of unacknowledged
 	  messages. This is the default behavior, no options need be set to enable it. For
 	  details of client addressing options see &#34;Using the Qpid Messaging API&#34;
-	  in <citetitle>Programming in Apache Qpid</citetitle>
+	  in <citetitle>Programming in Apache Qpid</citetitle>.
 	  </para>
 	</footnote>
-	If the primary crashes before a message is replicated to
-	all the backups, the client will re-send the message when it fails over
-	to the new primary.
+	<para>
+	  So if the primary crashes, all the <emphasis>acknowledged</emphasis> messages will
+	  be available on the backup that takes over as the new primary. The
+	  <emphasis>unacknowledged</emphasis> messages will be re-sent by the clients.  Thus
+	  no messages are lost.
+	</para>
       </para>
       <para>
 	Note that this means it is possible for messages to be
-	<emphasis>duplicated</emphasis>. In the event of a failure it is
-	possible for a message to be both received by the backup that becomes
-	the new primary <emphasis>and</emphasis> re-sent by the client.
+	<emphasis>duplicated</emphasis>. In the event of a failure it is possible for a
+	message to received by the backup that becomes the new primary
+	<emphasis>and</emphasis> re-sent by the client.  The application must take steps
+	to identify and eliminate duplicates.
       </para>
       <para>
 	When a new primary is promoted after a fail-over it is initially in
