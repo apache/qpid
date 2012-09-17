@@ -19,10 +19,8 @@ package org.apache.qpid.test.utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -818,34 +816,33 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Attempt to set the Java Broker to use the BDBMessageStore for persistence
-     * Falling back to the DerbyMessageStore if
+     * Creates a new virtual host within the test virtualhost file.
      *
-     * @param virtualhost - The virtualhost to modify
-     *
-     * @throws ConfigurationException - when reading/writing existing configuration
-     * @throws IOException            - When creating a temporary file.
+     * @param virtualHostName virtual host name
+     * @throws ConfigurationException
      */
-    protected void makeVirtualHostPersistent(String virtualhost)
-            throws ConfigurationException, IOException
+    protected void createTestVirtualHost(String virtualHostName) throws ConfigurationException
     {
-        Class<?> storeClass = null;
-        try
+        String storeClassName = getTestProfileMessageStoreClassName();
+
+        _testVirtualhosts.setProperty("virtualhost.name(-1)", virtualHostName);
+        _testVirtualhosts.setProperty("virtualhost." + virtualHostName + ".store.class", storeClassName);
+
+        String storeDir = null;
+
+        if (System.getProperty("profile", "").startsWith("java-dby-mem"))
         {
-            // Try and lookup the BDB class
-            storeClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
+            storeDir = DerbyMessageStore.MEMORY_STORE_LOCATION;
         }
-        catch (ClassNotFoundException e)
+        else if (!MEMORY_STORE_CLASS_NAME.equals(storeClassName))
         {
-            // No BDB store, we'll use Derby instead.
-            storeClass = DerbyMessageStore.class;
+            storeDir = "${QPID_WORK}" + File.separator + virtualHostName + "-store";
         }
 
-
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.class",
-                                    storeClass.getName());
-        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
-                                   "${QPID_WORK}/" + virtualhost);
+        if (storeDir != null)
+        {
+            _testVirtualhosts.setProperty("virtualhost." + virtualHostName + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, storeDir);
+        }
     }
 
     /**
@@ -884,10 +881,8 @@ public class QpidBrokerTestCase extends QpidTestCase
      * @param value    the new value
      *
      * @throws ConfigurationException when loading the current config file
-     * @throws IOException            when writing the new config file
      */
-    public void setConfigurationProperty(String property, String value)
-            throws ConfigurationException, IOException
+    public void setConfigurationProperty(String property, String value) throws ConfigurationException
     {
         // Choose which file to write the property to based on prefix.
         if (property.startsWith("virtualhosts"))
@@ -1092,7 +1087,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      *
      * @return A connection factory
      *
-     * @throws Exception if there is an error getting the tactory
+     * @throws Exception if there is an error getting the factory
      */
     public AMQConnectionFactory getConnectionFactory(String factoryName) throws NamingException
     {

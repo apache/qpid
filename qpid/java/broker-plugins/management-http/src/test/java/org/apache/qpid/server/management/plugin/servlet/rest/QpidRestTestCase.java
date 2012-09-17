@@ -27,16 +27,30 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QpidRestTestCase extends QpidBrokerTestCase
 {
-    public static final String[] EXPECTED_HOSTS = { "development", "test", "localhost" };
+    public static final String TEST1_VIRTUALHOST = "test";
+    public static final String TEST2_VIRTUALHOST = "test2";
+    public static final String TEST3_VIRTUALHOST = "test3";
+
+    public static final String[] EXPECTED_VIRTUALHOSTS = { TEST1_VIRTUALHOST, TEST2_VIRTUALHOST, TEST3_VIRTUALHOST};
     public static final String[] EXPECTED_QUEUES = { "queue", "ping" };
-    public static final String[] EXPECTED_EXCHANGES = { "amq.fanout", "amq.match", "amq.direct", "amq.topic",
-            "<<default>>" };
+    public static final String[] EXPECTED_EXCHANGES = { "amq.fanout", "amq.match", "amq.direct","amq.topic","<<default>>" };
 
     private RestTestHelper _restTestHelper = new RestTestHelper(findFreePort());
 
     @Override
     public void setUp() throws Exception
     {
+        // Set up virtualhost config with queues and bindings to the amq.direct
+        for (String virtualhost : EXPECTED_VIRTUALHOSTS)
+        {
+            createTestVirtualHost(virtualhost);
+            for (String queue : EXPECTED_QUEUES)
+            {
+                setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.exchange", "amq.direct");
+                setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.queue(-1).name", queue);
+            }
+        }
+
         customizeConfiguration();
         super.setUp();
     }

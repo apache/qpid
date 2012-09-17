@@ -66,8 +66,8 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _queue = (Queue) getInitialContext().lookup(QUEUE);
-        _topic = (Topic) getInitialContext().lookup(TOPIC);
+        _queue = _session.createQueue(getTestQueueName() + "Queue");
+        _topic = _session.createTopic(getTestQueueName() + "Topic");
     }
 
     /**
@@ -434,10 +434,6 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
             throw afe;
         }
         _connection.close();
-
-        //Ensure the queue is drained before the test ends
-        drainQueue(_queue);
-
     }
 
     /**

@@ -49,8 +49,8 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/virtualhost/");
         assertNotNull("Hosts data cannot be null", hosts);
-        assertEquals("Unexpected number of hosts", EXPECTED_HOSTS.length, hosts.size());
-        for (String hostName : EXPECTED_HOSTS)
+        assertEquals("Unexpected number of hosts", EXPECTED_VIRTUALHOSTS.length, hosts.size());
+        for (String hostName : EXPECTED_VIRTUALHOSTS)
         {
             Map<String, Object> host = getRestTestHelper().find("name", hostName, hosts);
             Asserts.assertVirtualHost(hostName, host);

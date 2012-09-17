@@ -55,9 +55,9 @@ public class BrokerRestTest extends QpidRestTestCase
         List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE);
         assertEquals("Unexpected number of virtual hosts", 3, virtualhosts.size());
 
-        Asserts.assertVirtualHost("development", getRestTestHelper().find(VirtualHost.NAME, "development", virtualhosts));
-        Asserts.assertVirtualHost("localhost", getRestTestHelper().find(VirtualHost.NAME, "localhost", virtualhosts));
-        Asserts.assertVirtualHost("test", getRestTestHelper().find(VirtualHost.NAME, "test", virtualhosts));
+        Asserts.assertVirtualHost(TEST3_VIRTUALHOST, getRestTestHelper().find(VirtualHost.NAME, TEST3_VIRTUALHOST, virtualhosts));
+        Asserts.assertVirtualHost(TEST2_VIRTUALHOST, getRestTestHelper().find(VirtualHost.NAME, TEST2_VIRTUALHOST, virtualhosts));
+        Asserts.assertVirtualHost(TEST1_VIRTUALHOST, getRestTestHelper().find(VirtualHost.NAME, TEST1_VIRTUALHOST, virtualhosts));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) brokerDetails.get(BROKER_PORTS_ATTRIBUTE);
