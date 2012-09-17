@@ -114,6 +114,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     // Hide the "queue deleted" error for a ReplicatingSubscription when a
     // queue is deleted, this is normal and not an error.
     bool hideDeletedError() { return true; }
+    // Not counted for auto deletion and immediate message purposes.
+    bool isCounted() { return false; }
 
     /** Initialization that must be done separately from construction
      * because it requires a shared_ptr to this to exist.
