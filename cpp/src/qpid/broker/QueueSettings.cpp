@@ -39,7 +39,7 @@ const std::string POLICY_TYPE("qpid.policy_type");
 const std::string POLICY_TYPE_REJECT("reject");
 const std::string POLICY_TYPE_RING("ring");
 const std::string NO_LOCAL("no-local");
-const std::string BROWSE_ONLY("browse-only");
+const std::string BROWSE_ONLY("qpid.browse-only");
 const std::string TRACE_ID("qpid.trace.id");
 const std::string TRACE_EXCLUDES("qpid.trace.exclude");
 const std::string LVQ_KEY("qpid.last_value_queue_key");
