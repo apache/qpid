@@ -1172,7 +1172,7 @@ QPID_AUTO_TEST_CASE(testBrowseOnly)
        allow message acquisition. */
 
     QueueFixture fix;
-    std::string addr = "q; {create:always, node:{type:queue, durable:false, x-declare:{arguments:{browse-only:1}}}}";
+    std::string addr = "q; {create:always, node:{type:queue, durable:false, x-declare:{arguments:{qpid.browse-only:1}}}}";
     Sender sender = fix.session.createSender(addr);
     Message out("test-message");
 
