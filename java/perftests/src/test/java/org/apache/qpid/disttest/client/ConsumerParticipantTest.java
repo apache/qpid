@@ -114,7 +114,7 @@ public class ConsumerParticipantTest extends TestCase
 
         _inOrder.verify(_delegate).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
-        _inOrder.verify(_delegate).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        _inOrder.verify(_delegate).commitOrAcknowledgeMessageIfNecessary(SESSION_NAME1, _mockMessage);
     }
 
     public void testReceiveMessagesForDurationSynch() throws Exception
@@ -129,7 +129,7 @@ public class ConsumerParticipantTest extends TestCase
 
         verify(_delegate, atLeastOnce()).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, atLeastOnce()).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, atLeastOnce()).commitOrAcknowledgeMessageIfNecessary(SESSION_NAME1, _mockMessage);
     }
 
     public void testReceiveMessagesBatchedSynch() throws Exception
@@ -147,7 +147,7 @@ public class ConsumerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(4)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(4)).commitOrAcknowledgeMessageIfNecessary(SESSION_NAME1, _mockMessage);
     }
 
     public void testReceiveMessagesWithVaryingPayloadSize() throws Exception
@@ -171,7 +171,7 @@ public class ConsumerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(numberOfMessages)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(numberOfMessages)).commitOrAcknowledgeMessageIfNecessary(SESSION_NAME1, _mockMessage);
     }
 
     public void testReleaseResources()
@@ -194,7 +194,7 @@ public class ConsumerParticipantTest extends TestCase
 
         _inOrder.verify(_delegate).consumeMessage(PARTICIPANT_NAME1, RECEIVE_TIMEOUT);
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
-        _inOrder.verify(_delegate).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        _inOrder.verify(_delegate).commitOrAcknowledgeMessageIfNecessary(SESSION_NAME1, _mockMessage);
         assertTrue("Unexpected consuemr results", result instanceof ConsumerParticipantResult);
         Collection<Long> latencies = ((ConsumerParticipantResult)result).getMessageLatencies();
         assertNotNull("Message latency is not cllected", latencies);

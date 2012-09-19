@@ -27,13 +27,10 @@ var jsonObject = {
       "_name": "Topic ack modes",
       "_iterations": [
         {
+          "_acknowledgeMode": 0
+        },
+        {
           "_acknowledgeMode": 1
-        },
-        {
-          "_acknowledgeMode": 2
-        },
-        {
-          "_acknowledgeMode": 3
         }
       ],
       "_clients": [
