@@ -230,7 +230,7 @@ void Link::startConnectionLH ()
         setStateLH(STATE_CONNECTING);
         broker->connect (host, boost::lexical_cast<std::string>(port), transport,
                          boost::bind (&Link::closed, this, _1, _2));
-        QPID_LOG (debug, "Inter-broker link connecting to " << host << ":" << port);
+        QPID_LOG (info, "Inter-broker link connecting to " << host << ":" << port);
     } catch(const std::exception& e) {
         QPID_LOG(error, "Link connection to " << host << ":" << port << " failed: "
                  << e.what());

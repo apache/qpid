@@ -119,9 +119,9 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
                     queue->getPosition());
     settings.setTable(ReplicatingSubscription::QPID_BROKER_INFO,
                       brokerInfo.asFieldTable());
-    SequenceNumber front;
-    if (ReplicatingSubscription::getFront(*queue, front))
-        settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
+    SequenceNumber front, back;
+    queue->getRange(front, back, broker::REPLICATOR);
+    if (front <= back) settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
     QPID_LOG(debug, logPrefix << " subscribe with settings  " << settings);
 
     peer.getMessage().subscribe(
@@ -152,6 +152,17 @@ void QueueReplicator::dequeue(SequenceNumber n, sys::Mutex::ScopedLock&) {
     queue->dequeueMessageAt(n);
 }
 
+namespace {
+bool getSequence(const Message& message, SequenceNumber& result) {
+    result = message.getSequence();
+    return true;
+}
+bool getNext(broker::Queue& q, SequenceNumber position, SequenceNumber& result) {
+    QueueCursor cursor(REPLICATOR);
+    return q.seek(cursor, boost::bind(&getSequence, _1, boost::ref(result)), position+1);
+}
+} // namespace
+
 // Called in connection thread of the queues bridge to primary.
 void QueueReplicator::route(Deliverable& msg)
 {
@@ -176,7 +187,7 @@ void QueueReplicator::route(Deliverable& msg)
                      << " to " << position);
             // Verify that there are no messages after the new position in the queue.
             SequenceNumber next;
-            if (ReplicatingSubscription::getNext(*queue, position, next))
+            if (getNext(*queue, position, next))
                 throw Exception(QPID_MSG(logPrefix << "Invalid position " << position
                                          << " preceeds message at " << next));
             queue->setPosition(position);

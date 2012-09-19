@@ -375,9 +375,24 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /**
      *@return sequence number for the back of the queue. The next message pushed
-     * will be at getPosition+1
+     * will be at getPosition()+1
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
+
+    /**
+     * Set front and back.
+     * If the queue is empty then front = back+1 (the first message to
+     * consume will be the next message pushed.)
+     *
+     *@param front = Position of first message to consume.
+     *@param back = getPosition(), next message pushed will be getPosition()+1
+     *@param type Subscription type to use to determine the front.
+     */
+    QPID_BROKER_EXTERN void getRange(
+        framing::SequenceNumber& front, framing::SequenceNumber& back,
+        SubscriptionType type=CONSUMER
+    );
+
     QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void removeObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);

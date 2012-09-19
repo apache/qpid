@@ -886,7 +886,7 @@ class LongTests(BrokerTest):
             """Wait for receiver r to pass n"""
             def check():
                 r.check()       # Verify no exceptions
-                return r.received > n
+                return r.received > n + 100
             assert retry(check), "Stalled %s at %s"%(r.queue, n)
 
         for r in receivers: wait_passed(r, 0)
