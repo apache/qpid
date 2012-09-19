@@ -24,6 +24,8 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
+
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.disttest.DistributedTestException;
@@ -36,6 +38,8 @@ public class QpidQueueCreator implements QueueCreator
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(QpidQueueCreator.class);
     private static final FieldTable EMPTY_QUEUE_BIND_ARGUMENTS = new FieldTable();
+    private static final String QUEUE_CREATOR_DRAIN_POLL_TIMEOUT = "qpid.disttest.queue.creator.drainPollTime";
+    private static int _drainPollTimeout = Integer.getInteger(QUEUE_CREATOR_DRAIN_POLL_TIMEOUT, 5000);
 
     @Override
     public void createQueues(Connection connection, Session session, List<QueueConfig> configs)
@@ -57,7 +61,10 @@ public class QpidQueueCreator implements QueueCreator
 
             // drainQueue method is added because deletion of queue with a lot
             // of messages takes time and might cause the timeout exception
-            drainQueue(connection, destination);
+            if (queueHasMessages(amqSession, destination))
+            {
+                drainQueue(connection, destination);
+            }
             deleteQueue(amqSession, destination.getAMQQueueName());
         }
     }
@@ -74,20 +81,34 @@ public class QpidQueueCreator implements QueueCreator
         }
     }
 
+    private boolean queueHasMessages(AMQSession<?, ?> amqSession, AMQDestination destination)
+    {
+        try
+        {
+            long queueDepth = amqSession.getQueueDepth(destination);
+            LOGGER.info("Queue {} has {} message(s)", destination.getQueueName(), queueDepth);
+            return queueDepth > 0;
+        }
+        catch (Exception e)
+        {
+            throw new DistributedTestException("Failed to query queue depth:" + destination, e);
+        }
+    }
+
     private void drainQueue(Connection connection, AMQDestination destination)
     {
         Session noAckSession = null;
         try
         {
-            LOGGER.debug("About to drain the queue " + destination);
+            LOGGER.debug("About to drain the queue {}", destination.getQueueName());
             noAckSession = connection.createSession(false, org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
             MessageConsumer messageConsumer = noAckSession.createConsumer(destination);
             int counter = 0;
-            while(messageConsumer.receive(1000l) != null)
+            while(messageConsumer.receive(_drainPollTimeout) != null)
             {
                 counter++;
             }
-            LOGGER.debug("Drained " + counter + " messages from queue " + destination);
+            LOGGER.info("Drained {} message(s) from queue {} ", counter, destination.getQueueName());
             messageConsumer.close();
         }
         catch (Exception e)
@@ -123,7 +144,7 @@ public class QpidQueueCreator implements QueueCreator
                     EMPTY_QUEUE_BIND_ARGUMENTS, destination.getExchangeName(),
                     destination, autoDelete);
 
-            LOGGER.debug("Created queue " + queueConfig);
+            LOGGER.debug("Created queue {}", queueConfig);
         }
         catch (Exception e)
         {
@@ -139,7 +160,7 @@ public class QpidQueueCreator implements QueueCreator
             // raw protocol method public.  This should be changed then we should switch the below to
             // use #deleteQueue.
             session.sendQueueDelete(queueName);
-            LOGGER.debug("Deleted queue " + queueName);
+            LOGGER.debug("Deleted queue {}", queueName);
         }
         catch (Exception e)
         {

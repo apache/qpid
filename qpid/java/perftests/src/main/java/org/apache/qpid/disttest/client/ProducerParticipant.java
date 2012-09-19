@@ -119,7 +119,7 @@ public class ProducerParticipant implements Participant
                 {
                     LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
                 }
-                _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
+                _jmsDelegate.commitIfNecessary(_command.getSessionName());
 
                 doSleepForInterval();
             }
@@ -138,7 +138,7 @@ public class ProducerParticipant implements Participant
             {
                 LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
             }
-            _jmsDelegate.commitOrAcknowledgeMessage(lastPublishedMessage, _command.getSessionName());
+            _jmsDelegate.commitIfNecessary(_command.getSessionName());
         }
 
         Date start = new Date(startTime);

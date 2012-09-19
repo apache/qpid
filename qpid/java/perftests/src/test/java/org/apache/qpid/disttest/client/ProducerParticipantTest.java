@@ -127,7 +127,7 @@ public class ProducerParticipantTest extends TestCase
 
         _inOrder.verify(_delegate).sendNextMessage(isA(CreateProducerCommand.class));
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
-        _inOrder.verify(_delegate).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        _inOrder.verify(_delegate).commitIfNecessary(SESSION_NAME1);
 
     }
 
@@ -142,7 +142,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, atLeastOnce()).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, atLeastOnce()).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, atLeastOnce()).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testSendMessageBatches() throws Exception
@@ -161,7 +161,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(expectedNumberOfCommits)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(expectedNumberOfCommits)).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testSendMessageWithPublishInterval() throws Exception
@@ -183,7 +183,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(4)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(4)).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testSendMessageWithVaryingPayloadSize() throws Exception
@@ -208,7 +208,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(numberOfMessages)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(numberOfMessages)).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testReleaseResources()

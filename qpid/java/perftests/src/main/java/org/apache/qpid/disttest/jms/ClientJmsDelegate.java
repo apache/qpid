@@ -373,30 +373,6 @@ public class ClientJmsDelegate
         }
     }
 
-    public void commitOrAcknowledgeMessage(final Message message, final String sessionName)
-    {
-        try
-        {
-            final Session session = _testSessions.get(sessionName);
-            if (session.getTransacted())
-            {
-                synchronized(session)
-                {
-                    session.commit();
-                }
-            }
-            else if (message != null && session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
-            {
-                message.acknowledge();
-            }
-        }
-        catch (final JMSException jmse)
-        {
-            throw new DistributedTestException("Unable to commit or acknowledge message on session: " +
-                            sessionName, jmse);
-        }
-    }
-
     public int getAcknowledgeMode(final String sessionName)
     {
         try
@@ -493,7 +469,36 @@ public class ClientJmsDelegate
         }
     }
 
-    public void rollbackOrRecover(String sessionName)
+    public void commitOrAcknowledgeMessageIfNecessary(final String sessionName, final Message message)
+    {
+        try
+        {
+            final Session session = _testSessions.get(sessionName);
+            if (session.getTransacted())
+            {
+                synchronized(session)
+                {
+                    session.commit();
+                }
+            }
+            else if (message != null && session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+            {
+                message.acknowledge();
+            }
+        }
+        catch (final JMSException jmse)
+        {
+            throw new DistributedTestException("Unable to commit or acknowledge message on session: " +
+                            sessionName, jmse);
+        }
+    }
+
+    public void commitIfNecessary(final String sessionName)
+    {
+        commitOrAcknowledgeMessageIfNecessary(sessionName, null);
+    }
+
+    public void rollbackOrRecoverIfNecessary(String sessionName)
     {
         try
         {
@@ -514,29 +519,6 @@ public class ClientJmsDelegate
         {
             throw new DistributedTestException("Unable to rollback or recover on session: " +
                             sessionName, jmse);
-        }
-    }
-
-    public void releaseMessage(String sessionName)
-    {
-        try
-        {
-            final Session session = _testSessions.get(sessionName);
-            synchronized(session)
-            {
-                if (session.getTransacted())
-                {
-                    session.rollback();
-                }
-                else
-                {
-                    session.recover();
-                }
-            }
-        }
-        catch (final JMSException jmse)
-        {
-            LOGGER.warn("Unable to rollback or recover on session: " + sessionName, jmse);
         }
     }
 
