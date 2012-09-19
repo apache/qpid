@@ -43,7 +43,16 @@
 
     <import file="../../module.xml" />
 
-    <target name="precompile">
+    <!-- Flagfile used to determine if uwar needs to be done.  ._ is part of Ant's defaultexcludes so wont appear bundles -->
+    <property name="dojo.uptodate.flagfile" value="${module.classes}/resources/dojo/._dojouptodate.timestamp"/>
+
+    <uptodate property="unwardojo.done"
+              targetfile="${dojo.uptodate.flagfile}"
+              srcfile="${project.root}/${dojo}"/>
+
+    <target name="precompile" depends="unwardojo"/>
+
+    <target name="unwardojo" unless="unwardojo.done">
       <unwar src="${project.root}/${dojo}" dest="${module.classes}/resources/dojo">
         <patternset>
           <exclude name="META-INF/**"/>
@@ -51,6 +60,7 @@
           <exclude name="**/*.uncompressed.js"/>
         </patternset>
       </unwar>
+      <touch file="${dojo.uptodate.flagfile}"/>
     </target>
 
     <target name="bundle" depends="bundle-tasks" />
