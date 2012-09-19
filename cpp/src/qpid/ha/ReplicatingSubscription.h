@@ -80,17 +80,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     static const std::string QPID_FRONT;
     static const std::string QPID_BROKER_INFO;
 
-    // TODO aconway 2012-05-23: these don't belong on ReplicatingSubscription
-    /** Get position of front message on queue.
-     *@return false if queue is empty.
-     */
-    static bool getFront(broker::Queue&, framing::SequenceNumber& result);
-    /** Get next message after position in queue.
-     *@return false if none found.
-     */
-    static bool getNext(broker::Queue&, framing::SequenceNumber position,
-                        framing::SequenceNumber& result);
-
     ReplicatingSubscription(broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,

@@ -24,6 +24,7 @@
 
 #include "ReplicatingSubscription.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueCursor.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/SequenceNumber.h"
 #include <iostream>
@@ -51,15 +52,7 @@ struct QueueRange {
 
     QueueRange() : front(1), back(0) { } // Empty range.
 
-    QueueRange(broker::Queue& q) {
-        if (ReplicatingSubscription::getFront(q, front))
-            back = q.getPosition();
-        else {
-            back = q.getPosition();
-            front = back+1;     // empty
-        }
-        assert(front <= back + 1);
-    }
+    QueueRange(broker::Queue& q) { q.getRange(front, back, broker::REPLICATOR); }
 
     QueueRange(const framing::FieldTable& args) {
         back = args.getAsInt(ReplicatingSubscription::QPID_BACK);

@@ -1390,6 +1390,16 @@ SequenceNumber Queue::getPosition() {
     return sequence;
 }
 
+void Queue::getRange(framing::SequenceNumber& front, framing::SequenceNumber& back,
+                     SubscriptionType type)
+{
+    Mutex::ScopedLock locker(messageLock);
+    QueueCursor cursor(type);
+    back = sequence;
+    Message* message = messages->next(cursor);
+    front = message ? message->getSequence() : back+1;
+}
+
 int Queue::getEventMode() { return eventMode; }
 
 void Queue::recoveryComplete(ExchangeRegistry& exchanges)
