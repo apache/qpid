@@ -174,7 +174,7 @@ public class ConsumerParticipant implements Participant
                 {
                     LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
                 }
-                _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
+                _jmsDelegate.commitOrAcknowledgeMessageIfNecessary(_command.getSessionName(), message);
             }
         }
 
@@ -199,7 +199,7 @@ public class ConsumerParticipant implements Participant
                 }
 
                 // commit/acknowledge remaining messages if necessary
-                _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
+                _jmsDelegate.commitOrAcknowledgeMessageIfNecessary(_command.getSessionName(), message);
             }
             return false;
         }
