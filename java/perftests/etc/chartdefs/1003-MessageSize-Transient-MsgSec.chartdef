@@ -17,16 +17,16 @@
 # under the License.
 #
 
-chartType=BAR
-chartTitle=Performance of acknowledgement modes
-chartSubtitle=Transient messages (1024b)
-xAxisTitle=Acknowledge mode (0=session transacted; 1=auto-acknowledge)
+chartType=XYLINE
+chartTitle=Impact of Message Size
+chartSubtitle=Transient messages
+xAxisTitle=Message Size (B)
 yAxisTitle=Throughput (messages/s)
 
-series.1.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Transient%' AND participantName = 'All' ORDER BY acknowledgeMode
+series.1.statement=SELECT payloadSizeB, throughputMessagesPerS FROM MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Transient%' AND participantName = 'All' ORDER BY acknowledgeMode
+series.2.statement=SELECT payloadSizeB, throughputMessagesPerS FROM MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}

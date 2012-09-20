@@ -142,6 +142,7 @@ public class ParticipantResultAggregator
         aggregatedResult.setStartDate(new Date(_minStartDate));
         aggregatedResult.setEndDate(new Date(_maxEndDate));
         aggregatedResult.setThroughput(calculateThroughputInKiloBytesPerSecond());
+        aggregatedResult.setMessageThroughput(calculateThroughputInMessagesPerSecond());
     }
 
     private void setRolledUpConstantAttributes(ParticipantResult aggregatedResult)
@@ -197,4 +198,14 @@ public class ParticipantResultAggregator
         return totalPayloadProcessedInKiloBytes/durationInSeconds;
     }
 
+    private int calculateThroughputInMessagesPerSecond()
+    {
+        double durationInMillis = _maxEndDate - _minStartDate;
+        if (durationInMillis == 0 )
+        {
+            return 0;
+        }
+
+        return (int)Math.round((_numberOfMessagesProcessed * 1000.0d)/durationInMillis);
+    }
 }

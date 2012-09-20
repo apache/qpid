@@ -60,7 +60,8 @@ public enum ParticipantAttribute
     ERROR_MESSAGE("errorMessage"),
     MIN_LATENCY("minLatency"),
     MAX_LATENCY("maxLatency"),
-    LATENCY_STANDARD_DEVIATION("latencyStandardDeviation")
+    LATENCY_STANDARD_DEVIATION("latencyStandardDeviation"),
+    MESSAGE_THROUGHPUT("throughputMessagesPerS")
     ;
 
     private String _displayName;

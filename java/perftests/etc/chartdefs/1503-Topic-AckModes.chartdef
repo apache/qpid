@@ -21,12 +21,12 @@ chartType=BAR
 chartTitle=Topic acknowledge modes
 chartSubtitle=Transient 1KB messages
 xAxisTitle=Ack Mode
-yAxisTitle=Throughput (KB/s)
+yAxisTitle=Throughput (messages/s)
 
-series.1.statement=SELECT acknowledgeMode, throughputKbPerS FROM Topic-AckModes WHERE participantName = 'All'
+series.1.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM Topic-AckModes WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT acknowledgeMode, throughputKbPerS FROM Topic-AckModes WHERE participantName = 'All'
+series.2.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM Topic-AckModes WHERE participantName = 'All'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
