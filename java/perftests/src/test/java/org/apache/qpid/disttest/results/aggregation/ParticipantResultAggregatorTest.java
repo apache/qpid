@@ -39,15 +39,19 @@ public class ParticipantResultAggregatorTest extends TestCase
     private static final long PARTICIPANT1_STARTDATE = 50;
     private static final long PARTICIPANT1_ENDDATE = 20000;
     private static final long PARTICIPANT1_TOTAL_PROCESSED = 1024;
+    private static final int PARTICIPANT1_NUMBER_OF_MESSAGES_PROCESSED = 20000;
 
     private static final long PARTICIPANT2_STARTDATE = 100;
     private static final long PARTICIPANT2_ENDDATE = 21000;
     private static final long PARTICIPANT2_TOTAL_PROCESSED = 2048;
+    private static final int PARTICIPANT2_NUMBER_OF_MESSAGES_PROCESSED = 950;
 
     private static final long OVERALL_PROCESSED = PARTICIPANT1_TOTAL_PROCESSED + PARTICIPANT2_TOTAL_PROCESSED;
     private static final double OVERALL_TIMETAKEN = PARTICIPANT2_ENDDATE - PARTICIPANT1_STARTDATE;
+    private static final long OVERALL_NUMBER_OF_MESSAGES_PROCESSED = PARTICIPANT1_NUMBER_OF_MESSAGES_PROCESSED + PARTICIPANT2_NUMBER_OF_MESSAGES_PROCESSED;
 
     private static final double EXPECTED_AGGREGATED_ALL_THROUGHPUT = ((OVERALL_PROCESSED)/1024)/((OVERALL_TIMETAKEN)/1000);
+    private static final int EXPECTED_AGGREGATED_MESSAGE_THROUGHPUT = (int)(OVERALL_NUMBER_OF_MESSAGES_PROCESSED * 1000.0d/OVERALL_TIMETAKEN);
 
     public void testStartAndEndDateForOneParticipantResult()
     {
@@ -126,6 +130,26 @@ public class ParticipantResultAggregatorTest extends TestCase
 
         ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
         assertEquals(EXPECTED_AGGREGATED_ALL_THROUGHPUT, aggregratedResult.getThroughput(), 0.1);
+    }
+
+    public void testComputeMessageThroughput()
+    {
+        ParticipantResult result1 = new ParticipantResult();
+        result1.setStartDate(new Date(PARTICIPANT1_STARTDATE));
+        result1.setEndDate(new Date(PARTICIPANT1_ENDDATE));
+        result1.setNumberOfMessagesProcessed(PARTICIPANT1_NUMBER_OF_MESSAGES_PROCESSED);
+
+        ParticipantResult result2 = new ParticipantResult();
+        result2.setStartDate(new Date(PARTICIPANT2_STARTDATE));
+        result2.setEndDate(new Date(PARTICIPANT2_ENDDATE));
+        result2.setNumberOfMessagesProcessed(PARTICIPANT2_NUMBER_OF_MESSAGES_PROCESSED);
+
+        _aggregator.aggregate(result1);
+        _aggregator.aggregate(result2);
+
+        ParticipantResult aggregratedResult = _aggregator.getAggregatedResult();
+        assertEquals(EXPECTED_AGGREGATED_MESSAGE_THROUGHPUT, aggregratedResult.getMessageThroughput());
+
     }
 
     public void testConstantTestNameAndIterationNumberRolledUp() throws Exception

@@ -169,6 +169,10 @@ public class TestResultAggregatorTest extends TestCase
                 aggregatedTestResult.getAllParticipantResult(),
                 TEST1_NAME, TEST1_ITERATION_NUMBER,
                 BATCH_SIZE, NUMBER_OF_MESSAGES_CONSUMED_IN_TOTAL, 2, 1);
+
+        int expectedThroughtput = (int)Math.round(NUMBER_OF_MESSAGES_PRODUCED * 1000.0d /(CONSUMER2_ENDDATE - PRODUCER_STARTDATE));
+        ParticipantResult result = aggregatedTestResult.getAllParticipantResult();
+        assertEquals("Unexpected message throughtput", expectedThroughtput, result.getMessageThroughput());
     }
 
     private void assertLatencyAggregatedResults(ParticipantResult allConsumerParticipantResult)

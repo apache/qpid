@@ -21,15 +21,15 @@ chartType=BAR
 chartTitle=Performance of acknowledgement modes
 chartSubtitle=Persistent messages (1024b)
 xAxisTitle=Acknowledge mode (0=session transacted; 1=auto-acknowledge)
-yAxisTitle=Throughput (KB/s)
+yAxisTitle=Throughput (messages/s)
 
-series.1.statement=SELECT acknowledgeMode, throughputKbPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
+series.1.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
 
 
-series.2.statement=SELECT acknowledgeMode, throughputKbPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
+series.2.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
 

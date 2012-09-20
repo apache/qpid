@@ -21,20 +21,20 @@ chartType=XYLINE
 chartTitle=Varying number of producers - auto ack
 chartSubtitle=Persistent 1KB messages
 xAxisTitle=Producers
-yAxisTitle=Throughput (KB/s)
+yAxisTitle=Throughput (messages/s)
 
-series.1.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '1' and acknowledgeMode = '1'
+series.1.statement=SELECT totalNumberOfProducers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '1' and acknowledgeMode = '1'
 series.1.legend=1 Consumer
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '5' and acknowledgeMode = '1'
+series.2.statement=SELECT totalNumberOfProducers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '5' and acknowledgeMode = '1'
 series.2.legend=5 Consumer
 series.2.dir=${csvCurrentDir}
 
-series.3.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '10' and acknowledgeMode = '1'
+series.3.statement=SELECT totalNumberOfProducers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '10' and acknowledgeMode = '1'
 series.3.legend=10 Consumer
 series.3.dir=${csvCurrentDir}
 
-series.4.statement=SELECT totalNumberOfProducers, throughputKbPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '1' and acknowledgeMode = '1'
+series.4.statement=SELECT totalNumberOfProducers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfConsumers = '1' and acknowledgeMode = '1'
 series.4.legend=1 Consumer (baseline)
 series.4.dir=${csvBaselineDir}

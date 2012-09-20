@@ -105,6 +105,7 @@ public class TestResultAggregator
         aggregatedAllResult.setNumberOfMessagesProcessed(aggregatedConsumerResult.getNumberOfMessagesProcessed());
         aggregatedAllResult.setTotalPayloadProcessed(aggregatedConsumerResult.getTotalPayloadProcessed());
         aggregatedAllResult.setThroughput(aggregatedConsumerResult.getThroughput());
+        aggregatedAllResult.setMessageThroughput(aggregatedConsumerResult.getMessageThroughput());
     }
 
     /**

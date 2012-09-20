@@ -21,12 +21,12 @@ chartType=BAR
 chartTitle=Queue Types
 chartSubtitle=Persistent 1KB messages
 xAxisTitle=Queue Types
-yAxisTitle=Throughput (KB/s)
+yAxisTitle=Throughput (messages/s)
 
-series.1.statement=SELECT testName, throughputKbPerS FROM QueueTypes WHERE participantName = 'All'
+series.1.statement=SELECT testName, throughputMessagesPerS FROM QueueTypes WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT testName, throughputKbPerS FROM QueueTypes WHERE participantName = 'All'
+series.2.statement=SELECT testName, throughputMessagesPerS FROM QueueTypes WHERE participantName = 'All'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}

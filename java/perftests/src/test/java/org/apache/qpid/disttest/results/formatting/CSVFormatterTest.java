@@ -96,7 +96,7 @@ public class CSVFormatterTest extends TestCase
         participantAttributes.put(ITERATION_NUMBER, 0);
         participantAttributes.put(CONFIGURED_CLIENT_NAME, CONFIGURED_CLIENT1);
         participantAttributes.put(PARTICIPANT_NAME, PARTICIPANT);
-        participantAttributes.put(NUMBER_OF_MESSAGES_PROCESSED, 0);
+        participantAttributes.put(NUMBER_OF_MESSAGES_PROCESSED, 2);
         participantAttributes.put(PAYLOAD_SIZE, 1);
         participantAttributes.put(PRIORITY, 2);
         participantAttributes.put(TIME_TO_LIVE, 3);
@@ -122,6 +122,7 @@ public class CSVFormatterTest extends TestCase
         participantAttributes.put(MAX_LATENCY, 9l);
         participantAttributes.put(AVERAGE_LATENCY, 4.6f);
         participantAttributes.put(LATENCY_STANDARD_DEVIATION, 2.0f);
+        participantAttributes.put(MESSAGE_THROUGHPUT, 2);
         return participantAttributes;
     }
 
