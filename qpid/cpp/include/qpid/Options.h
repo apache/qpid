@@ -149,6 +149,11 @@ struct Options : public po::options_description {
                const std::string& configfile=std::string(),
                bool  allowUnknown = false);
 
+    /**
+     * Tests for presence of argc/argv switch
+     */
+    QPID_COMMON_EXTERN bool findArg(int argc, char const* const* argv,
+                                       const std::string& theArg);
 
   boost::program_options::options_description_easy_init addOptions() {
       return add_options();
