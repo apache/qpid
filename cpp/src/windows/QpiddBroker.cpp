@@ -53,6 +53,10 @@ BootstrapOptions::BootstrapOptions(const char* argv0)
     add(log);
 }
 
+void BootstrapOptions::usage() const {
+    std::cout << "Usage: qpidd [OPTIONS]" << std::endl << std::endl << *this << std::endl;
+}
+
 // Local functions to set and get the pid via a LockFile.
 namespace {
 
@@ -225,10 +229,10 @@ VOID WINAPI SvcCtrlHandler(DWORD control)
         ::SetServiceStatus(svcStatusHandle, &svcStatus);
         CtrlHandler(CTRL_C_EVENT);
         break;
- 
+
     case SERVICE_CONTROL_INTERROGATE:
         break;
- 
+
     default:
         break;
     }
@@ -306,7 +310,7 @@ struct ServiceOptions : public qpid::Options {
     std::string password;
     std::string depends;
 
-    ServiceOptions() 
+    ServiceOptions()
         : qpid::Options("Service options"),
           install(false),
           start(false),
@@ -423,7 +427,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
         // Relies on port number being set via --port or QPID_PORT env variable.
         NamedSharedMemory<BrokerInfo> info(brokerInfoName(options->broker.port));
         int pid = info.get().pid;
-        if (pid < 0) 
+        if (pid < 0)
             return 1;
         if (myOptions->control.check)
             std::cout << pid << std::endl;
