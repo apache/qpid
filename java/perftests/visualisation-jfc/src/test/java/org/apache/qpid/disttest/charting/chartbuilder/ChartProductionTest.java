@@ -66,7 +66,10 @@ public class ChartProductionTest extends TestCase
         super.setUp();
 
         when(_seriesDefinition.getSeriesLegend()).thenReturn(TEST_SERIESLEGEND);
+        when(_seriesDefinition.getStrokeWidth()).thenReturn(null);
+        when(_seriesDefinition.getSeriesColourName()).thenReturn(null);
 
+        when(_chartingDefinition.getChartStemName()).thenReturn(getName());
         when(_chartingDefinition.getChartTitle()).thenReturn(TEST_CHARTTITLE);
         when(_chartingDefinition.getChartSubtitle()).thenReturn(TEST_CHARTSUBTITLE);
         when(_chartingDefinition.getXAxisTitle()).thenReturn(TEST_XAXIS);
@@ -112,6 +115,15 @@ public class ChartProductionTest extends TestCase
 
     public void testXYLineChart() throws Exception
     {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, new SampleSeriesBuilder());
+        assertChartTitlesAndWriteToFile(builder);
+    }
+
+    public void testXYLineChartWithColourAndWidth() throws Exception
+    {
+        when(_seriesDefinition.getStrokeWidth()).thenReturn(3);
+        when(_seriesDefinition.getSeriesColourName()).thenReturn("dark_orange");
+
         ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, new SampleSeriesBuilder());
         assertChartTitlesAndWriteToFile(builder);
     }
@@ -166,7 +178,7 @@ public class ChartProductionTest extends TestCase
             assertEquals(1, chart.getCategoryPlot().getDatasetCount());
         }
 
-        _writer.writeChartToFileSystem(chart, getName());
+        _writer.writeChartToFileSystem(chart, _chartingDefinition);
     }
 
     private class SampleSeriesBuilder implements SeriesBuilder

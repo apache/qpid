@@ -30,6 +30,7 @@ public class ChartingDefinition
     private final ChartType _chartType;
     private final String _chartTitle;
     private final String _chartSubtitle;
+    private final String _chartDescription;
     private final String _xaxisTitle;
     private final String _yaxisTitle;
     private final List<SeriesDefinition> _seriesDefinitions;
@@ -39,12 +40,14 @@ public class ChartingDefinition
                               final ChartType chartType,
                               final String chartTitle,
                               final String chartSubtitle,
+                              final String chartDescription,
                               final String xaxisTitle, final String yaxisTitle, List<SeriesDefinition> seriesDefinitions)
     {
         _chartStemName = chartStemName;
         _chartType = chartType;
         _chartTitle = chartTitle;
         _chartSubtitle = chartSubtitle;
+        _chartDescription = chartDescription;
         _xaxisTitle = xaxisTitle;
         _yaxisTitle = yaxisTitle;
         _seriesDefinitions = seriesDefinitions;
@@ -65,6 +68,10 @@ public class ChartingDefinition
         return _chartSubtitle;
     }
 
+    public String getChartDescription()
+    {
+        return _chartDescription;
+    }
 
     public String getXAxisTitle()
     {
@@ -77,8 +84,6 @@ public class ChartingDefinition
         return _yaxisTitle;
     }
 
-
-
     public ChartType getChartType()
     {
         return _chartType;
@@ -88,6 +93,5 @@ public class ChartingDefinition
     {
         return Collections.unmodifiableList(_seriesDefinitions);
     }
-
 
 }
