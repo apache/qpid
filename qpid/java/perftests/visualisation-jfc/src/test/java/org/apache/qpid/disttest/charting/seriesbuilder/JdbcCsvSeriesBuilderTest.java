@@ -37,6 +37,8 @@ public class JdbcCsvSeriesBuilderTest extends TestCase
 {
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SELECT A, B FROM test";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";
+    private static final String TEST_SERIES1_COLOUR_NAME = "blue";
+    private static final Integer TEST_SERIES1_STROKE_WIDTH = 3;
 
     private SeriesBuilderCallback _seriesWalkerCallback = mock(SeriesBuilderCallback.class);
     private JdbcCsvSeriesBuilder _seriesBuilder = new JdbcCsvSeriesBuilder();
@@ -79,7 +81,7 @@ public class JdbcCsvSeriesBuilderTest extends TestCase
 
     private SeriesDefinition createTestSeriesDefinition()
     {
-        SeriesDefinition definition = new SeriesDefinition(TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, _testTempDir.getAbsolutePath());
+        SeriesDefinition definition = new SeriesDefinition(TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, _testTempDir.getAbsolutePath(), TEST_SERIES1_COLOUR_NAME, TEST_SERIES1_STROKE_WIDTH);
         return definition;
     }
 

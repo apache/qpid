@@ -26,10 +26,11 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.qpid.disttest.charting.ChartingException;
+import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.slf4j.Logger;
@@ -42,19 +43,19 @@ public class ChartWriter
     static final String SUMMARY_FILE_NAME = "chart-summary.html";
 
     private File _chartDirectory = new File(".");
-    private SortedSet<File> _chartFiles = new TreeSet<File>();
+    private SortedMap<File,ChartingDefinition> _chartFilesToChartDef = new TreeMap<File, ChartingDefinition>();
 
-    public void writeChartToFileSystem(JFreeChart chart, String chartStemName)
+    public void writeChartToFileSystem(JFreeChart chart, ChartingDefinition chartDef)
     {
         OutputStream pngOutputStream = null;
         try
         {
-            File pngFile = new File(_chartDirectory, chartStemName + ".png");
+            File pngFile = new File(_chartDirectory, chartDef.getChartStemName() + ".png");
             pngOutputStream = new BufferedOutputStream(new FileOutputStream(pngFile));
             ChartUtilities.writeChartAsPNG(pngOutputStream, chart, 600, 400, true, 0);
             pngOutputStream.close();
 
-            _chartFiles.add(pngFile);
+            _chartFilesToChartDef.put(pngFile, chartDef);
 
             LOGGER.info("Written {} chart", pngFile);
         }
@@ -80,9 +81,9 @@ public class ChartWriter
 
     public void writeHtmlSummaryToFileSystem()
     {
-        if(_chartFiles.size() < 2)
+        if(_chartFilesToChartDef.size() < 2)
         {
-            LOGGER.info("Only " + _chartFiles.size() + " chart image(s) have been written so no HTML summary file will be produced");
+            LOGGER.info("Only {} chart image(s) have been written so no HTML summary file will be produced", _chartFilesToChartDef.size());
             return;
         }
 
@@ -90,6 +91,7 @@ public class ChartWriter
             "<html>\n" +
             "    <head>\n" +
             "        <title>Performance Charts</title>\n" +
+            "        <style type='text/css'>figure { float: left; display: table; width: 87px;}</style>\n" +
             "    </head>\n" +
             "    <body>\n";
 
@@ -101,22 +103,29 @@ public class ChartWriter
         try
         {
             File summaryFile = new File(_chartDirectory, SUMMARY_FILE_NAME);
-            LOGGER.debug("About to produce HTML summary file " + summaryFile.getAbsolutePath() + " from charts " + _chartFiles);
+            LOGGER.debug("About to produce HTML summary file " + summaryFile.getAbsolutePath() + " from charts " + _chartFilesToChartDef);
 
             writer = new BufferedWriter(new FileWriter(summaryFile));
             writer.write(htmlHeader);
 
             writer.write("        <ul>\n");
-            for (File chartFile : _chartFiles)
+            for (File chartFile : _chartFilesToChartDef.keySet())
             {
                 writer.write("            <li><a href='#"+ chartFile.getName() +"'>" + chartFile.getName() + "</a></li>\n");
             }
             writer.write("        </ul>\n");
 
-            for (File chartFile : _chartFiles)
+            for (File chartFile : _chartFilesToChartDef.keySet())
             {
+                ChartingDefinition def = _chartFilesToChartDef.get(chartFile);
                 writer.write("        <a name='" + chartFile.getName() + "'/>\n");
-                writer.write("        <img src='" + chartFile.getName() + "'/>\n");
+                writer.write("        <figure>\n");
+                writer.write("          <img src='" + chartFile.getName() + "'/>\n");
+                if (def.getChartDescription() != null)
+                {
+                    writer.write("          <figcaption>" + def.getChartDescription() + "</figcaption>\n");
+                }
+                writer.write("        </figure>\n");
             }
             writer.write(htmlFooter);
             writer.close();

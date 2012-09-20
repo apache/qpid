@@ -21,6 +21,7 @@ package org.apache.qpid.disttest.charting.definition;
 
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_TITLE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_SUBTITLE_KEY;
+import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_DESCRIPTION_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_TYPE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.XAXIS_TITLE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.YAXIS_TITLE_KEY;
@@ -40,6 +41,7 @@ public class ChartingDefinitionCreatorTest extends TestCase
 {
     private static final String TEST_CHART_TITLE = "CHART_TITLE";
     private static final String TEST_CHART_SUBTITLE = "CHART_SUBTITLE";
+    private static final String TEST_CHART_DESCRIPTION = "CHART_DESCRIPTION";
     private static final String TEST_XAXIS_TITLE = "XAXIS_TITLE";
     private static final String TEST_YAXIS_TITLE = "YAXIS_TITLE";
     private static final ChartType TEST_CHART_TYPE = ChartType.LINE;
@@ -86,6 +88,7 @@ public class ChartingDefinitionCreatorTest extends TestCase
         ChartingDefinition definition1 = definitions.get(0);
         assertEquals(TEST_CHART_TITLE, definition1.getChartTitle());
         assertEquals(TEST_CHART_SUBTITLE, definition1.getChartSubtitle());
+        assertEquals(TEST_CHART_DESCRIPTION, definition1.getChartDescription());
         assertEquals(TEST_XAXIS_TITLE, definition1.getXAxisTitle());
         assertEquals(TEST_YAXIS_TITLE, definition1.getYAxisTitle());
         assertEquals(TEST_CHART_TYPE, definition1.getChartType());
@@ -125,6 +128,7 @@ public class ChartingDefinitionCreatorTest extends TestCase
         props.setProperty(CHART_TYPE_KEY, TEST_CHART_TYPE.name());
         props.setProperty(CHART_TITLE_KEY, TEST_CHART_TITLE);
         props.setProperty(CHART_SUBTITLE_KEY, TEST_CHART_SUBTITLE);
+        props.setProperty(CHART_DESCRIPTION_KEY, TEST_CHART_DESCRIPTION);
         props.setProperty(XAXIS_TITLE_KEY, TEST_XAXIS_TITLE);
         props.setProperty(YAXIS_TITLE_KEY, TEST_YAXIS_TITLE);
 

@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
+import java.awt.Color;
+import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +30,6 @@ import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.data.xy.DefaultXYDataset;
 
 
@@ -93,10 +94,24 @@ public abstract class XYDataSetBasedChartBuilder extends BaseChartBuilder
 
         _seriesBuilder.build(chartingDefinition.getSeries());
 
-        JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
+        final JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
                 dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
 
         addCommonChartAttributes(chart, chartingDefinition);
+        addSeriesAttributes(chartingDefinition.getSeries(), new SeriesStokeAndPaintAccessor()
+        {
+            @Override
+            public void setSeriesStroke(int seriesIndex, Stroke stroke)
+            {
+                chart.getXYPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
+            }
+
+            @Override
+            public void setSeriesPaint(int seriesIndex, Color colour)
+            {
+                chart.getXYPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
+            }
+        });
 
         return chart;
     }

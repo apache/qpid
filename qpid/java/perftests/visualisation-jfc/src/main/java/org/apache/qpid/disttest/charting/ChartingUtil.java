@@ -98,7 +98,7 @@ public class ChartingUtil
         {
             ChartBuilder chartBuilder = ChartBuilderFactory.createChartBuilder(chartingDefinition.getChartType(), seriesBuilder);
             JFreeChart chart = chartBuilder.buildChart(chartingDefinition);
-            writer.writeChartToFileSystem(chart, chartingDefinition.getChartStemName());
+            writer.writeChartToFileSystem(chart, chartingDefinition);
         }
 
         writer.writeHtmlSummaryToFileSystem();
