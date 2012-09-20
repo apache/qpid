@@ -128,17 +128,8 @@ org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFlowContro
 
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 
-//Excluded due to QPID-1447 : CPP broker does not have SlowConsumer Disconnection
-org.apache.qpid.systest.GlobalQueuesTest#*
-org.apache.qpid.systest.GlobalTopicsTest#*
-org.apache.qpid.systest.MergeConfigurationTest#*
-org.apache.qpid.systest.SubscriptionTest#*
-org.apache.qpid.systest.TopicTest#*
-
 // Excluded because Java plugins not used in CPP broker
 org.apache.qpid.server.virtualhost.plugin.*
-org.apache.qpid.server.virtualhost.plugin.policies.*
-org.apache.qpid.info.systest.InfoPluginTest#*
 org.apache.qpid.info.test.*
 org.apache.qpid.server.security.access.*
 org.apache.qpid.server.security.access.plugins.*
