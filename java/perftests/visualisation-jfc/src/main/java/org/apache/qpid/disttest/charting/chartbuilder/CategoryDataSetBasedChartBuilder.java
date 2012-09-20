@@ -20,6 +20,9 @@
 package org.apache.qpid.disttest.charting.chartbuilder;
 
 
+import java.awt.Color;
+import java.awt.Stroke;
+
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
@@ -72,12 +75,26 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
 
         _seriesBuilder.build(chartingDefinition.getSeries());
 
-        JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
+        final JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
                 dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
 
         chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
 
         addCommonChartAttributes(chart, chartingDefinition);
+        addSeriesAttributes(chartingDefinition.getSeries(), new SeriesStokeAndPaintAccessor()
+        {
+            @Override
+            public void setSeriesStroke(int seriesIndex, Stroke stroke)
+            {
+                chart.getCategoryPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
+            }
+
+            @Override
+            public void setSeriesPaint(int seriesIndex, Color colour)
+            {
+                chart.getCategoryPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
+            }
+        });
 
         return chart;
     }

@@ -30,6 +30,8 @@ public class SeriesDefinitionCreator
     public static final String SERIES_STATEMENT_KEY_FORMAT = "series.%d.statement";
     public static final String SERIES_LEGEND_KEY_FORMAT = "series.%d.legend";
     public static final String SERIES_DIRECTORY_KEY_FORMAT = "series.%d.dir";
+    public static final String SERIES_COLOUR_NAME_FORMAT = "series.%d.colourName";
+    public static final String SERIES_STROKE_WIDTH_FORMAT = "series.%d.strokeWidth";
 
     public List<SeriesDefinition> createFromProperties(Properties properties)
     {
@@ -42,10 +44,13 @@ public class SeriesDefinitionCreator
             String seriesStatement = properties.getProperty(String.format(SERIES_STATEMENT_KEY_FORMAT, index));
             String seriesLegend = properties.getProperty(String.format(SERIES_LEGEND_KEY_FORMAT, index));
             String seriesDir = StrSubstitutor.replaceSystemProperties(properties.getProperty(String.format(SERIES_DIRECTORY_KEY_FORMAT, index)));
+            String seriesColourName = properties.getProperty(String.format(SERIES_COLOUR_NAME_FORMAT, index));
+            Integer seriesStrokeWidth = properties.getProperty(String.format(SERIES_STROKE_WIDTH_FORMAT, index)) == null
+                    ? null : Integer.parseInt(properties.getProperty(String.format(SERIES_STROKE_WIDTH_FORMAT, index)));
 
             if (seriesStatement != null)
             {
-                final SeriesDefinition seriesDefinition = new SeriesDefinition(seriesStatement, seriesLegend, seriesDir);
+                final SeriesDefinition seriesDefinition = new SeriesDefinition(seriesStatement, seriesLegend, seriesDir, seriesColourName, seriesStrokeWidth);
                 seriesDefinitions.add(seriesDefinition);
             }
             else

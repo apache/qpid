@@ -19,10 +19,13 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
+import java.util.List;
 
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
+import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.title.ShortTextTitle;
@@ -36,6 +39,22 @@ public abstract class BaseChartBuilder implements ChartBuilder
     {
         addSubtitle(chart, chartingDefinition);
         setBackgroundColour(chart);
+    }
+
+    public void addSeriesAttributes(List<SeriesDefinition> series, SeriesStokeAndPaintAccessor stokeAndPaintAccessor)
+    {
+        for (int i = 0; i < series.size(); i++)
+        {
+            SeriesDefinition seriesDefinition = series.get(i);
+            if (seriesDefinition.getSeriesColourName() != null)
+            {
+                stokeAndPaintAccessor.setSeriesPaint(i, ColorFactory.toColour(seriesDefinition.getSeriesColourName()));
+            }
+            if (seriesDefinition.getStrokeWidth() != null)
+            {
+                stokeAndPaintAccessor.setSeriesStroke(i, new BasicStroke(seriesDefinition.getStrokeWidth()));
+            }
+        }
     }
 
     private void addSubtitle(JFreeChart chart, ChartingDefinition chartingDefinition)

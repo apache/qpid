@@ -22,6 +22,8 @@ package org.apache.qpid.disttest.charting.definition;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_DIRECTORY_KEY_FORMAT;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_LEGEND_KEY_FORMAT;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_STATEMENT_KEY_FORMAT;
+import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_COLOUR_NAME_FORMAT;
+import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_STROKE_WIDTH_FORMAT;
 
 import java.util.List;
 import java.util.Properties;
@@ -33,6 +35,8 @@ public class SeriesDefinitionCreatorTest extends TestCase
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SERIES_1_SELECT_STATEMENT";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";
     private static final String TEST_SERIES_1_DIR = "SERIES_1_DIR";
+    private static final String TEST_SERIES_1_COLOUR_NAME = "seriesColourName";
+    private static final Integer TEST_SERIES_1_STROKE_WIDTH = 1;;
 
     private static final String TEST_SERIES_1_DIR_WITH_SYSPROP = "${java.io.tmpdir}/mydir";
 
@@ -52,7 +56,7 @@ public class SeriesDefinitionCreatorTest extends TestCase
 
     public void testOneSeriesDefinition() throws Exception
     {
-        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR);
+        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR, TEST_SERIES_1_COLOUR_NAME, TEST_SERIES_1_STROKE_WIDTH);
 
         List<SeriesDefinition> definitions = _seriesDefinitionLoader.createFromProperties(_properties);
         assertEquals(1, definitions.size());
@@ -61,12 +65,14 @@ public class SeriesDefinitionCreatorTest extends TestCase
         assertEquals(TEST_SERIES_1_SELECT_STATEMENT, definition.getSeriesStatement());
         assertEquals(TEST_SERIES_1_LEGEND, definition.getSeriesLegend());
         assertEquals(TEST_SERIES_1_DIR, definition.getSeriesDirectory());
+        assertEquals(TEST_SERIES_1_COLOUR_NAME, definition.getSeriesColourName());
+        assertEquals(TEST_SERIES_1_STROKE_WIDTH, definition.getStrokeWidth());
     }
 
     public void testTwoSeriesDefinitions() throws Exception
     {
-        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR);
-        createTestProperties(2, TEST_SERIES_2_SELECT_STATEMENT, TEST_SERIES_2_LEGEND, TEST_SERIES_2_DIR);
+        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR, TEST_SERIES_1_COLOUR_NAME, TEST_SERIES_1_STROKE_WIDTH);
+        createTestProperties(2, TEST_SERIES_2_SELECT_STATEMENT, TEST_SERIES_2_LEGEND, TEST_SERIES_2_DIR, null, null);
 
         List<SeriesDefinition> definitions = _seriesDefinitionLoader.createFromProperties(_properties);
         assertEquals(2, definitions.size());
@@ -84,8 +90,8 @@ public class SeriesDefinitionCreatorTest extends TestCase
 
     public void testNonSequentialSeriesDefinitionsIgnored() throws Exception
     {
-        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR);
-        createTestProperties(3, TEST_SERIES_2_SELECT_STATEMENT, TEST_SERIES_2_LEGEND, TEST_SERIES_2_DIR);
+        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR, TEST_SERIES_1_COLOUR_NAME, TEST_SERIES_1_STROKE_WIDTH);
+        createTestProperties(3, TEST_SERIES_2_SELECT_STATEMENT, TEST_SERIES_2_LEGEND, TEST_SERIES_2_DIR, null, null);
 
         List<SeriesDefinition> definitions = _seriesDefinitionLoader.createFromProperties(_properties);
         assertEquals(1, definitions.size());
@@ -94,7 +100,7 @@ public class SeriesDefinitionCreatorTest extends TestCase
     public void testSeriesDirectorySubstitution() throws Exception
     {
         final String tmpDir = System.getProperty("java.io.tmpdir");
-        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR_WITH_SYSPROP);
+        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR_WITH_SYSPROP, null, null);
 
         List<SeriesDefinition> definitions = _seriesDefinitionLoader.createFromProperties(_properties);
         assertEquals(1, definitions.size());
@@ -103,11 +109,19 @@ public class SeriesDefinitionCreatorTest extends TestCase
         assertTrue(seriesDefinition1.getSeriesDirectory().startsWith(tmpDir));
     }
 
-    private void createTestProperties(int index, String selectStatement, String seriesLegend, String seriesDir) throws Exception
+    private void createTestProperties(int index, String selectStatement, String seriesLegend, String seriesDir, String seriesColourName, Integer seriesStrokeWidth) throws Exception
     {
         _properties.setProperty(String.format(SERIES_STATEMENT_KEY_FORMAT, index), selectStatement);
         _properties.setProperty(String.format(SERIES_LEGEND_KEY_FORMAT, index), seriesLegend);
         _properties.setProperty(String.format(SERIES_DIRECTORY_KEY_FORMAT, index), seriesDir);
+        if (seriesColourName != null)
+        {
+            _properties.setProperty(String.format(SERIES_COLOUR_NAME_FORMAT, index), seriesColourName);
+        }
+        if (seriesStrokeWidth != null)
+        {
+            _properties.setProperty(String.format(SERIES_STROKE_WIDTH_FORMAT, index), seriesStrokeWidth.toString());
+        }
     }
 
 }
