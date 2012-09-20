@@ -27,6 +27,7 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.NUMBER_OF_ME
 import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PARTICIPANT_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TEST_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.MESSAGE_THROUGHPUT;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -49,6 +50,7 @@ public class ParticipantResult extends Response
     private long _totalPayloadProcessed;
     private int _payloadSize;
     private double _throughput;
+    private int _messageThroughput;
 
     private int _totalNumberOfConsumers;
     private int _totalNumberOfProducers;
@@ -234,6 +236,17 @@ public class ParticipantResult extends Response
     public void setThroughput(double throughput)
     {
         _throughput = throughput;
+    }
+
+    @OutputAttribute(attribute=MESSAGE_THROUGHPUT)
+    public int getMessageThroughput()
+    {
+        return _messageThroughput;
+    }
+
+    public void setMessageThroughput(int throughput)
+    {
+        _messageThroughput = throughput;
     }
 
     public void setTotalNumberOfConsumers(int totalNumberOfConsumers)

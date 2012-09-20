@@ -21,12 +21,12 @@ chartType=BAR
 chartTitle=Topic transient/durable subscriptions
 chartSubtitle=1KB messages
 xAxisTitle=Durable subscription
-yAxisTitle=Throughput (KB/s)
+yAxisTitle=Throughput (messages/s)
 
-series.1.statement=SELECT isDurableSubscription, throughputKbPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
+series.1.statement=SELECT isDurableSubscription, throughputMessagesPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
 
-series.2.statement=SELECT isDurableSubscription, throughputKbPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
+series.2.statement=SELECT isDurableSubscription, throughputMessagesPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
