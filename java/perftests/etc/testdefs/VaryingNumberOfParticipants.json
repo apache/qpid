@@ -8,6 +8,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -18,7 +26,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -42,7 +49,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -65,6 +71,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -75,7 +89,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -99,7 +112,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -116,7 +128,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -139,6 +150,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -149,7 +168,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session0",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -173,7 +191,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -190,7 +207,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -207,7 +223,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -224,7 +239,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -241,7 +255,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -267,6 +280,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -277,7 +298,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session0",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -301,7 +321,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -318,7 +337,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -335,7 +353,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -352,7 +369,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -369,7 +385,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -386,7 +401,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer6",
@@ -403,7 +417,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer7",
@@ -420,7 +433,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer8",
@@ -437,7 +449,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer9",
@@ -454,7 +465,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer10",
@@ -480,6 +490,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -490,7 +508,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -509,7 +526,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -533,7 +549,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -560,6 +575,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -570,7 +593,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -589,7 +611,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -613,7 +634,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -630,7 +650,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -657,6 +676,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -667,7 +694,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -686,7 +712,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -710,7 +735,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -727,7 +751,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -744,7 +767,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -761,7 +783,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -778,7 +799,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -804,6 +824,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -814,7 +842,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -833,7 +860,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -857,7 +883,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -874,7 +899,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -891,7 +915,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -908,7 +931,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -925,7 +947,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -942,7 +963,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer6",
@@ -959,7 +979,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer7",
@@ -976,7 +995,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer8",
@@ -993,7 +1011,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer9",
@@ -1010,7 +1027,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer10",
@@ -1036,6 +1052,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -1046,7 +1070,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -1065,7 +1088,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -1084,7 +1106,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -1103,7 +1124,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -1122,7 +1142,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -1146,7 +1165,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -1173,6 +1191,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -1183,7 +1209,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -1202,7 +1227,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -1221,7 +1245,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -1240,7 +1263,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -1259,7 +1281,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -1283,7 +1304,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -1300,7 +1320,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -1328,6 +1347,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -1338,7 +1365,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -1357,7 +1383,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -1376,7 +1401,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -1395,7 +1419,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -1414,7 +1437,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -1438,7 +1460,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -1455,7 +1476,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -1472,7 +1492,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -1489,7 +1508,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -1506,7 +1524,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -1532,6 +1549,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -1542,7 +1567,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -1561,7 +1585,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -1580,7 +1603,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -1599,7 +1621,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -1618,7 +1639,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -1642,7 +1662,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -1659,7 +1678,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -1676,7 +1694,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -1693,7 +1710,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -1710,7 +1726,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -1727,7 +1742,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer6",
@@ -1744,7 +1758,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer7",
@@ -1761,7 +1774,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer8",
@@ -1778,7 +1790,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer9",
@@ -1795,7 +1806,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer10",
@@ -1822,6 +1832,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -1832,7 +1850,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -1851,7 +1868,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -1870,7 +1886,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -1889,7 +1904,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -1908,7 +1922,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -1927,7 +1940,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer6",
@@ -1946,7 +1958,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer7",
@@ -1965,7 +1976,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer8",
@@ -1984,7 +1994,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer9",
@@ -2003,7 +2012,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer10",
@@ -2027,7 +2035,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -2054,6 +2061,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -2064,7 +2079,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -2083,7 +2097,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -2102,7 +2115,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -2121,7 +2133,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -2140,7 +2151,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -2159,7 +2169,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer6",
@@ -2178,7 +2187,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer7",
@@ -2197,7 +2205,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer8",
@@ -2216,7 +2223,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer9",
@@ -2235,7 +2241,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer10",
@@ -2259,7 +2264,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -2276,7 +2280,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -2304,6 +2307,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -2314,7 +2325,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -2333,7 +2343,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -2352,7 +2361,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -2371,7 +2379,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -2390,7 +2397,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -2409,7 +2415,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer6",
@@ -2428,7 +2433,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer7",
@@ -2447,7 +2451,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer8",
@@ -2466,7 +2469,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer9",
@@ -2485,7 +2487,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer10",
@@ -2509,7 +2510,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -2526,7 +2526,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -2543,7 +2542,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -2560,7 +2558,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -2577,7 +2574,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -2604,6 +2600,14 @@
           "_durable": true
         }
       ],
+     "_iterations":[
+        {
+          "_acknowledgeMode": 0
+        },
+        {
+          "_acknowledgeMode": 1
+        }
+      ],
       "_clients":[
         {
           "_name": "producingClient",
@@ -2614,7 +2618,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -2633,7 +2636,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer2",
@@ -2652,7 +2654,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer3",
@@ -2671,7 +2672,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer4",
@@ -2690,7 +2690,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer5",
@@ -2709,7 +2708,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer6",
@@ -2728,7 +2726,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer7",
@@ -2747,7 +2744,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer8",
@@ -2766,7 +2762,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer9",
@@ -2785,7 +2780,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_producers": [
                     {
                       "_name": "Producer10",
@@ -2809,7 +2803,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
@@ -2826,7 +2819,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session2",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer2",
@@ -2843,7 +2835,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session3",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer3",
@@ -2860,7 +2851,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session4",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer4",
@@ -2877,7 +2867,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session5",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer5",
@@ -2894,7 +2883,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session6",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer6",
@@ -2911,7 +2899,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session7",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer7",
@@ -2928,7 +2915,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session8",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer8",
@@ -2945,7 +2931,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session9",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer9",
@@ -2962,7 +2947,6 @@
               "_sessions": [
                 {
                   "_sessionName": "session10",
-                  "_acknowledgeMode": 1,
                   "_consumers": [
                     {
                       "_name": "Consumer10",
