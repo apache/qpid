@@ -48,6 +48,10 @@ BootstrapOptions::BootstrapOptions(const char* argv0)
     add(log);
 }
 
+void BootstrapOptions::usage() const {
+    cout << "Usage: qpidd [OPTIONS]" << endl << endl << *this << endl;
+}
+
 namespace {
 const std::string TCP = "tcp";
 }
@@ -111,17 +115,17 @@ void QpiddOptions::usage() const {
 // Set the broker pointer on the signal handler, then reset at end of scope.
 // This is to ensure that the signal handler doesn't keep a broker
 // reference after main() has returned.
-// 
+//
 struct ScopedSetBroker {
     ScopedSetBroker(const boost::intrusive_ptr<Broker>& broker) {
         qpid::broker::SignalHandler::setBroker(broker.get());
     }
     ~ScopedSetBroker() { qpid::broker::SignalHandler::setBroker(0); }
 };
-    
+
 struct QpiddDaemon : public Daemon {
     QpiddPosixOptions *options;
-  
+
     QpiddDaemon(std::string pidDir, QpiddPosixOptions *opts)
       : Daemon(pidDir), options(opts) {}
 
@@ -129,7 +133,7 @@ struct QpiddDaemon : public Daemon {
     void parent() {
         uint16_t port = wait(options->daemon.wait);
         if (options->parent->broker.port == 0 || options->daemon.transport != TCP)
-            cout << port << endl; 
+            cout << port << endl;
     }
 
     /** Code for forked child process */
@@ -162,12 +166,12 @@ int QpiddBroker::execute (QpiddOptions *options) {
             QPID_LOG(notice, "Cannot stop broker: " << e.what());
             return 1;
         }
-        if (pid < 0) 
+        if (pid < 0)
             return 1;
         if (myOptions->daemon.check)
             cout << pid << endl;
         if (myOptions->daemon.quit) {
-            if (kill(pid, SIGINT) < 0) 
+            if (kill(pid, SIGINT) < 0)
                 throw Exception("Failed to stop daemon: " + qpid::sys::strError(errno));
             // Wait for the process to die before returning
             int retry=10000;    // Try up to 10 seconds

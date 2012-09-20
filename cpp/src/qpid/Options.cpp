@@ -41,13 +41,13 @@ struct EnvOptMapper {
         return desc->long_name().size() == env.size() &&
             std::equal(env.begin(), env.end(), desc->long_name().begin(), &matchChar);
     }
-            
+
     static bool matchCase(const string& env, boost::shared_ptr<po::option_description> desc) {
         return env == desc->long_name();
     }
-            
+
     EnvOptMapper(const Options& o) : opts(o) {}
-    
+
     string operator()(const string& envVar) {
         static const std::string prefix("QPID_");
         if (envVar.substr(0, prefix.size()) == prefix) {
@@ -75,7 +75,7 @@ struct EnvOptMapper {
 
 
     string configFileLine (string& line) {
-        
+
         if ( isComment ( line ) )
           return string();
 
@@ -85,7 +85,7 @@ struct EnvOptMapper {
         string key = line.substr (0, pos);
 #if (BOOST_VERSION >= 103300)
         typedef const std::vector< boost::shared_ptr<po::option_description> > OptDescs;
-        OptDescs::const_iterator i = 
+        OptDescs::const_iterator i =
             find_if(opts.options().begin(), opts.options().end(), boost::bind(matchCase, key, _1));
         if (i != opts.options().end())
             return string (line) + "\n";
@@ -109,8 +109,8 @@ std::string prettyArg(const std::string& name, const std::string& value) {
     return value.empty() ? name+" " : name+" ("+value+") ";
 }
 
-Options::Options(const string& name) : 
-  po::options_description(name) 
+Options::Options(const string& name) :
+  po::options_description(name)
 {
 }
 
@@ -196,6 +196,34 @@ CommonOptions::CommonOptions(const string& name, const string& configfile, const
         ("client-config", optValue(clientConfig, "FILE"), "Reads client configuration from FILE (for cluster interconnect)");
 }
 
+
+
+bool Options::findArg(int argc, char const* const* argv, const std::string& theArg)
+{
+    const string parsing("command line options");
+    bool result(false);
+    try {
+        if (argc > 0 && argv != 0) {
+            po::command_line_parser clp = po::command_line_parser(argc, const_cast<char**>(argv)).
+            options(*this).allow_unregistered();
+            po::parsed_options opts     = clp.run();
+
+            for (std::vector< po::basic_option<char> >::iterator
+                i = opts.options.begin(); i != opts.options.end(); i++) {
+                if (theArg.compare(i->string_key) == 0) {
+                    result = true;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+    catch (const std::exception& e) {
+        ostringstream msg;
+        msg << "Error in " << parsing << ": " << e.what() << endl;
+        throw Exception(msg.str());
+    }
+}
 
 } // namespace qpid
 

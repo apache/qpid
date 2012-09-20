@@ -37,9 +37,10 @@ namespace broker {
 struct BootstrapOptions : public qpid::Options {
     qpid::CommonOptions common;
     qpid::ModuleOptions module;
-    qpid::log::Options log;     
+    qpid::log::Options log;
 
     BootstrapOptions(const char *argv0);
+    void usage() const;
 };
 
 // Each platform derives an options struct from QpiddOptionsPrivate, adding
