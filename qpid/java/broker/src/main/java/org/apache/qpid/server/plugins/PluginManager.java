@@ -36,9 +36,6 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.TopicConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfiguration.SlowConsumerDetectionConfigurationFactory;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionPolicyConfiguration.SlowConsumerDetectionPolicyConfigurationFactory;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration.SlowConsumerDetectionQueueConfigurationFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SecurityPluginFactory;
@@ -51,10 +48,7 @@ import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticat
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManagerPluginFactory;
-import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
-import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.apache.qpid.util.FileUtils;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -90,7 +84,6 @@ public class PluginManager implements Closeable
     private ServiceTracker _securityTracker = null;
     private ServiceTracker _configTracker = null;
     private ServiceTracker _virtualHostTracker = null;
-    private ServiceTracker _policyTracker = null;
     private ServiceTracker _authenticationManagerTracker = null;
     private ServiceTracker _groupManagerTracker = null;
 
@@ -100,7 +93,6 @@ public class PluginManager implements Closeable
     private Map<String, SecurityPluginFactory> _securityPlugins = new HashMap<String, SecurityPluginFactory>();
     private Map<List<String>, ConfigurationPluginFactory> _configPlugins = new IdentityHashMap<List<String>, ConfigurationPluginFactory>();
     private Map<String, VirtualHostPluginFactory> _vhostPlugins = new HashMap<String, VirtualHostPluginFactory>();
-    private Map<String, SlowConsumerPolicyPluginFactory> _policyPlugins = new HashMap<String, SlowConsumerPolicyPluginFactory>();
     private Map<String, AuthenticationManagerPluginFactory<? extends Plugin>> _authenticationManagerPlugins = new HashMap<String, AuthenticationManagerPluginFactory<? extends Plugin>>();
     private Map<String, GroupManagerPluginFactory<? extends Plugin>> _groupManagerPlugins = new HashMap<String, GroupManagerPluginFactory<? extends Plugin>>();
 
@@ -159,9 +151,6 @@ public class PluginManager implements Closeable
                 TopicConfiguration.FACTORY,
                 SecurityManager.SecurityConfiguration.FACTORY,
                 LegacyAccess.LegacyAccessConfiguration.FACTORY,
-                new SlowConsumerDetectionConfigurationFactory(),
-                new SlowConsumerDetectionPolicyConfigurationFactory(),
-                new SlowConsumerDetectionQueueConfigurationFactory(),
                 PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration.FACTORY,
                 AnonymousAuthenticationManager.AnonymousAuthenticationManagerConfiguration.FACTORY,
                 KerberosAuthenticationManager.KerberosAuthenticationManagerConfiguration.FACTORY,
@@ -171,16 +160,6 @@ public class PluginManager implements Closeable
                 ))
         {
             _configPlugins.put(configFactory.getParentPaths(), configFactory);
-        }
-        for (SlowConsumerPolicyPluginFactory pluginFactory : Arrays.asList(
-                new TopicDeletePolicy.TopicDeletePolicyFactory()))
-        {
-            _policyPlugins.put(pluginFactory.getPluginName(), pluginFactory);
-        }
-        for (VirtualHostPluginFactory pluginFactory : Arrays.asList(
-                new SlowConsumerDetection.SlowConsumerFactory()))
-        {
-            _vhostPlugins.put(pluginFactory.getClass().getName(), pluginFactory);
         }
 
         for (AuthenticationManagerPluginFactory<? extends Plugin> pluginFactory : Arrays.asList(
@@ -286,10 +265,6 @@ public class PluginManager implements Closeable
         _virtualHostTracker.open();
         _trackers.add(_virtualHostTracker);
 
-        _policyTracker = new ServiceTracker(bundleContext, SlowConsumerPolicyPluginFactory.class.getName(), null);
-        _policyTracker.open();
-        _trackers.add(_policyTracker);
-
         _authenticationManagerTracker = new ServiceTracker(bundleContext, AuthenticationManagerPluginFactory.class.getName(), null);
         _authenticationManagerTracker.open();
         _trackers.add(_authenticationManagerTracker);
@@ -352,11 +327,6 @@ public class PluginManager implements Closeable
     public Map<String, VirtualHostPluginFactory> getVirtualHostPlugins()
     {
         return getServices(_virtualHostTracker, _vhostPlugins);
-    }
-
-    public Map<String, SlowConsumerPolicyPluginFactory> getSlowConsumerPlugins()
-    {
-        return getServices(_policyTracker, _policyPlugins);
     }
 
     public Map<String, ExchangeType<?>> getExchanges()
