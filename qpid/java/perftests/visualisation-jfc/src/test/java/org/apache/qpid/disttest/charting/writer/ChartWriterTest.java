@@ -36,7 +36,6 @@ import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.servlet.ChartDeleter;
 import org.jfree.data.general.DefaultPieDataset;
 
 public class ChartWriterTest extends TestCase

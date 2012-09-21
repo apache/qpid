@@ -118,8 +118,8 @@ public class ChartWriter
             for (File chartFile : _chartFilesToChartDef.keySet())
             {
                 ChartingDefinition def = _chartFilesToChartDef.get(chartFile);
-                writer.write("        <a name='" + chartFile.getName() + "'/>\n");
                 writer.write("        <figure>\n");
+                writer.write("          <a name='" + chartFile.getName() + "'/>\n");
                 writer.write("          <img src='" + chartFile.getName() + "'/>\n");
                 if (def.getChartDescription() != null)
                 {

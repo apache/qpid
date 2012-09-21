@@ -20,13 +20,18 @@
 chartType=XYLINE
 chartTitle=Number of topic consumers
 chartSubtitle=Transient 1KB messages
+chartDescription=1P 1-100C transient, auto-ack with message payload 1KB.
+
 xAxisTitle=Numer of consumers
 yAxisTitle=Throughput (messages/s)
 
 series.1.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM Topic-NumberOfConsumers WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+series.1.colourName=red
 
 series.2.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM Topic-NumberOfConsumers WHERE participantName = 'All'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
+series.2.colourName=dark_red
+series.2.strokeWidth=-1
