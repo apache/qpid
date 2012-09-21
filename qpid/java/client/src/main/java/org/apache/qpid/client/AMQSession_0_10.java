@@ -1230,7 +1230,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                 dest.getExchangeClass().asString(),
                                 dest.getTargetNode().getAlternateExchange(),
                                 dest.getTargetNode().getDeclareArgs(),
-                                false, false, false);
+                                false,
+                                dest.getTargetNode().isDurable(),
+                                false);
                         if (isConsumer && !isQueueExist(dest,(QueueNode)dest.getSourceNode(),true)) 
                         {
                             createSubscriptionQueue(dest,noLocal);
