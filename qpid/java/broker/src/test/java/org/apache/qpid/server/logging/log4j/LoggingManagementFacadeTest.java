@@ -28,9 +28,9 @@ import org.apache.qpid.util.FileUtils;
 
 import junit.framework.TestCase;
 
-public class LoggingFacadeTest extends TestCase
+public class LoggingManagementFacadeTest extends TestCase
 {
-    private LoggingFacade _loggingFacade;
+    private LoggingManagementFacade _loggingFacade;
     private String _log4jXmlFile;
 
     @Override
@@ -38,7 +38,7 @@ public class LoggingFacadeTest extends TestCase
     {
         super.setUp();
         _log4jXmlFile = createTestLog4jXml();
-        _loggingFacade = LoggingFacade.configure(_log4jXmlFile);
+        _loggingFacade = LoggingManagementFacade.configure(_log4jXmlFile);
     }
 
     public void testGetAvailableLoggerLevels() throws Exception

@@ -26,7 +26,7 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.logging.log4j.LoggingFacade;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.log4j.LoggingFacadeException;
 
 import javax.management.JMException;
@@ -55,7 +55,8 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     private static final TabularType LOGGER_LEVEL_TABULAR_TYE;
     private static final CompositeType LOGGER_LEVEL_COMPOSITE_TYPE;
 
-    private final LoggingFacade _configurator;
+    private final LoggingManagementFacade _loggingManagementFacade;
+    private final String[] _allAvailableLogLevels;
 
     static
     {
@@ -77,12 +78,13 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             throw new ExceptionInInitializerError(e);
         }
     }
-    
-    public LoggingManagementMBean(LoggingFacade configurator, ManagedObjectRegistry registry) throws JMException
+
+    public LoggingManagementMBean(LoggingManagementFacade loggingManagementFacade, ManagedObjectRegistry registry) throws JMException
     {
         super(LoggingManagement.class, LoggingManagement.TYPE, registry);
         register();
-        _configurator = configurator;
+        _loggingManagementFacade = loggingManagementFacade;
+        _allAvailableLogLevels = buildAllAvailableLoggerLevelsWithInheritedPsuedoLogLevel(_loggingManagementFacade);
     }
 
     @Override
@@ -100,30 +102,26 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     @Override
     public Integer getLog4jLogWatchInterval()
     {
-        return _configurator.getLog4jLogWatchInterval();
+        return _loggingManagementFacade.getLog4jLogWatchInterval();
     }
     
     @Override
     public String[] getAvailableLoggerLevels()
     {
-        List<String> levels = _configurator.getAvailableLoggerLevels();
-        List<String> mbeanLevels = new ArrayList<String>(levels);
-        mbeanLevels.add(INHERITED_PSUEDO_LOG_LEVEL);
-        
-        return mbeanLevels.toArray(new String[mbeanLevels.size()]);
+        return _allAvailableLogLevels;
     }
 
     @Override
     public TabularData viewEffectiveRuntimeLoggerLevels()
     {
-        Map<String, String> levels = _configurator.retrieveRuntimeLoggersLevels();
+        Map<String, String> levels = _loggingManagementFacade.retrieveRuntimeLoggersLevels();
         return createTabularDataFromLevelsMap(levels);
     }
 
     @Override
     public String getRuntimeRootLoggerLevel()
     {
-        return _configurator.retrieveRuntimeRootLoggerLevel();
+        return _loggingManagementFacade.retrieveRuntimeRootLoggerLevel();
     }
 
     @Override
@@ -139,7 +137,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             return false;
         }
 
-        _configurator.setRuntimeRootLoggerLevel(level);
+        _loggingManagementFacade.setRuntimeRootLoggerLevel(level);
         return true;
     }
 
@@ -159,7 +157,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
 
         try
         {
-            _configurator.setRuntimeLoggerLevel(logger, validatedLevel);
+            _loggingManagementFacade.setRuntimeLoggerLevel(logger, validatedLevel);
         }
         catch (LoggingFacadeException e)
         {
@@ -175,7 +173,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         Map<String,String> levels;
         try
         {
-            levels = _configurator.retrieveConfigFileLoggersLevels();
+            levels = _loggingManagementFacade.retrieveConfigFileLoggersLevels();
         }
         catch (LoggingFacadeException e)
         {
@@ -191,7 +189,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     {
         try
         {
-            return _configurator.retrieveConfigFileRootLoggerLevel().toUpperCase();
+            return _loggingManagementFacade.retrieveConfigFileRootLoggerLevel().toUpperCase();
         }
         catch (LoggingFacadeException e)
         {
@@ -216,7 +214,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
 
         try
         {
-            _configurator.setConfigFileLoggerLevel(logger, validatedLevel);
+            _loggingManagementFacade.setConfigFileLoggerLevel(logger, validatedLevel);
         }
         catch (LoggingFacadeException e)
         {
@@ -241,7 +239,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
 
         try
         {
-            _configurator.setConfigFileRootLoggerLevel(level);
+            _loggingManagementFacade.setConfigFileRootLoggerLevel(level);
             return true;
         }
         catch (LoggingFacadeException e)
@@ -257,7 +255,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         try
         {
 
-            _configurator.reload();
+            _loggingManagementFacade.reload();
         }
         catch (LoggingFacadeException e)
         {
@@ -283,9 +281,8 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
 
     private void validateLevelNotAllowingInherited(String level)
     {
-        final List<String> availableLoggerLevels = _configurator.getAvailableLoggerLevels();
-        if (!availableLoggerLevels.contains(level)
-             && !availableLoggerLevels.contains(String.valueOf(level).toUpperCase()))
+        final List<String> availableLoggerLevels = _loggingManagementFacade.getAvailableLoggerLevels();
+        if (level == null || !availableLoggerLevels.contains(level.toUpperCase()))
         {
             throw new IllegalArgumentException(level + " not known");
         }
@@ -305,7 +302,6 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         return loggerLevelList;
     }
 
-
     private CompositeData createRow(String loggerName, String level)
     {
         Object[] itemData = {loggerName, level.toUpperCase()};
@@ -320,5 +316,14 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             // Should not happen
             throw new RuntimeException(ode);
         }
+    }
+
+    private String[] buildAllAvailableLoggerLevelsWithInheritedPsuedoLogLevel(LoggingManagementFacade loggingManagementFacade)
+    {
+        List<String> levels = loggingManagementFacade.getAvailableLoggerLevels();
+        List<String> mbeanLevels = new ArrayList<String>(levels);
+        mbeanLevels.add(INHERITED_PSUEDO_LOG_LEVEL);
+
+        return mbeanLevels.toArray(new String[mbeanLevels.size()]);
     }
 }

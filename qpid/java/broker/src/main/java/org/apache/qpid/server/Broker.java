@@ -36,7 +36,7 @@ import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.logging.log4j.LoggingFacade;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
@@ -458,7 +458,7 @@ public class Broker
                 // log4j expects the watch interval in milliseconds
                 try
                 {
-                    LoggingFacade.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
+                    LoggingManagementFacade.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
                 }
                 catch (Exception e)
                 {
@@ -469,7 +469,7 @@ public class Broker
             {
                 try
                 {
-                    LoggingFacade.configure(logConfigFile.getPath());
+                    LoggingManagementFacade.configure(logConfigFile.getPath());
                 }
                 catch (Exception e)
                 {

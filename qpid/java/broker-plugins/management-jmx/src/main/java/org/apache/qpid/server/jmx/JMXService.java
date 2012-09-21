@@ -39,7 +39,7 @@ import org.apache.qpid.server.jmx.mbeans.ConfigurationManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
-import org.apache.qpid.server.logging.log4j.LoggingFacade;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -83,7 +83,7 @@ public class JMXService implements ConfigurationChangeListener
         _shutdown = new Shutdown(_objectRegistry);
         _serverInfo = new ServerInformationMBean(_objectRegistry, _broker);
         _configManagement = new ConfigurationManagementMBean(_objectRegistry);
-        _loggingManagement = new LoggingManagementMBean(LoggingFacade.getCurrentInstance(), _objectRegistry);
+        _loggingManagement = new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
     }
     
     public void start() throws IOException, ConfigurationException
