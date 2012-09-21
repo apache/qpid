@@ -24,8 +24,12 @@ try:
 except ImportError:
   from socket import ssl as wrap_socket
   class ssl:
-
     def __init__(self, sock, keyfile=None, certfile=None, trustfile=None):
+      # Bug (QPID-4337): this is the "old" version of python SSL.
+      # The private key is required. If a certificate is given, but no
+      # keyfile, assume the key is contained in the certificate
+      if certfile and not keyfile:
+        keyfile = certfile
       self.sock = sock
       self.ssl = wrap_socket(sock, keyfile=keyfile, certfile=certfile)
 

@@ -25,6 +25,7 @@ import qpid
 import struct
 import socket
 import re
+import sys
 from qpid.datatypes  import UUID
 from qpid.datatypes  import timestamp
 from qpid.datatypes  import datetime
@@ -2423,7 +2424,14 @@ class Broker(Thread):
       oldTimeout = sock.gettimeout()
       sock.settimeout(self.connTimeout)
       connSock = None
+      force_blocking = False
       if self.ssl:
+        # Bug (QPID-4337): the "old" implementation of python SSL
+        # fails if the socket is set to non-blocking (which settimeout()
+        # may change).
+        if sys.version_info[:2] < (2, 6):  # 2.6+ uses openssl - it's ok
+          force_blocking = True
+          sock.setblocking(1)
         if 'ssl_certfile' in self.connectArgs:
           connSock = ssl(sock, certfile=self.connectArgs['ssl_certfile'])
         else:
@@ -2438,7 +2446,10 @@ class Broker(Thread):
       oldAborted = self.conn.aborted
       self.conn.aborted = aborted
       self.conn.start()
-      sock.settimeout(oldTimeout)
+      
+      # Bug (QPID-4337): don't enable non-blocking (timeouts) for old SSL
+      if not force_blocking:
+        sock.settimeout(oldTimeout)
       self.conn.aborted = oldAborted
       uid = self.conn.user_id
       if uid.__class__ == tuple and len(uid) == 2:
