@@ -20,6 +20,7 @@
 chartType=XYLINE
 chartTitle=Varying number of producer sessions on single connection
 chartSubtitle=Persistent messages (1024b)
+chartDescription=1-80P on single connection, 20C on separate connections, persistent, transacted with message payload 1KB.
 
 xAxisTitle=Number of producer sessions
 yAxisTitle=Throughput (KB/s)
@@ -28,15 +29,21 @@ yAxisTitle=Throughput (KB/s)
 series.1.statement=SELECT testName, throughputKbPerS FROM VaryingNumberOfProducerSessionsSingleConnection WHERE participantName = 'All'
 series.1.legend=Current - End-to-end throughput
 series.1.dir=${csvCurrentDir}
+series.1.colourName=red
 
 series.2.statement=SELECT testName, throughputKbPerS FROM VaryingNumberOfProducerSessionsSingleConnection WHERE participantName = 'All Producers'
 series.2.legend=Current - Producer only throughput
 series.2.dir=${csvCurrentDir}
+series.2.colourName=blue
 
 series.3.statement=SELECT testName, throughputKbPerS FROM VaryingNumberOfProducerSessionsSingleConnection WHERE participantName = 'All'
 series.3.legend=Baseline - End-to-end throughput
 series.3.dir=${csvBaselineDir}
+series.3.colourName=dark_red
+series.3.strokeWidth=-1
 
 series.4.statement=SELECT testName, throughputKbPerS FROM VaryingNumberOfProducerSessionsSingleConnection WHERE participantName = 'All Producers'
 series.4.legend=Baseline - Producer only throughput
 series.4.dir=${csvBaselineDir}
+series.4.colourName=dark_blue
+series.4.strokeWidth=-1

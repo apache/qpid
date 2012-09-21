@@ -20,13 +20,18 @@
 chartType=BAR
 chartTitle=Topic acknowledge modes
 chartSubtitle=Transient 1KB messages
-xAxisTitle=Ack Mode
+chartDescription=1P 10C, transient, non-durable subscription, message payload 1KB
+
+xAxisTitle=Ack Mode (0=transaction 1=auto-ack)
 yAxisTitle=Throughput (messages/s)
 
 series.1.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM Topic-AckModes WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+series.1.colourName=blue
 
 series.2.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM Topic-AckModes WHERE participantName = 'All'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
+series.2.colourName=dark_red
+series.2.stokeWidth=2
