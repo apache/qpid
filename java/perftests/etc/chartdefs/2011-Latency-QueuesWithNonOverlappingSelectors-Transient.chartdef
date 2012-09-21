@@ -20,21 +20,27 @@
 chartType=STATISTICAL_BAR
 chartTitle=Latency with consumers having non-overlapping selectors
 chartSubtitle=Transient 1KB messages
+chartDescription=1P 1-10C, transient, auto-ack, with message payload between 1KB.
+
 xAxisTitle=Consumers
 yAxisTitle=Latency (millis)
 
 series.1.statement=SELECT totalNumberOfConsumers, maxLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
 series.1.legend=Max latency
 series.1.dir=${csvCurrentDir}
+series.1.colourName=blue
 
 series.2.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
 series.2.legend=Average latency
 series.2.dir=${csvCurrentDir}
+series.2.colourName=red
 
 series.3.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
 series.3.legend=Average latency (baseline)
 series.3.dir=${csvBaselineDir}
+series.3.colourName=dark_red
 
 series.4.statement=SELECT totalNumberOfConsumers, minLatency, 0 FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers' and testName like '%non overlapping - NON_PERSISTENT%'
 series.4.legend=Min latency
 series.4.dir=${csvCurrentDir}
+series.4.colourName=green

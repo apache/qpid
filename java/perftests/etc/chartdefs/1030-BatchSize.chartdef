@@ -20,14 +20,19 @@
 chartType=XYLINE
 chartTitle=Transaction Batch Size
 chartSubtitle=Persistent 1KB messages
+chartDescription=1P 1C, persistent, transacted with message payload 1KB and batch sizes 1-100 messages
+
 xAxisTitle=Batch Size
 yAxisTitle=Throughput (messages/s)
 
 series.1.statement=SELECT batchSize, throughputMessagesPerS FROM BatchSize WHERE participantName = 'All'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+series.1.colourName=red
 
 series.2.statement=SELECT batchSize, throughputMessagesPerS FROM BatchSize WHERE participantName = 'All'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
+series.2.colourName=dark_red
+series.2.strokeWidth=-1
 

@@ -20,13 +20,18 @@
 chartType=BAR
 chartTitle=Topic transient/durable subscriptions
 chartSubtitle=1KB messages
-xAxisTitle=Durable subscription
+chartDescription=1P 10C, auto-ack, message payload 1KB, transient messages on non-durable sub, persistent messages on durable sub
+
+xAxisTitle=Subscription type (true durable, false non durable)
 yAxisTitle=Throughput (messages/s)
 
 series.1.statement=SELECT isDurableSubscription, throughputMessagesPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
+series.1.colourName=blue
 
 series.2.statement=SELECT isDurableSubscription, throughputMessagesPerS FROM Topic-Persistence WHERE participantName = 'All Consumers'
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
+series.2.colourName=dark_red
+series.2.stokeWidth=2

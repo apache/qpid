@@ -20,25 +20,32 @@
 chartType=STATISTICAL_BAR
 chartTitle=Latency, varying number of participants
 chartSubtitle=Persistent 1KB messages
+chartDescription=1,2,5,10 P/Cs, persistent, auto-ack, with message payload 1KB.
+
 xAxisTitle=Consumers
 yAxisTitle=Latency (millis)
 
 series.1.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 1 producer - PERSISTENT'
 series.1.legend=1 producer
 series.1.dir=${csvCurrentDir}
+series.1.colourName=blue
 
 series.2.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 2 producers - PERSISTENT'
 series.2.legend=2 producers
 series.2.dir=${csvCurrentDir}
+series.2.colourName=green
 
 series.3.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 5 producers - PERSISTENT'
 series.3.legend=5 producers
 series.3.dir=${csvCurrentDir}
+series.3.colourName=magenta
 
 series.4.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 10 producers - PERSISTENT'
 series.4.legend=10 producers
 series.4.dir=${csvCurrentDir}
+series.4.colourName=red
 
 series.5.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 10 producers - PERSISTENT'
 series.5.legend=10 producers (baseline)
 series.5.dir=${csvBaselineDir}
+series.5.colourName=dark_red

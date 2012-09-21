@@ -20,21 +20,28 @@
 chartType=XYLINE
 chartTitle=Varying number of consumers - transacted
 chartSubtitle=Persistent 1KB messages
+chartDescription=1,2,5,10 P/Cs, persistent, transacted, with message payload 1KB.
+
 xAxisTitle=Consumers
 yAxisTitle=Throughput (messages/s)
 
 series.1.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '1' and acknowledgeMode = '0'
 series.1.legend=1 Producer
 series.1.dir=${csvCurrentDir}
+series.1.colourName=blue
 
 series.2.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '5' and acknowledgeMode = '0'
 series.2.legend=5 Producers
 series.2.dir=${csvCurrentDir}
+series.2.colourName=green
 
 series.3.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '10' and acknowledgeMode = '0'
 series.3.legend=10 Producers
 series.3.dir=${csvCurrentDir}
+series.3.colourName=red
 
 series.4.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '10' and acknowledgeMode = '0'
 series.4.legend=10 Producers (baseline)
 series.4.dir=${csvBaselineDir}
+series.4.colourName=dark_red
+series.4.strokeWidth=-1

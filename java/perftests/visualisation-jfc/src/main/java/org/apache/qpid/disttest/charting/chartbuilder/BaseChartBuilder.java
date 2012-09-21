@@ -52,9 +52,31 @@ public abstract class BaseChartBuilder implements ChartBuilder
             }
             if (seriesDefinition.getStrokeWidth() != null)
             {
-                stokeAndPaintAccessor.setSeriesStroke(i, new BasicStroke(seriesDefinition.getStrokeWidth()));
+                // Negative width used to signify dashed
+                boolean dashed = seriesDefinition.getStrokeWidth() < 0;
+                float width = Math.abs(seriesDefinition.getStrokeWidth());
+                BasicStroke stroke = buildStrokeOfWidth(width, dashed);
+                stokeAndPaintAccessor.setSeriesStroke(i, stroke);
             }
         }
+    }
+
+    public abstract JFreeChart createChartImpl(String title, String xAxisTitle,
+            String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips,
+            boolean showUrls);
+
+    private BasicStroke buildStrokeOfWidth(float width, boolean dashed)
+    {
+        final BasicStroke stroke;
+        if (dashed)
+        {
+            stroke = new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, new float[] {5.0f, 3.0f}, 0.0f);
+        }
+        else
+        {
+            stroke = new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+        }
+        return stroke;
     }
 
     private void addSubtitle(JFreeChart chart, ChartingDefinition chartingDefinition)
@@ -69,9 +91,5 @@ public abstract class BaseChartBuilder implements ChartBuilder
     {
         chart.setBackgroundPaint(BLUE_GRADIENT);
     }
-
-    public abstract JFreeChart createChartImpl(String title, String xAxisTitle,
-            String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips,
-            boolean showUrls);
 
 }

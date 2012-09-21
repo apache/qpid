@@ -19,17 +19,20 @@
 
 chartType=BAR
 chartTitle=Performance of acknowledgement modes
-chartSubtitle=Persistent messages (1024b)
+chartSubtitle=Persistent messages (1KB)
+chartDescription=1P 1C, persistent, with message payload 1KB.
+
 xAxisTitle=Acknowledge mode (0=session transacted; 1=auto-acknowledge)
 yAxisTitle=Throughput (messages/s)
 
 series.1.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
 series.1.legend=Current
 series.1.dir=${csvCurrentDir}
-
+series.1.colourName=blue
 
 
 series.2.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
 series.2.legend=Baseline
 series.2.dir=${csvBaselineDir}
+series.2.colourName=dark_red
 
