@@ -58,49 +58,49 @@ import java.util.Random;
  * turn {@link Logger} on, off and control their {@link Level}, and the manipulation and reload
  * of the log4j configuration file.
  */
-public class LoggingFacade
+public class LoggingManagementFacade
 {
     private static Logger LOGGER;
-    private static transient LoggingFacade _instance;
+    private static transient LoggingManagementFacade _instance;
     private final String _filename;
     private final int _delay;
 
-    public static LoggingFacade configure(String filename) throws LoggingFacadeException
+    public static LoggingManagementFacade configure(String filename) throws LoggingFacadeException
     {
-        _instance = new LoggingFacade(filename);
+        _instance = new LoggingManagementFacade(filename);
         return _instance;
     }
 
-    public static LoggingFacade configureAndWatch(String filename, int delay) throws LoggingFacadeException
+    public static LoggingManagementFacade configureAndWatch(String filename, int delay) throws LoggingFacadeException
     {
-        _instance = new LoggingFacade(filename, delay);
+        _instance = new LoggingManagementFacade(filename, delay);
         return _instance;
     }
 
-    public static LoggingFacade getCurrentInstance()
+    public static LoggingManagementFacade getCurrentInstance()
     {
         return _instance;
     }
 
-    private LoggingFacade(String filename)
+    private LoggingManagementFacade(String filename)
     {
         DOMConfigurator.configure(filename);
 
         if(LOGGER == null)
         {
-            LOGGER = Logger.getLogger(LoggingFacade.class);
+            LOGGER = Logger.getLogger(LoggingManagementFacade.class);
         }
         _filename = filename;
         _delay = 0;
     }
 
-    private LoggingFacade(String filename, int delay)
+    private LoggingManagementFacade(String filename, int delay)
     {
         DOMConfigurator.configureAndWatch(filename, delay);
 
         if(LOGGER == null)
         {
-            LOGGER = Logger.getLogger(LoggingFacade.class);
+            LOGGER = Logger.getLogger(LoggingManagementFacade.class);
         }
 
         _filename = filename;

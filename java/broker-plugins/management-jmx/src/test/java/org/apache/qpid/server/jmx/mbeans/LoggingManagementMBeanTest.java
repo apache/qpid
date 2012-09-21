@@ -39,7 +39,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.logging.log4j.LoggingFacade;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 
 public class LoggingManagementMBeanTest extends TestCase
 {
@@ -47,13 +47,13 @@ public class LoggingManagementMBeanTest extends TestCase
     private static final String TEST_LEVEL2 = "LEVEL2";
 
     private LoggingManagementMBean _loggingMBean;
-    private LoggingFacade _mockLoggingFacade;
+    private LoggingManagementFacade _mockLoggingFacade;
     private ManagedObjectRegistry _mockManagedObjectRegistry;
 
     @Override
     protected void setUp() throws Exception
     {
-        _mockLoggingFacade = mock(LoggingFacade.class);
+        _mockLoggingFacade = mock(LoggingManagementFacade.class);
         final List<String> listOfLevels = new ArrayList<String>()
         {{
             add(TEST_LEVEL1);
