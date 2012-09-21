@@ -145,6 +145,23 @@ public class ProducerParticipantTest extends TestCase
         verify(_delegate, atLeastOnce()).commitIfNecessary(SESSION_NAME1);
     }
 
+    public void testSendMessagesForDurationWithDelayExceedingDuration() throws Exception
+    {
+        final long duration = 100;
+        _command.setMaximumDuration(duration);
+        _command.setStartDelay(150);
+
+        try
+        {
+            _producer.doIt(CLIENT_NAME);
+            fail("Exception should be thrown indicating configuration error");
+        }
+        catch(DistributedTestException e)
+        {
+            assertEquals("Start delay must be less than maximum test duration", e.getMessage());
+        }
+    }
+
     public void testSendMessageBatches() throws Exception
     {
         final int batchSize = 3;

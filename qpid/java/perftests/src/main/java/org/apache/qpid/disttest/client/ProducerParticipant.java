@@ -58,17 +58,25 @@ public class ProducerParticipant implements Participant
     @Override
     public ParticipantResult doIt(String registeredClientName) throws Exception
     {
-        if (_command.getMaximumDuration() == 0 && _command.getNumberOfMessages() == 0)
+        long numberOfMessages = _command.getNumberOfMessages();
+        long maximumDuration = _command.getMaximumDuration();
+
+        if (maximumDuration == 0 && numberOfMessages == 0)
         {
             throw new DistributedTestException("number of messages and duration cannot both be zero");
         }
 
-        int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
+        long duration = maximumDuration - _command.getStartDelay();
+        if (maximumDuration > 0 && duration <= 0)
+        {
+            throw new DistributedTestException("Start delay must be less than maximum test duration");
+        }
+        final long requiredDuration = duration > 0 ? duration : 0;
 
         doSleepForStartDelay();
 
-        final long requiredDuration = _command.getMaximumDuration() - _command.getStartDelay();
-
+        final int batchSize = _command.getBatchSize();
+        final int acknowledgeMode = _jmsDelegate.getAcknowledgeMode(_command.getSessionName());
         final long startTime = System.currentTimeMillis();
 
         Message lastPublishedMessage = null;
@@ -78,10 +86,20 @@ public class ProducerParticipant implements Participant
 
         _limiter = ExecutorWithLimitsFactory.createExecutorWithLimit(startTime, requiredDuration);
 
-        LOGGER.info("Producer {} about to send messages", getName());
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Producer {} about to send messages. Duration limit: {} ms, Message limit: {}",
+                    new Object[]{getName(), requiredDuration, numberOfMessages});
+        }
 
         while (true)
         {
+            if (numberOfMessages > 0 && numberOfMessagesSent >= numberOfMessages
+                 || requiredDuration > 0 && System.currentTimeMillis() - startTime >= requiredDuration)
+            {
+                break;
+            }
+
             try
             {
                 lastPublishedMessage = _limiter.execute(new Callable<Message>()
@@ -110,35 +128,35 @@ public class ProducerParticipant implements Participant
                 LOGGER.trace("message " + numberOfMessagesSent + " sent by " + this);
             }
 
-            final boolean batchLimitReached = _command.getBatchSize() <= 0
-                            || numberOfMessagesSent % _command.getBatchSize() == 0;
+            final boolean batchLimitReached = batchSize <= 0
+                            || numberOfMessagesSent % batchSize == 0;
 
             if (batchLimitReached)
             {
-                if (LOGGER.isTraceEnabled() && _command.getBatchSize() > 0)
+                if (LOGGER.isTraceEnabled() && batchSize > 0)
                 {
-                    LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+                    LOGGER.trace("Committing: batch size " + batchSize );
                 }
                 _jmsDelegate.commitIfNecessary(_command.getSessionName());
 
                 doSleepForInterval();
             }
-
-            if (_command.getNumberOfMessages() > 0 && numberOfMessagesSent >= _command.getNumberOfMessages()
-                            || requiredDuration > 0 && System.currentTimeMillis() - startTime >= requiredDuration)
-            {
-                break;
-            }
         }
 
         // commit the remaining batch messages
-        if (_command.getBatchSize() > 0 && numberOfMessagesSent % _command.getBatchSize() != 0)
+        if (batchSize > 0 && numberOfMessagesSent % batchSize != 0)
         {
             if (LOGGER.isTraceEnabled())
             {
-                LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
+                LOGGER.trace("Committing: batch size " + batchSize );
             }
             _jmsDelegate.commitIfNecessary(_command.getSessionName());
+        }
+
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Producer {} finished publishing. Number of messages published: {}",
+                        getName(), numberOfMessagesSent);
         }
 
         Date start = new Date(startTime);
