@@ -21,7 +21,6 @@ package org.apache.qpid.disttest.message;
 
 public class CreateConsumerCommand extends CreateParticpantCommand
 {
-    private boolean _isTopic;
     private boolean _isDurableSubscription;
     private boolean _isBrowsingSubscription;
     private String _selector;
@@ -73,16 +72,6 @@ public class CreateConsumerCommand extends CreateParticpantCommand
     public void setNoLocal(final boolean noLocal)
     {
         this._noLocal = noLocal;
-    }
-
-    public boolean isTopic()
-    {
-        return _isTopic;
-    }
-
-    public void setTopic(boolean isTopic)
-    {
-        this._isTopic = isTopic;
     }
 
     public boolean isSynchronous()
