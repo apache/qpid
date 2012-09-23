@@ -33,6 +33,7 @@ public abstract class ParticipantConfig
     private boolean _alreadyLoggedAboutOverriddenDuration;
 
     private String _destinationName;
+    private boolean _isTopic;
     private long _numberOfMessages;
     private String _name;
     private int _batchSize;
@@ -51,12 +52,14 @@ public abstract class ParticipantConfig
     public ParticipantConfig(
             String name,
             String destinationName,
+            boolean isTopic,
             long numberOfMessages,
             int batchSize,
             long maximumDuration)
     {
         _name = name;
         _destinationName = destinationName;
+        _isTopic = isTopic;
         _numberOfMessages = numberOfMessages;
         _batchSize = batchSize;
         _maximumDuration = maximumDuration;
@@ -66,6 +69,7 @@ public abstract class ParticipantConfig
     {
         createParticipantCommand.setParticipantName(_name);
         createParticipantCommand.setDestinationName(_destinationName);
+        createParticipantCommand.setTopic(_isTopic);
         createParticipantCommand.setNumberOfMessages(_numberOfMessages);
         createParticipantCommand.setBatchSize(_batchSize);
 
