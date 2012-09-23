@@ -32,7 +32,7 @@ public class ParticipantConfigTest extends QpidTestCase
         setTestSystemProperty(ParticipantConfig.DURATION_OVERRIDE_SYSTEM_PROPERTY, String.valueOf(overriddenDuration));
 
         CreateParticpantCommand createParticipantCommand = mock(CreateParticpantCommand.class);
-        ParticipantConfig participantConfig = new ParticipantConfig("name", "destinationName", 1, 2, 5000)
+        ParticipantConfig participantConfig = new ParticipantConfig("name", "destinationName", false, 1, 2, 5000)
         {
         };
 

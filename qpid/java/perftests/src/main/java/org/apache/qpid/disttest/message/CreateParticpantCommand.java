@@ -23,6 +23,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 public abstract class CreateParticpantCommand extends Command
 {
+    private boolean _isTopic;
     private String _participantName;
     private String _sessionName;
     private String _destinationName;
@@ -63,6 +64,16 @@ public abstract class CreateParticpantCommand extends Command
     public void setDestinationName(final String destinationName)
     {
         _destinationName = destinationName;
+    }
+
+    public boolean isTopic()
+    {
+        return _isTopic;
+    }
+
+    public void setTopic(boolean isTopic)
+    {
+        _isTopic = isTopic;
     }
 
     public long getNumberOfMessages()

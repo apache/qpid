@@ -218,7 +218,15 @@ public class ClientJmsDelegate
 
             synchronized(session)
             {
-                final Destination destination = session.createQueue(command.getDestinationName());
+                final Destination destination;
+                if(command.isTopic())
+                {
+                    destination = session.createTopic(command.getDestinationName());
+                }
+                else
+                {
+                    destination = session.createQueue(command.getDestinationName());
+                }
 
                 final MessageProducer jmsProducer = session.createProducer(destination);
 
