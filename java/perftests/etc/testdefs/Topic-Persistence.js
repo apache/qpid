@@ -26,8 +26,9 @@ var jsonObject = {
     {
       "_name": "Topic persistence",
       "_iterations": [
-        // note that we use _durableSubscription (the JaveBeans property name)
-        // rather than _isDurableSubscription (the field name)
+        // Note that we use _durableSubscription (more like the JavaBeans property name)
+        // rather than _isDurableSubscription (the field name, which we use elsewhere).
+        // This convention is required within the _iterations definition.
         {
           "_deliveryMode": 1,
           "_durableSubscription": false
