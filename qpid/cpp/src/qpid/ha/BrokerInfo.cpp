@@ -43,6 +43,8 @@ using types::Uuid;
 using types::Variant;
 using framing::FieldTable;
 
+BrokerInfo::BrokerInfo() : port(0), status(JOINING) {}
+
 BrokerInfo::BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
     hostName(host), port(port_), systemId(id), status(JOINING)
 {
