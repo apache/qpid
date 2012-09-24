@@ -598,24 +598,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 break;
             }
         }
-
-        reconfigure();
-    }
-
-    private void reconfigure()
-    {
-        //Reconfigure the queue for to reflect this new binding.
-        ConfigurationPlugin config = getVirtualHost().getConfiguration().getQueueConfiguration(this);
-
-        if (config != null)
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Reconfiguring queue(" + this + ") with config:" + config + " was "+ _queueConfiguration);
-            }
-            // Reconfigure with new config.
-            configure(config);
-        }
     }
 
     public int getBindingCountHigh()
@@ -626,8 +608,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public void removeBinding(final Binding binding)
     {
         _bindings.remove(binding);
-
-        reconfigure();
     }
 
     public List<Binding> getBindings()
@@ -2137,32 +2117,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     }
 
 
-    public void configure(ConfigurationPlugin config)
+    public void configure(QueueConfiguration config)
     {
         if (config != null)
         {
-            if (config instanceof QueueConfiguration)
-            {
-
-                setMaximumMessageAge(((QueueConfiguration)config).getMaximumMessageAge());
-                setMaximumQueueDepth(((QueueConfiguration)config).getMaximumQueueDepth());
-                setMaximumMessageSize(((QueueConfiguration)config).getMaximumMessageSize());
-                setMaximumMessageCount(((QueueConfiguration)config).getMaximumMessageCount());
-                setMinimumAlertRepeatGap(((QueueConfiguration)config).getMinimumAlertRepeatGap());
-                setMaximumDeliveryCount(((QueueConfiguration)config).getMaxDeliveryCount());
-                _capacity = ((QueueConfiguration)config).getCapacity();
-                _flowResumeCapacity = ((QueueConfiguration)config).getFlowResumeCapacity();
-            }
-
-            _queueConfiguration = config;
-
+            setMaximumMessageAge(config.getMaximumMessageAge());
+            setMaximumQueueDepth(config.getMaximumQueueDepth());
+            setMaximumMessageSize(config.getMaximumMessageSize());
+            setMaximumMessageCount(config.getMaximumMessageCount());
+            setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
+            setMaximumDeliveryCount(config.getMaxDeliveryCount());
+            _capacity = config.getCapacity();
+            _flowResumeCapacity = config.getFlowResumeCapacity();
         }
-    }
-
-
-    public ConfigurationPlugin getConfiguration()
-    {
-        return _queueConfiguration;
     }
 
     public long getMessageDequeueCount()
