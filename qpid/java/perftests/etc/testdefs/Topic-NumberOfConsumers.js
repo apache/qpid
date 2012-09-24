@@ -42,6 +42,7 @@ for(i=0; i < numbersOfConsumers.length ; i++)
               "_sessions": [
                 {
                   "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -67,6 +68,7 @@ for(i=0; i < numbersOfConsumers.length ; i++)
               "_sessions": [
                 {
                   "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
                   "_consumers": [
                     {
                       "_name": "Consumer-__INDEX",

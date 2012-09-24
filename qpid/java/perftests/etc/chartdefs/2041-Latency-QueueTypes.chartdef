@@ -20,7 +20,7 @@
 chartType=STATISTICAL_BAR
 chartTitle=Latency on different queues
 chartSubtitle=Persistent 1KB messages
-chartDescription=1P 1C, persistent, auto-ack with message payload 1KB. Sorted queue - 400 random keys, Priority - 200 random priorities.
+chartDescription=1P 1C, persistent, auto-ack with message payload 1KB. Sorted queue - 400 varied keys, Priority - 200 varied priorities.
 
 xAxisTitle=Queue type
 yAxisTitle=Latency (millis)

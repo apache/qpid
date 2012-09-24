@@ -20,7 +20,7 @@
 chartType=STATISTICAL_BAR
 chartTitle=Latency with consumers having 50%-overlapping selectors
 chartSubtitle=Transient 1KB messages
-chartDescription=1P 1-10C, transient, auto-ack, with message payload between 1KB.
+chartDescription=1P 1-10C, transient, auto-ack, with message payload 1KB.
 
 xAxisTitle=Consumers
 yAxisTitle=Latency (millis)
