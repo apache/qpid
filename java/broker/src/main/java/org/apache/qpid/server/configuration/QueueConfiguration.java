@@ -193,43 +193,4 @@ public class QueueConfiguration extends ConfigurationPlugin
     {
         return getBooleanValue("deadLetterQueues", _vHostConfig.isDeadLetterQueueEnabled());
     }
-
-    public static class QueueConfig extends ConfigurationPlugin
-    {
-        @Override
-        public String[] getElementsProcessed()
-        {
-            return new String[]{"name"};
-        }
-
-        public String getName()
-        {
-            return getStringValue("name");
-        }
-
-
-        public void validateConfiguration() throws ConfigurationException
-        {
-            if (getConfig().isEmpty())
-            {
-                throw new ConfigurationException("Queue section cannot be empty.");
-            }
-
-            if (getName() == null)
-            {
-                throw new ConfigurationException("Queue section must have a 'name' element.");
-            }
-
-        }
-
-
-        @Override
-        public String formatToString()
-        {
-            return "Name:"+getName();
-        }
-          
-
-    }
-
 }

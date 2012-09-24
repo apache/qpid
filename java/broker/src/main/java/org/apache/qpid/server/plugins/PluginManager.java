@@ -34,7 +34,6 @@ import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.server.configuration.TopicConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
@@ -148,7 +147,6 @@ public class PluginManager implements Closeable
             _securityPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
         for (ConfigurationPluginFactory configFactory : Arrays.asList(
-                TopicConfiguration.FACTORY,
                 SecurityManager.SecurityConfiguration.FACTORY,
                 LegacyAccess.LegacyAccessConfiguration.FACTORY,
                 PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration.FACTORY,

@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
@@ -508,14 +509,9 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
-    public void configure(ConfigurationPlugin config)
+    public void configure(QueueConfiguration config)
     {
 
-    }
-
-    public ConfigurationPlugin getConfiguration()
-    {
-        return null;
     }
 
     public AuthorizationHolder getAuthorizationHolder()
