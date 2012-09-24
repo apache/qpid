@@ -23,18 +23,11 @@ package org.apache.qpid.server.configuration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -147,105 +140,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
                 return null;
             }
         }
-    }
-
-    public ConfigurationPlugin getQueueConfiguration(AMQQueue queue)
-    {
-        VirtualHostConfiguration hostConfig = queue.getVirtualHost().getConfiguration();
-
-        // First check if we have a named queue configuration (the easy case)
-        if (Arrays.asList(hostConfig.getQueueNames()).contains(queue.getName()))
-        {
-            return null;
-        }
-
-        // We don't have an explicit queue config we must find out what we need.
-        ArrayList<Binding> bindings = new ArrayList<Binding>(queue.getBindings());
-
-        List<AMQShortString> exchangeClasses = new ArrayList<AMQShortString>(bindings.size());
-
-        //Remove default exchange
-        for (int index = 0; index < bindings.size(); index++)
-        {
-            // Ignore the DEFAULT Exchange binding
-            if (bindings.get(index).getExchange().getNameShortString().equals(ExchangeDefaults.DEFAULT_EXCHANGE_NAME))
-            {
-                bindings.remove(index);
-            }
-            else
-            {
-                exchangeClasses.add(bindings.get(index).getExchange().getType().getName());
-
-                if (exchangeClasses.size() > 1)
-                {
-                    // If we have more than 1 class of exchange then we can only use the global queue configuration.
-                    // and this will be returned from the default getQueueConfiguration
-                    return null;
-                }
-            }
-        }
-
-        // If we are just bound the the default exchange then use the default.
-        if (bindings.isEmpty())
-        {
-            return null;
-        }
-
-        // If we are bound to only one type of exchange then we are going
-        // to have to resolve the configuration for that exchange.
-
-        String exchangeName = bindings.get(0).getExchange().getType().getName().toString();
-
-        // Lookup a Configuration handler for this Exchange.
-
-        // Build the expected class name. <Exchangename>sConfiguration
-        // i.e. TopicConfiguration or HeadersConfiguration
-        String exchangeClass = "org.apache.qpid.server.configuration."
-                               + exchangeName.substring(0, 1).toUpperCase()
-                               + exchangeName.substring(1) + "Configuration";
-
-        ExchangeConfigurationPlugin exchangeConfiguration
-                = (ExchangeConfigurationPlugin) queue.getVirtualHost().getConfiguration().getConfiguration(exchangeClass);
-
-        // now need to perform the queue-topic-topics-queues magic.
-        // So make a new ConfigurationObject that will hold all the configuration for this queue.
-        ConfigurationPlugin queueConfig = new QueueConfiguration.QueueConfig();
-
-        // Initialise the queue with any Global values we may have
-        PropertiesConfiguration newQueueConfig = new PropertiesConfiguration();
-        newQueueConfig.setProperty("name", queue.getName());
-
-        try
-        {
-            //Set the queue name
-            CompositeConfiguration mungedConf = new CompositeConfiguration();
-            //Set the queue name
-            mungedConf.addConfiguration(newQueueConfig);
-            //Set the global queue configuration
-            mungedConf.addConfiguration(getConfig().subset("queues"));
-
-            // Set configuration
-            queueConfig.setConfiguration("virtualhosts.virtualhost.queues", mungedConf);
-        }
-        catch (ConfigurationException e)
-        {
-            // This will not occur as queues only require a name.
-            _logger.error("QueueConfiguration requirements have changed.");
-        }
-
-        // Merge any configuration the Exchange wishes to apply        
-        if (exchangeConfiguration != null)
-        {
-            queueConfig.addConfiguration(exchangeConfiguration.getConfiguration(queue));
-        }
-
-        //Finally merge in any specific queue configuration we have.
-        if (_queues.containsKey(queue.getName()))
-        {
-            queueConfig.addConfiguration(_queues.get(queue.getName()));
-        }
-
-        return queueConfig;
     }
 
     public int getMaximumMessageAge()
