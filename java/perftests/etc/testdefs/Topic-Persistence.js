@@ -48,6 +48,7 @@ var jsonObject = {
               "_sessions": [
                 {
                   "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
                   "_producers": [
                     {
                       "_name": "Producer",
@@ -73,6 +74,7 @@ var jsonObject = {
               "_sessions": [
                 {
                   "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
                   "_consumers": [
                     {
                       "_name": "Consumer-__INDEX",
