@@ -53,20 +53,22 @@ void TxBuffer::enlist(TxOp::shared_ptr op)
     ops.push_back(op);
 }
 
-bool TxBuffer::commitLocal(TransactionalStore* const store)
+//bool TxBuffer::commitLocal(TransactionalStore* const store)
+bool TxBuffer::commitLocal(AsyncTransactionalStore* const asyncTxnStore)
 {
-    if (!store) return false;
+    if (!asyncTxnStore) return false;
     try {
-        std::auto_ptr<TransactionContext> ctxt = store->begin();
-        if (prepare(ctxt.get())) {
-            store->commit(*ctxt);
-            commit();
-            return true;
-        } else {
-            store->abort(*ctxt);
-            rollback();
-            return false;
-        }
+//        std::auto_ptr<TransactionContext> ctxt = asyncTxnStore->begin();
+//        if (prepare(ctxt.get())) {
+//            asyncTxnStore->commit(*ctxt);
+//            commit();
+//            return true;
+//        } else {
+//            asyncTxnStore->abort(*ctxt);
+//            rollback();
+//            return false;
+//        }
+        // TODO: kpvdr: add async local transaction commits here
     } catch (std::exception& e) {
         QPID_LOG(error, "Commit failed with exception: " << e.what());
     } catch (...) {

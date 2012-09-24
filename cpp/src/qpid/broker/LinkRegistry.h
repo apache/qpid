@@ -25,7 +25,7 @@
 #include <map>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Bridge.h"
-#include "qpid/broker/MessageStore.h"
+//#include "qpid/broker/MessageStore.h"
 #include "qpid/Address.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
@@ -52,7 +52,8 @@ namespace broker {
         qpid::sys::Mutex lock;
         Broker* broker;
         management::Manageable* parent;
-        MessageStore* store;
+//        MessageStore* store;
+        AsyncStore* asyncStore;
         bool passive;
         std::string realm;
 
@@ -130,12 +131,14 @@ namespace broker {
         /**
          * Set the store to use.  May only be called once.
          */
-        QPID_BROKER_EXTERN void setStore (MessageStore*);
+//        QPID_BROKER_EXTERN void setStore (MessageStore*);
+        QPID_BROKER_EXTERN void setStore (AsyncStore*);
 
         /**
          * Return the message store used.
          */
-        QPID_BROKER_EXTERN MessageStore* getStore() const;
+//        QPID_BROKER_EXTERN MessageStore* getStore() const;
+        QPID_BROKER_EXTERN AsyncStore* getStore() const;
 
         QPID_BROKER_EXTERN std::string getAuthMechanism   (const std::string& key);
         QPID_BROKER_EXTERN std::string getAuthCredentials (const std::string& key);

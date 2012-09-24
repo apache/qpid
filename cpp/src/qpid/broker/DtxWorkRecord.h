@@ -21,6 +21,7 @@
 #ifndef _DtxWorkRecord_
 #define _DtxWorkRecord_
 
+#include "qpid/broker/AsyncStore.h"
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/DtxBuffer.h"
 #include "qpid/broker/DtxTimeout.h"
@@ -48,7 +49,8 @@ class DtxWorkRecord
     typedef std::vector<DtxBuffer::shared_ptr> Work;
 
     const std::string xid;
-    TransactionalStore* const store;
+//    TransactionalStore* const store;
+    AsyncTransactionalStore* const asyncTxnStore;
     bool completed;
     bool rolledback;
     bool prepared;
@@ -63,7 +65,8 @@ class DtxWorkRecord
     bool prepare(TransactionContext* txn);
 public:
     QPID_BROKER_EXTERN DtxWorkRecord(const std::string& xid,
-                                     TransactionalStore* const store);
+//                                     TransactionalStore* const store);
+                                       AsyncTransactionalStore* const store);
     QPID_BROKER_EXTERN ~DtxWorkRecord();
     QPID_BROKER_EXTERN bool prepare();
     QPID_BROKER_EXTERN bool commit(bool onePhase);

@@ -195,4 +195,8 @@ bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const
 bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const FieldTable* const) { return false; }
 std::string QueueReplicator::getType() const { return TYPE_NAME; }
 
+// DataSource interface - used to write persistence data to async store
+uint64_t QueueReplicator::getSize() { return 0; }
+void QueueReplicator::write(char* /*target*/) {}
+
 }} // namespace qpid::broker

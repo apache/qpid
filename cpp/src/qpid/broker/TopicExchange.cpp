@@ -337,4 +337,11 @@ TopicExchange::~TopicExchange() {}
 
 const std::string TopicExchange::typeName("topic");
 
+// DataSource interface - used to write persistence data to async store
+// TODO: kpvdr: implement
+uint64_t TopicExchange::getSize() {
+    return 0;
+}
+void TopicExchange::write(char* /*target*/) {}
+
 }} // namespace qpid::broker

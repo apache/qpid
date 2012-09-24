@@ -100,12 +100,14 @@ Queue::shared_ptr QueueRegistry::get(const string& name) {
     return q;
 }
 
-void QueueRegistry::setStore (MessageStore* _store)
+//void QueueRegistry::setStore (MessageStore* _store)
+void QueueRegistry::setStore (AsyncStore* _store)
 {
     QueueFactory::setStore(_store);
 }
 
-MessageStore* QueueRegistry::getStore() const
+//MessageStore* QueueRegistry::getStore() const
+AsyncStore* QueueRegistry::getStore() const
 {
     return QueueFactory::getStore();
 }

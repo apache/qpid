@@ -655,7 +655,9 @@ XaResult SessionAdapter::DtxHandlerImpl::rollback(const Xid& xid)
 DtxRecoverResult SessionAdapter::DtxHandlerImpl::recover()
 {
     std::set<std::string> xids;
-    getBroker().getStore().collectPreparedXids(xids);
+//    getBroker().getStore().collectPreparedXids(xids);
+    // TODO: kpvdr: When designing async store with gsim, it was decided that this function
+    // would be performed outside the store. Resolve this function.
     /*
      * create array of long structs
      */

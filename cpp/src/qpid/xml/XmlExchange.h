@@ -94,6 +94,10 @@ class XmlExchange : public virtual Exchange {
 
     virtual ~XmlExchange();
 
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize();
+    void write(char* target);
+
     struct MatchOrigin {
         const std::string origin;
         MatchOrigin(const std::string& origin);

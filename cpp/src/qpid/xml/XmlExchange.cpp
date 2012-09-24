@@ -430,6 +430,11 @@ bool XmlExchange::MatchQueueAndOrigin::operator()(XmlBinding::shared_ptr b)
 
 
 const std::string XmlExchange::typeName("xml");
- 
+
+
+// DataSource interface - used to write persistence data to async store
+uint64_t XmlExchange::getSize() { return 0; }
+void XmlExchange::write(char* /*target*/) {}
+
 }
 }

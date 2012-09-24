@@ -620,6 +620,10 @@ bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const frami
 bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
+// DataSource interface - used to write persistence data to async store
+uint64_t BrokerReplicator::getSize() { return 0; }
+void BrokerReplicator::write(char* /*target*/) {}
+
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
 
 }} // namespace broker

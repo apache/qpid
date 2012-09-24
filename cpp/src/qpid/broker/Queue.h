@@ -59,7 +59,7 @@ namespace qpid {
 namespace broker {
 class Broker;
 class Exchange;
-class MessageStore;
+//class MessageStore;
 class QueueDepth;
 class QueueEvents;
 class QueueRegistry;
@@ -115,7 +115,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     typedef boost::function1<void, Message&> MessageFunctor;
 
     const std::string name;
-    MessageStore* store;
+//    MessageStore* store;
+    AsyncStore* asyncStore;
     const OwnershipToken* owner;
     uint32_t consumerCount;     // Actually a count of all subscriptions, acquiring or not.
     uint32_t browserCount;      // Count of non-acquiring subscriptions.
@@ -201,7 +202,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     QPID_BROKER_EXTERN Queue(const std::string& name,
                              const QueueSettings& settings = QueueSettings(),
-                             MessageStore* const store = 0,
+//                             MessageStore* const store = 0,
+                             AsyncStore* const asyncStore = 0,
                              management::Manageable* parent = 0,
                              Broker* broker = 0);
     QPID_BROKER_EXTERN virtual ~Queue();
@@ -286,7 +288,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN bool setExclusiveOwner(const OwnershipToken* const o);
     QPID_BROKER_EXTERN bool hasExclusiveConsumer() const;
     QPID_BROKER_EXTERN bool hasExclusiveOwner() const;
-    inline bool isDurable() const { return store != 0; }
+//    inline bool isDurable() const { return store != 0; }
+    inline bool isDurable() const { return asyncStore != 0; }
     inline const QueueSettings& getSettings() const { return settings; }
     inline const qpid::framing::FieldTable& getEncodableSettings() const { return encodableSettings; }
     inline bool isAutoDelete() const { return settings.autodelete; }

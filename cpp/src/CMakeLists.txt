@@ -1122,7 +1122,12 @@ set (qpidbroker_SOURCES
      qpid/broker/FifoDistributor.cpp
      qpid/broker/MessageGroupManager.cpp
      qpid/broker/PersistableMessage.cpp
+     qpid/broker/AsyncResultHandle.cpp
+     qpid/broker/AsyncResultHandleImpl.cpp
+     qpid/broker/AsyncResultQueueImpl.cpp
      qpid/broker/Bridge.cpp
+     qpid/broker/ConfigAsyncContext.cpp
+     qpid/broker/ConfigHandle.cpp
      qpid/broker/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
      qpid/broker/ConnectionFactory.cpp
@@ -1145,9 +1150,9 @@ set (qpidbroker_SOURCES
      qpid/broker/MessageAdapter.cpp
      qpid/broker/MessageBuilder.cpp
      qpid/broker/MessageHandle.cpp
-     qpid/broker/MessageStoreModule.cpp
+#     qpid/broker/MessageStoreModule.cpp
      qpid/broker/NameGenerator.cpp
-     qpid/broker/NullMessageStore.cpp
+#     qpid/broker/NullMessageStore.cpp
      qpid/broker/QueueBindings.cpp
      qpid/broker/QueuedMessage.cpp
      qpid/broker/QueueCursor.cpp
@@ -1156,6 +1161,8 @@ set (qpidbroker_SOURCES
      qpid/broker/QueueRegistry.cpp
      qpid/broker/QueueSettings.cpp
      qpid/broker/QueueFlowLimit.cpp
+     qpid/broker/RecoveryAsyncContext.cpp
+     qpid/broker/RecoveryHandle.cpp
      qpid/broker/RecoveryManagerImpl.cpp
      qpid/broker/RecoveredEnqueue.cpp
      qpid/broker/RecoveredDequeue.cpp
@@ -1444,7 +1451,7 @@ add_definitions(-DBOOST_FILESYSTEM_VERSION=2)
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-add_subdirectory(qpid/store)
+#add_subdirectory(qpid/store)
 add_subdirectory(tests)
 
 # Support for pkg-config

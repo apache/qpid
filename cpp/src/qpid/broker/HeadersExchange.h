@@ -107,6 +107,11 @@ class HeadersExchange : public virtual Exchange {
 
     static QPID_BROKER_EXTERN bool match(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
     static bool equal(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
+
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize();
+    void write(char* target);
+
 };
 
 

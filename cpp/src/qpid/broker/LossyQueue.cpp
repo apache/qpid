@@ -33,8 +33,10 @@ bool isLowerPriorityThan(uint8_t priority, const Message& m)
 }
 }
 
-LossyQueue::LossyQueue(const std::string& n, const QueueSettings& s, MessageStore* const ms, management::Manageable* p, Broker* b)
-    : Queue(n, s, ms, p, b) {}
+//LossyQueue::LossyQueue(const std::string& n, const QueueSettings& s, MessageStore* const ms, management::Manageable* p, Broker* b)
+//    : Queue(n, s, ms, p, b) {}
+LossyQueue::LossyQueue(const std::string& n, const QueueSettings& s, AsyncStore* const as, management::Manageable* p, Broker* b)
+    : Queue(n, s, as, p, b) {}
 
 bool LossyQueue::checkDepth(const QueueDepth& increment, const Message& message)
 {

@@ -18,6 +18,9 @@
  * under the License.
  *
  */
+
+#error "deprected in favor of AsyncStore"
+
 #ifndef _NullMessageStore_
 #define _NullMessageStore_
 

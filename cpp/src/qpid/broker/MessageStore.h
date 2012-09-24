@@ -18,6 +18,9 @@
  * under the License.
  *
  */
+
+#error "deprecated in favor of AsyncStore"
+
 #ifndef _MessageStore_
 #define _MessageStore_
 

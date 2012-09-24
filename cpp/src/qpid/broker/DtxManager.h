@@ -22,9 +22,10 @@
 #define _DtxManager_
 
 #include <boost/ptr_container/ptr_map.hpp>
+#include "qpid/broker/AsyncStore.h"
 #include "qpid/broker/DtxBuffer.h"
 #include "qpid/broker/DtxWorkRecord.h"
-#include "qpid/broker/TransactionalStore.h"
+//#include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Xid.h"
 #include "qpid/sys/Mutex.h"
@@ -46,7 +47,8 @@ class DtxManager{
     };
 
     WorkMap work;
-    TransactionalStore* store;
+//    TransactionalStore* store;
+    AsyncTransactionalStore* asyncTxnStore;
     qpid::sys::Mutex lock;
     qpid::sys::Timer* timer;
 
@@ -65,7 +67,8 @@ public:
     void setTimeout(const std::string& xid, uint32_t secs);
     uint32_t getTimeout(const std::string& xid);
     void timedout(const std::string& xid);
-    void setStore(TransactionalStore* store);
+//    void setStore(TransactionalStore* store);
+    void setStore(AsyncTransactionalStore* ats);
     void setTimer(sys::Timer& t) { timer = &t; }
 
     // Used by cluster for replication.

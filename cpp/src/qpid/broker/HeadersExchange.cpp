@@ -418,3 +418,9 @@ bool HeadersExchange::FedUnbindModifier::operator()(BoundKey & bk)
     return true;
 }
 
+// DataSource interface - used to write persistence data to async store
+// TODO: kpvdr: implement
+uint64_t HeadersExchange::getSize() {
+    return 0;
+}
+void HeadersExchange::write(char* /*target*/) {}

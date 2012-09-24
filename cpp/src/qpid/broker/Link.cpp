@@ -115,6 +115,11 @@ public:
         link = _link;
     }
 
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize() { return 0; }
+    void write(char* /*target*/) {}
+
+
 private:
     Link *link;
 };

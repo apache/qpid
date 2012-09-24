@@ -23,10 +23,11 @@
  */
 
 #include <boost/shared_ptr.hpp>
+#include <qpid/broker/AsyncStore.h>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/Message.h"
-#include "qpid/broker/MessageStore.h"
+//#include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Mutex.h"
@@ -35,13 +36,15 @@
 #include "qmf/org/apache/qpid/broker/Binding.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
 
+#include <set>
+
 namespace qpid {
 namespace broker {
 
 class Broker;
 class ExchangeRegistry;
 
-class QPID_BROKER_CLASS_EXTERN Exchange : public PersistableExchange, public management::Manageable {
+class QPID_BROKER_CLASS_EXTERN Exchange : public PersistableExchange, public DataSource, public management::Manageable {
 public:
     struct Binding : public management::Manageable {
         typedef boost::shared_ptr<Binding>       shared_ptr;

@@ -109,6 +109,11 @@ public:
     QPID_BROKER_EXTERN virtual ~TopicExchange();
     virtual bool supportsDynamicBinding() { return true; }
 
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize();
+    void write(char* target);
+
+
     class TopicExchangeTester;
     friend class TopicExchangeTester;
 };

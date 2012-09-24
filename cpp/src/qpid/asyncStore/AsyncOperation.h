@@ -90,6 +90,18 @@ private:
 };
 
 
+class AsyncOpRecover: public qpid::asyncStore::AsyncOperation {
+public:
+    AsyncOpRecover(qpid::broker::RecoveryHandle& rcvrHandle,
+                   boost::shared_ptr<qpid::broker::RecoveryAsyncContext> rcvrCtxt,
+                   qpid::broker::AsyncStore* store);
+    virtual ~AsyncOpRecover();
+    virtual void executeOp() const;
+    virtual const char* getOpStr() const;
+private:
+    qpid::broker::RecoveryHandle& m_rcvrHandle;
+};
+
 class AsyncOpConfigCreate: public qpid::asyncStore::AsyncOperation {
 public:
     AsyncOpConfigCreate(qpid::broker::ConfigHandle& cfgHandle,

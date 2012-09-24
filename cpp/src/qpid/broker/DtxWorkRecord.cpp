@@ -29,8 +29,8 @@ using qpid::sys::Mutex;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) :
-    xid(_xid), store(_store), completed(false), rolledback(false), prepared(false), expired(false) {}
+DtxWorkRecord::DtxWorkRecord(const std::string& _xid, AsyncTransactionalStore* const _ats) :
+    xid(_xid), asyncTxnStore(_ats), completed(false), rolledback(false), prepared(false), expired(false) {}
 
 DtxWorkRecord::~DtxWorkRecord()
 {
@@ -43,14 +43,15 @@ bool DtxWorkRecord::prepare()
 {
     Mutex::ScopedLock locker(lock);
     if (check()) {
-        txn = store->begin(xid);
-        if (prepare(txn.get())) {
-            store->prepare(*txn);
-            prepared = true;
-        } else {
-            abort();
-            //TODO: this should probably be flagged as internal error
-        }
+//        txn = asyncTxnStore->begin(xid);
+//        if (prepare(txn.get())) {
+//            asyncTxnStore->prepare(*txn);
+//            prepared = true;
+//        } else {
+//            abort();
+//            //TODO: this should probably be flagged as internal error
+//        }
+        // TODO: kpvdr: Async transaction prepare here
     } else {
         //some part of the work has been marked rollback only
         abort();
@@ -67,7 +68,7 @@ bool DtxWorkRecord::prepare(TransactionContext* _txn)
     return succeeded;
 }
 
-bool DtxWorkRecord::commit(bool onePhase)
+bool DtxWorkRecord::commit(bool onePhase) // why is onePhase necessary if prepared already contains the necessary state?
 {
     Mutex::ScopedLock locker(lock);
     if (check()) {
@@ -77,7 +78,8 @@ bool DtxWorkRecord::commit(bool onePhase)
                 throw IllegalStateException(QPID_MSG("Branch with xid " << DtxManager::convert(xid) << " has been prepared, one-phase option not valid!"));
             }
 
-            store->commit(*txn);
+//            asyncTxnStore->commit(*txn);
+            // TODO: kpvdr: Async transaction commit here
             txn.reset();
 
             std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
@@ -87,17 +89,20 @@ bool DtxWorkRecord::commit(bool onePhase)
             if (!onePhase) {
                 throw IllegalStateException(QPID_MSG("Branch with xid " << DtxManager::convert(xid) << " has not been prepared, one-phase option required!"));
             }
-            std::auto_ptr<TransactionContext> localtxn = store->begin();
-            if (prepare(localtxn.get())) {
-                store->commit(*localtxn);
-                std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
-                return true;
-            } else {
-                store->abort(*localtxn);
-                abort();
-                //TODO: this should probably be flagged as internal error
-                return false;
-            }
+//            std::auto_ptr<TransactionContext> localtxn = asyncTxnStore->begin();
+//            if (prepare(localtxn.get())) {
+//                asyncTxnStore->commit(*localtxn);
+//                std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
+//                return true;
+//            } else {
+//                asyncTxnStore->abort(*localtxn);
+//                abort();
+//                //TODO: this should probably be flagged as internal error
+//                return false;
+//            }
+            // TODO: kpvdr: Local transaction async prepare and commit here
+            // temp return value:
+            return true;
         }
     } else {
         //some part of the work has been marked rollback only
@@ -147,7 +152,8 @@ bool DtxWorkRecord::check()
 void DtxWorkRecord::abort()
 {
     if (txn.get()) {
-        store->abort(*txn);
+//        asyncTxnStore->abort(*txn);
+        // TODO: kpvdr: Async transaction abore here
         txn.reset();
     }
     std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::rollback));

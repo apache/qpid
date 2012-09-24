@@ -24,9 +24,9 @@
 #ifndef qpid_broker_QueueAsyncContext_h_
 #define qpid_broker_QueueAsyncContext_h_
 
-#include "AsyncResultHandle.h"
-#include "AsyncStore.h"
-#include "TxnHandle.h"
+#include "qpid/broker/AsyncResultHandle.h"
+#include "qpid/broker/AsyncStore.h"
+#include "qpid/broker/TxnHandle.h"
 
 #include "qpid/asyncStore/AsyncOperation.h"
 
@@ -36,7 +36,7 @@
 namespace qpid {
 namespace broker {
 
-class PersistableMessage;
+//class PersistableMessage;
 class PersistableQueue;
 
 typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);

@@ -120,3 +120,11 @@ bool FanOutExchange::isBound(Queue::shared_ptr queue, const string* const, const
 FanOutExchange::~FanOutExchange() {}
 
 const std::string FanOutExchange::typeName("fanout");
+
+
+// DataSource interface - used to write persistence data to async store
+// TODO: kpvdr: implement
+uint64_t FanOutExchange::getSize() {
+    return 0;
+}
+void FanOutExchange::write(char* /*target*/) {}

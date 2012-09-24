@@ -55,7 +55,8 @@ namespace qpid {
 namespace broker {
 
 class Exchange;
-class MessageStore;
+//class MessageStore;
+class AsyncStore;
 class SessionContext;
 class SessionState;
 
@@ -233,7 +234,8 @@ class SemanticState : private boost::noncopyable {
     void stop(const std::string& destination);
 
     void startTx();
-    void commit(MessageStore* const store);
+//    void commit(MessageStore* const store);
+    void commit(AsyncStore* const store);
     void rollback();
     void selectDtx();
     bool getDtxSelected() const { return dtxSelected; }

@@ -41,7 +41,8 @@ namespace qpid {
 namespace broker {
 
 
-QueueFactory::QueueFactory() : broker(0), store(0), parent(0) {}
+//QueueFactory::QueueFactory() : broker(0), store(0), parent(0) {}
+QueueFactory::QueueFactory() : broker(0), asyncStore(0), parent(0) {}
 
 boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const QueueSettings& settings)
 {
@@ -51,12 +52,15 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
     // -> if 'ring' policy is in use then subclass
     boost::shared_ptr<Queue> queue;
     if (settings.dropMessagesAtLimit) {
-        queue = boost::shared_ptr<Queue>(new LossyQueue(name, settings, settings.durable ? store : 0, parent, broker));
+//        queue = boost::shared_ptr<Queue>(new LossyQueue(name, settings, settings.durable ? store : 0, parent, broker));
+        queue = boost::shared_ptr<Queue>(new LossyQueue(name, settings, settings.durable ? asyncStore : 0, parent, broker));
     } else if (settings.lvqKey.size()) {
         std::auto_ptr<MessageMap> map(new MessageMap(settings.lvqKey));
-        queue = boost::shared_ptr<Queue>(new Lvq(name, map, settings, settings.durable ? store : 0, parent, broker));
+//        queue = boost::shared_ptr<Queue>(new Lvq(name, map, settings, settings.durable ? store : 0, parent, broker));
+        queue = boost::shared_ptr<Queue>(new Lvq(name, map, settings, settings.durable ? asyncStore : 0, parent, broker));
     } else {
-        queue = boost::shared_ptr<Queue>(new Queue(name, settings, settings.durable ? store : 0, parent, broker));
+//        queue = boost::shared_ptr<Queue>(new Queue(name, settings, settings.durable ? store : 0, parent, broker));
+        queue = boost::shared_ptr<Queue>(new Queue(name, settings, settings.durable ? asyncStore : 0, parent, broker));
     }
 
     //2. determine Messages type (i.e. structure)
@@ -98,13 +102,15 @@ Broker* QueueFactory::getBroker()
 {
     return broker;
 }
-void QueueFactory::setStore (MessageStore* s)
+//void QueueFactory::setStore (MessageStore* s)
+void QueueFactory::setStore (AsyncStore* as)
 {
-    store = s;
+    asyncStore = as;
 }
-MessageStore* QueueFactory::getStore() const
+//MessageStore* QueueFactory::getStore() const
+AsyncStore* QueueFactory::getStore() const
 {
-    return store;
+    return asyncStore;
 }
 void QueueFactory::setParent(management::Manageable* p)
 {

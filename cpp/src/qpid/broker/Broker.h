@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/broker/AsyncResultQueueImpl.h"
 #include "qpid/broker/AsyncStore.h"
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionFactory.h"
@@ -29,7 +30,7 @@
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/DtxManager.h"
 #include "qpid/broker/ExchangeRegistry.h"
-#include "qpid/broker/MessageStore.h"
+//#include "qpid/broker/MessageStore.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/LinkRegistry.h"
 #include "qpid/broker/SessionManager.h"
@@ -138,6 +139,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     void declareStandardExchange(const std::string& name, const std::string& type);
     void setStore ();
+    static void recoverComplete(const AsyncResultHandle* const);
+    static void configureComplete(const AsyncResultHandle* const);
     void setLogLevel(const std::string& level);
     std::string getLogLevel();
     void createObject(const std::string& type, const std::string& name,
@@ -160,7 +163,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
-    std::auto_ptr<MessageStore> store;
+//    std::auto_ptr<MessageStore> store;
+//    std::auto_ptr<AsyncStore> asyncStore;
+    boost::shared_ptr<AsyncStore> asyncStore;
+    AsyncResultQueueImpl asyncResultQueue;
     AclModule* acl;
     DataDir dataDir;
     ConnectionObservers connectionObservers;
@@ -213,9 +219,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Shut down the broker */
     QPID_BROKER_EXTERN virtual void shutdown();
 
-    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
-    void setAsyncStore(boost::shared_ptr<AsyncStore>& asyncStore);
-    MessageStore& getStore() { return *store; }
+//    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
+    void setStore(boost::shared_ptr<AsyncStore>& asyncStore);
+//    MessageStore& getStore() { return *store; }
+    AsyncStore& getStore() { return *asyncStore; }
     void setAcl (AclModule* _acl) {acl = _acl;}
     AclModule* getAcl() { return acl; }
     QueueRegistry& getQueues() { return queues; }

@@ -155,7 +155,8 @@ void SemanticState::startTx()
     txBuffer = TxBuffer::shared_ptr(new TxBuffer());
 }
 
-void SemanticState::commit(MessageStore* const store)
+//void SemanticState::commit(MessageStore* const store)
+void SemanticState::commit(AsyncStore* const store)
 {
     if (!txBuffer) throw
         CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));

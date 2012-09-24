@@ -47,7 +47,7 @@ public:
     AsyncStoreImpl(boost::shared_ptr<qpid::sys::Poller> poller,
                    const AsyncStoreOptions& opts);
     virtual ~AsyncStoreImpl();
-    void initialize();
+    void initialize(bool truncateFlag = false, bool saveFlag = true);
     uint64_t getNextRid(); // Global counter for journal RIDs
 
     // --- Management ---
@@ -65,11 +65,17 @@ public:
                                             qpid::broker::SimpleTxnBuffer* tb);
 
     void submitPrepare(qpid::broker::TxnHandle& txnHandle,
-                       boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> TxnCtxt);
+                       boost::shared_ptr<qpid::broker::TpcTxnAsyncContext> txnCtxt);
     void submitCommit(qpid::broker::TxnHandle& txnHandle,
-                      boost::shared_ptr<qpid::broker::TxnAsyncContext> TxnCtxt);
+                      boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt);
     void submitAbort(qpid::broker::TxnHandle& txnHandle,
-                     boost::shared_ptr<qpid::broker::TxnAsyncContext> TxnCtxt);
+                     boost::shared_ptr<qpid::broker::TxnAsyncContext> txnCtxt);
+
+
+    // --- Interface from AsyncRecoverable ---
+    qpid::broker::RecoveryHandle createRecoveryHandle();
+    void submitRecover(qpid::broker::RecoveryHandle& rcvrHandle,
+                       boost::shared_ptr<qpid::broker::RecoveryAsyncContext> rcvrCtxt);
 
 
     // --- Interface from AsyncStore ---
@@ -112,12 +118,12 @@ public:
                        qpid::broker::TxnHandle& txnHandle,
                        boost::shared_ptr<qpid::broker::QueueAsyncContext> QueueCtxt);
 
-    // Legacy - Restore FTD message, is NOT async!
-    virtual int loadContent(qpid::broker::MessageHandle& msgHandle,
-                            qpid::broker::QueueHandle& queueHandle,
-                            char* data,
-                            uint64_t offset,
-                            const uint64_t length);
+//    // Legacy - Restore FTD message, is NOT async!
+//    virtual int loadContent(qpid::broker::MessageHandle& msgHandle,
+//                            qpid::broker::QueueHandle& queueHandle,
+//                            char* data,
+//                            uint64_t offset,
+//                            const uint64_t length);
 
 private:
     boost::shared_ptr<qpid::sys::Poller> m_poller;

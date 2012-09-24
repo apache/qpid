@@ -25,6 +25,7 @@
 
 #include "qpid/broker/AsyncResultHandle.h"
 #include "qpid/broker/AsyncResultHandleImpl.h"
+#include "qpid/broker/RecoveryAsyncContext.h"
 #include "qpid/broker/QueueAsyncContext.h"
 #include "qpid/broker/TxnAsyncContext.h"
 
@@ -129,6 +130,29 @@ AsyncOpTxnAbort::executeOp() const {
 const char*
 AsyncOpTxnAbort::getOpStr() const {
     return "TXN_ABORT";
+}
+
+
+// --- class AsyncOpRecover ---
+
+AsyncOpRecover::AsyncOpRecover(qpid::broker::RecoveryHandle& rcvrHandle,
+                               boost::shared_ptr<qpid::broker::RecoveryAsyncContext> rcvrCtxt,
+                               qpid::broker::AsyncStore* store) :
+        AsyncOperation(boost::dynamic_pointer_cast<qpid::broker::BrokerAsyncContext>(rcvrCtxt), store),
+        m_rcvrHandle(rcvrHandle)
+{}
+
+AsyncOpRecover::~AsyncOpRecover() {}
+
+void
+AsyncOpRecover::executeOp() const {
+    // TODO: Implement store operation here
+    submitResult();
+}
+
+const char*
+AsyncOpRecover::getOpStr() const {
+    return "RECOVER";
 }
 
 

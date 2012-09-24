@@ -54,6 +54,7 @@ set (asyncStore_SOURCES
 	qpid/asyncStore/PersistableMessageContext.cpp
 	qpid/asyncStore/Plugin.cpp
 	qpid/asyncStore/QueueHandleImpl.cpp
+	qpid/asyncStore/RecoveryHandleImpl.cpp
 	qpid/asyncStore/RunState.cpp
 	qpid/asyncStore/TxnHandleImpl.cpp
     qpid/broker/AsyncResultHandle.cpp
@@ -65,6 +66,8 @@ set (asyncStore_SOURCES
 	qpid/broker/MessageHandle.cpp
 	qpid/broker/QueueAsyncContext.cpp
 	qpid/broker/QueueHandle.cpp
+    qpid/broker/RecoveryAsyncContext.cpp
+    qpid/broker/RecoveryHandle.cpp
     qpid/broker/SimpleDeliverable.cpp
     qpid/broker/SimpleDeliveryRecord.cpp
 	qpid/broker/SimpleMessage.cpp

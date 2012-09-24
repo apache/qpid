@@ -80,16 +80,16 @@ class PersistableMessage : public Persistable
     QPID_BROKER_INLINE_EXTERN void enqueueStart() { ingressCompletion->startCompleter(); }
     QPID_BROKER_INLINE_EXTERN void enqueueComplete() { ingressCompletion->finishCompleter(); }
 
-    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue, // deprecated
-                                         MessageStore* _store);
+//    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue, // deprecated
+//                                         MessageStore* _store);
     QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
                                          AsyncStore* _store);
 
 
     QPID_BROKER_EXTERN bool isDequeueComplete();
     QPID_BROKER_EXTERN void dequeueComplete();
-    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue, // deprecated
-                                         MessageStore* _store);
+//    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue, // deprecated
+//                                         MessageStore* _store);
     QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
                                          AsyncStore* _store);
 

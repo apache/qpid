@@ -199,3 +199,10 @@ bool DirectExchange::isBound(Queue::shared_ptr queue, const string* const routin
 DirectExchange::~DirectExchange() {}
 
 const std::string DirectExchange::typeName("direct");
+
+// DataSource interface - used to write persistence data to async store
+// TODO: kpvdr: implement
+uint64_t DirectExchange::getSize() {
+    return 0;
+}
+void DirectExchange::write(char* /*target*/) {}

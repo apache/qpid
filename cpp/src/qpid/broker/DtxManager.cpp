@@ -35,7 +35,8 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(&t) {}
+//DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(&t) {}
+DtxManager::DtxManager(qpid::sys::Timer& t) : asyncTxnStore(0), timer(&t) {}
 
 DtxManager::~DtxManager() {}
 
@@ -124,7 +125,8 @@ DtxWorkRecord* DtxManager::createWork(const std::string& xid)
         throw NotAllowedException(QPID_MSG("Xid " << convert(xid) << " is already known (use 'join' to add work to an existing xid)"));
     } else {
         std::string ncxid = xid; // Work around const correctness problems in ptr_map.
-        return ptr_map_ptr(work.insert(ncxid, new DtxWorkRecord(ncxid, store)).first);
+//        return ptr_map_ptr(work.insert(ncxid, new DtxWorkRecord(ncxid, store)).first);
+        return ptr_map_ptr(work.insert(ncxid, new DtxWorkRecord(ncxid, asyncTxnStore)).first);
     }
 }
 
@@ -172,9 +174,11 @@ void DtxManager::DtxCleanup::fire()
     }
 }
 
-void DtxManager::setStore (TransactionalStore* _store)
+//void DtxManager::setStore (TransactionalStore* _store)
+void DtxManager::setStore (AsyncTransactionalStore* _ats)
 {
-    store = _store;
+//    store = _store;
+    asyncTxnStore = _ats;
 }
 
 std::string DtxManager::convert(const qpid::framing::Xid& xid)

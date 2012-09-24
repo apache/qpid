@@ -48,6 +48,10 @@ class ManagementDirectExchange : public virtual DirectExchange
     void setManagmentAgent(management::ManagementAgent* agent, int qmfVersion);
 
     virtual ~ManagementDirectExchange();
+
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize() { return 0; }
+    void write(char* /*target*/) {}
 };
 
 

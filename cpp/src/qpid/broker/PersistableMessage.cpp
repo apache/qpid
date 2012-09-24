@@ -64,19 +64,19 @@ void PersistableMessage::flush()
     //TODO: is this really the right place for this?
 }
 
-// deprecated
-void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, MessageStore*)
-{
-    enqueueStart();
-}
+//// deprecated
+//void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, MessageStore*)
+//{
+//    enqueueStart();
+//}
 
 void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, AsyncStore*)
 {
     enqueueStart();
 }
 
-// deprecated
-void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
+//// deprecated
+//void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
 
 void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, AsyncStore*) {}
 

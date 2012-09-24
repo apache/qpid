@@ -97,12 +97,14 @@ class QueueRegistry : QueueFactory {
     /**
      * Set the store to use.  May only be called once.
      */
-    void setStore (MessageStore*);
+//    void setStore (MessageStore*);
+    void setStore (AsyncStore*);
 
     /**
      * Return the message store used.
      */
-    MessageStore* getStore() const;
+//    MessageStore* getStore() const;
+    AsyncStore* getStore() const;
 
     /**
      * Register the manageable parent for declared queues

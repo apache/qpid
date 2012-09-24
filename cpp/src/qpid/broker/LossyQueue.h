@@ -32,7 +32,8 @@ namespace broker {
 class LossyQueue : public Queue
 {
   public:
-    LossyQueue(const std::string&, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
+//    LossyQueue(const std::string&, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
+    LossyQueue(const std::string&, const QueueSettings&, AsyncStore* const, management::Manageable*, Broker*);
     bool checkDepth(const QueueDepth& increment, const Message&);
   private:
 };

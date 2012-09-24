@@ -45,15 +45,18 @@ class RecoveryManager{
     virtual void recoveryComplete() = 0;
 };
 
+// kpvdr: this has been replaced with AsyncRecoverable defined in AsyncStore.h
+/*
 class Recoverable {
   public:
     virtual ~Recoverable() {}
 
-    /**
+    *
      * Request recovery of queue and message state.
-     */
+
     virtual void recover(RecoveryManager& recoverer) = 0;
 };
+*/
 
 }}
 

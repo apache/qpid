@@ -42,7 +42,8 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 // factored: The persistence element should be factored separately
 LinkRegistry::LinkRegistry () :
     broker(0),
-    parent(0), store(0), passive(false),
+//    parent(0), store(0), passive(false),
+    parent(0), asyncStore(0), passive(false),
     realm("")
 {
 }
@@ -59,7 +60,7 @@ class LinkRegistryConnectionObserver : public ConnectionObserver {
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker),
-    parent(0), store(0), passive(false),
+    parent(0), asyncStore(0), passive(false),
     realm(broker->getOptions().realm)
 {
     broker->getConnectionObservers().add(
@@ -117,7 +118,11 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(const string& name,
                       boost::bind(&LinkRegistry::linkDestroyed, this, _1),
                       durable, authMechanism, username, password, broker,
                       parent, failover));
-        if (durable && store) store->create(*link);
+//        if (durable && store) store->create(*link);
+        if (durable && asyncStore) {
+//            store->create(*link);
+             // TODO: kpvdr: async create config (link)
+        }
         links[name] = link;
         pendingLinks[name] = link;
         QPID_LOG(debug, "Creating new link; name=" << name );
@@ -213,8 +218,11 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& name,
                        args, init, queueName, altExchange));
         bridges[name] = bridge;
         link.add(bridge);
-        if (durable && store)
-            store->create(*bridge);
+//        if (durable && store)
+        if (durable && asyncStore) {
+//            store->create(*bridge);
+            // TODO: kpvdr: Async create config (bridge)
+        }
 
         QPID_LOG(debug, "Bridge '" << name <<"' declared on link '" << link.getName() <<
                  "' from " << src << " to " << dest << " (" << key << ")");
@@ -234,8 +242,11 @@ void LinkRegistry::linkDestroyed(Link *link)
     LinkMap::iterator i = links.find(link->getName());
     if (i != links.end())
     {
-        if (i->second->isDurable() && store)
-            store->destroy(*(i->second));
+//        if (i->second->isDurable() && store)
+        if (i->second->isDurable() && asyncStore) {
+//            store->destroy(*(i->second));
+            // TODO: kpvdr: Async destroy config (link)
+        }
         links.erase(i);
     }
 }
@@ -254,18 +265,22 @@ void LinkRegistry::destroyBridge(Bridge *bridge)
     if (link) {
         link->cancel(b->second);
     }
-    if (b->second->isDurable())
-        store->destroy(*(b->second));
+//    if (b->second->isDurable())
+    if (b->second->isDurable()) {
+//        store->destroy(*(b->second));
+        // TODO: kpvdr: Async destroy config (bridge)
+    }
     bridges.erase(b);
 }
 
-void LinkRegistry::setStore (MessageStore* _store)
-{
-    store = _store;
+//void LinkRegistry::setStore (MessageStore* _store)
+void LinkRegistry::setStore (AsyncStore* _asyncStore) {
+    asyncStore = _asyncStore;
 }
 
-MessageStore* LinkRegistry::getStore() const {
-    return store;
+//MessageStore* LinkRegistry::getStore() const {
+AsyncStore* LinkRegistry::getStore() const {
+    return asyncStore;
 }
 
 namespace {

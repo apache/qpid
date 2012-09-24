@@ -20,6 +20,7 @@
 #ifndef qpid_broker_AsyncStore_h_
 #define qpid_broker_AsyncStore_h_
 
+#include "qpid/broker/RecoveryManager.h"
 #include "qpid/types/Variant.h" // qpid::types::Variant::Map
 
 #include <boost/shared_ptr.hpp>
@@ -65,9 +66,12 @@ class EnqueueHandle;
 class EventHandle;
 class MessageHandle;
 class QueueHandle;
+class RecoveryHandle;
 class TxnHandle;
 
+class InitAsyncContext;
 class QueueAsyncContext;
+class RecoveryAsyncContext;
 class TpcTxnAsyncContext;
 class TxnAsyncContext;
 class SimpleTxnBuffer;
@@ -92,10 +96,20 @@ public:
                              boost::shared_ptr<TxnAsyncContext>) = 0;
 };
 
+class AsyncRecoverable {
+public:
+    virtual ~AsyncRecoverable() {}
+    virtual RecoveryHandle createRecoveryHandle() = 0;
+    virtual void submitRecover(qpid::broker::RecoveryHandle&,
+                               boost::shared_ptr<qpid::broker::RecoveryAsyncContext>) = 0;
+};
+
 // Subclassed by store:
-class AsyncStore : public AsyncTransactionalStore {
+class AsyncStore : public AsyncTransactionalStore,
+                   public AsyncRecoverable {
 public:
     virtual ~AsyncStore() {}
+    virtual void initialize(bool truncateFlag = false, bool saveFlag = true) = 0;
 
     // --- Factory methods for creating handles ---
 
@@ -144,12 +158,12 @@ public:
                                TxnHandle&,
                                boost::shared_ptr<QueueAsyncContext>) = 0;
 
-    // Legacy - Restore FTD message, is NOT async!
-    virtual int loadContent(MessageHandle&,
-                            QueueHandle&,
-                            char* data,
-                            uint64_t offset,
-                            const uint64_t length) = 0;
+//    // Legacy - Restore FTD message, is NOT async!
+//    virtual int loadContent(MessageHandle&,
+//                            QueueHandle&,
+//                            char* data,
+//                            uint64_t offset,
+//                            const uint64_t length) = 0;
 };
 
 

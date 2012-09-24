@@ -35,7 +35,8 @@ class MessageMap;
 class Lvq : public Queue
 {
   public:
-    Lvq(const std::string&, std::auto_ptr<MessageMap>, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
+//    Lvq(const std::string&, std::auto_ptr<MessageMap>, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
+    Lvq(const std::string&, std::auto_ptr<MessageMap>, const QueueSettings&, AsyncStore* const, management::Manageable*, Broker*);
     void push(Message& msg, bool isRecovery=false);
   private:
     MessageMap& messageMap;

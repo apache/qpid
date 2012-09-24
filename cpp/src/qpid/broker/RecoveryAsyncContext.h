@@ -18,48 +18,37 @@
  */
 
 /**
- * \file QueueHandle.cpp
+ * \file RecoveryAsyncContext.h
  */
 
-#include "QueueHandle.h"
+#ifndef qpid_broker_RecoveryAsyncContext_h_
+#define qpid_broker_RecoveryAsyncContext_h_
 
-#include "qpid/asyncStore/QueueHandleImpl.h"
-#include "qpid/broker/PrivateImplRef.h"
+#include "qpid/broker/AsyncStore.h"
 
 namespace qpid {
 namespace broker {
+class AsyncResultHandle;
+class RecoveryManagerImpl;
 
-typedef PrivateImplRef<QueueHandle> PrivateImpl;
+typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
 
-QueueHandle::QueueHandle(qpid::asyncStore::QueueHandleImpl* p) :
-        Handle<qpid::asyncStore::QueueHandleImpl>()
-{
-    PrivateImpl::ctor(*this, p);
-}
+class RecoveryAsyncContext: public qpid::broker::BrokerAsyncContext {
+public:
+    RecoveryAsyncContext(RecoveryManagerImpl& rm,
+                         AsyncResultCallback rcb,
+                         AsyncResultQueue* const arq);
+    virtual ~RecoveryAsyncContext();
+    RecoveryManagerImpl& getRecoveryManager() const;
+    AsyncResultQueue* getAsyncResultQueue() const;
+    void invokeCallback(const AsyncResultHandle* const) const;
 
-QueueHandle::QueueHandle(const QueueHandle& r) :
-        Handle<qpid::asyncStore::QueueHandleImpl>()
-{
-    PrivateImpl::copy(*this, r);
-}
-
-QueueHandle::~QueueHandle()
-{
-    PrivateImpl::dtor(*this);
-}
-
-QueueHandle&
-QueueHandle::operator=(const QueueHandle& r)
-{
-    return PrivateImpl::assign(*this, r);
-}
-
-// --- QueueHandleImpl methods ---
-
-const std::string&
-QueueHandle::getName() const
-{
-    return impl->getName();
-}
+private:
+    RecoveryManagerImpl& m_rm;
+    AsyncResultCallback m_rcb;
+    AsyncResultQueue* const m_arq;
+};
 
 }} // namespace qpid::broker
+
+#endif // qpid_broker_RecoveryAsyncContext_h_

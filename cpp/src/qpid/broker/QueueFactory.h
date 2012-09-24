@@ -31,7 +31,8 @@ class Manageable;
 }
 namespace broker {
 class Broker;
-class MessageStore;
+//class MessageStore;
+class AsyncStore;
 class Queue;
 struct QueueSettings;
 
@@ -52,12 +53,14 @@ class QueueFactory
     /**
      * Set the store to use.  May only be called once.
      */
-    void setStore (MessageStore*);
+//    void setStore (MessageStore*);
+    void setStore (AsyncStore*);
 
     /**
      * Return the message store used.
      */
-    MessageStore* getStore() const;
+//    MessageStore* getStore() const;
+    AsyncStore* getStore() const;
 
     /**
      * Register the manageable parent for declared queues
@@ -65,7 +68,8 @@ class QueueFactory
     void setParent(management::Manageable*);
   private:
     Broker* broker;
-    MessageStore* store;
+//    MessageStore* store;
+    AsyncStore* asyncStore;
     management::Manageable* parent;
 };
 }} // namespace qpid::broker

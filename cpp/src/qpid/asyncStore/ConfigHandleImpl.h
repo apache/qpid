@@ -29,8 +29,7 @@
 namespace qpid {
 namespace asyncStore {
 
-class ConfigHandleImpl : public virtual qpid::RefCounted
-{
+class ConfigHandleImpl : public virtual qpid::RefCounted {
 public:
     ConfigHandleImpl();
     virtual ~ConfigHandleImpl();

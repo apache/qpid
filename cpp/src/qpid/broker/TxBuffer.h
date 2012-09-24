@@ -59,6 +59,8 @@
  */
 namespace qpid {
     namespace broker {
+        class AsyncTransactionalStore;
+
         class TxBuffer{
             typedef std::vector<TxOp::shared_ptr>::iterator op_iterator;
             std::vector<TxOp::shared_ptr> ops;
@@ -107,7 +109,8 @@ namespace qpid {
              * Helper method for managing the process of server local
              * commit
              */
-            QPID_BROKER_EXTERN bool commitLocal(TransactionalStore* const store);
+//            QPID_BROKER_EXTERN bool commitLocal(TransactionalStore* const store);
+            QPID_BROKER_EXTERN bool commitLocal(AsyncTransactionalStore* const store);
         };
     }
 }

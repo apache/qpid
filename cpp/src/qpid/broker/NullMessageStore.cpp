@@ -19,6 +19,8 @@
  *
  */
 
+#error "deprecated in favor of AsyncStore"
+
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/MessageStoreModule.h"
 #include "qpid/broker/RecoveryManager.h"

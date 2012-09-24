@@ -43,7 +43,7 @@ Plugin::earlyInitialize(Target& target) {
     }
     m_store.reset(new qpid::asyncStore::AsyncStoreImpl(broker->getPoller(), m_options));
     boost::shared_ptr<qpid::broker::AsyncStore> brokerAsyncStore(m_store);
-    broker->setAsyncStore(brokerAsyncStore);
+    broker->setStore(brokerAsyncStore);
     boost::function<void()> fn = boost::bind(&Plugin::finalize, this);
     target.addFinalizer(fn);
     QPID_LOG(info, "asyncStore: Initialized using path " << m_options.m_storeDir);

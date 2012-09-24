@@ -23,7 +23,7 @@
 
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/Message.h"
-#include "qpid/broker/MessageStore.h"
+//#include "qpid/broker/MessageStore.h"
 #include "qpid/broker/TxOp.h"
 
 #include <algorithm>

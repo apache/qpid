@@ -19,7 +19,7 @@
  *
  */
 
-
+// TODO: kpvdr: Rewrite this test in terms of an Null AsyncStore
 /**@file
  * Plug-in message store for tests.
  *
@@ -32,26 +32,26 @@
  *  - do async completion after a delay.
  */
 
-#include "qpid/broker/NullMessageStore.h"
-#include "qpid/broker/Broker.h"
-#include "qpid/broker/amqp_0_10/MessageTransfer.h"
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/log/Statement.h"
-#include "qpid/Plugin.h"
-#include "qpid/Options.h"
-#include <boost/cast.hpp>
-#include <boost/lexical_cast.hpp>
-#include <memory>
-#include <fstream>
-
-using namespace qpid;
-using namespace broker;
-using namespace std;
-using namespace qpid::sys;
+//#include "qpid/broker/NullMessageStore.h"
+//#include "qpid/broker/Broker.h"
+//#include "qpid/broker/amqp_0_10/MessageTransfer.h"
+//#include "qpid/framing/AMQFrame.h"
+//#include "qpid/log/Statement.h"
+//#include "qpid/Plugin.h"
+//#include "qpid/Options.h"
+//#include <boost/cast.hpp>
+//#include <boost/lexical_cast.hpp>
+//#include <memory>
+//#include <fstream>
+//
+//using namespace qpid;
+//using namespace broker;
+//using namespace std;
+//using namespace qpid::sys;
 
 namespace qpid {
 namespace tests {
-
+/*
 struct TestStoreOptions : public Options {
 
     string name;
@@ -75,6 +75,7 @@ struct Completer : public Runnable {
         delete this;
     }
 };
+
 
 class TestStore : public NullMessageStore {
   public:
@@ -157,6 +158,7 @@ const string TestStore::EXCEPTION = "exception";
 const string TestStore::EXIT_PROCESS = "exit_process";
 const string TestStore::ASYNC="async ";
 
+
 struct TestStorePlugin : public Plugin {
 
     TestStoreOptions options;
@@ -168,12 +170,13 @@ struct TestStorePlugin : public Plugin {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
         boost::shared_ptr<MessageStore> p(new TestStore(options, *broker));
-        broker->setStore (p);
+//        broker->setStore (p);
+        // TODO: kpvdr: This test will need to be reworked in terms of an AsyncStore.
     }
 
     void initialize(qpid::Plugin::Target&) {}
 };
 
 static TestStorePlugin pluginInstance;
-
+*/
 }} // namespace qpid::tests

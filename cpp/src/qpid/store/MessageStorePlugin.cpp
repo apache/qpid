@@ -101,7 +101,8 @@ MessageStorePlugin::earlyInitialize (qpid::Plugin::Target& target)
     provider->second->activate(*this);
     NoopDeleter d;
     boost::shared_ptr<qpid::broker::MessageStore> sp(this, d);
-    broker->setStore(sp);
+//    broker->setStore(sp);
+    // TODO: kpvdr: Windows store earlyInitialize()
     target.addFinalizer(boost::bind(&MessageStorePlugin::finalizeMe, this));
 }
 

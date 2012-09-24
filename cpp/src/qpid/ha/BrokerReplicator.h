@@ -76,6 +76,10 @@ class BrokerReplicator : public broker::Exchange,
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize();
+    void write(char* target);
+
   private:
     typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
 

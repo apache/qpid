@@ -52,6 +52,11 @@ class ManagementTopicExchange : public virtual TopicExchange
     void setManagmentAgent(management::ManagementAgent* agent, int qmfVersion);
 
     virtual ~ManagementTopicExchange();
+
+    // DataSource interface - used to write persistence data to async store
+    uint64_t getSize() { return 0; }
+    void write(char* /*target*/) {}
+
 };
 
 
