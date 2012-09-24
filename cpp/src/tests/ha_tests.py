@@ -109,6 +109,7 @@ class HaBroker(Broker):
 
     def wait_status(self, status):
         def try_get_status():
+            self._status = self.ha_status()
             # Ignore ConnectionError, the broker may not be up yet.
             try:
                 self._status = self.ha_status()
