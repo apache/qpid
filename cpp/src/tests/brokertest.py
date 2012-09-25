@@ -425,8 +425,8 @@ class Cluster:
         self._brokers.append(self.test.broker(self.args+args, name, expect, wait, port=port, show_cmd=show_cmd))
         return self._brokers[-1]
 
-    def ready(self):
-        for b in self: b.ready()
+    def ready(self,  timeout=30, **kwargs):
+        for b in self: b.ready(**kwargs)
 
     def start_n(self, count, expect=EXPECT_RUNNING, wait=True, args=[], show_cmd=False):
         for i in range(count): self.start(expect=expect, wait=wait, args=args, show_cmd=show_cmd)
