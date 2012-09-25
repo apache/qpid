@@ -61,7 +61,10 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
     range = QueueRange(q);
 }
 
-QueueGuard::~QueueGuard() { cancel(); }
+QueueGuard::~QueueGuard() {
+    QPID_LOG(debug, logPrefix << "Cancelled");
+    cancel();
+}
 
 // NOTE: Called with message lock held.
 void QueueGuard::enqueued(const Message& m) {
@@ -97,7 +100,6 @@ void QueueGuard::completeRange(Delayed::iterator begin, Delayed::iterator end) {
 }
 
 void QueueGuard::cancel() {
-    QPID_LOG(debug, logPrefix << "Cancelled");
     queue.removeObserver(observer);
     Delayed removed;
     {

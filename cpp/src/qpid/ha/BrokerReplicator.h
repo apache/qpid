@@ -78,6 +78,8 @@ class BrokerReplicator : public broker::Exchange,
 
   private:
     typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
+    typedef std::pair<boost::shared_ptr<broker::Queue>, bool> CreateQueueResult;
+    typedef std::pair<boost::shared_ptr<broker::Exchange>, bool> CreateExchangeResult;
 
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
 
@@ -98,14 +100,14 @@ class BrokerReplicator : public broker::Exchange,
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
     void stopQueueReplicator(const std::string& name);
 
-    boost::shared_ptr<broker::Queue> createQueue(
+    CreateQueueResult createQueue(
         const std::string& name,
         bool durable,
         bool autodelete,
         const qpid::framing::FieldTable& arguments,
         const std::string& alternateExchange);
 
-    boost::shared_ptr<broker::Exchange> createExchange(
+    CreateExchangeResult createExchange(
         const std::string& name,
         const std::string& type,
         bool durable,
@@ -121,6 +123,8 @@ class BrokerReplicator : public broker::Exchange,
     bool initialized;
     AlternateExchangeSetter alternates;
     qpid::Address primary;
+    typedef std::set<std::string> StringSet;
+    StringSet replicatedExchanges; // exchanges that have been replicated.
 };
 }} // namespace qpid::broker
 

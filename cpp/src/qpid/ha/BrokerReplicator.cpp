@@ -41,6 +41,7 @@
 #include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 #include "qmf/org/apache/qpid/broker/EventSubscribe.h"
 #include "qmf/org/apache/qpid/ha/EventMembersUpdate.h"
+#include <boost/bind.hpp>
 #include <algorithm>
 #include <sstream>
 #include <iostream>
@@ -313,11 +314,11 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
         // The queue was definitely created on the primary.
         if (broker.getQueues().find(name)) {
             QPID_LOG(warning, logPrefix << "Replacing exsiting queue: " << name);
-            broker.getQueues().destroy(name);
+            broker.deleteQueue(name, userId, remoteHost);
             stopQueueReplicator(name);
         }
         settings.populate(args, settings.storeSettings);
-        std::pair<boost::shared_ptr<Queue>, bool> result =
+        CreateQueueResult result =
             broker.createQueue(
                 name,
                 settings,
@@ -325,7 +326,7 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
                 values[ALTEX].asString(),
                 userId,
                 remoteHost);
-        assert(result.second);  // Should be true since we destroyed existing queue above
+        assert(result.second);
         startQueueReplicator(result.first);
     }
 }
@@ -361,12 +362,14 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
         // If we already have a exchange with this name, replace it.
         // The exchange was definitely created on the primary.
         if (broker.getExchanges().find(name)) {
-            broker.getExchanges().destroy(name);
+            broker.deleteExchange(name, userId, remoteHost);
             QPID_LOG(warning, logPrefix << "Replaced exsiting exchange: " << name);
         }
-        boost::shared_ptr<Exchange> exchange =
-            createExchange(name, values[EXTYPE].asString(), values[DURABLE].asBool(), args, values[ALTEX].asString());
-        assert(exchange);
+        CreateExchangeResult result = createExchange(
+            name, values[EXTYPE].asString(), values[DURABLE].asBool(), args,
+            values[ALTEX].asString());
+        replicatedExchanges.insert(name);
+        assert(result.second);
     }
 }
 
@@ -380,6 +383,7 @@ void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
     } else {
         QPID_LOG(debug, logPrefix << "Exchange delete event:" << name);
         broker.deleteExchange(name, userId, remoteHost);
+        replicatedExchanges.erase(name);
     }
 }
 
@@ -399,7 +403,7 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         QPID_LOG(debug, logPrefix << "Bind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
-        exchange->bind(queue, key, &args);
+        queue->bind(exchange, key, args);
     }
 }
 
@@ -454,14 +458,20 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
         return;
     string name(values[NAME].asString());
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
+    if (broker.getQueues().find(name)) { // Already exists
+        if (findQueueReplicator(name))
+            return; // Already replicated
+        else {
+            QPID_LOG(debug, logPrefix << "Deleting queue to make way for replica: " << name);
+            broker.deleteQueue(name, userId, remoteHost);
+        }
+    }
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
-    boost::shared_ptr<Queue> queue =
+    CreateQueueResult result =
         createQueue(name, values[DURABLE].asBool(), values[AUTODELETE].asBool(), args,
                     getAltExchange(values[ALTEXCHANGE]));
-    // It is normal for the queue to already exist if we are failing over.
-    if (queue) startQueueReplicator(queue);
-    else QPID_LOG(debug, logPrefix << "Queue already replicated: " << name);
+    if (result.second) startQueueReplicator(result.first);
 }
 
 void BrokerReplicator::doResponseExchange(Variant::Map& values) {
@@ -469,13 +479,22 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     if (!replicationTest.replicateLevel(argsMap)) return;
     string name = values[NAME].asString();
     QPID_LOG(debug, logPrefix << "Exchange response: " << name);
+    if (broker.getExchanges().find(name)) {
+        if (replicatedExchanges.find(name) != replicatedExchanges.end())
+            return; // Already replicated
+        else {
+            QPID_LOG(debug, logPrefix << "Deleting exchange to make way for replica: "
+                     << name);
+            broker.deleteExchange(name, userId, remoteHost);
+        }
+    }
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
-    boost::shared_ptr<Exchange> exchange = createExchange(
+    CreateExchangeResult result = createExchange(
         name, values[TYPE].asString(), values[DURABLE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
-    // It is normal for the exchange to already exist if we are failing over.
-    QPID_LOG_IF(debug, !exchange, logPrefix << "Exchange already replicated: " << name);
+    assert(result.second);
+    replicatedExchanges.insert(name);
 }
 
 namespace {
@@ -563,7 +582,7 @@ void BrokerReplicator::stopQueueReplicator(const std::string& name) {
     }
 }
 
-boost::shared_ptr<Queue> BrokerReplicator::createQueue(
+BrokerReplicator::CreateQueueResult BrokerReplicator::createQueue(
     const std::string& name,
     bool durable,
     bool autodelete,
@@ -572,7 +591,7 @@ boost::shared_ptr<Queue> BrokerReplicator::createQueue(
 {
     QueueSettings settings(durable, autodelete);
     settings.populate(arguments, settings.storeSettings);
-    std::pair<boost::shared_ptr<Queue>, bool> result =
+    CreateQueueResult result =
         broker.createQueue(
             name,
             settings,
@@ -580,24 +599,22 @@ boost::shared_ptr<Queue> BrokerReplicator::createQueue(
             string(), // Set alternate exchange below
             userId,
             remoteHost);
-    if (result.second) {
-        if (!alternateExchange.empty()) {
-            alternates.setAlternate(
-                alternateExchange, boost::bind(&Queue::setAlternateExchange, result.first, _1));
-        }
-        return result.first;
+
+    if (!alternateExchange.empty()) {
+        alternates.setAlternate(
+            alternateExchange, boost::bind(&Queue::setAlternateExchange, result.first, _1));
     }
-    else return  boost::shared_ptr<Queue>();
+    return result;
 }
 
-boost::shared_ptr<Exchange> BrokerReplicator::createExchange(
+BrokerReplicator::CreateExchangeResult BrokerReplicator::createExchange(
     const std::string& name,
     const std::string& type,
     bool durable,
     const qpid::framing::FieldTable& args,
     const std::string& alternateExchange)
 {
-    std::pair<boost::shared_ptr<Exchange>, bool> result =
+    CreateExchangeResult result =
         broker.createExchange(
             name,
             type,
@@ -606,15 +623,13 @@ boost::shared_ptr<Exchange> BrokerReplicator::createExchange(
             args,
             userId,
             remoteHost);
-    if (result.second) {
-        alternates.addExchange(result.first);
-        if (!alternateExchange.empty()) {
-            alternates.setAlternate(
-                alternateExchange, boost::bind(&Exchange::setAlternate, result.first, _1));
-        }
-        return result.first;
+
+    alternates.addExchange(result.first);
+    if (!alternateExchange.empty()) {
+        alternates.setAlternate(
+            alternateExchange, boost::bind(&Exchange::setAlternate, result.first, _1));
     }
-    else return  boost::shared_ptr<Exchange>();
+    return result;
 }
 
 bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
@@ -622,5 +637,6 @@ bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const fra
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
+
 
 }} // namespace broker

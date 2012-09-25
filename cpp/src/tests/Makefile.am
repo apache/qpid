@@ -348,7 +348,9 @@ EXTRA_DIST +=								\
   run_msg_group_tests							\
   ipv6_test								\
   run_ha_tests								\
+  ha_test.py								\
   ha_tests.py								\
+  ha_store_tests.py							\
   test_env.ps1.in
 
 check_LTLIBRARIES += libdlclose_noop.la
