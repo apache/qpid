@@ -20,6 +20,7 @@
  */
 #include "ReplicationTest.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 
 namespace qpid {
@@ -69,6 +70,11 @@ bool ReplicationTest::isReplicated(
 bool ReplicationTest::isReplicated(ReplicateLevel level, const broker::Queue& q)
 {
     return isReplicated(level, q.getSettings().storeSettings, q.isAutoDelete(), q.hasExclusiveOwner());
+}
+
+bool ReplicationTest::isReplicated(ReplicateLevel level, const broker::Exchange& ex)
+{
+    return replicateLevel(ex.getArgs()) >= level;
 }
 
 

@@ -67,6 +67,7 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
       logPrefix("Backup queue "+q->getName()+": "),
       queue(q), link(l), brokerInfo(hb.getBrokerInfo())
 {
+    args.setString(QPID_REPLICATE, printable(NONE).str());
     Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
 }

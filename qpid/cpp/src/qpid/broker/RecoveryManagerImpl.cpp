@@ -82,6 +82,7 @@ public:
     RecoverableExchangeImpl(Exchange::shared_ptr _exchange, QueueRegistry& _queues) : exchange(_exchange), queues(_queues) {}
     void setPersistenceId(uint64_t id);
     void bind(const std::string& queue, const std::string& routingKey, qpid::framing::FieldTable& args);
+    string getName() const { return exchange->getName(); }
 };
 
 class RecoverableConfigImpl : public RecoverableConfig

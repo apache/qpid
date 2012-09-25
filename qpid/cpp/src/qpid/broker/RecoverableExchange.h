@@ -43,6 +43,9 @@ public:
     virtual void bind(const std::string& queue,
                       const std::string& routingKey,
                       qpid::framing::FieldTable& args) = 0;
+
+    virtual std::string getName() const = 0;
+
     virtual ~RecoverableExchange() {};
 };
 

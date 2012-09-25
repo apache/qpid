@@ -30,6 +30,7 @@ namespace qpid {
 
 namespace broker {
 class Queue;
+class Exchange;
 }
 
 namespace framing {
@@ -59,6 +60,7 @@ class ReplicationTest
     bool isReplicated(ReplicateLevel level,
                       const framing::FieldTable& args, bool autodelete, bool exclusive);
     bool isReplicated(ReplicateLevel level, const broker::Queue&);
+    bool isReplicated(ReplicateLevel level, const broker::Exchange&);
   private:
     ReplicateLevel replicateDefault;
 };
