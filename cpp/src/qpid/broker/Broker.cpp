@@ -184,6 +184,15 @@ const std::string amq_match("amq.match");
 const std::string qpid_management("qpid.management");
 const std::string knownHostsNone("none");
 
+namespace {
+// Arguments to declare a non-replicated exchange.
+framing::FieldTable noReplicateArgs() {
+    framing::FieldTable args;
+    args.setString("qpid.replicate", "none");
+    return args;
+}
+}
+
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
@@ -273,7 +282,10 @@ Broker::Broker(const Broker::Options& conf) :
     if (NullMessageStore::isNullStore(store.get()))
         setStore();
 
-    exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
+    framing::FieldTable args;
+
+    // Default exchnge is not replicated.
+    exchanges.declare(empty, DirectExchange::typeName, false, noReplicateArgs());
 
     if (store.get() != 0) {
         // The cluster plug-in will setRecovery(false) on all but the first
@@ -295,7 +307,7 @@ Broker::Broker(const Broker::Options& conf) :
     declareStandardExchange(amq_match, HeadersExchange::typeName);
 
     if(conf.enableMgmt) {
-        exchanges.declare(qpid_management, ManagementTopicExchange::typeName);
+        exchanges.declare(qpid_management, ManagementTopicExchange::typeName, false, noReplicateArgs());
         Exchange::shared_ptr mExchange = exchanges.get(qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get(amq_direct);
         managementAgent->setExchange(mExchange, dExchange);
@@ -304,8 +316,10 @@ Broker::Broker(const Broker::Options& conf) :
         std::string qmfTopic("qmf.default.topic");
         std::string qmfDirect("qmf.default.direct");
 
-        std::pair<Exchange::shared_ptr, bool> topicPair(exchanges.declare(qmfTopic, ManagementTopicExchange::typeName));
-        std::pair<Exchange::shared_ptr, bool> directPair(exchanges.declare(qmfDirect, ManagementDirectExchange::typeName));
+        std::pair<Exchange::shared_ptr, bool> topicPair(
+            exchanges.declare(qmfTopic, ManagementTopicExchange::typeName, false, noReplicateArgs()));
+        std::pair<Exchange::shared_ptr, bool> directPair(
+            exchanges.declare(qmfDirect, ManagementDirectExchange::typeName, false, noReplicateArgs()));
 
         boost::dynamic_pointer_cast<ManagementDirectExchange>(directPair.first)->setManagmentAgent(managementAgent.get(), 2);
         boost::dynamic_pointer_cast<ManagementTopicExchange>(topicPair.first)->setManagmentAgent(managementAgent.get(), 2);
@@ -358,7 +372,10 @@ Broker::Broker(const Broker::Options& conf) :
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
 {
     bool storeEnabled = store.get() != NULL;
-    std::pair<Exchange::shared_ptr, bool> status = exchanges.declare(name, type, storeEnabled);
+    framing::FieldTable args;
+    // Standard exchanges are not replicated.
+    std::pair<Exchange::shared_ptr, bool> status =
+        exchanges.declare(name, type, storeEnabled, noReplicateArgs());
     if (status.second && storeEnabled) {
         store->create(*status.first, framing::FieldTable ());
     }
