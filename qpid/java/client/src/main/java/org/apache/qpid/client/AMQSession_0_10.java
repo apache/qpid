@@ -356,6 +356,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             
             for (Binding binding: bindings)
             {
+                // Currently there is a bug (QPID-3317) with setting up and tearing down x-bindings for link.
+                // The null check below is a way to side step that issue while fixing QPID-4146
+                // Note this issue only affects producers.
+                if (binding.getQueue() == null && queueName == null)
+                {
+                    continue;
+                }
                 String queue = binding.getQueue() == null?
                                    queueName.asString(): binding.getQueue();
                                    
@@ -1237,6 +1244,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         {
                             createSubscriptionQueue(dest,noLocal);
                         }
+                        sendQueueBind(dest.getAMQQueueName(), dest.getRoutingKey(),
+                                null,dest.getExchangeName(),dest, false);
                         break;
                     }
                 }
