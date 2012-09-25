@@ -590,6 +590,13 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <programlisting>
       "myqueue;{create:always,node:{x-declare:{arguments:{'qpid.replicate':all}}}}"
     </programlisting>
+    <para>
+      There are some built-in exchanges created automatically by the broker, these
+      exchangs are never replicated. The built-in exchanges are the default (nameless)
+      exchange, the AMQP standard exchanges (amq.direct, amq.topic, amq.fanout and
+      amq.match) and the management exchanges (qpid.management, qmf.default.direct and
+      qmf.default.topic)
+    </para>
   </section>
 
   <section>
