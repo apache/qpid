@@ -45,7 +45,7 @@ namespace ha {
 using namespace broker;
 using namespace framing;
 
-const std::string QPID_HA_EVENT_PREFIX("qpid.ha-event:");
+const std::string QPID_HA_EVENT_PREFIX("qpid.ha-");
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_EVENT_PREFIX+"dequeue");
 const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA_EVENT_PREFIX+"position");
 
