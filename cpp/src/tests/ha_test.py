@@ -30,6 +30,18 @@ from uuid import UUID
 
 log = getLogger(__name__)
 
+class LogLevel:
+    """
+    Temporarily change the log settings on the root logger.
+    Used to suppress expected WARN messages from the python client.
+    """
+    def __init__(self, level):
+        self.save_level = getLogger().getEffectiveLevel()
+        getLogger().setLevel(level)
+
+    def restore(self):
+        getLogger().setLevel(self.save_level)
+
 class QmfAgent(object):
     """Access to a QMF broker agent."""
     def __init__(self, address, **kwargs):
@@ -73,7 +85,6 @@ class HaBroker(Broker):
         assert os.path.exists(self.qpid_ha_path)
         self.qpid_config_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-config")
         assert os.path.exists(self.qpid_config_path)
-        getLogger().setLevel(ERROR) # Hide expected WARNING log messages from failover.
         self.qpid_ha_script=import_script(self.qpid_ha_path)
         self._agent = None
         self.client_credentials = client_credentials
