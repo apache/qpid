@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import static org.mockito.Mockito.*;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
+import javax.security.auth.Subject;
+
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -194,6 +201,49 @@ public class AccessControlTest extends TestCase
         assertEquals(Result.DEFER, result);
     }
 
+    public void testAccess() throws Exception
+    {
+        Subject subject = TestPrincipalUtils.createTestSubject("user1");
+        SecurityManager.setThreadSubject(subject);
+
+        RuleSet mockRuleSet = mock(RuleSet.class);
+        ConfigurationPlugin accessControlConfiguration = createConfiguration(mockRuleSet);
+
+        InetAddress inetAddress = InetAddress.getLocalHost();
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
+
+        AccessControl accessControl = AccessControl.FACTORY.newInstance(accessControlConfiguration);
+
+        accessControl.access(ObjectType.VIRTUALHOST, inetSocketAddress);
+
+        verify(mockRuleSet).check(subject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY, inetAddress);
+    }
+
+    public void testAccessIsDeniedIfRuleThrowsException() throws Exception
+    {
+        Subject subject = TestPrincipalUtils.createTestSubject("user1");
+        SecurityManager.setThreadSubject(subject);
+
+        InetAddress inetAddress = InetAddress.getLocalHost();
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
+
+        RuleSet mockRuleSet = mock(RuleSet.class);
+        when(mockRuleSet.check(
+                subject,
+                Operation.ACCESS,
+                ObjectType.VIRTUALHOST,
+                ObjectProperties.EMPTY,
+                inetAddress)).thenThrow(new RuntimeException());
+
+        ConfigurationPlugin accessControlConfiguration = createConfiguration(mockRuleSet);
+
+        AccessControl accessControl = AccessControl.FACTORY.newInstance(accessControlConfiguration);
+        Result result = accessControl.access(ObjectType.VIRTUALHOST, inetSocketAddress);
+
+        assertEquals(Result.DENIED, result);
+    }
+
+
     /**
      * Tests that a grant access method rule allows any access operation to be performed on a specified component
      */
@@ -332,7 +382,7 @@ public class AccessControlTest extends TestCase
         final ConfigurationPlugin cp = new ConfigurationPlugin()
         {
             @SuppressWarnings("unchecked")
-            public AccessControlConfiguration  getConfiguration(final String plugin)
+            public AccessControlConfiguration getConfiguration(final String plugin)
             {
                 return new AccessControlConfiguration()
                 {

@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 import javax.security.auth.Subject;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.AbstractPlugin;
@@ -39,7 +43,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
  */
 public class AccessControl extends AbstractPlugin
 {
-    public static final Logger _logger = Logger.getLogger(AccessControl.class);
+    private static final Logger _logger = Logger.getLogger(AccessControl.class);
 
     private RuleSet _ruleSet;
 
@@ -82,9 +86,16 @@ public class AccessControl extends AbstractPlugin
 	 * Delegate to the {@link #authorise(Operation, ObjectType, ObjectProperties)} method, with
      * the operation set to ACCESS and no object properties.
 	 */
-    public Result access(ObjectType objectType, Object instance)
+    public Result access(ObjectType objectType, Object inetSocketAddress)
     {
-        return authorise(Operation.ACCESS, objectType, ObjectProperties.EMPTY);
+        InetAddress addressOfClient = null;
+
+        if(inetSocketAddress != null)
+        {
+            addressOfClient = ((InetSocketAddress) inetSocketAddress).getAddress();
+        }
+
+        return authoriseFromAddress(Operation.ACCESS, objectType, ObjectProperties.EMPTY, addressOfClient);
     }
 
     /**
@@ -94,6 +105,11 @@ public class AccessControl extends AbstractPlugin
      */
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
+        return authoriseFromAddress(operation, objectType, properties, null);
+    }
+
+    public Result authoriseFromAddress(Operation operation, ObjectType objectType, ObjectProperties properties, InetAddress addressOfClient)
+    {
         final Subject subject = SecurityManager.getThreadSubject();
         // Abstain if there is no subject/principal associated with this thread
         if (subject == null  || subject.getPrincipals().size() == 0)
@@ -101,8 +117,20 @@ public class AccessControl extends AbstractPlugin
             return Result.ABSTAIN;
         }
 
-        _logger.debug("Checking " + operation + " " + objectType);
-        return  _ruleSet.check(subject, operation, objectType, properties);
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Checking " + operation + " " + objectType + " " + ObjectUtils.defaultIfNull(addressOfClient, ""));
+        }
+
+        try
+        {
+            return  _ruleSet.check(subject, operation, objectType, properties, addressOfClient);
+        }
+        catch(Exception e)
+        {
+            _logger.error("Unable to check " + operation + " " + objectType + " " + ObjectUtils.defaultIfNull(addressOfClient, ""), e);
+            return Result.DENIED;
+        }
     }
 
     public void configure(ConfigurationPlugin config)

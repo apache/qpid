@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,31 +15,19 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.security.access.config;
+package org.apache.qpid.server.security.access.firewall;
 
-/**
- * Firewall plugin exception.
- */
-public class FirewallException extends Exception
+public class FirewallRuleFactory
 {
-    /** serialVersionUID */
-    private static final long serialVersionUID = 4526157149690917805L;
-    
-    public FirewallException() {
-	    super();
+    public FirewallRule createForHostname(String[] hostnames)
+    {
+        return new HostnameFirewallRule(hostnames);
     }
 
-    public FirewallException(String message) {
-	    super(message);
+    public FirewallRule createForNetwork(String[] networks)
+    {
+        return new NetworkFirewallRule(networks);
     }
 
-    public FirewallException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public FirewallException(Throwable cause) {
-        super(cause);
-    }
 }
