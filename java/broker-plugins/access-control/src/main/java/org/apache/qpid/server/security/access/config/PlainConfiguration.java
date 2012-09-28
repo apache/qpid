@@ -49,20 +49,21 @@ public class PlainConfiguration extends AbstractConfiguration
     public static final String ACL = "acl";
     public static final String CONFIG = "config";
 
-    public static final String UNRECOGNISED_INITIAL_MSG = "Unrecognised initial token '%s' at line %d";
-    public static final String NOT_ENOUGH_TOKENS_MSG = "Not enough tokens at line %d";
-    public static final String NUMBER_NOT_ALLOWED_MSG = "Number not allowed before '%s' at line %d";
-    public static final String CANNOT_LOAD_MSG = "Cannot load config file %s";
-    public static final String PREMATURE_CONTINUATION_MSG = "Premature continuation character at line %d";
-    public static final String PREMATURE_EOF_MSG = "Premature end of file reached at line %d";
-    public static final String PARSE_TOKEN_FAILED_MSG = "Failed to parse token at line %d";
-    public static final String CONFIG_NOT_FOUND_MSG = "Cannot find config file %s";
-    public static final String NOT_ENOUGH_ACL_MSG = "Not enough data for an acl at line %d";
-    public static final String NOT_ENOUGH_CONFIG_MSG = "Not enough data for config at line %d";
-    public static final String BAD_ACL_RULE_NUMBER_MSG = "Invalid rule number at line %d";
-    public static final String PROPERTY_KEY_ONLY_MSG = "Incomplete property (key only) at line %d";
-    public static final String PROPERTY_NO_EQUALS_MSG = "Incomplete property (no equals) at line %d";
-    public static final String PROPERTY_NO_VALUE_MSG = "Incomplete property (no value) at line %d";
+    static final String UNRECOGNISED_INITIAL_MSG = "Unrecognised initial token '%s' at line %d";
+    static final String NOT_ENOUGH_TOKENS_MSG = "Not enough tokens at line %d";
+    static final String NUMBER_NOT_ALLOWED_MSG = "Number not allowed before '%s' at line %d";
+    static final String CANNOT_LOAD_MSG = "Cannot load config file %s";
+    static final String CANNOT_CLOSE_MSG = "Cannot close config file %s";
+    static final String PREMATURE_CONTINUATION_MSG = "Premature continuation character at line %d";
+    static final String PREMATURE_EOF_MSG = "Premature end of file reached at line %d";
+    static final String PARSE_TOKEN_FAILED_MSG = "Failed to parse token at line %d";
+    static final String CONFIG_NOT_FOUND_MSG = "Cannot find config file %s";
+    static final String NOT_ENOUGH_ACL_MSG = "Not enough data for an acl at line %d";
+    static final String NOT_ENOUGH_CONFIG_MSG = "Not enough data for config at line %d";
+    static final String BAD_ACL_RULE_NUMBER_MSG = "Invalid rule number at line %d";
+    static final String PROPERTY_KEY_ONLY_MSG = "Incomplete property (key only) at line %d";
+    static final String PROPERTY_NO_EQUALS_MSG = "Incomplete property (no equals) at line %d";
+    static final String PROPERTY_NO_VALUE_MSG = "Incomplete property (no value) at line %d";
 
     private StreamTokenizer _st;
 
@@ -77,6 +78,7 @@ public class PlainConfiguration extends AbstractConfiguration
         RuleSet ruleSet = super.load();
 
         File file = getFile();
+        FileReader fileReader = null;
 
         try
         {
@@ -85,7 +87,8 @@ public class PlainConfiguration extends AbstractConfiguration
                 _logger.debug("About to load ACL file " + file);
             }
 
-            _st = new StreamTokenizer(new BufferedReader(new FileReader(file)));
+            fileReader = new FileReader(file);
+            _st = new StreamTokenizer(new BufferedReader(fileReader));
             _st.resetSyntax(); // setup the tokenizer
 
             _st.commentChar(COMMENT); // single line comments
@@ -210,6 +213,21 @@ public class PlainConfiguration extends AbstractConfiguration
         {
             throw new ConfigurationException(String.format(CANNOT_LOAD_MSG, file.getName()), ioe);
         }
+        finally
+        {
+            if(fileReader != null)
+            {
+                try
+                {
+                    fileReader.close();
+                }
+                catch (IOException e)
+                {
+                    throw new ConfigurationException(String.format(CANNOT_CLOSE_MSG, file.getName()), e);
+                }
+            }
+        }
+
 
         return ruleSet;
     }

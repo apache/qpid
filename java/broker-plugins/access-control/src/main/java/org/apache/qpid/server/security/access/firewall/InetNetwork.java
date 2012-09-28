@@ -32,7 +32,7 @@ class InetNetwork
 
     public InetNetwork(InetAddress ip, InetAddress netmask)
     {
-        network = maskIP(ip, netmask);
+        this.network = maskIP(ip, netmask);
         this.netmask = netmask;
     }
 
@@ -46,20 +46,25 @@ class InetNetwork
         return network.equals(maskIP(ip, netmask));
     }
 
+    @Override
     public String toString()
     {
         return network.getHostAddress() + "/" + netmask.getHostAddress();
     }
 
+    @Override
     public int hashCode()
     {
         return maskIP(network, netmask).hashCode();
     }
 
+    @Override
     public boolean equals(Object obj)
     {
-        return (obj != null) && (obj instanceof InetNetwork) &&
-                ((((InetNetwork)obj).network.equals(network)) && (((InetNetwork)obj).netmask.equals(netmask)));
+        return  (obj != null) &&
+                (obj instanceof InetNetwork) &&
+                ((InetNetwork)obj).network.equals(network) &&
+                ((InetNetwork)obj).netmask.equals(netmask);
     }
 
     public static InetNetwork getFromString(String netspec) throws java.net.UnknownHostException
@@ -81,7 +86,8 @@ class InetNetwork
             }
         }
 
-        return new InetNetwork(InetAddress.getByName(netspec.substring(0, netspec.indexOf('/'))),
+        return new InetNetwork(
+                InetAddress.getByName(netspec.substring(0, netspec.indexOf('/'))),
                 InetAddress.getByName(netspec.substring(netspec.indexOf('/') + 1)));
     }
 
@@ -89,15 +95,17 @@ class InetNetwork
     {
         try
         {
-            return getByAddress(new byte[]
-            {
-                (byte) (mask[0] & ip[0]),
-                (byte) (mask[1] & ip[1]),
-                (byte) (mask[2] & ip[2]),
-                (byte) (mask[3] & ip[3])
-            });
+            return getByAddress(
+                new byte[]
+                {
+                    (byte) (mask[0] & ip[0]),
+                    (byte) (mask[1] & ip[1]),
+                    (byte) (mask[2] & ip[2]),
+                    (byte) (mask[3] & ip[3])
+                }
+            );
         }
-        catch(Exception _) {}
+        catch (Exception _)
         {
             return null;
         }
@@ -150,34 +158,9 @@ class InetNetwork
                 Integer.toString(mask >>  0 & 0xFF, 10);
     }
 
-    private static java.lang.reflect.Method getByAddress = null;
-
-    static {
-        try {
-            Class<?> inetAddressClass = Class.forName("java.net.InetAddress");
-            Class<?>[] parameterTypes = { byte[].class };
-            getByAddress = inetAddressClass.getMethod("getByAddress", parameterTypes);
-        } catch (Exception e) {
-            getByAddress = null;
-        }
-    }
-
     private static InetAddress getByAddress(byte[] ip) throws java.net.UnknownHostException
     {
-        InetAddress addr = null;
-        if (getByAddress != null)
-        {
-            try
-            {
-                addr = (InetAddress) getByAddress.invoke(null, new Object[] { ip });
-            }
-            catch (IllegalAccessException e)
-            {
-            }
-            catch (java.lang.reflect.InvocationTargetException e)
-            {
-            }
-        }
+        InetAddress addr = InetAddress.getByAddress(ip);
 
         if (addr == null) {
             addr = InetAddress.getByName
@@ -188,6 +171,7 @@ class InetNetwork
                     Integer.toString(ip[3] & 0xFF, 10)
                    );
         }
+
         return addr;
     }
 }
