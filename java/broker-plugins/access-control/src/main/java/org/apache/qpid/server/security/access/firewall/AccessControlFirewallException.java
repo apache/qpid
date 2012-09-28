@@ -25,19 +25,23 @@ public class AccessControlFirewallException extends RuntimeException
     /** serialVersionUID */
     private static final long serialVersionUID = 4526157149690917805L;
 
-    public AccessControlFirewallException() {
-	    super();
+    public AccessControlFirewallException()
+    {
+        super();
     }
 
-    public AccessControlFirewallException(String message) {
-	    super(message);
+    public AccessControlFirewallException(String message)
+    {
+        super(message);
     }
 
-    public AccessControlFirewallException(String message, Throwable cause) {
+    public AccessControlFirewallException(String message, Throwable cause)
+    {
         super(message, cause);
     }
 
-    public AccessControlFirewallException(Throwable cause) {
+    public AccessControlFirewallException(Throwable cause)
+    {
         super(cause);
     }
 }
