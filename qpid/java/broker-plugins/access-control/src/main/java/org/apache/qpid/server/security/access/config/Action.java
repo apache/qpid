@@ -43,9 +43,9 @@ import org.apache.qpid.server.security.access.Operation;
  */
 public class Action
 {
-    private Operation _operation;
-    private ObjectType _object;
-    private ObjectProperties _properties;
+    private final Operation _operation;
+    private final ObjectType _object;
+    private final ObjectProperties _properties;
 
     public Action(Operation operation)
     {
@@ -64,9 +64,9 @@ public class Action
 
     public Action(Operation operation, ObjectType object, ObjectProperties properties)
     {
-        setOperation(operation);
-        setObjectType(object);
-        setProperties(properties);
+        _operation = operation;
+        _object = object;
+        _properties = properties;
     }
 
     public Operation getOperation()
@@ -74,19 +74,9 @@ public class Action
         return _operation;
     }
 
-    public void setOperation(Operation operation)
-    {
-        _operation = operation;
-    }
-
     public ObjectType getObjectType()
     {
         return _object;
-    }
-
-    public void setObjectType(ObjectType object)
-    {
-        _object = object;
     }
 
     public ObjectProperties getProperties()
@@ -94,24 +84,53 @@ public class Action
         return _properties;
     }
 
-    public void setProperties(ObjectProperties properties)
-    {
-        _properties = properties;
-    }
-
     public boolean isAllowed()
     {
         return _object.isAllowed(_operation);
     }
 
-    /** @see Comparable#compareTo(Object) */
     public boolean matches(Action a)
     {
-        boolean operationMatches = Operation.ALL == a.getOperation() || getOperation() == a.getOperation();
-        boolean objectTypeMatches = ObjectType.ALL == a.getObjectType() || getObjectType() == a.getObjectType();
-        boolean propertiesMatch = _properties.matches(a.getProperties());
+        if (!operationsMatch(a))
+        {
+            return false;
+        }
 
-        return (operationMatches && objectTypeMatches && propertiesMatch);
+        if (!objectTypesMatch(a))
+        {
+            return false;
+        }
+
+        if (!propertiesMatch(a))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean operationsMatch(Action a)
+    {
+        return Operation.ALL == a.getOperation() || getOperation() == a.getOperation();
+    }
+
+    private boolean objectTypesMatch(Action a)
+    {
+        return ObjectType.ALL == a.getObjectType() || getObjectType() == a.getObjectType();
+    }
+
+    private boolean propertiesMatch(Action a)
+    {
+        boolean propertiesMatch = false;
+        if (_properties != null)
+        {
+            propertiesMatch = _properties.matches(a.getProperties());
+        }
+        else if (a.getProperties() == null)
+        {
+            propertiesMatch = true;
+        }
+        return propertiesMatch;
     }
 
     @Override

@@ -65,12 +65,11 @@ public class HostnameFirewallRule implements FirewallRule
         String hostname = getHostname(remote);
         if (hostname == null)
         {
-            throw new AccessControlFirewallException("DNS lookup failed");
+            throw new AccessControlFirewallException("DNS lookup failed for address " + remote);
         }
         for (Pattern pattern : _hostnamePatterns)
         {
             boolean hostnameMatches = pattern.matcher(hostname).matches();
-
 
             if (hostnameMatches)
             {
@@ -114,6 +113,7 @@ public class HostnameFirewallRule implements FirewallRule
         }
         catch (Exception e)
         {
+            _logger.warn("Unable to look up hostname from address " + remote, e);
             return null;
         }
         finally
