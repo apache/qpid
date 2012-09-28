@@ -91,7 +91,6 @@ public class AMQPEncodedListMessage extends JMSStreamMessage implements
     {
         checkWritable();
         checkAllowedValue(a);
-        checkIfElementIsOfCorrectType(a);
         try
         {
             return _list.add(a);
@@ -932,18 +931,5 @@ public class AMQPEncodedListMessage extends JMSStreamMessage implements
     public List<Object> asList()
     {
         return _list;
-    }
-
-    private void checkIfElementIsOfCorrectType(Object obj) throws JMSException
-    {
-        if (!_list.isEmpty())
-        {
-            if (obj.getClass() != _list.get(0).getClass())
-            {
-                throw new MessageFormatException("List can only contain elements of the same type."+
-                                                 " The first element of the list is of type " + _list.get(0).getClass() +
-                                                 " ,while the element suplied here is of type " + obj.getClass());
-            }
-        }
     }
 }
