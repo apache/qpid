@@ -87,6 +87,8 @@ public class ClientProperties
 
     public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
+    public static final String USE_LEGACY_STREAM_MESSAGE_FORMAT = "qpid.use_legacy_stream_message";
+
     public static final String AMQP_VERSION = "qpid.amqp.version";
 
     public static final String QPID_VERIFY_CLIENT_ID = "qpid.verify_client_id";

@@ -21,6 +21,7 @@
 package org.apache.qpid.jms;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.ListMessage;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -100,4 +101,6 @@ public interface Session extends TopicSession, QueueSession
     AMQShortString getDefaultTopicExchangeName();
 
     AMQShortString getTemporaryQueueExchangeName();
+
+    ListMessage createListMessage() throws JMSException;
 }
