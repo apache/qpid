@@ -179,6 +179,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     // new amqp-0-10 encoded format.
     private boolean _useLegacyMapMessageFormat;
 
+    // Indicates whether to use the old stream message format or the
+    // new amqp-0-10 list encoded format.
+    private boolean _useLegacyStreamMessageFormat;
+
     //used to track the last failover time for
     //Address resolution purposes
     private volatile long _lastFailoverTime = 0;
@@ -292,6 +296,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             // use the default value set for all connections
             _useLegacyMapMessageFormat = Boolean.getBoolean(ClientProperties.USE_LEGACY_MAP_MESSAGE_FORMAT);
+        }
+
+        if (connectionURL.getOption(ConnectionURL.OPTIONS_USE_LEGACY_STREAM_MESSAGE_FORMAT) != null)
+        {
+            _useLegacyStreamMessageFormat =  Boolean.parseBoolean(
+                    connectionURL.getOption(ConnectionURL.OPTIONS_USE_LEGACY_STREAM_MESSAGE_FORMAT));
+        }
+        else
+        {
+            // use the default value set for all connections
+            _useLegacyStreamMessageFormat = Boolean.getBoolean(ClientProperties.USE_LEGACY_STREAM_MESSAGE_FORMAT);
         }
 
         String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
@@ -1496,6 +1511,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public boolean isUseLegacyMapMessageFormat()
     {
         return _useLegacyMapMessageFormat;
+    }
+
+    public boolean isUseLegacyStreamMessageFormat()
+    {
+        return _useLegacyStreamMessageFormat;
     }
 
     private void verifyClientID() throws AMQException
