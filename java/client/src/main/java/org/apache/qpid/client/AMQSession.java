@@ -35,6 +35,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.AMQPEncodedMapMessage;
+import org.apache.qpid.client.message.AMQPEncodedListMessage;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.CloseConsumerMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
@@ -50,6 +51,7 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.jms.ListMessage;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.SessionException;
@@ -122,6 +124,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_DECLARE_EXCHANGES_PROP_NAME, "true"));
 
     private final boolean _useAMQPEncodedMapMessage;
+
+    private final boolean _useAMQPEncodedStreamMessage;
 
     /**
      * Flag indicating to start dispatcher as a daemon thread
@@ -398,6 +402,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
         _useAMQPEncodedMapMessage = con == null ? true : !con.isUseLegacyMapMessageFormat();
+        _useAMQPEncodedStreamMessage = con == null ? true : !con.isUseLegacyStreamMessageFormat();
         _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP, STRICT_AMQP_DEFAULT));
         _strictAMQPFATAL =
                 Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP_FATAL, STRICT_AMQP_FATAL_DEFAULT));
@@ -1111,6 +1116,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
+    public ListMessage createListMessage() throws JMSException
+    {
+        checkNotClosed();
+        AMQPEncodedListMessage msg = new AMQPEncodedListMessage(getMessageDelegateFactory());
+        msg.setAMQSession(this);
+        return msg;
+    }
+
     public MapMessage createMapMessage() throws JMSException
     {
         checkNotClosed();
@@ -1353,17 +1366,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public StreamMessage createStreamMessage() throws JMSException
     {
-        // This method needs to be improved. Throwables only arrive here from the mina : exceptionRecived
-        // calls through connection.closeAllSessions which is also called by the public connection.close()
-        // with a null cause
-        // When we are closing the Session due to a protocol session error we simply create a new AMQException
-        // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
-        // We need to determin here if the connection should be
-
-        synchronized (getFailoverMutex())
+        checkNotClosed();
+        if (_useAMQPEncodedMapMessage)
         {
-            checkNotClosed();
-
+            AMQPEncodedListMessage msg = new AMQPEncodedListMessage(getMessageDelegateFactory());
+            msg.setAMQSession(this);
+            return msg;
+        }
+        else
+        {
             JMSStreamMessage msg = new JMSStreamMessage(getMessageDelegateFactory());
             msg.setAMQSession(this);
             return msg;
