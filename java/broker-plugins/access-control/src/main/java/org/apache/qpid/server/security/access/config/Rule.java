@@ -41,10 +41,10 @@ public class Rule implements Comparable<Rule>
     private Integer _number;
     private Boolean _enabled = Boolean.TRUE;
     private String _identity;
-    private Action _action;
+    private AclAction _action;
     private Permission _permission;
 
-    public Rule(Integer number, String identity, Action action, Permission permission)
+    public Rule(Integer number, String identity, AclAction action, Permission permission)
     {
         setNumber(number);
         setIdentity(identity);
@@ -52,7 +52,7 @@ public class Rule implements Comparable<Rule>
         setPermission(permission);
     }
 
-    public Rule(String identity, Action action, Permission permission)
+    public Rule(String identity, AclAction action, Permission permission)
     {
         this(null, identity, action, permission);
     }
@@ -99,10 +99,15 @@ public class Rule implements Comparable<Rule>
 
     public Action getAction()
     {
+        return _action.getAction();
+    }
+
+    public AclAction getAclAction()
+    {
         return _action;
     }
 
-    public void setAction(Action action)
+    public void setAction(AclAction action)
     {
         _action = action;
     }
@@ -117,7 +122,7 @@ public class Rule implements Comparable<Rule>
         _permission = permission;
     }
 
-    /** @see Comparable#compareTo(Object) */
+    @Override
     public int compareTo(Rule r)
     {
         return new CompareToBuilder()
@@ -127,7 +132,6 @@ public class Rule implements Comparable<Rule>
                 .toComparison();
     }
 
-    /** @see Object#equals(Object) */
     @Override
     public boolean equals(Object o)
     {
@@ -139,30 +143,28 @@ public class Rule implements Comparable<Rule>
 
         return new EqualsBuilder()
                 .append(getIdentity(), r.getIdentity())
-                .append(getAction(), r.getAction())
+                .append(getAclAction(), r.getAclAction())
                 .append(getPermission(), r.getPermission())
                 .isEquals();
     }
 
-    /** @see Object#hashCode() */
     @Override
     public int hashCode()
     {
         return new HashCodeBuilder()
                 .append(getIdentity())
-                .append(getAction())
+                .append(getAclAction())
                 .append(getPermission())
                 .toHashCode();
     }
 
-    /** @see Object#toString() */
     @Override
     public String toString()
     {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                 .append("#", getNumber())
                 .append("identity", getIdentity())
-                .append("action", getAction())
+                .append("action", getAclAction())
                 .append("permission", getPermission())
                 .append("enabled", isEnabled())
                 .toString();

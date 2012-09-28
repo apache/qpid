@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.server.security.access.config;
 
+import java.net.InetAddress;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,7 +54,7 @@ import org.apache.qpid.server.security.access.logging.AccessControlMessages;
  */
 public class RuleSet
 {
-    public static final Logger _logger = Logger.getLogger(RuleSet.class);
+    private static final Logger _logger = Logger.getLogger(RuleSet.class);
 
     private static final String AT = "@";
     private static final String SLASH = "/";
@@ -154,21 +155,27 @@ public class RuleSet
 
     public void grant(Integer number, String identity, Permission permission, Operation operation)
     {
-        Action action = new Action(operation);
+        AclAction action = new AclAction(operation);
         addRule(number, identity, permission, action);
     }
 
     public void grant(Integer number, String identity, Permission permission, Operation operation, ObjectType object, ObjectProperties properties)
     {
-        Action action = new Action(operation, object, properties);
+        AclAction action = new AclAction(operation, object, properties);
         addRule(number, identity, permission, action);
     }
 
-    public boolean ruleExists(String identity, Action action)
+    public void grant(Integer number, String identity, Permission permission, Operation operation, ObjectType object, AclRulePredicates predicates)
+    {
+        AclAction aclAction = new AclAction(operation, object, predicates);
+        addRule(number, identity, permission, aclAction);
+    }
+
+    public boolean ruleExists(String identity, AclAction action)
     {
         for (Rule rule : _rules.values())
         {
-            if (rule.getIdentity().equals(identity) && rule.getAction().equals(action))
+            if (rule.getIdentity().equals(identity) && rule.getAclAction().equals(action))
             {
                 return true;
             }
@@ -176,8 +183,7 @@ public class RuleSet
         return false;
     }
 
-    // TODO make this work when group membership is not known at file parse time
-    public void addRule(Integer number, String identity, Permission permission, Action action)
+    public void addRule(Integer number, String identity, Permission permission, AclAction action)
     {
         _cache.clear();
 
@@ -263,6 +269,16 @@ public class RuleSet
     }
 
     /**
+     * Checks for the case when the client's address is not known.
+     *
+     * @see #check(Subject, Operation, ObjectType, ObjectProperties, InetAddress)
+     */
+    public Result check(Subject subject, Operation operation, ObjectType objectType, ObjectProperties properties)
+    {
+        return check(subject, operation, objectType, properties, null);
+    }
+
+    /**
      * Check the authorisation granted to a particular identity for an operation on an object type with
      * specific properties.
      *
@@ -271,10 +287,9 @@ public class RuleSet
      * the first match found, or denies access if there are no matching rules. Normally, it would be expected
      * to have a default deny or allow rule at the end of an access configuration however.
      */
-    public Result check(Subject subject, Operation operation, ObjectType objectType, ObjectProperties properties)
+    public Result check(Subject subject, Operation operation, ObjectType objectType, ObjectProperties properties, InetAddress addressOfClient)
     {
-        // Create the action to check
-        Action action = new Action(operation, objectType, properties);
+        ClientAction action = new ClientAction(operation, objectType, properties);
 
         if(_logger.isDebugEnabled())
         {
@@ -293,27 +308,31 @@ public class RuleSet
         }
 
         // Iterate through a filtered set of rules dealing with this identity and operation
-        for (Rule current : rules)
+        for (Rule rule : rules)
         {
             if(_logger.isDebugEnabled())
             {
-                _logger.debug("Checking against rule: " + current);
+                _logger.debug("Checking against rule: " + rule);
             }
-            // Check if action matches
-            if (action.matches(current.getAction()))
+
+            if (action.matches(rule.getAclAction(), addressOfClient))
             {
-                Permission permission = current.getPermission();
+                Permission permission = rule.getPermission();
 
                 switch (permission)
                 {
                     case ALLOW_LOG:
                         CurrentActor.get().message(AccessControlMessages.ALLOWED(
-                                action.getOperation().toString(), action.getObjectType().toString(), action.getProperties().toString()));
+                                action.getOperation().toString(),
+                                action.getObjectType().toString(),
+                                action.getProperties().toString()));
                     case ALLOW:
                         return Result.ALLOWED;
                     case DENY_LOG:
                         CurrentActor.get().message(AccessControlMessages.DENIED(
-                                action.getOperation().toString(), action.getObjectType().toString(), action.getProperties().toString()));
+                                action.getOperation().toString(),
+                                action.getObjectType().toString(),
+                                action.getProperties().toString()));
                     case DENY:
                         return Result.DENIED;
                 }
@@ -419,5 +438,4 @@ public class RuleSet
         }
         return objects;
     }
-
 }

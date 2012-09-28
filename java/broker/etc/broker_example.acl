@@ -78,11 +78,24 @@ ACL ALLOW-LOG webadmins UPDATE METHOD
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
 
 ### MESSAGING ###
+# The 'ACCESS VIRTUALHOST' rules below apply to messaging operations (as opposed to management operations)
 
-#Example permissions for request-response based messaging.
+# Firewall examples
 
-#Allow 'messaging-users' group to connect to all virtualhosts
+# Deny access to all users from *.example.company1.com and *.example.company2.com
+ACL DENY-LOG all ACCESS VIRTUALHOST from_hostname=".*\.example\.company1.com,.*\.example\.company2.com"
+
+# Deny access to all users in the IP ranges 192.168.1.0-192.168.1.255 and 192.168.2.0-192.168.2.255,
+# using the notation specified in RFC 4632, "Classless Inter-domain Routing (CIDR)"
+ACL DENY-LOG messaging-users ACCESS VIRTUALHOST from_network="192.168.1.0/24,192.168.2.0/24"
+
+# Deny access to all users in the IP ranges 192.169.1.0-192.169.1.255 and 192.169.2.0-192.169.2.255,
+# using wildcard notation.
+ACL DENY-LOG messaging-users ACCESS VIRTUALHOST from_network="192.169.1.*,192.169.2.*"
+
+# Allow 'messaging-users' group to connect to all virtualhosts
 ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST
+
 # Deny messaging-users management
 ACL DENY-LOG messaging-users ACCESS MANAGEMENT
 

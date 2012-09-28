@@ -45,12 +45,6 @@
     <artifact name="qpid-broker-plugins-access-control" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker-plugins-access-control" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-access-control" type="source.asc" ext="jar.asc" e:classifier="sources"/>
-    <artifact name="qpid-broker-plugins-firewall" type="pom" ext="pom"/>
-    <artifact name="qpid-broker-plugins-firewall" type="pom.asc" ext="pom.asc"/>
-    <artifact name="qpid-broker-plugins-firewall" type="jar" ext="jar"/>
-    <artifact name="qpid-broker-plugins-firewall" type="jar.asc" ext="jar.asc"/>
-    <artifact name="qpid-broker-plugins-firewall" type="source" ext="jar" e:classifier="sources"/>
-    <artifact name="qpid-broker-plugins-firewall" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-management-http" type="pom" ext="pom"/>
     <artifact name="qpid-broker-plugins-management-http" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-broker-plugins-management-http" type="jar" ext="jar"/>

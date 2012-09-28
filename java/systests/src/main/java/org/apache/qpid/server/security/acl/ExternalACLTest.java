@@ -404,4 +404,33 @@ public class ExternalACLTest extends AbstractACLTestCase
         sess.rollback();
         conn.close();
     }
+
+    public void setUpFirewallAllow() throws Exception
+    {
+        writeACLFile("test", "ACL ALLOW client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
+    }
+
+    public void testFirewallAllow() throws Exception
+    {
+        getConnection("test", "client", "guest");
+        // test pass because we successfully connected
+    }
+
+    public void setUpFirewallDeny() throws Exception
+    {
+        writeACLFile("test", "ACL DENY client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
+    }
+
+    public void testFirewallDeny() throws Exception
+    {
+        try
+        {
+            getConnection("test", "client", "guest");
+            fail("We expected the connection to fail");
+        }
+        catch(JMSException e)
+        {
+            // pass
+        }
+    }
 }

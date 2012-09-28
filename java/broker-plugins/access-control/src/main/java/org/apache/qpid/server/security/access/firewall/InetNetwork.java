@@ -1,131 +1,24 @@
-/***********************************************************************
- * Copyright (c) 2000-2006 The Apache Software Foundation.             *
- * All rights reserved.                                                *
- * ------------------------------------------------------------------- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you *
- * may not use this file except in compliance with the License. You    *
- * may obtain a copy of the License at:                                *
- *                                                                     *
- *     http://www.apache.org/licenses/LICENSE-2.0                      *
- *                                                                     *
- * Unless required by applicable law or agreed to in writing, software *
- * distributed under the License is distributed on an "AS IS" BASIS,   *
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or     *
- * implied.  See the License for the specific language governing       *
- * permissions and limitations under the License.                      *
- ***********************************************************************/
-
-package org.apache.qpid.util;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.qpid.server.security.access.firewall;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-
-public class NetMatcher
-{
-    private ArrayList networks;
-
-    public void initInetNetworks(final Collection nets)
-    {
-        networks = new ArrayList();
-        for (Iterator iter = nets.iterator(); iter.hasNext(); )
-        {
-            try
-            {
-                InetNetwork net = InetNetwork.getFromString((String) iter.next());
-                if (!networks.contains(net))
-                {
-                    networks.add(net);
-                }
-            }
-            catch (java.net.UnknownHostException uhe)
-            {
-                log("Cannot resolve address: " + uhe.getMessage());
-            }
-        }
-        networks.trimToSize();
-    }
-
-    public void initInetNetworks(final String[] nets)
-    {
-        networks = new ArrayList();
-        for (int i = 0; i < nets.length; i++)
-        {
-            try
-            {
-                InetNetwork net = InetNetwork.getFromString(nets[i]);
-                if (!networks.contains(net))
-                {
-                    networks.add(net);
-                }
-            }
-            catch (java.net.UnknownHostException uhe)
-            {
-                log("Cannot resolve address: " + uhe.getMessage());
-            }
-        }
-        networks.trimToSize();
-    }
-
-    public boolean matchInetNetwork(final String hostIP)
-    {
-        InetAddress ip = null;
-
-        try
-        {
-            ip = InetAddress.getByName(hostIP);
-        }
-        catch (java.net.UnknownHostException uhe)
-        {
-            log("Cannot resolve address for " + hostIP + ": " + uhe.getMessage());
-        }
-
-        boolean sameNet = false;
-
-        if (ip != null)
-        {
-            for (Iterator iter = networks.iterator(); (!sameNet) && iter.hasNext(); )
-            {
-                InetNetwork network = (InetNetwork) iter.next();
-                sameNet = network.contains(ip);
-            }
-        }
-        return sameNet;
-    }
-
-    public boolean matchInetNetwork(final InetAddress ip)
-    {
-        boolean sameNet = false;
-
-        for (Iterator iter = networks.iterator(); (!sameNet) && iter.hasNext(); )
-        {
-            InetNetwork network = (InetNetwork) iter.next();
-            sameNet = network.contains(ip);
-        }
-        return sameNet;
-    }
-
-    public NetMatcher()
-    {
-    }
-
-    public NetMatcher(final String[] nets)
-    {
-        initInetNetworks(nets);
-    }
-
-    public NetMatcher(final Collection nets)
-    {
-        initInetNetworks(nets);
-    }
-
-    public String toString() {
-        return networks.toString();
-    }
-
-    protected void log(String s) { }
-}
 
 class InetNetwork
 {
@@ -218,7 +111,7 @@ class InetNetwork
     /*
      * This converts from an uncommon "wildcard" CIDR format
      * to "address + mask" format:
-     * 
+     *
      *   *               =>  000.000.000.0/000.000.000.0
      *   xxx.*           =>  xxx.000.000.0/255.000.000.0
      *   xxx.xxx.*       =>  xxx.xxx.000.0/255.255.000.0
@@ -227,7 +120,7 @@ class InetNetwork
     static private String normalizeFromAsterisk(final String netspec)
     {
         String[] masks = {  "0.0.0.0/0.0.0.0", "0.0.0/255.0.0.0", "0.0/255.255.0.0", "0/255.255.255.0" };
-        char[] srcb = netspec.toCharArray();                
+        char[] srcb = netspec.toCharArray();
         int octets = 0;
         for (int i = 1; i < netspec.length(); i++)
         {
@@ -261,8 +154,8 @@ class InetNetwork
 
     static {
         try {
-            Class inetAddressClass = Class.forName("java.net.InetAddress");
-            Class[] parameterTypes = { byte[].class };
+            Class<?> inetAddressClass = Class.forName("java.net.InetAddress");
+            Class<?>[] parameterTypes = { byte[].class };
             getByAddress = inetAddressClass.getMethod("getByAddress", parameterTypes);
         } catch (Exception e) {
             getByAddress = null;
