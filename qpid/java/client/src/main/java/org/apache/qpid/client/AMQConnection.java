@@ -306,7 +306,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         else
         {
             // use the default value set for all connections
-            _useLegacyStreamMessageFormat = Boolean.getBoolean(ClientProperties.USE_LEGACY_STREAM_MESSAGE_FORMAT);
+            _useLegacyStreamMessageFormat = System.getProperty(ClientProperties.USE_LEGACY_STREAM_MESSAGE_FORMAT) == null ?
+                    true : Boolean.getBoolean(ClientProperties.USE_LEGACY_STREAM_MESSAGE_FORMAT);
         }
 
         String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
