@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- 
+
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -9,16 +9,16 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
- 
+
 -->
 
 <section id="Configuring-ACLS">
@@ -26,9 +26,11 @@
       Configuring ACLs
   </title>
   <para>
-    In Qpid, ACLs specify which actions can be performed by each authenticated user. To enable the ACL &lt;acl/&gt; element is used within the 
-    &lt;security/&gt; element of the configuration XML. In the Java Broker, the ACL may be imposed broker wide or applied to individual virtual
-    hosts.  The  &lt;acl/&gt; references a text file containing the ACL rules.  By convention, this file should have a .acl extension.
+    In Qpid, Access Control Lists (ACLs) specify which actions can be performed by each authenticated user.
+    To enable, the &lt;acl/&gt; element is used within the &lt;security/&gt; element of the configuration XML.
+    In the Java Broker, the ACL may be imposed broker wide or applied to individual virtual
+    hosts.  The  &lt;acl/&gt; configuration references a text file containing the ACL rules.
+    By convention, this file should have a .acl extension.
   </para>
 
 
@@ -38,10 +40,10 @@
     </title>
 
     <para>
-      To apply an ACL broker-wide, add the following to the config.xml (Assuming that <replaceable>conf</replaceable> has been set to a suitable
-      location such as ${QPID_HOME}/etc)
+      To apply an ACL broker-wide, add the following to the config.xml (assuming that <replaceable>conf</replaceable> has been set to a suitable
+      location such as ${QPID_HOME}/etc):
     </para>
- 
+
     <programlisting>
       &lt;broker&gt;
         ...
@@ -58,7 +60,7 @@
     <para>
       To apply an ACL on a single virtualhost named <replaceable>test</replaceable>, add the following to the config.xml:
     </para>
- 
+
     <programlisting>
       &lt;virtualhost&gt;
         ...
@@ -82,7 +84,7 @@
       The ACL file consists of a series of rules associating behaviour for a user or group. Use of groups can serve to make the ACL file more concise. See <link linkend="Configuring-Group-Providers">Configuring Group Providers</link> for more information on defining groups.
     </para>
     <para>
-      Each ACL rule grants (or denies) a particular action on a object to a user/group.  The rule may be augmented with one or more properties, restricting
+      Each ACL rule grants or denies a particular action on an object to a user/group.  The rule may be augmented with one or more properties, restricting
       the rule's applicability.
     </para>
     <programlisting>
@@ -102,23 +104,25 @@
       If the desire is to allow bob to create all exchanges except "myexch", order of the rules must be reversed:
     </para>
     <programlisting>
-      ACL DENY bob CREATE EXCHANGE name="myexch" 
+      ACL DENY bob CREATE EXCHANGE name="myexch"
       ACL ALLOW bob ALL EXCHANGE
     </programlisting>
     <para>
-      All ACL files end with a implict rule denying all operations to all users.  It is as if each file ends with 
+      All ACL files end with an implict rule denying all operations to all users.  It is as if each file ends with
       <programlisting>ACL DENY ALL ALL </programlisting>
-      To allow all operations, other than those controlled by earlier use <programlisting>ACL ALLOW ALL ALL </programlisting> instead.
+      If instead you wish to <emphasis>allow</emphasis> all operations other than those controlled by earlier rules,
+      add <programlisting>ACL ALLOW ALL ALL</programlisting> to the bottom of the ACL file.
     </para>
     <para>
       When writing a new ACL, a good approach is to begin with an .acl file containing only <programlisting>ACL DENY-LOG ALL ALL</programlisting>
       which will cause the Broker to deny all operations with details of the denial logged to the Qpid log file. Build up the ACL rule by rule,
-      gradually working through the use-cases of your system.  Once the ACL is complete, switch the DEBY-LOG to DENY for optimum performamce.
+      gradually working through the use-cases of your system.  Once the ACL is complete, consider switching the DENY-LOG actions to DENY
+      to improve performamce and reduce log noise.
     </para>
     <para>
-      ACL rules are very powerful: it is possible to write very expressive rules permissioning every AMQP objects enumerating all object
+      ACL rules are very powerful: it is possible to write very granular rules specifying many broker objects and their
       properties.  Most projects probably won't need this degree of flexibility.  A reasonable approach is to choose to apply permissions
-      at a certain level of abstraction (i.e. QUEUE) and apply consistently across the whole system.
+      at a certain level of abstraction (e.g. QUEUE) and apply them consistently across the whole system.
     </para>
   </section>
 
@@ -128,7 +132,7 @@
     </title>
 
     <para>
-       ACL rules must follow this syntax:
+       ACL rules follow this syntax:
     </para>
     <programlisting>
      ACL {permission} {&lt;group-name&gt;|&lt;user-name>&gt;|ALL} {action|ALL} [object|ALL] [property="&lt;property-value&gt;"]
@@ -309,6 +313,58 @@
           <entry> <command>schemaclass</command> </entry>
           <entry> <para> String. QMF schema class name (Not used in Java Broker)</para> </entry>
         </row>
+        <row>
+          <entry> <command>from_network</command> </entry>
+          <entry>
+            <para>
+              Comma-separated strings representing IPv4 address ranges.
+            </para>
+            <para>
+              Intended for use in ACCESS VIRTUALHOST rules to apply firewall-like restrictions.
+            </para>
+            <para>
+              The rule matches if any of the address ranges match the IPv4 address of the messaging client.
+              The address ranges are specified using either Classless Inter-Domain Routing notation
+              (e.g. 192.168.1.0/24; see <ulink url="http://tools.ietf.org/html/rfc4632">RFC 4632</ulink>)
+              or wildcards (e.g. 192.169.1.*).
+            </para>
+            <para>
+              Java Broker only.
+            </para>
+          </entry>
+        </row>
+        <row>
+          <entry> <command>from_hostname</command> </entry>
+          <entry>
+            <para>
+              Comma-separated strings representing hostnames, specified using Perl-style regular
+              expressions, e.g. .*\.example\.company\.com
+            </para>
+            <para>
+              Intended for use in ACCESS VIRTUALHOST rules to apply firewall-like restrictions.
+            </para>
+            <para>
+              The rule matches if any of the patterns match the hostname of the messaging client.
+            </para>
+            <para>
+              To look up the client's hostname, Qpid uses Java's DNS support, which internally caches its results.
+            </para>
+            <para>
+              You can modify the time-to-live of cached results using the *.ttl properties described on the
+              Java <ulink url="http://docs.oracle.com/javase/6/docs/technotes/guides/net/properties.html">Networking
+              Properties</ulink> page.
+            </para>
+            <para>
+              For example, you can either set system property sun.net.inetaddr.ttl from the command line
+              (e.g. export QPID_OPTS="-Dsun.net.inetaddr.ttl=0") or networkaddress.cache.ttl in
+              $JAVA_HOME/lib/security/java.security. The latter is preferred because it is JVM
+              vendor-independent.
+            </para>
+            <para>
+              Java Broker only.
+            </para>
+          </entry>
+        </row>
       </tbody>
     </tgroup>
   </table>
@@ -356,30 +412,31 @@
       Worked Examples
     </title>
     <para>
-       Here are three example ACLs illustrating some common use-cases.
+      Here are some example ACLs illustrating common use cases.
+      In addition, note that the Java broker provides a complete example ACL file, located at etc/broker_example.acl.
     </para>
     <section role="h4" id="ConfigureACLs-WorkedExample1">
       <title>
         Worked example 1 - Management rights
       </title>
       <para>
-         Suppose you wish to permission two users: a user 'operator' must be able to perform all Management operations, and
-         a user 'readonly' must be enable to perform only read-only functions.  Neither 'operator' nor 'readonly'
-         should be allowed to connect clients for messaging.
+        Suppose you wish to permission two users: a user 'operator' must be able to perform all Management operations, and
+        a user 'readonly' must be enable to perform only read-only functions.  Neither 'operator' nor 'readonly'
+        should be allowed to connect clients for messaging.
       </para>
       <programlisting>
-        # Deny (loggged) operator/readonly permission to connect messaging clients.
-        ACL DENY-LOG operator ACCESS VIRTUALHOST
-        ACL DENY-LOG readonly ACCESS VIRTUALHOST
-        # Give operator permission to perfom all other actions
-        ACL ALLOW operator ALL ALL
-        # Give readonly permission to execute only read-only actions
-        ACL ALLOW readonly ACCESS ALL
-        ...
-        ... rules for other users
-        ...
-        # Explicitly deny all (log) to eveyone 
-        ACL DENY-LOG ALL ALL
+# Deny (loggged) operator/readonly permission to connect messaging clients.
+ACL DENY-LOG operator ACCESS VIRTUALHOST
+ACL DENY-LOG readonly ACCESS VIRTUALHOST
+# Give operator permission to perfom all other actions
+ACL ALLOW operator ALL ALL
+# Give readonly permission to execute only read-only actions
+ACL ALLOW readonly ACCESS ALL
+...
+... rules for other users
+...
+# Explicitly deny all (log) to eveyone
+ACL DENY-LOG ALL ALL
       </programlisting>
     </section>
     <section role="h4" id="ConfigureACLs-WorkedExample2">
@@ -387,21 +444,22 @@
         Worked example 2 - User maintainer group
       </title>
       <para>
-         Suppose you wish to restrict User Management operations to users belonging to a <link linkend="Configuring-Group-Providers">group</link> 'usermaint'.  No other user
-         is allowed to perform user maintainence  This example illustrates the permissioning of an individual component.
+        Suppose you wish to restrict User Management operations to users belonging to a
+        <link linkend="Configuring-Group-Providers">group</link> 'usermaint'.  No other user
+        is allowed to perform user maintainence  This example illustrates the permissioning of an individual component.
       </para>
       <programlisting>
-        # Give usermaint access to management and permission to execute all JMX Methods on the
-        # UserManagement MBean and perform all actions for USER objects
-        ACL ALLOW usermaint ACCESS MANAGEMENT
-        ACL ALLOW usermaint ALL METHOD component="UserManagement"
-        ACL ALLOW usermaint ALL USER
-        ACL DENY ALL ALL METHOD component="UserManagement"
-        ACL DENY ALL ALL USER
-        ...
-        ... rules for other users
-        ...
-        ACL DENY-LOG ALL ALL
+# Give usermaint access to management and permission to execute all JMX Methods on the
+# UserManagement MBean and perform all actions for USER objects
+ACL ALLOW usermaint ACCESS MANAGEMENT
+ACL ALLOW usermaint ALL METHOD component="UserManagement"
+ACL ALLOW usermaint ALL USER
+ACL DENY ALL ALL METHOD component="UserManagement"
+ACL DENY ALL ALL USER
+...
+... rules for other users
+...
+ACL DENY-LOG ALL ALL
       </programlisting>
     </section>
     <section role="h4" id="ConfigureACLs-WorkedExample3">
@@ -409,35 +467,71 @@
         Worked example 3 - Request/Response messaging
       </title>
       <para>
-         Suppose you wish to permission a system using a request/response paradigm. Two users: 'client' publishes requests;
-         'server' consumes the requests and generates a response.  This example illustrates the permissioning of AMQP exchanges
-         and queues.
+        Suppose you wish to permission a system using a request/response paradigm. Two users: 'client' publishes requests;
+        'server' consumes the requests and generates a response.  This example illustrates the permissioning of AMQP exchanges
+        and queues.
       </para>
       <programlisting>
-        # Allow client and server to connect to the virtual host.
-        ACL ALLOW client ACCESS VIRTUALHOST
-        ACL ALLOW server ACCESS VIRTUALHOST
+# Allow client and server to connect to the virtual host.
+ACL ALLOW client ACCESS VIRTUALHOST
+ACL ALLOW server ACCESS VIRTUALHOST
 
-        # Client side
-        # Allow the 'client' user to publish requests to the request queue. As is the norm for the request/response paradigm, the client
-        # is required to create a temporary queue on which the server will response.  Consequently, there are rules to allow the creation
-        # of the temporary queues and consumption of messages from it.
-        ACL ALLOW client CREATE QUEUE temporary="true"
-        ACL ALLOW client CONSUME QUEUE temporary="true"
-        ACL ALLOW client DELETE QUEUE temporary="true"
-        ACL ALLOW client BIND EXCHANGE name="amq.direct" temporary="true"
-        ACL ALLOW client UNBIND EXCHANGE name="amq.direct" temporary="true"
-        ACL ALLOW client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
-        
-        # Server side
-        # Allow the 'server' user to consume from the request queue and publish a response to the temporary response queue created by
-        # client.  We also allow the server to create the request queue.
-        ACL ALLOW server CREATE QUEUE name="example.RequestQueue"
-        ACL ALLOW server CONSUME QUEUE name="example.RequestQueue"
-        ACL ALLOW server BIND EXCHANGE
-        ACL ALLOW server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
-        
-        ACL DENY-LOG all all
+# Client side
+# Allow the 'client' user to publish requests to the request queue. As is the norm for the request/response paradigm, the client
+# is required to create a temporary queue on which the server will respond.  Consequently, there are rules to allow the creation
+# of the temporary queues and consumption of messages from it.
+ACL ALLOW client CREATE QUEUE temporary="true"
+ACL ALLOW client CONSUME QUEUE temporary="true"
+ACL ALLOW client DELETE QUEUE temporary="true"
+ACL ALLOW client BIND EXCHANGE name="amq.direct" temporary="true"
+ACL ALLOW client UNBIND EXCHANGE name="amq.direct" temporary="true"
+ACL ALLOW client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
+
+# Server side
+# Allow the 'server' user to consume from the request queue and publish a response to the temporary response queue created by
+# client.  We also allow the server to create the request queue.
+ACL ALLOW server CREATE QUEUE name="example.RequestQueue"
+ACL ALLOW server CONSUME QUEUE name="example.RequestQueue"
+ACL ALLOW server BIND EXCHANGE
+ACL ALLOW server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+
+ACL DENY-LOG all all
+      </programlisting>
+    </section>
+    <section role="h4" id="ConfigureACLs-WorkedExample4">
+      <title>
+        Worked example 4 - firewall-like access control
+      </title>
+      <para>
+        This example illustrates how to set up an ACL that restricts the IP addresses and hostnames
+        of messaging clients that can access a virtual host.
+      </para>
+      <programlisting>
+################
+# Hostname rules
+################
+
+# Allow messaging clients from company1.com and company1.co.uk to connect
+ACL ALLOW all ACCESS VIRTUALHOST from_hostname=".*\.company1\.com,.*\.company1\.co\.uk"
+
+# Deny messaging clients from hosts within the dev subdomain
+ACL DENY-LOG all ACCESS VIRTUALHOST from_hostname=".*\.dev\.company1\.com"
+
+##################
+# IP address rules
+##################
+
+# Deny access to all users in the IP ranges 192.168.1.0-192.168.1.255 and 192.168.2.0-192.168.2.255,
+# using the notation specified in RFC 4632, "Classless Inter-domain Routing (CIDR)"
+ACL DENY-LOG messaging-users ACCESS VIRTUALHOST \
+  from_network="192.168.1.0/24,192.168.2.0/24"
+
+# Deny access to all users in the IP ranges 192.169.1.0-192.169.1.255 and 192.169.2.0-192.169.2.255,
+# using wildcard notation.
+ACL DENY-LOG messaging-users ACCESS VIRTUALHOST \
+  from_network="192.169.1.*,192.169.2.*"
+
+ACL DENY-LOG all all
       </programlisting>
     </section>
   </section>
