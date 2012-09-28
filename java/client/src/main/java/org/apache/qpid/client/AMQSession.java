@@ -402,7 +402,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
         _useAMQPEncodedMapMessage = con == null ? true : !con.isUseLegacyMapMessageFormat();
-        _useAMQPEncodedStreamMessage = con == null ? true : !con.isUseLegacyStreamMessageFormat();
+        _useAMQPEncodedStreamMessage = con == null ? false : !con.isUseLegacyStreamMessageFormat();
         _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP, STRICT_AMQP_DEFAULT));
         _strictAMQPFATAL =
                 Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP_FATAL, STRICT_AMQP_FATAL_DEFAULT));
@@ -1367,7 +1367,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public StreamMessage createStreamMessage() throws JMSException
     {
         checkNotClosed();
-        if (_useAMQPEncodedMapMessage)
+        if (_useAMQPEncodedStreamMessage)
         {
             AMQPEncodedListMessage msg = new AMQPEncodedListMessage(getMessageDelegateFactory());
             msg.setAMQSession(this);

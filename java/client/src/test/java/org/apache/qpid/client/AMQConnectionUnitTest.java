@@ -30,15 +30,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AMQConnectionUnitTest extends TestCase
 {
+    String _url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'";
 
     public void testExceptionReceived()
     {
-        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'";
         AMQInvalidArgumentException expectedException = new AMQInvalidArgumentException("Test", null);
         final AtomicReference<JMSException> receivedException = new AtomicReference<JMSException>();
         try
         {
-            MockAMQConnection connection = new MockAMQConnection(url);
+            MockAMQConnection connection = new MockAMQConnection(_url);
             connection.setExceptionListener(new ExceptionListener()
             {
 
@@ -62,4 +62,21 @@ public class AMQConnectionUnitTest extends TestCase
         assertEquals("JMSException linked exception is incorrect", expectedException, exception.getLinkedException());
     }
 
+    /**
+     * This should expand to test all the defaults.
+     */
+    public void testDefaultStreamMessageEncoding() throws Exception
+    {
+        MockAMQConnection connection = new MockAMQConnection(_url);
+        assertTrue("Legacy Stream message encoding should be the default",connection.isUseLegacyStreamMessageFormat());
+    }
+
+    /**
+     * This should expand to test all the connection properties.
+     */
+    public void testStreamMessageEncodingProperty() throws Exception
+    {
+        MockAMQConnection connection = new MockAMQConnection(_url + "&use_legacy_stream_msg_format='false'");
+        assertFalse("Stream message encoding should be amqp/list",connection.isUseLegacyStreamMessageFormat());
+    }
 }
