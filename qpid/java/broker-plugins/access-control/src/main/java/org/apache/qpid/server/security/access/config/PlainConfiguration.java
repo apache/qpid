@@ -34,13 +34,15 @@ import java.util.Stack;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
 
 public class PlainConfiguration extends AbstractConfiguration
 {
+    private static final Logger _logger = Logger.getLogger(PlainConfiguration.class);
+
     public static final Character COMMENT = '#';
     public static final Character CONTINUATION = '\\';
 
@@ -74,9 +76,16 @@ public class PlainConfiguration extends AbstractConfiguration
     {
         RuleSet ruleSet = super.load();
 
+        File file = getFile();
+
         try
         {
-            _st = new StreamTokenizer(new BufferedReader(new FileReader(getFile())));
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("About to load ACL file " + file);
+            }
+
+            _st = new StreamTokenizer(new BufferedReader(new FileReader(file)));
             _st.resetSyntax(); // setup the tokenizer
 
             _st.commentChar(COMMENT); // single line comments
@@ -195,11 +204,11 @@ public class PlainConfiguration extends AbstractConfiguration
         }
         catch (FileNotFoundException fnfe)
         {
-            throw new ConfigurationException(String.format(CONFIG_NOT_FOUND_MSG, getFile().getName()), fnfe);
+            throw new ConfigurationException(String.format(CONFIG_NOT_FOUND_MSG, file.getName()), fnfe);
         }
         catch (IOException ioe)
         {
-            throw new ConfigurationException(String.format(CANNOT_LOAD_MSG, getFile().getName()), ioe);
+            throw new ConfigurationException(String.format(CANNOT_LOAD_MSG, file.getName()), ioe);
         }
 
         return ruleSet;
@@ -228,9 +237,9 @@ public class PlainConfiguration extends AbstractConfiguration
         else
         {
             ObjectType object = ObjectType.parse(args.get(3));
-            ObjectProperties properties = toObjectProperties(args.subList(4, args.size()));
+            AclRulePredicates predicates = toRulePredicates(args.subList(4, args.size()));
 
-            getConfiguration().grant(number, identity, permission, operation, object, properties);
+            getConfiguration().grant(number, identity, permission, operation, object, predicates);
         }
     }
 
@@ -246,10 +255,9 @@ public class PlainConfiguration extends AbstractConfiguration
         getConfiguration().configure(properties);
     }
 
-    /** Converts a {@link List} of "name", "=", "value" tokens into a {@link Map}. */
-    protected ObjectProperties toObjectProperties(List<String> args) throws ConfigurationException
+    private AclRulePredicates toRulePredicates(List<String> args) throws ConfigurationException
     {
-        ObjectProperties properties = new ObjectProperties();
+        AclRulePredicates predicates = new AclRulePredicates();
         Iterator<String> i = args.iterator();
         while (i.hasNext())
         {
@@ -268,11 +276,9 @@ public class PlainConfiguration extends AbstractConfiguration
             }
             String value = i.next();
 
-            // parse property key
-            ObjectProperties.Property property = ObjectProperties.Property.parse(key);
-            properties.put(property, value);
+            predicates.parse(key, value);
         }
-        return properties;
+        return predicates;
     }
 
     /** Converts a {@link List} of "name", "=", "value" tokens into a {@link Map}. */
