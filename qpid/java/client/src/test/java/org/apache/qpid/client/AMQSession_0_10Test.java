@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.client.message.AMQPEncodedListMessage;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.*;
@@ -28,6 +29,8 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
+import javax.jms.StreamMessage;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -457,6 +460,13 @@ public class AMQSession_0_10Test extends QpidTestCase
         assertNotNull("MessageTransfer event was not sent", event);
         event = findSentProtocolEventOfClass(session, ExchangeDeclare.class, false);
         assertNotNull("ExchangeDeclare event was not sent", event);
+    }
+
+    public void testCreateStreamMessage() throws Exception
+    {
+        AMQSession_0_10 session = createAMQSession_0_10();
+        StreamMessage m = session.createStreamMessage();
+        assertTrue("Legacy Stream message encoding should be the default" + m.getClass(),!(m instanceof AMQPEncodedListMessage));
     }
 
     public void testGetQueueDepthWithSync()
