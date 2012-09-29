@@ -252,55 +252,47 @@ public class ConnectionURLTest extends TestCase
         assertTrue(service.getPort() == 5672);
     }
 
-    public void testSingleTransportDefaultedBrokerWithIPandPort() throws URLSyntaxException
+    public void testConnectionURLOptionToStringMasksPassword() throws URLSyntaxException
     {
-        String url = "amqp://guest:guest@/test?brokerlist='127.0.0.1:1234'";
+        String url = "amqp://guest:guest@client/localhost?brokerlist='tcp://localhost:1234'";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-//        ConnectionURL connectionurl = new AMQConnectionURL(url);
-//
-//        assertTrue(connectionurl.getFailoverMethod() == null);
-//        assertTrue(connectionurl.getUsername().equals("guest"));
-//        assertTrue(connectionurl.getPassword().equals("guest"));
-//        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
-//
-//
-//        assertTrue(connectionurl.getBrokerCount() == 1);
-//
-//        BrokerDetails service = connectionurl.getBrokerDetails(0);
-//
-//        assertTrue(service.getTransport().equals("tcp"));
-//
-//        assertTrue(service.getHost().equals("127.0.0.1"));
-//        assertTrue(service.getPort() == 1234);
+        String expectedToString = "amqp://guest:********@client/localhost?brokerlist='tcp://localhost:1234'";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
+    }
+
+    public void testConnectionURLOptionToStringMasksSslTrustStorePassword() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@client/vhost?brokerlist='tcp://host:1234?trust_store_password='truststorepassword''";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        String expectedToString = "amqp://guest:********@client/vhost?brokerlist='tcp://host:1234?trust_store_password='********''";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
+    }
+
+    public void testConnectionURLOptionToStringMasksSslKeyStorePassword() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@client/vhost?brokerlist='tcp://host:1234?key_store_password='keystorepassword1';tcp://host:1235?key_store_password='keystorepassword2''";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        String expectedToString = "amqp://guest:********@client/vhost?brokerlist='tcp://host:1234?key_store_password='********';tcp://host:1235?key_store_password='********''";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
     }
 
     /**
      * Test for QPID-3662 to ensure the {@code toString()} representation is correct.
      */
-    public void testConnectionURLOptionToString() throws URLSyntaxException
+    public void testConnectionURLOptionToStringWithMaxPreftech() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        assertNull(connectionurl.getFailoverMethod());
-        assertEquals("guest", connectionurl.getUsername());
-        assertEquals("guest", connectionurl.getPassword());
-        assertEquals("client", connectionurl.getClientName());
-        assertEquals("/localhost", connectionurl.getVirtualHost());
-        assertEquals("1", connectionurl.getOption("maxprefetch"));
-        assertTrue(connectionurl.getBrokerCount() == 1);
-
-        BrokerDetails service = connectionurl.getBrokerDetails(0);
-        assertTrue(service.getTransport().equals("tcp"));
-        assertTrue(service.getHost().equals("localhost"));
-        assertTrue(service.getPort() == 1234);
-        assertTrue(service.getProperties().containsKey("tcp_nodelay"));
-        assertEquals("true", service.getProperties().get("tcp_nodelay"));
-        
-        String nopasswd = "amqp://guest:********@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
-        String tostring = connectionurl.toString();
-        assertEquals(tostring.indexOf("maxprefetch"), tostring.lastIndexOf("maxprefetch"));
-        assertEquals(nopasswd, tostring);
+        String expectedToString = "amqp://guest:********@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
     }
 
     public void testSingleTransportMultiOptionURL() throws URLSyntaxException
@@ -570,11 +562,6 @@ public class ConnectionURLTest extends TestCase
         //check that the reject behaviour option is null as expected
         assertNull("Reject behaviour option was not as expected",
                 connectionurl.getOption(ConnectionURL.OPTIONS_REJECT_BEHAVIOUR));
-    }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(ConnectionURLTest.class);
     }
 }
 
