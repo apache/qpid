@@ -120,6 +120,27 @@ public class BrokerDetailsTest extends TestCase
         {
             assertTrue(urise.getReason().equals("Illegal character in port number"));
         }
+    }
 
+    public void testToStringMasksKeyStorePassword() throws Exception
+    {
+        String url = "tcp://localhost:5672?key_store_password='password'";
+        BrokerDetails details = new AMQBrokerDetails(url);
+
+        String expectedToString = "tcp://localhost:5672?key_store_password='********'";
+        String actualToString = details.toString();
+
+        assertEquals("Unexpected toString", expectedToString, actualToString);
+    }
+
+    public void testToStringMasksTrustStorePassword() throws Exception
+    {
+        String url = "tcp://localhost:5672?trust_store_password='password'";
+        BrokerDetails details = new AMQBrokerDetails(url);
+
+        String expectedToString = "tcp://localhost:5672?trust_store_password='********'";
+        String actualToString = details.toString();
+
+        assertEquals("Unexpected toString", expectedToString, actualToString);
     }
 }

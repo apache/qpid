@@ -344,7 +344,14 @@ public class AMQBrokerDetails implements BrokerDetails
 
                 optionsURL.append("='");
 
-                optionsURL.append(_options.get(key));
+                if (OPTIONS_TRUST_STORE_PASSWORD.equals(key) || OPTIONS_KEY_STORE_PASSWORD.equals(key))
+                {
+                    optionsURL.append("********");
+                }
+                else
+                {
+                    optionsURL.append(_options.get(key));
+                }
 
                 optionsURL.append("'");
 
