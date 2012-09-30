@@ -126,4 +126,10 @@ string SystemInfo::getProcessName()
     return value;
 }
 
+// Always true.  Only Windows has exception cases.
+bool SystemInfo::threadSafeShutdown()
+{
+    return true;
+}
+
 }} // namespace qpid::sys

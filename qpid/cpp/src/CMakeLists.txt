@@ -766,6 +766,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
   set (qpidclient_platform_SOURCES
     ${sslclient_windows_SOURCES}
+    qpid/client/windows/ClientDllMain.cpp
   )
   set (qpidclient_platform_LIBS
     ${windows_ssl_libs}
