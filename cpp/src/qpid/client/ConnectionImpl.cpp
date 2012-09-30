@@ -128,15 +128,17 @@ public:
     // and we can't do that before we're unloaded as we can't
     // restart the Poller after shutting it down
     ~IOThread() {
-        std::vector<Thread> threads;
-        {
-            ScopedLock<Mutex> l(threadLock);
-            if (poller_)
-                poller_->shutdown();
-            t.swap(threads);
-        }
-        for (std::vector<Thread>::iterator i = threads.begin(); i != threads.end(); ++i) {
-            i->join();
+        if (SystemInfo::threadSafeShutdown()) {
+            std::vector<Thread> threads;
+            {
+                ScopedLock<Mutex> l(threadLock);
+                if (poller_)
+                    poller_->shutdown();
+                t.swap(threads);
+            }
+            for (std::vector<Thread>::iterator i = threads.begin(); i != threads.end(); ++i) {
+                i->join();
+            }
         }
     }
 };

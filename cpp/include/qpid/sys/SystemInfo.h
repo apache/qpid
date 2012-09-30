@@ -90,6 +90,12 @@ QPID_COMMON_EXTERN uint32_t getParentProcessId();
  */
 QPID_COMMON_EXTERN std::string getProcessName();
 
+/**
+ * Can thread related primitives be trusted during runtime house-cleaning?
+ * (i.e. static destructors, atexit()).
+ */
+QPID_COMMON_EXTERN bool threadSafeShutdown();
+
 
 }}} // namespace qpid::sys::SystemInfo
 

@@ -24,6 +24,7 @@
 #include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/windows/check.h"
 #include "qpid/sys/windows/IoHandlePrivate.h"
+#include "qpid/sys/SystemInfo.h"
 
 // Ensure we get all of winsock2.h
 #ifndef _WIN32_WINNT
@@ -67,7 +68,8 @@ public:
     }
 
     ~WinSockSetup() {
-        WSACleanup();
+        if (SystemInfo::threadSafeShutdown())
+            WSACleanup();
     }
 
 public:

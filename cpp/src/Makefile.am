@@ -25,6 +25,7 @@ SUBDIRS = . tests
 windows_dist = \
   qpid/client/windows/SaslFactory.cpp \
   qpid/client/windows/SslConnector.cpp \
+  qpid/client/windows/ClientDllMain.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
@@ -42,6 +43,7 @@ windows_dist = \
   qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/PipeHandle.cpp \
   ../include/qpid/sys/windows/Mutex.h \
+  qpid/sys/windows/QpidDllMain.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/SocketAddress.cpp \
   qpid/sys/windows/Socket.cpp \

@@ -27,6 +27,7 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/windows/check.h"
+#include "qpid/sys/SystemInfo.h"
 
 #include <process.h>
 #include <windows.h>
@@ -274,8 +275,17 @@ Thread Thread::current() {
 
 #ifdef _DLL
 
+namespace qpid {
+namespace sys {
+namespace windows {
+
+extern bool processExiting;
+extern bool libraryUnloading;
+
+}}} // namespace qpid::sys::SystemInfo
+
 // DllMain: called possibly many times in a process lifetime if dll
-// loaded and freed repeatedly .  Be mindful of Windows loader lock
+// loaded and freed repeatedly.  Be mindful of Windows loader lock
 // and other DllMain restrictions.
 
 BOOL APIENTRY DllMain(HMODULE hm, DWORD reason, LPVOID reserved) {
@@ -290,10 +300,12 @@ BOOL APIENTRY DllMain(HMODULE hm, DWORD reason, LPVOID reserved) {
         if (reserved != NULL) {
             // process exit(): threads are stopped arbitrarily and
             // possibly in an inconsistent state.  Not even threadLock
-            // can be trusted.  All static destructors have been
-            // called at this point and any resources this unit knows
-            // about will be released as part of process tear down by
-            // the OS.  Accordingly, do nothing.
+            // can be trusted.  All static destructors for this unit
+            // are pending and face the same unsafe environment.
+            // Any resources this unit knows about will be released as
+            // part of process tear down by the OS.  Accordingly, skip
+            // any clean up tasks.
+            qpid::sys::windows::processExiting = true;
             return TRUE;
         }
         else {
@@ -301,6 +313,7 @@ BOOL APIENTRY DllMain(HMODULE hm, DWORD reason, LPVOID reserved) {
             // encouraged to clean up to avoid leaks.  Mostly we just
             // want any straggler threads to finish and notify
             // threadsDone as the last thing they do.
+            qpid::sys::windows::libraryUnloading = true;
             while (1) {
                 {
                     ScopedCriticalSection l(threadLock);
