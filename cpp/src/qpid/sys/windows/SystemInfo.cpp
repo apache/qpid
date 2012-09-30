@@ -26,6 +26,7 @@
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/Exception.h"
+#include "qpid/log/Statement.h"
 
 #include <assert.h>
 #include <winsock2.h>
@@ -206,6 +207,31 @@ std::string SystemInfo::getProcessName()
     CloseHandle(snap);
     name = entry.szExeFile;
     return name;
+}
+
+
+#ifdef _DLL
+namespace windows {
+// set from one or more Qpid DLLs: i.e. in DllMain with DLL_PROCESS_DETACH
+QPID_EXPORT bool processExiting = false;
+QPID_EXPORT bool libraryUnloading = false;
+}
+#endif
+
+bool SystemInfo::threadSafeShutdown()
+{
+#ifdef _DLL
+    if (!windows::processExiting && !windows::libraryUnloading) {
+        // called before exit() or FreeLibrary(), or by a DLL without
+        // a participating DllMain.
+        QPID_LOG(warning, "invalid query for shutdown state");
+        throw qpid::Exception(QPID_MSG("Unable to determine shutdown state."));
+    }
+    return !windows::processExiting;
+#else
+    // Not a DLL: shutdown can only be by exit() or return from main().
+    return false;
+#endif
 }
 
 }} // namespace qpid::sys
