@@ -181,18 +181,15 @@ under the License.
     </section>
     <section>
       <title>Limitations</title>
+      <para>
+	There are a number of known limitations in the current preview implementation. These
+	will be fixed in the production versions.
+      </para>
       <itemizedlist>
 	<listitem>
-	  Transactional changes to queue state are not replicated atomically. If the
-	  primary crashes during a transaction, it is possible that the backup could
-	  contain only part of the changes introduced by a transaction.
-	</listitem>
-	<listitem>
-	  Not yet integrated with the persistent store.  A persistent broker must have its
-	  store erased before joining an existing cluster.  If the entire cluster fails,
-	  there are no tools to help identify the most recent store. In the future a
-	  persistent broker will be able to use its stored messages to avoid downloading
-	  messages from the primary when joining a cluster.
+	  Transactional changes to queue state are not replicated atomically. If the primary crashes
+	  during a transaction, it is possible that the backup could contain only part of the
+	  changes introduced by a transaction.
 	</listitem>
 	<listitem>
 	  Configuration changes (creating or deleting queues, exchanges and bindings) are
@@ -209,7 +206,7 @@ under the License.
 	<listitem>
 	  Federated links <emphasis>from</emphasis> the primary will be lost in fail over,
 	  they will not be re-connected to the new primary. Federation links
-	  <emphasis>to</emphasis> the primary can fail over.
+	  <emphasis>to</emphasis> the primary will fail over.
 	</listitem>
       </itemizedlist>
     </section>
@@ -342,6 +339,15 @@ ssl_addr = "ssl:" host [":" port]'
 		Interval for the broker to check link health and re-connect links if need
 		be. If you want brokers to fail over quickly you can set this to a
 		fraction of a second, for example: 0.1.
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>link-heartbeat-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <para>
+		Heartbeat interval for replication links. The link will be assumed broken
+		if there is no heartbeat for twice the interval.
 	      </para>
 	    </entry>
 	  </row>
