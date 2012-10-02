@@ -209,6 +209,7 @@ class HaCluster(object):
     def start(self, update_urls=True, args=[]):
         """Start a new broker in the cluster"""
         b = HaBroker(self.test, name=self.next_name(), **self.kwargs)
+        b.ready()
         self._brokers.append(b)
         if update_urls: self.update_urls()
         return b
@@ -235,6 +236,7 @@ class HaCluster(object):
         self._brokers[i] = HaBroker(
             self.test, name=b.name, port=b.port(), brokers_url=self.url,
             **self.kwargs)
+        self._brokers[i].ready()
 
     def bounce(self, i, promote_next=True):
         """Stop and restart a broker in a cluster."""

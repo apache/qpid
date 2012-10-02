@@ -370,7 +370,7 @@ bool Queue::acquire(const QueueCursor& position, const std::string& consumer)
 
 bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
 {
-    checkNotDeleted(c);
+    if (!checkNotDeleted(c)) return false;
     QueueListeners::NotificationSet set;
     while (true) {
         //TODO: reduce lock scope
@@ -1443,11 +1443,11 @@ QueueListeners& Queue::getListeners() { return listeners; }
 Messages& Queue::getMessages() { return *messages; }
 const Messages& Queue::getMessages() const { return *messages; }
 
-void Queue::checkNotDeleted(const Consumer::shared_ptr& c)
+bool Queue::checkNotDeleted(const Consumer::shared_ptr& c)
 {
-    if (deleted && !c->hideDeletedError()) {
+    if (deleted && !c->hideDeletedError())
         throw ResourceDeletedException(QPID_MSG("Queue " << getName() << " has been deleted."));
-    }
+    return !deleted;
 }
 
 void Queue::addObserver(boost::shared_ptr<QueueObserver> observer)
