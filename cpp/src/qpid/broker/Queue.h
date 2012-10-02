@@ -188,7 +188,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     int getEventMode();
     void dequeueFromStore(boost::intrusive_ptr<PersistableMessage>);
     void abandoned(const Message& message);
-    void checkNotDeleted(const Consumer::shared_ptr&);
+    bool checkNotDeleted(const Consumer::shared_ptr&);
     void notifyDeleted();
     uint32_t remove(uint32_t maxCount, MessagePredicate, MessageFunctor, SubscriptionType);
     virtual bool checkDepth(const QueueDepth& increment, const Message&);
