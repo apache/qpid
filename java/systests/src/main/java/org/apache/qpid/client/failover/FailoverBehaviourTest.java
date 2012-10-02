@@ -25,11 +25,12 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -929,18 +930,22 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         return queue;
     }
 
-    private AMQConnection createConnectionWithFailover() throws NamingException, JMSException
+    private AMQConnection createConnectionWithFailover() throws NamingException, JMSException, URLSyntaxException
     {
-        AMQConnection connection;
-        AMQConnectionFactory connectionFactory = (AMQConnectionFactory)getConnectionFactory("default");
-        ConnectionURL connectionURL = connectionFactory.getConnectionURL();
-        connectionURL.setOption(ConnectionURL.OPTIONS_FAILOVER, "singlebroker");
-        connectionURL.setOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE, "2");
-        BrokerDetails details = connectionURL.getBrokerDetails(0);
-        details.setProperty(BrokerDetails.OPTIONS_RETRY, "200");
-        details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "1000");
+        BrokerDetails origBrokerDetails = ((AMQConnectionFactory) getConnectionFactory("default")).getConnectionURL().getBrokerDetails(0);
 
-        connection = (AMQConnection)connectionFactory.createConnection("admin", "admin");
+        String retries = "200";
+        String connectdelay = "1000";
+        String cycleCount = "2";
+
+        String newUrlFormat="amqp://username:password@clientid/test?brokerlist=" +
+                            "'tcp://%s:%s?retries='%s'&connectdelay='%s''&failover='singlebroker?cyclecount='%s''";
+
+        String newUrl = String.format(newUrlFormat, origBrokerDetails.getHost(), origBrokerDetails.getPort(),
+                                                    retries, connectdelay, cycleCount);
+
+        ConnectionFactory connectionFactory = new AMQConnectionFactory(newUrl);
+        AMQConnection connection = (AMQConnection) connectionFactory.createConnection("admin", "admin");
         connection.setConnectionListener(this);
         return connection;
     }

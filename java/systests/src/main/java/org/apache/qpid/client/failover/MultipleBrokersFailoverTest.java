@@ -50,10 +50,9 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
     {
         super.setUp();
 
+        int numBrokers = 4;
         int port = findFreePort();
-        _brokerPorts = new int[4];
-        _connectionURL = new AMQConnectionURL("amqp://guest:guest@test/" + FAILOVER_VIRTUAL_HOST
-                + "?&failover='roundrobin?cyclecount='1''");
+        _brokerPorts = new int[numBrokers];
 
         // we need to create 4 brokers:
         // 1st broker will be running in test JVM and will not have failover host (only tcp connection will established, amqp connection will be closed)
@@ -63,7 +62,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
 
         // the test should connect to the second broker first and fail over to the forth broker
         // after unsuccessful try to establish the connection to the 3d broker
-        for (int i = 0; i < _brokerPorts.length; i++)
+        for (int i = 0; i < numBrokers; i++)
         {
             if (i > 0)
             {
@@ -92,14 +91,36 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
 
             startBroker(port, testConfiguration, testVirtualhosts);
             revertSystemProperties();
-
-            _connectionURL.addBrokerDetails(new AMQBrokerDetails(String.format(BROKER_PORTION_FORMAT, port,
-                    FAILOVER_CONNECTDELAY, FAILOVER_RETRIES)));
         }
+
+        _connectionURL = new AMQConnectionURL(generateUrlString(numBrokers));
+
         _connection = getConnection(_connectionURL);
         ((AMQConnection) _connection).setConnectionListener(this);
         _failoverComplete = new CountDownLatch(1);
         _failoverStarted = new CountDownLatch(1);
+    }
+
+    private String generateUrlString(int numBrokers)
+    {
+        String baseString = "amqp://guest:guest@test/" + FAILOVER_VIRTUAL_HOST
+                            + "?&failover='roundrobin?cyclecount='1''&brokerlist='";
+        StringBuffer buffer = new StringBuffer(baseString);
+
+        for(int i = 0; i< numBrokers ; i++)
+        {
+            if(i != 0)
+            {
+                buffer.append(";");
+            }
+
+            String broker = String.format(BROKER_PORTION_FORMAT, _brokerPorts[i],
+                                          FAILOVER_CONNECTDELAY, FAILOVER_RETRIES);
+            buffer.append(broker);
+        }
+        buffer.append("'");
+
+        return buffer.toString();
     }
 
     public void tearDown() throws Exception

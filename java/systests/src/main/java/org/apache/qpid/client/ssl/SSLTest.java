@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.client.ssl;
 
-import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.transport.Connection;
 
+import javax.jms.Connection;
 import javax.jms.Session;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -76,8 +76,8 @@ public class SSLTest extends QpidBrokerTestCase
             
             url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT,
                     KEYSTORE,KEYSTORE_PASSWORD,TRUSTSTORE,TRUSTSTORE_PASSWORD);
-            
-            AMQConnection con = new AMQConnection(url);
+
+            Connection con = getConnection(new AMQConnectionURL(url));
             assertNotNull("connection should be successful", con);
             Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
             assertNotNull("create session should be successful", ssn);
@@ -93,7 +93,7 @@ public class SSLTest extends QpidBrokerTestCase
 
             url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT);
             
-            AMQConnection con = new AMQConnection(url);
+            Connection con = getConnection(new AMQConnectionURL(url));
             assertNotNull("connection should be successful", con);
             Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
             assertNotNull("create session should be successful", ssn);
@@ -109,7 +109,7 @@ public class SSLTest extends QpidBrokerTestCase
             "?ssl='true'&ssl_cert_alias='" + CERT_ALIAS_APP1 + "''";
             
             AMQTestConnection_0_10 con = new AMQTestConnection_0_10(url);      
-            Connection transportCon = con.getConnection();
+            org.apache.qpid.transport.Connection transportCon = con.getConnection();
             String userID = transportCon.getSecurityLayer().getUserID();
             assertEquals("The correct certificate was not choosen","app1@acme.org",userID);
             con.close();
@@ -136,7 +136,7 @@ public class SSLTest extends QpidBrokerTestCase
             
             try
             {
-                AMQConnection con = new AMQConnection(url);
+                getConnection(new AMQConnectionURL(url));
                 fail("Hostname verification failed. No exception was thrown");
             }
             catch (Exception e)
@@ -158,8 +158,8 @@ public class SSLTest extends QpidBrokerTestCase
             QpidBrokerTestCase.DEFAULT_SSL_PORT + 
             "?ssl='true'&ssl_verify_hostname='true''";
 
-            AMQConnection con = new AMQConnection(url);
-            assertNotNull("connection should have been created", con); 
+            Connection con = getConnection(new AMQConnectionURL(url));
+            assertNotNull("connection should have been created", con);
         }
     }
     
@@ -171,7 +171,7 @@ public class SSLTest extends QpidBrokerTestCase
             QpidBrokerTestCase.DEFAULT_SSL_PORT + 
             "?ssl='true'&ssl_verify_hostname='true''";
 
-            AMQConnection con = new AMQConnection(url);
+            Connection con = getConnection(new AMQConnectionURL(url));
             assertNotNull("connection should have been created", con);
         }        
     }
@@ -193,7 +193,7 @@ public class SSLTest extends QpidBrokerTestCase
 
             url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT, TRUSTSTORE,TRUSTSTORE_PASSWORD);
 
-            AMQConnection con = new AMQConnection(url);
+            Connection con = getConnection(new AMQConnectionURL(url));
             assertNotNull("connection should be successful", con);
             Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
             assertNotNull("create session should be successful", ssn);
