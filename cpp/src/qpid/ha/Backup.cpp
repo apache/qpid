@@ -75,8 +75,13 @@ void Backup::initialize(const Url& brokers) {
 }
 
 Backup::~Backup() {
+    QPID_LOG(debug, logPrefix << "Backup shutting down.");
     if (link) link->close();
-    if (replicator.get()) broker.getExchanges().destroy(replicator->getName());
+    if (replicator.get()) {
+        broker.getExchanges().destroy(replicator->getName());
+        replicator->shutdown();
+        replicator.reset();
+    }
 }
 
 // Called via management.

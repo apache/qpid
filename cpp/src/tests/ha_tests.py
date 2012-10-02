@@ -648,6 +648,24 @@ acl deny all all
         self.assertRaises(NotFound, s.receiver, ("e1"));
 
 
+    def test_auto_delete_qpid_4285(self):
+        """Regression test for QPID-4285: an auto delete queue gets stuck in
+        a partially deleted state and causes replication errors."""
+        cluster = HaCluster(self,2)
+        cluster[1].wait_status("ready")
+        s = cluster[0].connect().session()
+        s.receiver("q;{create:always}")
+        cluster[1].wait_backup("q")
+        cluster.kill(0)       # Make the backup take over.
+        s = cluster[1].connect().session()
+        s.receiver("q;{delete:always}").close() # Delete q on new primary
+        try:
+            s.receiver("q")
+            self.fail("Expected NotFound exception") # Should not be avaliable
+        except NotFound: pass
+        assert not cluster[1].agent().getQueue("q") # Should not be in QMF
+
+
 def fairshare(msgs, limit, levels):
     """
     Generator to return prioritised messages in expected order for a given fairshare limit
@@ -660,7 +678,7 @@ def fairshare(msgs, limit, levels):
             msgs = postponed
             count = 0
             last_priority = None
-            postponed = []
+            postponed = [ ]
         msg = msgs.pop(0)
         if last_priority and priority_level(msg.priority, levels) == last_priority:
             count += 1
