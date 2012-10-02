@@ -44,6 +44,7 @@ namespace qpid {
 namespace ha {
 using namespace broker;
 using namespace framing;
+using namespace std;
 
 const std::string QPID_HA_EVENT_PREFIX("qpid.ha-");
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_EVENT_PREFIX+"dequeue");
@@ -124,13 +125,18 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     SequenceNumber front, back;
     queue->getRange(front, back, broker::REPLICATOR);
     if (front <= back) settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
-    peer.getMessage().subscribe(
-        args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
-        false/*exclusive*/, "", 0, settings);
-    // FIXME aconway 2012-05-22: use a finite credit window?
-    peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
-    peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-
+    try {
+        peer.getMessage().subscribe(
+            args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
+            false/*exclusive*/, "", 0, settings);
+        // FIXME aconway 2012-05-22: use a finite credit window?
+        peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
+        peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
+    }
+    catch(const exception& e) {
+        QPID_LOG(error, QPID_MSG(logPrefix + "Cannot connect to primary: " << e.what()));
+        throw;
+    }
     qpid::Address primary;
     link->getRemoteAddress(primary);
     QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
