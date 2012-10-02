@@ -76,6 +76,7 @@ class BrokerReplicator : public broker::Exchange,
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
+    void shutdown();
 
   private:
     typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
@@ -141,6 +142,8 @@ class BrokerReplicator : public broker::Exchange,
         const qpid::framing::FieldTable& args,
         const std::string& alternateExchange);
 
+    void deactivateQueue(const std::string& name);
+    void deactivate(boost::shared_ptr<broker::Queue> q);
     void deleteQueue(const std::string& name);
     void deleteExchange(const std::string& name);
 

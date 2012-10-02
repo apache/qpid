@@ -68,7 +68,7 @@ using namespace broker;
 
 namespace {
 
-const string QPID_CONFIGURATION_REPLICATOR("qpid.configuration-replicator");
+const string QPID_CONFIGURATION_REPLICATOR("qpid.broker-replicator");
 
 const string CLASS_NAME("_class_name");
 const string EVENT("_event");
@@ -208,7 +208,12 @@ void BrokerReplicator::initialize() {
     );
 }
 
-BrokerReplicator::~BrokerReplicator() { }
+BrokerReplicator::~BrokerReplicator() { shutdown(); }
+
+void BrokerReplicator::shutdown() {
+    QPID_LOG(debug, logPrefix << "BrokerReplicator shutting down.");
+    broker.getQueues().eachQueue(boost::bind(&BrokerReplicator::deactivate, this, _1));
+}
 
 // This is called in the connection IO thread when the bridge is started.
 void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
@@ -591,7 +596,7 @@ void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queu
     }
 }
 
-void BrokerReplicator::deleteQueue(const std::string& name) {
+void BrokerReplicator::deactivateQueue(const std::string& name) {
     boost::shared_ptr<QueueReplicator> qr = findQueueReplicator(name);
     if (qr) {
         qr->deactivate();
@@ -599,7 +604,14 @@ void BrokerReplicator::deleteQueue(const std::string& name) {
         // actually be destroyed.
         broker.getExchanges().destroy(qr->getName());
     }
-    qr.reset();
+}
+
+void BrokerReplicator::deactivate(boost::shared_ptr<broker::Queue> q) {
+    deactivateQueue(q->getName());
+}
+
+void BrokerReplicator::deleteQueue(const std::string& name) {
+    deactivateQueue(name);
     try {
         broker.deleteQueue(name, userId, remoteHost);
         QPID_LOG(debug, logPrefix << "Queue deleted: " << name);

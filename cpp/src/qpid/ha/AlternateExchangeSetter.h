@@ -45,7 +45,7 @@ class AlternateExchangeSetter
 
     /** If altEx is already known, call setter(altEx) now else save for later */
     void setAlternate(const std::string& altEx, const SetFunction& setter) {
-        broker::Exchange::shared_ptr ex = exchanges.find(altEx);
+        boost::shared_ptr<broker::Exchange> ex = exchanges.find(altEx);
         if (ex) setter(ex);     // Set immediately.
         else setters.insert(Setters::value_type(altEx, setter)); // Save for later.
     }
