@@ -31,6 +31,7 @@
 #include "qpid/management/ManagementObject.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <set>
 
 namespace qpid {
 
@@ -81,6 +82,33 @@ class BrokerReplicator : public broker::Exchange,
     typedef std::pair<boost::shared_ptr<broker::Queue>, bool> CreateQueueResult;
     typedef std::pair<boost::shared_ptr<broker::Exchange>, bool> CreateExchangeResult;
 
+    /** Keep track of queues and exchanges that need to be cleaned up. */
+    class Cleaner {
+      public:
+        Cleaner(BrokerReplicator&);
+
+        /** Scan for existing queues and exchanges. */
+        void start();
+
+        // Forget a queue/exchange that does not need cleaning
+        void forgetExchange(const std::string& name);
+        void forgetQueue(const std::string& name);
+
+        void cleanExchanges();
+        void cleanQueues();
+
+      private:
+        typedef std::set<std::string> Names;
+
+        // add a queue/exchange that may need cleaning.
+        void addExchange(boost::shared_ptr<broker::Exchange>);
+        void addQueue(boost::shared_ptr<broker::Queue>);
+
+        BrokerReplicator& brokerReplicator;
+        Names queues, exchanges;
+    };
+  friend class Cleaner;
+
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
@@ -98,7 +126,6 @@ class BrokerReplicator : public broker::Exchange,
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
-    void stopQueueReplicator(const std::string& name);
 
     CreateQueueResult createQueue(
         const std::string& name,
@@ -114,6 +141,9 @@ class BrokerReplicator : public broker::Exchange,
         const qpid::framing::FieldTable& args,
         const std::string& alternateExchange);
 
+    void deleteQueue(const std::string& name);
+    void deleteExchange(const std::string& name);
+
     std::string logPrefix;
     std::string userId, remoteHost;
     ReplicationTest replicationTest;
@@ -125,6 +155,7 @@ class BrokerReplicator : public broker::Exchange,
     qpid::Address primary;
     typedef std::set<std::string> StringSet;
     StringSet replicatedExchanges; // exchanges that have been replicated.
+    Cleaner cleaner;
 };
 }} // namespace qpid::broker
 

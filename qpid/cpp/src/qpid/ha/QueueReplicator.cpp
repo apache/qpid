@@ -70,6 +70,7 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
     args.setString(QPID_REPLICATE, printable(NONE).str());
     Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
+    getArgs().setString(QPID_REPLICATE, printable(NONE).str());
 }
 
 // This must be separate from the constructor so we can call shared_from_this.
@@ -123,8 +124,6 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     SequenceNumber front, back;
     queue->getRange(front, back, broker::REPLICATOR);
     if (front <= back) settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
-    QPID_LOG(debug, logPrefix << " subscribe with settings  " << settings);
-
     peer.getMessage().subscribe(
         args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
         false/*exclusive*/, "", 0, settings);
