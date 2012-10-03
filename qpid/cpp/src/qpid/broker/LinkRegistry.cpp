@@ -117,7 +117,8 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(const string& name,
                       boost::bind(&LinkRegistry::linkDestroyed, this, _1),
                       durable, authMechanism, username, password, broker,
                       parent, failover));
-        if (durable && store) store->create(*link);
+        if (durable && store && !broker->inRecovery())
+            store->create(*link);
         links[name] = link;
         pendingLinks[name] = link;
         QPID_LOG(debug, "Creating new link; name=" << name );
@@ -213,7 +214,7 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& name,
                        args, init, queueName, altExchange));
         bridges[name] = bridge;
         link.add(bridge);
-        if (durable && store)
+        if (durable && store && !broker->inRecovery())
             store->create(*bridge);
 
         QPID_LOG(debug, "Bridge '" << name <<"' declared on link '" << link.getName() <<
