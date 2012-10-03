@@ -471,6 +471,9 @@
     <copy todir="${module.metainf}" failonerror="true">
         <fileset dir="${project.root}/resources/"/>
     </copy>
+    <copy todir="${module.metainf}" failonerror="false" overwrite="true">
+        <fileset dir="resources/"/>
+    </copy>
   </target>
 
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
