@@ -28,6 +28,7 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionHandler.h"
+#include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
@@ -59,6 +60,25 @@ bool QueueReplicator::isEventKey(const std::string key) {
     bool ret = key.size() > prefix.size() && key.compare(0, prefix.size(), prefix) == 0;
     return ret;
 }
+
+class QueueReplicator::ErrorListener : public SessionHandler::ErrorListener {
+  public:
+    ErrorListener(const std::string& prefix) : logPrefix(prefix) {}
+    void connectionException(framing::connection::CloseCode, const std::string& msg) {
+        QPID_LOG(error, logPrefix << "Connection error: " << msg);
+    }
+    void channelException(framing::session::DetachCode, const std::string& msg) {
+        QPID_LOG(error, logPrefix << "Channel error: " << msg);
+    }
+    void executionException(framing::execution::ErrorCode, const std::string& msg) {
+        QPID_LOG(error, logPrefix << "Execution error: " << msg);
+    }
+    void detach() {
+        QPID_LOG(error, logPrefix << "Unexpectedly detached.");
+    }
+  private:
+    std::string logPrefix;
+};
 
 QueueReplicator::QueueReplicator(HaBroker& hb,
                                  boost::shared_ptr<Queue> q,
@@ -96,6 +116,8 @@ void QueueReplicator::activate() {
         boost::bind(&QueueReplicator::initializeBridge, shared_from_this(), _1, _2)
     );
     bridge = result.first;
+    bridge->setErrorListener(
+        boost::shared_ptr<ErrorListener>(new ErrorListener(logPrefix)));
 }
 
 QueueReplicator::~QueueReplicator() { deactivate(); }
