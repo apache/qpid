@@ -214,6 +214,7 @@ Broker::Broker(const Broker::Options& conf) :
         *this),
     mgmtObject(0),
     queueCleaner(queues, &timer),
+    recoveryInProgress(false),
     recovery(true),
     inCluster(false),
     clusterUpdatee(false),
@@ -292,7 +293,9 @@ Broker::Broker(const Broker::Options& conf) :
         // broker to join a cluster.
         if (getRecovery()) {
             RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager);
+            recoveryInProgress = true;
             store->recover(recoverer);
+            recoveryInProgress = false;
         }
         else {
             QPID_LOG(notice, "Cluster recovery: recovered journal data discarded and journal files pushed down");
