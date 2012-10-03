@@ -78,6 +78,7 @@ class QueueReplicator : public broker::Exchange,
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
   private:
+    class ErrorListener;
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void dequeue(framing::SequenceNumber, sys::Mutex::ScopedLock&);
 
