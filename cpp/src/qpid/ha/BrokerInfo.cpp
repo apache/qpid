@@ -33,10 +33,10 @@ namespace qpid {
 namespace ha {
 
 namespace {
-std::string SYSTEM_ID="system-id";
-std::string HOST_NAME="host-name";
-std::string PORT="port";
-std::string STATUS="status";
+const std::string SYSTEM_ID="system-id";
+const std::string HOST_NAME="host-name";
+const std::string PORT="port";
+const std::string STATUS="status";
 }
 
 using types::Uuid;

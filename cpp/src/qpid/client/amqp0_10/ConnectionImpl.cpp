@@ -26,6 +26,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include <boost/intrusive_ptr.hpp>
 #include <vector>
 #include <sstream>
@@ -156,6 +157,8 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         settings.sslCertName = value.asString();
     } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
         reconnectOnLimitExceeded = value;
+    } else if (name == "client-properties") {
+        amqp_0_10::translate(value.asMap(), settings.clientProperties);
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }

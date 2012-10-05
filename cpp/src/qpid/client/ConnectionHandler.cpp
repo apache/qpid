@@ -82,9 +82,11 @@ void ConnectionHandler::Adapter::handle(qpid::framing::AMQFrame& f)
     handler.out(f);
 }
 
-ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v, Bounds& b)
-    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this, b), proxy(outHandler),
-      errorCode(CLOSE_CODE_NORMAL), version(v)
+ConnectionHandler::ConnectionHandler(
+    const ConnectionSettings& s, ProtocolVersion& v, Bounds& b)
+    : StateManager(NOT_STARTED), ConnectionSettings(s),
+      outHandler(*this, b), proxy(outHandler), errorCode(CLOSE_CODE_NORMAL), version(v),
+      properties(s.clientProperties)
 {
     insist = true;
 

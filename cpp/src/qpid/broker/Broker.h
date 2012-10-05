@@ -362,8 +362,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
     QPID_BROKER_EXTERN void setLinkClientProperties(const framing::FieldTable&);
 
+    QPID_BROKER_EXTERN uint16_t getLinkHearbeatInterval() { return config.linkHeartbeatInterval; }
     /** Information identifying this system */
     boost::shared_ptr<const System> getSystem() const { return systemObject; }
+  friend class StatusCheckThread;
 };
 
 }}

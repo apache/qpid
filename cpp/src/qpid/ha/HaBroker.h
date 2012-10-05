@@ -53,6 +53,7 @@ namespace ha {
 class Backup;
 class ConnectionObserver;
 class Primary;
+class StatusCheck;
 
 /**
  * HA state and actions associated with a HA broker. Holds all the management info.
@@ -130,6 +131,7 @@ class HaBroker : public management::Manageable
     BrokerInfo brokerInfo;
     Membership membership;
     ReplicationTest replicationTest;
+    std::auto_ptr<StatusCheck> statusCheck;
 };
 }} // namespace qpid::ha
 
