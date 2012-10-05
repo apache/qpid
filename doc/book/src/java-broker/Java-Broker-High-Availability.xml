@@ -26,10 +26,10 @@
  under the License.
 
 -->
-<section id="High-Availability">
+<chapter id="Java-Broker-High-Availability">
   <title>High Availability</title>
 
-  <section role="h3" id="HAGeneralIntroduction">
+  <section role="h3" id="Java-Broker-High-Availability-GeneralIntroduction">
     <title>General Introduction</title>
     <para>The term High Availability (HA) usually refers to having a number of instances of a service such as a Message Broker
       available so that should a service unexpectedly fail, or requires to be shutdown for maintenance, users may quickly connect
@@ -42,7 +42,7 @@
     </para>
   </section>
 
-  <section role="h3" id="HAOfferingsOfJavaBroker">
+  <section role="h3" id="Java-Broker-High-Availability-OfferingsOfJavaBroker">
     <title>HA offerings of the Java Broker</title>
     <para>The Java Broker's HA offering became available at release <emphasis role="bold">0.18</emphasis>.  HA is provided by way of the HA
       features built into the <ulink url="&oracleBdbProductOverviewUrl;">Java Edition of the Berkley Database (BDB JE)</ulink> and as such
@@ -63,7 +63,7 @@
       Message Store</emphasis>.</para>
   </section>
 
-  <section role="h3" id="HATwoNodeCluster">
+  <section role="h3" id="Java-Broker-High-Availability-TwoNodeCluster">
     <title>Two Node Cluster</title>
     <section role="h4">
       <title>Overview</title>
@@ -73,7 +73,7 @@
       <para>All data and state required for the operation of the virtual host is automatically sent from the
         master to the replica. This is called the replication stream. The master virtual host confirms each
         message is on the replica before the client transaction completes. The exact way the client awaits
-        for the master and replica is gorverned by the <link linkend="HADurabilityGuarantee">durability</link>
+        for the master and replica is gorverned by the <link linkend="Java-Broker-High-Availability-DurabilityGuarantee">durability</link>
         configuration, which is discussed later. In this way, the replica remains ready to take over the
         role of the master if the master becomes unavailable.
       </para>
@@ -86,7 +86,7 @@
         In the event of a master failure, a third party must designate the replica as primary.  This process
         is described in more detail later.
       </para>
-      <para>Clients connect to the cluster using a <link linkend="HAClientFailover">failover url</link>.
+      <para>Clients connect to the cluster using a <link linkend="Java-Broker-High-Availability-ClientFailover">failover url</link>.
         This allows the client to maintain a connection to the master in a way that is transparent
         to the client application.</para>
     </section>
@@ -105,7 +105,7 @@
           </textobject>
         </mediaobject>
       </figure>
-      <section role="h5" id="HATwoNodeNormalOperation">
+      <section role="h5" id="Java-Broker-High-Availability-TwoNodeNormalOperation">
         <title>Normal Operation</title>
         <para>The figure below illustrates normal operation.  Clients connecting to the cluster by way
 	  of the failover URL achieve a connection to the master. As clients perform work (message
@@ -123,7 +123,7 @@
           </mediaobject>
         </figure>
       </section>
-      <section role="h5" id="HATwoNodeMasterFailure">
+      <section role="h5" id="Java-Broker-High-Availability-TwoNodeMasterFailure">
         <title>Master Failure and Recovery</title>
         <para>The figure below illustrates a sequence of events whereby the master suffers a failure
 	  and the replica is made the master to allow the clients to continue to work. Later the
@@ -142,7 +142,7 @@
             <para>A third-party (an operator, a script or a combination of the two) verifies that the master has truely
            failed <emphasis role="bold">and is no longer running</emphasis>. If it has truely failed, the decision is made
            to designate the replica as primary, allowing it to assume the role of master despite the other node being down.
-           This primary designation is performed using <link linkend="HAJMXAPI">JMX</link>.</para>
+           This primary designation is performed using <link linkend="Java-Broker-High-Availability-JMXAPI">JMX</link>.</para>
           </listitem>
           <listitem>
             <para>Client connections to the new master succeed and the <emphasis role="bold">service is restored
@@ -165,7 +165,7 @@
           </mediaobject>
         </figure>
       </section>
-      <section role="h5" id="HATwoNodeReplicaFailure">
+      <section role="h5" id="Java-Broker-High-Availability-TwoNodeReplicaFailure">
         <title>Replica Failure and Recovery</title>
         <para>The figure that follows illustrates a sequence of events whereby the replica suffers a failure
 	   leaving the master to continue processing alone.  Later the replica is repaired and is restarted.
@@ -205,11 +205,11 @@
           </mediaobject>
         </figure>
       </section>
-      <section role="h5" id="HATwoNodeNetworkPartition">
+      <section role="h5" id="Java-Broker-High-Availability-TwoNodeNetworkPartition">
         <title>Network Partition and Recovery</title>
         <para>The figure below illustrates the sequence of events that would occur if the network between
 	  master and replica were to suffer a partition, and the nodes were out of contact with one and other.</para>
-        <para>As with <link linkend="HATwoNodeReplicaFailure">Replica Failure and Recovery</link>, the
+        <para>As with <link linkend="Java-Broker-High-Availability-TwoNodeReplicaFailure">Replica Failure and Recovery</link>, the
 	  behaviour is governed by the <varname>designatedPrimary</varname>.
 	  Only if <varname>designatedPrimary</varname> is true on the master, will the master continue solo.</para>
         <para>The item numbers in this list apply to the numbered boxes in the figure below. This example assumes
@@ -243,7 +243,7 @@
           </mediaobject>
         </figure>
       </section>
-      <section role="h5" id="HATwoNodeSplitBrain">
+      <section role="h5" id="Java-Broker-High-Availability-TwoNodeSplitBrain">
         <title>Split Brain</title>
         <para>A <ulink url="http://en.wikipedia.org/wiki/Split-brain_(computing)">split-brain</ulink>
           is a situation where the two node cluster has two masters. BDB normally strives to prevent
@@ -287,13 +287,13 @@
     </section>
   </section>
 
-  <section role="h3" id="HAMultiNodeCluster">
+  <section role="h3" id="Java-Broker-High-Availability-MultiNodeCluster">
     <title>Multi Node Cluster</title>
     <para>Multi node clusters, that is clusters where the number of nodes is three or more, are not yet
          ready for use.</para>
   </section>
 
-  <section role="h3" id="HAConfiguration">
+  <section role="h3" id="Java-Broker-High-Availability-Configuration">
     <title>Configuring a Virtual Host to be a node</title>
     <para>To configure a virtualhost as a cluster node, configure the virtualhost.xml in the following manner:</para>
     <para>
@@ -331,28 +331,28 @@
       nodes within the cluster when they are newly introduced to the cluster.  When configuring the first node, set the
       <varname>helperHostPort</varname> to its own <varname>nodeHostPort</varname>.  For the second and subsequent nodes,
       set their <varname>helperHostPort</varname> to that of the first node.</para>
-    <para><varname>durability</varname> controls the <link linkend="HADurabilityGuarantee">durability</link>
+    <para><varname>durability</varname> controls the <link linkend="Java-Broker-High-Availability-DurabilityGuarantee">durability</link>
       guarantees made by the cluster. It is important that all nodes use the same value for this property. The default value is
       NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY. Owing to the internal use of Apache Commons Config, it is currently necessary
       to escape the commas within the durability string.</para>
-    <para><varname>coalescingSync</varname> controls the <link linkend="HADurabilityGuarantee_CoalescingSync">coalescing-sync</link>
+    <para><varname>coalescingSync</varname> controls the <link linkend="Java-Broker-High-Availability-DurabilityGuarantee_CoalescingSync">coalescing-sync</link>
       mode of Qpid. It is important that all nodes use the same value. If omitted, it defaults to true.</para>
-    <para>The <varname>designatedPrimary</varname> is applicable only to the <link linkend="HATwoNodeCluster">two-node
+    <para>The <varname>designatedPrimary</varname> is applicable only to the <link linkend="Java-Broker-High-Availability-TwoNodeCluster">two-node
      case.</link>  It governs the behaviour of a node when the other node fails or becomes uncontactable.  If true,
      the node will be designated as primary at startup and will be able to continue operating as a single node master.
      If false, the node will transition to an unavailable state until a third-party manually designates the node as
      primary or the other node is restored. It is suggested that the node that normally fulfils the role of master is
      set true in config file and the node that is normally replica is set false.  Be aware that setting both nodes to
      true will lead to a failure to start up, as both cannot be designated at the point of contact. Designating both
-     nodes as primary at runtime (using the JMX interface) will lead to a <link linkend="HATwoNodeSplitBrain">split-brain</link>
+     nodes as primary at runtime (using the JMX interface) will lead to a <link linkend="Java-Broker-High-Availability-TwoNodeSplitBrain">split-brain</link>
      in the case of network partition and must be avoided.</para>
      <note><para>Usage of domain names in  <varname>helperHostPort</varname> and <varname>nodeHostPort</varname> is more preferebale
      over IP addresses due to the tendency of more frequent changes of the last over the former.
      If server IP address changes but domain name remains the same the HA cluster can continue working as normal
      in case when domain names are used in cluster configuration. In case when IP addresses are used and they are changed with the time
-     than Qpid <link linkend="HAJMXAPI">JMX API for HA</link> can be used to change the addresses or remove the nodes from the cluster.</para></note>
+     than Qpid <link linkend="Java-Broker-High-Availability-JMXAPI">JMX API for HA</link> can be used to change the addresses or remove the nodes from the cluster.</para></note>
 
-    <section role="h4" id="HAConfiguration_BDBEnvVars">
+    <section role="h4" id="Java-Broker-High-Availability-Configuration_BDBEnvVars">
       <title>Passing BDB environment and replication configuration options</title>
       <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">
          environment</ulink> and <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/ReplicationConfig.html">
@@ -387,7 +387,7 @@
     </section>
   </section>
 
-  <section role="h3" id="HADurabilityGuarantee">
+  <section role="h3" id="Java-Broker-High-Availability-DurabilityGuarantee">
     <title>Durability Guarantees</title>
     <para>The term <ulink url="http://en.wikipedia.org/wiki/ACID#Durability">durability</ulink> is used to mean that once a
       transaction is committed, it remains committed regardless of subsequent failures. A highly durable system is one where
@@ -397,7 +397,7 @@
       <ulink url="&oracleBdbRepGuideUrl;txn-management.html#durabilitycontrols">durability controls</ulink>
       offered by by BDB JE JA and a Qpid specific optimisation called <emphasis role="bold">coalescing-sync</emphasis> which defaults
       to enabled.</para>
-    <section role="h4" id="HADurabilityGuarantee_BDBControls">
+    <section role="h4" id="Java-Broker-High-Availability-DurabilityGuarantee_BDBControls">
       <title>BDB Durability Controls</title>
       <para>BDB expresses durability as a triplet with the following form:</para>
       <programlisting><![CDATA[<master sync policy>,<replica sync policy>,<replica acknowledgement policy>]]></programlisting>
@@ -408,7 +408,7 @@
         <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/Durability.SyncPolicy.html#WRITE_NO_SYNC">WRITE_NO_SYNC</ulink>,
         <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/Durability.SyncPolicy.html#NO_SYNC">NO_SYNC</ulink>. SYNC
         is offers the highest durability whereas NO_SYNC the lowest.</para>
-      <para>Note: the combination of a master sync policy of SYNC and <link linkend="HADurabilityGuarantee_CoalescingSync">coalescing-sync</link>
+      <para>Note: the combination of a master sync policy of SYNC and <link linkend="Java-Broker-High-Availability-DurabilityGuarantee_CoalescingSync">coalescing-sync</link>
         true would result in poor performance with no corresponding increase in durability guarantee.  It cannot not be used.</para>
       <para>The acknowledgement policy defines whether when a master commits a transaction, it also awaits for the replica(s) to
          commit the same transaction before continuing.  For the two-node case, ALL and SIMPLE_MAJORITY are equal.</para>
@@ -417,7 +417,7 @@
          <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/Durability.ReplicaAckPolicy.html#SIMPLE_MAJORITY">SIMPLE_MAJORITY</ulink>
          <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/Durability.ReplicaAckPolicy.html#NONE">NONE</ulink>.</para>
     </section>
-    <section role="h4" id="HADurabilityGuarantee_CoalescingSync">
+    <section role="h4" id="Java-Broker-High-Availability-DurabilityGuarantee_CoalescingSync">
       <title>Coalescing-sync</title>
       <para>If enabled (the default) Qpid works to reduce the number of separate
         <ulink url="&oracleJdkDocUrl;java/io/FileDescriptor.html#sync()">file-system sync</ulink> operations
@@ -426,14 +426,14 @@
         It does this in such a manner not to reduce the ACID guarantees of the system.</para>
       <para>Coalescing-sync has no effect on the behaviour of the replicas.</para>
     </section>
-    <section role="h4" id="HADurabilityGuarantee_Default">
+    <section role="h4" id="Java-Broker-High-Availability-DurabilityGuarantee_Default">
       <title>Default</title>
       <para>The default durability guarantee is <constant>NO_SYNC, NO_SYNC, SIMPLE_MAJORITY</constant> with coalescing-sync enabled. The effect
          of this combination is described in the table below. It offers a good compromise between durability guarantee and performance
          with writes being guaranteed on the master and the additional guarantee that a majority of replicas have received the
          transaction.</para>
     </section>
-    <section role="h4" id="HADurabilityGuarantee_Examples">
+    <section role="h4" id="Java-Broker-High-Availability-DurabilityGuarantee_Examples">
       <title>Examples</title>
       <para>Here are some examples illustrating the effects of the durability and coalescing-sync settings.</para>
       <para>
@@ -483,7 +483,7 @@
     </section>
   </section>
 
-  <section id="HAClientFailover">
+  <section id="Java-Broker-High-Availability-ClientFailover">
     <title>Client failover configuration</title>
     <para>The details about format of Qpid connection URLs can be found at section
         <ulink url="../../Programming-In-Apache-Qpid/html/QpidJNDI.html">Connection URLs</ulink>
@@ -500,7 +500,7 @@ amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?connectdelay='
   </section>
 
 
-  <section role="h3" id="HAJMXAPI">
+  <section role="h3" id="Java-Broker-High-Availability-JMXAPI">
     <title>Qpid JMX API for HA</title>
     <para>Qpid exposes the BDB HA store information via its JMX interface and provides APIs to remove a Node from
      the group, update a Node IP address, and assign a Node as the designated primary.</para>
@@ -639,7 +639,7 @@ System.out.println("Node state:" + state);
     </example>
   </section>
 
-  <section id="BDB-HA-Monitoring-cluster">
+  <section id="Java-Broker-High-Availability-Monitoring-cluster">
     <title>Monitoring cluster</title>
     <para>In order to discover potential issues with HA Cluster early, all nodes in the Cluster should be monitored on regular basis
     using the following techniques:</para>
@@ -707,26 +707,26 @@ Current state of node: Node-5001 from group: TestClusterGroup
             <para><emphasis>AllNodesInGroup</emphasis> lists of all nodes in the replication group including their names, hosts and ports.</para>
           </listitem>
         </itemizedlist>
-        <para>For more details about <classname>BDBHAMessageStore</classname> MBean please refer section <link linkend="HAJMXAPI">Qpid JMX API for HA</link></para>
+        <para>For more details about <classname>BDBHAMessageStore</classname> MBean please refer section <link linkend="Java-Broker-High-Availability-JMXAPI">Qpid JMX API for HA</link></para>
       </listitem>
     </itemizedlist>
   </section>
 
-  <section id="HADiskSpace">
+  <section id="Java-Broker-High-Availability-DiskSpace">
     <title>Disk space requirements</title>
     <para>Disk space is a critical resource for the HA Qpid broker.</para>
     <para>In case when a Replica goes down (or falls behind the Master in 2 node cluster where the Master is designated primary)
     and the Master continues running, the non-replicated store files are kept on the Masters disk for the period of time
     as specified in <emphasis>je.rep.repStreamTimeout</emphasis> JE setting in order to replicate this data later
     when the Replica is back. This setting is set to 1 hour by default by the broker. The setting can be overridden as described in
-    <xref linkend="HAConfiguration_BDBEnvVars"/>.</para>
+    <xref linkend="Java-Broker-High-Availability-Configuration_BDBEnvVars"/>.</para>
     <para>Depending from the application publishing/consuming rates and message sizes,
     the disk space might become overfull during this period of time due to preserved logs.
     Please, make sure to allocate enough space on your disk to avoid this from happening.
     </para>
   </section>
 
-  <section id="BDB-HA-Network-Requirements">
+  <section id="Java-Broker-High-Availability-Network-Requirements">
     <title>Network Requirements</title>
     <para>The HA Cluster performance depends on the network bandwidth, its use by existing traffic, and quality of service.</para>
     <para>In order to achieve the best performance it is recommended to use a separate network infrastructure for the Qpid HA Nodes
@@ -734,7 +734,7 @@ Current state of node: Node-5001 from group: TestClusterGroup
      installing a cluster in a separate network not impacted by any other traffic.</para>
   </section>
 
-  <section id="BDB-HA-Security">
+  <section id="Java-Broker-High-Availability-Security">
     <title>Security</title>
     <para>At the moment Berkeley replication API supports only TCP/IP protocol to transfer replication data between Master and Replicas.</para>
     <para>As result, the replicated data is unprotected and can be intercepted by anyone having access to the replication network.</para>
@@ -742,7 +742,7 @@ Current state of node: Node-5001 from group: TestClusterGroup
     <para>In order to reduce the security risks the entire HA cluster is recommended to run in a separate network protected from general access.</para>
   </section>
 
-  <section id="BDB-HA-Backup">
+  <section id="Java-Broker-High-Availability-Backup">
     <title>Backups</title>
     <para>In order to protect the entire cluster from some cataclysms which might destroy all cluster nodes,
     backups of the Master store should be taken on a regular basis.</para>
@@ -764,7 +764,7 @@ Current state of node: Node-5001 from group: TestClusterGroup
     </note>
   </section>
 
-  <section id="HAMigrationFromNonHA">
+  <section id="Java-Broker-High-Availability-MigrationFromNonHA">
     <title>Migration of a non-HA store to HA</title>
     <para>Non HA stores starting from schema version 4 (0.14 Qpid release) can be automatically converted into HA store on broker startup if replication is first enabled with the <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/util/DbEnableReplication.html"><classname>DbEnableReplication</classname></ulink> utility from the BDB JE jar.</para>
     <para>DbEnableReplication converts a non HA store into an HA store and can be used as follows:</para>
@@ -795,10 +795,10 @@ java -jar je-&oracleBdbProductVersion;.jar DbEnableReplication -h /path/to/store
     </note>
   </section>
 
-  <section id="HADisasterRecovery">
+  <section id="Java-Broker-High-Availability-DisasterRecovery">
     <title>Disaster Recovery</title>
     <para>This section describes the steps required to restore HA broker cluster from backup.</para>
-    <para>The detailed instructions how to perform backup on replicated environment can be found <link linkend="BDB-HA-Backup">here</link>.</para>
+    <para>The detailed instructions how to perform backup on replicated environment can be found <link linkend="Java-Broker-High-Availability-Backup">here</link>.</para>
     <para>At this point we assume that backups are collected on regular basis from Master node.</para>
     <para>Replication configuration of a cluster is stored internally in HA message store.
     This information includes IP addresses of the nodes.
@@ -825,7 +825,7 @@ java -cp je-&oracleBdbProductVersion;.jar com.sleepycat.je.rep.util.DbResetRepGr
     </itemizedlist>
   </section>
 
-  <section id="HAPerformance">
+  <section id="Java-Broker-High-Availability-Performance">
     <title>Performance</title>
     <para>The aim of this section is not to provide exact performance metrics relating to HA, as this depends heavily on the test
     environment, but rather showing an impact of HA on Qpid broker performance in comparison with the Non HA case.</para>
@@ -996,9 +996,9 @@ java -cp je-&oracleBdbProductVersion;.jar com.sleepycat.je.rep.util.DbResetRepGr
     </figure>
     <para>On using durability <emphasis>SYNC,SYNC,ALL</emphasis> (without coalescing-sync) the performance drops significantly (by 62-95%) in comparison with non HA broker.</para>
     <para>Whilst, on using durability <emphasis>WRITE_NO_SYNC,WRITE_NO_SYNC,ALL</emphasis> (without coalescing-sync) the performance drops by only half, but with loss of durability guarantee, so is not recommended.</para>
-    <para>In order to have better performance with HA, Qpid Broker comes up with the special mode called <link linkend="HADurabilityGuarantee_CoalescingSync">coalescing-sync</link>,
+    <para>In order to have better performance with HA, Qpid Broker comes up with the special mode called <link linkend="Java-Broker-High-Availability-DurabilityGuarantee_CoalescingSync">coalescing-sync</link>,
     With this mode enabled, Qpid broker batches the concurrent transaction commits and syncs transaction data into Master disk in one go.
     As result, the HA performance only drops by 25-60% for durability <emphasis>NO_SYNC,NO_SYNC,ALL</emphasis> and by 10-90% for <emphasis>WRITE_NO_SYNC,WRITE_NO_SYNC,ALL</emphasis>.</para>
   </section>
 
-</section>
+</chapter>
