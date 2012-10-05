@@ -161,10 +161,7 @@ final class IoReceiver implements Runnable, Closeable
         }
         catch (Throwable t)
         {
-            if (!(shutdownBroken &&
-                  t instanceof SocketException &&
-                  t.getMessage().equalsIgnoreCase("socket closed") &&
-                  closed.get()))
+            if (shouldReport(t))
             {
                 receiver.exception(t);
             }
@@ -181,6 +178,21 @@ final class IoReceiver implements Runnable, Closeable
                 log.warn(e, "Error closing socket");
             }
         }
+    }
+
+    private boolean shouldReport(Throwable t)
+    {
+        boolean brokenClose = closed.get() &&
+                              shutdownBroken &&
+                              t instanceof SocketException &&
+                              "socket closed".equalsIgnoreCase(t.getMessage());
+
+        boolean sslSocketClosed = closed.get() &&
+                                  socket instanceof SSLSocket &&
+                                  t instanceof SocketException &&
+                                  "Socket is closed".equalsIgnoreCase(t.getMessage());
+
+        return !brokenClose && !sslSocketClosed;
     }
 
 }
