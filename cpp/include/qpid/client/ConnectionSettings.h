@@ -23,6 +23,7 @@
  */
 
 #include "qpid/client/ClientImportExport.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <string>
 
@@ -127,6 +128,11 @@ struct QPID_CLIENT_CLASS_EXTERN ConnectionSettings {
      * settings. Used only when a client connects to the broker.
      */
     std::string sslCertName;
+
+    /**
+     * Passed as client-propreties on opening the connecction.
+     */
+    framing::FieldTable clientProperties;
 };
 
 }} // namespace qpid::client

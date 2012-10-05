@@ -866,6 +866,20 @@ class RecoveryTests(BrokerTest):
         s.sync(timeout=1)      # And released after the timeout.
         self.assertEqual(cluster[2].ha_status(), "active")
 
+    def test_join_ready_cluster(self):
+        """If we join a cluster where the primary is dead, the new primary is
+        not yet promoted and there are ready backups then we should refuse
+        promotion so that one of the ready backups can be chosen."""
+        # FIXME aconway 2012-10-05: smaller timeout
+        cluster = HaCluster(self, 2, args=["--link-heartbeat-interval", 1])
+        cluster[0].wait_status("active")
+        cluster[1].wait_status("ready")
+        cluster.bounce(0, promote_next=False)
+        self.assertRaises(Exception, cluster[0].promote)
+        os.kill(cluster[1].pid, signal.SIGSTOP) # Test for timeout if unresponsive.
+        cluster.bounce(0, promote_next=False)
+        cluster[0].promote()
+
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
     qpid_ha = os.getenv("QPID_HA_EXEC")

@@ -26,6 +26,7 @@
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
+#include "StatusCheck.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
@@ -87,7 +88,6 @@ void HaBroker::initialize() {
         broker.getSystem()->getNodeName(),
         broker.getPort(broker::Broker::TCP_TRANSPORT),
         systemId);
-
     QPID_LOG(notice, logPrefix << "Initializing: " << brokerInfo);
 
     // Set up the management object.
@@ -110,6 +110,7 @@ void HaBroker::initialize() {
         status = JOINING;
         backup.reset(new Backup(*this, settings));
         broker.getKnownBrokers = boost::bind(&HaBroker::getKnownBrokers, this);
+        statusCheck.reset(new StatusCheck(logPrefix, broker.getLinkHearbeatInterval(), brokerInfo));
     }
 
     if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl));
@@ -158,8 +159,15 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
     switch (methodId) {
       case _qmf::HaBroker::METHOD_PROMOTE: {
           switch (getStatus()) {
-            case JOINING: recover(); break;
-            case CATCHUP:
+            case JOINING:
+              if (statusCheck->canPromote())
+                  recover();
+              else {
+                  QPID_LOG(error, logPrefix << "Cluster already active, cannot be promoted");
+                  throw Exception("Cluster already active, cannot be promoted.");
+              }
+              break;
+             case CATCHUP:
               QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
               throw Exception("Still catching up, cannot be promoted.");
               break;
@@ -219,7 +227,6 @@ void HaBroker::setClientUrl(const Url& url) {
 
 void HaBroker::updateClientUrl(Mutex::ScopedLock&) {
     Url url = clientUrl.empty() ? brokerUrl : clientUrl;
-    if (url.empty()) throw Url::Invalid("HA client URL is empty");
     mgmtObject->set_publicUrl(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
@@ -230,10 +237,10 @@ void HaBroker::setBrokerUrl(const Url& url) {
     boost::shared_ptr<Backup> b;
     {
         Mutex::ScopedLock l(lock);
-        if (url.empty()) throw Url::Invalid("HA broker URL is empty");
         brokerUrl = url;
         mgmtObject->set_brokersUrl(brokerUrl.str());
         QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
+        if (status == JOINING && statusCheck.get()) statusCheck->setUrl(url);
         // Updating broker URL also updates defaulted client URL:
         if (clientUrl.empty()) updateClientUrl(l);
         b = backup;

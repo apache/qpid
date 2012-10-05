@@ -50,10 +50,12 @@ ha_la_SOURCES =					\
   qpid/ha/ReplicationTest.cpp			\
   qpid/ha/ReplicationTest.h			\
   qpid/ha/Settings.h				\
+  qpid/ha/StatusCheck.cpp			\
+  qpid/ha/StatusCheck.h				\
   qpid/ha/RemoteBackup.cpp			\
   qpid/ha/RemoteBackup.h			\
   qpid/ha/types.cpp				\
   qpid/ha/types.h
 
-ha_la_LIBADD = libqpidbroker.la
+ha_la_LIBADD = libqpidbroker.la libqpidmessaging.la
 ha_la_LDFLAGS = $(PLUGINLDFLAGS)

@@ -654,6 +654,8 @@ if (BUILD_HA)
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/Settings.h
+	qpid/ha/StatusCheck.cpp
+	qpid/ha/StatusCheck.h
         qpid/ha/types.cpp
         qpid/ha/types.h
         qpid/ha/RemoteBackup.cpp
