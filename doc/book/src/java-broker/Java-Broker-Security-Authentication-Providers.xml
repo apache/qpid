@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- 
+
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -9,28 +9,28 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
- 
+
 -->
 
-<section id="Configuring-Authentication-Mechanisms">
-  <title>Configuring Authentication Mechanisms</title>
+<section id="Java-Broker-Security-Authentication-Providers">
+  <title>Authentication Providers</title>
   <para>
     In order to successfully establish a connection to the Java Broker, the connection must be
-    authenticated. The Java Broker supports a number of different authentication schemesi, each
+    authenticated. The Java Broker supports a number of different authentication schemes, each
     with its own "authentication manager". Different managers may be used on different ports.
     Each manager has its own configuration element, the presence of which within the
-    &lt;security&gt; section denotes the use of that authentication mechanism. Where only one
+    &lt;security&gt; section denotes the use of that authentication provider. Where only one
     such manager is configured, that manager will be used on all ports (including JMX). Where
-    more than one authentication manager is configured the configuration must define which 
+    more than one authentication manager is configured the configuration must define which
     manager is the "default", and (if required) the mapping of non-default authentication
     managers to other ports.
   </para>
@@ -39,46 +39,52 @@
     the default (e.g. for the JMX port), Kerberos on port 5672 and Anonymous on 5673.
   </para>
 
-  <programlisting><![CDATA[
-    <security>
-        <pd-auth-manager>
-            <principal-database>
-                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
-                <attributes>
-                    <attribute>
-                        <name>passwordFile</name>
-                        <value>${conf}/passwd</value>
-                    </attribute>
-                </attributes>
-            </principal-database>
-        </pd-auth-manager>
-        <kerberos-auth-manager><auth-name>sib</auth-name></kerberos-auth-manager>
-        <anonymous-auth-manager></anonymous-auth-manager>
-        <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
-        <port-mappings>
-            <port-mapping>
-                <port>5672</port>
-                <auth-manager>KerberosAuthenticationManager</auth-manager>
-            </port-mapping>
-            <port-mapping>
-                <port>5673</port>
-                <auth-manager>AnonymousAuthenticationManager</auth-manager>
-            </port-mapping>
-        </port-mappings>
-    </security>]]>
-  </programlisting>
+  <example>
+    <title>Configuring different authentication schemes on different ports</title>
+    <programlisting><![CDATA[
+<security>
+    <pd-auth-manager>
+	<principal-database>
+	    <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+	    <attributes>
+		<attribute>
+		    <name>passwordFile</name>
+		    <value>${conf}/passwd</value>
+		</attribute>
+	    </attributes>
+	</principal-database>
+    </pd-auth-manager>
+    <kerberos-auth-manager><auth-name>sib</auth-name></kerberos-auth-manager>
+    <anonymous-auth-manager></anonymous-auth-manager>
+    <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
+    <port-mappings>
+	<port-mapping>
+	    <port>5672</port>
+	    <auth-manager>KerberosAuthenticationManager</auth-manager>
+	</port-mapping>
+	<port-mapping>
+	    <port>5673</port>
+	    <auth-manager>AnonymousAuthenticationManager</auth-manager>
+	</port-mapping>
+    </port-mappings>
+</security>]]>
+    </programlisting>
+  </example>
 
   <section><title>Password File</title></section>
   <section><title>LDAP</title>
-  <programlisting><![CDATA[
-    <security>
-        <simple-ldap-auth-manager>
-          <provider-url>ldaps://example.com:636/</provider-url>
-          <search-context>dc=example\,dc=com</search-context>
-          <search-filter>(uid={0})</search-filter>
-        </simple-ldap-auth-manager>
-    </security>]]>
-  </programlisting>  
+  <example>
+    <title>Configuring a LDAP authentication</title>
+    <programlisting><![CDATA[
+<security>
+    <simple-ldap-auth-manager>
+      <provider-url>ldaps://example.com:636/</provider-url>
+      <search-context>dc=example\,dc=com</search-context>
+      <search-filter>(uid={0})</search-filter>
+    </simple-ldap-auth-manager>
+</security>]]>
+    </programlisting>
+  </example>
 
   <para>
     The authentication manager first connects to the ldap server anonymously and searches for the
@@ -121,29 +127,32 @@
     configuration, and use this for other ports:
   </para>
 
-  <programlisting><![CDATA[
-    <security>
-        <pd-auth-manager>
-            <principal-database>
-                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
-                <attributes>
-                    <attribute>
-                        <name>passwordFile</name>
-                        <value>${conf}/passwd</value>
-                    </attribute>
-                </attributes>
-            </principal-database>
-        </pd-auth-manager>
-        <kerberos-auth-manager><auth-name>sib</auth-name></kerberos-auth-manager>
-        <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
-        <port-mappings>
-            <port-mapping>
-                <port>5672</port>
-                <auth-manager>KerberosAuthenticationManager</auth-manager>
-            </port-mapping>
-        </port-mappings>
-    </security>]]>
-  </programlisting>
+  <example>
+    <title>Configuring a Kerberos authentication</title>
+    <programlisting><![CDATA[
+<security>
+    <pd-auth-manager>
+	<principal-database>
+	    <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+	    <attributes>
+		<attribute>
+		    <name>passwordFile</name>
+		    <value>${conf}/passwd</value>
+		</attribute>
+	    </attributes>
+	</principal-database>
+    </pd-auth-manager>
+    <kerberos-auth-manager></kerberos-auth-manager>
+    <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
+    <port-mappings>
+	<port-mapping>
+	    <port>5672</port>
+	    <auth-manager>KerberosAuthenticationManager</auth-manager>
+	</port-mapping>
+    </port-mappings>
+</security>]]>
+    </programlisting>
+  </example>
 
   <para>
     Configuration of kerberos is done through system properties (there doesn't seem to be a way

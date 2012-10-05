@@ -21,10 +21,8 @@
 
 -->
 
-<section id="Configuring-ACLS">
-  <title>
-      Configuring ACLs
-  </title>
+<section id="Java-Broker-Security-ACLs">
+  <title>Access Control Lists</title>
   <para>
     In Qpid, Access Control Lists (ACLs) specify which actions can be performed by each authenticated user.
     To enable, the &lt;acl/&gt; element is used within the &lt;security/&gt; element of the configuration XML.
@@ -34,7 +32,7 @@
   </para>
 
 
-  <section role="h3" id="ConfigureACLs-EnablingACL">
+  <section role="h3" id="Java-Broker-Security-ACLs-EnablingACL">
     <title>
        Enabling ACLs
     </title>
@@ -75,13 +73,13 @@
     </programlisting>
   </section>
 
-  <section role="h3" id="ConfigureACLs-WriteACL">
+  <section role="h3" id="Java-Broker-Security-ACLs-WriteACL">
     <title>
        Writing .acl files
     </title>
 
     <para>
-      The ACL file consists of a series of rules associating behaviour for a user or group. Use of groups can serve to make the ACL file more concise. See <link linkend="Configuring-Group-Providers">Configuring Group Providers</link> for more information on defining groups.
+      The ACL file consists of a series of rules associating behaviour for a user or group. Use of groups can serve to make the ACL file more concise. See <link linkend="Java-Broker-Security-Group-Providers">Configuring Group Providers</link> for more information on defining groups.
     </para>
     <para>
       Each ACL rule grants or denies a particular action on an object to a user/group.  The rule may be augmented with one or more properties, restricting
@@ -126,7 +124,7 @@
     </para>
   </section>
 
-  <section role="h4" id="ConfigureACLs-Syntax">
+  <section role="h4" id="Java-Broker-Security-ACLs-Syntax">
     <title>
        Syntax
     </title>
@@ -148,8 +146,8 @@
       ALL ALL   # A broken line
     </programlisting>
   </section>
-  <table id="tabl-ConfigureACLs-Syntax_permissions">
-    <title>ACL Rules: permission</title>
+  <table id="table-Java-Broker-Security-ACLs-Syntax_permissions">
+    <title>List of ACL permission</title>
     <tgroup cols="2">
       <tbody>
         <row>
@@ -171,8 +169,8 @@
      </tbody>
     </tgroup>
   </table>
-  <table id="tabl-ConfigureACLs-Syntax_actions">
-    <title>ACL Rules:action</title>
+  <table id="table-Java-Broker-Security-ACLs-Syntax_actions">
+    <title>List of ACL actions</title>
     <tgroup cols="2">
       <tbody>
         <row>
@@ -214,8 +212,8 @@
       </tbody>
     </tgroup>
   </table>
-  <table id="tabl-ConfigureACLs-Syntax_objects">
-    <title>ACL Rules:object</title>
+  <table id="table-Java-Broker-Security-ACLs-Syntax_objects">
+    <title>List of ACL objects</title>
     <tgroup cols="2">
       <tbody>
         <row>
@@ -257,8 +255,8 @@
       </tbody>
     </tgroup>
   </table>
-  <table id="tabl-ConfigureACLs-Syntax_properties">
-    <title>ACL Rules:property</title>
+  <table id="table-Java-Broker-Security-ACLs-Syntax_properties">
+    <title>List of ACL properties</title>
     <tgroup cols="2">
       <tbody>
         <row>
@@ -368,8 +366,8 @@
       </tbody>
     </tgroup>
   </table>
-  <table id="tabl-ConfigureACLs-Syntax_javacomponents">
-    <title>ACL rules:components (Java Broker only)</title>
+  <table id="table-Java-Broker-Security-ACLs-Syntax_javacomponents">
+    <title>List of ACL rules</title>
     <tgroup cols="3">
       <tbody>
         <row>
@@ -407,7 +405,7 @@
       </tbody>
     </tgroup>
   </table>
-  <section role="h4" id="ConfigureACLs-WorkedExamples">
+  <section role="h4" id="Java-Broker-Security-ACLs-WorkedExamples">
     <title>
       Worked Examples
     </title>
@@ -415,7 +413,7 @@
       Here are some example ACLs illustrating common use cases.
       In addition, note that the Java broker provides a complete example ACL file, located at etc/broker_example.acl.
     </para>
-    <section role="h4" id="ConfigureACLs-WorkedExample1">
+    <section role="h4" id="Java-Broker-Security-ACLs-WorkedExample1">
       <title>
         Worked example 1 - Management rights
       </title>
@@ -439,13 +437,13 @@ ACL ALLOW readonly ACCESS ALL
 ACL DENY-LOG ALL ALL
       </programlisting>
     </section>
-    <section role="h4" id="ConfigureACLs-WorkedExample2">
+    <section role="h4" id="Java-Broker-Security-ACLs-WorkedExample2">
       <title>
         Worked example 2 - User maintainer group
       </title>
       <para>
         Suppose you wish to restrict User Management operations to users belonging to a
-        <link linkend="Configuring-Group-Providers">group</link> 'usermaint'.  No other user
+        <link linkend="Java-Broker-Security-Group-Providers">group</link> 'usermaint'.  No other user
         is allowed to perform user maintainence  This example illustrates the permissioning of an individual component.
       </para>
       <programlisting>
@@ -462,7 +460,7 @@ ACL DENY ALL ALL USER
 ACL DENY-LOG ALL ALL
       </programlisting>
     </section>
-    <section role="h4" id="ConfigureACLs-WorkedExample3">
+    <section role="h4" id="Java-Broker-Security-ACLs-WorkedExample3">
       <title>
         Worked example 3 - Request/Response messaging
       </title>
@@ -498,7 +496,7 @@ ACL ALLOW server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
 ACL DENY-LOG all all
       </programlisting>
     </section>
-    <section role="h4" id="ConfigureACLs-WorkedExample4">
+    <section role="h4" id="Java-Broker-Security-ACLs-WorkedExample4">
       <title>
         Worked example 4 - firewall-like access control
       </title>

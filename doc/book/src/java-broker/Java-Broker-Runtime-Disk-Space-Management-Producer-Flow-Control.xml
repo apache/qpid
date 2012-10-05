@@ -23,7 +23,7 @@
 <section id="Qpid-Producer-Flow-Control">
     <title>Producer Flow Control</title>
 
-    <section role="h2" id="QpidProducerFlowControlGeneralInformation">
+    <section role="h2" id="Java-Broker-Runtime-Disk-Space-Management-Producer-Flow-Control-GeneralInformation">
         <title>General Information</title>
         <para>
             The Qpid 0.6 release introduced a simplistic producer-side flow control mechanism
@@ -32,7 +32,7 @@
             mechanism triggered by an overfull persistent message store on a virtual host.
         </para>
     </section>
-    <section role="h2" id="QpidProducerFlowControlServerConfiguration">
+    <section role="h2" id="Java-Broker-Runtime-Disk-Space-Management-Producer-Flow-Control-ServerConfiguration">
         <title>Server Configuration</title>
         <section role="h3">
             <title>Configuring a Queue to use flow control</title>
@@ -44,6 +44,9 @@
                 "capacity" of the Queue. A Queue becomes "underfull" when its size becomes
                 less than the "flowResumeCapacity".
 
+
+             <example>
+               <title>Configuring a queue depth limit</title>
                 <programlisting>
                 <![CDATA[
 <queue>
@@ -56,9 +59,12 @@
 </queue>
                 ]]>
                 </programlisting>
+             </example>
 
                 The default for all queues on a virtual host can also be set
 
+             <example>
+               <title>Configuring a default queue depth limit on a virtualhost</title>
                 <programlisting>
                 <![CDATA[
 <virtualhosts>
@@ -72,6 +78,7 @@
 </virtualhosts>
                 ]]>
                 </programlisting>
+             </example>
 
                 Where no flowResumeCapacity is set, the flowResumeCapacity is set to be equal
                 to the capacity. Where no capacity is set, capacity is defaulted to 0 meaning
@@ -127,6 +134,9 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
             <para>
                 An example of quota configuration for the BDB message store is provided below.
             </para>
+
+            <example>
+               <title>Configuring a limit on a store</title>
             <programlisting>
             <![CDATA[
 <store>
@@ -137,6 +147,7 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
 </store>
             ]]>
             </programlisting>
+            </example>
             <para>
                 The disk quota functionality is based on "best effort" principle. This means the broker
                 cannot guarantee that the disk space limit will not be exceeded. If several concurrent
@@ -163,7 +174,7 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
     </section><!-- Server configuration -->
 
 
-    <section role="h2" id="QpidProducerFlowControlClientImpact">
+    <section role="h2" id="Java-Broker-Runtime-Disk-Space-Management-Producer-Flow-Control-ClientImpact">
         <title>Client impact and configuration</title>
         <para>
             If a producer sends to a queue which is overfull, the broker will respond by

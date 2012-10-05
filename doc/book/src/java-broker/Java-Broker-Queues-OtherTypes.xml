@@ -23,26 +23,26 @@
 
 -->
 
-<section id="OtherQueueTypes">
+<section id="Java-Broker-Queues-OtherTypes">
   <title>Other Queue Types</title>
 
-  <section role="h2" id="OtherQueueTypes-Introduction">
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-Introduction">
     <title>Introduction</title>
     <para> In addition to the standard queue type where messages are delivered in the same order
       that they were sent, the Java Broker supports three additional queue types which allows for
-      alternative delivery behaviours. These are <link linkend="OtherQueueTypes-Priority"
-        >priority-queues</link>, <link linkend="OtherQueueTypes-Sorted">sorted-queues</link>-, and
-        <link linkend="OtherQueueTypes-LVQ">last-value-queues</link> (LVQs). </para>
+      alternative delivery behaviours. These are <link linkend="Java-Broker-Queues-OtherTypes-Priority"
+        >priority-queues</link>, <link linkend="Java-Broker-Queues-OtherTypes-Sorted">sorted-queues</link>-, and
+        <link linkend="Java-Broker-Queues-OtherTypes-LVQ">last-value-queues</link> (LVQs). </para>
     <para> In the following sections, the semantics of each queue type is described, followed by a
       description of how instances of these queue can be created via <link
-        linkend="OtherQueueTypes-CreateUsingConfig">configuration</link> or <link
-        linkend="OtherQueueTypes-CreateUsingJmsOrJmx">programmatically</link>. </para>
+        linkend="Java-Broker-Queues-OtherTypes-CreateUsingConfig">configuration</link> or <link
+        linkend="Java-Broker-Queues-OtherTypes-CreateUsingJmsOrJmx">programmatically</link>. </para>
     <para>The final section discusses the importance of using a <link
-        linkend="OtherQueueTypes-SetLowPrefetch">low client pre-fetch</link> with these queued.
+        linkend="Java-Broker-Queues-OtherTypes-SetLowPrefetch">low client pre-fetch</link> with these queued.
     </para>
   </section>
 
-  <section role="h2" id="OtherQueueTypes-Priority">
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-Priority">
     <title>Priority Queues</title>
     <para>In a priority queue, messages on the queue are delivered in an order determined by the
         <ulink url="&oracleJeeDocUrl;javax/jms/Message.html#getJMSPriority()">JMS priority message
@@ -53,7 +53,7 @@
         default message priority</ulink> as 4. Messages sent without a specified priority use this
       default. </para>
   </section>
-  <section role="h2" id="OtherQueueTypes-Sorted">
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-Sorted">
     <title>Sorted Queues</title>
     <para>Sorted queues allow the message delivery order to be determined by value of an arbitrary
         <ulink url="&oracleJeeDocUrl;javax/jms/Message.html#getStringProperty()">JMS message
@@ -62,7 +62,7 @@
     <para>Messages sent to a sorted queue without the specified JMS message property will be
       inserted into the 'last' position in the queue.</para>
   </section>
-  <section role="h2" id="OtherQueueTypes-LVQ">
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-LVQ">
     <title>Last Value Queues (LVQ)</title>
     <para>LVQs (or conflation queues) are special queues that automatically discard any message when
       a newer message arrives with the same key value. The key is specified by arbitrary <ulink
@@ -78,7 +78,7 @@
     <para>Messages sent to an LVQ without the specified property will be delivered as normal and
       will never be "replaced".</para>
   </section>
-  <section role="h2" id="OtherQueueTypes-Create">
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-Create">
     <title>Creating a Priority, Sorted or LVQ Queue</title>
     <para>To create a priority, sorted or LVQ queue, it can be defined in the virtualhost
       configuration file, or the queue can be created programmtically from a client via AMQP (using
@@ -86,12 +86,12 @@
     <para>Once a queue is created you cannot change its type (without deleting it and re-creating).
       Also note you cannot currently mix the natures of these queue types, for instance, you cannot
       define a queue which it both an LVQ and a priority-queue.</para>
-    <section role="h2" id="OtherQueueTypes-CreateUsingConfig">
+    <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig">
       <title>Using configuration</title>
       <para>To create a priority, sorted or LVQ queue within configuration, add the appropriate xml
         to the virtualhost.xml configuration file within the <varname>queues</varname>
         element.</para>
-      <section role="h3" id="OtherQueueTypes-CreateUsingConfig-Priority">
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Priority">
         <title>Priority</title>
         <para> To defining a priority queue, add a &lt;priority&gt;true&lt;/priority&gt; element. By
           default the queue will have 10 distinct priorities. </para>
@@ -124,7 +124,7 @@
 </queue>]]></programlisting>
         </example>
       </section>
-      <section role="h3" id="OtherQueueTypes-CreateUsingConfig-Sorted">
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Sorted">
         <title>Sorted</title>
         <para> To define a sorted queue, add a <varname>sortKey</varname> element. The value of the
             <varname>sortKey</varname> element defines the message property to use the value of when
@@ -140,7 +140,7 @@
 </queue>]]></programlisting>
         </example>
       </section>
-      <section role="h3" id="OtherQueueTypes-CreateUsingConfig-LVQ">
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-LVQ">
         <title>LVQ</title>
         <para> To define a LVQ, add a <varname>lvq</varname> element with the value
             <constant>true</constant>. Without any further configuration this will define an LVQ
@@ -171,11 +171,12 @@
         </example>
       </section>
     </section>
-    <section role="h2" id="OtherQueueTypes-CreateUsingJmsOrJmx">
-      <title>Using JMS or AMQP</title>
+    <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingJmsOrJmx">
+      <title>Using JMX or AMQP</title>
       <para>To create a priority, sorted or LVQ queue programmatically from JMX or using a Qpid
         extension to JMS, pass the appropriate queue-declare arguments.</para>
       <table>
+        <title>Queue-declare arguments understood for priority, sorted and LVQ queues</title>
         <tgroup cols="4">
           <thead>
             <row>
@@ -242,7 +243,7 @@ managedBroker.createNewQueue("myqueue", null, true, arguments);]]></programlisti
     </section>
   </section>
 
-  <section role="h2" id="OtherQueueTypes-SetLowPrefetch">
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-SetLowPrefetch">
     <title>Low pre-fetch</title>
     <para>Qpid clients receive buffered messages in batches, sized according to the pre-fetch value.
       The current default is 500. </para>
