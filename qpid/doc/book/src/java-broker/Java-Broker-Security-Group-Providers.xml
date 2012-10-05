@@ -21,10 +21,10 @@
 
 -->
 
-<section id="Configuring-Group-Providers">
+<section id="Java-Broker-Security-Group-Providers">
   <title>Configuring Group Providers</title>
   <para>
-    The Java broker utilises GroupProviders to allow assigning users to groups for use in <link linkend="Configuring-ACLS">ACLs</link>. Following authentication by a given <link linkend="Configuring-Authentication-Mechanisms">Authentication Provider</link>, the configured Group Providers are consulted to allowing assignment of GroupPrincipals for a given authenticated user. 
+    The Java broker utilises GroupProviders to allow assigning users to groups for use in <link linkend="Java-Broker-Security-ACLs">ACLs</link>. Following authentication by a given <link linkend="Java-Broker-Security-Authentication-Providers">Authentication Provider</link>, the configured Group Providers are consulted to allowing assignment of GroupPrincipals for a given authenticated user.
   </para>
 
 
