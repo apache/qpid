@@ -264,7 +264,7 @@ under the License.
 	    <entry>
 	      <para>
 		The URL
-		<footnote>
+		<footnote id="ha-url-grammar">
 		  <para>
 		  The full format of the URL is given by this grammar:
 		  <programlisting>
@@ -276,9 +276,9 @@ ssl_addr = "ssl:" host [":" port]'
 		  </programlisting>
 		  </para>
 		</footnote>
-		used by cluster brokers to connect to each other. The URL can
-		contain a list of all the broker addresses or it can contain a single
-		virtual IP address.  If a list is used it is comma separated, for example
+		used by cluster brokers to connect to each other. The URL should
+		contain a comma separated list of the broker addresses, rather than a
+		virtual IP address. For example:
 		<literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
 	      </para>
 	    </entry>
@@ -287,10 +287,10 @@ ssl_addr = "ssl:" host [":" port]'
 	    <entry><literal>ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL that is advertised to clients. This defaults to the
-		<literal>ha-brokers-url</literal> URL above, and has the same format.  A
-		virtual IP address is recommended for the public URL as it simplifies
-		deployment and hides changes to the cluster membership from clients.
+		The URL <footnoteref linkend="ha-url-grammar"/> used by clients to connect to the cluster.  This can be a list or
+		a single virtual IP address. A virtual IP address is recommended as it
+		simplifies deployment. If not specified this defaults to the value of
+		<literal>ha-brokers-url</literal>.
 	      </para>
 	      <para>
 		This option allows you to put client traffic on a different network from
