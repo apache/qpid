@@ -664,7 +664,7 @@ if (BUILD_HA)
 
     add_library (ha MODULE ${ha_SOURCES})
     set_target_properties (ha PROPERTIES PREFIX "")
-    target_link_libraries (ha qpidtypes qpidcommon qpidbroker)
+    target_link_libraries (ha qpidtypes qpidcommon qpidbroker qpidmessaging)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
                              PREFIX ""
