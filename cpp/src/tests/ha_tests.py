@@ -627,25 +627,29 @@ acl deny all all
     def test_delete_missing_response(self):
         """Check that a backup correctly deletes leftover queues and exchanges that are
         missing from the initial reponse set."""
-        cluster = HaCluster(self,2)
-        s = cluster[0].connect().session()
+        # This test is a bit contrived, we set up the situation on backup brokers
+        # and then promote one.
+        cluster = HaCluster(self, 2, promote=False)
+
+        # cluster[0] Will be the primary
+        s = cluster[0].connect_admin().session()
+        s.sender("q1;{create:always}")
+        s.sender("e1;{create:always, node:{type:topic}}")
+
+        # cluster[1] will be the backup, has extra queues/exchanges
+        s = cluster[1].connect_admin().session()
         s.sender("q1;{create:always}")
         s.sender("q2;{create:always}")
         s.sender("e1;{create:always, node:{type:topic}}")
         s.sender("e2;{create:always, node:{type:topic}}")
-        cluster.bounce(0, promote_next=False)
-        # Fake a primary that has deleted some queues and exchanges.
-        s = cluster[0].connect_admin().session()
-        s.sender("q2;{create:always}")
-        s.sender("e2;{create:always, node:{type:topic}}")
-        s.sender("x;{create:always}") # A new queue so we can wait for the update.
+        for a in ["q1", "q2", "e1", "e2"]: cluster[1].wait_backup(a)
+
         cluster[0].promote()
-        # Verify the backup has deleted the missing queues and exchanges
+        # Verify the backup deletes the surpluis queue and exchange
         cluster[1].wait_status("ready")
         s = cluster[1].connect_admin().session()
-        cluster[1].wait_backup("x");
-        self.assertRaises(NotFound, s.receiver, ("q1"));
-        self.assertRaises(NotFound, s.receiver, ("e1"));
+        self.assertRaises(NotFound, s.receiver, ("q2"));
+        self.assertRaises(NotFound, s.receiver, ("e2"));
 
 
     def test_auto_delete_qpid_4285(self):

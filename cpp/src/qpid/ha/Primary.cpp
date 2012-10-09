@@ -93,7 +93,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
                 new RemoteBackup(*i, haBroker.getReplicationTest(), false));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
-            backup->setInitialQueues(hb.getBroker().getQueues(), true); // Create guards
+            backup->setCatchupQueues(hb.getBroker().getQueues(), true); // Create guards
         }
         // Set timeout for expected brokers to connect and become ready.
         sys::Duration timeout(int64_t(hb.getSettings().backupTimeout*sys::TIME_SEC));
@@ -207,7 +207,7 @@ void Primary::opened(broker::Connection& connection) {
             {
                 // Avoid deadlock with queue registry lock.
                 Mutex::ScopedUnlock u(lock);
-                backup->setInitialQueues(haBroker.getBroker().getQueues(), false);
+                backup->setCatchupQueues(haBroker.getBroker().getQueues(), false);
             }
             backups[info.getSystemId()] = backup;
         }
