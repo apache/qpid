@@ -57,10 +57,10 @@ class RemoteBackup
     RemoteBackup(const BrokerInfo& info, ReplicationTest, bool connected);
     ~RemoteBackup();
 
-    /** Set the initial queues for all queues in the registry.
-     *@createGuards if true create guards also, if false guards will be created on demand.
+    /** Set all queues in the registry as catch-up queues.
+     *@createGuards if true create guards also, if false guards are created on demand.
      */
-    void setInitialQueues(broker::QueueRegistry&, bool createGuards);
+    void setCatchupQueues(broker::QueueRegistry&, bool createGuards);
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
     GuardPtr guard(const QueuePtr&);
@@ -80,7 +80,7 @@ class RemoteBackup
     /** Called via ConfigurationObserver. Note: may set isReady() */
     void queueDestroy(const QueuePtr&);
 
-    /**@return true when all initial queues for this backup are ready. */
+    /**@return true when all catch-up queues for this backup are ready. */
     bool isReady();
 
     /**@return true if isReady() and this is the first call to reportReady */
@@ -94,14 +94,13 @@ class RemoteBackup
     typedef std::map<QueuePtr, GuardPtr> GuardMap;
     typedef std::set<QueuePtr> QueueSet;
 
-    /** Add queue to guard as an initial queue */
-    void initialQueue(const QueuePtr&, bool createGuard);
+    void catchupQueue(const QueuePtr&, bool createGuard);
 
     std::string logPrefix;
     BrokerInfo brokerInfo;
     ReplicationTest replicationTest;
     GuardMap guards;
-    QueueSet initialQueues;
+    QueueSet catchupQueues;
     bool connected;
     bool reportedReady;
 };

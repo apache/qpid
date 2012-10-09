@@ -37,10 +37,10 @@ RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con)
     brokerInfo(info), replicationTest(rt), connected(con), reportedReady(false)
 {}
 
-void RemoteBackup::setInitialQueues(broker::QueueRegistry& queues, bool createGuards)
+void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGuards)
 {
-    QPID_LOG(debug, logPrefix << "Setting initial queues" << (createGuards ? " and guards" : ""));
-    queues.eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1, createGuards));
+    QPID_LOG(debug, logPrefix << "Setting catch-up queues" << (createGuards ? " and guards" : ""));
+    queues.eachQueue(boost::bind(&RemoteBackup::catchupQueue, this, _1, createGuards));
 }
 
 RemoteBackup::~RemoteBackup() { cancel(); }
@@ -52,12 +52,14 @@ void RemoteBackup::cancel() {
 }
 
 bool RemoteBackup::isReady() {
-    return connected && initialQueues.empty();
+    return connected && catchupQueues.empty();
 }
 
-void RemoteBackup::initialQueue(const QueuePtr& q, bool createGuard) {
+void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
     if (replicationTest.isReplicated(ALL, *q)) {
-        initialQueues.insert(q);
+        QPID_LOG(debug, logPrefix << "Catch-up queue"
+                 << (createGuard ? " and guard" : "") << ": " << q->getName());
+        catchupQueues.insert(q);
         if (createGuard) guards[q].reset(new QueueGuard(*q, brokerInfo));
     }
 }
@@ -88,13 +90,13 @@ std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
 }
 
 void RemoteBackup::ready(const QueuePtr& q) {
-    initialQueues.erase(q);
+    catchupQueues.erase(q);
     QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName()
-             <<  QueueSetPrinter(", waiting for: ", initialQueues));
+             <<  QueueSetPrinter(", waiting for: ", catchupQueues));
     if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
 }
 
-// Called via ConfigurationObserver::queueCreate and from initialQueue
+// Called via ConfigurationObserver::queueCreate and from catchupQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
     if (replicationTest.isReplicated(ALL, *q))
         guards[q].reset(new QueueGuard(*q, brokerInfo));
@@ -102,7 +104,7 @@ void RemoteBackup::queueCreate(const QueuePtr& q) {
 
 // Called via ConfigurationObserver
 void RemoteBackup::queueDestroy(const QueuePtr& q) {
-    initialQueues.erase(q);
+    catchupQueues.erase(q);
     GuardMap::iterator i = guards.find(q);
     if (i != guards.end()) {
         i->second->cancel();

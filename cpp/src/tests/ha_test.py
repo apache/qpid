@@ -199,7 +199,7 @@ class HaCluster(object):
         HaCluster._cluster_count += 1
         for i in xrange(n): self.start(False)
         self.update_urls()
-        self[0].promote()
+        if promote: self[0].promote()
 
     def next_name(self):
         name="cluster%s-%s"%(self.id, self.broker_id)
