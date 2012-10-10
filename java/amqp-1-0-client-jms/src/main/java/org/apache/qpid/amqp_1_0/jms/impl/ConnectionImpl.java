@@ -43,16 +43,24 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private boolean _isQueueConnection;
     private boolean _isTopicConnection;
     private final Collection<CloseTask> _closeTasks = new ArrayList<CloseTask>();
+    private final String _host;
+    private final int _port;
+    private final String _username;
+    private final String _password;
+    private final String _remoteHost;
+    private final boolean _ssl;
+    private String _clientId;
 
 
     private static enum State
     {
+        UNCONNECTED,
         STOPPED,
         STARTED,
         CLOSED
     }
 
-    private volatile State _state = State.STOPPED;
+    private volatile State _state = State.UNCONNECTED;
 
     public ConnectionImpl(String host, int port, String username, String password, String clientId) throws JMSException
     {
@@ -66,20 +74,52 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public ConnectionImpl(String host, int port, String username, String password, String clientId, String remoteHost, boolean ssl) throws JMSException
     {
-        Container container = clientId == null ? new Container() : new Container(clientId);
-        // TODO - authentication, containerId, clientId, ssl?, etc
-        try
+        _host = host;
+        _port = port;
+        _username = username;
+        _password = password;
+        _clientId = clientId;
+        _remoteHost = remoteHost;
+        _ssl = ssl;
+    }
+
+    private void connect() throws JMSException
+    {
+        synchronized(_lock)
         {
-            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password, container, remoteHost, ssl);
-            // TODO - retrieve negotiated AMQP version
-            _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
+            // already connected?
+            if( _state == State.UNCONNECTED )
+            {
+                _state = State.STOPPED;
+
+                Container container = _clientId == null ? new Container() : new Container(_clientId);
+                // TODO - authentication, containerId, clientId, ssl?, etc
+                try
+                {
+                    _conn = new org.apache.qpid.amqp_1_0.client.Connection(_host,
+                            _port, _username, _password, container, _remoteHost, _ssl);
+                    // TODO - retrieve negotiated AMQP version
+                    _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
+                }
+                catch (org.apache.qpid.amqp_1_0.client.Connection.ConnectionException e)
+                {
+                    JMSException jmsEx = new JMSException(e.getMessage());
+                    jmsEx.setLinkedException(e);
+                    jmsEx.initCause(e);
+                    throw jmsEx;
+                }
+            }
         }
-        catch (org.apache.qpid.amqp_1_0.client.Connection.ConnectionException e)
+    }
+
+    private void checkNotConnected(String msg) throws IllegalStateException
+    {
+        synchronized(_lock)
         {
-            JMSException jmsEx = new JMSException(e.getMessage());
-            jmsEx.setLinkedException(e);
-            jmsEx.initCause(e);
-            throw jmsEx;
+            if( _state != State.UNCONNECTED )
+            {
+                throw new IllegalStateException(msg);
+            }
         }
     }
 
@@ -111,7 +151,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             {
                 throw new IllegalStateException("Cannot create a session on a closed connection");
             }
-
+            connect();
             SessionImpl session = new SessionImpl(this, acknowledgeMode);
             session.setQueueSession(_isQueueConnection);
             session.setTopicSession(_isTopicConnection);
@@ -125,14 +165,19 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     public String getClientID() throws JMSException
     {
         checkClosed();
-        return _conn.getEndpoint().getContainer().getId();
+        return _clientId;
     }
 
-    public void setClientID(final String s) throws JMSException
+    public void setClientID(final String value) throws JMSException
     {
-        throw new IllegalStateException("Cannot set client-id to \""
-                                        + s
-                                        + "\"; client-id must be set on connection creation");
+        checkNotConnected("Cannot set client-id to \""
+                                        + value
+                                        + "\"; client-id must be set before the connection is used");
+        if( _clientId !=null )
+        {
+            throw new IllegalStateException("client-id has already been set");
+        }
+        _clientId = value;
     }
 
     public ConnectionMetaData getMetaData() throws JMSException
@@ -158,6 +203,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         synchronized(_lock)
         {
             checkClosed();
+            connect();
             if(_state == State.STOPPED)
             {
                 // TODO
@@ -187,6 +233,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     {
                         session.stop();
                     }
+                case UNCONNECTED:
                     _state = State.STOPPED;
                     break;
                 case CLOSED:
@@ -235,7 +282,9 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 {
                     task.onClose();
                 }
-                _conn.close();
+                if(_state != State.UNCONNECTED ) {
+                    _conn.close();
+                }
                 _state = State.CLOSED;
             }
 
