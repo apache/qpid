@@ -69,6 +69,7 @@ class QueueObserver
     virtual void requeued(const Message&) = 0;
     virtual void consumerAdded( const Consumer& ) {};
     virtual void consumerRemoved( const Consumer& ) {};
+    virtual void destroy() {};
  private:
 };
 }} // namespace qpid::broker

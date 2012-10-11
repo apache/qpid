@@ -129,6 +129,16 @@ class HaBroker(Broker):
         assert retry(try_get_status, timeout=20), "%s expected=%r, actual=%r"%(
             self, status, self._status)
 
+    def wait_queue(self, queue, timeout=1):
+        """ Wait for queue to be visible via QMF"""
+        agent = self.agent()
+        assert retry(lambda: agent.getQueue(queue) is not None, timeout=timeout)
+
+    def wait_no_queue(self, queue, timeout=1):
+        """ Wait for queue to be invisible via QMF"""
+        agent = self.agent()
+        assert retry(lambda: agent.getQueue(queue) is None, timeout=timeout)
+
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
         assert subprocess.call(
@@ -185,6 +195,9 @@ class HaBroker(Broker):
     def ready(self):
         return Broker.ready(self, client_properties={"qpid.ha-admin":1})
 
+    def kill(self):
+        self._agent = None
+        return Broker.kill(self)
 
 class HaCluster(object):
     _cluster_count = 0
@@ -225,7 +238,6 @@ class HaCluster(object):
 
     def kill(self, i, promote_next=True):
         """Kill broker i, promote broker i+1"""
-        self[i].expect = EXPECT_EXIT_FAIL
         self[i].kill()
         if promote_next: self[(i+1) % len(self)].promote()
 
@@ -254,12 +266,11 @@ class HaCluster(object):
     def __getitem__(self,index): return self._brokers[index]
     def __iter__(self): return self._brokers.__iter__()
 
+
 def wait_address(session, address):
     """Wait for an address to become valid."""
     def check():
-        try:
-            session.sender(address)
-            return True
+        try: session.sender(address); return True
         except NotFound: return False
     assert retry(check), "Timed out waiting for address %s"%(address)
 
@@ -269,3 +280,5 @@ def valid_address(session, address):
         session.receiver(address)
         return True
     except NotFound: return False
+
+

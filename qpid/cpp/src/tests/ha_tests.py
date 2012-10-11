@@ -652,9 +652,9 @@ acl deny all all
         self.assertRaises(NotFound, s.receiver, ("e2"));
 
 
-    def test_auto_delete_qpid_4285(self):
-        """Regression test for QPID-4285: an auto delete queue gets stuck in
-        a partially deleted state and causes replication errors."""
+    def test_delete_qpid_4285(self):
+        """Regression test for QPID-4285: on deleting a queue it gets stuck in a
+        partially deleted state and causes replication errors."""
         cluster = HaCluster(self,2)
         cluster[1].wait_status("ready")
         s = cluster[0].connect().session()
@@ -669,6 +669,72 @@ acl deny all all
         except NotFound: pass
         assert not cluster[1].agent().getQueue("q") # Should not be in QMF
 
+    def alt_setup(self, session, suffix):
+        # Create exchange to use as alternate and a queue bound to it.
+        # altex exchange: acts as alternate exchange
+        session.sender("altex%s;{create:always,node:{type:topic,x-declare:{type:'fanout'}}}"%(suffix))
+        # altq queue bound to altex, collect re-routed messages.
+        session.sender("altq%s;{create:always,node:{x-bindings:[{exchange:'altex%s',queue:altq%s}]}}"%(suffix,suffix,suffix))
+
+    def test_auto_delete_close(self):
+        """Verify auto-delete queues are deleted on backup if auto-deleted
+        on primary"""
+        cluster=HaCluster(self, 2)
+        p = cluster[0].connect().session()
+        self.alt_setup(p, "1")
+        r = p.receiver("adq1;{create:always,node:{x-declare:{auto-delete:True,alternate-exchange:'altex1'}}}", capacity=1)
+        s = p.sender("adq1")
+        for m in ["aa","bb","cc"]: s.send(m)
+        p.sender("adq2;{create:always,node:{x-declare:{auto-delete:True}}}")
+        cluster[1].wait_queue("adq1")
+        cluster[1].wait_queue("adq2")
+        r.close()               # trigger auto-delete of adq1
+        cluster[1].wait_no_queue("adq1")
+        cluster[1].assert_browse_backup("altq1", ["aa","bb","cc"])
+        cluster[1].wait_queue("adq2")
+
+    def test_auto_delete_crash(self):
+        """Verify auto-delete queues are deleted on backup if the primary crashes"""
+        cluster=HaCluster(self, 2)
+        p = cluster[0].connect().session()
+        self.alt_setup(p,"1")
+
+        # adq1 is subscribed so will be auto-deleted.
+        r = p.receiver("adq1;{create:always,node:{x-declare:{auto-delete:True,alternate-exchange:'altex1'}}}", capacity=1)
+        s = p.sender("adq1")
+        for m in ["aa","bb","cc"]: s.send(m)
+        # adq2 is subscribed after cluster[2] starts.
+        p.sender("adq2;{create:always,node:{x-declare:{auto-delete:True}}}")
+        # adq3 is never subscribed.
+        p.sender("adq3;{create:always,node:{x-declare:{auto-delete:True}}}")
+
+        cluster.start()
+        cluster[2].wait_status("ready")
+
+        p.receiver("adq2")      # Subscribed after cluster[2] joined
+
+        for q in ["adq1","adq2","adq3","altq1"]: cluster[1].wait_queue(q)
+        for q in ["adq1","adq2","adq3","altq1"]: cluster[2].wait_queue(q)
+        cluster[0].kill()
+
+        cluster[1].wait_no_queue("adq1")
+        cluster[1].wait_no_queue("adq2")
+        cluster[1].wait_queue("adq3")
+
+        cluster[2].wait_no_queue("adq1")
+        cluster[2].wait_no_queue("adq2")
+        cluster[2].wait_queue("adq3")
+
+        cluster[1].assert_browse_backup("altq1", ["aa","bb","cc"])
+        cluster[2].assert_browse_backup("altq1", ["aa","bb","cc"])
+
+    def test_auto_delete_timeout(self):
+        cluster = HaCluster(self, 2)
+        s = cluster[0].connect().session().receiver("q;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
+        cluster[1].wait_queue("q")
+        cluster[0].kill()
+        cluster[1].wait_queue("q")    # Not timed out yet
+        cluster[1].wait_no_queue("q") # Wait for timeout
 
 def fairshare(msgs, limit, levels):
     """
