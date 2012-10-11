@@ -19,4 +19,4 @@
 
 $LOAD_PATH.unshift(File.dirname(__FILE__) + "/../../lib")
 
-require 'qpid'
+require 'qpid_messaging'
