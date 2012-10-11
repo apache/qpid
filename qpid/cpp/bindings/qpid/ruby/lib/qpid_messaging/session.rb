@@ -17,10 +17,6 @@
 # under the License.
 #
 
-require 'cqpid'
-
-require 'qpid/errors'
-
 module Qpid
 
   module Messaging
