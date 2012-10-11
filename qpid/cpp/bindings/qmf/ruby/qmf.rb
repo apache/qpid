@@ -319,9 +319,7 @@ module Qmf
               eventImpl.sessionContext.handler.sess_event_recv(eventImpl.sessionContext, eventImpl.message)
             end
           rescue Exception => ex
-            puts "Event Exception: #{ex}"
             if bt_count < 2
-              puts ex.backtrace
               bt_count += 1
             end
           end
@@ -1251,9 +1249,7 @@ module Qmf
           when Qmfengine::ConsoleEvent::METHOD_RESPONSE
           end
         rescue Exception => ex
-          puts "Exception caught in callback: #{ex}"
           if @bt_count < 2
-            puts ex.backtrace
             @bt_count += 1
           end
         end
@@ -1381,14 +1377,13 @@ module Qmf
     end
 
     def conn_event_connected()
-      puts "Console Connection Established..."
       @session = Session.new(@conn, "qmfc-%s.%d" % [Socket.gethostname, Process::pid], self)
       @impl.sessionOpened(@session.handle)
       do_events
     end
 
     def conn_event_disconnected(error)
-      puts "Console Connection Lost"
+
     end
 
     def conn_event_visit
@@ -1396,12 +1391,10 @@ module Qmf
     end
 
     def sess_event_session_closed(context, error)
-      puts "Console Session Lost"
       @impl.sessionClosed()
     end
 
     def sess_event_recv(context, message)
-      puts "Unexpected RECV Event" if not @operational
       @impl.handleRcvMessage(message)
       do_events
     end
@@ -1510,14 +1503,13 @@ module Qmf
     end
 
     def conn_event_connected()
-      puts "Agent Connection Established..."
       @session = Session.new(@conn, "qmfa-%s.%d" % [Socket.gethostname, Process::pid], self)
       @impl.newSession
       do_events
     end
 
     def conn_event_disconnected(error)
-      puts "Agent Connection Lost"
+
     end
 
     def conn_event_visit
@@ -1525,7 +1517,7 @@ module Qmf
     end
 
     def sess_event_session_closed(context, error)
-      puts "Agent Session Lost"
+
     end
 
     def sess_event_recv(context, message)
