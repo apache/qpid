@@ -61,6 +61,11 @@ class ReplicationTests(BrokerTest):
             us = primary.connect_old().session(str(uuid4()))
             us.exchange_unbind(exchange=prefix+"e4", binding_key="key4", queue=prefix+"q4")
             p.sender(prefix+"e4").send(Message("drop1")) # Should be dropped
+            # Test replication of deletes
+            p.sender(queue(prefix+"dq", "all"))
+            p.sender(exchange(prefix+"de", "all", prefix+"dq", ""))
+            p.sender(prefix+"dq;{delete:always}").close()
+            p.sender(prefix+"de;{delete:always}").close()
             # Need a marker so we can wait till sync is done.
             p.sender(queue(prefix+"x", "configuration"))
 
@@ -87,6 +92,10 @@ class ReplicationTests(BrokerTest):
 
             b.sender(prefix+"e4/key4").send(Message("drop2")) # Verify unbind.
             self.assert_browse_retry(b, prefix+"q4", ["6","7"])
+
+            # Verify deletes
+            assert not valid_address(b, prefix+"dq")
+            assert not valid_address(b, prefix+"de")
 
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
@@ -735,6 +744,24 @@ acl deny all all
         cluster[0].kill()
         cluster[1].wait_queue("q")    # Not timed out yet
         cluster[1].wait_no_queue("q") # Wait for timeout
+
+    def test_alt_exchange_dup(self):
+        """QPID-4349: if a queue has an alterante exchange and is deleted the
+        messages appear twice on the alternate, they are rerouted once by the
+        primary and again by the backup."""
+        cluster = HaCluster(self,2)
+        cluster[0].wait_status("active")
+
+        # Set up q with alternate exchange altex bound to altq.
+        s = cluster[0].connect().session()
+        s.sender("altex;{create:always,node:{type:topic,x-declare:{type:'fanout'}}}")
+        s.sender("altq;{create:always,node:{x-bindings:[{exchange:'altex',queue:altq}]}}")
+        snd = s.sender("q;{create:always,node:{x-declare:{alternate-exchange:'altex'}}}")
+        messages = [ str(n) for n in xrange(10) ]
+        for m in messages: snd.send(m)
+        cluster[1].assert_browse_backup("q", messages)
+        s.sender("q;{delete:always}").close()
+        cluster[1].assert_browse_backup("altq", messages)
 
 def fairshare(msgs, limit, levels):
     """
