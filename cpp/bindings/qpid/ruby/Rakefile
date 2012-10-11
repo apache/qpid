@@ -20,7 +20,7 @@
 
 task :noop
 
-# look for a root directory for out-of-tree builds
+$:.push File.expand_path("../lib", __FILE__)
 
 OUTPUT_DIR=ENV["OUTPUT_DIR"] || "."
 
@@ -92,6 +92,7 @@ Rake::RDocTask.new(:rdoc => "rdoc",
   rd.main    = "README.rdoc"
   rd.options << "--all"
   rd.rdoc_files.include("README.rdoc", "lib/**/*.rb")
+  rd.title = "Qpid Messaging Documentation"
 end
 
 #-----------------

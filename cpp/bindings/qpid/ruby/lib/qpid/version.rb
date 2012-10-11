@@ -17,7 +17,7 @@
 # under the License.
 #
 
-module Qpid
+module Qpid #:nodoc:
 
   module Version
 
