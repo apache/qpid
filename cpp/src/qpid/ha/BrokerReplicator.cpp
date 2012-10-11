@@ -353,8 +353,8 @@ void BrokerReplicator::route(Deliverable& msg) {
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
                 EventKey key(schema[PACKAGE_NAME], schema[CLASS_NAME]);
-                EventDispatchMap::iterator i = dispatch.find(key);
-                if (i != dispatch.end()) (this->*(i->second))(values);
+                EventDispatchMap::iterator j = dispatch.find(key);
+                if (j != dispatch.end()) (this->*(j->second))(values);
             }
         } else if (msg.getMessage().getPropertyAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
