@@ -169,8 +169,10 @@ Broker::Options::Options(const std::string& name) :
         ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
         ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.")
         ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.")
-        ("link-maintenace-interval", optValue(linkMaintenanceInterval, "SECONDS"))
-        ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"))
+        ("link-maintenance-interval", optValue(linkMaintenanceInterval, "SECONDS"),
+         "Interval to check link health and re-connect  if need be")
+        ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"),
+         "Heartbeat interval for a federation link")
         ("max-negotiate-time", optValue(maxNegotiateTime, "MILLISECONDS"), "Maximum time a connection can take to send the initial protocol negotiation")
         ("federation-tag", optValue(fedTag, "NAME"), "Override the federation tag")
         ;
