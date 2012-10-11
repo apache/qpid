@@ -18,6 +18,8 @@
  */
 
 %module cqpid
+/* Ruby doesn't have a != operator*/
+#pragma SWIG nowarn=378
 %include "std_string.i"
 %include "../../swig_ruby_typemaps.i"
 
