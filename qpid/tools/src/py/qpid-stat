@@ -200,17 +200,21 @@ class BrokerManager:
         disp = Display(prefix="  ")
         heads = []
         heads.append(Header('uptime', Header.DURATION))
+        heads.append(Header('cluster', Header.NONE))
         heads.append(Header('connections', Header.COMMAS))
         heads.append(Header('sessions', Header.COMMAS))
         heads.append(Header('exchanges', Header.COMMAS))
         heads.append(Header('queues', Header.COMMAS))
         rows = []
         broker = self.broker.getBroker()
+        cluster = self.broker.getCluster()
+        clusterInfo = cluster and cluster.clusterName + "<" + cluster.status + ">" or "<standalone>"
         connections = self.getConnectionMap()
         sessions = self.getSessionMap()
         exchanges = self.getExchangeMap()
         queues = self.getQueueMap()
         row = (broker.getUpdateTime() - broker.getCreateTime(),
+               clusterInfo,
                len(connections), len(sessions),
                len(exchanges), len(queues))
         rows.append(row)
