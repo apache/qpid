@@ -17,13 +17,13 @@
 # under the License.
 #
 
-require 'qpid/errors'
-require 'qpid/duration'
-require 'qpid/address'
-require 'qpid/encoding'
-require 'qpid/message'
-require 'qpid/sender'
-require 'qpid/receiver'
-require 'qpid/session'
-require 'qpid/connection'
+require 'qpid_messaging/errors'
+require 'qpid_messaging/duration'
+require 'qpid_messaging/address'
+require 'qpid_messaging/encoding'
+require 'qpid_messaging/message'
+require 'qpid_messaging/sender'
+require 'qpid_messaging/receiver'
+require 'qpid_messaging/session'
+require 'qpid_messaging/connection'
 

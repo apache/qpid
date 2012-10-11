@@ -19,7 +19,7 @@
 
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
-require 'qpid'
+require 'qpid_messaging'
 
 if __FILE__ == $0
   broker  = ARGV[0] || "amqp:tcp:localhost:5672"
