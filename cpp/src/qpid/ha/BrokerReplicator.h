@@ -40,6 +40,7 @@ class Broker;
 class Link;
 class Bridge;
 class SessionHandler;
+class Connection;
 }
 
 namespace framing {
@@ -83,6 +84,13 @@ class BrokerReplicator : public broker::Exchange,
     typedef std::pair<boost::shared_ptr<broker::Queue>, bool> CreateQueueResult;
     typedef std::pair<boost::shared_ptr<broker::Exchange>, bool> CreateExchangeResult;
 
+    typedef std::pair<std::string,std::string> EventKey;
+    typedef void (BrokerReplicator::*DispatchFunction)(types::Variant::Map&);
+    typedef std::map<EventKey, DispatchFunction> EventDispatchMap;
+
+    typedef std::map<std::string, QueueReplicatorPtr> QueueReplicatorMap;
+
+
     /** Keep track of queues and exchanges that need to be cleaned up. */
     class Cleaner {
       public:
@@ -94,7 +102,7 @@ class BrokerReplicator : public broker::Exchange,
         // Forget a queue/exchange that does not need cleaning
         void forgetExchange(const std::string& name);
         void forgetQueue(const std::string& name);
-
+        // Clean up queues/exchange that are no longer on primary
         void cleanExchanges();
         void cleanQueues();
 
@@ -110,6 +118,9 @@ class BrokerReplicator : public broker::Exchange,
     };
   friend class Cleaner;
 
+    class ErrorListener;
+    class ConnectionObserver;
+
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
@@ -119,6 +130,7 @@ class BrokerReplicator : public broker::Exchange,
     void doEventBind(types::Variant::Map&);
     void doEventUnbind(types::Variant::Map&);
     void doEventMembersUpdate(types::Variant::Map&);
+    void doEventSubscribe(types::Variant::Map&);
 
     void doResponseQueue(types::Variant::Map& values);
     void doResponseExchange(types::Variant::Map& values);
@@ -126,9 +138,9 @@ class BrokerReplicator : public broker::Exchange,
     void doResponseHaBroker(types::Variant::Map& values);
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
-    void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
+    QueueReplicatorPtr startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
-    CreateQueueResult createQueue(
+    QueueReplicatorPtr replicateQueue(
         const std::string& name,
         bool durable,
         bool autodelete,
@@ -142,10 +154,12 @@ class BrokerReplicator : public broker::Exchange,
         const qpid::framing::FieldTable& args,
         const std::string& alternateExchange);
 
-    void deactivateQueue(const std::string& name);
-    void deactivate(boost::shared_ptr<broker::Queue> q);
-    void deleteQueue(const std::string& name);
+    bool deactivate(boost::shared_ptr<broker::Exchange> ex, bool destroy);
+    void deleteQueue(const std::string& name, bool purge=true);
     void deleteExchange(const std::string& name);
+
+    void autoDeleteCheck(boost::shared_ptr<broker::Exchange>, std::set<std::string>&);
+    void disconnected();
 
     std::string logPrefix;
     std::string userId, remoteHost;
@@ -159,6 +173,8 @@ class BrokerReplicator : public broker::Exchange,
     typedef std::set<std::string> StringSet;
     StringSet replicatedExchanges; // exchanges that have been replicated.
     Cleaner cleaner;
+    broker::Connection* connection;
+    EventDispatchMap dispatch;
 };
 }} // namespace qpid::broker
 

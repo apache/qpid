@@ -203,8 +203,8 @@ class Popen(subprocess.Popen):
         self.wait()
 
     def kill(self):
-        try:
-            subprocess.Popen.kill(self)
+        self.expect = EXPECT_EXIT_FAIL
+        try: subprocess.Popen.kill(self)
         except AttributeError:          # No terminate method
             try:
                 os.kill( self.pid , signal.SIGKILL)

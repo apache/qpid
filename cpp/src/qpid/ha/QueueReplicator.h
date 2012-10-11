@@ -58,6 +58,8 @@ class QueueReplicator : public broker::Exchange,
     static const std::string DEQUEUE_EVENT_KEY;
     static const std::string POSITION_EVENT_KEY;
     static std::string replicatorName(const std::string& queueName);
+    static bool isReplicatorName(const std::string&);
+
     /** Test if a string is an event key */
     static bool isEventKey(const std::string key);
 
@@ -77,8 +79,16 @@ class QueueReplicator : public broker::Exchange,
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
+    // Set if the queue has ever been subscribed to, used for auto-delete cleanup.
+    void setSubscribed() { subscribed = true; }
+    bool isSubscribed() { return subscribed; }
+
+    boost::shared_ptr<broker::Queue> getQueue() const { return queue; }
+
   private:
     class ErrorListener;
+    class QueueObserver;
+
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void dequeue(framing::SequenceNumber, sys::Mutex::ScopedLock&);
 
@@ -90,6 +100,7 @@ class QueueReplicator : public broker::Exchange,
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<broker::Bridge> bridge;
     BrokerInfo brokerInfo;
+    bool subscribed;
 };
 
 }} // namespace qpid::ha

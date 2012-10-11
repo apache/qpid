@@ -377,7 +377,14 @@ bool ReplicatingSubscription::doDispatch()
         Mutex::ScopedLock l(lock);
         if (!dequeues.empty()) sendDequeueEvent(l);
     }
-    return ConsumerImpl::doDispatch();
+    try {
+        return ConsumerImpl::doDispatch();
+    }
+    catch (const std::exception& e) {
+        // FIXME aconway 2012-10-05: detect queue deletion, no warning.
+        QPID_LOG(warning, logPrefix << " exception in dispatch: " << e.what());
+        return false;
+    }
 }
 
 }} // namespace qpid::ha
