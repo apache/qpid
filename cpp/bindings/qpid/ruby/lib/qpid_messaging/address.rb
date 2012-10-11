@@ -17,8 +17,6 @@
 # under the License.
 #
 
-require 'cqpid'
-
 module Qpid
 
   module Messaging
