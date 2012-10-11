@@ -1072,6 +1072,8 @@ void Queue::destroyed()
     notifyDeleted();
     {
         Mutex::ScopedLock lock(messageLock);
+        for_each(observers.begin(), observers.end(),
+                 boost::bind(&QueueObserver::destroy, _1));
         observers.clear();
     }
 }
