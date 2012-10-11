@@ -17,10 +17,6 @@
 # under the License.
 #
 
-require 'cqpid'
-
-require 'qpid/duration'
-
 module Qpid
 
   module Messaging
