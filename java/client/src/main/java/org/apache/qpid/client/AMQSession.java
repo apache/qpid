@@ -999,12 +999,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             try
             {
-                handleAddressBasedDestination(dest,false,noLocal,true);
+                resolveAddress(dest,false,noLocal);
                 if (dest.getAddressType() !=  AMQDestination.TOPIC_TYPE)
                 {
                     throw new JMSException("Durable subscribers can only be created for Topics");
                 }
-                dest.getSourceNode().setDurable(true);
             }
             catch(AMQException e)
             {
@@ -2840,7 +2839,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         if (amqd.getDestSyntax() == DestSyntax.ADDR)
         {
-            handleAddressBasedDestination(amqd,true,consumer.isNoLocal(),nowait);
+            resolveAddress(amqd,true,consumer.isNoLocal());
         }
         else
         {
@@ -2899,10 +2898,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
-    public abstract void handleAddressBasedDestination(AMQDestination dest, 
+    public abstract void resolveAddress(AMQDestination dest,
                                                        boolean isConsumer,
-                                                       boolean noLocal,
-                                                       boolean noWait) throws AMQException;
+                                                       boolean noLocal) throws AMQException;
     
     private void registerProducer(long producerId, MessageProducer producer)
     {

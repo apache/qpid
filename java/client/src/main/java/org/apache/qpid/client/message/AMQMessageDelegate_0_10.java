@@ -344,7 +344,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                int type = ((AMQSession_0_10)getAMQSession()).resolveAddressType(amqd);
                if (type == AMQDestination.QUEUE_TYPE)
                {
-                   ((AMQSession_0_10)getAMQSession()).setLegacyFiledsForQueueType(amqd);
+                   ((AMQSession_0_10)getAMQSession()).setLegacyFieldsForQueueType(amqd);
                }
                else
                {

@@ -86,7 +86,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         {       
             try
             {
-                getSession().handleAddressBasedDestination(destination,false,false,false);
+                getSession().resolveAddress(destination,false,false);
+                ((AMQSession_0_10)getSession()).handleLinkCreation(destination);
+                ((AMQSession_0_10)getSession()).sync();
             }
             catch(Exception e)
             {
@@ -251,25 +253,35 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         return getSession().isQueueBound(destination);
     }
     
+    // We should have a close and closed method to distinguish between normal close
+    // and a close due to session or connection error.
     @Override
     public void close() throws JMSException
     {
         super.close();
         AMQDestination dest = getAMQDestination();
-        if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        AMQSession_0_10 ssn = (AMQSession_0_10) getSession();
+        if (!ssn.isClosed() && dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
-            if (dest.getDelete() == AddressOption.ALWAYS ||
-                dest.getDelete() == AddressOption.SENDER )
+            try
             {
-                try
+                if (dest.getDelete() == AddressOption.ALWAYS ||
+                    dest.getDelete() == AddressOption.SENDER )
                 {
-                    ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
-                        getAMQDestination().getQueueName());
+                    ssn.handleNodeDelete(dest);
                 }
-                catch(TransportException e)
-                {
-                    throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
-                }
+                ssn.handleLinkDelete(dest);
+            }
+            catch(TransportException e)
+            {
+                throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
+            }
+            catch (AMQException e)
+            {
+                JMSException ex = new JMSException("Exception while closing producer:" + e.getMessage());
+                ex.setLinkedException(e);
+                ex.initCause(e);
+                throw ex;
             }
         }
     }

@@ -695,10 +695,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         declareExchange(new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
     }
 
-    public void handleAddressBasedDestination(AMQDestination dest, 
+    public void resolveAddress(AMQDestination dest,
                                               boolean isConsumer,
-                                              boolean noLocal,
-                                              boolean noWait) throws AMQException
+                                              boolean noLocal) throws AMQException
     {
         throw new UnsupportedOperationException("The new addressing based syntax is "
                 + "not supported for AMQP 0-8/0-9 versions");

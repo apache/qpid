@@ -26,19 +26,33 @@ import org.apache.qpid.client.AMQDestination.Binding;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Node
+public class Node
 { 
     private int _nodeType = AMQDestination.UNKNOWN_TYPE;
+    private String _name;
     private boolean _isDurable;
     private boolean _isAutoDelete;
+    private boolean _isExclusive;
     private String _alternateExchange;
+    private String _exchangeType = "topic"; // used when node is an exchange instead of a queue.
     private List<Binding> _bindings = new ArrayList<Binding>();
-    private Map<String,Object> _declareArgs = Collections.emptyMap();
+    private Map<String,Object> _declareArgs = new HashMap<String,Object>();
 
-    protected Node(int nodeType)
+    protected Node(String name)
+    {
+        _name = name;
+    }
+
+    public String getName()
+    {
+        return _name;
+    }
+
+    public void setNodeType(int nodeType)
     {
         _nodeType = nodeType;
     }
@@ -56,6 +70,16 @@ public abstract class Node
     public void setDurable(boolean durable)
     {
         _isDurable = durable;
+    }
+
+    public boolean isExclusive()
+    {
+        return _isExclusive;
+    }
+
+    public void setExclusive(boolean exclusive)
+    {
+        _isExclusive = exclusive;
     }
 
     public boolean isAutoDelete()
@@ -100,56 +124,15 @@ public abstract class Node
     public void setDeclareArgs(Map<String,Object> options)
     {
         _declareArgs = options;
-    }   
-    
-    public static class QueueNode extends Node 
-    {
-       private boolean _isExclusive;
-       private QpidQueueOptions _queueOptions = new QpidQueueOptions();
-       
-       public QueueNode()
-       {
-           super(AMQDestination.QUEUE_TYPE);
-       }
-       
-       public boolean isExclusive()
-       {
-           return _isExclusive;
-       }
-       
-       public void setExclusive(boolean exclusive)
-       {
-           _isExclusive = exclusive;
-       }  
     }
-    
-    public static class ExchangeNode extends Node 
+
+    public void setExchangeType(String type)
     {
-       private QpidExchangeOptions _exchangeOptions = new QpidExchangeOptions();
-       private String _exchangeType;
-       
-       public ExchangeNode()
-       {
-           super(AMQDestination.TOPIC_TYPE);
-       }
-       
-       public String getExchangeType()
-       {
-           return _exchangeType;
-       }
-       
-       public void setExchangeType(String exchangeType)
-       {
-           _exchangeType = exchangeType;
-       }
-    
+        _exchangeType = type;
     }
-    
-    public static class UnknownNodeType extends Node 
+
+    public String getExchangeType()
     {
-        public UnknownNodeType()
-        {
-            super(AMQDestination.UNKNOWN_TYPE);
-        }
+        return _exchangeType;
     }
 }
