@@ -38,8 +38,8 @@ QPID_BROKER_CLASS_EXTERN class Event/*MGEN:Event.NameCap*/ : public ::qpid::mana
 /*MGEN:Event.ArgDeclarations*/
 
   public:
-    static std::string PACKAGE_NAME;
-    static std::string EVENT_NAME;
+    QPID_BROKER_EXTERN static std::string PACKAGE_NAME;
+    QPID_BROKER_EXTERN static std::string EVENT_NAME;
 
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
 
