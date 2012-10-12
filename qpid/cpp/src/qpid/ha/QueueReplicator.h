@@ -70,7 +70,6 @@ class QueueReplicator : public broker::Exchange,
     ~QueueReplicator();
 
     void activate();            // Call after ctor
-    void deactivate();          // Call before dtor
 
     std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue
@@ -90,6 +89,7 @@ class QueueReplicator : public broker::Exchange,
     class QueueObserver;
 
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
+    void destroy();             // Called when the queue is destroyed.
     void dequeue(framing::SequenceNumber, sys::Mutex::ScopedLock&);
 
     HaBroker& haBroker;
