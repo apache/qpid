@@ -20,20 +20,19 @@
  */
 package org.apache.qpid.client.messaging.address;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQDestination.Binding;
-import org.apache.qpid.client.messaging.address.Link.Reliability;
-import org.apache.qpid.client.messaging.address.Link.Subscription;
-import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
-import org.apache.qpid.client.messaging.address.Node.QueueNode;
-import org.apache.qpid.configuration.Accessor;
-import org.apache.qpid.configuration.Accessor.MapAccessor;
-import org.apache.qpid.messaging.Address;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQDestination.Binding;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
+import org.apache.qpid.client.messaging.address.Link.Subscription;
+import org.apache.qpid.client.messaging.address.Link.SubscriptionQueue;
+import org.apache.qpid.configuration.Accessor;
+import org.apache.qpid.configuration.Accessor.MapAccessor;
+import org.apache.qpid.messaging.Address;
 
 /**
  * Utility class for extracting information from the address class
@@ -68,58 +67,56 @@ public class AddressHelper
     public static final String ARGUMENTS = "arguments";
     public static final String RELIABILITY = "reliability";
 
-    private Address address;
-    private Accessor addressProps;
-    private Accessor nodeProps;
-    private Accessor linkProps;
+    private Address _address;
+    private Accessor _addressPropAccess;
+    private Accessor _nodePropAccess;
+    private Accessor _linkPropAccess;
+    private Map _addressPropMap;
+    private Map _nodePropMap;
+    private Map _linkPropMap;
 
     public AddressHelper(Address address)
     {
-        this.address = address;
-        addressProps = new MapAccessor(address.getOptions());
-        Map node_props = address.getOptions() == null
+        this._address = address;
+        this._addressPropMap = address.getOptions();
+        this._addressPropAccess = new MapAccessor(_addressPropMap);
+        this._nodePropMap = address.getOptions() == null
                 || address.getOptions().get(NODE) == null ? null
                 : (Map) address.getOptions().get(NODE);
 
-        if (node_props != null)
+        if (_nodePropMap != null)
         {
-            nodeProps = new MapAccessor(node_props);
+            _nodePropAccess = new MapAccessor(_nodePropMap);
         }
 
-        Map link_props = address.getOptions() == null
+        this._linkPropMap = address.getOptions() == null
                 || address.getOptions().get(LINK) == null ? null
                 : (Map) address.getOptions().get(LINK);
 
-        if (link_props != null)
+        if (_linkPropMap != null)
         {
-            linkProps = new MapAccessor(link_props);
+            _linkPropAccess = new MapAccessor(_linkPropMap);
         }
     }
 
     public String getCreate()
     {
-        return addressProps.getString(CREATE);
+        return _addressPropAccess.getString(CREATE);
     }
 
     public String getAssert()
     {
-        return addressProps.getString(ASSERT);
+        return _addressPropAccess.getString(ASSERT);
     }
 
     public String getDelete()
     {
-        return addressProps.getString(DELETE);
-    }
-
-    public boolean isNoLocal()
-    {
-        Boolean b = nodeProps.getBoolean(NO_LOCAL);
-        return b == null ? false : b;
+        return _addressPropAccess.getString(DELETE);
     }
 
     public boolean isBrowseOnly()
     {
-        String mode = addressProps.getString(MODE);
+        String mode = _addressPropAccess.getString(MODE);
         return mode != null && mode.equals(BROWSE) ? true : false;
     }
 
@@ -127,7 +124,7 @@ public class AddressHelper
     public List<Binding> getBindings(Map props)
     {
         List<Binding> bindings = new ArrayList<Binding>();
-        List<Map> bindingList = (List<Map>) props.get(X_BINDINGS);
+        List<Map> bindingList = (props == null) ? Collections.EMPTY_LIST : (List<Map>) props.get(X_BINDINGS);
         if (bindingList != null)
         {
             for (Map bindingMap : bindingList)
@@ -157,117 +154,70 @@ public class AddressHelper
         }
     }
 
-    public int getTargetNodeType() throws Exception
+    public int getNodeType() throws Exception
     {
-        if (nodeProps == null || nodeProps.getString(TYPE) == null)
+        if (_nodePropAccess == null || _nodePropAccess.getString(TYPE) == null)
         {
             // need to query and figure out
             return AMQDestination.UNKNOWN_TYPE;
-        } else if (nodeProps.getString(TYPE).equals("queue"))
+        }
+        else if (_nodePropAccess.getString(TYPE).equals("queue"))
         {
             return AMQDestination.QUEUE_TYPE;
-        } else if (nodeProps.getString(TYPE).equals("topic"))
+        }
+        else if (_nodePropAccess.getString(TYPE).equals("topic"))
         {
             return AMQDestination.TOPIC_TYPE;
-        } else
+        }
+        else
         {
             throw new Exception("unkown exchange type");
         }
     }
 
-    public Node getTargetNode(int addressType)
+    public Node getNode()
     {
-        // target node here is the default exchange
-        if (nodeProps == null || addressType == AMQDestination.QUEUE_TYPE)
+        Node node = new Node(_address.getName());
+        if (_nodePropAccess != null)
         {
-            return new ExchangeNode();
-        } else if (addressType == AMQDestination.TOPIC_TYPE)
-        {
-            Map node = (Map) address.getOptions().get(NODE);
-            return createExchangeNode(node);
-        } else
-        {
-            // don't know yet
-            return null;
-        }
-    }
+            Map xDeclareMap = getDeclareArgs(_nodePropMap);
+            MapAccessor xDeclareMapAccessor = new MapAccessor(xDeclareMap);
 
-    private Node createExchangeNode(Map parent)
-    {
-        Map declareArgs = getDeclareArgs(parent);
-        MapAccessor argsMap = new MapAccessor(declareArgs);
-        ExchangeNode node = new ExchangeNode();
-        node.setExchangeType(argsMap.getString(TYPE) == null ? null : argsMap
-                .getString(TYPE));
-        fillInCommonNodeArgs(node, parent, argsMap);
+            node.setDurable(getBooleanProperty(_nodePropAccess,DURABLE,false));
+            node.setAutoDelete(getBooleanProperty(xDeclareMapAccessor,AUTO_DELETE,false));
+            node.setExclusive(getBooleanProperty(xDeclareMapAccessor,EXCLUSIVE,false));
+            node.setAlternateExchange(xDeclareMapAccessor.getString(ALT_EXCHANGE));
+            if (xDeclareMapAccessor.getString(TYPE) != null)
+            {
+                node.setExchangeType(xDeclareMapAccessor.getString(TYPE));
+            }
+            node.setBindings(getBindings(_nodePropMap));
+            if (!xDeclareMap.isEmpty() && xDeclareMap.containsKey(ARGUMENTS))
+            {
+                node.setDeclareArgs((Map<String,Object>)xDeclareMap.get(ARGUMENTS));
+            }
+        }
         return node;
     }
 
-    private Node createQueueNode(Map parent)
+    // This should really be in the Accessor interface
+    private boolean getBooleanProperty(Accessor access, String propName, boolean defaultValue)
     {
-        Map declareArgs = getDeclareArgs(parent);
-        MapAccessor argsMap = new MapAccessor(declareArgs);
-        QueueNode node = new QueueNode();
-        node.setAlternateExchange(argsMap.getString(ALT_EXCHANGE));
-        node.setExclusive(argsMap.getBoolean(EXCLUSIVE) == null ? false
-                : argsMap.getBoolean(EXCLUSIVE));
-        fillInCommonNodeArgs(node, parent, argsMap);
-
-        return node;
-    }
-
-    private void fillInCommonNodeArgs(Node node, Map parent, MapAccessor argsMap)
-    {
-        node.setDurable(getDurability(parent));
-        node.setAutoDelete(argsMap.getBoolean(AUTO_DELETE) == null ? false
-                : argsMap.getBoolean(AUTO_DELETE));
-        node.setAlternateExchange(argsMap.getString(ALT_EXCHANGE));
-        node.setBindings(getBindings(parent));
-        if (getDeclareArgs(parent).containsKey(ARGUMENTS))
-        {
-            node.setDeclareArgs((Map<String,Object>)getDeclareArgs(parent).get(ARGUMENTS));
-        }
-    }
-    
-    private boolean getDurability(Map map)
-    {
-        Accessor access = new MapAccessor(map);
-        Boolean result = access.getBoolean(DURABLE);
-        return (result == null) ? false : result.booleanValue();
-    }
-
-    /**
-     * if the type == queue x-declare args from the node props is used. if the
-     * type == exchange x-declare args from the link props is used else just
-     * create a default temp queue.
-     */
-    public Node getSourceNode(int addressType)
-    {
-        if (addressType == AMQDestination.QUEUE_TYPE && nodeProps != null)
-        {
-            return createQueueNode((Map) address.getOptions().get(NODE));
-        }
-        if (addressType == AMQDestination.TOPIC_TYPE && linkProps != null)
-        {
-            return createQueueNode((Map) address.getOptions().get(LINK));
-        } else
-        {
-            // need to query the info
-            return new QueueNode();
-        }
+        Boolean result = access.getBoolean(propName);
+        return (result == null) ? defaultValue : result.booleanValue();
     }
 
     public Link getLink() throws Exception
     {
         Link link = new Link();
         link.setSubscription(new Subscription());
-        if (linkProps != null)
+        link.setSubscriptionQueue(new SubscriptionQueue());
+        if (_linkPropAccess != null)
         {
-            link.setDurable(linkProps.getBoolean(DURABLE) == null ? false
-                    : linkProps.getBoolean(DURABLE));
-            link.setName(linkProps.getString(NAME));
+            link.setDurable(getBooleanProperty(_linkPropAccess,DURABLE,false));
+            link.setName(_linkPropAccess.getString(NAME));
 
-            String reliability = linkProps.getString(RELIABILITY);
+            String reliability = _linkPropAccess.getString(RELIABILITY);
             if ( reliability != null)
             {
                 if (reliability.equalsIgnoreCase("unreliable"))
@@ -283,13 +233,12 @@ public class AddressHelper
                     throw new Exception("The reliability mode '" + 
                             reliability + "' is not yet supported");
                 }
-                
             }
             
-            if (((Map) address.getOptions().get(LINK)).get(CAPACITY) instanceof Map)
+            if (((Map) _address.getOptions().get(LINK)).get(CAPACITY) instanceof Map)
             {
                 MapAccessor capacityProps = new MapAccessor(
-                        (Map) ((Map) address.getOptions().get(LINK))
+                        (Map) ((Map) _address.getOptions().get(LINK))
                                 .get(CAPACITY));
                 link
                         .setConsumerCapacity(capacityProps
@@ -302,17 +251,19 @@ public class AddressHelper
             } 
             else
             {
-                int cap = linkProps.getInt(CAPACITY) == null ? 0 : linkProps
+                int cap = _linkPropAccess.getInt(CAPACITY) == null ? 0 : _linkPropAccess
                         .getInt(CAPACITY);
                 link.setConsumerCapacity(cap);
                 link.setProducerCapacity(cap);
             }
-            link.setFilter(linkProps.getString(FILTER));
+            link.setFilter(_linkPropAccess.getString(FILTER));
             // so far filter type not used
             
-            if (((Map) address.getOptions().get(LINK)).containsKey(X_SUBSCRIBE))
+            Map linkMap = (Map) _address.getOptions().get(LINK);
+
+            if (linkMap != null && linkMap.containsKey(X_SUBSCRIBE))
             {   
-                Map x_subscribe = (Map)((Map) address.getOptions().get(LINK)).get(X_SUBSCRIBE);
+                Map x_subscribe = (Map)((Map) _address.getOptions().get(LINK)).get(X_SUBSCRIBE);
                 
                 if (x_subscribe.containsKey(ARGUMENTS))
                 {
@@ -323,6 +274,18 @@ public class AddressHelper
                                     Boolean.parseBoolean((String)x_subscribe.get(EXCLUSIVE)): false;
                 
                 link.getSubscription().setExclusive(exclusive);
+            }
+
+            link.setBindings(getBindings(linkMap));
+            Map xDeclareMap = getDeclareArgs(linkMap);
+            SubscriptionQueue queue = link.getSubscriptionQueue();
+            if (!xDeclareMap.isEmpty() && xDeclareMap.containsKey(ARGUMENTS))
+            {
+                MapAccessor xDeclareMapAccessor = new MapAccessor(xDeclareMap);
+                queue.setAutoDelete(getBooleanProperty(xDeclareMapAccessor,AUTO_DELETE,true));
+                queue.setAutoDelete(getBooleanProperty(xDeclareMapAccessor,EXCLUSIVE,true));
+                queue.setAlternateExchange(xDeclareMapAccessor.getString(ALT_EXCHANGE));
+                queue.setDeclareArgs((Map<String,Object>)xDeclareMap.get(ARGUMENTS));
             }
         }
 

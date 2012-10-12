@@ -20,8 +20,13 @@
  */
 package org.apache.qpid.client.messaging.address;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.client.AMQDestination.Binding;
 
 public class Link
 { 
@@ -36,10 +41,11 @@ public class Link
     private boolean _isDurable;
     private int _consumerCapacity = 0;
     private int _producerCapacity = 0;
-    private Node node;
     private Subscription subscription;
     private Reliability reliability = Reliability.AT_LEAST_ONCE;
-    
+    private List<Binding> _bindings = new ArrayList<Binding>();
+    private SubscriptionQueue _subscriptionQueue;
+
     public Reliability getReliability()
     {
         return reliability;
@@ -50,21 +56,11 @@ public class Link
         this.reliability = reliability;
     }
 
-    public Node getNode()
-    {
-        return node;
-    }
-
-    public void setNode(Node node)
-    {
-        this.node = node;
-    }
-
     public boolean isDurable()
     {
         return _isDurable;
     }
-    
+
     public void setDurable(boolean durable)
     {
         _isDurable = durable;
@@ -139,6 +135,74 @@ public class Link
     {
         this.subscription = subscription;
     }   
+
+    public List<Binding> getBindings()
+    {
+        return _bindings;
+    }
+
+    public void setBindings(List<Binding> bindings)
+    {
+        _bindings = bindings;
+    }
+
+    public SubscriptionQueue getSubscriptionQueue()
+    {
+        return _subscriptionQueue;
+    }
+
+    public void setSubscriptionQueue(SubscriptionQueue subscriptionQueue)
+    {
+        this._subscriptionQueue = subscriptionQueue;
+    }
+
+    public static class SubscriptionQueue
+    {
+        private Map<String,Object> _declareArgs = new HashMap<String,Object>();
+        private boolean _isAutoDelete = true;
+        private boolean _isExclusive = true;
+        private String _alternateExchange;
+
+        public Map<String,Object> getDeclareArgs()
+        {
+            return _declareArgs;
+        }
+
+        public void setDeclareArgs(Map<String,Object> options)
+        {
+            _declareArgs = options;
+        }
+
+        public boolean isAutoDelete()
+        {
+            return _isAutoDelete;
+        }
+
+        public void setAutoDelete(boolean autoDelete)
+        {
+            _isAutoDelete = autoDelete;
+        }
+
+        public boolean isExclusive()
+        {
+            return _isExclusive;
+        }
+
+        public void setExclusive(boolean exclusive)
+        {
+            _isExclusive = exclusive;
+        }
+
+        public String getAlternateExchange()
+        {
+            return _alternateExchange;
+        }
+
+        public void setAlternateExchange(String altExchange)
+        {
+            _alternateExchange = altExchange;
+        }
+    }
     
     public static class Subscription
     {

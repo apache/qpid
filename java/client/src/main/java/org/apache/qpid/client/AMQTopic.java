@@ -114,8 +114,8 @@ public class AMQTopic extends AMQDestination implements Topic
                     AMQShortString queueName = getDurableTopicQueueName(subscriptionName, connection);
                     // link is never null if dest was created using an address string.
                     t.getLink().setName(queueName.asString());               
-                    t.getSourceNode().setAutoDelete(false);
-                    t.getSourceNode().setDurable(true);
+                    t.getLink().getSubscriptionQueue().setAutoDelete(false);
+                    t.getLink().setDurable(true);
                     
                     // The legacy fields are also populated just in case.
                     t.setQueueName(queueName);
