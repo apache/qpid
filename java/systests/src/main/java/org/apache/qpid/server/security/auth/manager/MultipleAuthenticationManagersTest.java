@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
+import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import org.apache.qpid.AMQException;
@@ -28,11 +33,6 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class MultipleAuthenticationManagersTest extends QpidBrokerTestCase
 {
-    private static final String KEYSTORE = "test-profiles/test_resources/ssl/java_client_keystore.jks";
-    private static final String KEYSTORE_PASSWORD = "password";
-    private static final String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
-    private static final String TRUSTSTORE_PASSWORD = "password";
-
     @Override
     protected void setUp() throws Exception
     {

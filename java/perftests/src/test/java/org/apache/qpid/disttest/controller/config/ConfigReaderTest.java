@@ -27,6 +27,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.client.property.PropertyValue;
+import org.apache.qpid.test.utils.TestFileUtils;
 
 public class ConfigReaderTest extends TestCase
 {
@@ -111,8 +112,9 @@ public class ConfigReaderTest extends TestCase
     public void testReadsJS() throws Exception
     {
         ConfigReader configReader = new ConfigReader();
-        String path = getClass().getResource("ConfigReaderTest-test-config.js").toURI().getPath();
+        String path = TestFileUtils.createTempFileFromResource(this, "ConfigReaderTest-test-config.js").getAbsolutePath();
         _config = configReader.getConfigFromFile(path);
+
         List<TestConfig> testConfigs = _config.getTestConfigs();
         assertEquals("Unexpected number of tests", 2, testConfigs.size());
         TestConfig testConfig1 = _config.getTestConfigs().get(0);

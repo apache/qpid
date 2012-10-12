@@ -24,7 +24,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class VirtualHostConfiguration extends ConfigurationPlugin
+public class VirtualHostConfiguration extends AbstractConfiguration
 {
     private final String _name;
     private final Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
@@ -83,11 +83,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     public long getHousekeepingCheckPeriod()
     {
         return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
-    }
-
-    public List getCustomExchanges()
-    {
-        return getListValue("custom-exchanges.class-name");
     }
 
     public Configuration getStoreConfiguration()

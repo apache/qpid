@@ -38,18 +38,14 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.signal.SignalHandlerTask;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
-public class ServerConfiguration extends ConfigurationPlugin
+public class ServerConfiguration extends AbstractConfiguration
 {
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
 
@@ -73,8 +69,6 @@ public class ServerConfiguration extends ConfigurationPlugin
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
     public static final String LIB_DIR = "lib";
-    public static final String PLUGIN_DIR = "plugins";
-    public static final String CACHE_DIR = "cache";
 
     private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
 
@@ -157,39 +151,6 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
-
-        if(!Boolean.getBoolean(SKIP_SIGHUP_HANDLER_REGISTRATION))
-        {
-            registerSigHupHandler();
-        }
-        else
-        {
-            _logger.info("Skipping registration of Signal HUP handler.");
-        }
-    }
-
-    private void registerSigHupHandler()
-    {
-        SignalHandlerTask hupReparseTask = new SignalHandlerTask()
-        {
-            public void handle()
-            {
-                try
-                {
-                    reparseConfigFileSecuritySections();
-                }
-                catch (ConfigurationException e)
-                {
-                    _logger.error("Could not reload configuration file security sections", e);
-                }
-            }
-        };
-
-        if(!hupReparseTask.register("HUP"))
-        {
-            _logger.info("Unable to register Signal HUP handler to reload security configuration.");
-            _logger.info("Signal HUP not supported for this OS / JVM combination - " + SignalHandlerTask.getPlatformDescription());
-        }
     }
 
     /**
@@ -219,9 +180,6 @@ public class ServerConfiguration extends ConfigurationPlugin
      * Processes this configuration and setups any VirtualHosts defined in the
      * configuration.
      *
-     * This has been separated from the constructor to allow the PluginManager
-     * time to be created and provide plugins to the ConfigurationManager for
-     * processing here.
      * <p>
      * Called by {@link ApplicationRegistry#initialise()}.
      * <p>
@@ -497,38 +455,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         return _configFile == null ? "" : _configFile.getAbsolutePath();
     }
 
-    public void reparseConfigFileSecuritySections() throws ConfigurationException
-    {
-        if (_configFile != null)
-        {
-            Configuration newConfig = parseConfig(_configFile);
-            setConfiguration("", newConfig);
-            ApplicationRegistry.getInstance().getSecurityManager().configureHostPlugins(this);
-
-            // Reload virtualhosts from correct location
-            Configuration newVhosts;
-            if (_vhostsFile == null)
-            {
-                newVhosts = newConfig.subset("virtualhosts");
-            }
-            else
-            {
-                newVhosts = parseConfig(_vhostsFile);
-            }
-
-            VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
-            for (String hostName : _virtualHosts.keySet())
-            {
-                VirtualHost vhost = vhostRegistry.getVirtualHost(hostName);
-                Configuration vhostConfig = newVhosts.subset("virtualhost." + escapeTagName(hostName));
-                vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig);
-                vhost.getSecurityManager().configureGlobalPlugins(this);
-                vhost.getSecurityManager().configureHostPlugins(vhost.getConfiguration());
-            }
-
-            _logger.warn(SECURITY_CONFIG_RELOADED);
-        }
-    }
 
     public String getQpidWork()
     {
@@ -643,16 +569,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
     }
 
-    public String getPluginDirectory()
-    {
-        return getStringValue("plugin-directory");
-    }
-
-    public String getCacheDirectory()
-    {
-        return getStringValue("cache-directory");
-    }
-
     public VirtualHostConfiguration getVirtualHostConfig(String name)
     {
         return _virtualHosts.get(name);
@@ -700,6 +616,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getManagementKeyStorePath()
     {
+        // note difference in capitalisation used in fallback
         final String fallback = getStringValue("management.ssl.keystorePath");
         return getStringValue("management.ssl.keyStorePath", fallback);
     }
@@ -711,6 +628,7 @@ public class ServerConfiguration extends ConfigurationPlugin
 
     public String getManagementKeyStorePassword()
     {
+        // note difference in capitalisation used in fallback
         final String fallback = getStringValue("management.ssl.keystorePassword");
         return getStringValue("management.ssl.keyStorePassword", fallback);
     }

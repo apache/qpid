@@ -20,9 +20,7 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
@@ -30,86 +28,15 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 public class KerberosAuthenticationManager implements AuthenticationManager
 {
-    private static final Logger _logger = Logger.getLogger(KerberosAuthenticationManager.class);
-
     private static final String GSSAPI_MECHANISM = "GSSAPI";
     private final CallbackHandler _callbackHandler = new GssApiCallbackHandler();
 
-    public static class KerberosAuthenticationManagerConfiguration extends ConfigurationPlugin
-    {
-
-        public static final ConfigurationPluginFactory FACTORY =
-                new ConfigurationPluginFactory()
-                {
-                    public List<String> getParentPaths()
-                    {
-                        return Arrays.asList("security.kerberos-auth-manager");
-                    }
-
-                    public ConfigurationPlugin newInstance(final String path, final Configuration config) throws ConfigurationException
-                    {
-                        final ConfigurationPlugin instance = new KerberosAuthenticationManagerConfiguration();
-
-                        instance.setConfiguration(path, config);
-                        return instance;
-                    }
-                };
-
-        public String[] getElementsProcessed()
-        {
-            return new String[0];
-        }
-
-        public void validateConfiguration() throws ConfigurationException
-        {
-        }
-
-    }
-
-
-    public static final AuthenticationManagerPluginFactory<KerberosAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<KerberosAuthenticationManager>()
-    {
-        public KerberosAuthenticationManager newInstance(final ConfigurationPlugin config) throws ConfigurationException
-        {
-            KerberosAuthenticationManagerConfiguration configuration =
-                    config == null
-                            ? null
-                            : (KerberosAuthenticationManagerConfiguration) config.getConfiguration(KerberosAuthenticationManagerConfiguration.class.getName());
-
-            // If there is no configuration for this plugin then don't load it.
-            if (configuration == null)
-            {
-                _logger.info("No authentication-manager configuration found for KerberosAuthenticationManager");
-                return null;
-            }
-            KerberosAuthenticationManager kerberosAuthenticationManager = new KerberosAuthenticationManager();
-            kerberosAuthenticationManager.configure(configuration);
-            return kerberosAuthenticationManager;
-        }
-
-        public Class<KerberosAuthenticationManager> getPluginClass()
-        {
-            return KerberosAuthenticationManager.class;
-        }
-
-        public String getPluginName()
-        {
-            return KerberosAuthenticationManager.class.getName();
-        }
-    };
-
-
-    private KerberosAuthenticationManager()
+    KerberosAuthenticationManager()
     {
     }
 
@@ -179,11 +106,6 @@ public class KerberosAuthenticationManager implements AuthenticationManager
 
     @Override
     public void close()
-    {
-    }
-
-    @Override
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
     }
 

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -65,8 +64,6 @@ import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
 public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
@@ -130,8 +127,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
-        _securityManager.configureHostPlugins(_vhostConfig);
+        _securityManager = new SecurityManager(_appRegistry.getSecurityManager(), _vhostConfig.getConfig());
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
@@ -141,7 +137,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _queueRegistry = new DefaultQueueRegistry(this);
 
         _exchangeFactory = new DefaultExchangeFactory(this);
-        _exchangeFactory.initialise(_vhostConfig);
 
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
@@ -187,38 +182,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
      */
     private void initialiseHouseKeeping(long period)
     {
-
         if (period != 0L)
         {
             scheduleHouseKeepingTask(period, new VirtualHostHouseKeepingTask());
-
-            Map<String, VirtualHostPluginFactory> plugins = _appRegistry.getPluginManager().getVirtualHostPlugins();
-
-            if (plugins != null)
-            {
-                for (Map.Entry<String, VirtualHostPluginFactory> entry : plugins.entrySet())
-                {
-                    String pluginName = entry.getKey();
-                    VirtualHostPluginFactory factory = entry.getValue();
-                    try
-                    {
-                        VirtualHostPlugin plugin = factory.newInstance(this);
-
-                        // If we had configuration for the plugin the schedule it.
-                        if (plugin != null)
-                        {
-                            _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
-                                                           plugin.getDelay(), plugin.getTimeUnit());
-
-                            _logger.info("Loaded VirtualHostPlugin:" + plugin);
-                        }
-                    }
-                    catch (RuntimeException e)
-                    {
-                        _logger.error("Unable to load VirtualHostPlugin:" + pluginName + " due to:" + e.getMessage(), e);
-                    }
-                }
-            }
         }
     }
 

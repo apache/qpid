@@ -24,7 +24,6 @@ import java.security.Principal;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
 /**
@@ -40,7 +39,7 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
  * the manager.  The {@link #close()} method must reverse this registration.
  * </p>
  */
-public interface AuthenticationManager extends Closeable, Plugin
+public interface AuthenticationManager extends Closeable
 {
     /** The name for the required SASL Server mechanisms */
     public static final String PROVIDER_NAME= "AMQSASLProvider-Server";

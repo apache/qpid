@@ -26,14 +26,11 @@ import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class FileGroupManagerTest extends InternalBrokerBaseCase
+public class FileGroupManagerTest extends QpidTestCase
 {
     private static final String MYGROUP_USERS = "user1";
     private static final String MY_GROUP = "myGroup.users";
@@ -45,11 +42,6 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void tearDown() throws Exception
     {
         super.tearDown();
-//TODO: implement closable
-//        if (_manager != null)
-//        {
-//            _manager.close();
-//        }
 
         if (_tmpGroupFile != null)
         {
@@ -63,23 +55,18 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testValidGroupFile() throws Exception
     {
         final String groupFileName = writeGroupFile();
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
 
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
         assertNotNull(_manager);
     }
 
     public void testNonExistentGroupFile() throws Exception
     {
         final String filePath = "/does.not.exist/";
-        final File fileFile = new File(filePath);
-
-        assertFalse("File already exists", fileFile.exists());
-        final ConfigurationPlugin config = getConfig("groupFile", filePath);
 
         try
         {
-            _manager = FileGroupManager.FACTORY.newInstance(config);
+            _manager = new FileGroupManager(filePath);
             fail("expected exception was not thrown");
         }
         catch(ConfigurationException ce)
@@ -92,8 +79,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testGetGroupPrincipalsForUser() throws Exception
     {
         final String groupFileName = writeGroupFile();
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getGroupPrincipalsForUser("user1");
         assertEquals(1, principals.size());
@@ -103,8 +89,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testGetUserPrincipalsForGroup() throws Exception
     {
         final String groupFileName = writeGroupFile();
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(1, principals.size());
@@ -114,8 +99,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testGetGroupPrincipals() throws Exception
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS, MY_GROUP2, MYGROUP_USERS);
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getGroupPrincipals();
         assertEquals(2, principals.size());
@@ -126,8 +110,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testCreateGroup() throws Exception
     {
         final String groupFileName = writeGroupFile();
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getGroupPrincipals();
         assertEquals(1, principals.size());
@@ -142,8 +125,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testRemoveGroup() throws Exception
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS);
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getGroupPrincipals();
         assertEquals(1, principals.size());
@@ -157,8 +139,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testAddUserToGroup() throws Exception
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS);
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(1, principals.size());
@@ -174,8 +155,7 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
     public void testRemoveUserInGroup() throws Exception
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS);
-        final ConfigurationPlugin config = getConfig("groupFile", groupFileName);
-        _manager = FileGroupManager.FACTORY.newInstance(config);
+        _manager = new FileGroupManager(groupFileName);
 
         Set<Principal> principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(1, principals.size());
@@ -185,25 +165,6 @@ public class FileGroupManagerTest extends InternalBrokerBaseCase
 
         principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(0, principals.size());
-    }
-
-    private ConfigurationPlugin getConfig(final String argName, final String argValue) throws Exception
-    {
-        final ConfigurationPlugin config = new FileGroupManager.FileGroupManagerConfiguration();
-
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-
-        if (argName != null)
-        {
-            xmlconfig.addProperty("file-group-manager.attributes.attribute.name", argName);
-            xmlconfig.addProperty("file-group-manager.attributes.attribute.value", argValue);
-        }
-
-        // Create a CompositeConfiguration as this is what the broker uses
-        CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
-        config.setConfiguration("security", xmlconfig);
-        return config;
     }
 
     private String writeGroupFile() throws Exception

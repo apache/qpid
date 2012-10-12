@@ -18,7 +18,7 @@
  -->
 <project name="bdbstore" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="test client common/test broker/test management/common systests" />
+    <property name="module.test.depends" value="client common/tests broker/tests management/common systests broker-plugins/management-jmx" />
     <property name="module.genpom" value="true"/>
 
     <import file="../module.xml" />

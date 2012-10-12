@@ -18,49 +18,32 @@
  -->
 <project name="Qpid Broker-Plugins Management HTTP" default="build">
 
-    <condition property="systests.optional.depends" value="bdbstore" else="">
-      <or>
-        <and>
-            <contains string="${modules.opt}" substring="bdbstore"/>
-            <contains string="${profile}" substring="bdb"/>
-        </and>
-        <and>
-            <istrue value="${optional}"/>
-            <contains string="${profile}" substring="bdb"/>
-        </and>
-      </or>
-    </condition>
-
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="systests test broker/test common/test management/common client ${systests.optional.depends}" />
+    <property name="module.test.depends" value="broker/tests common/tests management/common client" />
 
-    <property name="module.manifest" value="MANIFEST.MF" />
-    <property name="module.plugin" value="true" />
-    <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+    <property name="module.genpom" value="true" />
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided" />
 
-    <property name="broker-plugins-management-http.libs" value=""/>
+    <property name="broker-plugins-management-http.libs" value="" />
 
     <import file="../../module.xml" />
 
     <!-- Flagfile used to determine if uwar needs to be done.  ._ is part of Ant's defaultexcludes so wont appear bundles -->
-    <property name="dojo.uptodate.flagfile" value="${module.classes}/resources/dojo/._dojouptodate.timestamp"/>
+    <property name="dojo.uptodate.flagfile" value="${module.classes}/resources/dojo/._dojouptodate.timestamp" />
 
-    <uptodate property="unwardojo.done"
-              targetfile="${dojo.uptodate.flagfile}"
-              srcfile="${project.root}/${dojo}"/>
+    <uptodate property="unwardojo.done" targetfile="${dojo.uptodate.flagfile}" srcfile="${project.root}/${dojo}" />
 
-    <target name="precompile" depends="unwardojo"/>
+    <target name="precompile" depends="unwardojo" />
 
     <target name="unwardojo" unless="unwardojo.done">
-      <unwar src="${project.root}/${dojo}" dest="${module.classes}/resources/dojo">
-        <patternset>
-          <exclude name="META-INF/**"/>
-          <exclude name="WEB-INF/**"/>
-          <exclude name="**/*.uncompressed.js"/>
-        </patternset>
-      </unwar>
-      <touch file="${dojo.uptodate.flagfile}"/>
+        <unwar src="${project.root}/${dojo}" dest="${module.classes}/resources/dojo">
+            <patternset>
+                <exclude name="META-INF/**" />
+                <exclude name="WEB-INF/**" />
+                <exclude name="**/*.uncompressed.js" />
+            </patternset>
+        </unwar>
+        <touch file="${dojo.uptodate.flagfile}" />
     </target>
 
     <target name="bundle" depends="bundle-tasks" />

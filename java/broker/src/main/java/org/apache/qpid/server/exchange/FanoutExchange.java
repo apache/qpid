@@ -22,19 +22,15 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.JMException;
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class FanoutExchange extends AbstractExchange
@@ -48,35 +44,7 @@ public class FanoutExchange extends AbstractExchange
      */
     private final ConcurrentHashMap<AMQQueue,Integer> _queues = new ConcurrentHashMap<AMQQueue,Integer>();
 
-    public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
-    {
-
-    	public AMQShortString getName()
-    	{
-    		return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
-    	}
-
-    	public Class<FanoutExchange> getExchangeClass()
-    	{
-    		return FanoutExchange.class;
-    	}
-
-        public FanoutExchange newInstance(UUID id, VirtualHost host,
-    									  AMQShortString name,
-    									  boolean durable,
-    									  int ticket,
-    									  boolean autoDelete) throws AMQException
-    	{
-    		FanoutExchange exch = new FanoutExchange();
-            exch.initialise(id, host, name, durable, ticket, autoDelete);
-    		return exch;
-    	}
-
-    	public AMQShortString getDefaultExchangeName()
-    	{
-    		return ExchangeDefaults.FANOUT_EXCHANGE_NAME;
-    	}
-    };
+    public static final ExchangeType<FanoutExchange> TYPE = new FanoutExchangeType();
 
     public FanoutExchange()
     {

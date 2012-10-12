@@ -32,6 +32,8 @@ import java.util.Map;
 /** Represents a "user database" which is really a way of storing principals (i.e. usernames) and passwords. */
 public interface PrincipalDatabase
 {
+    void setPasswordFile(String passwordFile) throws IOException;
+
     /**
      * Set the password for a given principal in the specified callback. This is used for certain SASL providers. The
      * user database implementation should look up the password in any way it chooses and set it in the callback by

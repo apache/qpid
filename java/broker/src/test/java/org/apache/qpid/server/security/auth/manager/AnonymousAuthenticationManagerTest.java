@@ -24,24 +24,13 @@ import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHel
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AnonymousAuthenticationManagerTest extends InternalBrokerBaseCase
+public class AnonymousAuthenticationManagerTest extends QpidTestCase
 {
-
-    private AuthenticationManager _manager = null;
-
-    public void setUp() throws Exception
-    {
-        _manager = AnonymousAuthenticationManager.INSTANCE;
-    }
-
+    private AuthenticationManager _manager = new AnonymousAuthenticationManager();
 
     public void tearDown() throws Exception
     {
@@ -49,29 +38,6 @@ public class AnonymousAuthenticationManagerTest extends InternalBrokerBaseCase
         {
             _manager = null;
         }
-    }
-
-    private ConfigurationPlugin getPlainDatabaseConfig() throws ConfigurationException
-    {
-        final ConfigurationPlugin config = new PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration();
-
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-        xmlconfig.addProperty("pd-auth-manager.principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
-
-        // Create a CompositeConfiguration as this is what the broker uses
-        CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
-        config.setConfiguration("security", xmlconfig);
-        return config;
-    }
-
-
-    public void testConfiguration() throws Exception
-    {
-        AuthenticationManager authenticationManager =
-                AnonymousAuthenticationManager.FACTORY.newInstance(getPlainDatabaseConfig());
-
-        assertNull("AnonymousAuthenticationManager unexpectedly created when not in config", authenticationManager);
     }
 
     public void testGetMechanisms() throws Exception

@@ -1,0 +1,5 @@
+org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory
+org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory
+org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManagerFactory
+org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthManagerFactory
+org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManagerFactory

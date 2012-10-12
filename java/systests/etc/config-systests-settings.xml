@@ -24,9 +24,6 @@
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
 
-    <plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>
-    <cache-directory>${QPID_WORK}/cache</cache-directory>
-
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword
 	     and set enabled to true.

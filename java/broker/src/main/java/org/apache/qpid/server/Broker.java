@@ -41,7 +41,6 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
@@ -124,8 +123,8 @@ public class Broker
 
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
-        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile, options.getBundleContext());
-        ServerConfiguration serverConfig = config.getConfiguration();
+        ServerConfiguration serverConfig = new ServerConfiguration(configFile);
+        ApplicationRegistry config = new ApplicationRegistry(serverConfig);
         if (options.getQpidWork() != null)
         {
             serverConfig.setQpidWork(options.getQpidWork());

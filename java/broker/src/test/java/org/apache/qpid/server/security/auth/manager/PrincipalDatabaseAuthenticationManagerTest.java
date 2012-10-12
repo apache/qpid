@@ -21,133 +21,91 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+import javax.security.sasl.SaslServerFactory;
+
+import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
- *
  * Tests the public methods of PrincipalDatabaseAuthenticationManager.
  *
  */
-public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBaseCase
+public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 {
+    private static final String MOCK_MECH_NAME = "MOCK-MECH-NAME";
     private static final UsernamePrincipal PRINCIPAL = new UsernamePrincipal("guest");
-    private AuthenticationManager _manager = null; // Class under test
-    private String TEST_USERNAME = "guest";
-    private String TEST_PASSWORD = "guest";
 
-    /**
-     * @see org.apache.qpid.server.util.InternalBrokerBaseCase#tearDown()
-     */
+    private AuthenticationManager _manager = null; // Class under test
+    private PrincipalDatabase _principalDatabase;
+
     @Override
     public void tearDown() throws Exception
     {
-        super.tearDown();
         if (_manager != null)
         {
             _manager.close();
         }
+        super.tearDown();
     }
 
-    /**
-     * @see org.apache.qpid.server.util.InternalBrokerBaseCase#setUp()
-     */
-    @Override
-    public void setUp() throws Exception
+    private void setupMocks() throws Exception
     {
-        super.setUp();
+        _principalDatabase = mock(PrincipalDatabase.class);
 
-        final String passwdFilename = createPasswordFile().getCanonicalPath();
-        final ConfigurationPlugin config = getConfig(PlainPasswordFilePrincipalDatabase.class.getName(),
-                "passwordFile", passwdFilename);
+        AuthenticationProviderInitialiser _mockMechInitialiser = mock(AuthenticationProviderInitialiser.class);
+        Map<String, AuthenticationProviderInitialiser> _initialisers = Collections.singletonMap(MOCK_MECH_NAME, _mockMechInitialiser);
 
-        _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(config);
+        when(_principalDatabase.getMechanisms()).thenReturn(_initialisers);
+
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase);
+        _manager.initialise();
     }
 
-    /**
-     * Tests where the case where the config specifies a PD implementation
-     * that is not found.
-     */
-    public void testPrincipalDatabaseImplementationNotFound() throws Exception
+    private void setupMocksWithInitialiser() throws Exception
     {
-        try
-        {
-            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig("not.Found", null, null));
-            fail("Exception not thrown");
-        }
-        catch (ConfigurationException ce)
-        {
-            // PASS
-        }
-    }
+        _principalDatabase = mock(PrincipalDatabase.class);
 
-    /**
-     * Tests where the case where the config specifies a PD implementation
-     * of the wrong type.
-     */
-    public void testPrincipalDatabaseImplementationWrongType() throws Exception
-    {
-        try
+        UsernamePasswordInitialiser usernamePasswordInitialiser = new UsernamePasswordInitialiser()
         {
-            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(String.class.getName(), null, null)); // Not a PrincipalDatabase implementation
-            fail("Exception not thrown");
-        }
-        catch (ConfigurationException ce)
-        {
-            // PASS
-        }
-    }
+            @Override
+            public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
+            {
+                return MySaslServerFactory.class;
+            }
 
-    /**
-     * Tests the case where a setter with the desired name cannot be found.
-     */
-    public void testPrincipalDatabaseSetterNotFound() throws Exception
-    {
-        try
-        {
-            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "noMethod", "test"));
-            fail("Exception not thrown");
-        }
-        catch (ConfigurationException ce)
-        {
-            // PASS
-        }
-    }
+            @Override
+            public String getMechanismName()
+            {
+                return MOCK_MECH_NAME;
+            }
+        };
 
-    /**
-     * QPID-1347. Make sure the exception message and stack trace is reasonable for an absent password file.
-     */
-    public void testPrincipalDatabaseThrowsSetterFileNotFound() throws Exception
-    {
-        try
-        {
-            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "passwordFile", "/not/found"));
-            fail("Exception not thrown");
-        }
-        catch (ConfigurationException ce)
-        {
-            // PASS
-            assertNotNull("Expected an underlying cause", ce.getCause());
-            assertEquals(FileNotFoundException.class, ce.getCause().getClass());
-        }
+        Map<String,AuthenticationProviderInitialiser> initialisers = new HashMap<String, AuthenticationProviderInitialiser>();
+        initialisers.put(MOCK_MECH_NAME, usernamePasswordInitialiser);
+
+        when(_principalDatabase.getMechanisms()).thenReturn(initialisers);
+
+        usernamePasswordInitialiser.initialise(_principalDatabase);
+
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase);
+        _manager.initialise();
     }
 
     /**
@@ -155,11 +113,16 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testRegisteredMechanisms() throws Exception
     {
-        assertNotNull(_manager.getMechanisms());
-        // relies on those mechanisms attached to PropertiesPrincipalDatabaseManager
-        assertEquals("AMQPLAIN PLAIN CRAM-MD5", _manager.getMechanisms());
-
+        //Ensure we haven't registered anything yet (though this would really indicate a prior test failure!)
         Provider qpidProvider = Security.getProvider(AuthenticationManager.PROVIDER_NAME);
+        assertNull(qpidProvider);
+
+        setupMocksWithInitialiser();
+
+        assertNotNull(_manager.getMechanisms());
+        assertEquals(MOCK_MECH_NAME, _manager.getMechanisms());
+
+        qpidProvider = Security.getProvider(AuthenticationManager.PROVIDER_NAME);
         assertNotNull(qpidProvider);
     }
 
@@ -169,7 +132,9 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testSaslMechanismCreation() throws Exception
     {
-        SaslServer server = _manager.createSaslServer("CRAM-MD5", "localhost", null);
+        setupMocksWithInitialiser();
+
+        SaslServer server = _manager.createSaslServer(MOCK_MECH_NAME, "localhost", null);
         assertNotNull(server);
         // Merely tests the creation of the mechanism. Mechanisms themselves are tested
         // by their own tests.
@@ -182,6 +147,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testSaslAuthenticationSuccess() throws Exception
     {
+        setupMocks();
 
         SaslServer testServer = createTestSaslServer(true, false);
 
@@ -199,6 +165,8 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testSaslAuthenticationNotCompleted() throws Exception
     {
+        setupMocks();
+
         SaslServer testServer = createTestSaslServer(false, false);
 
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
@@ -215,6 +183,8 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testSaslAuthenticationError() throws Exception
     {
+        setupMocks();
+
         SaslServer testServer = createTestSaslServer(false, true);
 
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
@@ -222,25 +192,23 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
         assertEquals(AuthenticationStatus.ERROR, result.getStatus());
     }
 
-    /**
-     * Tests that the authenticate method correctly interprets an
-     * authentication success.
-     *
-     */
     public void testNonSaslAuthenticationSuccess() throws Exception
     {
+        setupMocks();
+
+        when(_principalDatabase.verifyPassword("guest", "guest".toCharArray())).thenReturn(true);
+
         AuthenticationResult result = _manager.authenticate("guest", "guest");
         assertOnlyContainsWrapped(PRINCIPAL, result.getPrincipals());
         assertEquals(AuthenticationStatus.SUCCESS, result.getStatus());
     }
 
-    /**
-     * Tests that the authenticate method correctly interprets an
-     * authentication success.
-     *
-     */
     public void testNonSaslAuthenticationNotCompleted() throws Exception
     {
+        setupMocks();
+
+        when(_principalDatabase.verifyPassword("guest", "wrongpassword".toCharArray())).thenReturn(false);
+
         AuthenticationResult result = _manager.authenticate("guest", "wrongpassword");
         assertEquals("Principals was not expected size", 0, result.getPrincipals().size());
         assertEquals(AuthenticationStatus.CONTINUE, result.getStatus());
@@ -251,7 +219,9 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testClose() throws Exception
     {
-        assertEquals("AMQPLAIN PLAIN CRAM-MD5", _manager.getMechanisms());
+        setupMocksWithInitialiser();
+
+        assertEquals(MOCK_MECH_NAME, _manager.getMechanisms());
         assertNotNull(Security.getProvider(AuthenticationManager.PROVIDER_NAME));
 
         _manager.close();
@@ -267,94 +237,90 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     private SaslServer createTestSaslServer(final boolean complete, final boolean throwSaslException)
     {
-        return new SaslServer()
-        {
-            public String getMechanismName()
-            {
-                return null;
-            }
-
-            public byte[] evaluateResponse(byte[] response) throws SaslException
-            {
-                if (throwSaslException)
-                {
-                    throw new SaslException("Mocked exception");
-                }
-                return null;
-            }
-
-            public boolean isComplete()
-            {
-                return complete;
-            }
-
-            public String getAuthorizationID()
-            {
-                return complete ? "guest" : null;
-            }
-
-            public byte[] unwrap(byte[] incoming, int offset, int len) throws SaslException
-            {
-                return null;
-            }
-
-            public byte[] wrap(byte[] outgoing, int offset, int len) throws SaslException
-            {
-                return null;
-            }
-
-            public Object getNegotiatedProperty(String propName)
-            {
-                return null;
-            }
-
-            public void dispose() throws SaslException
-            {
-            }
-        };
+        return new MySaslServer(throwSaslException, complete);
     }
 
-    private ConfigurationPlugin getConfig(final String clazz, final String argName, final String argValue) throws Exception
+    public static final class MySaslServer implements SaslServer
     {
-        final ConfigurationPlugin config = new PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration();
+        private final boolean _throwSaslException;
+        private final boolean _complete;
 
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-        xmlconfig.addProperty("pd-auth-manager.principal-database.class", clazz);
-
-        if (argName != null)
+        public MySaslServer()
         {
-            xmlconfig.addProperty("pd-auth-manager.principal-database.attributes.attribute.name", argName);
-            xmlconfig.addProperty("pd-auth-manager.principal-database.attributes.attribute.value", argValue);
+            this(false, true);
         }
 
-        // Create a CompositeConfiguration as this is what the broker uses
-        CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
-        config.setConfiguration("security", xmlconfig);
-        return config;
+        private MySaslServer(boolean throwSaslException, boolean complete)
+        {
+            _throwSaslException = throwSaslException;
+            _complete = complete;
+        }
+
+        public String getMechanismName()
+        {
+            return null;
+        }
+
+        public byte[] evaluateResponse(byte[] response) throws SaslException
+        {
+            if (_throwSaslException)
+            {
+                throw new SaslException("Mocked exception");
+            }
+            return null;
+        }
+
+        public boolean isComplete()
+        {
+            return _complete;
+        }
+
+        public String getAuthorizationID()
+        {
+            return _complete ? "guest" : null;
+        }
+
+        public byte[] unwrap(byte[] incoming, int offset, int len) throws SaslException
+        {
+            return null;
+        }
+
+        public byte[] wrap(byte[] outgoing, int offset, int len) throws SaslException
+        {
+            return null;
+        }
+
+        public Object getNegotiatedProperty(String propName)
+        {
+            return null;
+        }
+
+        public void dispose() throws SaslException
+        {
+        }
     }
 
-    private File createPasswordFile() throws Exception
+    public static class MySaslServerFactory implements SaslServerFactory
     {
-        BufferedWriter writer = null;
-        try
+        @Override
+        public SaslServer createSaslServer(String mechanism, String protocol,
+                String serverName, Map<String, ?> props, CallbackHandler cbh)
+                throws SaslException
         {
-            File testFile = File.createTempFile(this.getClass().getName(),"tmp");
-            testFile.deleteOnExit();
-
-            writer = new BufferedWriter(new FileWriter(testFile));
-            writer.write(TEST_USERNAME + ":" + TEST_PASSWORD);
-            writer.newLine();
-
-            return testFile;
-
-        }
-        finally
-        {
-            if (writer != null)
+            if (MOCK_MECH_NAME.equals(mechanism))
             {
-                writer.close();
+                return new MySaslServer();
             }
+            else
+            {
+                return null;
+            }
+        }
+
+        @Override
+        public String[] getMechanismNames(Map<String, ?> props)
+        {
+            return new String[]{MOCK_MECH_NAME};
         }
     }
 }
