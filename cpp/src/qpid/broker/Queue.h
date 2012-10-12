@@ -329,7 +329,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * exclusive owner
      */
     static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
-    static void tryAutoDelete(Broker& broker, Queue::shared_ptr, const std::string& connectionId, const std::string& userId);
+    QPID_BROKER_EXTERN static void tryAutoDelete(Broker& broker, Queue::shared_ptr, const std::string& connectionId, const std::string& userId);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
 
