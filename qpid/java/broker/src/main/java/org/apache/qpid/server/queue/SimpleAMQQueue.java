@@ -42,7 +42,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -182,7 +182,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
-    private ConfigurationPlugin _queueConfiguration;
+    private AbstractConfiguration _queueConfiguration;
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
     private int _maximumDeliveryCount = ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount();

@@ -22,6 +22,8 @@
 
   <property name="module.depends" value="common client"/>
   <property name="module.name" value="jca"/>
+  <!-- Hack to make the renamed module jars available on the module test classpath -->
+  <property name="module.test.depends" value="ra ra/tests"/>
 
   <import file="../module.xml"/>
 
@@ -76,6 +78,11 @@
 
   <target name="examples" depends="example-properties-file, example-jars"/>
 
-  <target name="build" depends="rar, examples"/>
+  <target name="build" depends="rar, examples, jar-tests, jar-sources, postbuild"/>
 
+  <target name="postbuild">
+     <!-- Hack to make the tests/sources jar names match the renamed main module jar/rar -->
+     <move file="${module.test.jar}" tofile="${build.lib}/${project.name}-ra-tests-${project.version}.jar"/>
+     <move file="${module.source.jar}" tofile="${build.lib}/${project.name}-ra-${project.version}-sources.jar"/>
+  </target>
 </project>

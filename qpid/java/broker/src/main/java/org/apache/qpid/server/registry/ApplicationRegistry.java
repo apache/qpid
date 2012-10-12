@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.registry;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.*;
-import org.osgi.framework.BundleContext;
 
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.actors.AbstractActor;
@@ -35,18 +34,18 @@ import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
+import org.apache.qpid.server.management.plugin.ManagementPlugin;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
-import org.apache.qpid.server.plugins.Plugin;
-import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.plugin.GroupManagerFactory;
+import org.apache.qpid.server.plugin.ManagementFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManagerRegistry;
 import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.security.group.GroupManager;
-import org.apache.qpid.server.security.group.GroupManagerPluginFactory;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.transport.QpidAcceptor;
@@ -66,9 +65,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p/>
  * Subclasses should handle the construction of the "registered objects" such as the exchange registry.
  */
-public abstract class ApplicationRegistry implements IApplicationRegistry
+public class ApplicationRegistry implements IApplicationRegistry
 {
-
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
@@ -84,10 +82,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private SecurityManager _securityManager;
 
-    private PluginManager _pluginManager;
-
-    private ConfigurationManager _configurationManager;
-
     private volatile RootMessageLogger _rootMessageLogger;
 
     private CompositeStartupMessageLogger _startupMessageLogger;
@@ -96,8 +90,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private Timer _reportingTimer;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
-
-    private BundleContext _bundleContext;
 
     private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
 
@@ -113,6 +105,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private List<GroupManager> _groupManagerList = new ArrayList<GroupManager>();
 
+    private QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader = new QpidServiceLoader<GroupManagerFactory>();
+
+    private final List<ManagementPlugin> _managmentInstanceList = new ArrayList<ManagementPlugin>();
+
     public Map<InetSocketAddress, QpidAcceptor> getAcceptors()
     {
         synchronized (_acceptors)
@@ -124,16 +120,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected void setSecurityManager(SecurityManager securityManager)
     {
         _securityManager = securityManager;
-    }
-
-    protected void setPluginManager(PluginManager pluginManager)
-    {
-        _pluginManager = pluginManager;
-    }
-
-    protected void setConfigurationManager(ConfigurationManager configurationManager)
-    {
-        _configurationManager = configurationManager;
     }
 
     protected void setRootMessageLogger(RootMessageLogger rootMessageLogger)
@@ -205,31 +191,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    protected ApplicationRegistry(ServerConfiguration configuration)
-    {
-        this(configuration, null);
-    }
-
-    protected ApplicationRegistry(ServerConfiguration configuration, BundleContext bundleContext)
+    public ApplicationRegistry(ServerConfiguration configuration)
     {
         _configuration = configuration;
-        _bundleContext = bundleContext;
-    }
-
-    public void configure() throws ConfigurationException
-    {
-        _configurationManager = new ConfigurationManager();
-
-        try
-        {
-            _pluginManager = new PluginManager(_configuration.getPluginDirectory(), _configuration.getCacheDirectory(), _bundleContext);
-        }
-        catch (Exception e)
-        {
-            throw new ConfigurationException(e);
-        }
-
-        _configuration.initialise();
     }
 
     public void initialise() throws Exception
@@ -261,31 +225,17 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _broker = new BrokerAdapter(this);
 
-            configure();
-
+            _configuration.initialise();
             logStartupMessages(CurrentActor.get());
 
-            _securityManager = new SecurityManager(_configuration, _pluginManager);
+            // Management needs to be registered so that JMXManagement.childAdded can create optional management objects
+            createAndStartManagementPlugins(_configuration, _broker);
 
-            final Collection<GroupManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getGroupManagerPlugins().values();
-            final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
+            _securityManager = new SecurityManager(_configuration.getConfig());
 
-            for(GroupManagerPluginFactory<? extends Plugin> factory : factories)
-            {
-                final GroupManager groupManager = factory.newInstance(securityConfiguration);
-                if(groupManager != null)
-                {
-                    _groupManagerList.add(groupManager);
+            _groupManagerList = createGroupManagers(_configuration);
 
-                    for(GroupManagerChangeListener listener : _groupManagerChangeListeners)
-                    {
-                        listener.groupManagerRegistered(groupManager);
-                    }
-                }
-            }
-            _logger.debug("Created " + _groupManagerList.size() + " group manager(s)");
-
-            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, _pluginManager, new GroupPrincipalAccessor(_groupManagerList));
+            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, new GroupPrincipalAccessor(_groupManagerList));
 
             if(!_authManagerChangeListeners.isEmpty())
             {
@@ -319,10 +269,79 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration configuration, PluginManager pluginManager, GroupPrincipalAccessor groupManagerList)
+    private void createAndStartManagementPlugins(ServerConfiguration configuration, Broker broker) throws Exception
+    {
+        QpidServiceLoader<ManagementFactory> factories = new QpidServiceLoader<ManagementFactory>();
+        for (ManagementFactory managementFactory: factories.instancesOf(ManagementFactory.class))
+        {
+            ManagementPlugin managementPlugin = managementFactory.createInstance(configuration, broker);
+            if(managementPlugin != null)
+            {
+                try
+                {
+                    managementPlugin.start();
+                }
+                catch(Exception e)
+                {
+                    _logger.error("Management plugin " + managementPlugin.getClass().getSimpleName() + " failed to start normally, stopping it now", e);
+                    managementPlugin.stop();
+                    throw e;
+                }
+
+                _managmentInstanceList.add(managementPlugin);
+            }
+        }
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Configured " + _managmentInstanceList.size() + " management instance(s)");
+        }
+    }
+
+    private void closeAllManagementPlugins()
+    {
+        for (ManagementPlugin managementPlugin : _managmentInstanceList)
+        {
+            try
+            {
+                managementPlugin.stop();
+            }
+            catch (Exception e)
+            {
+                _logger.error("Exception thrown whilst stopping management plugin " + managementPlugin.getClass().getSimpleName(), e);
+            }
+        }
+    }
+
+    private List<GroupManager> createGroupManagers(ServerConfiguration configuration) throws ConfigurationException
+    {
+        List<GroupManager> groupManagerList = new ArrayList<GroupManager>();
+        Configuration securityConfig = configuration.getConfig().subset("security");
+
+        for(GroupManagerFactory factory : _groupManagerServiceLoader.instancesOf(GroupManagerFactory.class))
+        {
+            GroupManager groupManager = factory.createInstance(securityConfig);
+            if (groupManager != null)
+            {
+                groupManagerList.add(groupManager);
+                for(GroupManagerChangeListener listener : _groupManagerChangeListeners)
+                {
+                    listener.groupManagerRegistered(groupManager);
+                }
+            }
+        }
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Configured " + groupManagerList.size() + " group manager(s)");
+        }
+        return groupManagerList;
+    }
+
+    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration configuration, GroupPrincipalAccessor groupPrincipalAccessor)
             throws ConfigurationException
     {
-        return new AuthenticationManagerRegistry(configuration, pluginManager, groupManagerList);
+        return new AuthenticationManagerRegistry(configuration, groupPrincipalAccessor);
     }
 
     protected void initialiseVirtualHosts() throws Exception
@@ -476,11 +495,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             close(_authenticationManagerRegistry);
 
-            close(_pluginManager);
-
             CurrentActor.get().message(BrokerMessages.STOPPED());
 
             _logRecorder.closeLogRecorder();
+
+            closeAllManagementPlugins();
         }
         finally
         {
@@ -568,16 +587,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public List<GroupManager> getGroupManagers()
     {
         return _groupManagerList;
-    }
-
-    public PluginManager getPluginManager()
-    {
-        return _pluginManager;
-    }
-
-    public ConfigurationManager getConfigurationManager()
-    {
-        return _configurationManager;
     }
 
     public RootMessageLogger getRootMessageLogger()

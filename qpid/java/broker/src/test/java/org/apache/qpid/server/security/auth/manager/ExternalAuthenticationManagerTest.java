@@ -23,56 +23,13 @@ import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHel
 import javax.security.auth.x500.X500Principal;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ExternalAuthenticationManagerTest extends InternalBrokerBaseCase
+public class ExternalAuthenticationManagerTest extends QpidTestCase
 {
-
-    private AuthenticationManager _manager = null;
-
-    public void setUp() throws Exception
-    {
-        _manager = ExternalAuthenticationManager.INSTANCE;
-    }
-
-
-    public void tearDown() throws Exception
-    {
-        if(_manager != null)
-        {
-            _manager = null;
-        }
-    }
-
-    private ConfigurationPlugin getPlainDatabaseConfig() throws ConfigurationException
-    {
-        final ConfigurationPlugin config = new PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration();
-
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-        xmlconfig.addProperty("pd-auth-manager.principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
-
-        // Create a CompositeConfiguration as this is what the broker uses
-        CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
-        config.setConfiguration("security", xmlconfig);
-        return config;
-    }
-
-
-    public void testConfiguration() throws Exception
-    {
-        AuthenticationManager authenticationManager =
-                ExternalAuthenticationManager.FACTORY.newInstance(getPlainDatabaseConfig());
-
-        assertNull("ExternalAuthenticationManager unexpectedly created when not in config", authenticationManager);
-    }
+    private AuthenticationManager _manager = new ExternalAuthenticationManager();
 
     public void testGetMechanisms() throws Exception
     {

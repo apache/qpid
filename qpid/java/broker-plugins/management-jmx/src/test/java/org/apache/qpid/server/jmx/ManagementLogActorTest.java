@@ -25,19 +25,18 @@ import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.Result;
-import org.apache.qpid.server.security.SecurityPlugin;
+import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
@@ -59,16 +58,23 @@ public class ManagementLogActorTest extends QpidTestCase
 
         _registryPort = findFreePort();
         _connectorPort = getNextAvailable(_registryPort + 1);
+
+        //Start a TestApplicationRegistry with (JMX) management disabled, because we
+        //will instantiate our own directly in order to manipulate it for the test.
         XMLConfiguration config = new XMLConfiguration();
-        config.addProperty(ServerConfiguration.MGMT_JMXPORT_REGISTRYSERVER, _registryPort + "");
-        config.addProperty(ServerConfiguration.MGMT_JMXPORT_CONNECTORSERVER, _connectorPort + "");
+        config.addProperty("management.enabled", "false");
         _registry = new TestApplicationRegistry(new ServerConfiguration(config));
         ApplicationRegistry.initialise(_registry);
 
         _plugin = new TestPlugin();
         _registry.getSecurityManager().addHostPlugin(_plugin);
 
-        _objectRegistry = new JMXManagedObjectRegistry();
+        //Now start up a test JMXManagedObjectRegistry directly
+        XMLConfiguration jmxConfig = new XMLConfiguration();
+        jmxConfig.addProperty(ServerConfiguration.MGMT_JMXPORT_REGISTRYSERVER, _registryPort + "");
+        jmxConfig.addProperty(ServerConfiguration.MGMT_JMXPORT_CONNECTORSERVER, _connectorPort + "");
+
+        _objectRegistry = new JMXManagedObjectRegistry(new ServerConfiguration(jmxConfig));
         new TestMBean(_objectRegistry);
         _objectRegistry.start();
     }
@@ -90,7 +96,9 @@ public class ManagementLogActorTest extends QpidTestCase
         MBeanServerConnection mbsc = jmxConnector.getMBeanServerConnection();
         ObjectName mbeanObject = new ObjectName("org.apache.qpid:type=TestMBean,name=test");
 
-        String actorLogMessage = (String) mbsc.getAttribute(mbeanObject, "ActorLogMessage");
+        CurrentActorRetriever mbean = MBeanServerInvocationHandler.newProxyInstance(mbsc,
+                                            mbeanObject, CurrentActorRetriever.class, false);
+        String actorLogMessage = mbean.getActorLogMessage();
 
         assertTrue("Unexpected log principal in security plugin", _plugin.getLogMessage().startsWith("[mng:admin"));
         assertTrue("Unexpected log principal in MBean", actorLogMessage.startsWith("[mng:admin"));
@@ -130,14 +138,9 @@ public class ManagementLogActorTest extends QpidTestCase
         String getActorLogMessage();
     }
 
-    public static class TestPlugin implements SecurityPlugin
+    public static class TestPlugin implements AccessControl
     {
         private String _logMessage;
-
-        @Override
-        public void configure(ConfigurationPlugin config) throws ConfigurationException
-        {
-        }
 
         @Override
         public Result getDefault()

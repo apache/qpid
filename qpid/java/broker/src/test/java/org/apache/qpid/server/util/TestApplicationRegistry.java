@@ -26,12 +26,11 @@ import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
@@ -55,12 +54,14 @@ public class TestApplicationRegistry extends ApplicationRegistry
     {
         CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));
         GenericActor.setDefaultMessageLogger(new NullRootMessageLogger());
+        LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
+
         super.initialise();
     }
 
     @Override
     protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(
-            ServerConfiguration configuration, PluginManager pluginManager, final GroupPrincipalAccessor groupPrincipalAccessor)
+            ServerConfiguration configuration, final GroupPrincipalAccessor groupPrincipalAccessor)
             throws ConfigurationException
     {
         final Properties users = new Properties();
@@ -69,26 +70,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         final PropertiesPrincipalDatabase ppd = new PropertiesPrincipalDatabase(users);
 
-        final AuthenticationManager pdam =  new PrincipalDatabaseAuthenticationManager()
-        {
-
-            /**
-             * @see org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager#configure(org.apache.qpid.server.configuration.plugins.ConfigurationPlugin)
-             */
-            @Override
-            public void configure(ConfigurationPlugin config) throws ConfigurationException
-            {
-                // We don't pass configuration to this test instance.
-            }
-
-            @Override
-            public void initialise()
-            {
-                setPrincipalDatabase(ppd);
-
-                super.initialise();
-            }
-        };
+        final AuthenticationManager pdam =  new PrincipalDatabaseAuthenticationManager(ppd);
         pdam.initialise();
 
         return new IAuthenticationManagerRegistry()

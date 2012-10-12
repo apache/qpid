@@ -24,6 +24,7 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public class ExchangeInitialiser

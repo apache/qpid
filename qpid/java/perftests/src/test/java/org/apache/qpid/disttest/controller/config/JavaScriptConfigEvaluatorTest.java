@@ -25,6 +25,8 @@ import static org.apache.commons.beanutils.PropertyUtils.getProperty;
 import java.util.List;
 import java.util.TreeMap;
 
+import org.apache.qpid.test.utils.TestFileUtils;
+
 import junit.framework.TestCase;
 
 import com.google.gson.Gson;
@@ -33,7 +35,7 @@ public class JavaScriptConfigEvaluatorTest extends TestCase
 {
     public void testEvaluateJavaScript() throws Exception
     {
-        String jsFilePath = getClass().getResource("JavaScriptConfigEvaluatorTest-test-config.js").toURI().getPath();
+        String jsFilePath = TestFileUtils.createTempFileFromResource(this, "JavaScriptConfigEvaluatorTest-test-config.js").getAbsolutePath();
 
         String rawConfig = new JavaScriptConfigEvaluator().evaluateJavaScript(jsFilePath);
 

@@ -24,7 +24,6 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.management.common.JMXConnnectionFactory;
-import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
@@ -382,12 +381,6 @@ public class JMXTestUtils
     {
         ObjectName objectName = new ObjectName("org.apache.qpid:type=LoggingManagement,name=LoggingManagement");
         return getManagedObject(LoggingManagement.class, objectName);
-    }
-
-    public ConfigurationManagement getConfigurationManagement() throws MalformedObjectNameException
-    {
-        ObjectName objectName = new ObjectName("org.apache.qpid:type=ConfigurationManagement,name=ConfigurationManagement");
-        return getManagedObject(ConfigurationManagement.class, objectName);
     }
 
     public UserManagement getUserManagement() throws MalformedObjectNameException

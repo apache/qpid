@@ -22,18 +22,17 @@ package org.apache.qpid.server.security.auth.manager;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.plugins.Plugin;
-import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
@@ -55,24 +54,24 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
     private final Map<Integer, SubjectCreator> _portToSubjectCreatorMap;
     private final List<RegistryChangeListener> _listeners =
             Collections.synchronizedList(new ArrayList<RegistryChangeListener>());
+    private final QpidServiceLoader<AuthenticationManagerFactory> _authManagerFactoryServiceLoader;
 
-    public AuthenticationManagerRegistry(ServerConfiguration serverConfiguration, PluginManager _pluginManager, GroupPrincipalAccessor groupPrincipalAccessor)
+    public AuthenticationManagerRegistry(ServerConfiguration serverConfiguration, GroupPrincipalAccessor groupPrincipalAccessor)
     throws ConfigurationException
     {
-        final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
+        this(serverConfiguration, groupPrincipalAccessor, new QpidServiceLoader<AuthenticationManagerFactory>());
+    }
 
-        if (factories.size() == 0)
-        {
-            throw new ConfigurationException("No authentication manager factory plugins found. Check the desired authentication" +
-                    " manager plugin has been placed in the plugins directory.");
-        }
-
-        final SecurityConfiguration securityConfiguration = serverConfiguration.getConfiguration(SecurityConfiguration.class.getName());
+    // Exists as separate constructor for unit testing purposes
+    AuthenticationManagerRegistry(ServerConfiguration serverConfiguration, GroupPrincipalAccessor groupPrincipalAccessor, QpidServiceLoader<AuthenticationManagerFactory> authManagerFactoryServiceLoader)
+            throws ConfigurationException
+    {
+        _authManagerFactoryServiceLoader = authManagerFactoryServiceLoader;
 
         boolean willClose = true;
         try
         {
-            createAuthenticationManagersRejectingDuplicates(factories, securityConfiguration);
+            createAuthManagers(serverConfiguration.getConfig());
 
             if(_classToAuthManagerMap.isEmpty())
             {
@@ -86,7 +85,7 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
         }
         finally
         {
-            // if anything went wrong whilst configuring the registry, try to close all the AuthentcationManagers instantiated so far.
+            // if anyConfigurationExceptionthing went wrong whilst configuring the registry, try to close all the AuthentcationManagers instantiated so far.
             // This is done to allow the AuthenticationManager to undo any security registrations that they have performed.
             if (willClose)
             {
@@ -115,30 +114,33 @@ public class AuthenticationManagerRegistry implements Closeable, IAuthentication
         }
     }
 
-    private void createAuthenticationManagersRejectingDuplicates(
-            final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories,
-            final SecurityConfiguration securityConfiguration)
-            throws ConfigurationException
+    private void createAuthManagers(Configuration config)
     {
-        for(AuthenticationManagerPluginFactory<? extends Plugin> factory : factories)
-        {
-            final AuthenticationManager tmp = factory.newInstance(securityConfiguration);
-            if (tmp != null)
-            {
-                if(_classToAuthManagerMap.containsKey(tmp.getClass().getSimpleName()))
-                {
-                    throw new ConfigurationException("Cannot configure more than one authentication manager of type "
-                                                     + tmp.getClass().getSimpleName() + "."
-                                                     + " Remove configuration for one of the authentication managers.");
-                }
-                _classToAuthManagerMap.put(tmp.getClass().getSimpleName(),tmp);
+        Configuration securityConfiguration = config.subset("security");
 
-                for(RegistryChangeListener listener : _listeners)
-                {
-                    listener.authenticationManagerRegistered(tmp);
-                }
+        for(AuthenticationManagerFactory factory : _authManagerFactoryServiceLoader.atLeastOneInstanceOf(AuthenticationManagerFactory.class))
+        {
+            AuthenticationManager plugin = factory.createInstance(securityConfiguration);
+            if(plugin != null)
+            {
+                validateAndInitialiseAuthenticationManager(plugin);
             }
         }
+    }
+
+    private void validateAndInitialiseAuthenticationManager(AuthenticationManager authenticationManager)
+    {
+        // TODO Should be a user-defined name rather than the classname.
+        final String authManagerName = authenticationManager.getClass().getSimpleName();
+        if (_classToAuthManagerMap.containsKey(authManagerName))
+        {
+            throw new RuntimeException("Cannot configure more than one authentication manager with name "
+                    + authManagerName + ".");
+        }
+
+        authenticationManager.initialise();
+
+        _classToAuthManagerMap.put(authManagerName, authenticationManager);
     }
 
     private SubjectCreator createDefaultSubectCreator(

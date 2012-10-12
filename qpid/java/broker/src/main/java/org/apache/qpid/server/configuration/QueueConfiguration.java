@@ -24,11 +24,11 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 
 import java.util.List;
 
-public class QueueConfiguration extends ConfigurationPlugin
+public class QueueConfiguration extends AbstractConfiguration
 {
     private String _name;
     private VirtualHostConfiguration _vHostConfig;

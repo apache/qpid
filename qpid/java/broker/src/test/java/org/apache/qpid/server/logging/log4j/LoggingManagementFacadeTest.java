@@ -20,10 +20,12 @@
 package org.apache.qpid.server.logging.log4j;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Level;
+import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 
 import junit.framework.TestCase;
@@ -236,10 +238,6 @@ public class LoggingManagementFacadeTest extends TestCase
 
     private String createTestLog4jXml() throws Exception
     {
-        File dst = File.createTempFile("log4j." + getName(), "xml");
-        File filename = new File(getClass().getResource("LoggingFacadeTest.log4j.xml").toURI());
-        FileUtils.copy(filename, dst);
-        dst.deleteOnExit();
-        return dst.getAbsolutePath();
+        return TestFileUtils.createTempFileFromResource(this, "LoggingFacadeTest.log4j.xml").getAbsolutePath();
     }
 }

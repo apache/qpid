@@ -57,7 +57,6 @@
     <dependency org="log4j" name="log4j" rev="1.2.16" transitive="false"/>
     <dependency org="org.apache.maven" name="maven-ant-tasks" rev="2.1.1" transitive="false"/>
     <dependency org="org.mockito" name="mockito-all" rev="1.9.0" transitive="false"/>
-    <dependency org="org.apache.felix" name="org.apache.felix.main" rev="2.0.5" transitive="false"/>
     <dependency org="org.slf4j" name="slf4j-api" rev="1.6.4" transitive="false"/>
     <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.4" transitive="false"/>
     <dependency org="org.eclipse.jetty" name="jetty-server" rev="7.6.3.v20120416" transitive="false"/>
