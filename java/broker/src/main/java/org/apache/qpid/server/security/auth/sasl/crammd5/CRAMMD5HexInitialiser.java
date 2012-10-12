@@ -139,6 +139,12 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         {
             _realPricipalDatabase.reload();
         }
+
+        @Override
+        public void setPasswordFile(String passwordFile) throws IOException
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
 }

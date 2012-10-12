@@ -57,7 +57,6 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
@@ -68,7 +67,6 @@ import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
-import org.apache.qpid.util.LogMonitor;
 
 /**
  * Qpid base class for system testing test cases.
@@ -1383,31 +1381,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         //keep compiler happy
         return null;
-    }
-
-    /**
-     * Reloads the broker security configuration using the ApplicationRegistry (InVM brokers) or the
-     * ConfigurationManagementMBean via the JMX interface (Standalone brokers, management must be
-     * enabled before calling the method).
-     */
-    public void reloadBrokerSecurityConfig() throws Exception
-    {
-        JMXTestUtils jmxu = new JMXTestUtils(this);
-        jmxu.open();
-
-        try
-        {
-            ConfigurationManagement configMBean = jmxu.getConfigurationManagement();
-            configMBean.reloadSecurityConfiguration();
-        }
-        finally
-        {
-            jmxu.close();
-        }
-
-        LogMonitor _monitor = new LogMonitor(_outputFile);
-        assertTrue("The expected server security configuration reload did not occur",
-                _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
     }
 
     protected int getFailingPort()

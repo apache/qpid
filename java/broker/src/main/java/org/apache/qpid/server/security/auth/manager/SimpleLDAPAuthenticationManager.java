@@ -21,10 +21,8 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -40,11 +38,7 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
@@ -54,123 +48,25 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManager.class);
 
     private static final String PLAIN_MECHANISM = "PLAIN";
-    private static final String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
-    private String _providerSearchURL;
-    private String _searchContext;
-    private String _searchFilter;
-    private String _providerAuthURL;
-    private String _ldapContextFactory;
+    private final String _providerSearchURL;
+    private final String _providerAuthURL;
+    private final String _searchContext;
+    private final String _searchFilter;
+    private final String _ldapContextFactory;
 
-    public static class SimpleLDAPAuthenticationManagerConfiguration extends ConfigurationPlugin
+    SimpleLDAPAuthenticationManager(String providerSearchUrl, String providerAuthUrl, String searchContext, String searchFilter, String ldapContextFactory)
     {
-
-        public static final ConfigurationPluginFactory FACTORY =
-                new ConfigurationPluginFactory()
-                {
-                    public List<String> getParentPaths()
-                    {
-                        return Arrays.asList("security.simple-ldap-auth-manager");
-                    }
-
-                    public ConfigurationPlugin newInstance(final String path, final Configuration config) throws ConfigurationException
-                    {
-                        final ConfigurationPlugin instance = new SimpleLDAPAuthenticationManagerConfiguration();
-
-                        instance.setConfiguration(path, config);
-                        return instance;
-                    }
-                };
-
-        private static final String PROVIDER_URL = "provider-url";
-        private static final String PROVIDER_SEARCH_URL = "provider-search-url";
-        private static final String PROVIDER_AUTH_URL = "provider-auth-url";
-        private static final String SEARCH_CONTEXT = "search-context";
-        private static final String SEARCH_FILTER = "search-filter";
-        private static final String LDAP_CONTEXT_FACTORY = "ldap-context-factory";
-
-        public String[] getElementsProcessed()
-        {
-            return new String[] {PROVIDER_URL, PROVIDER_SEARCH_URL, PROVIDER_AUTH_URL, SEARCH_CONTEXT, SEARCH_FILTER,
-                                 LDAP_CONTEXT_FACTORY};
-        }
-
-        public void validateConfiguration() throws ConfigurationException
-        {
-        }
-
-        public String getLDAPContextFactory()
-        {
-            return getConfig().getString(LDAP_CONTEXT_FACTORY, DEFAULT_LDAP_CONTEXT_FACTORY);
-        }
-
-
-        public String getProviderURL()
-        {
-            return getConfig().getString(PROVIDER_URL);
-        }
-
-        public String getProviderSearchURL()
-        {
-            return getConfig().getString(PROVIDER_SEARCH_URL, getProviderURL());
-        }
-
-        public String getSearchContext()
-        {
-            return getConfig().getString(SEARCH_CONTEXT);
-        }
-
-        public String getSearchFilter()
-        {
-            return getConfig().getString(SEARCH_FILTER);
-        }
-
-        public String getProviderAuthURL()
-        {
-            return getConfig().getString(PROVIDER_AUTH_URL, getProviderURL());
-        }
-    }
-
-
-    public static final AuthenticationManagerPluginFactory<SimpleLDAPAuthenticationManager> FACTORY = new AuthenticationManagerPluginFactory<SimpleLDAPAuthenticationManager>()
-    {
-        public SimpleLDAPAuthenticationManager newInstance(final ConfigurationPlugin config) throws ConfigurationException
-        {
-            SimpleLDAPAuthenticationManagerConfiguration configuration =
-                    config == null
-                            ? null
-                            : (SimpleLDAPAuthenticationManagerConfiguration) config.getConfiguration(SimpleLDAPAuthenticationManagerConfiguration.class.getName());
-
-            // If there is no configuration for this plugin then don't load it.
-            if (configuration == null)
-            {
-                _logger.info("No authentication-manager configuration found for SimpleLDAPAuthenticationManager");
-                return null;
-            }
-            SimpleLDAPAuthenticationManager simpleLDAPAuthenticationManager = new SimpleLDAPAuthenticationManager();
-            simpleLDAPAuthenticationManager.configure(configuration);
-            return simpleLDAPAuthenticationManager;
-        }
-
-        public Class<SimpleLDAPAuthenticationManager> getPluginClass()
-        {
-            return SimpleLDAPAuthenticationManager.class;
-        }
-
-        public String getPluginName()
-        {
-            return SimpleLDAPAuthenticationManager.class.getName();
-        }
-    };
-
-
-    private SimpleLDAPAuthenticationManager()
-    {
+        _providerSearchURL = providerSearchUrl;
+        _providerAuthURL = providerAuthUrl;
+        _searchContext = searchContext;
+        _searchFilter = searchFilter;
+        _ldapContextFactory = ldapContextFactory;
     }
 
     @Override
     public void initialise()
     {
-
+        validateInitialDirContext();
     }
 
     @Override
@@ -257,17 +153,8 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
     }
 
-    @Override
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    private void validateInitialDirContext()
     {
-        SimpleLDAPAuthenticationManagerConfiguration ldapConfig = (SimpleLDAPAuthenticationManagerConfiguration) config;
-
-        _ldapContextFactory = ldapConfig.getLDAPContextFactory();
-        _providerSearchURL = ldapConfig.getProviderSearchURL();
-        _providerAuthURL = ldapConfig.getProviderAuthURL();
-        _searchContext = ldapConfig.getSearchContext();
-        _searchFilter = ldapConfig.getSearchFilter();
-
         Hashtable<String,Object> env = new Hashtable<String, Object>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
         env.put(Context.PROVIDER_URL, _providerSearchURL);
@@ -275,11 +162,11 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
         try
         {
-            new InitialDirContext(env);
+            new InitialDirContext(env).close();
         }
         catch (NamingException e)
         {
-            throw new ConfigurationException("Unable to establish anonymous connection to the ldap server at " + _providerSearchURL, e);
+            throw new RuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerSearchURL, e);
         }
     }
 

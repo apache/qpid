@@ -27,7 +27,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -114,32 +113,6 @@ public class ServerConfigurationTest extends QpidTestCase
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
         assertEquals(false, _serverConfig.getPlatformMbeanserver());
-    }
-
-    public void testGetPluginDirectory() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(null, _serverConfig.getPluginDirectory());
-
-        // Check value we set
-        _config.setProperty("plugin-directory", "/path/to/plugins");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals("/path/to/plugins", _serverConfig.getPluginDirectory());
-    }
-
-    public void testGetCacheDirectory() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(null, _serverConfig.getCacheDirectory());
-
-        // Check value we set
-        _config.setProperty("cache-directory", "/path/to/cache");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals("/path/to/cache", _serverConfig.getCacheDirectory());
     }
 
     public void testGetFrameSize() throws ConfigurationException
@@ -926,7 +899,7 @@ public class ServerConfigurationTest extends QpidTestCase
 
         // Load config
         ApplicationRegistry.remove();
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+        ApplicationRegistry reg = new ApplicationRegistry(new ServerConfiguration(mainFile));
         ApplicationRegistry.initialise(reg);
 
         // Test config
@@ -959,7 +932,7 @@ public class ServerConfigurationTest extends QpidTestCase
 
         // Load config
         ApplicationRegistry.remove();
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+        ApplicationRegistry reg = new ApplicationRegistry(new ServerConfiguration(mainFile));
         ApplicationRegistry.initialise(reg);
 
         // Test config
@@ -994,7 +967,7 @@ public class ServerConfigurationTest extends QpidTestCase
 
         // Load config
         ApplicationRegistry.remove();
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+        ApplicationRegistry reg = new ApplicationRegistry(new ServerConfiguration(mainFile));
         ApplicationRegistry.initialise(reg);
 
         // Test config
@@ -1039,7 +1012,7 @@ public class ServerConfigurationTest extends QpidTestCase
         try
         {
             ApplicationRegistry.remove();
-            ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+            ApplicationRegistry reg = new ApplicationRegistry(new ServerConfiguration(mainFile));
             ApplicationRegistry.initialise(reg);
             fail("Different virtualhost XML configurations not allowed");
         }
@@ -1074,7 +1047,7 @@ public class ServerConfigurationTest extends QpidTestCase
         try
         {
             ApplicationRegistry.remove();
-            ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+            ApplicationRegistry reg = new ApplicationRegistry(new ServerConfiguration(mainFile));
             ApplicationRegistry.initialise(reg);
             fail("Multiple virtualhost XML configurations not allowed");
         }
@@ -1557,7 +1530,7 @@ public class ServerConfigurationTest extends QpidTestCase
 
         // Load config
         ApplicationRegistry.remove();
-        ApplicationRegistry registry = new ConfigurationFileApplicationRegistry(xml);
+        ApplicationRegistry registry = new ApplicationRegistry(new ServerConfiguration(xml));
         ApplicationRegistry.initialise(registry);
         ServerConfiguration serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
 

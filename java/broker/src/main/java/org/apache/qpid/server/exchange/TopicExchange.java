@@ -27,15 +27,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.management.JMException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
@@ -49,44 +45,15 @@ import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.Filterable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class TopicExchange extends AbstractExchange
 {
-
-    public static final ExchangeType<TopicExchange> TYPE = new ExchangeType<TopicExchange>()
-    {
-
-        public AMQShortString getName()
-        {
-            return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
-        }
-
-        public Class<TopicExchange> getExchangeClass()
-        {
-            return TopicExchange.class;
-        }
-
-        public TopicExchange newInstance(UUID id, VirtualHost host,
-                                            AMQShortString name,
-                                            boolean durable,
-                                            int ticket,
-                                            boolean autoDelete) throws AMQException
-        {
-            TopicExchange exch = new TopicExchange();
-            exch.initialise(id, host, name, durable, ticket, autoDelete);
-            return exch;
-        }
-
-        public AMQShortString getDefaultExchangeName()
-        {
-            return ExchangeDefaults.TOPIC_EXCHANGE_NAME;
-        }
-    };
+    public static final ExchangeType<TopicExchange> TYPE = new TopicExchangeType();
 
 
     private static final Logger _logger = Logger.getLogger(TopicExchange.class);

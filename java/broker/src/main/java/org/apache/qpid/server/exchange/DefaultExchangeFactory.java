@@ -27,9 +27,9 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -40,31 +40,66 @@ import java.util.UUID;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
-    private static final Logger _logger = Logger.getLogger(DefaultExchangeFactory.class);
     public static final String DEFAULT_DLE_NAME_SUFFIX = "_DLE";
 
-    private Map<AMQShortString, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, ExchangeType<? extends Exchange>>();
+    private static final Logger LOGGER = Logger.getLogger(DefaultExchangeFactory.class);
+
+    private static final AMQShortString[] BASE_EXCHANGE_TYPES =
+                                    new AMQShortString[]{ExchangeDefaults.DIRECT_EXCHANGE_CLASS,
+                                                         ExchangeDefaults.FANOUT_EXCHANGE_CLASS,
+                                                         ExchangeDefaults.HEADERS_EXCHANGE_CLASS,
+                                                         ExchangeDefaults.TOPIC_EXCHANGE_CLASS};
+
     private final VirtualHost _host;
+    private Map<AMQShortString, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, ExchangeType<? extends Exchange>>();
 
     public DefaultExchangeFactory(VirtualHost host)
     {
         _host = host;
-        registerExchangeType(DirectExchange.TYPE);
-        registerExchangeType(TopicExchange.TYPE);
-        registerExchangeType(HeadersExchange.TYPE);
-        registerExchangeType(FanoutExchange.TYPE);
+
+        @SuppressWarnings("rawtypes")
+        Iterable<ExchangeType> exchangeTypes = loadExchangeTypes();
+        for (ExchangeType<?> exchangeType : exchangeTypes)
+        {
+            AMQShortString typeName = exchangeType.getName();
+
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Registering exchange type '" + typeName + "' using class '" + exchangeType.getClass().getName() + "'");
+            }
+
+            if(_exchangeClassMap.containsKey(typeName))
+            {
+                ExchangeType<?> existingType = _exchangeClassMap.get(typeName);
+
+                throw new IllegalStateException("ExchangeType with type name '" + typeName + "' is already registered using class '"
+                                                 + existingType.getClass().getName() + "', can not register class '"
+                                                 + exchangeType.getClass().getName() + "'");
+            }
+
+            _exchangeClassMap.put(typeName, exchangeType);
+        }
+
+        for(AMQShortString type : BASE_EXCHANGE_TYPES)
+        {
+            if(!_exchangeClassMap.containsKey(type))
+            {
+                throw new IllegalStateException("Did not find expected exchange type: " + type.asString());
+            }
+        }
     }
 
-    public void registerExchangeType(ExchangeType<? extends Exchange> type)
+    @SuppressWarnings("rawtypes")
+    protected Iterable<ExchangeType> loadExchangeTypes()
     {
-        _exchangeClassMap.put(type.getName(), type);
+        return new QpidServiceLoader<ExchangeType>().atLeastOneInstanceOf(ExchangeType.class);
     }
 
     public Collection<ExchangeType<? extends Exchange>> getRegisteredTypes()
     {
         return _exchangeClassMap.values();
     }
-    
+
     public Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes()
     {
         Collection<ExchangeType<? extends Exchange>> publicTypes = 
@@ -113,43 +148,5 @@ public class DefaultExchangeFactory implements ExchangeFactory
         
         Exchange e = exchType.newInstance(id, _host, exchange, durable, ticket, autoDelete);
         return e;
-    }
-
-    public void initialise(VirtualHostConfiguration hostConfig)
-    {
-
-        if (hostConfig == null)
-        {
-            return;
-        }
-
-        for(Object className : hostConfig.getCustomExchanges())
-        {
-            try
-            {
-                ExchangeType<?> exchangeType = ApplicationRegistry.getInstance().getPluginManager().getExchanges().get(String.valueOf(className));
-                if (exchangeType == null)
-                {
-                    _logger.error("No such custom exchange class found: \""+String.valueOf(className)+"\"");
-                    continue;
-                }
-                Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
-                ExchangeType<? extends ExchangeType> type = exchangeTypeClass.newInstance();
-                registerExchangeType(type);
-            }
-            catch (ClassCastException classCastEx)
-            {
-                _logger.error("No custom exchange class: \""+String.valueOf(className)+"\" cannot be registered as it does not extend class \""+ExchangeType.class+"\"");
-            }
-            catch (IllegalAccessException e)
-            {
-                _logger.error("Cannot create custom exchange class: \""+String.valueOf(className)+"\"",e);
-            }
-            catch (InstantiationException e)
-            {
-                _logger.error("Cannot create custom exchange class: \""+String.valueOf(className)+"\"",e);
-            }
-        }
-
     }
 }

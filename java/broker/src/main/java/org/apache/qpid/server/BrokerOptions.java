@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server;
 
-import org.osgi.framework.BundleContext;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +43,6 @@ public class BrokerOptions
     private String _bind;
     private Integer _jmxPortRegistryServer;
     private Integer _jmxPortConnectorServer;
-    private BundleContext _bundleContext;
 
     private Integer _logWatchFrequency = 0;
     private String _qpidWorkFolder;
@@ -154,16 +151,6 @@ public class BrokerOptions
     public void setLogWatchFrequency(final int logWatchFrequency)
     {
         _logWatchFrequency = logWatchFrequency;
-    }
-
-    public BundleContext getBundleContext()
-    {
-        return _bundleContext ;
-    }
-
-    public void setBundleContext(final BundleContext bundleContext)
-    {
-        _bundleContext = bundleContext;
     }
 
     public Set<Integer> getIncludedPorts(final ProtocolInclusion includeProtocol)

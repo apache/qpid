@@ -22,9 +22,7 @@ package org.apache.qpid.server.security.group;
 import java.security.Principal;
 import java.util.Set;
 
-import org.apache.qpid.server.plugins.Plugin;
-
-public interface GroupManager extends Plugin
+public interface GroupManager
 {
     Set<Principal> getGroupPrincipalsForUser(String user);
 

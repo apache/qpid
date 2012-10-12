@@ -86,4 +86,10 @@ public class TestPrincipalDatabase implements PrincipalDatabase
         // TODO Auto-generated method stub
     }
 
+    @Override
+    public void setPasswordFile(String passwordFile) throws IOException
+    {
+        // TODO Auto-generated method stub
+    }
+
 }

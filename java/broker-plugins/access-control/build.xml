@@ -18,10 +18,8 @@
  -->
 <project name="Qpid Broker-Plugins Access Control" default="build">
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="test common/test broker/test management/common systests" />
+    <property name="module.test.depends" value="common/tests broker/tests management/common" />
 
-    <property name="module.manifest" value="MANIFEST.MF" />
-    <property name="module.plugin" value="true" />
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
 

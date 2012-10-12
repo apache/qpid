@@ -57,7 +57,7 @@
   <property name="module.etc"          location="etc"/>
   <property name="module.src.resources.metainf" location="src/main/resources/META-INF"/>
   <property name="module.metainf" location="${module.build}/META-INF"/>
-    
+
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>
   <property name="module.release.base" value="${basedir}/release"/>
@@ -93,15 +93,6 @@
   <property name="module.depends"       value=""/>
   <property name="module.test.depends"  value=""/>
   <property name="module.test.excludes" value=""/>
-
-  <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build.scratch}/*/classes"/>
-  </map>
-
-  <map property="module.test.depends.path" value="${module.test.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build.scratch}/*/classes"/>
-  </map>
-
 
    <!-- Add depenencies dependencies to path -->
    <map property="module.depends.libs" value="${module.depends}" join=" ">
@@ -172,16 +163,54 @@
   <property name="module.test.jar"
             location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
 
+  <map property="module.depends.jars" value="${module.depends}" join=",">
+    <globmapper from="*" to="${project.name}-*-${project.version}.jar"/>
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
+  </map>
+
+  <map property="module.depends.jars.path" value="${module.depends}" join="${path.separator}">
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
+
+    <globmapper from="*" to="${build.lib}/${project.name}-*-${project.version}.jar"/>
+  </map>
+
+  <map property="module.test.depends.jars.path" value="${module.test.depends}" join="${path.separator}">
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
+    <globmapper from="*" to="${build.lib}/${project.name}-*-${project.version}.jar"/>
+  </map>
+
+  <!-- used for building the module -->
   <path id="module.class.path">
-    <pathelement location="${module.classes}"/>
-    <pathelement path="${module.depends.path}"/>
+    <pathelement path="${module.depends.jars.path}"/>
     <path refid="module.libs"/>
   </path>
 
+  <!-- used at runtime -->
+  <path id="module.runtime.class.path">
+    <pathelement location="${module.jar}"/>
+    <pathelement path="${module.depends.jars.path}"/>
+    <path refid="module.libs"/>
+  </path>
+
+  <!-- used to build the tests -->
   <path id="module.test.path">
-    <pathelement path="${module.test.classes}"/>
-    <path refid="module.class.path"/>
-    <pathelement path="${module.test.depends.path}"/>
+    <path refid="module.runtime.class.path"/>
+    <pathelement path="${module.test.depends.jars.path}"/>
+    <path refid="module.test.libs"/>
+    <pathelement path="${module.test.resources}"/>
+  </path>
+
+  <!-- used to run the tests -->
+  <path id="module.test.runtime.path">
+    <pathelement path="${module.test.jar}"/>
+    <path refid="module.runtime.class.path"/>
+    <pathelement path="${module.test.depends.jars.path}"/>
     <path refid="module.test.libs"/>
     <pathelement path="${module.test.resources}"/>
   </path>
@@ -197,14 +226,21 @@
     <echo-prop name="module.name"/>
     <echo-prop name="module.jar"/>
     <echo-prop name="module.depends"/>
-    <echo-prop name="module.depends.path"/>
+
     <echo-prop name="module.test.depends"/>
-    <echo-prop name="module.test.depends.path"/>
+
     <echo-prop name="module.depends.libs"/>
     <echo-prop name="module.test.depends.libs"/>      
+
+    <echo-prop name="module.depends.jars"/>
+    <echo-prop name="module.depends.jars.path"/>
+    <echo-prop name="module.test.depends.jars.path"/>
+
     <echo-path refid="module.src.path"/>
     <echo-path refid="module.class.path"/>
+    <echo-path refid="module.runtime.class.path"/>
     <echo-path refid="module.test.path"/>
+    <echo-path refid="module.test.runtime.path"/>
   </target>
 
   <target name="prepare">
@@ -383,7 +419,7 @@
       <formatter type="plain"/>
       <formatter type="xml"/>
 
-      <classpath refid="module.test.path"/>
+      <classpath refid="module.test.runtime.path"/>
 
       <batchtest todir="${module.results}">
         <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
@@ -497,14 +533,7 @@
     <copylist todir="${build.lib}" dir="${project.root}" files="${module.libs}"/>
   </target>
 
-  <map property="module.depends.jars" value="${module.depends}" join=",">
-    <globmapper from="*" to="${project.name}-*-${project.version}.jar"/>
-    <filtermapper>
-        <replacestring from="/" to="-"/>
-    </filtermapper>
-  </map>
 
- 
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
       <echo message="${module.libs}"/>
@@ -691,8 +720,7 @@
 
       <syspropertyset refid="all.test.systemproperties"/>
 
-      <sysproperty key="net.sourceforge.cobertura.datafile"
-		file="${cobertura.datafile}" />
+      <sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.datafile}" />
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -700,10 +728,10 @@
       <classpath path="${module.instrumented}"/>
       <classpath>
         <fileset dir="${build}">
-	  <include name="**/classes-instrumented/*.class"/>
-	</fileset>
+          <include name="**/classes-instrumented/*.class"/>
+        </fileset>
       </classpath>
-      <classpath refid="module.test.path"/>
+      <classpath refid="module.test.runtime.path"/>
       <classpath refid="cobertura.classpath"/>      
 
       <batchtest todir="${module.results}">
@@ -716,8 +744,8 @@
 
   <target name="coverage-report" depends="cobertura-init">
       <cobertura-report format="html"
-                      destdir="${module.coverage}"
-		      datafile="${cobertura.datafile}">
+                        destdir="${module.coverage}"
+                        datafile="${cobertura.datafile}">
       <fileset dir="${module.src}" includes="**/*.java" />
     </cobertura-report>
   </target>

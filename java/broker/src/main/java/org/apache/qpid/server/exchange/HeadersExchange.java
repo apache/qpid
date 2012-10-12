@@ -22,22 +22,18 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -81,40 +77,12 @@ public class HeadersExchange extends AbstractExchange
                             new CopyOnWriteArrayList<HeadersBinding>();
 
     
-    public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
-    {
-
-        public AMQShortString getName()
-        {
-            return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
-        }
-
-        public Class<HeadersExchange> getExchangeClass()
-        {
-            return HeadersExchange.class;
-        }
-
-        public HeadersExchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket,
-                boolean autoDelete) throws AMQException
-        {
-            HeadersExchange exch = new HeadersExchange();
-
-            exch.initialise(id, host, name, durable, ticket, autoDelete);
-            return exch;
-        }
-
-        public AMQShortString getDefaultExchangeName()
-        {
-
-            return ExchangeDefaults.HEADERS_EXCHANGE_NAME;
-        }
-    };
+    public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
 
     public HeadersExchange()
     {
         super(TYPE);
     }
-    
 
 
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
