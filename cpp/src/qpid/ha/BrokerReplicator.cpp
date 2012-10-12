@@ -214,7 +214,7 @@ class BrokerReplicator::ConnectionObserver : public broker::ConnectionObserver
     BrokerReplicator& brokerReplicator;
 };
 
-template <class E> BrokerReplicator::EventKey eventKey() {
+template <class E> pair<string,string> eventKey() {
     return make_pair(E::PACKAGE_NAME, E::EVENT_NAME);
 }
 
