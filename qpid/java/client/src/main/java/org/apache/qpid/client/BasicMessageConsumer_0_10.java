@@ -95,6 +95,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
 
         _capacity = evaluateCapacity(destination);
 
+        // This is due to the Destination carrying the temporary subscription name which is incorrect.
         if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
         {            
             boolean namedQueue = destination.getLink() != null && destination.getLink().getName() != null ; 
@@ -163,6 +164,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     @Override void sendCancel() throws AMQException
     {
         _0_10session.getQpidSession().messageCancel(getConsumerTagString());
+        postSubscription();
         try
         {
             _0_10session.getQpidSession().sync();
@@ -499,7 +501,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         }
     }
     
-    void cleanupQueue() throws AMQException, FailoverException
+    void postSubscription() throws AMQException
     {
         AMQDestination dest = this.getDestination();
         if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
@@ -507,9 +509,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             if (dest.getDelete() == AddressOption.ALWAYS ||
                 dest.getDelete() == AddressOption.RECEIVER )
             {
-                ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
-                        this.getDestination().getQueueName());
+                ((AMQSession_0_10) getSession()).handleNodeDelete(dest);
             }
+            // Subscription queue is handled as part of linkDelete method.
+            ((AMQSession_0_10) getSession()).handleLinkDelete(dest);
         }
     }
 
