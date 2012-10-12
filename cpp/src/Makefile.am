@@ -534,8 +534,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerImportExport.h \
   qpid/broker/Connection.cpp \
   qpid/broker/Connection.h \
-  qpid/broker/ConnectionFactory.cpp \
-  qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionHandler.h \
   qpid/broker/ConnectionState.h \

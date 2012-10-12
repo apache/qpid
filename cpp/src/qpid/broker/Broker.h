@@ -23,7 +23,6 @@
  */
 
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/ConnectionFactory.h"
 #include "qpid/broker/ConnectionToken.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/DtxManager.h"
@@ -49,6 +48,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
+#include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/types/Variant.h"
