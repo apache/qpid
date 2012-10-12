@@ -36,7 +36,6 @@ namespace qpid {
             QPID_BROKER_EXTERN DeliverableMessage(const Message& msg, TxBuffer* txn);
             QPID_BROKER_EXTERN virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
             QPID_BROKER_EXTERN Message& getMessage();
-            QPID_BROKER_EXTERN uint64_t contentSize();
             virtual ~DeliverableMessage(){}
         };
     }
