@@ -277,14 +277,7 @@ void collectQueueReplicators(
 }
 } // namespace
 
-void BrokerReplicator::shutdown() {
-    QPID_LOG(debug, logPrefix << "BrokerReplicator shutting down.");
-    set<boost::shared_ptr<QueueReplicator> > collect;
-    broker.getExchanges().eachExchange(
-        boost::bind(&collectQueueReplicators, _1, boost::ref(collect)));
-    for_each(collect.begin(), collect.end(),
-             boost::bind(&QueueReplicator::deactivate, _1));
-}
+void BrokerReplicator::shutdown() {}
 
 // This is called in the connection IO thread when the bridge is started.
 void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
@@ -672,8 +665,6 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::startQueueReplicator(
 }
 
 void BrokerReplicator::deleteQueue(const std::string& name, bool purge) {
-    boost::shared_ptr<QueueReplicator> qr(findQueueReplicator(name));
-    if (qr) qr->deactivate();
     Queue::shared_ptr queue = broker.getQueues().find(name);
     if (queue) {
         // Purge before deleting to ensure that we don't reroute any
