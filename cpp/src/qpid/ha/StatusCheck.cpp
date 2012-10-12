@@ -93,7 +93,7 @@ void StatusCheckThread::run() {
             QPID_LOG(debug, statusCheck.logPrefix << "Status of " << url << ": " << status);
         }
     } catch(const exception& error) {
-        QPID_LOG(warning, "Error checking status of " << url <<  ": " << error.what());
+        QPID_LOG(info, "Checking status of " << url <<  ": " << error.what());
     }
     delete this;
 }
