@@ -683,7 +683,8 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
         else {
             // An error... if it's a connection close, ignore it - it will be
             // noticed and handled on a read completion any moment now.
-            // What to do with real error??? Save the Buffer?
+            // What to do with real error??? Save the Buffer?  TBD.
+            queueReadBuffer(buff);     // All done; back to the pool
         }
     }
 
