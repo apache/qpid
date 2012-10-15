@@ -150,7 +150,7 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProp
 void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
 {
     const framing::FieldTable& clientProperties = body.getClientProperties();
-    qmf::org::apache::qpid::broker::Connection* mgmtObject = connection.getMgmtObject();
+    qmf::org::apache::qpid::broker::Connection::shared_ptr mgmtObject = connection.getMgmtObject();
 
     if (mgmtObject != 0) {
         string procName = clientProperties.getAsString(CLIENT_PROCESS_NAME);

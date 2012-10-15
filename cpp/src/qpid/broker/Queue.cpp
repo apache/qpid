@@ -77,8 +77,8 @@ namespace
 {
 
 inline void mgntEnqStats(const Message& msg,
-			 _qmf::Queue* mgmtObject,
-			 _qmf::Broker* brokerMgmtObject)
+			 _qmf::Queue::shared_ptr mgmtObject,
+			 _qmf::Broker::shared_ptr brokerMgmtObject)
 {
     if (mgmtObject != 0) {
         _qmf::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
@@ -101,8 +101,8 @@ inline void mgntEnqStats(const Message& msg,
 }
 
 inline void mgntDeqStats(const Message& msg,
-			 _qmf::Queue* mgmtObject,
-			 _qmf::Broker* brokerMgmtObject)
+			 _qmf::Queue::shared_ptr mgmtObject,
+			 _qmf::Broker::shared_ptr brokerMgmtObject)
 {
     if (mgmtObject != 0){
         _qmf::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
@@ -179,8 +179,6 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
     messages(new MessageDeque()),
     persistenceId(0),
     settings(b ? merge(_settings, b->getOptions()) : _settings),
-    mgmtObject(0),
-    brokerMgmtObject(0),
     eventMode(0),
     broker(b),
     deleted(false),
@@ -195,17 +193,17 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
     qpid::amqp_0_10::translate(settings.asMap(), encodableSettings);
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
-
         if (agent != 0) {
-            mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, settings.autodelete);
+            mgmtObject = _qmf::Queue::shared_ptr(
+                new _qmf::Queue(agent, this, parent, _name, _store != 0, settings.autodelete));
             mgmtObject->set_arguments(settings.asMap());
             agent->addObject(mgmtObject, 0, store != 0);
-            brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
+            brokerMgmtObject = boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObject());
             if (brokerMgmtObject)
                 brokerMgmtObject->inc_queueCount();
         }
     }
-    
+
     if ( settings.isBrowseOnly ) {
         QPID_LOG ( info, "Queue " << name << " is browse-only." );
     }
@@ -213,11 +211,6 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
 
 Queue::~Queue()
 {
-    if (mgmtObject != 0) {
-        mgmtObject->resourceDestroy();
-        if (brokerMgmtObject)
-            brokerMgmtObject->dec_queueCount();
-    }
 }
 
 bool isLocalTo(const OwnershipToken* token, const Message& msg)
@@ -1076,6 +1069,12 @@ void Queue::destroyed()
                  boost::bind(&QueueObserver::destroy, _1));
         observers.clear();
     }
+
+    if (mgmtObject != 0) {
+        mgmtObject->resourceDestroy();
+        if (brokerMgmtObject)
+            brokerMgmtObject->dec_queueCount();
+    }
 }
 
 void Queue::notifyDeleted()
@@ -1109,7 +1108,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
 {
     if (mgmtObject != 0 && persistenceId == 0 && externalQueueStore)
     {
-        ManagementObject* childObj = externalQueueStore->GetManagementObject();
+        ManagementObject::shared_ptr childObj = externalQueueStore->GetManagementObject();
         if (childObj != 0)
             childObj->setReference(mgmtObject->getObjectId());
     }
@@ -1263,7 +1262,7 @@ void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
     externalQueueStore = inst;
 
     if (inst) {
-        ManagementObject* childObj = inst->GetManagementObject();
+        ManagementObject::shared_ptr childObj = inst->GetManagementObject();
         if (childObj != 0 && mgmtObject != 0)
             childObj->setReference(mgmtObject->getObjectId());
     }
@@ -1311,9 +1310,9 @@ void Queue::countLoadedFromDisk(uint64_t size) const
 }
 
 
-ManagementObject* Queue::GetManagementObject (void) const
+ManagementObject::shared_ptr Queue::GetManagementObject (void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, string& etext)

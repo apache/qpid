@@ -214,7 +214,6 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    mgmtObject(0),
     queueCleaner(queues, &timer),
     recoveryInProgress(false),
     recovery(true),
@@ -235,7 +234,7 @@ Broker::Broker(const Broker::Options& conf) :
         System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);
         systemObject = System::shared_ptr(system);
 
-        mgmtObject = new _qmf::Broker(managementAgent.get(), this, system, "amqp-broker");
+        mgmtObject = _qmf::Broker::shared_ptr(new _qmf::Broker(managementAgent.get(), this, system, "amqp-broker"));
         mgmtObject->set_systemRef(system->GetManagementObject()->getObjectId());
         mgmtObject->set_port(conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
@@ -450,9 +449,9 @@ Broker::~Broker() {
     QPID_LOG(notice, "Shut down");
 }
 
-ManagementObject* Broker::GetManagementObject(void) const
+ManagementObject::shared_ptr Broker::GetManagementObject(void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable* Broker::GetVhostObject(void) const

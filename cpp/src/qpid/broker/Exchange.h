@@ -52,13 +52,13 @@ public:
         const std::string         key;
         const framing::FieldTable args;
         std::string               origin;
-        qmf::org::apache::qpid::broker::Binding* mgmtBinding;
+        qmf::org::apache::qpid::broker::Binding::shared_ptr mgmtBinding;
 
         Binding(const std::string& key, boost::shared_ptr<Queue> queue, Exchange* parent = 0,
                 framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
         ~Binding();
         void startManagement();
-        management::ManagementObject* GetManagementObject() const;
+        management::ManagementObject::shared_ptr GetManagementObject() const;
     };
 
 private:
@@ -159,8 +159,8 @@ protected:
         }
     };
 
-    qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
-    qmf::org::apache::qpid::broker::Broker* brokerMgmtObject;
+    qmf::org::apache::qpid::broker::Exchange::shared_ptr mgmtExchange;
+    qmf::org::apache::qpid::broker::Broker::shared_ptr brokerMgmtObject;
 
 public:
     typedef boost::shared_ptr<Exchange> shared_ptr;
@@ -210,7 +210,7 @@ public:
     static QPID_BROKER_EXTERN Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
     // Manageable entry points
-    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject(void) const;
+    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject(void) const;
 
     // Federation hooks
     class DynamicBridge {

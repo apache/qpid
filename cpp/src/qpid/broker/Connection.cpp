@@ -97,7 +97,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
     link(link_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
-    mgmtObject(0),
     links(broker_.getLinks()),
     agent(0),
     timer(broker_.getTimer()),
@@ -119,7 +118,7 @@ void Connection::addManagementObject() {
         agent = broker.getManagementAgent();
         if (agent != 0) {
             // TODO set last bool true if system connection
-            mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !link, false);
+            mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false));
             mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId);
         }
@@ -403,9 +402,9 @@ SessionHandler& Connection::getChannel(ChannelId id) {
     return *ptr_map_ptr(i);
 }
 
-ManagementObject* Connection::GetManagementObject(void) const
+ManagementObject::shared_ptr Connection::GetManagementObject(void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&, string&)

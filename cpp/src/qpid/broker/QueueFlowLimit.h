@@ -31,14 +31,8 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"
+#include "qmf/org/apache/qpid/broker/Queue.h"
 
-namespace qmf {
-namespace org {
-namespace apache {
-namespace qpid {
-namespace broker {
-    class Queue;
-}}}}}
 namespace _qmfBroker = qmf::org::apache::qpid::broker;
 
 namespace qpid {
@@ -118,7 +112,7 @@ struct QueueSettings;
     std::map<framing::SequenceNumber, Message > index;
     mutable qpid::sys::Mutex indexLock;
 
-    _qmfBroker::Queue *queueMgmtObj;
+    _qmfBroker::Queue::shared_ptr queueMgmtObj;
 
     const Broker *broker;
 

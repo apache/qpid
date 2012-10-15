@@ -71,7 +71,7 @@ class HaBroker : public management::Manageable
     void initialize();
 
     // Implement Manageable.
-    qpid::management::ManagementObject* GetManagementObject() const { return mgmtObject; }
+    qpid::management::ManagementObject::shared_ptr GetManagementObject() const { return mgmtObject; }
     management::Manageable::status_t ManagementMethod (
         uint32_t methodId, management::Args& args, std::string& text);
 
@@ -124,7 +124,7 @@ class HaBroker : public management::Manageable
     boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
     boost::shared_ptr<Backup> backup;
     boost::shared_ptr<Primary> primary;
-    qmf::org::apache::qpid::ha::HaBroker* mgmtObject;
+    qmf::org::apache::qpid::ha::HaBroker::shared_ptr mgmtObject;
     Url clientUrl, brokerUrl;
     std::vector<Url> knownBrokers;
     BrokerStatus status;

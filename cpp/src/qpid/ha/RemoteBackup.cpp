@@ -91,9 +91,8 @@ std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
 
 void RemoteBackup::ready(const QueuePtr& q) {
     catchupQueues.erase(q);
-    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName()
-             <<  QueueSetPrinter(", waiting for: ", catchupQueues));
-    if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
+    QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() << ", "
+             << catchupQueues.size() << " remain to catch up");
 }
 
 // Called via ConfigurationObserver::queueCreate and from catchupQueue

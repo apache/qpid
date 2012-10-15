@@ -37,6 +37,7 @@
 #include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
 #include <qpid/framing/ResizableBuffer.h>
+#include <boost/shared_ptr.hpp>
 #include <memory>
 #include <string>
 #include <map>
@@ -100,12 +101,12 @@ public:
                                              const std::string& eventName,
                                              uint8_t*    md5Sum,
                                              ManagementObject::writeSchemaCall_t schemaCall);
-    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
-                                             uint64_t          persistId = 0,
-                                             bool              persistent = false);
-    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject*  object,
-                                             const std::string& key,
-                                             bool               persistent = false);
+    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject::shared_ptr object,
+                                             uint64_t                     persistId = 0,
+                                             bool                         persistent = false);
+    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject::shared_ptr object,
+                                             const std::string&           key,
+                                             bool                         persistent = false);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
@@ -158,7 +159,7 @@ public:
     class DeletedObject {
       public:
         typedef boost::shared_ptr<DeletedObject> shared_ptr;
-        DeletedObject(ManagementObject *, bool v1, bool v2);
+        DeletedObject(ManagementObject::shared_ptr, bool v1, bool v2);
         DeletedObject( const std::string &encoded );
         ~DeletedObject() {};
         void encode( std::string& toBuffer );
@@ -207,9 +208,9 @@ private:
         uint32_t          agentBank;
         std::string       routingKey;
         ObjectId          connectionRef;
-        qmf::org::apache::qpid::broker::Agent*    mgmtObject;
-        RemoteAgent(ManagementAgent& _agent) : agent(_agent), mgmtObject(0) {}
-        ManagementObject* GetManagementObject (void) const { return mgmtObject; }
+        qmf::org::apache::qpid::broker::Agent::shared_ptr mgmtObject;
+        RemoteAgent(ManagementAgent& _agent) : agent(_agent) {}
+        ManagementObject::shared_ptr GetManagementObject (void) const { return mgmtObject; }
 
         virtual ~RemoteAgent ();
         void mapEncode(qpid::types::Variant::Map& _map) const;
@@ -276,7 +277,7 @@ private:
     PackageMap                   packages;
 
     //
-    // Protected by userLock
+    // Protected by objectLock
     //
     ManagementObjectMap          managementObjects;
 
@@ -288,11 +289,11 @@ private:
     framing::Uuid                uuid;
 
     //
-    // Lock hierarchy:  If a thread needs to take both addLock and userLock,
-    // it MUST take userLock first, then addLock.
+    // Lock ordering:  userLock -> addLock -> objectLock
     //
     sys::Mutex userLock;
     sys::Mutex addLock;
+    sys::Mutex objectLock;
 
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
@@ -335,53 +336,45 @@ private:
     // list of objects that have been deleted, but have yet to be published
     // one final time.
     // Indexed by a string composed of the object's package and class name.
-    // Protected by userLock.
+    // Protected by objectLock.
     typedef std::map<std::string, DeletedObjectList> PendingDeletedObjsMap;
     PendingDeletedObjsMap pendingDeletedObjs;
-
-#   define MA_BUFFER_SIZE 65536
-    char inputBuffer[MA_BUFFER_SIZE];
-    char outputBuffer[MA_BUFFER_SIZE];
-    char eventBuffer[MA_BUFFER_SIZE];
-    framing::ResizableBuffer msgBuffer;
 
     //
     // Memory statistics object
     //
-    qmf::org::apache::qpid::broker::Memory *memstat;
+    qmf::org::apache::qpid::broker::Memory::shared_ptr memstat;
 
     void writeData ();
     void periodicProcessing (void);
-    void deleteObjectNowLH(const ObjectId& oid);
+    void deleteObjectNow(const ObjectId& oid);
     void encodeHeader       (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
     bool checkHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
-    void sendBufferLH(framing::Buffer&             buf,
-                      uint32_t                     length,
-                      qpid::broker::Exchange::shared_ptr exchange,
-                      const std::string&           routingKey);
-    void sendBufferLH(framing::Buffer&             buf,
-                      uint32_t                     length,
-                      const std::string&           exchange,
-                      const std::string&           routingKey);
-    void sendBufferLH(const std::string&     data,
-                      const std::string&     cid,
-                      const qpid::types::Variant::Map& headers,
-                      const std::string&     content_type,
-                      qpid::broker::Exchange::shared_ptr exchange,
-                      const std::string& routingKey,
-                      uint64_t ttl_msec = 0);
-    void sendBufferLH(const std::string& data,
-                      const std::string& cid,
-                      const qpid::types::Variant::Map& headers,
-                      const std::string& content_type,
-                      const std::string& exchange,
-                      const std::string& routingKey,
-                      uint64_t ttl_msec = 0);
-    void moveNewObjectsLH();
-    bool moveDeletedObjectsLH();
+    void sendBuffer(framing::Buffer&             buf,
+                    qpid::broker::Exchange::shared_ptr exchange,
+                    const std::string&           routingKey);
+    void sendBuffer(framing::Buffer&             buf,
+                    const std::string&           exchange,
+                    const std::string&           routingKey);
+    void sendBuffer(const std::string&     data,
+                    const std::string&     cid,
+                    const qpid::types::Variant::Map& headers,
+                    const std::string&     content_type,
+                    qpid::broker::Exchange::shared_ptr exchange,
+                    const std::string& routingKey,
+                    uint64_t ttl_msec = 0);
+    void sendBuffer(const std::string& data,
+                    const std::string& cid,
+                    const qpid::types::Variant::Map& headers,
+                    const std::string& content_type,
+                    const std::string& exchange,
+                    const std::string& routingKey,
+                    uint64_t ttl_msec = 0);
+    void moveNewObjects();
+    bool moveDeletedObjects();
 
-    bool authorizeAgentMessageLH(qpid::broker::Message& msg);
-    void dispatchAgentCommandLH(qpid::broker::Message& msg, bool viaLocal=false);
+    bool authorizeAgentMessage(qpid::broker::Message& msg);
+    void dispatchAgentCommand(qpid::broker::Message& msg, bool viaLocal=false);
 
     PackageMap::iterator findOrAddPackageLH(std::string name);
     void addClassLH(uint8_t                      kind,
@@ -399,22 +392,22 @@ private:
     uint32_t allocateNewBank ();
     uint32_t assignBankLH (uint32_t requestedPrefix);
     void deleteOrphanedAgentsLH();
-    void sendCommandCompleteLH(const std::string& replyToKey, uint32_t sequence,
-                              uint32_t code = 0, const std::string& text = "OK");
-    void sendExceptionLH(const std::string& rte, const std::string& rtk, const std::string& cid, const std::string& text, uint32_t code=1, bool viaLocal=false);
-    void handleBrokerRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handlePackageQueryLH   (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handlePackageIndLH     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleClassQueryLH     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleClassIndLH       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleSchemaRequestLH  (framing::Buffer& inBuffer, const std::string& replyToEx, const std::string& replyToKey, uint32_t sequence);
-    void handleSchemaResponseLH (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleAttachRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleGetQueryLH       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleMethodRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleGetQueryLH       (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, bool viaLocal);
-    void handleMethodRequestLH  (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken, bool viaLocal);
-    void handleLocateRequestLH  (const std::string& body, const std::string& replyToEx, const std::string &replyToKey, const std::string& cid);
+    void sendCommandComplete(const std::string& replyToKey, uint32_t sequence,
+                             uint32_t code = 0, const std::string& text = "OK");
+    void sendException(const std::string& rte, const std::string& rtk, const std::string& cid, const std::string& text, uint32_t code=1, bool viaLocal=false);
+    void handleBrokerRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handlePackageQuery   (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handlePackageInd     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleClassQuery     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleClassInd       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleSchemaRequest  (framing::Buffer& inBuffer, const std::string& replyToEx, const std::string& replyToKey, uint32_t sequence);
+    void handleSchemaResponse (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleAttachRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleGetQuery       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleMethodRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleGetQuery       (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, bool viaLocal);
+    void handleMethodRequest  (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken, bool viaLocal);
+    void handleLocateRequest  (const std::string& body, const std::string& replyToEx, const std::string &replyToKey, const std::string& cid);
 
 
     size_t validateSchema(framing::Buffer&, uint8_t kind);
