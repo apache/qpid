@@ -300,8 +300,7 @@ Consumer(_name, type),
     arguments(_arguments),
     notifyEnabled(true),
     syncFrequency(_arguments.getAsInt(QPID_SYNC_FREQUENCY)),
-    deliveryCount(0),
-    mgmtObject(0)
+    deliveryCount(0)
 {
     if (parent != 0 && queue.get() != 0 && queue->GetManagementObject() !=0)
     {
@@ -310,17 +309,17 @@ Consumer(_name, type),
 
         if (agent != 0)
         {
-            mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId(), getTag(),
-                                                !acquire, ackExpected, exclusive, ManagementAgent::toMap(arguments));
+            mgmtObject = _qmf::Subscription::shared_ptr(new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId(), getTag(),
+                                                                               !acquire, ackExpected, exclusive, ManagementAgent::toMap(arguments)));
             agent->addObject (mgmtObject);
             mgmtObject->set_creditMode("WINDOW");
         }
     }
 }
 
-ManagementObject* SemanticState::ConsumerImpl::GetManagementObject (void) const
+ManagementObject::shared_ptr SemanticState::ConsumerImpl::GetManagementObject (void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable::status_t SemanticState::ConsumerImpl::ManagementMethod (uint32_t methodId, Args&, string&)

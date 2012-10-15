@@ -58,7 +58,6 @@ SessionState::SessionState(
       broker(b), handler(&h),
       semanticState(*this),
       adapter(semanticState),
-      mgmtObject(0),
       asyncCommandCompleter(new AsyncCommandCompleter(this))
 {
     if (!delayManagement) addManagementObject();
@@ -71,8 +70,8 @@ void SessionState::addManagementObject() {
     if (parent != 0) {
         ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent != 0) {
-            mgmtObject = new _qmf::Session
-                (agent, this, parent, getId().getName());
+            mgmtObject = _qmf::Session::shared_ptr(new _qmf::Session
+                (agent, this, parent, getId().getName()));
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
@@ -149,9 +148,9 @@ void SessionState::giveReadCredit(int32_t credit) {
         getConnection().outputTasks.giveReadCredit(credit);
 }
 
-ManagementObject* SessionState::GetManagementObject (void) const
+ManagementObject::shared_ptr SessionState::GetManagementObject (void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,

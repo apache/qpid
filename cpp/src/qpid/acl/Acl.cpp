@@ -52,7 +52,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
-Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0),
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false),
     connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal)),
     resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)){
 
@@ -60,7 +60,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
     if (agent != 0){
         _qmf::Package  packageInit(agent);
-        mgmtObject = new _qmf::Acl (agent, this, broker);
+        mgmtObject = _qmf::Acl::shared_ptr(new _qmf::Acl (agent, this, broker));
         agent->addObject (mgmtObject);
         mgmtObject->set_maxConnections(aclValues.aclMaxConnectTotal);
         mgmtObject->set_maxConnectionsPerIp(aclValues.aclMaxConnectPerIp);
@@ -317,9 +317,9 @@ Acl::~Acl(){
     broker->getConnectionObservers().remove(connectionCounter);
 }
 
-ManagementObject* Acl::GetManagementObject(void) const
+ManagementObject::shared_ptr Acl::GetManagementObject(void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& args, string& text)

@@ -112,7 +112,7 @@ class Connection : public sys::ConnectionInputHandler,
     void closeChannel(framing::ChannelId channel);
 
     // Manageable entry points
-    management::ManagementObject* GetManagementObject (void) const;
+    management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args, std::string&);
 
@@ -196,7 +196,7 @@ class Connection : public sys::ConnectionInputHandler,
     const std::string mgmtId;
     sys::Mutex ioCallbackLock;
     std::queue<boost::function0<void> > ioCallbacks;
-    qmf::org::apache::qpid::broker::Connection* mgmtObject;
+    qmf::org::apache::qpid::broker::Connection::shared_ptr mgmtObject;
     LinkRegistry& links;
     management::ManagementAgent* agent;
     sys::Timer& timer;
@@ -231,7 +231,7 @@ class Connection : public sys::ConnectionInputHandler,
 
   public:
 
-    qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
+    qmf::org::apache::qpid::broker::Connection::shared_ptr getMgmtObject() { return mgmtObject; }
 };
 
 }}

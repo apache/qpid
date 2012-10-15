@@ -64,7 +64,6 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       systemId(broker.getSystem()->getSystemId().data()),
       settings(s),
       observer(new ConnectionObserver(*this, systemId)),
-      mgmtObject(0),
       status(STANDALONE),
       membership(systemId),
       replicationTest(s.replicateDefault.get())
@@ -95,7 +94,7 @@ void HaBroker::initialize() {
     if (settings.cluster && !ma)
         throw Exception("Cannot start HA: management is disabled");
     _qmf::Package  packageInit(ma);
-    mgmtObject = new _qmf::HaBroker(ma, this, "ha-broker");
+    mgmtObject = _qmf::HaBroker::shared_ptr(new _qmf::HaBroker(ma, this, "ha-broker"));
     mgmtObject->set_replicateDefault(settings.replicateDefault.str());
     mgmtObject->set_systemId(systemId);
     ma->addObject(mgmtObject);

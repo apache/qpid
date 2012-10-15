@@ -96,7 +96,7 @@ class SemanticState : private boost::noncopyable {
         bool notifyEnabled;
         const int syncFrequency;
         int deliveryCount;
-        qmf::org::apache::qpid::broker::Subscription* mgmtObject;
+        qmf::org::apache::qpid::broker::Subscription::shared_ptr mgmtObject;
 
         bool checkCredit(const Message& msg);
         void allocateCredit(const Message& msg);
@@ -160,7 +160,7 @@ class SemanticState : private boost::noncopyable {
         void acknowledged(const DeliveryRecord&) {}
 
         // manageable entry points
-        QPID_BROKER_EXTERN management::ManagementObject*
+        QPID_BROKER_EXTERN management::ManagementObject::shared_ptr
         GetManagementObject(void) const;
 
         QPID_BROKER_EXTERN management::Manageable::status_t

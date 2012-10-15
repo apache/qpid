@@ -171,7 +171,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
-    qmf::org::apache::qpid::broker::Broker* mgmtObject;
+    qmf::org::apache::qpid::broker::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
     QueueCleaner queueCleaner;
@@ -230,7 +230,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     SessionManager& getSessionManager() { return sessionManager; }
     const std::string& getFederationTag() const { return federationTag; }
 
-    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject() const;
+    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject() const;
     QPID_BROKER_EXTERN management::Manageable* GetVhostObject() const;
     QPID_BROKER_EXTERN management::Manageable::status_t ManagementMethod(
         uint32_t methodId, management::Args& args, std::string& text);

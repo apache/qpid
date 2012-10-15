@@ -87,8 +87,8 @@ void StatusCheckThread::run() {
             string status = details["status"].getString();
             if (status != "joining") {
                 statusCheck.setPromote(false);
-                QPID_LOG(error, statusCheck.logPrefix << "Broker " << url << " status is " << status
-                         << " this broker will refuse promotion.");
+                QPID_LOG(info, statusCheck.logPrefix << "Status of " << url << " is "
+                         << status << ", this broker will refuse promotion.");
             }
             QPID_LOG(debug, statusCheck.logPrefix << "Status of " << url << ": " << status);
         }
