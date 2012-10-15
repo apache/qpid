@@ -143,7 +143,7 @@ Link::Link(const string&  _name,
       host(_host), port(_port), transport(_transport),
       durable(_durable),
       authMechanism(_authMechanism), username(_username), password(_password),
-      persistenceId(0), mgmtObject(0), broker(_broker), state(0),
+      persistenceId(0), broker(_broker), state(0),
       visitCount(0),
       currentInterval(1),
       closing(false),
@@ -161,7 +161,7 @@ Link::Link(const string&  _name,
         agent = broker->getManagementAgent();
         if (agent != 0)
         {
-            mgmtObject = new _qmf::Link(agent, this, parent, name, durable);
+            mgmtObject = _qmf::Link::shared_ptr(new _qmf::Link(agent, this, parent, name, durable));
             mgmtObject->set_host(host);
             mgmtObject->set_port(port);
             mgmtObject->set_transport(transport);
@@ -638,9 +638,9 @@ uint32_t Link::encodedSize() const
         + password.size() + 1;
 }
 
-ManagementObject* Link::GetManagementObject (void) const
+ManagementObject::shared_ptr Link::GetManagementObject (void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 void Link::close() {

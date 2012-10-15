@@ -76,6 +76,8 @@ QPID_BROKER_CLASS_EXTERN class /*MGEN:Class.NameCap*/ : public ::qpid::managemen
     void aggregatePerThreadStats(struct PerThreadStats*) const;
 /*MGEN:ENDIF*/
   public:
+    typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
+
     QPID_BROKER_EXTERN static void writeSchema(std::string& schema);
     QPID_BROKER_EXTERN void mapEncodeValues(::qpid::types::Variant::Map& map,
                                           bool includeProperties=true,

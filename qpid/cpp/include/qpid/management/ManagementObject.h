@@ -25,7 +25,7 @@
 
 #include "qpid/management/Mutex.h"
 #include "qpid/types/Variant.h"
-
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <vector>
 
@@ -155,6 +155,8 @@ protected:
     QPID_COMMON_EXTERN uint32_t writeTimestampsSize() const;
 
   public:
+    typedef boost::shared_ptr<ManagementObject> shared_ptr;
+
     QPID_COMMON_EXTERN static const uint8_t MD5_LEN = 16;
     QPID_COMMON_EXTERN static int maxThreads;
     //typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
@@ -227,8 +229,8 @@ protected:
     //QPID_COMMON_EXTERN void mapDecode(const types::Variant::Map& map);
 };
 
-typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;
-typedef std::vector<ManagementObject*> ManagementObjectVector;
+typedef std::map<ObjectId, ManagementObject::shared_ptr> ManagementObjectMap;
+typedef std::vector<ManagementObject::shared_ptr> ManagementObjectVector;
 
 }}
 

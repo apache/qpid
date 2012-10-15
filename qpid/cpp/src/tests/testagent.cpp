@@ -59,7 +59,7 @@ class CoreClass : public Manageable
 {
     string           name;
     ManagementAgent* agent;
-    _qmf::Parent* mgmtObject;
+    _qmf::Parent::shared_ptr mgmtObject;
     std::vector<ChildClass*> children;
     Mutex vectorLock;
 
@@ -68,7 +68,7 @@ public:
     CoreClass(ManagementAgent* agent, string _name);
     ~CoreClass() { mgmtObject->resourceDestroy(); }
 
-    ManagementObject* GetManagementObject(void) const
+    ManagementObject::shared_ptr GetManagementObject(void) const
     { return mgmtObject; }
 
     void doLoop();
@@ -78,14 +78,14 @@ public:
 class ChildClass : public Manageable
 {
     string name;
-    _qmf::Child* mgmtObject;
+    _qmf::Child::shared_ptr mgmtObject;
 
 public:
 
     ChildClass(ManagementAgent* agent, CoreClass* parent, string name);
     ~ChildClass() { mgmtObject->resourceDestroy(); }
 
-    ManagementObject* GetManagementObject(void) const
+    ManagementObject::shared_ptr GetManagementObject(void) const
     { return mgmtObject; }
 
     void doWork()
@@ -97,9 +97,9 @@ public:
 CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent(_agent)
 {
     static uint64_t persistId = 0x111222333444555LL;
-    mgmtObject = new _qmf::Parent(agent, this, name);
+    mgmtObject = _qmf::Parent::shared_ptr(new _qmf::Parent(agent, this, name));
 
-    agent->addObject(mgmtObject, persistId++);
+    agent->addObject(mgmtObject.get(), persistId++);
     mgmtObject->set_state("IDLE");
 }
 
@@ -146,9 +146,9 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, 
 
 ChildClass::ChildClass(ManagementAgent* agent, CoreClass* parent, string name)
 {
-    mgmtObject = new _qmf::Child(agent, this, parent, name);
+    mgmtObject = _qmf::Child::shared_ptr(new _qmf::Child(agent, this, parent, name));
 
-    agent->addObject(mgmtObject);
+    agent->addObject(mgmtObject.get());
 }
 
 

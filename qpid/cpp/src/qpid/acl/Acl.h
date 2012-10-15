@@ -62,7 +62,7 @@ private:
     broker::Broker*                      broker;
     bool                                 transferAcl;
     boost::shared_ptr<AclData>           data;
-    qmf::org::apache::qpid::acl::Acl*    mgmtObject; // mgnt owns lifecycle
+    qmf::org::apache::qpid::acl::Acl::shared_ptr mgmtObject;
     qpid::management::ManagementAgent*   agent;
     mutable qpid::sys::Mutex             dataLock;
     boost::shared_ptr<ConnectionCounter> connectionCounter;
@@ -113,7 +113,7 @@ private:
     bool readAclFile(std::string& aclFile, std::string& errorText);
     Manageable::status_t lookup       (management::Args& args, std::string& text);
     Manageable::status_t lookupPublish(management::Args& args, std::string& text);
-    virtual qpid::management::ManagementObject* GetManagementObject(void) const;
+    virtual qpid::management::ManagementObject::shared_ptr GetManagementObject(void) const;
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
 };

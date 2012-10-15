@@ -60,7 +60,7 @@ void Bridge::PushHandler::handle(framing::AMQFrame& frame)
 Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
                CancellationListener l, const _qmf::ArgsLinkBridge& _args,
                InitializeCallback init, const std::string& _queueName, const string& ae) :
-    link(_link), channel(_id), args(_args), mgmtObject(0),
+    link(_link), channel(_id), args(_args),
     listener(l), name(_name),
     queueName(_queueName.empty() ? "qpid.bridge_queue_" + name + "_" + link->getBroker()->getFederationTag()
               : _queueName),
@@ -71,10 +71,10 @@ Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
 {
     ManagementAgent* agent = link->getBroker()->getManagementAgent();
     if (agent != 0) {
-        mgmtObject = new _qmf::Bridge
+        mgmtObject = _qmf::Bridge::shared_ptr(new _qmf::Bridge
             (agent, this, link, name, args.i_durable, args.i_src, args.i_dest,
              args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
-             args.i_tag, args.i_excludes, args.i_dynamic, args.i_sync);
+             args.i_tag, args.i_excludes, args.i_dynamic, args.i_sync));
         mgmtObject->set_channelId(channel);
         agent->addObject(mgmtObject);
     }
@@ -296,9 +296,9 @@ uint32_t Bridge::encodedSize() const
         + 2;              // sync
 }
 
-management::ManagementObject* Bridge::GetManagementObject (void) const
+management::ManagementObject::shared_ptr Bridge::GetManagementObject (void) const
 {
-    return (management::ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId,

@@ -68,7 +68,7 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
     : StatefulQueueObserver(std::string("QueueFlowLimit")), queue(_queue), queueName("<unknown>"),
       flowStopCount(_flowStopCount), flowResumeCount(_flowResumeCount),
       flowStopSize(_flowStopSize), flowResumeSize(_flowResumeSize),
-      flowStopped(false), count(0), size(0), queueMgmtObj(0), broker(0)
+      flowStopped(false), count(0), size(0), broker(0)
 {
     uint32_t maxCount(0);
     uint64_t maxSize(0);
@@ -78,7 +78,7 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
         if (queue->getSettings().maxDepth.hasCount()) maxCount = queue->getSettings().maxDepth.getCount();
         if (queue->getSettings().maxDepth.hasCount()) maxSize = queue->getSettings().maxDepth.getSize();
         broker = queue->getBroker();
-        queueMgmtObj = dynamic_cast<_qmfBroker::Queue*> (queue->GetManagementObject());
+        queueMgmtObj = boost::dynamic_pointer_cast<_qmfBroker::Queue> (queue->GetManagementObject());
         if (queueMgmtObj) {
             queueMgmtObj->set_flowStopped(isFlowControlActive());
         }

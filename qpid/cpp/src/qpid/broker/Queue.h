@@ -151,8 +151,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     std::string alternateExchangeName;
     boost::shared_ptr<Exchange> alternateExchange;
     framing::SequenceNumber sequence;
-    qmf::org::apache::qpid::broker::Queue* mgmtObject;
-    qmf::org::apache::qpid::broker::Broker* brokerMgmtObject;
+    qmf::org::apache::qpid::broker::Queue::shared_ptr mgmtObject;
+    qmf::org::apache::qpid::broker::Broker::shared_ptr brokerMgmtObject;
     sys::AtomicValue<uint32_t> dequeueSincePurge; // Count dequeues since last purge.
     int eventMode;
     Observers observers;
@@ -339,7 +339,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void countLoadedFromDisk(uint64_t size) const;
 
     // Manageable entry points
-    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject (void) const;
+    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable::status_t
     QPID_BROKER_EXTERN ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     QPID_BROKER_EXTERN void query(::qpid::types::Variant::Map&) const;

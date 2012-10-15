@@ -424,7 +424,7 @@ void CyrusAuthenticator::start(const string& mechanism, const string* response)
                                  &challenge, &challenge_len);
 
     processAuthenticationStep(code, challenge, challenge_len);
-    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    qmf::org::apache::qpid::broker::Connection::shared_ptr cnxMgmt = connection.getMgmtObject();
     if ( cnxMgmt )
         cnxMgmt->set_saslMechanism(mechanism);
 }
@@ -507,7 +507,7 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
     if (ssf) {
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
     }
-    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    qmf::org::apache::qpid::broker::Connection::shared_ptr cnxMgmt = connection.getMgmtObject();
     if ( cnxMgmt )
         cnxMgmt->set_saslSsf(ssf);
     return securityLayer;
