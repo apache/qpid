@@ -25,6 +25,7 @@
 
 #include "qpid/management/ManagementObject.h"
 #include "qmf/BrokerImportExport.h"
+#include <limits>
 
 namespace qpid {
     namespace management {
