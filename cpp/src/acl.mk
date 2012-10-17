@@ -33,6 +33,7 @@ acl_la_SOURCES = \
   qpid/acl/AclReader.h \
   qpid/acl/AclResourceCounter.cpp \
   qpid/acl/AclResourceCounter.h \
+  qpid/acl/AclTopicMatch.h \
   qpid/acl/AclValidator.cpp \
   qpid/acl/AclValidator.h
 
