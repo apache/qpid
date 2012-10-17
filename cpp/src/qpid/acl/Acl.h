@@ -81,6 +81,10 @@ public:
         return transferAcl;
     };
 
+    inline virtual uint16_t getMaxConnectTotal() {
+        return aclValues.aclMaxConnectTotal;
+    };
+
 // create specilied authorise methods for cases that need faster matching as needed.
     virtual bool authorise(
         const std::string&               id,

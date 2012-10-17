@@ -81,6 +81,7 @@
     <property name="systemRef"        type="objId"  references="System" access="RO" desc="System ID" parentRef="y"/>
     <property name="port"             type="uint16" access="RO" desc="TCP Port for AMQP Service"/>
     <property name="workerThreads"    type="uint16" access="RO" desc="Thread pool size"/>
+    <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
     <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
     <property name="mgmtPublish"      type="bool"   access="RO" desc="Broker's management agent sends unsolicited data on the publish interval"/>
