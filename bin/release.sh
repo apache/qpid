@@ -231,7 +231,6 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/management/common/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/access-control/release/maven artifacts/
-  cp -a qpid-${VER}/java/broker-plugins/firewall/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
   cp -a qpid-${VER}/java/bdbstore/jmx/release/maven artifacts/
