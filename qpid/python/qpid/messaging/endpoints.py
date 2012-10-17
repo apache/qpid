@@ -871,7 +871,7 @@ class Sender(Endpoint):
     self.queued += 1
 
     if sync:
-      self.sync()
+      self.sync(timeout=timeout)
       assert message not in self.session.outgoing
     else:
       self._wakeup()
