@@ -351,6 +351,12 @@ Broker::Broker(const Broker::Options& conf) :
     // Initialize plugins
     Plugin::initializeAll(*this);
 
+    if(conf.enableMgmt) {
+        if (getAcl()) {
+            mgmtObject->set_maxConns(getAcl()->getMaxConnectTotal());
+        }
+    }
+
     if (managementAgent.get()) managementAgent->pluginsInitialized();
 
     if (conf.queueCleanInterval) {

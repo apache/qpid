@@ -132,6 +132,8 @@ namespace broker {
         // doTransferAcl pervents time consuming ACL calls on a per-message basis.
         virtual bool doTransferAcl()=0;
 
+        virtual uint16_t getMaxConnectTotal()=0;
+
         virtual bool authorise(
             const std::string&                    id,
             const acl::Action&                    action,
