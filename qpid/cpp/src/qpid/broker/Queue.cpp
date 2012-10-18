@@ -1576,7 +1576,7 @@ Queue::UsageBarrier::UsageBarrier(Queue& q) : parent(q), count(0) {}
 
 bool Queue::UsageBarrier::acquire()
 {
-    Monitor::ScopedLock l(parent.messageLock);  /** @todo: use a dedicated lock instead of messageLock */
+    Monitor::ScopedLock l(usageLock);
     if (parent.deleted) {
         return false;
     } else {
@@ -1587,15 +1587,15 @@ bool Queue::UsageBarrier::acquire()
 
 void Queue::UsageBarrier::release()
 {
-    Monitor::ScopedLock l(parent.messageLock);
-    if (--count == 0) parent.messageLock.notifyAll();
+    Monitor::ScopedLock l(usageLock);
+    if (--count == 0) usageLock.notifyAll();
 }
 
 void Queue::UsageBarrier::destroy()
 {
-    Monitor::ScopedLock l(parent.messageLock);
+    Monitor::ScopedLock l(usageLock);
     parent.deleted = true;
-    while (count) parent.messageLock.wait();
+    while (count) usageLock.wait();
 }
 
 }}
