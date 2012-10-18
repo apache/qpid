@@ -27,7 +27,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -72,10 +71,11 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
                 for (int i = start; i < end && !interrupted(); i++)
                 {
                     producer.send(session.createTextMessage(Integer.toString(i)));
+                    ((AMQSession<?, ?>)session).sync();
                 }
                 this._logger.info("Sent " + (end - start) + " messages");
             }
-            catch (JMSException e)
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -101,7 +101,7 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
         con.start();
     }
 
-    public void testPausedOrder() throws Exception
+    public void testMessagesSentByTwoThreadsAreDeliveredInOrder() throws Exception
     {
 
         // Setup initial messages
@@ -121,9 +121,9 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
         for (int i = 0; i < numMessages; i++)
         {
             Message msg = consumer.receive(3000);
-            assertNotNull("Message should not be null", msg);
-            assertTrue("Message should be a text message", msg instanceof TextMessage);
-            assertEquals("Message content does not match expected", Integer.toString(i), ((TextMessage) msg).getText());
+            assertNotNull("Message " + i + " should not be null", msg);
+            assertTrue("Message " + i + " should be a text message", msg instanceof TextMessage);
+            assertEquals("Message content " + i + "does not match expected", Integer.toString(i), ((TextMessage) msg).getText());
         }
     }
 
