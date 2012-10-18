@@ -22,6 +22,7 @@
 #include "HaBroker.h"
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
+#include "Settings.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
@@ -39,7 +40,6 @@
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
 const std::string TYPE_NAME("qpid.queue-replicator");
-const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 }
 
 namespace qpid {
@@ -52,6 +52,7 @@ using sys::Mutex;
 const std::string QPID_HA_EVENT_PREFIX("qpid.ha-");
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_EVENT_PREFIX+"dequeue");
 const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA_EVENT_PREFIX+"position");
+const std::string QueueReplicator::QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 
 std::string QueueReplicator::replicatorName(const std::string& queueName) {
     return QPID_REPLICATOR_ + queueName;
@@ -107,7 +108,8 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()),
       haBroker(hb),
       logPrefix("Backup queue "+q->getName()+": "),
-      queue(q), link(l), brokerInfo(hb.getBrokerInfo()), subscribed(false)
+      queue(q), link(l), brokerInfo(hb.getBrokerInfo()), subscribed(false),
+      settings(hb.getSettings())
 {
     args.setString(QPID_REPLICATE, printable(NONE).str());
     Uuid uuid(true);
@@ -165,23 +167,21 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     if (!queue) return;         // Already destroyed
     AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
-    FieldTable settings;
-    settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
-    settings.setInt(QPID_SYNC_FREQUENCY, 1); // FIXME aconway 2012-05-22: optimize?
-    settings.setInt(ReplicatingSubscription::QPID_BACK,
-                    queue->getPosition());
-    settings.setTable(ReplicatingSubscription::QPID_BROKER_INFO,
-                      brokerInfo.asFieldTable());
+    FieldTable arguments;
+    arguments.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
+    arguments.setInt(QPID_SYNC_FREQUENCY, 1); // FIXME aconway 2012-05-22: optimize?
+    arguments.setInt(ReplicatingSubscription::QPID_BACK, queue->getPosition());
+    arguments.setTable(ReplicatingSubscription::QPID_BROKER_INFO,brokerInfo.asFieldTable());
     SequenceNumber front, back;
     queue->getRange(front, back, broker::REPLICATOR);
-    if (front <= back) settings.setInt(ReplicatingSubscription::QPID_FRONT, front);
+    if (front <= back) arguments.setInt(ReplicatingSubscription::QPID_FRONT, front);
     try {
         peer.getMessage().subscribe(
             args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
-            false/*exclusive*/, "", 0, settings);
-        // FIXME aconway 2012-05-22: use a finite credit window?
-        peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
-        peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
+            false/*exclusive*/, "", 0, arguments);
+        peer.getMessage().setFlowMode(getName(), 1); // Window
+        peer.getMessage().flow(getName(), 0, settings.getFlowMessages());
+        peer.getMessage().flow(getName(), 1, settings.getFlowBytes());
     }
     catch(const exception& e) {
         QPID_LOG(error, QPID_MSG(logPrefix + "Cannot connect to primary: " << e.what()));
@@ -190,7 +190,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     qpid::Address primary;
     link->getRemoteAddress(primary);
     QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
-    QPID_LOG(trace, logPrefix << "Subscription settings: " << settings);
+    QPID_LOG(trace, logPrefix << "Subscription arguments: " << arguments);
 }
 
 namespace {
