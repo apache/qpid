@@ -106,6 +106,7 @@ class QueueGuard {
     class QueueObserver;
 
     sys::Mutex lock;
+    bool cancelled;
     std::string logPrefix;
     broker::Queue& queue;
     typedef std::map<framing::SequenceNumber, boost::intrusive_ptr<broker::AsyncCompletion> > Delayed;
