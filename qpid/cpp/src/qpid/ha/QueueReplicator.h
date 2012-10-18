@@ -41,6 +41,7 @@ class Deliverable;
 
 namespace ha {
 class HaBroker;
+class Settings;
 
 /**
  * Exchange created on a backup broker to replicate a queue on the primary.
@@ -57,6 +58,8 @@ class QueueReplicator : public broker::Exchange,
   public:
     static const std::string DEQUEUE_EVENT_KEY;
     static const std::string POSITION_EVENT_KEY;
+    static const std::string QPID_SYNC_FREQUENCY;
+
     static std::string replicatorName(const std::string& queueName);
     static bool isReplicatorName(const std::string&);
 
@@ -101,6 +104,7 @@ class QueueReplicator : public broker::Exchange,
     boost::shared_ptr<broker::Bridge> bridge;
     BrokerInfo brokerInfo;
     bool subscribed;
+    const Settings& settings;
 };
 
 }} // namespace qpid::ha

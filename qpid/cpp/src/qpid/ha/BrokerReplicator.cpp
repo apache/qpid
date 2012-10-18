@@ -312,9 +312,14 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_EVENT_BROKER, FieldTable());
     peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_EVENT_HA, FieldTable());
     //subscribe to the queue
-    peer.getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
-    peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
-    peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
+    FieldTable arguments;
+    arguments.setInt(QueueReplicator::QPID_SYNC_FREQUENCY, 1); // FIXME aconway 2012-05-22: optimize?
+    peer.getMessage().subscribe(
+        queueName, args.i_dest, 1/*accept-none*/, 0/*pre-acquired*/,
+        false/*exclusive*/, "", 0, arguments);
+    peer.getMessage().setFlowMode(args.i_dest, 1); // Window
+    peer.getMessage().flow(args.i_dest, 0, haBroker.getSettings().getFlowMessages());
+    peer.getMessage().flow(args.i_dest, 1, haBroker.getSettings().getFlowBytes());
 
     // Issue a query request for queues, exchanges, bindings and the habroker
     // using event queue as the reply-to address
