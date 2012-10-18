@@ -19,7 +19,9 @@
  *
  */
 
+#include "qpid/broker/AsyncResultHandle.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/ConfigAsyncContext.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
@@ -299,7 +301,7 @@ ManagementObject* Exchange::GetManagementObject (void) const
     return (ManagementObject*) mgmtExchange;
 }
 
-void Exchange::registerDynamicBridge(DynamicBridge* db)
+void Exchange::registerDynamicBridge(DynamicBridge* db, AsyncStore* const store)
 {
     if (!supportsDynamicBinding())
         throw Exception("Exchange type does not support dynamic binding");
@@ -315,7 +317,7 @@ void Exchange::registerDynamicBridge(DynamicBridge* db)
 
     FieldTable args;
     args.setString(qpidFedOp, fedOpReorigin);
-    bind(Queue::shared_ptr(), string(), &args);
+    bind(Queue::shared_ptr(), string(), &args, store);
 }
 
 void Exchange::removeDynamicBridge(DynamicBridge* db)
@@ -344,8 +346,8 @@ void Exchange::propagateFedOp(const string& routingKey, const string& tags, cons
 }
 
 Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* _parent,
-                           FieldTable _args, const string& _origin)
-    : parent(_parent), queue(_queue), key(_key), args(_args), origin(_origin), mgmtBinding(0)
+                           FieldTable _args, const string& _origin, ConfigHandle _cfgHandle)
+    : parent(_parent), queue(_queue), key(_key), args(_args), origin(_origin), cfgHandle(_cfgHandle), mgmtBinding(0)
 {
 }
 
@@ -386,6 +388,30 @@ void Exchange::Binding::startManagement()
 ManagementObject* Exchange::Binding::GetManagementObject () const
 {
     return (ManagementObject*) mgmtBinding;
+}
+
+uint64_t Exchange::Binding::getSize() { return 0; } // TODO: kpvdr: implement persistence
+void Exchange::Binding::write(char* /*target*/) {} // TODO: kpvdr: implement persistence
+
+void Exchange::persistBind(Binding::shared_ptr b, AsyncStore* const s) {
+    if (s && broker != 0 && b->queue->isDurable() && isDurable()) {
+        b->cfgHandle = s->createConfigHandle();
+        boost::shared_ptr<BrokerAsyncContext> bc(new ConfigAsyncContext(&configureComplete, &broker->getAsyncResultQueue()));
+        s->submitCreate(b->cfgHandle, b.get(), bc);
+    }
+}
+
+void Exchange::persistUnbind(Binding::shared_ptr b, AsyncStore* const s) {
+    if (s && broker != 0 && b->queue->isDurable() && isDurable()) {
+        boost::shared_ptr<BrokerAsyncContext> bc(new ConfigAsyncContext(&configureComplete, &broker->getAsyncResultQueue()));
+        s->submitDestroy(b->cfgHandle, bc);
+        b->cfgHandle.reset();
+    }
+}
+
+// static
+void Exchange::configureComplete(const AsyncResultHandle* const arh) {
+    std::cout << "@@@@ Exchange: Configure complete: err=" << arh->getErrNo() << "; msg=\"" << arh->getErrMsg() << "\"" << std::endl;
 }
 
 Exchange::MatchQueue::MatchQueue(Queue::shared_ptr q) : queue(q) {}

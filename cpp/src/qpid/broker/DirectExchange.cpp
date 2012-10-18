@@ -53,7 +53,7 @@ DirectExchange::DirectExchange(const string& _name, bool _durable,
         mgmtExchange->set_type(typeName);
 }
 
-bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
+bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args, AsyncStore* const store)
 {
     string fedOp(fedOpBind);
     string fedTags;
@@ -88,6 +88,8 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
             bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
             return false;
         }
+        persistBind(b, store);
+
     } else if (fedOp == fedOpUnbind) {
         Mutex::ScopedLock l(lock);
         BoundKey& bk = bindings[routingKey];
@@ -97,7 +99,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
 
         propagate = bk.fedBinding.delOrigin(queue->getName(), fedOrigin);
         if (bk.fedBinding.countFedBindings(queue->getName()) == 0)
-            unbind(queue, routingKey, args);
+            unbind(queue, routingKey, args, store);
 
     } else if (fedOp == fedOpReorigin) {
         /** gather up all the keys that need rebinding in a local vector
@@ -127,7 +129,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
     return true;
 }
 
-bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
+bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args, AsyncStore* const /*store*/)
 {
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     bool propagate = false;
@@ -155,6 +157,12 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
         propagateFedOp(routingKey, string(), fedOpUnbind, string());
     return true;
 }
+
+//boost::shared_ptr<Exchange::Binding> DirectExchange::getBinding(boost::shared_ptr<Queue> queue, const std::string& routingKey) {
+//    Mutex::ScopedLock l(lock);
+//    BoundKey& bk = bindings[routingKey];
+//    return bk.queues[routingKey];
+//}
 
 void DirectExchange::route(Deliverable& msg)
 {

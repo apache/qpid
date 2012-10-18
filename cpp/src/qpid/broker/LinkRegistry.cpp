@@ -274,7 +274,7 @@ void LinkRegistry::destroyBridge(Bridge *bridge)
 }
 
 //void LinkRegistry::setStore (MessageStore* _store)
-void LinkRegistry::setStore (AsyncStore* _asyncStore) {
+void LinkRegistry::setStore (AsyncStore* const _asyncStore) {
     asyncStore = _asyncStore;
 }
 

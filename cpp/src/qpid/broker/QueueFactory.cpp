@@ -42,7 +42,7 @@ namespace broker {
 
 
 //QueueFactory::QueueFactory() : broker(0), store(0), parent(0) {}
-QueueFactory::QueueFactory() : broker(0), asyncStore(0), parent(0) {}
+QueueFactory::QueueFactory() : broker(0), asyncStore(), parent(0) {}
 
 boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const QueueSettings& settings)
 {
@@ -103,7 +103,7 @@ Broker* QueueFactory::getBroker()
     return broker;
 }
 //void QueueFactory::setStore (MessageStore* s)
-void QueueFactory::setStore (AsyncStore* as)
+void QueueFactory::setStore (AsyncStore* const as)
 {
     asyncStore = as;
 }

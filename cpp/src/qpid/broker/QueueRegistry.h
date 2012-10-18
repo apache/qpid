@@ -98,7 +98,7 @@ class QueueRegistry : QueueFactory {
      * Set the store to use.  May only be called once.
      */
 //    void setStore (MessageStore*);
-    void setStore (AsyncStore*);
+    void setStore (AsyncStore* const);
 
     /**
      * Return the message store used.

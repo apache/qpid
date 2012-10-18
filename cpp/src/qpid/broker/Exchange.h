@@ -23,7 +23,6 @@
  */
 
 #include <boost/shared_ptr.hpp>
-#include <qpid/broker/AsyncStore.h>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/Message.h"
@@ -36,7 +35,7 @@
 #include "qmf/org/apache/qpid/broker/Binding.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
 
-#include <set>
+//#include <set>
 
 namespace qpid {
 namespace broker {
@@ -44,9 +43,9 @@ namespace broker {
 class Broker;
 class ExchangeRegistry;
 
-class QPID_BROKER_CLASS_EXTERN Exchange : public PersistableExchange, public DataSource, public management::Manageable {
+class QPID_BROKER_CLASS_EXTERN Exchange : public PersistableExchange, public management::Manageable {
 public:
-    struct Binding : public management::Manageable {
+    struct Binding : public DataSource, public management::Manageable {
         typedef boost::shared_ptr<Binding>       shared_ptr;
         typedef std::vector<Binding::shared_ptr> vector;
 
@@ -55,13 +54,19 @@ public:
         const std::string         key;
         const framing::FieldTable args;
         std::string               origin;
+        ConfigHandle              cfgHandle;
         qmf::org::apache::qpid::broker::Binding* mgmtBinding;
 
         Binding(const std::string& key, boost::shared_ptr<Queue> queue, Exchange* parent = 0,
-                framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
+                framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string(),
+                ConfigHandle cfgHandle = ConfigHandle());
         ~Binding();
         void startManagement();
         management::ManagementObject* GetManagementObject() const;
+
+        // DataSource implementation - allows for persistence
+        uint64_t getSize();
+        void write(char* target);
     };
 
 private:
@@ -71,6 +76,7 @@ private:
     boost::shared_ptr<Exchange> alternate;
     uint32_t alternateUsers;
     mutable uint64_t persistenceId;
+    static void configureComplete(const AsyncResultHandle* const);
 
 protected:
     mutable qpid::framing::FieldTable args;
@@ -92,6 +98,8 @@ protected:
     typedef boost::shared_ptr<      std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> > > BindingList;
     void doRoute(Deliverable& msg, ConstBindingList b);
     void routeIVE();
+    void persistBind(Binding::shared_ptr b, AsyncStore* const s);
+    void persistUnbind(Binding::shared_ptr b, AsyncStore* const s);
 
 
     struct MatchQueue {
@@ -197,9 +205,10 @@ public:
      *
      */
 
-    virtual bool bind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
-    virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
+    virtual bool bind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args, AsyncStore* const store) = 0;
+    virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args, AsyncStore* const store) = 0;
     virtual bool isBound(boost::shared_ptr<Queue> queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
+//    virtual boost::shared_ptr<Binding> getBinding(boost::shared_ptr<Queue> queue, const std::string& routingKey) = 0;
     //QPID_BROKER_EXTERN virtual void setProperties(Message&);
     virtual void route(Deliverable& msg) = 0;
 
@@ -224,7 +233,7 @@ public:
         virtual const std::string& getLocalTag() const = 0;
     };
 
-    void registerDynamicBridge(DynamicBridge* db);
+    void registerDynamicBridge(DynamicBridge* db, AsyncStore* const store);
     void removeDynamicBridge(DynamicBridge* db);
     virtual bool supportsDynamicBinding() { return false; }
     Broker* getBroker() const { return broker; }

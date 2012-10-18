@@ -50,7 +50,7 @@ class DtxWorkRecord
 
     const std::string xid;
 //    TransactionalStore* const store;
-    AsyncTransactionalStore* const asyncTxnStore;
+    AsyncTransactionalStore* asyncTxnStore;
     bool completed;
     bool rolledback;
     bool prepared;
@@ -66,7 +66,7 @@ class DtxWorkRecord
 public:
     QPID_BROKER_EXTERN DtxWorkRecord(const std::string& xid,
 //                                     TransactionalStore* const store);
-                                       AsyncTransactionalStore* const store);
+                                     AsyncTransactionalStore* const store);
     QPID_BROKER_EXTERN ~DtxWorkRecord();
     QPID_BROKER_EXTERN bool prepare();
     QPID_BROKER_EXTERN bool commit(bool onePhase);

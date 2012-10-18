@@ -55,7 +55,7 @@ class QueueBindings
     }
 
     void add(const std::string& exchange, const std::string& key, const qpid::framing::FieldTable& args);
-    void unbind(ExchangeRegistry& exchanges, boost::shared_ptr<Queue> queue);
+    void unbind(ExchangeRegistry& exchanges, boost::shared_ptr<Queue> queue, AsyncStore* const store);
 
   private:
     mutable sys::Mutex lock;

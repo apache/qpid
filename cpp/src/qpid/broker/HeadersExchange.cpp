@@ -167,7 +167,7 @@ HeadersExchange::HeadersExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
 
-bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args)
+bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args, AsyncStore* const store)
 {
     string fedOp(fedOpBind);
     string fedTags;
@@ -221,7 +221,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
         bindings.modify_if(MatchKey(queue, bindingKey), modifier);
         propagate = modifier.shouldPropagate;
         if (modifier.shouldUnbind) {
-          unbind(queue, bindingKey, args);
+          unbind(queue, bindingKey, args, store);
         }
         
     } else if (fedOp == fedOpReorigin) {
@@ -246,7 +246,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     return true;
 }
 
-bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable *args){
+bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable *args, AsyncStore* const /*store*/){
     bool propagate = false;
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     {

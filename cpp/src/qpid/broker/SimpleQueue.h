@@ -51,8 +51,7 @@ class SimpleMessage;
 class SimpleTxnBuffer;
 
 class SimpleQueue : public boost::enable_shared_from_this<SimpleQueue>,
-                    public PersistableQueue,
-                    public DataSource
+                    public PersistableQueue
 {
 public:
     SimpleQueue(const std::string& name,

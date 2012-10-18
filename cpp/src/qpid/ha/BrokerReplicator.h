@@ -35,6 +35,7 @@
 namespace qpid {
 
 namespace broker {
+class AsyncStore;
 class Broker;
 class Link;
 class Bridge;
@@ -71,8 +72,8 @@ class BrokerReplicator : public broker::Exchange,
 
     // Exchange methods
     std::string getType() const;
-    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
-    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, qpid::broker::AsyncStore* const store);
+    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, qpid::broker::AsyncStore* const store);
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 

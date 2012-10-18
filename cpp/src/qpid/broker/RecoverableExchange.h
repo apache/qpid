@@ -27,6 +27,7 @@
 
 namespace qpid {
 namespace broker {
+class AsyncStore;
 
 /**
  * The interface through which bindings are recovered.
@@ -42,7 +43,8 @@ public:
      */
     virtual void bind(const std::string& queue,
                       const std::string& routingKey,
-                      qpid::framing::FieldTable& args) = 0;
+                      qpid::framing::FieldTable&,
+                      AsyncStore* const store) = 0;
     virtual ~RecoverableExchange() {};
 };
 

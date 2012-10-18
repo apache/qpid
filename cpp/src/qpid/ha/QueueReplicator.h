@@ -71,9 +71,8 @@ class QueueReplicator : public broker::Exchange,
     void deactivate();          // Call before dtor
 
     std::string getType() const;
-    bool bind(boost::shared_ptr<broker::Queue
-              >, const std::string&, const framing::FieldTable*);
-    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, qpid::broker::AsyncStore* const);
+    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, qpid::broker::AsyncStore* const);
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 

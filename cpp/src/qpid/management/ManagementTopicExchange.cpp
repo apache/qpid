@@ -53,11 +53,12 @@ void ManagementTopicExchange::route(Deliverable&      msg)
 
 bool ManagementTopicExchange::bind(Queue::shared_ptr queue,
                                    const std::string& routingKey,
-                                   const qpid::framing::FieldTable* args)
+                                   const qpid::framing::FieldTable* args,
+                                   AsyncStore* const store)
 {
     if (qmfVersion == 1)
         managementAgent->clientAdded(routingKey);
-    return TopicExchange::bind(queue, routingKey, args);
+    return TopicExchange::bind(queue, routingKey, args, store);
 }
 
 void ManagementTopicExchange::setManagmentAgent(ManagementAgent* agent, int qv)

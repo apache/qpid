@@ -222,7 +222,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
 //    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
     void setStore(boost::shared_ptr<AsyncStore>& asyncStore);
 //    MessageStore& getStore() { return *store; }
-    AsyncStore& getStore() { return *asyncStore; }
+//    AsyncStore& getStore() { return *asyncStore; }
+    AsyncStore* getStore() { return asyncStore.get(); }
     void setAcl (AclModule* _acl) {acl = _acl;}
     AclModule* getAcl() { return acl; }
     QueueRegistry& getQueues() { return queues; }
@@ -231,6 +232,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
     Options& getOptions() { return config; }
+    AsyncResultQueueImpl& getAsyncResultQueue() { return asyncResultQueue; }
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }

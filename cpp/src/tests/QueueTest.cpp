@@ -100,15 +100,15 @@ QPID_AUTO_TEST_CASE(testBound){
     ExchangeRegistry exchanges;
     //establish bindings from exchange->queue and notify the queue as it is bound:
     Exchange::shared_ptr exchange1 = exchanges.declare("my-exchange-1", "direct").first;
-    exchange1->bind(queue, key, &args);
+    exchange1->bind(queue, key, &args, 0);
     queue->bound(exchange1->getName(), key, args);
 
     Exchange::shared_ptr exchange2 = exchanges.declare("my-exchange-2", "fanout").first;
-    exchange2->bind(queue, key, &args);
+    exchange2->bind(queue, key, &args, 0);
     queue->bound(exchange2->getName(), key, args);
 
     Exchange::shared_ptr exchange3 = exchanges.declare("my-exchange-3", "topic").first;
-    exchange3->bind(queue, key, &args);
+    exchange3->bind(queue, key, &args, 0);
     queue->bound(exchange3->getName(), key, args);
 
     //delete one of the exchanges:

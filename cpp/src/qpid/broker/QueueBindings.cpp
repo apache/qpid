@@ -34,7 +34,7 @@ void QueueBindings::add(const string& exchange, const string& key, const FieldTa
     bindings.push_back(QueueBinding(exchange, key, args));
 }
 
-void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
+void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue, AsyncStore* const store)
 {
     Bindings local;
     {
@@ -44,7 +44,7 @@ void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
 
     for (Bindings::iterator i = local.begin(); i != local.end(); i++) {
         Exchange::shared_ptr ex = exchanges.find(i->exchange);
-        if (ex) ex->unbind(queue, i->key, &(i->args));
+        if (ex) ex->unbind(queue, i->key, &(i->args), store);
     }
 }
 

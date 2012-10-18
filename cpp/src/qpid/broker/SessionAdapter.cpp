@@ -563,7 +563,7 @@ void SessionAdapter::TxHandlerImpl::select()
 
 void SessionAdapter::TxHandlerImpl::commit()
 {
-    state.commit(&getBroker().getStore());
+    state.commit(getBroker().getStore());
 }
 
 void SessionAdapter::TxHandlerImpl::rollback()

@@ -156,7 +156,7 @@ TopicExchange::TopicExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
 
-bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
+bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args, AsyncStore* const /*store*/)
 {
     ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
     string fedOp(args ? args->getAsString(qpidFedOp) : fedOpBind);
@@ -226,7 +226,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
     return true;
 }
 
-bool TopicExchange::unbind(Queue::shared_ptr queue, const string& constRoutingKey, const FieldTable* args)
+bool TopicExchange::unbind(Queue::shared_ptr queue, const string& constRoutingKey, const FieldTable* args, AsyncStore* const /*store*/)
 {
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     QPID_LOG(debug, "Unbinding key [" << constRoutingKey << "] from queue " << queue->getName()

@@ -36,7 +36,7 @@
 namespace qpid {
 namespace broker {
 
-//class PersistableMessage;
+class PersistableMessage;
 class PersistableQueue;
 
 typedef void (*AsyncResultCallback)(const AsyncResultHandle* const);
@@ -47,22 +47,22 @@ public:
     QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
-/*    QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+    QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                       boost::intrusive_ptr<PersistableMessage> msg,
                       AsyncResultCallback rcb,
-                      AsyncResultQueue* const arq);*/
+                      AsyncResultQueue* const arq);
     QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                       SimpleTxnBuffer* tb,
                       AsyncResultCallback rcb,
                       AsyncResultQueue* const arq);
-/*    QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
+    QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                       boost::intrusive_ptr<PersistableMessage> msg,
                       SimpleTxnBuffer* tb,
                       AsyncResultCallback rcb,
-                      AsyncResultQueue* const arq);*/
+                      AsyncResultQueue* const arq);
     virtual ~QueueAsyncContext();
     boost::shared_ptr<PersistableQueue> getQueue() const;
-//    boost::intrusive_ptr<PersistableMessage> getMessage() const;
+    boost::intrusive_ptr<PersistableMessage> getMessage() const;
     SimpleTxnBuffer* getTxnBuffer() const;
     AsyncResultQueue* getAsyncResultQueue() const;
     AsyncResultCallback getAsyncResultCallback() const;
@@ -71,7 +71,7 @@ public:
 
 private:
     boost::shared_ptr<PersistableQueue> m_q;
-//    boost::intrusive_ptr<PersistableMessage> m_msg;
+    boost::intrusive_ptr<PersistableMessage> m_pmsg;
     SimpleTxnBuffer* m_tb;
     AsyncResultCallback m_rcb;
     AsyncResultQueue* const m_arq;

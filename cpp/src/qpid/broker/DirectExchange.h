@@ -55,12 +55,17 @@ public:
         
     QPID_BROKER_EXTERN virtual bool bind(boost::shared_ptr<Queue> queue,
                                          const std::string& routingKey,
-                                         const qpid::framing::FieldTable* args);
-    virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+                                         const qpid::framing::FieldTable* args,
+                                         AsyncStore* const store);
+    virtual bool unbind(boost::shared_ptr<Queue> queue,
+                        const std::string& routingKey,
+                        const qpid::framing::FieldTable* args,
+                        AsyncStore* const store);
     QPID_BROKER_EXTERN virtual void route(Deliverable& msg);
     QPID_BROKER_EXTERN virtual bool isBound(boost::shared_ptr<Queue> queue,
                                             const std::string* const routingKey,
                                             const qpid::framing::FieldTable* const args);
+//    boost::shared_ptr<Binding> getBinding(boost::shared_ptr<Queue> queue, const std::string& routingKey);
 
     QPID_BROKER_EXTERN virtual ~DirectExchange();
 

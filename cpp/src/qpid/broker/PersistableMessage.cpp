@@ -23,6 +23,7 @@
 #include "qpid/broker/PersistableMessage.h"
 //#include "qpid/broker/MessageStore.h"
 //#include "qpid/broker/AsyncStore.h"
+#include "qpid/broker/EnqueueHandle.h"
 #include <iostream>
 
 using namespace qpid::broker;
@@ -82,6 +83,44 @@ void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, AsyncStore*)
 
 bool PersistableMessage::isDequeueComplete() { return false; }
 void PersistableMessage::dequeueComplete() {}
+
+MessageHandle& PersistableMessage::createMessageHandle(AsyncStore* const store) {
+    assert (store != 0);
+    msgHandle = store->createMessageHandle(this);
+    return msgHandle;
+}
+
+EnqueueHandle& PersistableMessage::createEnqueueHandle(QueueHandle& queueHandle, AsyncStore* const asyncStore) {
+    std::map<QueueHandle, EnqueueHandle>::iterator ehi = enqueueHandles.find(queueHandle);
+    if (ehi == enqueueHandles.end()) {
+        assert (asyncStore != 0);
+        ehi = enqueueHandles.insert(std::pair<QueueHandle, EnqueueHandle>(queueHandle,
+                        asyncStore->createEnqueueHandle(msgHandle, queueHandle))).first;
+    }
+    return ehi->second;
+}
+
+void PersistableMessage::removeEnqueueHandle(QueueHandle& queueHandle) {
+    std::map<QueueHandle, EnqueueHandle>::iterator ehi = enqueueHandles.find(queueHandle);
+    if (ehi != enqueueHandles.end()) {
+        enqueueHandles.erase(ehi);
+    }
+}
+
+EnqueueHandle& PersistableMessage::getEnqueueHandle(QueueHandle& queueHandle) {
+    std::map<QueueHandle, EnqueueHandle>::iterator ehi = enqueueHandles.find(queueHandle);
+    assert (ehi != enqueueHandles.end());
+    return ehi->second;
+}
+
+const EnqueueHandle& PersistableMessage::getEnqueueHandle(QueueHandle& queueHandle) const {
+    std::map<QueueHandle, EnqueueHandle>::const_iterator ehci = enqueueHandles.find(queueHandle);
+    assert (ehci != enqueueHandles.end());
+    return ehci->second;
+}
+
+uint64_t PersistableMessage::getSize() { return 0; } // TODO: kpvdr: implement
+void PersistableMessage::write(char* /*target*/) {}      // TODO: kpvdr: implement
 
 }}
 

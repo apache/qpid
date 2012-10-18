@@ -116,7 +116,7 @@ XmlExchange::XmlExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
     
-bool XmlExchange::bind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
+bool XmlExchange::bind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args, AsyncStore* const store)
 { 
 
     // Federation uses bind for unbind and reorigin comands as well as for binds.
@@ -136,7 +136,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const std::string& bindingKey, c
     }
 
     if (fedOp == fedOpUnbind) {
-        return fedUnbind(fedOrigin, fedTags, queue, bindingKey, args);
+        return fedUnbind(fedOrigin, fedTags, queue, bindingKey, args, store);
     }
     else if (fedOp == fedOpReorigin) {
         fedReorigin();
@@ -176,7 +176,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const std::string& bindingKey, c
     return true;
 }
 
-bool XmlExchange::unbind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
+bool XmlExchange::unbind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args, AsyncStore* const /*store*/)
 {
     /*
      *  When called directly, no qpidFedOrigin argument will be
@@ -383,11 +383,11 @@ void XmlExchange::propagateFedOp(const std::string& bindingKey, const std::strin
     Exchange::propagateFedOp(bindingKey, fedTags, fedOp, fedOrigin, propArgs);
 }
 
-bool XmlExchange::fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
+bool XmlExchange::fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args, AsyncStore* const store)
 {
     RWlock::ScopedRlock l(lock);
 
-    if (unbind(queue, bindingKey, args)) {
+    if (unbind(queue, bindingKey, args, store)) {
         propagateFedOp(bindingKey, fedTags, fedOpUnbind, fedOrigin); 
         return true;
     }

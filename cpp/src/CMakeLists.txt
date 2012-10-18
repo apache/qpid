@@ -1139,6 +1139,7 @@ set (qpidbroker_SOURCES
      qpid/broker/DtxManager.cpp
      qpid/broker/DtxTimeout.cpp
      qpid/broker/DtxWorkRecord.cpp
+     qpid/broker/EnqueueHandle.cpp
      qpid/broker/ExchangeRegistry.cpp
      qpid/broker/FanOutExchange.cpp
      qpid/broker/HeadersExchange.cpp
@@ -1153,11 +1154,13 @@ set (qpidbroker_SOURCES
 #     qpid/broker/MessageStoreModule.cpp
      qpid/broker/NameGenerator.cpp
 #     qpid/broker/NullMessageStore.cpp
+     qpid/broker/QueueAsyncContext.cpp
      qpid/broker/QueueBindings.cpp
      qpid/broker/QueuedMessage.cpp
      qpid/broker/QueueCursor.cpp
      qpid/broker/QueueDepth.cpp
      qpid/broker/QueueFactory.cpp
+     qpid/broker/QueueHandle.cpp
      qpid/broker/QueueRegistry.cpp
      qpid/broker/QueueSettings.cpp
      qpid/broker/QueueFlowLimit.cpp
@@ -1184,6 +1187,7 @@ set (qpidbroker_SOURCES
      qpid/broker/TopicExchange.cpp
      qpid/broker/TxAccept.cpp
      qpid/broker/TxBuffer.cpp
+     qpid/broker/TxnHandle.cpp
      qpid/broker/Vhost.cpp
      qpid/broker/amqp_0_10/MessageTransfer.cpp
      qpid/management/ManagementAgent.cpp
@@ -1191,8 +1195,6 @@ set (qpidbroker_SOURCES
      qpid/management/ManagementTopicExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
 # New async store objects and new versions of broker objects
-#     qpid/broker/AsyncResultHandle.cpp
-#     qpid/broker/AsyncResultHandleImpl.cpp
 #     qpid/broker/IdHandle.cpp
 #     qpid/broker/TxnAsyncContext.cpp
 #     qpid/broker/TxnBuffer.cpp

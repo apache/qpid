@@ -109,7 +109,7 @@ QPID_AUTO_TEST_CASE(testBindNoXMatch)
     FieldTable args;
     try {
         //just checking this doesn't cause assertion etc
-        exchange.bind(queue, key, &args);
+        exchange.bind(queue, key, &args, 0);
     } catch(qpid::Exception&) {
         //expected
     }

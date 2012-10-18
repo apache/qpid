@@ -31,12 +31,13 @@
 
 namespace qpid {
 namespace broker {
+class AsyncStore;
 
 class RecoveryManager{
   public:
     virtual ~RecoveryManager(){}
     virtual RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer) = 0;
-    virtual RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer) = 0;
+    virtual RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer, AsyncStore* const store) = 0;
     virtual RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer) = 0;
     virtual RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
                                                                   std::auto_ptr<TPCTransactionContext> txn) = 0;

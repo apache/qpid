@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+
 #ifndef _TransactionalStore_
 #define _TransactionalStore_
 

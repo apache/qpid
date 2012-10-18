@@ -116,7 +116,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     const std::string name;
 //    MessageStore* store;
-    AsyncStore* asyncStore;
+    AsyncStore* const asyncStore;
     const OwnershipToken* owner;
     uint32_t consumerCount;     // Actually a count of all subscriptions, acquiring or not.
     uint32_t browserCount;      // Count of non-acquiring subscriptions.
@@ -194,6 +194,12 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     uint32_t remove(uint32_t maxCount, MessagePredicate, MessageFunctor, SubscriptionType);
     virtual bool checkDepth(const QueueDepth& increment, const Message&);
 
+    static void createComplete(const AsyncResultHandle* const arh);
+    static void dequeueComplete(const AsyncResultHandle* const arh);
+    static void destroyComplete(const AsyncResultHandle* const arh);
+    static void enqueueComplete(const AsyncResultHandle* const arh);
+    static void flushComplete(const AsyncResultHandle* const arh);
+
   public:
 
     typedef boost::shared_ptr<Queue> shared_ptr;
@@ -233,7 +239,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      */
     QPID_BROKER_EXTERN bool bind(
         boost::shared_ptr<Exchange> exchange, const std::string& key,
-        const qpid::framing::FieldTable& arguments=qpid::framing::FieldTable());
+        const qpid::framing::FieldTable& arguments/*=qpid::framing::FieldTable()*/);
 
     /**
      * Removes (and dequeues) a message by its sequence number (used
@@ -335,6 +341,10 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     static void tryAutoDelete(Broker& broker, Queue::shared_ptr, const std::string& connectionId, const std::string& userId);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
+
+    // Implement DataStore, allows Queue to persist its configuration
+    uint64_t getSize();
+    void write(char* target);
 
     // Increment the rejected-by-consumer counter.
     QPID_BROKER_EXTERN void countRejected() const;

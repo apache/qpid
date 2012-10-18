@@ -33,67 +33,67 @@ QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      AsyncResultCallback rcb,
                                      AsyncResultQueue* const arq) :
         m_q(q),
+        m_pmsg(0),
+        m_tb(0),
         m_rcb(rcb),
         m_arq(arq)
-{}
+{
+    //assert(m_q.get() != 0);
+}
 
-/*
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      boost::intrusive_ptr<PersistableMessage> msg,
                                      AsyncResultCallback rcb,
                                      AsyncResultQueue* const arq) :
         m_q(q),
-        m_msg(msg),
+        m_pmsg(msg),
+        m_tb(0),
         m_rcb(rcb),
         m_arq(arq)
-{}
-*/
+{
+    //assert(m_q.get() != 0);
+    //assert(m_pmsg.get() != 0);
+}
 
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      SimpleTxnBuffer* tb,
                                      AsyncResultCallback rcb,
                                      AsyncResultQueue* const arq) :
         m_q(q),
+        m_pmsg(0),
         m_tb(tb),
         m_rcb(rcb),
         m_arq(arq)
 {
-    assert(m_q.get() != 0);
+    //assert(m_q.get() != 0);
 }
 
-/*
 QueueAsyncContext::QueueAsyncContext(boost::shared_ptr<PersistableQueue> q,
                                      boost::intrusive_ptr<PersistableMessage> msg,
                                      SimpleTxnBuffer* tb,
                                      AsyncResultCallback rcb,
                                      AsyncResultQueue* const arq) :
         m_q(q),
-        m_msg(msg),
+        m_pmsg(msg),
         m_tb(tb),
         m_rcb(rcb),
         m_arq(arq)
 {
-    assert(m_q.get() != 0);
-    assert(m_msg.get() != 0);
+    //assert(m_q.get() != 0);
+    //assert(m_pmsg.get() != 0);
 }
-*/
 
-QueueAsyncContext::~QueueAsyncContext()
-{}
+QueueAsyncContext::~QueueAsyncContext() {}
 
 boost::shared_ptr<PersistableQueue>
-QueueAsyncContext::getQueue() const
-{
+QueueAsyncContext::getQueue() const {
     return m_q;
 }
 
-/*
 boost::intrusive_ptr<PersistableMessage>
-QueueAsyncContext::getMessage() const
-{
-    return m_msg;
+QueueAsyncContext::getMessage() const {
+    return m_pmsg;
 }
-*/
 
 SimpleTxnBuffer*
 QueueAsyncContext::getTxnBuffer() const {
@@ -101,28 +101,24 @@ QueueAsyncContext::getTxnBuffer() const {
 }
 
 AsyncResultQueue*
-QueueAsyncContext::getAsyncResultQueue() const
-{
+QueueAsyncContext::getAsyncResultQueue() const {
     return m_arq;
 }
 
 AsyncResultCallback
-QueueAsyncContext::getAsyncResultCallback() const
-{
+QueueAsyncContext::getAsyncResultCallback() const {
     return m_rcb;
 }
 
 void
-QueueAsyncContext::invokeCallback(const AsyncResultHandle* const arh) const
-{
+QueueAsyncContext::invokeCallback(const AsyncResultHandle* const arh) const {
     if (m_rcb) {
         m_rcb(arh);
     }
 }
 
 void
-QueueAsyncContext::destroy()
-{
+QueueAsyncContext::destroy() {
     delete this;
 }
 

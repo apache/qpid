@@ -401,7 +401,7 @@ void SessionState::IncompleteIngressMsgXfer::completed(bool sync)
         completerContext->scheduleMsgCompletion(id, requiresAccept, requiresSync);
     } else {
         // this path runs directly from the ac->end() call in handleContent() above,
-        // so *session is definately valid.
+        // so *session is definitely valid.
         if (session->isAttached()) {
             QPID_LOG(debug, ": receive completed for msg seq=" << id);
             session->completeRcvMsg(id, requiresAccept, requiresSync);

@@ -54,12 +54,4 @@ QueueHandle::operator=(const QueueHandle& r)
     return PrivateImpl::assign(*this, r);
 }
 
-// --- QueueHandleImpl methods ---
-
-const std::string&
-QueueHandle::getName() const
-{
-    return impl->getName();
-}
-
 }} // namespace qpid::broker

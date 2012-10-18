@@ -81,7 +81,7 @@ class RecoverableExchangeImpl : public RecoverableExchange
 public:
     RecoverableExchangeImpl(Exchange::shared_ptr _exchange, QueueRegistry& _queues) : exchange(_exchange), queues(_queues) {}
     void setPersistenceId(uint64_t id);
-    void bind(const std::string& queue, const std::string& routingKey, qpid::framing::FieldTable& args);
+    void bind(const std::string& queue, const std::string& routingKey, qpid::framing::FieldTable& args, AsyncStore* const store);
 };
 
 class RecoverableConfigImpl : public RecoverableConfig
@@ -113,13 +113,13 @@ RecoverableExchange::shared_ptr RecoveryManagerImpl::recoverExchange(framing::Bu
     }
 }
 
-RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& buffer)
+RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& buffer, AsyncStore* const store)
 {
     Queue::shared_ptr queue = Queue::restore(queues, buffer);
     try {
         Exchange::shared_ptr exchange = exchanges.getDefault();
         if (exchange) {
-            exchange->bind(queue, queue->getName(), 0);
+            exchange->bind(queue, queue->getName(), 0, store);
             queue->bound(exchange->getName(), queue->getName(), framing::FieldTable());
         }
     } catch (const framing::NotFoundException& /*e*/) {
@@ -238,10 +238,11 @@ void RecoverableConfigImpl::setPersistenceId(uint64_t id)
 
 void RecoverableExchangeImpl::bind(const string& queueName,
                                    const string& key,
-                                   framing::FieldTable& args)
+                                   framing::FieldTable& args,
+                                   AsyncStore* const store)
 {
     Queue::shared_ptr queue = queues.find(queueName);
-    exchange->bind(queue, key, &args);
+    exchange->bind(queue, key, &args, store);
     queue->bound(exchange->getName(), key, args);
 }
 

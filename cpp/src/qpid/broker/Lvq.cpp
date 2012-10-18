@@ -27,7 +27,7 @@ namespace qpid {
 namespace broker {
 //Lvq::Lvq(const std::string& n, std::auto_ptr<MessageMap> m, const QueueSettings& s, MessageStore* const ms, management::Manageable* p, Broker* b)
 //    : Queue(n, s, ms, p, b), messageMap(*m)
-Lvq::Lvq(const std::string& n, std::auto_ptr<MessageMap> m, const QueueSettings& s, AsyncStore* const as, management::Manageable* p, Broker* b)
+Lvq::Lvq(const std::string& n, std::auto_ptr<MessageMap> m, const QueueSettings& s, AsyncStore* as, management::Manageable* p, Broker* b)
     : Queue(n, s, as, p, b), messageMap(*m)
 {
     messages = m;

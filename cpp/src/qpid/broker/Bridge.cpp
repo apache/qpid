@@ -86,7 +86,7 @@ Bridge::~Bridge()
     mgmtObject->resourceDestroy();
 }
 
-void Bridge::create(Connection& c)
+void Bridge::create(Connection& c, AsyncStore* const store)
 {
     detached = false;           // Reset detached in case we are recovering.
     connState = &c;
@@ -153,7 +153,7 @@ void Bridge::create(Connection& c)
             Exchange::shared_ptr exchange = link->getBroker()->getExchanges().get(args.i_src);
             if (exchange.get() == 0)
                 throw Exception("Exchange not found for dynamic route");
-            exchange->registerDynamicBridge(this);
+            exchange->registerDynamicBridge(this, store);
             QPID_LOG(debug, "Activated bridge " << name << " for dynamic route for exchange " << args.i_src);
         } else {
             QPID_LOG(debug, "Activated bridge " << name << " for static route from exchange " << args.i_src << " to " << args.i_dest);

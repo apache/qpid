@@ -175,7 +175,7 @@ void DtxManager::DtxCleanup::fire()
 }
 
 //void DtxManager::setStore (TransactionalStore* _store)
-void DtxManager::setStore (AsyncTransactionalStore* _ats)
+void DtxManager::setStore (AsyncTransactionalStore* const _ats)
 {
 //    store = _store;
     asyncTxnStore = _ats;

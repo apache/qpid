@@ -132,7 +132,7 @@ namespace broker {
          * Set the store to use.  May only be called once.
          */
 //        QPID_BROKER_EXTERN void setStore (MessageStore*);
-        QPID_BROKER_EXTERN void setStore (AsyncStore*);
+        QPID_BROKER_EXTERN void setStore (AsyncStore* const);
 
         /**
          * Return the message store used.

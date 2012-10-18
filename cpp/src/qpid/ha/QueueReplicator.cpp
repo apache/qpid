@@ -190,8 +190,8 @@ void QueueReplicator::route(Deliverable& msg)
 }
 
 // Unused Exchange methods.
-bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*) { return false; }
-bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*) { return false; }
+bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*, qpid::broker::AsyncStore* const) { return false; }
+bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const FieldTable*, qpid::broker::AsyncStore* const) { return false; }
 bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const FieldTable* const) { return false; }
 std::string QueueReplicator::getType() const { return TYPE_NAME; }
 

@@ -76,9 +76,9 @@ class XmlExchange : public virtual Exchange {
 
     virtual std::string getType() const { return typeName; }
         
-    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args, AsyncStore* const store);
 
-    virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args, AsyncStore* const store);
 
     virtual void route(Deliverable& msg);
 
@@ -86,7 +86,7 @@ class XmlExchange : public virtual Exchange {
 
     virtual void propagateFedOp(const std::string& bindingKey, const std::string& fedTags, const std::string& fedOp, const std::string& fedOrigin, const qpid::framing::FieldTable* args=0);
 
-    virtual bool fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const  qpid::framing::FieldTable* args);
+    virtual bool fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const  qpid::framing::FieldTable* args, AsyncStore* const store);
     
     virtual void fedReorigin();
 

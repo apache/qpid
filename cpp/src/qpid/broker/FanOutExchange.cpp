@@ -46,7 +46,7 @@ FanOutExchange::FanOutExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
 
-bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* args)
+bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* args, AsyncStore* const store)
 {
     string fedOp(args ? args->getAsString(qpidFedOp) : fedOpBind);
     string fedTags(args ? args->getAsString(qpidFedTags) : "");
@@ -69,7 +69,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
     } else if (fedOp == fedOpUnbind) {
         propagate = fedBinding.delOrigin(queue->getName(), fedOrigin);
         if (fedBinding.countFedBindings(queue->getName()) == 0)
-            unbind(queue, "", args);
+            unbind(queue, "", args, store);
     } else if (fedOp == fedOpReorigin) {
         if (fedBinding.hasLocal()) {
             propagateFedOp(string(), string(), fedOpBind, string());
@@ -82,7 +82,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
     return true;
 }
 
-bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* args)
+bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* args, AsyncStore* const /*store*/)
 {
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     bool propagate = false;

@@ -23,12 +23,15 @@
  */
 
 #include <string>
+#include "qpid/broker/AsyncStore.h"
 #include "qpid/broker/Persistable.h"
+#include "qpid/broker/QueueHandle.h"
 #include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
+class AsyncResultHandle;
 
 
 /**
@@ -48,7 +51,7 @@ public:
  * The interface queues must expose to the MessageStore in order to be
  * persistable.
  */
-class PersistableQueue : public Persistable
+class PersistableQueue : public Persistable, public DataSource
 {
 public:
     typedef boost::shared_ptr<PersistableQueue> shared_ptr;
@@ -62,14 +65,14 @@ public:
     virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
     virtual void flush() = 0;
     
-    inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
+    inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;}
+    inline QueueHandle& getQueueHandle() { return queueHandle; }
     
-    PersistableQueue():externalQueueStore(NULL){
-    };
+    PersistableQueue():externalQueueStore(NULL) {}
     
 protected:
     ExternalQueueStore* externalQueueStore;
-    
+    QueueHandle queueHandle;
 };
 
 }}

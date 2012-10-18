@@ -141,7 +141,7 @@ class Bridge : public PersistableConfig,
     bool resetProxy();
 
     // connection Management (called by owning Link)
-    void create(Connection& c);
+    void create(Connection& c, AsyncStore* const store);
     void cancel(Connection& c);
     void closed();
     friend class Link; // to call create, cancel, closed()

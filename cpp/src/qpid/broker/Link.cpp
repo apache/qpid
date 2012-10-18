@@ -86,8 +86,8 @@ public:
     std::string getType() const { return Link::exchangeTypeName; }
 
     // Exchange methods - set up to prevent binding/unbinding etc from clients!
-    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*) { return false; }
-    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*) { return false; }
+    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, AsyncStore* const) { return false; }
+    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, AsyncStore* const) { return false; }
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const) {return false;}
 
     // Process messages sent from the remote's amq.failover exchange by extracting the failover URLs
@@ -480,7 +480,7 @@ void Link::ioThreadProcessing()
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
             active.push_back(*i);
-            (*i)->create(*connection);
+            (*i)->create(*connection, broker->getStore());
         }
         created.clear();
     }

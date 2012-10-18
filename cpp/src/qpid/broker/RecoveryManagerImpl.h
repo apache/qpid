@@ -42,7 +42,7 @@ namespace broker {
         ~RecoveryManagerImpl();
 
         RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer);
-        RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer);
+        RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer, AsyncStore* const store);
         RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer);
         RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
                                                               std::auto_ptr<TPCTransactionContext> txn);

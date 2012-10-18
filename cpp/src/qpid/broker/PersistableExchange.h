@@ -23,6 +23,8 @@
  */
 
 #include <string>
+#include "qpid/broker/AsyncStore.h"
+#include "qpid/broker/ConfigHandle.h"
 #include "qpid/broker/Persistable.h"
 
 namespace qpid {
@@ -32,11 +34,17 @@ namespace broker {
  * The interface exchanges must expose to the MessageStore in order to be
  * persistable.
  */
-class PersistableExchange : public Persistable
+class PersistableExchange : public Persistable, public DataSource
 {
 public:
     virtual  const std::string& getName() const = 0;
     virtual ~PersistableExchange() {};
+    ConfigHandle& getHandle() { return configHandle; }
+    void setHandle(ConfigHandle& ch) { configHandle = ch; }
+    void resetHandle() { configHandle.reset(); }
+
+protected:
+    ConfigHandle configHandle;
 };
 
 }}

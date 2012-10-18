@@ -51,12 +51,12 @@ QPID_AUTO_TEST_CASE(testMe)
     Queue::shared_ptr queue2(new Queue("queue2", true));
 
     TopicExchange topic("topic");
-    topic.bind(queue, "abc", 0);
-    topic.bind(queue2, "abc", 0);
+    topic.bind(queue, "abc", 0, 0);
+    topic.bind(queue2, "abc", 0, 0);
 
     DirectExchange direct("direct");
-    direct.bind(queue, "abc", 0);
-    direct.bind(queue2, "abc", 0);
+    direct.bind(queue, "abc", 0, 0);
+    direct.bind(queue2, "abc", 0, 0);
 
     queue.reset();
     queue2.reset();
@@ -78,9 +78,9 @@ QPID_AUTO_TEST_CASE(testIsBound)
     string k3("xyz");
 
     FanOutExchange fanout("fanout");
-    BOOST_CHECK(fanout.bind(a, "", 0));
-    BOOST_CHECK(fanout.bind(b, "", 0));
-    BOOST_CHECK(fanout.bind(c, "", 0));
+    BOOST_CHECK(fanout.bind(a, "", 0, 0));
+    BOOST_CHECK(fanout.bind(b, "", 0, 0));
+    BOOST_CHECK(fanout.bind(c, "", 0, 0));
 
     BOOST_CHECK(fanout.isBound(a, 0, 0));
     BOOST_CHECK(fanout.isBound(b, 0, 0));
@@ -88,10 +88,10 @@ QPID_AUTO_TEST_CASE(testIsBound)
     BOOST_CHECK(!fanout.isBound(d, 0, 0));
 
     DirectExchange direct("direct");
-    BOOST_CHECK(direct.bind(a, k1, 0));
-    BOOST_CHECK(direct.bind(a, k3, 0));
-    BOOST_CHECK(direct.bind(b, k2, 0));
-    BOOST_CHECK(direct.bind(c, k1, 0));
+    BOOST_CHECK(direct.bind(a, k1, 0, 0));
+    BOOST_CHECK(direct.bind(a, k3, 0, 0));
+    BOOST_CHECK(direct.bind(b, k2, 0, 0));
+    BOOST_CHECK(direct.bind(c, k1, 0, 0));
 
     BOOST_CHECK(direct.isBound(a, 0, 0));
     BOOST_CHECK(direct.isBound(a, &k1, 0));
@@ -106,10 +106,10 @@ QPID_AUTO_TEST_CASE(testIsBound)
     BOOST_CHECK(!direct.isBound(d, &k3, 0));
 
     TopicExchange topic("topic");
-    BOOST_CHECK(topic.bind(a, k1, 0));
-    BOOST_CHECK(topic.bind(a, k3, 0));
-    BOOST_CHECK(topic.bind(b, k2, 0));
-    BOOST_CHECK(topic.bind(c, k1, 0));
+    BOOST_CHECK(topic.bind(a, k1, 0, 0));
+    BOOST_CHECK(topic.bind(a, k3, 0, 0));
+    BOOST_CHECK(topic.bind(b, k2, 0, 0));
+    BOOST_CHECK(topic.bind(c, k1, 0, 0));
 
     BOOST_CHECK(topic.isBound(a, 0, 0));
     BOOST_CHECK(topic.isBound(a, &k1, 0));
@@ -137,10 +137,10 @@ QPID_AUTO_TEST_CASE(testIsBound)
     args3.setString("c", "C");
     args3.setInt("b", 6);
 
-    headers.bind(a, "", &args1);
-    headers.bind(a, "", &args3);
-    headers.bind(b, "", &args2);
-    headers.bind(c, "", &args1);
+    headers.bind(a, "", &args1, 0);
+    headers.bind(a, "", &args3, 0);
+    headers.bind(b, "", &args2, 0);
+    headers.bind(c, "", &args1, 0);
 
     BOOST_CHECK(headers.isBound(a, 0, 0));
     BOOST_CHECK(headers.isBound(a, 0, &args1));
@@ -250,10 +250,10 @@ QPID_AUTO_TEST_CASE(testIVEOption)
     Queue::shared_ptr queue2(new Queue("queue2", true));
     Queue::shared_ptr queue3(new Queue("queue3", true));
 
-    BOOST_CHECK(direct.bind(queue, "abc", 0));
-    BOOST_CHECK(fanout.bind(queue1, "abc", 0));
-    BOOST_CHECK(header.bind(queue2, "", &args2));
-    BOOST_CHECK(topic.bind(queue3, "abc", 0));
+    BOOST_CHECK(direct.bind(queue, "abc", 0, 0));
+    BOOST_CHECK(fanout.bind(queue1, "abc", 0, 0));
+    BOOST_CHECK(header.bind(queue2, "", &args2, 0));
+    BOOST_CHECK(topic.bind(queue3, "abc", 0, 0));
 
     BOOST_CHECK_EQUAL(1u,queue->getMessageCount());
     BOOST_CHECK_EQUAL(1u,queue1->getMessageCount());

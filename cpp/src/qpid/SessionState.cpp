@@ -126,7 +126,7 @@ void SessionState::senderRecord(const AMQFrame& f) {
     sender.incomplete += sender.sendPoint.command;
     sender.sendPoint.advance(f);
     if (config.replayHardLimit && config.replayHardLimit < sender.replaySize) 
-        throw ResourceLimitExceededException("Replay buffer exceeeded hard limit");
+        throw ResourceLimitExceededException("Replay buffer exceeded hard limit");
 }
 
 static const uint32_t SPONTANEOUS_REQUEST_INTERVAL = 65536; 

@@ -41,14 +41,16 @@ class Variant;
 }
 namespace broker {
 
+class EnqueueHandle;
 class MessageStore;
 class AsyncStore;
 class Queue;
+class QueueHandle;
 
 /**
  * Base class for persistable messages.
  */
-class PersistableMessage : public Persistable
+class PersistableMessage : public Persistable, public DataSource
 {
     /**
      * "Ingress" messages == messages sent _to_ the broker.
@@ -63,6 +65,7 @@ class PersistableMessage : public Persistable
     boost::intrusive_ptr<AsyncCompletion> holder;
     mutable uint64_t persistenceId;
     MessageHandle msgHandle;
+    std::map<QueueHandle, EnqueueHandle> enqueueHandles;
 
   public:
     PersistableMessage();
@@ -96,9 +99,17 @@ class PersistableMessage : public Persistable
     uint64_t getPersistenceId() const { return persistenceId; }
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
 
+    MessageHandle& createMessageHandle(AsyncStore* const store);
     MessageHandle& getMessageHandle() { return msgHandle; }
     const MessageHandle& getMessagehandle() const { return msgHandle; }
 
+    EnqueueHandle& createEnqueueHandle(QueueHandle& queueHandle, AsyncStore* const asyncStore);
+    void removeEnqueueHandle(QueueHandle& queueHandle);
+    EnqueueHandle& getEnqueueHandle(QueueHandle& queueHandle);
+    const EnqueueHandle& getEnqueueHandle(QueueHandle& queueHandle) const;
+
+    uint64_t getSize();
+    void write(char* target);
 
     virtual void decodeHeader(framing::Buffer& buffer) = 0;
     virtual void decodeContent(framing::Buffer& buffer) = 0;

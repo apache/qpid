@@ -235,7 +235,7 @@ class SemanticState : private boost::noncopyable {
 
     void startTx();
 //    void commit(MessageStore* const store);
-    void commit(AsyncStore* const store);
+    void commit(AsyncTransactionalStore* const store);
     void rollback();
     void selectDtx();
     bool getDtxSelected() const { return dtxSelected; }

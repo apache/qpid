@@ -65,6 +65,8 @@ template <class T> class Handle {
 
     void swap(Handle<T>& h) { T* t = h.impl; h.impl = impl; impl = t; }
 
+    void reset() { impl = 0; }
+
   protected:
     typedef T Impl;
     Handle() :impl() {}

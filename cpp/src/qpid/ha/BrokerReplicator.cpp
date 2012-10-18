@@ -398,7 +398,7 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         QPID_LOG(debug, logPrefix << "Bind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
-        exchange->bind(queue, key, &args);
+        exchange->bind(queue, key, &args, 0);
     }
 }
 
@@ -418,7 +418,7 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
         QPID_LOG(debug, logPrefix << "Unbind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
-        exchange->unbind(queue, key, &args);
+        exchange->unbind(queue, key, &args, 0);
     }
 }
 
@@ -514,7 +514,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
                  << " key:" << key);
         framing::FieldTable args;
         qpid::amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
-        exchange->bind(queue, key, &args);
+        exchange->bind(queue, key, &args, 0);
     }
 }
 
@@ -616,8 +616,8 @@ boost::shared_ptr<Exchange> BrokerReplicator::createExchange(
     else return  boost::shared_ptr<Exchange>();
 }
 
-bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
-bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
+bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*, qpid::broker::AsyncStore* const) { return false; }
+bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*, qpid::broker::AsyncStore* const) { return false; }
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
 // DataSource interface - used to write persistence data to async store

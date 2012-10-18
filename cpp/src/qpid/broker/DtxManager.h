@@ -68,7 +68,7 @@ public:
     uint32_t getTimeout(const std::string& xid);
     void timedout(const std::string& xid);
 //    void setStore(TransactionalStore* store);
-    void setStore(AsyncTransactionalStore* ats);
+    void setStore(AsyncTransactionalStore* const ats);
     void setTimer(sys::Timer& t) { timer = &t; }
 
     // Used by cluster for replication.
