@@ -83,6 +83,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     {
         Queue& parent;
         uint count;
+        qpid::sys::Monitor usageLock;
 
         UsageBarrier(Queue&);
         bool acquire();
@@ -141,7 +142,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      *     o  consumerCount  (TBD: move under separate lock)
      *     o  Queue::UsageBarrier (TBD: move under separate lock)
      */
-    mutable qpid::sys::Monitor messageLock;
+    mutable qpid::sys::Mutex messageLock;
     mutable qpid::sys::Mutex ownershipLock;
     mutable uint64_t persistenceId;
     const QueueSettings settings;
