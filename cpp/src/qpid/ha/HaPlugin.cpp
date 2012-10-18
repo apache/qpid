@@ -48,6 +48,10 @@ struct Options : public qpid::Options {
              "Authentication mechanism for connections between HA brokers")
             ("ha-backup-timeout", optValue(settings.backupTimeout, "SECONDS"),
              "Maximum time to wait for an expected backup to connect and become ready.")
+            ("ha-flow-messages", optValue(settings.flowMessages, "N"),
+             "Flow control message count limit for replication, 0 means no limit")
+            ("ha-flow-bytes", optValue(settings.flowBytes, "N"),
+             "Flow control byte limit for replication, 0 means no limit")
             ;
     }
 };
