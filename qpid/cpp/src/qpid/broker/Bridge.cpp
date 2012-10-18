@@ -366,8 +366,8 @@ void Bridge::ioThreadPropagateBinding(const string& queue, const string& exchang
     if (resetProxy()) {
         peer->getExchange().bind(queue, exchange, key, args);
     } else {
-        QPID_LOG(error, "Cannot propagate binding for dynamic bridge as session has been detached, deleting dynamic bridge");
-        close();
+      // link's periodic maintenance visit will attempt to recover
+      QPID_LOG(warning, "Cannot propagate binding for dynamic bridge as session has been detached");
     }
 }
 
