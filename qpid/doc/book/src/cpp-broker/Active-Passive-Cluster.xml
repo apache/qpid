@@ -165,11 +165,6 @@ under the License.
 	    integrated with a resource manager available in that environment.
 	  </listitem>
 	  <listitem>
-	    Replication to a <firstterm>disaster recovery</firstterm> site can be handled as
-	    simply another node in the cluster, it does not require a separate replication
-	    mechanism.
-	  </listitem>
-	  <listitem>
 	    It can take advantage of features provided by the resource manager, for example
 	    virtual IP addresses.
 	  </listitem>
