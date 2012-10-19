@@ -745,6 +745,7 @@ acl deny all all
         cluster[1].wait_queue("q")    # Not timed out yet
         cluster[1].wait_no_queue("q") # Wait for timeout
 
+<<<<<<< HEAD
     def test_alt_exchange_dup(self):
         """QPID-4349: if a queue has an alterante exchange and is deleted the
         messages appear twice on the alternate, they are rerouted once by the
@@ -763,6 +764,20 @@ acl deny all all
         s.sender("q;{delete:always}").close()
         cluster[1].assert_browse_backup("altq", messages)
 
+||||||| parent of c584515... Bug 868360 - QPID-4379: HA does not properly handle expired messages.
+=======
+    def test_expired(self):
+        """Regression test for QPID-4379: HA does not properly handle expired messages"""
+        # Race between messages expiring and HA replicating consumer.
+        cluster = HaCluster(self, 2)
+        s = cluster[0].connect().session().sender("q;{create:always}", capacity=2)
+        def send_ttl_messages():
+            for i in xrange(100): s.send(Message(str(i), ttl=0.001), timeout=1)
+        send_ttl_messages()
+        cluster.start()
+        send_ttl_messages()
+
+>>>>>>> c584515... Bug 868360 - QPID-4379: HA does not properly handle expired messages.
 def fairshare(msgs, limit, levels):
     """
     Generator to return prioritised messages in expected order for a given fairshare limit
