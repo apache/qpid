@@ -302,7 +302,7 @@ AC_ARG_WITH([proton], AS_HELP_STRING([--with-proton], [Build with the proton too
 AS_IF([test "x$with_proton" = "xyes"], [
    PKG_CHECK_MODULES([PROTON], [libqpid-proton])
 ])
-AM_CONDITIONAL([HAVE_PROTON], [test "x$have_proton" = xyes])
+AM_CONDITIONAL([HAVE_PROTON], [test "x$with_proton" = "xyes"])
 
 
 # Setup --with-xml/--without-xml as arguments to configure
