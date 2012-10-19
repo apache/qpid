@@ -1,6 +1,3 @@
-#ifndef QPID_MESSAGING_SENDERIMPL_H
-#define QPID_MESSAGING_SENDERIMPL_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -10,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,28 +18,48 @@
  * under the License.
  *
  */
-#include "qpid/RefCounted.h"
-#include "qpid/sys/IntegerTypes.h"
+#include "qpid/broker/amqp/Header.h"
+#include "qpid/broker/Message.h"
 
 namespace qpid {
-namespace messaging {
+namespace broker {
+namespace amqp {
 
-class Message;
-class Session;
-
-class SenderImpl : public virtual qpid::RefCounted
+bool Header::isDurable() const
 {
-  public:
-    virtual ~SenderImpl() {}
-    virtual void send(const Message& message, bool sync) = 0;
-    virtual void close() = 0;
-    virtual void setCapacity(uint32_t) = 0;
-    virtual uint32_t getCapacity() = 0;
-    virtual uint32_t getUnsettled() = 0;
-    virtual const std::string& getName() const = 0;
-    virtual Session getSession() const = 0;
-  private:
-};
-}} // namespace qpid::messaging
+    return message.isPersistent();
+}
 
-#endif  /*!QPID_MESSAGING_SENDERIMPL_H*/
+uint8_t Header::getPriority() const
+{
+    return message.getPriority();
+}
+
+bool Header::hasTtl() const
+{
+    uint64_t dummy(0);
+    return message.getTtl(dummy);
+}
+
+uint32_t Header::getTtl() const
+{
+    uint64_t ttl(0);
+    message.getTtl(ttl);
+    if (ttl > std::numeric_limits<uint32_t>::max()) return std::numeric_limits<uint32_t>::max();
+    else return (uint32_t) ttl;
+}
+
+bool Header::isFirstAcquirer() const
+{
+    return false;//TODO
+}
+
+uint32_t Header::getDeliveryCount() const
+{
+    return message.getDeliveryCount();
+}
+
+Header::Header(const qpid::broker::Message& m) : message(m) {}
+
+
+}}} // namespace qpid::broker::amqp

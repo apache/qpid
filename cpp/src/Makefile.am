@@ -210,6 +210,7 @@ posix_broker_src = \
 
 lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
+
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
 confdir=$(sysconfdir)/qpid
@@ -512,7 +513,38 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/alloca.h				\
   qpid/sys/uuid.h				\
   qpid/sys/unordered_map.h			\
-  qpid/amqp_0_10/Codecs.cpp
+  qpid/amqp_0_10/Codecs.cpp			\
+  qpid/amqp/CharSequence.h                      \
+  qpid/amqp/CharSequence.cpp                    \
+  qpid/amqp/Decoder.h                       	\
+  qpid/amqp/Decoder.cpp                       	\
+  qpid/amqp/Descriptor.h                       	\
+  qpid/amqp/Descriptor.cpp                     	\
+  qpid/amqp/Encoder.h                       	\
+  qpid/amqp/Encoder.cpp                       	\
+  qpid/amqp/MessageEncoder.h                    \
+  qpid/amqp/MessageEncoder.cpp                  \
+  qpid/amqp/MessageId.h		                \
+  qpid/amqp/MessageId.cpp                       \
+  qpid/amqp/MessageReader.h			\
+  qpid/amqp/MessageReader.cpp			\
+  qpid/amqp/Reader.h				\
+  qpid/amqp/Sasl.h				\
+  qpid/amqp/Sasl.cpp				\
+  qpid/amqp/SaslClient.h			\
+  qpid/amqp/SaslClient.cpp			\
+  qpid/amqp/SaslServer.h			\
+  qpid/amqp/SaslServer.cpp
+
+#libqpidcommon is not really the 'right' place for the Transport
+#interface, which is only used in 1.0 impl of messaging API, but this
+#lets the 1.0 SSL support be included in the existing sslconnector lib
+#which in turn addresses common ssl needs in qpidclient and
+#qpidmessaging:
+libqpidcommon_la_SOURCES +=                    \
+  qpid/messaging/amqp/Transport.h              \
+  qpid/messaging/amqp/Transport.cpp            \
+  qpid/messaging/amqp/TransportContext.h
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
@@ -718,6 +750,65 @@ libqpidbroker_la_SOURCES = \
 QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
 
+if HAVE_PROTON
+
+dmoduleexec_LTLIBRARIES += amqp.la
+amqp_la_LIBADD = libqpidcommon.la
+amqp_la_SOURCES = \
+  qpid/broker/amqp/Connection.h \
+  qpid/broker/amqp/Connection.cpp \
+  qpid/broker/amqp/Header.h \
+  qpid/broker/amqp/Header.cpp \
+  qpid/broker/amqp/ManagedConnection.h \
+  qpid/broker/amqp/ManagedConnection.cpp \
+  qpid/broker/amqp/ManagedSession.h \
+  qpid/broker/amqp/ManagedSession.cpp \
+  qpid/broker/amqp/ManagedOutgoingLink.h \
+  qpid/broker/amqp/ManagedOutgoingLink.cpp \
+  qpid/broker/amqp/Message.h \
+  qpid/broker/amqp/Message.cpp \
+  qpid/broker/amqp/Outgoing.h \
+  qpid/broker/amqp/Outgoing.cpp \
+  qpid/broker/amqp/ProtocolPlugin.cpp \
+  qpid/broker/amqp/Sasl.h \
+  qpid/broker/amqp/Sasl.cpp \
+  qpid/broker/amqp/Session.h \
+  qpid/broker/amqp/Session.cpp \
+  qpid/broker/amqp/Translation.h \
+  qpid/broker/amqp/Translation.cpp
+
+amqp_la_LDFLAGS = $(PLUGINLDFLAGS)
+
+cmoduleexec_LTLIBRARIES += amqpc.la
+amqpc_la_LIBADD = libqpidcommon.la
+amqpc_la_SOURCES = \
+  qpid/messaging/amqp/ConnectionContext.h	\
+  qpid/messaging/amqp/ConnectionContext.cpp	\
+  qpid/messaging/amqp/ConnectionHandle.h	\
+  qpid/messaging/amqp/ConnectionHandle.cpp	\
+  qpid/messaging/amqp/DriverImpl.h		\
+  qpid/messaging/amqp/DriverImpl.cpp		\
+  qpid/messaging/amqp/ReceiverContext.h		\
+  qpid/messaging/amqp/ReceiverContext.cpp	\
+  qpid/messaging/amqp/ReceiverHandle.h		\
+  qpid/messaging/amqp/ReceiverHandle.cpp	\
+  qpid/messaging/amqp/Sasl.h			\
+  qpid/messaging/amqp/Sasl.cpp			\
+  qpid/messaging/amqp/SenderContext.h		\
+  qpid/messaging/amqp/SenderContext.cpp		\
+  qpid/messaging/amqp/SenderHandle.h		\
+  qpid/messaging/amqp/SenderHandle.cpp		\
+  qpid/messaging/amqp/SessionContext.h		\
+  qpid/messaging/amqp/SessionContext.cpp	\
+  qpid/messaging/amqp/SessionHandle.h		\
+  qpid/messaging/amqp/SessionHandle.cpp		\
+  qpid/messaging/amqp/TcpTransport.h		\
+  qpid/messaging/amqp/TcpTransport.cpp
+
+amqpc_la_LDFLAGS = $(PLUGINLDFLAGS)
+
+endif #HAVE_PROTON
+
 libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
 libqpidclient_la_SOURCES =			\
@@ -794,6 +885,8 @@ libqpidmessaging_la_SOURCES =			\
   qpid/messaging/AddressParser.h		\
   qpid/messaging/AddressParser.cpp		\
   qpid/messaging/Connection.cpp			\
+  qpid/messaging/ConnectionOptions.h		\
+  qpid/messaging/ConnectionOptions.cpp		\
   qpid/messaging/Duration.cpp			\
   qpid/messaging/exceptions.cpp			\
   qpid/messaging/Message.cpp			\
@@ -810,6 +903,8 @@ libqpidmessaging_la_SOURCES =			\
   qpid/messaging/ReceiverImpl.h			\
   qpid/messaging/SessionImpl.h			\
   qpid/messaging/FailoverUpdates.cpp		\
+  qpid/messaging/amqp/EncodedMessage.h		\
+  qpid/messaging/amqp/EncodedMessage.cpp	\
   qpid/client/amqp0_10/AcceptTracker.h		\
   qpid/client/amqp0_10/AcceptTracker.cpp	\
   qpid/client/amqp0_10/AddressResolution.h	\
