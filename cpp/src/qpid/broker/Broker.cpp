@@ -293,7 +293,7 @@ Broker::Broker(const Broker::Options& conf) :
         // The cluster plug-in will setRecovery(false) on all but the first
         // broker to join a cluster.
         if (getRecovery()) {
-            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager);
+            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, protocolRegistry);
             recoveryInProgress = true;
             store->recover(recoverer);
             recoveryInProgress = false;
@@ -737,7 +737,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
             else extensions[i->first] = i->second;
         }
         framing::FieldTable arguments;
-        amqp_0_10::translate(extensions, arguments);
+        qpid::amqp_0_10::translate(extensions, arguments);
 
         try {
             std::pair<boost::shared_ptr<Exchange>, bool> result =
@@ -759,7 +759,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
             else extensions[i->first] = i->second;
         }
         framing::FieldTable arguments;
-        amqp_0_10::translate(extensions, arguments);
+        qpid::amqp_0_10::translate(extensions, arguments);
 
         bind(binding.queue, binding.exchange, binding.key, arguments, userId, connectionId);
 

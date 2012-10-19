@@ -56,6 +56,7 @@ namespace broker {
 
 class Exchange;
 class MessageStore;
+class ProtocolRegistry;
 class SessionContext;
 class SessionState;
 
@@ -97,6 +98,7 @@ class SemanticState : private boost::noncopyable {
         const int syncFrequency;
         int deliveryCount;
         qmf::org::apache::qpid::broker::Subscription::shared_ptr mgmtObject;
+        ProtocolRegistry& protocols;
 
         bool checkCredit(const Message& msg);
         void allocateCredit(const Message& msg);

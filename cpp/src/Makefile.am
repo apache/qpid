@@ -608,6 +608,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/PriorityQueue.h \
   qpid/broker/PriorityQueue.cpp \
+  qpid/broker/Protocol.h \
+  qpid/broker/Protocol.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \
@@ -657,6 +659,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveryManagerImpl.h \
+  qpid/broker/RecoverableMessageImpl.h \
   qpid/broker/RetryList.cpp \
   qpid/broker/RetryList.h \
   qpid/broker/SaslAuthenticator.cpp \
@@ -797,6 +800,8 @@ libqpidmessaging_la_SOURCES =			\
   qpid/messaging/MessageImpl.h			\
   qpid/messaging/MessageImpl.cpp		\
   qpid/messaging/PrivateImplRef.h		\
+  qpid/messaging/ProtocolRegistry.h		\
+  qpid/messaging/ProtocolRegistry.cpp		\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\
