@@ -158,7 +158,7 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
         uint32_t ppid = clientProperties.getAsInt(CLIENT_PPID);
 
         types::Variant::Map properties;
-        amqp_0_10::translate(clientProperties, properties);
+        qpid::amqp_0_10::translate(clientProperties, properties);
         mgmtObject->set_remoteProperties(properties);
         if (!procName.empty())
             mgmtObject->set_remoteProcessName(procName);

@@ -30,15 +30,17 @@
 
 namespace qpid {
 namespace broker {
+class ProtocolRegistry;
 
     class RecoveryManagerImpl : public RecoveryManager{
         QueueRegistry& queues;
         ExchangeRegistry& exchanges;
         LinkRegistry& links;
         DtxManager& dtxMgr;
+        ProtocolRegistry& protocols;
     public:
         RecoveryManagerImpl(QueueRegistry& queues, ExchangeRegistry& exchanges, LinkRegistry& links,
-                            DtxManager& dtxMgr);
+                            DtxManager& dtxMgr, ProtocolRegistry&);
         ~RecoveryManagerImpl();
 
         RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer);
