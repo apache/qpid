@@ -37,7 +37,7 @@ namespace cyrus {
 class CyrusSecurityLayer : public qpid::sys::SecurityLayer
 {
   public:
-    CyrusSecurityLayer(sasl_conn_t*, uint16_t maxFrameSize);
+    CyrusSecurityLayer(sasl_conn_t*, uint16_t maxFrameSize, int ssf);
     size_t decode(const char* buffer, size_t size);
     size_t encode(char* buffer, size_t size);
     bool canEncode();
