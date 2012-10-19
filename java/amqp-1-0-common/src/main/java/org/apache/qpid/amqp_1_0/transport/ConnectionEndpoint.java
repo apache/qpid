@@ -81,6 +81,8 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private boolean _closedForInput;
     private boolean _closedForOutput;
 
+    private long _idleTimeout;
+
     private AMQPDescribedTypeRegistry _describedTypeRegistry = AMQPDescribedTypeRegistry.newInstance()
                 .registerTransportLayer()
                 .registerMessagingLayer()
@@ -282,6 +284,11 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
         _remoteContainerId = open.getContainerId();
 
+        if(open.getIdleTimeOut() != null)
+        {
+            _idleTimeout = open.getIdleTimeOut().longValue();
+        }
+
         switch(_state)
         {
             case UNOPENED:
@@ -316,6 +323,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 sendClose(new Close());
                 break;
             case CLOSE_SENT:
+
             default:
         }
     }
@@ -648,6 +656,11 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     public Object getLock()
     {
         return this;
+    }
+
+    public synchronized long getIdleTimeout()
+    {
+        return _idleTimeout;
     }
 
     public synchronized void close()

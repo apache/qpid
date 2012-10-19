@@ -77,13 +77,21 @@ public class FrameWriter implements ValueWriter<AMQFrame>
             {
                 case SIZE_0:
 
-                    _typeWriter.setValue(_frame.getFrameBody());
-
                     int payloadLength = _payload == null ? 0 : _payload.remaining();
 
-                    _size = _typeWriter.writeToBuffer(remaining > 8
-                                                      ? (ByteBuffer)buffer.duplicate().position(buffer.position()+8)
-                                                      : ByteBuffer.wrap(EMPTY_BYTE_ARRAY)) + 8 + payloadLength;
+                    if(_typeWriter!=null)
+                    {
+                        _typeWriter.setValue(_frame.getFrameBody());
+
+
+                        _size = _typeWriter.writeToBuffer(remaining > 8
+                                                          ? (ByteBuffer)buffer.duplicate().position(buffer.position()+8)
+                                                          : ByteBuffer.wrap(EMPTY_BYTE_ARRAY)) + 8 + payloadLength;
+                    }
+                    else
+                    {
+                        _size = 8 + payloadLength;
+                    }
                     if(remaining >= 4)
                     {
                         buffer.putInt(_size);
@@ -239,7 +247,14 @@ public class FrameWriter implements ValueWriter<AMQFrame>
         _size = -1;
         _payload = null;
         final Object frameBody = frame.getFrameBody();
-        _typeWriter = _registry.getValueWriter(frameBody);
+        if(frameBody!=null)
+        {
+            _typeWriter = _registry.getValueWriter(frameBody);
+        }
+        else
+        {
+            _typeWriter = null;
+        }
         _payload = frame.getPayload() == null ? null : frame.getPayload().duplicate();
     }
 }
