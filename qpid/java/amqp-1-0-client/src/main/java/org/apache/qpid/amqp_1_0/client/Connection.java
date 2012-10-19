@@ -20,6 +20,15 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.ssl.SSLSocketFactory;
 import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
 import org.apache.qpid.amqp_1_0.transport.AMQPTransport;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
@@ -29,17 +38,6 @@ import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
-
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Connection
 {
@@ -224,7 +222,6 @@ public class Connection
             }
 
 
-            //ConnectionHandler.OutputHandler outputHandler = new ConnectionHandler.OutputHandler(outputStream, out, _conn.getDescribedTypeRegistry());
             ConnectionHandler.BytesOutputHandler outputHandler = new ConnectionHandler.BytesOutputHandler(outputStream, src, _conn);
             Thread outputThread = new Thread(outputHandler);
             outputThread.setDaemon(true);
@@ -236,8 +233,6 @@ public class Connection
             final ConnectionHandler handler = new ConnectionHandler(_conn);
             final InputStream inputStream = s.getInputStream();
 
-            //final AMQPTransport transport = new AMQPTransport(new AMQPFrameTransport(_conn));
-
             Thread inputThread = new Thread(new Runnable()
             {
 
@@ -246,7 +241,6 @@ public class Connection
                     try
                     {
                         doRead(handler, inputStream);
-//                        doRead(transport, inputStream);
                     }
                     finally
                     {
@@ -267,85 +261,6 @@ public class Connection
 
             inputThread.setDaemon(true);
             inputThread.start();
-
-/*
-            Thread outputThread = new Thread(new Runnable()
-            {
-
-                private int _lastWrite;
-
-                public void run()
-                {
-                    try
-                    {
-//                        doRead(handler, inputStream);
-                        final Object lock = new Object();
-                        transport.setOutputStateChangeListener(new StateChangeListener()
-                        {
-
-                            public void onStateChange(final boolean active)
-                            {
-                                synchronized (lock)
-                                {
-                                    lock.notifyAll();
-                                }
-                            }
-                        });
-
-                        synchronized(lock)
-                        {
-                            while(transport.isOpenForOutput())
-                            {
-                                _lastWrite = 0;
-                                transport.getNextBytes(new BytesProcessor()
-                                {
-
-                                    public void processBytes(final ByteBuffer buf)
-                                    {
-                                        _lastWrite = buf.remaining();
-                                        try
-                                        {
-                                            outputStream.write(buf.array(),
-                                                               buf.arrayOffset() + buf.position(),
-                                                               buf.limit() - buf.position());
-                                        }
-                                        catch (IOException e)
-                                        {
-                                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                                        }
-                                    }
-                                });
-                                if(_lastWrite == 0 && transport.isOpenForOutput())
-                                {
-                                    try
-                                    {
-                                        lock.wait(1000);
-                                    }
-                                    catch (InterruptedException e)
-                                    {
-                                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if(_conn.closedForInput() && _conn.closedForOutput())
-                        {
-                            try
-                            {
-                                s.close();
-                            }
-                            catch (IOException e)
-                            {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                            }
-                        }
-                    }
-                }
-            });
-*/
 
             _conn.open();
 
@@ -394,7 +309,7 @@ public class Connection
         }
         catch (IOException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
 
     }
@@ -419,7 +334,7 @@ public class Connection
         {
             int read;
             boolean done = false;
-            while(!done && (read = inputStream.read(buf)) != -1)
+            while(!handler.isDone() && (read = inputStream.read(buf)) != -1)
             {
                 ByteBuffer bbuf = ByteBuffer.wrap(buf, 0, read);
                 Binary b = new Binary(buf,0,read);
@@ -428,12 +343,6 @@ public class Connection
                 {
                     RAW_LOGGER.fine("RECV [" + _conn.getRemoteAddress() + "] : " + b.toString());
                 }
-                /*System.err.println(b);
-                System.err.println("XXX: " + bbuf.hasRemaining() + "; " + handler.isDone());
-                if(handler.isDone())
-                {
-                    System.err.println(handler.getClass().getName() + "IS DONE!");
-                } */
                 while(bbuf.hasRemaining() && !handler.isDone())
                 {
                     handler.parse(bbuf);
@@ -444,7 +353,7 @@ public class Connection
         }
         catch (IOException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
     }
 

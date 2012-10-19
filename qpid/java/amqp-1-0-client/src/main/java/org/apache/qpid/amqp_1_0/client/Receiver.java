@@ -241,7 +241,7 @@ public class Receiver implements DeliveryStateHandler
                     }
                     if(hasMore)
                     {
-                        xfr = receiveFromPrefetch(0L);
+                        xfr = receiveFromPrefetch(-1l);
                         if(xfr== null)
                         {
                             // TODO - this is wrong!!!!
