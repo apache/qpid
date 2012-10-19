@@ -29,8 +29,8 @@ namespace qpid {
 namespace sys {
 namespace cyrus {
 
-CyrusSecurityLayer::CyrusSecurityLayer(sasl_conn_t* c, uint16_t maxFrameSize) : 
-    conn(c), decrypted(0), decryptedSize(0), encrypted(0), encryptedSize(0), codec(0), maxInputSize(0), 
+CyrusSecurityLayer::CyrusSecurityLayer(sasl_conn_t* c, uint16_t maxFrameSize, int ssf) :
+    SecurityLayer(ssf), conn(c), decrypted(0), decryptedSize(0), encrypted(0), encryptedSize(0), codec(0), maxInputSize(0),
     decodeBuffer(maxFrameSize), encodeBuffer(maxFrameSize), encoded(0)
 {
     const void* value(0);

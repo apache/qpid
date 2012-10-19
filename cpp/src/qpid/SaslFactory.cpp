@@ -377,7 +377,7 @@ std::auto_ptr<SecurityLayer> CyrusSasl::getSecurityLayer(uint16_t maxFrameSize)
     std::auto_ptr<SecurityLayer> securityLayer;
     if (ssf) {
         QPID_LOG(info, "Installing security layer,  SSF: "<< ssf);
-        securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(conn, maxFrameSize));
+        securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(conn, maxFrameSize, ssf));
     }
     return securityLayer;
 }
