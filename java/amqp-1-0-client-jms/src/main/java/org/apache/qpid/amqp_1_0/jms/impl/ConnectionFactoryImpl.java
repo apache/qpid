@@ -20,8 +20,12 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.net.URLStreamHandler;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -96,12 +100,35 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
     {
-        URL url = new URL(urlString);
+        URL url = new URL(null, urlString, new URLStreamHandler()
+                    {
+                        @Override
+                        protected URLConnection openConnection(URL u) throws IOException
+                        {
+                            throw new UnsupportedOperationException();
+                        }
+                    });
+        String protocol = url.getProtocol();
+        if(protocol == null || "".equals(protocol))
+        {
+            protocol = "amqp";
+        }
+        else if(!protocol.equals("amqp") && !protocol.equals("amqps"))
+        {
+            throw new MalformedURLException("Protocol '"+protocol+"' unknown. Must be one of 'amqp' or 'amqps'.");
+        }
         String host = url.getHost();
         int port = url.getPort();
         if(port == -1)
         {
-            port = 5672;
+            if("amqps".equals(protocol))
+            {
+                port = 5671;
+            }
+            else
+            {
+                port = 5672;
+            }
         }
         String userInfo = url.getUserInfo();
         String username = null;
@@ -112,10 +139,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         if(userInfo != null)
         {
             String[] components = userInfo.split(":",2);
-            username = components[0];
+            username = URLDecoder.decode(components[0]);
             if(components.length == 2)
             {
-                password = components[1];
+                password = URLDecoder.decode(components[1]);
             }
         }
         String query = url.getQuery();
@@ -170,4 +197,5 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         connection.setTopicConnection(true);
         return connection;
     }
+
 }
