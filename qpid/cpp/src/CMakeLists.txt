@@ -902,6 +902,7 @@ set (qpidcommon_SOURCES
      qpid/StringUtils.cpp
      qpid/Url.cpp
      qpid/UrlArray.cpp
+     qpid/NullSaslServer.cpp
      qpid/amqp_0_10/SessionHandler.cpp
      qpid/framing/AccumulatedAck.cpp
      qpid/framing/AMQBody.cpp

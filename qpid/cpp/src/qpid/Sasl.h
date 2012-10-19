@@ -34,7 +34,7 @@ struct SecuritySettings;
 }
 
 /**
- * Interface to SASL support. This class is implemented by platform-specific
+ * Interface to support for the SASL client role. This class is implemented by platform-specific
  * SASL providers.
  */
 class Sasl
