@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/amqp/MessageId.h"
+#include <assert.h>
 #include <boost/lexical_cast.hpp>
 
 namespace qpid {

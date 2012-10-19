@@ -193,7 +193,7 @@ bool EncodedMessage::hasHeaderChanged(const qpid::messaging::MessageImpl& msg) c
     if (!durable) {
         if (msg.isDurable()) return true;
     } else {
-        if (durable != msg.isDurable()) return true;
+        if (durable.get() != msg.isDurable()) return true;
     }
 
     if (!priority) {
