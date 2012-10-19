@@ -119,23 +119,31 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         }
         String host = url.getHost();
         int port = url.getPort();
+
+        boolean ssl = false;
+
         if(port == -1)
         {
             if("amqps".equals(protocol))
             {
                 port = 5671;
+                ssl = true;
             }
             else
             {
                 port = 5672;
             }
         }
+        else if("amqps".equals(protocol))
+        {
+            ssl = true;
+        }
+
         String userInfo = url.getUserInfo();
         String username = null;
         String password = null;
         String clientId = null;
         String remoteHost = null;
-        boolean ssl = false;
         if(userInfo != null)
         {
             String[] components = userInfo.split(":",2);
@@ -164,6 +172,11 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                    remoteHost = keyValuePair[1];
                }
            }
+        }
+
+        if(remoteHost == null)
+        {
+            remoteHost = host;
         }
 
         return new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
