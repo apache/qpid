@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_SENDERIMPL_H
-#define QPID_MESSAGING_SENDERIMPL_H
+#ifndef QPID_BROKER_AMQP_HEADER_H
+#define QPID_BROKER_AMQP_HEADER_H
 
 /*
  *
@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,28 +21,30 @@
  * under the License.
  *
  */
-#include "qpid/RefCounted.h"
-#include "qpid/sys/IntegerTypes.h"
+#include "qpid/amqp/MessageEncoder.h"
 
 namespace qpid {
-namespace messaging {
-
+namespace broker {
 class Message;
-class Session;
+namespace amqp {
 
-class SenderImpl : public virtual qpid::RefCounted
+/**
+ * Adapts the broker current message abstraction to provide that
+ * required by the AMQP 1.0 message encoder.
+ */
+class Header : public qpid::amqp::MessageEncoder::Header
 {
   public:
-    virtual ~SenderImpl() {}
-    virtual void send(const Message& message, bool sync) = 0;
-    virtual void close() = 0;
-    virtual void setCapacity(uint32_t) = 0;
-    virtual uint32_t getCapacity() = 0;
-    virtual uint32_t getUnsettled() = 0;
-    virtual const std::string& getName() const = 0;
-    virtual Session getSession() const = 0;
+    Header(const qpid::broker::Message&);
+    bool isDurable() const;
+    uint8_t getPriority() const;
+    bool hasTtl() const;
+    uint32_t getTtl() const;
+    bool isFirstAcquirer() const;
+    uint32_t getDeliveryCount() const;
   private:
+    const qpid::broker::Message& message;
 };
-}} // namespace qpid::messaging
+}}} // namespace qpid::broker::amqp
 
-#endif  /*!QPID_MESSAGING_SENDERIMPL_H*/
+#endif  /*!QPID_BROKER_AMQP_HEADER_H*/

@@ -1,6 +1,3 @@
-#ifndef QPID_MESSAGING_SENDERIMPL_H
-#define QPID_MESSAGING_SENDERIMPL_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -10,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,28 +18,32 @@
  * under the License.
  *
  */
-#include "qpid/RefCounted.h"
-#include "qpid/sys/IntegerTypes.h"
+#include "qpid/messaging/amqp/Transport.h"
+#include "qpid/messaging/amqp/TransportContext.h"
+#include <map>
 
 namespace qpid {
 namespace messaging {
+namespace amqp {
+namespace {
+typedef std::map<std::string, Transport::Factory*> Registry;
 
-class Message;
-class Session;
-
-class SenderImpl : public virtual qpid::RefCounted
+Registry& theRegistry()
 {
-  public:
-    virtual ~SenderImpl() {}
-    virtual void send(const Message& message, bool sync) = 0;
-    virtual void close() = 0;
-    virtual void setCapacity(uint32_t) = 0;
-    virtual uint32_t getCapacity() = 0;
-    virtual uint32_t getUnsettled() = 0;
-    virtual const std::string& getName() const = 0;
-    virtual Session getSession() const = 0;
-  private:
-};
-}} // namespace qpid::messaging
+    static Registry factories;
+    return factories;
+}
+}
 
-#endif  /*!QPID_MESSAGING_SENDERIMPL_H*/
+Transport* Transport::create(const std::string& name, TransportContext& context, boost::shared_ptr<qpid::sys::Poller> poller)
+{
+    Registry::const_iterator i = theRegistry().find(name);
+    if (i != theRegistry().end()) return (i->second)(context, poller);
+    else return 0;
+}
+void Transport::add(const std::string& name, Factory* factory)
+{
+    theRegistry()[name] = factory;
+}
+
+}}} // namespace qpid::messaging::amqp

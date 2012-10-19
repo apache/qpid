@@ -45,27 +45,162 @@ MessageImpl::MessageImpl(const char* chars, size_t count) :
     bytes(chars, count),
     internalId(0) {}
 
-void MessageImpl::setReplyTo(const Address& d) { replyTo = d; }
-const Address& MessageImpl::getReplyTo() const { return replyTo; }
+void MessageImpl::setReplyTo(const Address& d)
+{
+    replyTo = d;
+    updated();
+}
+const Address& MessageImpl::getReplyTo() const
+{
+    if (!replyTo && encoded) encoded->getReplyTo(replyTo);
+    return replyTo;
+}
 
-void MessageImpl::setSubject(const std::string& s) { subject = s; }
-const std::string& MessageImpl::getSubject() const { return subject; }
+void MessageImpl::setSubject(const std::string& s)
+{
+    subject = s;
+    updated();
+}
+const std::string& MessageImpl::getSubject() const
+{
+    if (!subject.size() && encoded) encoded->getSubject(subject);
+    return subject;
+}
 
-void MessageImpl::setContentType(const std::string& s) { contentType = s; }
-const std::string& MessageImpl::getContentType() const { return contentType; }
+void MessageImpl::setContentType(const std::string& s)
+{
+    contentType = s;
+    updated();
+}
+const std::string& MessageImpl::getContentType() const
+{
+    if (!contentType.size() && encoded) encoded->getContentType(contentType);
+    return contentType;
+}
 
-const Variant::Map& MessageImpl::getHeaders() const { return headers; }
-Variant::Map& MessageImpl::getHeaders() { return headers; }
-void MessageImpl::setHeader(const std::string& key, const qpid::types::Variant& val) { headers[key] = val; }
+void MessageImpl::setMessageId(const std::string& s)
+{
+    messageId = s;
+    updated();
+}
+const std::string& MessageImpl::getMessageId() const
+{
+    if (!messageId.size() && encoded) encoded->getMessageId(messageId);
+    return messageId;
+}
+void MessageImpl::setUserId(const std::string& s)
+{
+    userId = s;
+    updated();
+}
+const std::string& MessageImpl::getUserId() const
+{
+    if (!userId.size() && encoded) encoded->getUserId(userId);
+    return userId;
+}
+void MessageImpl::setCorrelationId(const std::string& s)
+{
+    correlationId = s;
+    updated();
+}
+const std::string& MessageImpl::getCorrelationId() const
+{
+    if (!correlationId.size() && encoded) encoded->getCorrelationId(correlationId);
+    return correlationId;
+}
+void MessageImpl::setPriority(uint8_t p)
+{
+    priority = p;
+}
+uint8_t MessageImpl::getPriority() const
+{
+    return priority;
+}
+void MessageImpl::setTtl(uint64_t t)
+{
+    ttl = t;
+}
+uint64_t MessageImpl::getTtl() const
+{
+    return ttl;
+}
+void MessageImpl::setDurable(bool d)
+{
+    durable = d;
+}
+bool MessageImpl::isDurable() const
+{
+    return durable;
+}
+void MessageImpl::setRedelivered(bool b)
+{
+    redelivered = b;
+}
+bool MessageImpl::isRedelivered() const
+{
+    return redelivered;
+}
+
+const Variant::Map& MessageImpl::getHeaders() const
+{
+    if (!headers.size() && encoded) encoded->populate(headers);
+    return headers;
+}
+Variant::Map& MessageImpl::getHeaders() {
+    if (!headers.size() && encoded) encoded->populate(headers);
+    updated();
+    return headers;
+}
+void MessageImpl::setHeader(const std::string& key, const qpid::types::Variant& val)
+{
+    headers[key] = val; updated();
+}
 
 //should these methods be on MessageContent?
-void MessageImpl::setBytes(const std::string& c) { bytes = c; }
-void MessageImpl::setBytes(const char* chars, size_t count) { bytes.assign(chars, count); }
-const std::string& MessageImpl::getBytes() const { return bytes; }
-std::string& MessageImpl::getBytes() { return bytes; }
+void MessageImpl::setBytes(const std::string& c)
+{
+    bytes = c;
+    updated();
+}
+void MessageImpl::setBytes(const char* chars, size_t count)
+{
+    bytes.assign(chars, count);
+    updated();
+}
+void MessageImpl::appendBytes(const char* chars, size_t count)
+{
+    bytes.append(chars, count);
+    updated();
+}
+const std::string& MessageImpl::getBytes() const
+{
+    if (!bytes.size() && encoded) encoded->getBody(bytes);
+    return bytes;
+}
+std::string& MessageImpl::getBytes()
+{
+    if (!bytes.size() && encoded) encoded->getBody(bytes);
+    updated();//have to assume body may be edited, invalidating our message
+    return bytes;
+}
 
 void MessageImpl::setInternalId(qpid::framing::SequenceNumber i) { internalId = i; }
 qpid::framing::SequenceNumber MessageImpl::getInternalId() { return internalId; }
+
+void MessageImpl::updated()
+{
+
+    if (!replyTo && encoded) encoded->getReplyTo(replyTo);
+    if (!subject.size() && encoded) encoded->getSubject(subject);
+    if (!contentType.size() && encoded) encoded->getContentType(contentType);
+    if (!messageId.size() && encoded) encoded->getMessageId(messageId);
+    if (!userId.size() && encoded) encoded->getUserId(userId);
+    if (!correlationId.size() && encoded) encoded->getCorrelationId(correlationId);
+    if (!headers.size() && encoded) encoded->populate(headers);
+    if (!bytes.size() && encoded) encoded->getBody(bytes);
+
+    encoded.reset();
+}
 
 MessageImpl& MessageImplAccess::get(Message& msg)
 {

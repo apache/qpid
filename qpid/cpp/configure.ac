@@ -296,6 +296,15 @@ AS_IF([test "x$WANT_SASL" != xno],
 AM_CONDITIONAL([HAVE_SASL], [test "x$have_sasl" = xyes])
 AC_SUBST([SASL_PASSWD])
 
+# Allow integration against external AMQP 1.0 protocol engine
+AC_ARG_WITH([proton], AS_HELP_STRING([--with-proton], [Build with the proton toolkit for AMQP 1.0 support]))
+
+AS_IF([test "x$with_proton" = "xyes"], [
+   PKG_CHECK_MODULES([PROTON], [libqpid-proton])
+])
+AM_CONDITIONAL([HAVE_PROTON], [test "x$have_proton" = xyes])
+
+
 # Setup --with-xml/--without-xml as arguments to configure
 use_xml=yes
 want_xml=check

@@ -681,6 +681,9 @@ include (rdma.cmake)
 # Check for optional SSL support requirements
 include (ssl.cmake)
 
+# Check for optional AMQP 1.0 support requirements
+include (amqp.cmake)
+
 # Check for syslog capabilities not present on all systems
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
 check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
@@ -947,6 +950,30 @@ set (qpidcommon_SOURCES
      qpid/sys/Timer.cpp
      qpid/sys/TimerWarnings.cpp
      qpid/amqp_0_10/Codecs.cpp
+     qpid/amqp/CharSequence.h
+     qpid/amqp/CharSequence.cpp
+     qpid/amqp/Decoder.h
+     qpid/amqp/Decoder.cpp
+     qpid/amqp/Descriptor.h
+     qpid/amqp/Descriptor.cpp
+     qpid/amqp/Encoder.h
+     qpid/amqp/Encoder.cpp
+     qpid/amqp/MessageEncoder.h
+     qpid/amqp/MessageEncoder.cpp
+     qpid/amqp/MessageId.h
+     qpid/amqp/MessageId.cpp
+     qpid/amqp/MessageReader.h
+     qpid/amqp/MessageReader.cpp
+     qpid/amqp/Reader.h
+     qpid/amqp/Sasl.h
+     qpid/amqp/Sasl.cpp
+     qpid/amqp/SaslClient.h
+     qpid/amqp/SaslClient.cpp
+     qpid/amqp/SaslServer.h
+     qpid/amqp/SaslServer.cpp
+     qpid/messaging/amqp/Transport.h
+     qpid/messaging/amqp/Transport.cpp
+     qpid/messaging/amqp/TransportContext.h
      ${qpid_memstat_module}
 )
 add_msvc_version (qpidcommon library dll)
@@ -1039,6 +1066,8 @@ set (qpidmessaging_SOURCES
      qpid/messaging/AddressParser.cpp
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
+     qpid/messaging/ConnectionOptions.h
+     qpid/messaging/ConnectionOptions.cpp
      qpid/messaging/Duration.cpp
      qpid/messaging/exceptions.cpp
      qpid/messaging/Message.cpp
@@ -1052,6 +1081,8 @@ set (qpidmessaging_SOURCES
      qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
      qpid/messaging/FailoverUpdates.cpp
+     qpid/messaging/amqp/EncodedMessage.h
+     qpid/messaging/amqp/EncodedMessage.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h

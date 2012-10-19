@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_SENDERIMPL_H
-#define QPID_MESSAGING_SENDERIMPL_H
+#ifndef QPID_MESSAGING_AMQP_TRANSPORT_H
+#define QPID_MESSAGING_AMQP_TRANSPORT_H
 
 /*
  *
@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,28 +21,28 @@
  * under the License.
  *
  */
-#include "qpid/RefCounted.h"
-#include "qpid/sys/IntegerTypes.h"
+#include "qpid/sys/OutputControl.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
+namespace sys {
+class Poller;
+}
 namespace messaging {
+namespace amqp {
+class TransportContext;
 
-class Message;
-class Session;
-
-class SenderImpl : public virtual qpid::RefCounted
+class Transport : public qpid::sys::OutputControl
 {
   public:
-    virtual ~SenderImpl() {}
-    virtual void send(const Message& message, bool sync) = 0;
+    virtual ~Transport() {}
+    virtual void connect(const std::string& host, const std::string& port) = 0;
     virtual void close() = 0;
-    virtual void setCapacity(uint32_t) = 0;
-    virtual uint32_t getCapacity() = 0;
-    virtual uint32_t getUnsettled() = 0;
-    virtual const std::string& getName() const = 0;
-    virtual Session getSession() const = 0;
-  private:
-};
-}} // namespace qpid::messaging
 
-#endif  /*!QPID_MESSAGING_SENDERIMPL_H*/
+    typedef Transport* Factory(TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
+    static Transport* create(const std::string& name, TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
+    static void add(const std::string& name, Factory* factory);
+};
+}}} // namespace qpid::messaging::amqp
+
+#endif  /*!QPID_MESSAGING_AMQP_TRANSPORT_H*/

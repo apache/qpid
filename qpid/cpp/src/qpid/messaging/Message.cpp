@@ -46,26 +46,26 @@ const std::string& Message::getSubject() const { return impl->getSubject(); }
 void Message::setContentType(const std::string& s) { impl->setContentType(s); }
 const std::string& Message::getContentType() const { return impl->getContentType(); }
 
-void Message::setMessageId(const std::string& id) { impl->messageId = id; }
-const std::string& Message::getMessageId() const { return impl->messageId; }
+void Message::setMessageId(const std::string& id) { impl->setMessageId(id); }
+const std::string& Message::getMessageId() const { return impl->getMessageId(); }
 
-void Message::setUserId(const std::string& id) { impl->userId = id; }
-const std::string& Message::getUserId() const { return impl->userId; }
+void Message::setUserId(const std::string& id) { impl->setUserId(id); }
+const std::string& Message::getUserId() const { return impl->getUserId(); }
 
-void Message::setCorrelationId(const std::string& id) { impl->correlationId = id; }
-const std::string& Message::getCorrelationId() const { return impl->correlationId; }
+void Message::setCorrelationId(const std::string& id) { impl->setCorrelationId(id); }
+const std::string& Message::getCorrelationId() const { return impl->getCorrelationId(); }
 
-uint8_t Message::getPriority() const { return impl->priority; }
-void Message::setPriority(uint8_t priority) { impl->priority = priority; }
+uint8_t Message::getPriority() const { return impl->getPriority(); }
+void Message::setPriority(uint8_t priority) { impl->setPriority(priority); }
 
-void Message::setTtl(Duration ttl) { impl->ttl = ttl.getMilliseconds(); }
-Duration Message::getTtl() const { return Duration(impl->ttl); }
+void Message::setTtl(Duration ttl) { impl->setTtl(ttl.getMilliseconds()); }
+Duration Message::getTtl() const { return Duration(impl->getTtl()); }
 
-void Message::setDurable(bool durable) { impl->durable = durable; }
-bool Message::getDurable() const { return impl->durable; }
+void Message::setDurable(bool durable) { impl->setDurable(durable); }
+bool Message::getDurable() const { return impl->isDurable(); }
 
-bool Message::getRedelivered() const { return impl->redelivered; }
-void Message::setRedelivered(bool redelivered) { impl->redelivered = redelivered; }
+bool Message::getRedelivered() const { return impl->isRedelivered(); }
+void Message::setRedelivered(bool redelivered) { impl->setRedelivered(redelivered); }
 
 const Variant::Map& Message::getProperties() const { return impl->getHeaders(); }
 Variant::Map& Message::getProperties() { return impl->getHeaders(); }
