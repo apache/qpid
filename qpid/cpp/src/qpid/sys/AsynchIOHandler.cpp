@@ -175,6 +175,9 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
                     write(framing::ProtocolInitiation(framing::highestProtocolVersion));
                     readError = true;
                     aio->queueWriteClose();
+                } else {
+                    //read any further data that may already have been sent
+                    decoded += codec->decode(buff->bytes+buff->dataStart+in.getPosition(), buff->dataCount-in.getPosition());
                 }
             } catch (const std::exception& e) {
                 QPID_LOG(error, e.what());
