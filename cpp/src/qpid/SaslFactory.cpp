@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,9 @@
  * under the License.
  *
  */
-#include "qpid//SaslFactory.h"
+#include "qpid/SaslFactory.h"
+#include "qpid/SaslServer.h"
+#include "qpid/NullSaslServer.h"
 #include <map>
 #include <string.h>
 
@@ -31,6 +33,7 @@
 namespace qpid {
 
 //Null implementation
+
 
 SaslFactory::SaslFactory() {}
 
@@ -48,6 +51,12 @@ SaslFactory& SaslFactory::getInstance()
 std::auto_ptr<Sasl> SaslFactory::create( const std::string &, const std::string &, const std::string &, const std::string &, int, int, bool )
 {
     return std::auto_ptr<Sasl>();
+}
+
+std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings&)
+{
+    std::auto_ptr<SaslServer> server(new NullSaslServer(realm));
+    return server;
 }
 
 qpid::sys::Mutex SaslFactory::lock;
@@ -140,6 +149,22 @@ typedef int CallbackProc();
 qpid::sys::Mutex SaslFactory::lock;
 std::auto_ptr<SaslFactory> SaslFactory::instance;
 
+class CyrusSaslServer : public SaslServer
+{
+  public:
+    CyrusSaslServer(const std::string& realm, bool encryptionRequired, const qpid::sys::SecuritySettings& external);
+    ~CyrusSaslServer();
+    Status start(const std::string& mechanism, const std::string* response, std::string& challenge);
+    Status step(const std::string* response, std::string& challenge);
+    std::string getMechanisms();
+    std::string getUserid();
+    std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(size_t);
+  private:
+    std::string realm;
+    std::string userid;
+    sasl_conn_t *sasl_conn;
+};
+
 SaslFactory::SaslFactory()
 {
     sasl_callback_t* callbacks = 0;
@@ -167,6 +192,12 @@ std::auto_ptr<Sasl> SaslFactory::create(const std::string & username, const std:
 {
     std::auto_ptr<Sasl> sasl(new CyrusSasl(username, password, serviceName, hostName, minSsf, maxSsf, allowInteraction));
     return sasl;
+}
+
+std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, bool encryptionRequired, const qpid::sys::SecuritySettings& external)
+{
+    std::auto_ptr<SaslServer> server(new CyrusSaslServer(realm, encryptionRequired, external));
+    return server;
 }
 
 CyrusSasl::CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction)
@@ -382,6 +413,179 @@ std::auto_ptr<SecurityLayer> CyrusSasl::getSecurityLayer(uint16_t maxFrameSize)
     return securityLayer;
 }
 
+CyrusSaslServer::CyrusSaslServer(const std::string& r, bool encryptionRequired, const qpid::sys::SecuritySettings& external) : realm(r), sasl_conn(0)
+{
+    int code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
+                               NULL, /* Server FQDN, gethostname() */
+                               realm.c_str(), /* Authentication realm */
+                               NULL, /* Local IP, needed for some mechanism */
+                               NULL, /* Remote IP, needed for some mechanism */
+                               NULL, /* Callbacks */
+                               0, /* Connection flags */
+                               &sasl_conn);
+
+    if (SASL_OK != code) {
+        QPID_LOG(error, "SASL: Connection creation failed: [" << code << "] " << sasl_errdetail(sasl_conn));
+
+        // TODO: Change this to an exception signaling
+        // server error, when one is available
+        throw qpid::framing::ConnectionForcedException("Unable to perform authentication");
+    }
+
+    sasl_security_properties_t secprops;
+
+    //TODO: should the actual SSF values be configurable here?
+    secprops.min_ssf = encryptionRequired ? 10: 0;
+    secprops.max_ssf = 256;
+
+    // If the transport provides encryption, notify the SASL library of
+    // the key length and set the ssf range to prevent double encryption.
+    QPID_LOG(debug, "External ssf=" << external.ssf << " and auth=" << external.authid);
+    sasl_ssf_t external_ssf = (sasl_ssf_t) external.ssf;
+    if (external_ssf) {
+        int result = sasl_setprop(sasl_conn, SASL_SSF_EXTERNAL, &external_ssf);
+        if (result != SASL_OK) {
+            throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external SSF: " << result));
+        }
+
+        secprops.max_ssf = secprops.min_ssf = 0;
+    }
+
+    QPID_LOG(debug, "min_ssf: " << secprops.min_ssf <<
+             ", max_ssf: " << secprops.max_ssf <<
+             ", external_ssf: " << external_ssf );
+
+    if (!external.authid.empty()) {
+        const char* external_authid = external.authid.c_str();
+        int result = sasl_setprop(sasl_conn, SASL_AUTH_EXTERNAL, external_authid);
+        if (result != SASL_OK) {
+            throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external auth: " << result));
+        }
+
+        QPID_LOG(debug, "external auth detected and set to " << external_authid);
+    }
+    secprops.maxbufsize = 65535;
+    secprops.property_names = 0;
+    secprops.property_values = 0;
+    secprops.security_flags = 0; /* or SASL_SEC_NOANONYMOUS etc as appropriate */
+    /*
+     * The nodict flag restricts SASL authentication mechanisms
+     * to those that are not susceptible to dictionary attacks.
+     * They are:
+     *   SRP
+     *   PASSDSS-3DES-1
+     *   EXTERNAL
+     */
+    if (external.nodict) secprops.security_flags |= SASL_SEC_NODICTIONARY;
+    int result = sasl_setprop(sasl_conn, SASL_SEC_PROPS, &secprops);
+    if (result != SASL_OK) {
+        throw framing::InternalErrorException(QPID_MSG("SASL error: " << result));
+    }
+}
+
+CyrusSaslServer::~CyrusSaslServer()
+{
+    if (sasl_conn) {
+        sasl_dispose(&sasl_conn);
+        sasl_conn = 0;
+    }
+}
+
+CyrusSaslServer::Status CyrusSaslServer::start(const std::string& mechanism, const std::string* response, std::string& chllng)
+{
+    const char *challenge;
+    unsigned int challenge_len;
+
+    // This should be at same debug level as mech list in getMechanisms().
+    QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
+    int code = sasl_server_start(sasl_conn,
+                                 mechanism.c_str(),
+                                 (response ? response->c_str() : 0), (response ? response->size() : 0),
+                                 &challenge, &challenge_len);
+    switch (code) {
+      case SASL_OK:
+        return SaslServer::OK;
+      case SASL_CONTINUE:
+        chllng = std::string(challenge, challenge_len);
+        return SaslServer::CHALLENGE;
+      case SASL_NOMECH:
+        QPID_LOG(info, "Unsupported mechanism: " << mechanism);
+      default:
+        return SaslServer::FAIL;
+    }
+}
+
+CyrusSaslServer::Status CyrusSaslServer::step(const std::string* response, std::string& chllng)
+{
+    const char *challenge;
+    unsigned int challenge_len;
+
+    int code = sasl_server_step(sasl_conn,
+                                (response ? response->c_str() : 0), (response ? response->size() : 0),
+                                &challenge, &challenge_len);
+
+    switch (code) {
+      case SASL_OK:
+        return SaslServer::OK;
+      case SASL_CONTINUE:
+        chllng = std::string(challenge, challenge_len);
+        return SaslServer::CHALLENGE;
+      default:
+        return SaslServer::FAIL;
+    }
+
+}
+std::string CyrusSaslServer::getMechanisms()
+{
+    const char *separator = " ";
+    const char *list;
+    unsigned int list_len;
+    int count;
+
+    int code = sasl_listmech(sasl_conn, NULL,
+                             "", separator, "",
+                             &list, &list_len,
+                             &count);
+
+    if (SASL_OK != code) {
+        QPID_LOG(info, "SASL: Mechanism listing failed: " << sasl_errdetail(sasl_conn));
+
+        // TODO: Change this to an exception signaling
+        // server error, when one is available
+        throw qpid::framing::ConnectionForcedException("Mechanism listing failed");
+    } else {
+        std::string mechanisms(list, list_len);
+        QPID_LOG(info, "SASL: Mechanism list: " << mechanisms);
+        return mechanisms;
+    }
+}
+std::string CyrusSaslServer::getUserid()
+{
+    const void* ptr;
+    int code = sasl_getprop(sasl_conn, SASL_USERNAME, &ptr);
+    if (SASL_OK == code) {
+        userid = static_cast<const char*>(ptr);
+    } else {
+        QPID_LOG(warning, "Failed to retrieve sasl username");
+    }
+    return userid;
+}
+
+std::auto_ptr<SecurityLayer> CyrusSaslServer::getSecurityLayer(size_t maxFrameSize)
+{
+    const void* value(0);
+    int result = sasl_getprop(sasl_conn, SASL_SSF, &value);
+    if (result != SASL_OK) {
+        throw framing::InternalErrorException(QPID_MSG("SASL error: " << sasl_errdetail(sasl_conn)));
+    }
+    uint ssf = *(reinterpret_cast<const unsigned*>(value));
+    std::auto_ptr<SecurityLayer> securityLayer;
+    if (ssf) {
+        securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize, ssf));
+    }
+    return securityLayer;
+}
+
 int getUserFromSettings(void* context, int /*id*/, const char** result, unsigned* /*len*/)
 {
     if (context) {
@@ -428,7 +632,6 @@ int getPasswordFromSettings(sasl_conn_t* conn, void* context, int /*id*/, sasl_s
         return SASL_FAIL;
     }
 }
-
 } // namespace qpid
 
 #endif

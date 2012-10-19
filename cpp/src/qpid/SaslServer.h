@@ -1,5 +1,5 @@
-#ifndef QPID_SASLFACTORY_H
-#define QPID_SASLFACTORY_H
+#ifndef QPID_SASLSERVER_H
+#define QPID_SASLSERVER_H
 
 /*
  *
@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,28 +21,28 @@
  * under the License.
  *
  */
-#include "qpid/Sasl.h"
-#include "qpid/sys/Mutex.h"
+#include <string>
 #include <memory>
 
 namespace qpid {
-class SaslServer;
+namespace sys {
+class SecurityLayer;
+}
 /**
- * Factory for instances of the Sasl interface through which Sasl
- * support is provided to a ConnectionHandler.
+ *
  */
-class SaslFactory
+class SaslServer
 {
   public:
-    QPID_COMMON_EXTERN std::auto_ptr<Sasl> create(const std::string & userName, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction=true );
-    QPID_COMMON_EXTERN std::auto_ptr<SaslServer> createServer(const std::string& realm, bool encryptionRequired, const qpid::sys::SecuritySettings&);
-    QPID_COMMON_EXTERN static SaslFactory& getInstance();
-    QPID_COMMON_EXTERN ~SaslFactory();
+    typedef enum {OK, FAIL, CHALLENGE} Status;
+    virtual ~SaslServer() {}
+    virtual Status start(const std::string& mechanism, const std::string* response, std::string& challenge) = 0;
+    virtual Status step(const std::string* response, std::string& challenge) = 0;
+    virtual std::string getMechanisms() = 0;
+    virtual std::string getUserid() = 0;
+    virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(size_t) = 0;
   private:
-    SaslFactory();
-    static qpid::sys::Mutex lock;
-    static std::auto_ptr<SaslFactory> instance;
 };
 } // namespace qpid
 
-#endif  /*!QPID_SASLFACTORY_H*/
+#endif  /*!QPID_SASLSERVER_H*/

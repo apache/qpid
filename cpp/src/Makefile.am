@@ -359,6 +359,9 @@ libqpidcommon_la_SOURCES +=			\
   qpid/Sasl.h                                   \
   qpid/SaslFactory.cpp                          \
   qpid/SaslFactory.h                            \
+  qpid/SaslServer.h                             \
+  qpid/NullSaslServer.h                         \
+  qpid/NullSaslServer.cpp                       \
   qpid/Serializer.h				\
   qpid/SessionId.cpp				\
   qpid/SessionState.cpp				\
