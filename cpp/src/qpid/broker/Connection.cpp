@@ -118,7 +118,7 @@ void Connection::addManagementObject() {
         agent = broker.getManagementAgent();
         if (agent != 0) {
             // TODO set last bool true if system connection
-            mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false));
+            mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false, "AMQP 0-10"));
             mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId);
         }

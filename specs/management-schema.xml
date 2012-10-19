@@ -359,6 +359,7 @@
     <property name="saslMechanism"      type="sstr"   access="RO" desc="SASL mechanism"/>
     <property name="saslSsf"            type="uint16"   access="RO" desc="SASL security strength factor"/>
     <property name="remoteProperties"   type="map"    access="RO" desc="optional map of identifying information sent by the remote"/>
+    <property name="protocol"           type="sstr"   access="RC" desc="protocol in use"/>
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
