@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_SENDERIMPL_H
-#define QPID_MESSAGING_SENDERIMPL_H
+#ifndef QPID_AMQP_SASL_H
+#define QPID_AMQP_SASL_H
 
 /*
  *
@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,28 +21,34 @@
  * under the License.
  *
  */
-#include "qpid/RefCounted.h"
-#include "qpid/sys/IntegerTypes.h"
+#include "qpid/amqp/Encoder.h"
+#include "qpid/amqp/Reader.h"
+#include <string>
+#include <vector>
 
 namespace qpid {
-namespace messaging {
+namespace amqp {
 
-class Message;
-class Session;
-
-class SenderImpl : public virtual qpid::RefCounted
+/**
+ * Base for SASL client and server utilities
+ */
+class Sasl : protected Reader
 {
   public:
-    virtual ~SenderImpl() {}
-    virtual void send(const Message& message, bool sync) = 0;
-    virtual void close() = 0;
-    virtual void setCapacity(uint32_t) = 0;
-    virtual uint32_t getCapacity() = 0;
-    virtual uint32_t getUnsettled() = 0;
-    virtual const std::string& getName() const = 0;
-    virtual Session getSession() const = 0;
-  private:
-};
-}} // namespace qpid::messaging
+    Sasl(const std::string& id);
+    virtual ~Sasl();
+    std::size_t read(const char* data, size_t available);
+    std::size_t write(char* data, size_t available);
+    std::size_t readProtocolHeader(const char* buffer, std::size_t size);
+    std::size_t writeProtocolHeader(char* buffer, std::size_t size);
+  protected:
+    const std::string id;
+    std::vector<char> buffer;
+    Encoder encoder;
 
-#endif  /*!QPID_MESSAGING_SENDERIMPL_H*/
+    void* startFrame();
+    void endFrame(void*);
+};
+}} // namespace qpid::amqp
+
+#endif  /*!QPID_AMQP_SASL_H*/
