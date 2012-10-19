@@ -777,7 +777,8 @@ amqp_la_SOURCES = \
   qpid/broker/amqp/Translation.h \
   qpid/broker/amqp/Translation.cpp
 
-amqp_la_LDFLAGS = $(PLUGINLDFLAGS)
+amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(PROTON_CFLAGS)
+amqp_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
 
 cmoduleexec_LTLIBRARIES += amqpc.la
 amqpc_la_LIBADD = libqpidcommon.la
@@ -805,7 +806,8 @@ amqpc_la_SOURCES = \
   qpid/messaging/amqp/TcpTransport.h		\
   qpid/messaging/amqp/TcpTransport.cpp
 
-amqpc_la_LDFLAGS = $(PLUGINLDFLAGS)
+amqpc_la_CXXFLAGS=$(AM_CXXFLAGS) $(PROTON_CFLAGS)
+amqpc_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
 
 endif #HAVE_PROTON
 
