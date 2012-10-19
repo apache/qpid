@@ -1044,6 +1044,7 @@ set (qpidmessaging_SOURCES
      qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
+     qpid/messaging/ProtocolRegistry.cpp
      qpid/messaging/Receiver.cpp
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/Session.cpp
@@ -1118,6 +1119,7 @@ set (qpidbroker_SOURCES
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp
      qpid/broker/PriorityQueue.cpp
+     qpid/broker/Protocol.cpp
      qpid/broker/Queue.cpp
      qpid/broker/QueueCleaner.cpp
      qpid/broker/QueueListeners.cpp
