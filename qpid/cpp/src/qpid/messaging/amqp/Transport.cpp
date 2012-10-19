@@ -21,6 +21,7 @@
 #include "qpid/messaging/amqp/Transport.h"
 #include "qpid/messaging/amqp/TransportContext.h"
 #include <map>
+#include <string>
 
 namespace qpid {
 namespace messaging {

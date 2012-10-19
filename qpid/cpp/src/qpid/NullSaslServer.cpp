@@ -20,6 +20,7 @@
  */
 #include "NullSaslServer.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/SecurityLayer.h"
 #include <assert.h>
 #include <boost/format.hpp>
 
