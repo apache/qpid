@@ -57,6 +57,9 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         Map data = new ConcurrentHashMap();
 
         String file = null;
+        String fileName = (environment.containsKey(Context.PROVIDER_URL))
+                            ? (String)environment.get(Context.PROVIDER_URL) : System.getProperty(Context.PROVIDER_URL);
+
         try
         {
 

@@ -766,7 +766,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
             {
                 while(!_closed)
                 {
-                    while(!_started || (_recoveredMessage == null && _messageConsumerList.isEmpty()))
+                    while(!_closed && (!_started || (_recoveredMessage == null && _messageConsumerList.isEmpty())))
                     {
                         try
                         {
@@ -777,7 +777,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                             return;
                         }
                     }
-                    while(_started && (_recoveredMessage != null || !_messageConsumerList.isEmpty()))
+                    while(!_closed && (_started && (_recoveredMessage != null || !_messageConsumerList.isEmpty())))
                     {
                         Message msg;
 
