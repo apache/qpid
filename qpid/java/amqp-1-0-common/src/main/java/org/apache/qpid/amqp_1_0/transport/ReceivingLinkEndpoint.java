@@ -113,33 +113,37 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
         synchronized (getLock())
         {
             TransientState transientState;
-            boolean existingState = _unsettledMap.containsKey(transfer.getDeliveryTag());
-            _unsettledMap.put(transfer.getDeliveryTag(), transfer.getState());
+            final Binary deliveryTag = delivery.getDeliveryTag();
+            boolean existingState = _unsettledMap.containsKey(deliveryTag);
+            if(!existingState || transfer.getState() != null)
+            {
+                _unsettledMap.put(deliveryTag, transfer.getState());
+            }
             if(!existingState)
             {
                 transientState = new TransientState(transfer.getDeliveryId());
-                if(Boolean.TRUE.equals(transfer.getSettled()))
+                if(delivery.isSettled())
                 {
                     transientState.setSettled(true);
                 }
-                _unsettledIds.put(transfer.getDeliveryTag(), transientState);
+                _unsettledIds.put(deliveryTag, transientState);
                 setLinkCredit(getLinkCredit().subtract(UnsignedInteger.ONE));
                 setDeliveryCount(getDeliveryCount().add(UnsignedInteger.ONE));
 
             }
             else
             {
-                transientState = _unsettledIds.get(transfer.getDeliveryTag());
+                transientState = _unsettledIds.get(deliveryTag);
                 transientState.incrementCredit();
-                if(Boolean.TRUE.equals(transfer.getSettled()))
+                if(delivery.isSettled())
                 {
                     transientState.setSettled(true);
                 }
             }
 
-            if(transientState.isSettled())
+            if(transientState.isSettled() && delivery.isComplete())
             {
-                _unsettledMap.remove(transfer.getDeliveryTag());
+                _unsettledMap.remove(deliveryTag);
             }
             getLinkEventListener().messageTransfer(transfer);
 
@@ -371,7 +375,7 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
                     tag = iter.next();
                     tagsToUpdate.add(tag);
 
-                    deliveryId = _unsettledIds.get(firstTag).getDeliveryId();
+                    deliveryId = _unsettledIds.get(tag).getDeliveryId();
 
                     if(deliveryId.equals(last.add(UnsignedInteger.ONE)))
                     {
