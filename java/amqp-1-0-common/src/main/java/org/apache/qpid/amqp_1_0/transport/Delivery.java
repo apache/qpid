@@ -71,6 +71,10 @@ public class Delivery
         {
             setComplete(true);
         }
+        if(Boolean.TRUE.equals(transfer.getSettled()))
+        {
+            setSettled(true);
+        }
     }
 
     public List<Transfer> getTransfers()
