@@ -367,7 +367,6 @@ void Bridge::ioThreadPropagateBinding(const string& queue, const string& exchang
         peer->getExchange().bind(queue, exchange, key, args);
     } else {
       // link's periodic maintenance visit will attempt to recover
-      QPID_LOG(warning, "Cannot propagate binding for dynamic bridge as session has been detached");
     }
 }
 
