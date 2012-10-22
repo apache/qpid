@@ -292,6 +292,7 @@ endif
 EXTRA_DIST +=\
   CMakeLists.txt \
   config.h.cmake \
+  amqp.cmake \
   rdma.cmake \
   ssl.cmake \
   managementgen.cmake \
@@ -515,12 +516,17 @@ libqpidcommon_la_SOURCES +=			\
   qpid/amqp_0_10/Codecs.cpp			\
   qpid/amqp/CharSequence.h                      \
   qpid/amqp/CharSequence.cpp                    \
+  qpid/amqp/Codec.h				\
+  qpid/amqp/Constructor.h			\
   qpid/amqp/Decoder.h                       	\
   qpid/amqp/Decoder.cpp                       	\
   qpid/amqp/Descriptor.h                       	\
   qpid/amqp/Descriptor.cpp                     	\
+  qpid/amqp/descriptors.h                       \
   qpid/amqp/Encoder.h                       	\
   qpid/amqp/Encoder.cpp                       	\
+  qpid/amqp/ListReader.h			\
+  qpid/amqp/LoggingReader.h			\
   qpid/amqp/MessageEncoder.h                    \
   qpid/amqp/MessageEncoder.cpp                  \
   qpid/amqp/MessageId.h		                \
@@ -533,7 +539,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/amqp/SaslClient.h			\
   qpid/amqp/SaslClient.cpp			\
   qpid/amqp/SaslServer.h			\
-  qpid/amqp/SaslServer.cpp
+  qpid/amqp/SaslServer.cpp			\
+  qpid/amqp/typecodes.h
 
 #libqpidcommon is not really the 'right' place for the Transport
 #interface, which is only used in 1.0 impl of messaging API, but this
