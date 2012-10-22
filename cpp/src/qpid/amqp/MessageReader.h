@@ -102,7 +102,7 @@ class MessageReader : public Reader
     virtual void onBody(const qpid::types::Variant&, const Descriptor&) = 0;
     virtual void onFooter(const CharSequence&) = 0;
 
-    CharSequence getBareMessage() const;
+    QPID_COMMON_EXTERN CharSequence getBareMessage() const;
 
   private:
     /*
