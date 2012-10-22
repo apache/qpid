@@ -19,7 +19,7 @@
 
 if HAVE_SWIG
 
-EXTRA_DIST = CMakeLists.txt qmfengine.i
+EXTRA_DIST = qmfengine.i
 SUBDIRS = tests
 
 if HAVE_RUBY_DEVEL
