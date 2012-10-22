@@ -74,8 +74,8 @@ if (BUILD_AMQP)
     target_link_libraries (amqp qpidbroker qpidcommon)
     set_target_properties (amqp PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS ${PROTON_COMPILE_FLAGS}
-                           LINK_FLAGS ${PROTON_LINK_FLAGS})
+                           COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
+                           LINK_FLAGS "${PROTON_LINK_FLAGS}")
     install (TARGETS amqp
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
@@ -109,8 +109,8 @@ if (BUILD_AMQP)
     target_link_libraries (amqpc qpidclient qpidcommon)
     set_target_properties (amqpc PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS ${PROTON_COMPILE_FLAGS}
-                           LINK_FLAGS ${PROTON_LINK_FLAGS})
+                           COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
+                           LINK_FLAGS "${PROTON_LINK_FLAGS}")
     install (TARGETS amqpc
              DESTINATION ${QPIDC_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_CLIENT})
