@@ -23,6 +23,7 @@
  */
 #include <stddef.h>
 #include <string>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace amqp {
@@ -37,11 +38,11 @@ struct CharSequence
     const char* data;
     size_t size;
 
-    operator bool() const;
-    std::string str() const;
-    void init();
+    QPID_COMMON_EXTERN operator bool() const;
+    QPID_COMMON_EXTERN std::string str() const;
+    QPID_COMMON_EXTERN void init();
 
-    static CharSequence create(const char* data, size_t size);
+    QPID_COMMON_EXTERN static CharSequence create(const char* data, size_t size);
 };
 }} // namespace qpid::amqp
 
