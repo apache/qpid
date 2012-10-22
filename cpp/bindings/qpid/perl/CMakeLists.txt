@@ -33,6 +33,6 @@ set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_F
 ##----------------------------------
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_perl.so
               ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.pm
-        DESTINATION ${PERL_ARCHLIB}
+        DESTINATION ${PERL_PFX_ARCHLIB}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )

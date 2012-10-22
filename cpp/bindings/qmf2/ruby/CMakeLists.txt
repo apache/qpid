@@ -32,7 +32,7 @@ swig_link_libraries(cqmf2_ruby qmf2 ${RUBY_LIBRARY})
 ##----------------------------------
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqmf2_ruby.so
         RENAME cqmf2.so
-        DESTINATION ${RUBY_ARCH_DIR}
+        DESTINATION ${RUBY_PFX_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 

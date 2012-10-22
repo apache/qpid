@@ -31,7 +31,6 @@ set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_F
 ##------------------------------------
 ## Install the complete Python binding
 ##------------------------------------
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile cqpid.py
                               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile cqpid.py
@@ -39,12 +38,12 @@ install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile cqpi
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid.py
               ${CMAKE_CURRENT_BINARY_DIR}/cqpid.pyc
               ${CMAKE_CURRENT_BINARY_DIR}/cqpid.pyo
-        DESTINATION ${PYTHON_SITE_PACKAGES}
+        DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_cqpid_python.so
         RENAME _cqpid.so
-        DESTINATION ${PYTHON_SITE_PACKAGES}
+        DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 
