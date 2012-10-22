@@ -34,7 +34,7 @@ struct Descriptor;
 }
 namespace messaging {
 class Address;
-struct MessageImpl;
+class MessageImpl;
 namespace amqp {
 
 /**
