@@ -274,8 +274,12 @@ remember_location(msg_group_test)
 
 
 # qpid-perftest and qpid-latency-test are generally useful so install them
-install (TARGETS qpid-perftest qpid-latency-test RUNTIME
-         DESTINATION ${QPID_INSTALL_BINDIR})
+install (TARGETS
+         qpid-perftest qpid-latency-test qpid-client-test
+         qpid-ping
+         qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
+         qpid-txtest
+         RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
 
 # This should ideally be done as part of the test run, but I don't know a way
 # to get these arguments and the working directory set like Makefile.am does,
