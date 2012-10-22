@@ -47,12 +47,12 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qmfengine.py
               ${CMAKE_CURRENT_SOURCE_DIR}/qmf.py
               ${CMAKE_CURRENT_BINARY_DIR}/qmf.pyc
               ${CMAKE_CURRENT_BINARY_DIR}/qmf.pyo
-        DESTINATION ${PYTHON_SITE_PACKAGES}
+        DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_qmfengine_python.so
         RENAME _qmfengine.so
-        DESTINATION ${PYTHON_SITE_PACKAGES}
+        DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 

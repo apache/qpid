@@ -32,6 +32,6 @@ swig_link_libraries(qmfengine_ruby qmf qmfconsole ${RUBY_LIBRARY})
 ##----------------------------------
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libqmfengine_ruby.so
         RENAME qmfengine.so
-        DESTINATION ${RUBY_ARCH_DIR}
+        DESTINATION ${RUBY_PFX_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )

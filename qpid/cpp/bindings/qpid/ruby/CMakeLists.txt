@@ -43,7 +43,7 @@ set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_F
 ##----------------------------------
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_ruby.so
         RENAME cqpid.so
-        DESTINATION ${RUBY_ARCH_DIR}
+        DESTINATION ${RUBY_PFX_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 
