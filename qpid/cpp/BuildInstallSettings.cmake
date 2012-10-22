@@ -102,10 +102,22 @@ if (WIN32)
        "Directory to install library files")
   set (QPID_INSTALL_SBINDIR bin CACHE STRING
        "Directory to install system admin executables")
+  set (QPID_INSTALL_TESTDIR bin CACHE STRING
+       "Directory for test executables")
   set (QPIDC_MODULE_DIR plugins/client CACHE STRING
        "Directory to load client plug-in modules from")
   set (QPIDD_MODULE_DIR plugins/broker CACHE STRING
        "Directory to load broker plug-in modules from")
+
+# function to get absolute path from a variable that may be relative to the
+# install prefix - For Windows we can never know the absolute install prefix
+# as this is decided at install time so this just returns the input path
+  function(set_absolute_install_path var input)
+    set (${var} ${input} PARENT_SCOPE)
+  endfunction(set_absolute_install_path)
+
+  set (INCLUDE_INSTALL_DIR ${QPID_INSTALL_INCLUDEDIR})
+  set (LIB_INSTALL_DIR ${QPID_INSTALL_INCLUDEDIR})
 endif (WIN32)
 
 if (UNIX)
