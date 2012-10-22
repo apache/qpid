@@ -33,7 +33,7 @@ if (GEN_DOXYGEN)
 
     # HTML files are generated to ./html - put those in the install.
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
-             DESTINATION ${QPID_INSTALL_HTMLDIR}
+             DESTINATION ${QPID_INSTALL_DOCDIR}/api/html
              COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
     if (CPACK_GENERATOR STREQUAL "NSIS")
         set (CPACK_NSIS_MENU_LINKS

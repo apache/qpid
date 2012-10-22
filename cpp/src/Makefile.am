@@ -129,7 +129,6 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(srcdir) -I=$(bu
 # Destination for intalled programs and tests defined here
 #
 qpidexecdir = $(libexecdir)/qpid
-AM_CXXFLAGS += -DQPID_LIBEXEC_DIR=\"$(qpidexecdir)\"
 qpidexec_PROGRAMS =
 qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/tests
