@@ -23,6 +23,7 @@
  */
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/types/Variant.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace amqp {
@@ -41,10 +42,10 @@ struct MessageId
         ULONG
     } type;
 
-    MessageId();
-    void assign(std::string&) const;
-    void set(qpid::amqp::CharSequence bytes, qpid::types::VariantType t);
-    void set(uint64_t ulong);
+    QPID_COMMON_EXTERN MessageId();
+    QPID_COMMON_EXTERN void assign(std::string&) const;
+    QPID_COMMON_EXTERN void set(qpid::amqp::CharSequence bytes, qpid::types::VariantType t);
+    QPID_COMMON_EXTERN void set(uint64_t ulong);
 
 };
 

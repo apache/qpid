@@ -34,7 +34,7 @@ namespace messaging {
 
 class Address;
 class Codec;
-struct MessageImpl;
+class MessageImpl;
 
 /**   \ingroup messaging 
  * Representation of a message.
