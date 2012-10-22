@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/sys/IntegerTypes.h"
+#include "qpid/CommonImportExport.h"
 #include <map>
 #include <string>
 #include <stddef.h>
@@ -43,33 +44,33 @@ class Reader;
 class Decoder
 {
   public:
-    Decoder(const char*, size_t);
+    QPID_COMMON_EXTERN Decoder(const char*, size_t);
 
-    size_t available();
-    uint8_t readCode();
+    QPID_COMMON_EXTERN size_t available();
+    QPID_COMMON_EXTERN uint8_t readCode();
 
-    bool readBoolean();
-    uint8_t readUByte();
-    uint16_t readUShort();
-    uint32_t readUInt();
-    uint64_t readULong();
-    int8_t readByte();
-    int16_t readShort();
-    int32_t readInt();
-    int64_t readLong();
-    float readFloat();
-    double readDouble();
-    qpid::types::Uuid readUuid();
-    CharSequence readSequence8();
-    CharSequence readSequence32();
-    Descriptor readDescriptor();
-    void read(Reader& reader);
+    QPID_COMMON_EXTERN bool readBoolean();
+    QPID_COMMON_EXTERN uint8_t readUByte();
+    QPID_COMMON_EXTERN uint16_t readUShort();
+    QPID_COMMON_EXTERN uint32_t readUInt();
+    QPID_COMMON_EXTERN uint64_t readULong();
+    QPID_COMMON_EXTERN int8_t readByte();
+    QPID_COMMON_EXTERN int16_t readShort();
+    QPID_COMMON_EXTERN int32_t readInt();
+    QPID_COMMON_EXTERN int64_t readLong();
+    QPID_COMMON_EXTERN float readFloat();
+    QPID_COMMON_EXTERN double readDouble();
+    QPID_COMMON_EXTERN qpid::types::Uuid readUuid();
+    QPID_COMMON_EXTERN CharSequence readSequence8();
+    QPID_COMMON_EXTERN CharSequence readSequence32();
+    QPID_COMMON_EXTERN Descriptor readDescriptor();
+    QPID_COMMON_EXTERN void read(Reader& reader);
 
-    void readMap(std::map<std::string, qpid::types::Variant>&);
-    std::map<std::string, qpid::types::Variant> readMap();
-    void advance(size_t);
-    size_t getPosition() const;
-    void resetSize(size_t size);
+    QPID_COMMON_EXTERN void readMap(std::map<std::string, qpid::types::Variant>&);
+    QPID_COMMON_EXTERN std::map<std::string, qpid::types::Variant> readMap();
+    QPID_COMMON_EXTERN void advance(size_t);
+    QPID_COMMON_EXTERN size_t getPosition() const;
+    QPID_COMMON_EXTERN void resetSize(size_t size);
 
   private:
     const char* const start;
