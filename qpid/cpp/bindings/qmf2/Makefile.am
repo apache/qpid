@@ -19,7 +19,7 @@
 
 if HAVE_SWIG
 
-EXTRA_DIST = CMakeLists.txt qmf2.i
+EXTRA_DIST = qmf2.i
 SUBDIRS = examples/cpp
 
 if HAVE_RUBY_DEVEL

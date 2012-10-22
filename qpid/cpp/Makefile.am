@@ -25,8 +25,8 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = \
   LICENSE NOTICE README.txt SSL RELEASE_NOTES DESIGN \
   xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
-  packaging/NSIS QPID_VERSION.txt bindings/swig_python_typemaps.i \
-  bindings/swig_ruby_typemaps.i bindings/swig_perl_typemaps.i
+  packaging/NSIS QPID_VERSION.txt bindings/CMakeLists.txt \
+  bindings/swig_python_typemaps.i bindings/swig_ruby_typemaps.i bindings/swig_perl_typemaps.i
 
 SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings/qpid bindings/qmf2
 
