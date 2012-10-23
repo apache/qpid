@@ -57,32 +57,52 @@ public class ClientRegistry
         return Collections.unmodifiableSet(_registeredClientNames);
     }
 
-    public int awaitClients(int numberOfClientsToAwait, long timeout)
+    /**
+     * @return the number of clients that are still absent.
+     */
+    public int awaitClients(final int numberOfClientsToAwait, final long idleTimeout)
     {
-        final long endTime = System.currentTimeMillis() + timeout;
+        long deadlineForNextRegistration = deadline(idleTimeout);
 
-        int numberOfClientsAbsent = numberOfClientsToAwait - _registeredClientNames.size();
-        long remainingTimeout = endTime - System.currentTimeMillis();
+        int numberOfClientsAbsent = numberAbsent(numberOfClientsToAwait);
 
-        while(numberOfClientsAbsent > 0 && remainingTimeout > 0)
+        while(numberOfClientsAbsent > 0 && System.currentTimeMillis() < deadlineForNextRegistration)
         {
             synchronized (_lock)
             {
                 try
                 {
-                    _lock.wait(remainingTimeout);
+                    _lock.wait(idleTimeout);
                 }
                 catch (InterruptedException e)
                 {
                    Thread.currentThread().interrupt();
+                   return numberOfClientsAbsent;
                 }
             }
 
-            numberOfClientsAbsent = numberOfClientsToAwait - _registeredClientNames.size();
-            remainingTimeout = endTime - System.currentTimeMillis();
+            int newNumberAbsent = numberAbsent(numberOfClientsToAwait);
+            if(newNumberAbsent < numberOfClientsAbsent)
+            {
+                // a registration was received since the last loop, so reset the timeout
+                deadlineForNextRegistration = deadline(idleTimeout);
+            }
+
+            numberOfClientsAbsent = newNumberAbsent;
         }
 
         return numberOfClientsAbsent < 0 ? 0 : numberOfClientsAbsent;
+    }
+
+
+    private long deadline(final long idleTimeout)
+    {
+        return System.currentTimeMillis() + idleTimeout;
+    }
+
+    private int numberAbsent(int numberOfClientsToAwait)
+    {
+        return numberOfClientsToAwait - _registeredClientNames.size();
     }
 
     private void notifyAllWaiters()
