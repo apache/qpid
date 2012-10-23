@@ -31,6 +31,7 @@ else()
 endif(EXISTS "${PROJECT_SOURCE_DIR}/../QPID_VERSION.txt")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\1" QPID_VERSION_MAJOR "${QPID_VERSION}")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\2" QPID_VERSION_MINOR "${QPID_VERSION}")
+set (QPID_VERSION_FULL "${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR}")
 
 # When doing installs, there are a number of components that the item can
 # be associated with. Since there may be different sets of components desired
@@ -143,7 +144,7 @@ endfunction(set_absolute_install_path)
   set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
   set (SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
   set (SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
-  set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION} CACHE PATH "Shared read only data directory")
+  set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION_FULL} CACHE PATH "Shared read only data directory")
   
   set (QPID_COMPONENT_BROKER runtime)
   set (QPID_COMPONENT_CLIENT runtime)
