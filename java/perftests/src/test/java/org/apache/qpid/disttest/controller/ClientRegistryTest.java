@@ -29,6 +29,8 @@ public class ClientRegistryTest extends TestCase
 {
     private static final String CLIENT1_REGISTERED_NAME = "CLIENT1_REGISTERED_NAME";
     private static final String CLIENT2_REGISTERED_NAME = "CLIENT2_REGISTERED_NAME";
+    private static final String CLIENT3_REGISTERED_NAME = "CLIENT3_REGISTERED_NAME";
+
     private static final int AWAIT_DELAY = 100;
 
     private ClientRegistry _clientRegistry = new ClientRegistry();
@@ -70,13 +72,48 @@ public class ClientRegistryTest extends TestCase
         assertEquals(0, numberOfClientsAbsent);
     }
 
-    public void testAwaitTwoClientWhenClientRegistersWhilstWaiting()
+    public void testAwaitTwoClientsWhenClientRegistersWhilstWaiting()
     {
         _clientRegistry.registerClient(CLIENT1_REGISTERED_NAME);
         registerClientLater(CLIENT2_REGISTERED_NAME, 50);
 
         int numberOfClientsAbsent = _clientRegistry.awaitClients(2, AWAIT_DELAY);
         assertEquals(0, numberOfClientsAbsent);
+    }
+
+    public void testAwaitTimeoutForPromptRegistrations()
+    {
+        registerClientsLaterAndAssertResult("Clients registering every 100ms should be within 600ms timeout",
+                new int[] {300, 400, 500},
+                600,
+                0);
+    }
+
+    public void testAwaitTimeoutForWhenThirdRegistrationIsLate()
+    {
+        registerClientsLaterAndAssertResult("Third client registering tardily should exceed timeout",
+                new int[] {300, 400, 1500},
+                600,
+                1);
+    }
+
+    public void testAwaitTimeoutWhenSecondAndThirdRegistrationsAreLate()
+    {
+        registerClientsLaterAndAssertResult("Second and third clients registering tardily should exceed timeout",
+                new int[] {300, 1500, 1500},
+                600,
+                2);
+    }
+
+    private void registerClientsLaterAndAssertResult(String message, int[] registrationDelays, int timeout, int expectedNumberOfAbsentees)
+    {
+        registerClientLater(CLIENT1_REGISTERED_NAME, registrationDelays[0]);
+        registerClientLater(CLIENT2_REGISTERED_NAME, registrationDelays[1]);
+        registerClientLater(CLIENT3_REGISTERED_NAME, registrationDelays[2]);
+
+        int numberOfClientsAbsent = _clientRegistry.awaitClients(3, timeout);
+
+        assertEquals(message, expectedNumberOfAbsentees, numberOfClientsAbsent);
     }
 
     private void registerClientLater(final String clientName, long delayInMillis)
