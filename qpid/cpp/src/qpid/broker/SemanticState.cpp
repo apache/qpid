@@ -432,9 +432,9 @@ void SemanticState::cancel(ConsumerImpl::shared_ptr c)
     Queue::shared_ptr queue = c->getQueue();
     if(queue) {
         queue->cancel(c);
-        if (queue->canAutoDelete() && !queue->hasExclusiveOwner()) {
+        // Only run auto-delete for counted consumers.
+        if (c->isCounted() && queue->canAutoDelete() && !queue->hasExclusiveOwner())
             Queue::tryAutoDelete(session.getBroker(), queue, connectionId, userID);
-        }
     }
     c->cancel();
 }
