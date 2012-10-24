@@ -87,6 +87,7 @@ SslSocket::SslSocket(const std::string& certName, bool clientAuth) :
 {
     //configure prototype socket:
     prototype = SSL_ImportFD(0, PR_NewTCPSocket());
+
     if (clientAuth) {
         NSS_CHECK(SSL_OptionSet(prototype, SSL_REQUEST_CERTIFICATE, PR_TRUE));
         NSS_CHECK(SSL_OptionSet(prototype, SSL_REQUIRE_CERTIFICATE, PR_TRUE));
@@ -131,7 +132,10 @@ void SslSocket::setTcpNoDelay() const
 void SslSocket::connect(const SocketAddress& addr) const
 {
     BSDSocket::connect(addr);
+}
 
+void SslSocket::finishConnect(const SocketAddress& addr) const
+{
     nssSocket = SSL_ImportFD(0, PR_ImportTCPSocket(fd));
 
     void* arg;
@@ -167,9 +171,9 @@ void SslSocket::close() const
 int SslSocket::listen(const SocketAddress& sa, int backlog) const
 {
     //get certificate and key (is this the correct way?)
-    std::string certName( (certname == "") ? "localhost.localdomain" : certname);
-    CERTCertificate *cert = PK11_FindCertFromNickname(const_cast<char*>(certName.c_str()), 0);
-    if (!cert) throw Exception(QPID_MSG("Failed to load certificate '" << certName << "'"));
+    std::string cName( (certname == "") ? "localhost.localdomain" : certname);
+    CERTCertificate *cert = PK11_FindCertFromNickname(const_cast<char*>(cName.c_str()), 0);
+    if (!cert) throw Exception(QPID_MSG("Failed to load certificate '" << cName << "'"));
     SECKEYPrivateKey *key = PK11_FindKeyByAnyCert(cert, 0);
     if (!key) throw Exception(QPID_MSG("Failed to retrieve private key from certificate"));
     NSS_CHECK(SSL_ConfigSecureServer(prototype, cert, key, NSS_FindCertKEAType(cert)));

@@ -196,6 +196,13 @@ void AsynchConnector::connComplete(DispatchHandle& h)
     int errCode = socket.getError();
     if (errCode == 0) {
         h.stopWatch();
+        try {
+            socket.finishConnect(sa);
+        } catch (const std::exception& e) {
+            failCallback(socket, 0, e.what());
+            DispatchHandle::doDelete();
+            return;
+        }
         connCallback(socket);
     } else {
         // Retry while we cause an immediate exception

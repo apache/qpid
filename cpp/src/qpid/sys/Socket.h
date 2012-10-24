@@ -46,6 +46,7 @@ public:
     virtual void setTcpNoDelay() const = 0;
 
     virtual void connect(const SocketAddress&) const = 0;
+    virtual void finishConnect(const SocketAddress&) const = 0;
 
     virtual void close() const = 0;
 

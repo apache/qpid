@@ -69,8 +69,6 @@ if (BUILD_SSL)
          qpid/sys/ssl/util.cpp
          qpid/sys/ssl/SslSocket.h
          qpid/sys/ssl/SslSocket.cpp
-         qpid/sys/ssl/SslIo.h
-         qpid/sys/ssl/SslIo.cpp
         )
 
     add_library (sslcommon SHARED ${sslcommon_SOURCES})
@@ -87,8 +85,6 @@ if (BUILD_SSL)
 
     set (ssl_SOURCES
          qpid/sys/SslPlugin.cpp
-         qpid/sys/ssl/SslHandler.h
-         qpid/sys/ssl/SslHandler.cpp
         )
     add_library (ssl MODULE ${ssl_SOURCES})
     target_link_libraries (ssl qpidbroker sslcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
