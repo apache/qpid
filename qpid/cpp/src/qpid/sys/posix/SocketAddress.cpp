@@ -102,6 +102,11 @@ std::string SocketAddress::asString(bool numeric) const
     return asString(ai.ai_addr, ai.ai_addrlen);
 }
 
+std::string SocketAddress::getHost() const
+{
+    return host;
+}
+
 bool SocketAddress::nextAddress() {
     bool r = currentAddrInfo->ai_next != 0;
     if (r)
