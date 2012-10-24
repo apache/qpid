@@ -23,7 +23,6 @@
  * Use socketpair to test the poller
  */
 
-#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/posix/PrivatePosix.h"
 
@@ -106,8 +105,8 @@ int main(int /*argc*/, char** /*argv*/)
 
         auto_ptr<Poller> poller(new Poller);
 
-        PosixIOHandle f0(sv[0]);
-        PosixIOHandle f1(sv[1]);
+        IOHandle f0(sv[0]);
+        IOHandle f1(sv[1]);
 
         PollerHandle h0(f0);
         PollerHandle h1(f1);
@@ -225,8 +224,8 @@ int main(int /*argc*/, char** /*argv*/)
 	
         auto_ptr<Poller> poller1(new Poller);
 
-        PosixIOHandle f2(sv[0]);
-        PosixIOHandle f3(sv[1]);
+        IOHandle f2(sv[0]);
+        IOHandle f3(sv[1]);
 
         PollerHandle h2(f2);
         PollerHandle h3(f3);

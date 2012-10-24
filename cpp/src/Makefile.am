@@ -46,7 +46,6 @@ windows_dist = \
   qpid/sys/windows/QpidDllMain.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/SocketAddress.cpp \
-  qpid/sys/windows/Socket.cpp \
   qpid/sys/windows/SslAsynchIO.cpp \
   qpid/sys/windows/SslAsynchIO.h \
   qpid/sys/windows/StrError.cpp \
@@ -56,6 +55,8 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
+  qpid/sys/windows/WinSocket.cpp \
+  qpid/sys/windows/WinSocket.h \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
@@ -158,7 +159,8 @@ qpidd_SOURCES = qpidd.cpp qpidd.h $(posix_qpidd_src)
 libqpidcommon_la_SOURCES +=			\
   qpid/log/posix/SinkOptions.cpp		\
   qpid/sys/posix/IOHandle.cpp			\
-  qpid/sys/posix/Socket.cpp			\
+  qpid/sys/posix/BSDSocket.cpp			\
+  qpid/sys/posix/BSDSocket.h			\
   qpid/sys/posix/SocketAddress.cpp		\
   qpid/sys/posix/AsynchIO.cpp			\
   qpid/sys/posix/FileSysDir.cpp			\
