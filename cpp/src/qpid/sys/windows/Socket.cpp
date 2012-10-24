@@ -160,12 +160,6 @@ void Socket::setNonblocking() const {
     QPID_WINSOCK_CHECK(ioctlsocket(impl->fd, FIONBIO, &nonblock));
 }
 
-void Socket::connect(const std::string& host, const std::string& port) const
-{
-    SocketAddress sa(host, port);
-    connect(sa);
-}
-
 void
 Socket::connect(const SocketAddress& addr) const
 {
@@ -207,12 +201,6 @@ int Socket::read(void *buf, size_t count) const
     if (received == SOCKET_ERROR)
         return -1;
     return received;
-}
-
-int Socket::listen(const std::string& host, const std::string& port, int backlog) const
-{
-    SocketAddress sa(host, port);
-    return listen(sa, backlog);
 }
 
 int Socket::listen(const SocketAddress& addr, int backlog) const

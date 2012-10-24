@@ -33,6 +33,10 @@ namespace sys {
 class Duration;
 class SocketAddress;
 
+namespace ssl {
+class SslMuxSocket;
+}
+
 class QPID_COMMON_CLASS_EXTERN Socket : public IOHandle
 {
 public:
@@ -47,7 +51,6 @@ public:
 
     QPID_COMMON_EXTERN void setTcpNoDelay() const;
 
-    QPID_COMMON_EXTERN void connect(const std::string& host, const std::string& port) const;
     QPID_COMMON_EXTERN void connect(const SocketAddress&) const;
 
     QPID_COMMON_EXTERN void close() const;
@@ -57,7 +60,6 @@ public:
      *@param backlog maximum number of pending connections.
      *@return The bound port.
      */
-    QPID_COMMON_EXTERN int listen(const std::string& host = "", const std::string& port = "0", int backlog = 10) const;
     QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
 
     /**
@@ -91,19 +93,18 @@ public:
     QPID_COMMON_EXTERN int read(void *buf, size_t count) const;
     QPID_COMMON_EXTERN int write(const void *buf, size_t count) const;
 
-private:
+protected:
     /** Create socket */
     void createSocket(const SocketAddress&) const;
 
-public:
-    /** Construct socket with existing handle */
-    Socket(IOHandlePrivate*);
-
-protected:
     mutable std::string localname;
     mutable std::string peername;
     mutable bool nonblocking;
     mutable bool nodelay;
+
+    /** Construct socket with existing handle */
+    Socket(IOHandlePrivate*);
+    friend class qpid::sys::ssl::SslMuxSocket;
 };
 
 }}

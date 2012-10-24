@@ -24,6 +24,7 @@
 
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/OutputControl.h"
+#include "qpid/sys/SecuritySettings.h"
 
 #include <boost/intrusive_ptr.hpp>
 
@@ -35,14 +36,15 @@ namespace framing {
 
 namespace sys {
 
+class AsynchIO;
+struct AsynchIOBufferBase;
+class Socket;
 class Timer;
 class TimerTask;
 
 namespace ssl {
 
 class SslIO;
-struct SslIOBufferBase;
-class SslSocket;
 
 class SslHandler : public OutputControl {
     std::string identifier;
@@ -70,14 +72,14 @@ class SslHandler : public OutputControl {
     void giveReadCredit(int32_t);
 
     // Input side
-    void readbuff(SslIO& aio, SslIOBufferBase* buff);
-    void eof(SslIO& aio);
-    void disconnect(SslIO& aio);
+    void readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase* buff);
+    void eof(qpid::sys::AsynchIO&);
+    void disconnect(qpid::sys::AsynchIO& a);
 
     // Notifications
-    void nobuffs(SslIO& aio);
-    void idle(SslIO& aio);
-    void closedSocket(SslIO& aio, const SslSocket& s);
+    void nobuffs(qpid::sys::AsynchIO&);
+    void idle(qpid::sys::AsynchIO&);
+    void closedSocket(qpid::sys::AsynchIO&, const qpid::sys::Socket& s);
 };
 
 }}} // namespace qpid::sys::ssl

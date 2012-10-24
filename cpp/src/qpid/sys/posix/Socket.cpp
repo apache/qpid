@@ -135,12 +135,6 @@ void Socket::setTcpNoDelay() const
     }
 }
 
-void Socket::connect(const std::string& host, const std::string& port) const
-{
-    SocketAddress sa(host, port);
-    connect(sa);
-}
-
 void Socket::connect(const SocketAddress& addr) const
 {
     // The display name for an outbound connection needs to be the name that was specified
@@ -186,12 +180,6 @@ Socket::close() const
     if (socket == -1) return;
     if (::close(socket) < 0) throw QPID_POSIX_ERROR(errno);
     socket = -1;
-}
-
-int Socket::listen(const std::string& host, const std::string& port, int backlog) const
-{
-    SocketAddress sa(host, port);
-    return listen(sa, backlog);
 }
 
 int Socket::listen(const SocketAddress& sa, int backlog) const
