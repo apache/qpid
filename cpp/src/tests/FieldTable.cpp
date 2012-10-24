@@ -20,7 +20,6 @@
  */
 #include <iostream>
 #include <algorithm>
-#include "qpid/sys/alloca.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
