@@ -176,6 +176,10 @@ void BSDSocket::connect(const SocketAddress& addr) const
     }
 }
 
+void BSDSocket::finishConnect(const SocketAddress&) const
+{
+}
+
 void
 BSDSocket::close() const
 {

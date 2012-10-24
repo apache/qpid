@@ -55,6 +55,7 @@ public:
     QPID_COMMON_EXTERN virtual void setTcpNoDelay() const;
 
     QPID_COMMON_EXTERN virtual void connect(const SocketAddress&) const;
+    QPID_COMMON_EXTERN virtual void finishConnect(const SocketAddress&) const;
 
     QPID_COMMON_EXTERN virtual void close() const;
 

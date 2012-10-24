@@ -165,6 +165,11 @@ WinSocket::connect(const SocketAddress& addr) const
 }
 
 void
+WinSocket::finishConnect(const SocketAddress&) const
+{
+}
+
+void
 WinSocket::close() const
 {
     SOCKET& socket = handle->fd;
