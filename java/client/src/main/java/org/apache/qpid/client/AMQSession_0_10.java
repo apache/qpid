@@ -53,6 +53,7 @@ import org.apache.qpid.client.messaging.address.AddressHelper;
 import org.apache.qpid.client.messaging.address.Link;
 import org.apache.qpid.client.messaging.address.Link.SubscriptionQueue;
 import org.apache.qpid.client.messaging.address.Node;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -624,7 +625,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         {
             if (AMQDestination.TOPIC_TYPE == consumer.getDestination().getAddressType())
             {
-                createSubscriptionQueue(consumer.getDestination(), consumer.isNoLocal());
+                String selector =  consumer.getMessageSelectorFilter() == null? null : consumer.getMessageSelectorFilter().getSelector();
+
+                createSubscriptionQueue(consumer.getDestination(), consumer.isNoLocal(), selector);
                 queueName = consumer.getDestination().getAMQQueueName();
                 consumer.setQueuename(queueName);
             }
@@ -1300,8 +1303,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             }
         }
     }
-    
-    void createSubscriptionQueue(AMQDestination dest, boolean noLocal) throws AMQException
+
+    void createSubscriptionQueue(AMQDestination dest, boolean noLocal, String messageSelector) throws AMQException
     {
         Link link = dest.getLink();
         String queueName = dest.getQueueName();
@@ -1325,12 +1328,14 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 link.isDurable() ? Option.DURABLE : Option.NONE,
                 queueProps.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
 
+        Map<String,Object> bindingArguments = new HashMap<String, Object>();
+        bindingArguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
         getQpidSession().exchangeBind(queueName,
-        		              dest.getAddressName(), 
-        		              dest.getSubject(), 
-        		              Collections.<String,Object>emptyMap());
+                              dest.getAddressName(),
+                              dest.getSubject(),
+                              bindingArguments);
     }
-    
+
     public void setLegacyFieldsForQueueType(AMQDestination dest)
     {
         // legacy support
