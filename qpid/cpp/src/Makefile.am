@@ -512,7 +512,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/TimerWarnings.cpp			\
   qpid/sys/TimerWarnings.h			\
   qpid/sys/Waitable.h				\
-  qpid/sys/alloca.h				\
   qpid/sys/uuid.h				\
   qpid/sys/unordered_map.h			\
   qpid/amqp_0_10/Codecs.cpp			\
