@@ -217,14 +217,14 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
 
     // We must have at least one resolved address
     QPID_LOG(info, "SSL Listening to: " << sa.asString())
-    Socket* s = new Socket;
+    Socket* s = createSocket();
     listeningPort = s->listen(sa, backlog);
     listeners.push_back(s);
 
     // Try any other resolved addresses
     while (sa.nextAddress()) {
         QPID_LOG(info, "SSL Listening to: " << sa.asString())
-        Socket* s = new Socket;
+        Socket* s = createSocket();
         s->listen(sa, backlog);
         listeners.push_back(s);
     }
@@ -325,7 +325,7 @@ void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
     // upon connection failure or by the AsynchIO upon connection
     // shutdown.  The allocated AsynchConnector frees itself when it
     // is no longer needed.
-    qpid::sys::Socket* socket = new qpid::sys::Socket();
+    qpid::sys::Socket* socket = createSocket();
     connectFailedCallback = failed;
     AsynchConnector::create(*socket,
                             host,

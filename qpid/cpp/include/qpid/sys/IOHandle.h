@@ -22,8 +22,6 @@
  *
  */
 
-#include "qpid/CommonImportExport.h"
-
 namespace qpid {
 namespace sys {
 
@@ -31,18 +29,7 @@ namespace sys {
  * This is a class intended to abstract the Unix concept of file descriptor
  * or the Windows concept of HANDLE
  */
-class PollerHandle;
-class IOHandlePrivate;
-class IOHandle {
-    friend class PollerHandle;
-    friend class IOHandlePrivate;
-
-protected:
-    IOHandlePrivate* const impl;
-
-    IOHandle(IOHandlePrivate*);
-    QPID_COMMON_EXTERN virtual ~IOHandle();
-};
+class IOHandle;
 
 }}
 

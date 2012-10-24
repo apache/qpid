@@ -126,7 +126,7 @@ AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const 
 
     // We must have at least one resolved address
     QPID_LOG(info, "Listening to: " << sa.asString())
-    Socket* s = new Socket;
+    Socket* s = createSocket();
     uint16_t lport = s->listen(sa, backlog);
     QPID_LOG(debug, "Listened to: " << lport);
     listeners.push_back(s);
@@ -138,7 +138,7 @@ AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const 
         // Hack to ensure that all listening connections are on the same port
         sa.setAddrInfoPort(listeningPort);
         QPID_LOG(info, "Listening to: " << sa.asString())
-        Socket* s = new Socket;
+        Socket* s = createSocket();
         uint16_t lport = s->listen(sa, backlog);
         QPID_LOG(debug, "Listened to: " << lport);
         listeners.push_back(s);
@@ -204,7 +204,7 @@ void AsynchIOProtocolFactory::connect(
     // upon connection failure or by the AsynchIO upon connection
     // shutdown.  The allocated AsynchConnector frees itself when it
     // is no longer needed.
-    Socket* socket = new Socket();
+    Socket* socket = createSocket();
     try {
     AsynchConnector* c = AsynchConnector::create(
         *socket,

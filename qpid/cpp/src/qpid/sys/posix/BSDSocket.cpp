@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/sys/Socket.h"
+#include "qpid/sys/posix/BSDSocket.h"
 
 #include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/posix/check.h"
@@ -67,25 +67,41 @@ uint16_t getLocalPort(int fd)
 }
 }
 
-Socket::Socket() :
-    IOHandle(new IOHandlePrivate),
+BSDSocket::BSDSocket() :
+    fd(-1),
+    handle(new IOHandle),
     nonblocking(false),
     nodelay(false)
 {}
 
-Socket::Socket(IOHandlePrivate* h) :
-    IOHandle(h),
-    nonblocking(false),
-    nodelay(false)
-{}
-
-void Socket::createSocket(const SocketAddress& sa) const
+Socket* createSocket()
 {
-    int& socket = impl->fd;
-    if (socket != -1) Socket::close();
+    return new BSDSocket;
+}
+
+BSDSocket::BSDSocket(int fd0) :
+    fd(fd0),
+    handle(new IOHandle(fd)),
+    nonblocking(false),
+    nodelay(false)
+{}
+
+BSDSocket::~BSDSocket()
+{}
+
+BSDSocket::operator const IOHandle&() const
+{
+    return *handle;
+}
+
+void BSDSocket::createSocket(const SocketAddress& sa) const
+{
+    int& socket = fd;
+    if (socket != -1) BSDSocket::close();
     int s = ::socket(getAddrInfo(sa).ai_family, getAddrInfo(sa).ai_socktype, 0);
     if (s < 0) throw QPID_POSIX_ERROR(errno);
     socket = s;
+    *handle = IOHandle(s);
 
     try {
         if (nonblocking) setNonblocking();
@@ -98,44 +114,31 @@ void Socket::createSocket(const SocketAddress& sa) const
     } catch (std::exception&) {
         ::close(s);
         socket = -1;
+        *handle = IOHandle();
         throw;
     }
 }
 
-Socket* Socket::createSameTypeSocket() const {
-    int& socket = impl->fd;
-    // Socket currently has no actual socket attached
-    if (socket == -1)
-        return new Socket;
-
-    ::sockaddr_storage sa;
-    ::socklen_t salen = sizeof(sa);
-    QPID_POSIX_CHECK(::getsockname(socket, (::sockaddr*)&sa, &salen));
-    int s = ::socket(sa.ss_family, SOCK_STREAM, 0); // Currently only work with SOCK_STREAM
-    if (s < 0) throw QPID_POSIX_ERROR(errno);
-    return new Socket(new IOHandlePrivate(s));
-}
-
-void Socket::setNonblocking() const {
-    int& socket = impl->fd;
+void BSDSocket::setNonblocking() const {
+    int& socket = fd;
     nonblocking = true;
     if (socket != -1) {
         QPID_POSIX_CHECK(::fcntl(socket, F_SETFL, O_NONBLOCK));
     }
 }
 
-void Socket::setTcpNoDelay() const
+void BSDSocket::setTcpNoDelay() const
 {
-    int& socket = impl->fd;
+    int& socket = fd;
     nodelay = true;
     if (socket != -1) {
         int flag = 1;
-        int result = ::setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
+        int result = ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
         QPID_POSIX_CHECK(result);
     }
 }
 
-void Socket::connect(const SocketAddress& addr) const
+void BSDSocket::connect(const SocketAddress& addr) const
 {
     // The display name for an outbound connection needs to be the name that was specified
     // for the address rather than a resolved IP address as we don't know which of
@@ -148,7 +151,7 @@ void Socket::connect(const SocketAddress& addr) const
 
     createSocket(addr);
 
-    const int& socket = impl->fd;
+    const int& socket = fd;
     // TODO the correct thing to do here is loop on failure until you've used all the returned addresses
     if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) < 0) &&
         (errno != EINPROGRESS)) {
@@ -174,19 +177,20 @@ void Socket::connect(const SocketAddress& addr) const
 }
 
 void
-Socket::close() const
+BSDSocket::close() const
 {
-    int& socket = impl->fd;
+    int& socket = fd;
     if (socket == -1) return;
     if (::close(socket) < 0) throw QPID_POSIX_ERROR(errno);
     socket = -1;
+    *handle = IOHandle();
 }
 
-int Socket::listen(const SocketAddress& sa, int backlog) const
+int BSDSocket::listen(const SocketAddress& sa, int backlog) const
 {
     createSocket(sa);
 
-    const int& socket = impl->fd;
+    const int& socket = fd;
     int yes=1;
     QPID_POSIX_CHECK(::setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
 
@@ -198,11 +202,11 @@ int Socket::listen(const SocketAddress& sa, int backlog) const
     return getLocalPort(socket);
 }
 
-Socket* Socket::accept() const
+Socket* BSDSocket::accept() const
 {
-    int afd = ::accept(impl->fd, 0, 0);
+    int afd = ::accept(fd, 0, 0);
     if ( afd >= 0) {
-        Socket* s = new Socket(new IOHandlePrivate(afd));
+        BSDSocket* s = new BSDSocket(afd);
         s->localname = localname;
         return s;
     }
@@ -211,38 +215,38 @@ Socket* Socket::accept() const
     else throw QPID_POSIX_ERROR(errno);
 }
 
-int Socket::read(void *buf, size_t count) const
+int BSDSocket::read(void *buf, size_t count) const
 {
-    return ::read(impl->fd, buf, count);
+    return ::read(fd, buf, count);
 }
 
-int Socket::write(const void *buf, size_t count) const
+int BSDSocket::write(const void *buf, size_t count) const
 {
-    return ::write(impl->fd, buf, count);
+    return ::write(fd, buf, count);
 }
 
-std::string Socket::getPeerAddress() const
+std::string BSDSocket::getPeerAddress() const
 {
     if (peername.empty()) {
-        peername = getName(impl->fd, false);
+        peername = getName(fd, false);
     }
     return peername;
 }
 
-std::string Socket::getLocalAddress() const
+std::string BSDSocket::getLocalAddress() const
 {
     if (localname.empty()) {
-        localname = getName(impl->fd, true);
+        localname = getName(fd, true);
     }
     return localname;
 }
 
-int Socket::getError() const
+int BSDSocket::getError() const
 {
     int       result;
     socklen_t rSize = sizeof (result);
 
-    if (::getsockopt(impl->fd, SOL_SOCKET, SO_ERROR, &result, &rSize) < 0)
+    if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &result, &rSize) < 0)
         throw QPID_POSIX_ERROR(errno);
 
     return result;

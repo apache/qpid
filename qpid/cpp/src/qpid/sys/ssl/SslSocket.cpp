@@ -98,16 +98,16 @@ SslSocket::SslSocket(const std::string& certName, bool clientAuth) :
  * returned from accept. Because we use posix accept rather than
  * PR_Accept, we have to reset the handshake.
  */
-SslSocket::SslSocket(IOHandlePrivate* ioph, PRFileDesc* model) : Socket(ioph), nssSocket(0), prototype(0)
+SslSocket::SslSocket(int fd, PRFileDesc* model) : BSDSocket(fd), nssSocket(0), prototype(0)
 {
-    nssSocket = SSL_ImportFD(model, PR_ImportTCPSocket(impl->fd));
+    nssSocket = SSL_ImportFD(model, PR_ImportTCPSocket(fd));
     NSS_CHECK(SSL_ResetHandshake(nssSocket, PR_TRUE));
 }
 
 void SslSocket::setNonblocking() const
 {
     if (!nssSocket) {
-        Socket::setNonblocking();
+        BSDSocket::setNonblocking();
         return;
     }
     PRSocketOptionData option;
@@ -119,7 +119,7 @@ void SslSocket::setNonblocking() const
 void SslSocket::setTcpNoDelay() const
 {
     if (!nssSocket) {
-        Socket::setTcpNoDelay();
+        BSDSocket::setTcpNoDelay();
         return;
     }
     PRSocketOptionData option;
@@ -130,9 +130,9 @@ void SslSocket::setTcpNoDelay() const
 
 void SslSocket::connect(const SocketAddress& addr) const
 {
-    Socket::connect(addr);
+    BSDSocket::connect(addr);
 
-    nssSocket = SSL_ImportFD(0, PR_ImportTCPSocket(impl->fd));
+    nssSocket = SSL_ImportFD(0, PR_ImportTCPSocket(fd));
 
     void* arg;
     // Use the connection's cert-name if it has one; else use global cert-name
@@ -155,12 +155,12 @@ void SslSocket::connect(const SocketAddress& addr) const
 void SslSocket::close() const
 {
     if (!nssSocket) {
-        Socket::close();
+        BSDSocket::close();
         return;
     }
-    if (impl->fd > 0) {
+    if (fd > 0) {
         PR_Close(nssSocket);
-        impl->fd = -1;
+        fd = -1;
     }
 }
 
@@ -176,15 +176,15 @@ int SslSocket::listen(const SocketAddress& sa, int backlog) const
     SECKEY_DestroyPrivateKey(key);
     CERT_DestroyCertificate(cert);
 
-    return Socket::listen(sa, backlog);
+    return BSDSocket::listen(sa, backlog);
 }
 
-SslSocket* SslSocket::accept() const
+Socket* SslSocket::accept() const
 {
     QPID_LOG(trace, "Accepting SSL connection.");
-    int afd = ::accept(impl->fd, 0, 0);
+    int afd = ::accept(fd, 0, 0);
     if ( afd >= 0) {
-        return new SslSocket(new IOHandlePrivate(afd), prototype);
+        return new SslSocket(afd, prototype);
     } else if (errno == EAGAIN) {
         return 0;
     } else {
@@ -275,15 +275,15 @@ SslMuxSocket::SslMuxSocket(const std::string& certName, bool clientAuth) :
 
 Socket* SslMuxSocket::accept() const
 {
-    int afd = ::accept(impl->fd, 0, 0);
+    int afd = ::accept(fd, 0, 0);
     if (afd >= 0) {
         QPID_LOG(trace, "Accepting connection with optional SSL wrapper.");
         if (isSslStream(afd)) {
             QPID_LOG(trace, "Accepted SSL connection.");
-            return new SslSocket(new IOHandlePrivate(afd), prototype);
+            return new SslSocket(afd, prototype);
         } else {
             QPID_LOG(trace, "Accepted Plaintext connection.");
-            return new Socket(new IOHandlePrivate(afd));
+            return new BSDSocket(afd);
         }
     } else if (errno == EAGAIN) {
         return 0;

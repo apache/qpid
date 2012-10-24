@@ -21,7 +21,6 @@
 
 #include "qpid/sys/PollableCondition.h"
 #include "qpid/sys/DispatchHandle.h"
-#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/Exception.h"
 
@@ -58,14 +57,14 @@ PollableConditionPrivate::PollableConditionPrivate(
     const sys::PollableCondition::Callback& cb,
     sys::PollableCondition& parent,
     const boost::shared_ptr<sys::Poller>& poller
-) : IOHandle(new sys::IOHandlePrivate), cb(cb), parent(parent)
+) : cb(cb), parent(parent)
 {
     int fds[2];
     if (::pipe(fds) == -1)
         throw ErrnoException(QPID_MSG("Can't create PollableCondition"));
-    impl->fd = fds[0];
+    fd = fds[0];
     writeFd = fds[1];
-    if (::fcntl(impl->fd, F_SETFL, O_NONBLOCK) == -1)
+    if (::fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
         throw ErrnoException(QPID_MSG("Can't create PollableCondition"));
     if (::fcntl(writeFd, F_SETFL, O_NONBLOCK) == -1)
         throw ErrnoException(QPID_MSG("Can't create PollableCondition"));

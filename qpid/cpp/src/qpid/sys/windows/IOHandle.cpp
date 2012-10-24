@@ -19,24 +19,11 @@
  *
  */
 
-#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/windows/IoHandlePrivate.h"
 #include <windows.h>
 
 namespace qpid {
 namespace sys {
 
-SOCKET toFd(const IOHandlePrivate* h)
-{
-    return h->fd;
-}
-
-IOHandle::IOHandle(IOHandlePrivate* h) :
-  impl(h)
-{}
-
-IOHandle::~IOHandle() {
-	delete impl;
-}
 
 }} // namespace qpid::sys
