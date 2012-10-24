@@ -316,6 +316,7 @@ EXTRA_DIST +=								\
   run_header_test							\
   header_test.py							\
   ssl_test								\
+  ping_broker								\
   config.null								\
   cpg_check.sh.in							\
   run_federation_tests							\
