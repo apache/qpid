@@ -51,7 +51,7 @@ struct ProtocolTimeoutTask : public sys::TimerTask {
     }
 };
 
-AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory* f) :
+AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory* f, bool nodict0) :
     identifier(id),
     aio(0),
     factory(f),
@@ -59,6 +59,7 @@ AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory
     reads(0),
     readError(false),
     isClient(false),
+    nodict(nodict0),
     readCredit(InfiniteCredit)
 {}
 
@@ -118,6 +119,15 @@ void AsynchIOHandler::giveReadCredit(int32_t credit) {
         aio->startReading();
 }
 
+namespace {
+    SecuritySettings getSecuritySettings(AsynchIO* aio, bool nodict)
+    {
+        SecuritySettings settings = aio->getSecuritySettings();
+        settings.nodict = nodict;
+        return settings;
+    }
+}
+
 void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (readError) {
         return;
@@ -168,7 +178,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
 
             QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
             try {
-                codec = factory->create(protocolInit.getVersion(), *this, identifier, SecuritySettings());
+                codec = factory->create(protocolInit.getVersion(), *this, identifier, getSecuritySettings(aio, nodict));
                 if (!codec) {
                     //TODO: may still want to revise this...
                     //send valid version header & close connection.
@@ -226,7 +236,7 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 
 void AsynchIOHandler::idle(AsynchIO&){
     if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier, SecuritySettings());
+        codec = factory->create(*this, identifier, getSecuritySettings(aio, nodict));
         write(framing::ProtocolInitiation(codec->getVersion()));
         // We've just sent the protocol negotiation so we can cancel the timeout for that
         // This is not ideal, because we've not received anything yet, but heartbeats will

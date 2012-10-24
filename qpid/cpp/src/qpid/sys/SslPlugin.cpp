@@ -236,7 +236,7 @@ void SslMuxProtocolFactory::established(Poller::shared_ptr poller, const Socket&
         return;
     }
 
-    AsynchIOHandler* async = new AsynchIOHandler(s.getFullAddress(), f);
+    AsynchIOHandler* async = new AsynchIOHandler(s.getFullAddress(), f, false);
 
     if (tcpNoDelay) {
         s.setTcpNoDelay();

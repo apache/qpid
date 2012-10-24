@@ -21,8 +21,10 @@
  *
  */
 
-#include "qpid/sys/IntegerTypes.h"
 #include "qpid/CommonImportExport.h"
+
+#include "qpid/sys/IntegerTypes.h"
+#include "qpid/sys/SecuritySettings.h"
 
 #include <string.h>
 
@@ -159,6 +161,8 @@ public:
     virtual void stopReading() = 0;
     virtual void requestCallback(RequestCallback) = 0;
     virtual BufferBase* getQueuedBuffer() = 0;
+
+    virtual SecuritySettings getSecuritySettings() = 0;
 
 protected:
     // Derived class manages lifetime; must be constructed using the

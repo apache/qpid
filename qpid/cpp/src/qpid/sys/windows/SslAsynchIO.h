@@ -81,8 +81,7 @@ public:
     virtual void stopReading();
     virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
-
-    QPID_COMMON_EXTERN unsigned int getSslKeySize();
+    virtual SecuritySettings getSecuritySettings(void);
 
 protected:
     CredHandle credHandle;

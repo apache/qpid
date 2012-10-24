@@ -258,4 +258,14 @@ void WinSocket::setTcpNoDelay() const
     }
 }
 
+int WinSocket::getKeyLen() const
+{
+    return 0;
+}
+
+std::string WinSocket::getClientAuthId() const
+{
+    return std::string();
+}
+
 }} // namespace qpid::sys

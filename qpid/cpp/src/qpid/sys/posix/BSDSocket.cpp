@@ -252,4 +252,14 @@ int BSDSocket::getError() const
     return result;
 }
 
+int BSDSocket::getKeyLen() const
+{
+    return 0;
+}
+
+std::string BSDSocket::getClientAuthId() const
+{
+    return std::string();
+}
+
 }} // namespace qpid::sys
