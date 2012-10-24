@@ -628,7 +628,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
                  << " key:" << key);
         framing::FieldTable args;
         qpid::amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
-        exchange->bind(queue, key, &args);
+        queue->bind(exchange, key, args);
     }
 }
 
