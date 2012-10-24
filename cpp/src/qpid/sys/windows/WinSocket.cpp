@@ -19,19 +19,12 @@
  *
  */
 
-#include "qpid/sys/Socket.h"
+#include "qpid/sys/windows/WinSocket.h"
 
 #include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/windows/check.h"
 #include "qpid/sys/windows/IoHandlePrivate.h"
 #include "qpid/sys/SystemInfo.h"
-
-// Ensure we get all of winsock2.h
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#endif
-
-#include <winsock2.h>
 
 namespace qpid {
 namespace sys {
@@ -108,22 +101,32 @@ uint16_t getLocalPort(int fd)
 }
 }  // namespace
 
-Socket::Socket() :
-    IOHandle(new IOHandlePrivate),
+WinSocket::WinSocket() :
+    handle(new IOHandle),
     nonblocking(false),
     nodelay(false)
 {}
 
-Socket::Socket(IOHandlePrivate* h) :
-    IOHandle(h),
-    nonblocking(false),
-    nodelay(false)
-{}
-
-void Socket::createSocket(const SocketAddress& sa) const
+Socket* createSocket()
 {
-    SOCKET& socket = impl->fd;
-    if (socket != INVALID_SOCKET) Socket::close();
+    return new WinSocket;
+}
+
+WinSocket::WinSocket(SOCKET fd) :
+    handle(new IOHandle(fd)),
+    nonblocking(false),
+    nodelay(false)
+{}
+
+WinSocket::operator const IOHandle&() const
+{
+    return *handle;
+}
+
+void WinSocket::createSocket(const SocketAddress& sa) const
+{
+    SOCKET& socket = handle->fd;
+    if (socket != INVALID_SOCKET) WinSocket::close();
 
     SOCKET s = ::socket (getAddrInfo(sa).ai_family,
                          getAddrInfo(sa).ai_socktype,
@@ -141,33 +144,19 @@ void Socket::createSocket(const SocketAddress& sa) const
     }
 }
 
-Socket* Socket::createSameTypeSocket() const {
-    SOCKET& socket = impl->fd;
-    // Socket currently has no actual socket attached
-    if (socket == INVALID_SOCKET)
-        return new Socket;
-
-    ::sockaddr_storage sa;
-    ::socklen_t salen = sizeof(sa);
-    QPID_WINSOCK_CHECK(::getsockname(socket, (::sockaddr*)&sa, &salen));
-    SOCKET s = ::socket(sa.ss_family, SOCK_STREAM, 0); // Currently only work with SOCK_STREAM
-    if (s == INVALID_SOCKET) throw QPID_WINDOWS_ERROR(WSAGetLastError());
-    return new Socket(new IOHandlePrivate(s));
-}
-
-void Socket::setNonblocking() const {
+void WinSocket::setNonblocking() const {
     u_long nonblock = 1;
-    QPID_WINSOCK_CHECK(ioctlsocket(impl->fd, FIONBIO, &nonblock));
+    QPID_WINSOCK_CHECK(ioctlsocket(handle->fd, FIONBIO, &nonblock));
 }
 
 void
-Socket::connect(const SocketAddress& addr) const
+WinSocket::connect(const SocketAddress& addr) const
 {
     peername = addr.asString(false);
 
     createSocket(addr);
 
-    const SOCKET& socket = impl->fd;
+    const SOCKET& socket = handle->fd;
     int err;
     WSASetLastError(0);
     if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) != 0) &&
@@ -176,38 +165,38 @@ Socket::connect(const SocketAddress& addr) const
 }
 
 void
-Socket::close() const
+WinSocket::close() const
 {
-    SOCKET& socket = impl->fd;
+    SOCKET& socket = handle->fd;
     if (socket == INVALID_SOCKET) return;
     QPID_WINSOCK_CHECK(closesocket(socket));
     socket = INVALID_SOCKET;
 }
 
 
-int Socket::write(const void *buf, size_t count) const
+int WinSocket::write(const void *buf, size_t count) const
 {
-    const SOCKET& socket = impl->fd;
+    const SOCKET& socket = handle->fd;
     int sent = ::send(socket, (const char *)buf, count, 0);
     if (sent == SOCKET_ERROR)
         return -1;
     return sent;
 }
 
-int Socket::read(void *buf, size_t count) const
+int WinSocket::read(void *buf, size_t count) const
 {
-    const SOCKET& socket = impl->fd;
+    const SOCKET& socket = handle->fd;
     int received = ::recv(socket, (char *)buf, count, 0);
     if (received == SOCKET_ERROR)
         return -1;
     return received;
 }
 
-int Socket::listen(const SocketAddress& addr, int backlog) const
+int WinSocket::listen(const SocketAddress& addr, int backlog) const
 {
     createSocket(addr);
 
-    const SOCKET& socket = impl->fd;
+    const SOCKET& socket = handle->fd;
     BOOL yes=1;
     QPID_WINSOCK_CHECK(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)));
 
@@ -219,64 +208,54 @@ int Socket::listen(const SocketAddress& addr, int backlog) const
     return getLocalPort(socket);
 }
 
-Socket* Socket::accept() const
+Socket* WinSocket::accept() const
 {
-  SOCKET afd = ::accept(impl->fd, 0, 0);
+  SOCKET afd = ::accept(handle->fd, 0, 0);
     if (afd != INVALID_SOCKET)
-        return new Socket(new IOHandlePrivate(afd));
+        return new WinSocket(afd);
     else if (WSAGetLastError() == EAGAIN)
         return 0;
     else throw QPID_WINDOWS_ERROR(WSAGetLastError());
 }
 
-std::string Socket::getPeerAddress() const
+std::string WinSocket::getPeerAddress() const
 {
     if (peername.empty()) {
-        peername = getName(impl->fd, false);
+        peername = getName(handle->fd, false);
     }
     return peername;
 }
 
-std::string Socket::getLocalAddress() const
+std::string WinSocket::getLocalAddress() const
 {
     if (localname.empty()) {
-        localname = getName(impl->fd, true);
+        localname = getName(handle->fd, true);
     }
     return localname;
 }
 
-int Socket::getError() const
+int WinSocket::getError() const
 {
     int       result;
     socklen_t rSize = sizeof (result);
 
-    QPID_WINSOCK_CHECK(::getsockopt(impl->fd, SOL_SOCKET, SO_ERROR, (char *)&result, &rSize));
+    QPID_WINSOCK_CHECK(::getsockopt(handle->fd, SOL_SOCKET, SO_ERROR, (char *)&result, &rSize));
     return result;
 }
 
-void Socket::setTcpNoDelay() const
+void WinSocket::setTcpNoDelay() const
 {
-    SOCKET& socket = impl->fd;
+    SOCKET& socket = handle->fd;
     nodelay = true;
     if (socket != INVALID_SOCKET) {
         int flag = 1;
-        int result = setsockopt(impl->fd,
+        int result = setsockopt(handle->fd,
                                 IPPROTO_TCP,
                                 TCP_NODELAY,
                                 (char *)&flag,
                                 sizeof(flag));
         QPID_WINSOCK_CHECK(result);
     }
-}
-
-inline IOHandlePrivate* IOHandlePrivate::getImpl(const qpid::sys::IOHandle &h)
-{
-    return h.impl;
-}
-
-SOCKET toSocketHandle(const Socket& s)
-{
-    return IOHandlePrivate::getImpl(s)->fd;
 }
 
 }} // namespace qpid::sys

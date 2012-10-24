@@ -23,7 +23,7 @@
  */
 
 #include "qpid/sys/IOHandle.h"
-#include "qpid/sys/Socket.h"
+#include "qpid/sys/posix/BSDSocket.h"
 #include <nspr.h>
 
 #include <string>
@@ -37,7 +37,7 @@ class Duration;
 
 namespace ssl {
 
-class SslSocket : public qpid::sys::Socket
+class SslSocket : public qpid::sys::BSDSocket
 {
 public:
     /** Create a socket wrapper for descriptor.
@@ -71,7 +71,7 @@ public:
      * Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
-    SslSocket* accept() const;
+    virtual Socket* accept() const;
 
     // TODO The following are raw operations, maybe they need better wrapping?
     int read(void *buf, size_t count) const;
@@ -92,8 +92,8 @@ protected:
      */
     mutable PRFileDesc* prototype;
 
-    SslSocket(IOHandlePrivate* ioph, PRFileDesc* model);
-    friend class SslMuxSocket;
+    SslSocket(int fd, PRFileDesc* model);
+    friend class SslMuxSocket; // Needed for this constructor
 };
 
 class SslMuxSocket : public SslSocket

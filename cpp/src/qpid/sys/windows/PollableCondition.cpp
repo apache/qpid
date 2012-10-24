@@ -57,8 +57,7 @@ private:
 PollableConditionPrivate::PollableConditionPrivate(const sys::PollableCondition::Callback& cb,
                                                    sys::PollableCondition& parent,
                                                    const boost::shared_ptr<sys::Poller>& poller)
-  : IOHandle(new sys::IOHandlePrivate(INVALID_SOCKET,
-                                      boost::bind(&PollableConditionPrivate::dispatch, this, _1))),
+  : IOHandle(INVALID_SOCKET, boost::bind(&PollableConditionPrivate::dispatch, this, _1)),
     cb(cb), parent(parent), poller(poller), isSet(0)
 {
 }

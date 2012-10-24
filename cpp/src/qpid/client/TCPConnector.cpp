@@ -72,12 +72,13 @@ TCPConnector::TCPConnector(Poller::shared_ptr p,
       closed(true),
       shutdownHandler(0),
       input(0),
+      socket(createSocket()),
       connector(0),
       aio(0),
       poller(p)
 {
     QPID_LOG(debug, "TCPConnector created for " << version);
-    settings.configureSocket(socket);
+    settings.configureSocket(*socket);
 }
 
 TCPConnector::~TCPConnector() {
@@ -88,7 +89,7 @@ void TCPConnector::connect(const std::string& host, const std::string& port) {
     Mutex::ScopedLock l(lock);
     assert(closed);
     connector = AsynchConnector::create(
-        socket,
+        *socket,
         host, port,
         boost::bind(&TCPConnector::connected, this, _1),
         boost::bind(&TCPConnector::connectFailed, this, _3));
@@ -99,7 +100,7 @@ void TCPConnector::connect(const std::string& host, const std::string& port) {
 
 void TCPConnector::connected(const Socket&) {
     connector = 0;
-    aio = AsynchIO::create(socket,
+    aio = AsynchIO::create(*socket,
                        boost::bind(&TCPConnector::readbuff, this, _1, _2),
                        boost::bind(&TCPConnector::eof, this, _1),
                        boost::bind(&TCPConnector::disconnected, this, _1),
@@ -116,7 +117,7 @@ void TCPConnector::start(sys::AsynchIO* aio_) {
 
     aio->createBuffers(maxFrameSize);
 
-    identifier = str(format("[%1%]") % socket.getFullAddress());
+    identifier = str(format("[%1%]") % socket->getFullAddress());
 }
 
 void TCPConnector::initAmqp() {
@@ -127,7 +128,7 @@ void TCPConnector::initAmqp() {
 void TCPConnector::connectFailed(const std::string& msg) {
     connector = 0;
     QPID_LOG(warning, "Connect failed: " << msg);
-    socket.close();
+    socket->close();
     if (!closed)
         closed = true;
     if (shutdownHandler)
@@ -318,7 +319,7 @@ void TCPConnector::eof(AsynchIO&) {
 
 void TCPConnector::disconnected(AsynchIO&) {
     close();
-    socketClosed(*aio, socket);
+    socketClosed(*aio, *socket);
 }
 
 void TCPConnector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer> sl)

@@ -20,7 +20,6 @@
  */
 
 #include "qpid/sys/Poller.h"
-#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/AtomicCount.h"
 #include "qpid/sys/DeletionManager.h"
@@ -64,12 +63,12 @@ class PollerHandlePrivate {
     };
 
     ::__uint32_t events;
-    const IOHandlePrivate* ioHandle;
+    const IOHandle* ioHandle;
     PollerHandle* pollerHandle;
     FDStat stat;
     Mutex lock;
 
-    PollerHandlePrivate(const IOHandlePrivate* h, PollerHandle* p) :
+    PollerHandlePrivate(const IOHandle* h, PollerHandle* p) :
       events(0),
       ioHandle(h),
       pollerHandle(p),
@@ -77,7 +76,7 @@ class PollerHandlePrivate {
     }
 
     int fd() const {
-        return toFd(ioHandle);
+        return ioHandle->fd;
     }
 
     bool isActive() const {
@@ -138,7 +137,7 @@ class PollerHandlePrivate {
 };
 
 PollerHandle::PollerHandle(const IOHandle& h) :
-    impl(new PollerHandlePrivate(h.impl, this))
+    impl(new PollerHandlePrivate(&h, this))
 {}
 
 PollerHandle::~PollerHandle() {

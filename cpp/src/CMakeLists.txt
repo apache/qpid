@@ -748,7 +748,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/PipeHandle.cpp
     qpid/sys/windows/PollableCondition.cpp
     qpid/sys/windows/Shlib.cpp
-    qpid/sys/windows/Socket.cpp
+    qpid/sys/windows/WinSocket.cpp
     qpid/sys/windows/SocketAddress.cpp
     qpid/sys/windows/StrError.cpp
     qpid/sys/windows/SystemInfo.cpp
@@ -853,7 +853,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/PollableCondition.cpp
     qpid/sys/posix/Shlib.cpp
     qpid/log/posix/SinkOptions.cpp
-    qpid/sys/posix/Socket.cpp
+    qpid/sys/posix/BSDSocket.cpp
     qpid/sys/posix/SocketAddress.cpp
     qpid/sys/posix/StrError.cpp
     qpid/sys/posix/Thread.cpp
