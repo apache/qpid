@@ -41,6 +41,8 @@ class Link;
 class Bridge;
 class SessionHandler;
 class Connection;
+class QueueRegistry;
+class ExchangeRegistry;
 }
 
 namespace framing {
@@ -90,34 +92,7 @@ class BrokerReplicator : public broker::Exchange,
 
     typedef std::map<std::string, QueueReplicatorPtr> QueueReplicatorMap;
 
-
-    /** Keep track of queues and exchanges that need to be cleaned up. */
-    class Cleaner {
-      public:
-        Cleaner(BrokerReplicator&);
-
-        /** Scan for existing queues and exchanges. */
-        void start();
-
-        // Forget a queue/exchange that does not need cleaning
-        void forgetExchange(const std::string& name);
-        void forgetQueue(const std::string& name);
-        // Clean up queues/exchange that are no longer on primary
-        void cleanExchanges();
-        void cleanQueues();
-
-      private:
-        typedef std::set<std::string> Names;
-
-        // add a queue/exchange that may need cleaning.
-        void addExchange(boost::shared_ptr<broker::Exchange>);
-        void addQueue(boost::shared_ptr<broker::Queue>);
-
-        BrokerReplicator& brokerReplicator;
-        Names queues, exchanges;
-    };
-  friend class Cleaner;
-
+    class UpdateTracker;
     class ErrorListener;
     class ConnectionObserver;
 
@@ -166,15 +141,18 @@ class BrokerReplicator : public broker::Exchange,
     ReplicationTest replicationTest;
     HaBroker& haBroker;
     broker::Broker& broker;
+    broker::ExchangeRegistry& exchanges;
+    broker::QueueRegistry& queues;
     boost::shared_ptr<broker::Link> link;
     bool initialized;
     AlternateExchangeSetter alternates;
     qpid::Address primary;
     typedef std::set<std::string> StringSet;
     StringSet replicatedExchanges; // exchanges that have been replicated.
-    Cleaner cleaner;
     broker::Connection* connection;
     EventDispatchMap dispatch;
+    std::auto_ptr<UpdateTracker> queueTracker;
+    std::auto_ptr<UpdateTracker> exchangeTracker;
 };
 }} // namespace qpid::broker
 

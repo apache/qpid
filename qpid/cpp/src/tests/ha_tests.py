@@ -29,7 +29,21 @@ from logging import getLogger, WARN, ERROR, DEBUG, INFO
 from qpidtoollibs import BrokerAgent
 from uuid import UUID
 
-class ReplicationTests(BrokerTest):
+log = getLogger(__name__)
+
+def grep(filename, regexp):
+    for line in open(filename).readlines():
+        if (regexp.search(line)): return True
+    return False
+
+class HaBrokerTest(BrokerTest):
+    """Base class for HA broker tests"""
+    def assert_log_no_errors(self, broker):
+        log = broker.get_log()
+        if grep(log, re.compile("] error|] critical")):
+            self.fail("Errors in log file %s"%(log))
+
+class ReplicationTests(HaBrokerTest):
     """Correctness tests for  HA replication."""
 
     def test_replication(self):
@@ -774,6 +788,19 @@ acl deny all all
         cluster.start()
         send_ttl_messages()
 
+    def test_stale_response(self):
+        """Check for race condition where a stale response is processed after an
+        event for the same queue/exchange """
+        cluster = HaCluster(self, 2)
+        s = cluster[0].connect().session()
+        s.sender("keep;{create:always}") # Leave this queue in place.
+        for i in xrange(100):            # FIXME aconway 2012-10-23: ??? IS this an issue?
+            s.sender("deleteme%s;{create:always,delete:always}"%(i)).close()
+        # It is possible for the backup to attempt to subscribe after the queue
+        # is deleted. This is not an error, but is logged as an error on the primary.
+        # The backup does not log this as an error so we only check the backup log for errors.
+        self.assert_log_no_errors(cluster[1])
+
 def fairshare(msgs, limit, levels):
     """
     Generator to return prioritised messages in expected order for a given fairshare limit
@@ -808,7 +835,7 @@ def priority_level(value, levels):
     offset = 5-math.ceil(levels/2.0)
     return min(max(value - offset, 0), levels-1)
 
-class LongTests(BrokerTest):
+class LongTests(HaBrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
 
     def duration(self):
@@ -891,7 +918,7 @@ class LongTests(BrokerTest):
             if unexpected_dead:
                 raise Exception("Brokers not running: %s"%unexpected_dead)
 
-class RecoveryTests(BrokerTest):
+class RecoveryTests(HaBrokerTest):
     """Tests for recovery after a failure."""
 
     def test_queue_hold(self):
