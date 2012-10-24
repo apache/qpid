@@ -44,11 +44,9 @@ class TimerTask;
 
 namespace ssl {
 
-class SslIO;
-
 class SslHandler : public OutputControl {
     std::string identifier;
-    SslIO* aio;
+    AsynchIO* aio;
     ConnectionCodec::Factory* factory;
     ConnectionCodec* codec;
     bool readError;
@@ -57,12 +55,12 @@ class SslHandler : public OutputControl {
     boost::intrusive_ptr<sys::TimerTask> timeoutTimerTask;
 
     void write(const framing::ProtocolInitiation&);
-    qpid::sys::SecuritySettings getSecuritySettings(SslIO* aio);
+    qpid::sys::SecuritySettings getSecuritySettings(AsynchIO* aio);
 
   public:
     SslHandler(std::string id, ConnectionCodec::Factory* f, bool nodict);
     ~SslHandler();
-    void init(SslIO* a, Timer& timer, uint32_t maxTime);
+    void init(AsynchIO* a, Timer& timer, uint32_t maxTime);
 
     void setClient() { isClient = true; }
 

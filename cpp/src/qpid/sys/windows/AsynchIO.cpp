@@ -290,6 +290,8 @@ public:
      */
     virtual BufferBase* getQueuedBuffer();
 
+    virtual SecuritySettings getSecuritySettings(void);
+
 private:
     ReadCallback readCallback;
     EofCallback eofCallback;
@@ -655,6 +657,13 @@ void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
 void AsynchIO::close(void) {
     socket.close();
     notifyClosed();
+}
+
+SecuritySettings AsynchIO::getSecuritySettings() {
+    SecuritySettings settings;
+    settings.ssf = socket.getKeyLen();
+    settings.authid = socket.getClientAuthId();
+    return settings;
 }
 
 void AsynchIO::readComplete(AsynchReadResult *result) {

@@ -148,7 +148,7 @@ AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const 
 
 void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
                                           ConnectionCodec::Factory* f, bool isClient) {
-    AsynchIOHandler* async = new AsynchIOHandler(s.getFullAddress(), f);
+    AsynchIOHandler* async = new AsynchIOHandler(s.getFullAddress(), f, false);
 
     if (tcpNoDelay) {
         s.setTcpNoDelay();

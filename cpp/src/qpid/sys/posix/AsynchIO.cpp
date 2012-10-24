@@ -251,6 +251,7 @@ public:
     virtual void stopReading();
     virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
+    virtual SecuritySettings getSecuritySettings();
 
 private:
     ~AsynchIO();
@@ -624,6 +625,13 @@ void AsynchIO::close(DispatchHandle& h) {
     if (closedCallback) {
         closedCallback(*this, socket);
     }
+}
+
+SecuritySettings AsynchIO::getSecuritySettings() {
+    SecuritySettings settings;
+    settings.ssf = socket.getKeyLen();
+    settings.authid = socket.getClientAuthId();
+    return settings;
 }
 
 } // namespace posix

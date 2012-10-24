@@ -85,6 +85,10 @@ public:
 
     virtual int read(void *buf, size_t count) const = 0;
     virtual int write(const void *buf, size_t count) const = 0;
+
+    /* Transport security related: */
+    virtual int getKeyLen() const = 0;
+    virtual std::string getClientAuthId() const = 0;
 };
 
 /** Make the default socket for whatever platform we are executing on
