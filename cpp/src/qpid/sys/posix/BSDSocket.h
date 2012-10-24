@@ -89,6 +89,9 @@ public:
     QPID_COMMON_EXTERN virtual int read(void *buf, size_t count) const;
     QPID_COMMON_EXTERN virtual int write(const void *buf, size_t count) const;
 
+    QPID_COMMON_EXTERN int getKeyLen() const;
+    QPID_COMMON_EXTERN std::string getClientAuthId() const;
+
 protected:
     /** Create socket */
     void createSocket(const SocketAddress&) const;

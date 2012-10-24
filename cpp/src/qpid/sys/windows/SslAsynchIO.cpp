@@ -241,11 +241,15 @@ AsynchIO::BufferBase* SslAsynchIO::getQueuedBuffer() {
     return sslBuff;
 }
 
-unsigned int SslAsynchIO::getSslKeySize() {
+SecuritySettings SslAsynchIO::getSecuritySettings() {
     SecPkgContext_KeyInfo info;
     memset(&info, 0, sizeof(info));
     ::QueryContextAttributes(&ctxtHandle, SECPKG_ATTR_KEY_INFO, &info);
-    return info.KeySize;
+
+    SecuritySettings settings;
+    settings.ssf = info.KeySize;
+    settings.authid = std::string();
+    return settings;
 }
 
 void SslAsynchIO::negotiationDone() {

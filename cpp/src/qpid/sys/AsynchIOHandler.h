@@ -51,6 +51,7 @@ class AsynchIOHandler : public OutputControl {
     uint32_t reads;
     bool readError;
     bool isClient;
+    bool nodict;
     AtomicValue<int32_t> readCredit;
     static const int32_t InfiniteCredit = -1;
     Mutex creditLock;
@@ -59,7 +60,7 @@ class AsynchIOHandler : public OutputControl {
     void write(const framing::ProtocolInitiation&);
 
   public:
-    QPID_COMMON_EXTERN AsynchIOHandler(const std::string& id, qpid::sys::ConnectionCodec::Factory* f );
+    QPID_COMMON_EXTERN AsynchIOHandler(const std::string& id, qpid::sys::ConnectionCodec::Factory* f, bool nodict);
     QPID_COMMON_EXTERN ~AsynchIOHandler();
     QPID_COMMON_EXTERN void init(AsynchIO* a, Timer& timer, uint32_t maxTime);
 

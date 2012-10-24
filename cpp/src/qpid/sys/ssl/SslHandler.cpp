@@ -69,7 +69,7 @@ SslHandler::~SslHandler() {
     delete codec;
 }
 
-void SslHandler::init(SslIO* a, Timer& timer, uint32_t maxTime) {
+void SslHandler::init(AsynchIO* a, Timer& timer, uint32_t maxTime) {
     aio = a;
 
     // Start timer for this connection
@@ -209,7 +209,7 @@ void SslHandler::idle(AsynchIO&){
         aio->queueWriteClose();
 }
 
-SecuritySettings SslHandler::getSecuritySettings(SslIO* aio)
+SecuritySettings SslHandler::getSecuritySettings(AsynchIO* aio)
 {
     SecuritySettings settings = aio->getSecuritySettings();
     settings.nodict = nodict;
