@@ -24,6 +24,7 @@
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
@@ -195,7 +196,7 @@ AsynchConnector::AsynchConnector(const Socket& sock,
 void AsynchConnector::start(Poller::shared_ptr)
 {
     try {
-        socket.connect(hostname, port);
+        socket.connect(SocketAddress(hostname, port));
         socket.setNonblocking();
         connCallback(socket);
     } catch(std::exception& e) {

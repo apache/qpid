@@ -83,7 +83,7 @@ void SslHandler::init(SslIO* a, Timer& timer, uint32_t maxTime) {
 void SslHandler::write(const framing::ProtocolInitiation& data)
 {
     QPID_LOG(debug, "SENT [" << identifier << "]: INIT(" << data << ")");
-    SslIO::BufferBase* buff = aio->getQueuedBuffer();
+    AsynchIOBufferBase* buff = aio->getQueuedBuffer();
     assert(buff);
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
@@ -106,7 +106,7 @@ void SslHandler::giveReadCredit(int32_t) {
 }
 
 // Input side
-void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
+void SslHandler::readbuff(AsynchIO& , AsynchIOBufferBase* buff) {
     if (readError) {
         return;
     }
@@ -160,13 +160,13 @@ void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
     }
 }
 
-void SslHandler::eof(SslIO&) {
+void SslHandler::eof(AsynchIO&) {
     QPID_LOG(debug, "DISCONNECTED [" << identifier << "]");
     if (codec) codec->closed();
     aio->queueWriteClose();
 }
 
-void SslHandler::closedSocket(SslIO&, const SslSocket& s) {
+void SslHandler::closedSocket(AsynchIO&, const Socket& s) {
     // If we closed with data still to send log a warning
     if (!aio->writeQueueEmpty()) {
         QPID_LOG(warning, "CLOSING [" << identifier << "] unsent data (probably due to client disconnect)");
@@ -176,16 +176,16 @@ void SslHandler::closedSocket(SslIO&, const SslSocket& s) {
     delete this;
 }
 
-void SslHandler::disconnect(SslIO& a) {
+void SslHandler::disconnect(AsynchIO& a) {
     // treat the same as eof
     eof(a);
 }
 
 // Notifications
-void SslHandler::nobuffs(SslIO&) {
+void SslHandler::nobuffs(AsynchIO&) {
 }
 
-void SslHandler::idle(SslIO&){
+void SslHandler::idle(AsynchIO&){
     if (isClient && codec == 0) {
         codec = factory->create(*this, identifier, getSecuritySettings(aio));
         write(framing::ProtocolInitiation(codec->getVersion()));
@@ -199,7 +199,7 @@ void SslHandler::idle(SslIO&){
     if (!codec->canEncode()) {
         return;
     }
-    SslIO::BufferBase* buff = aio->getQueuedBuffer();
+    AsynchIOBufferBase* buff = aio->getQueuedBuffer();
     if (buff) {
         size_t encoded=codec->encode(buff->bytes, buff->byteCount);
         buff->dataCount = encoded;

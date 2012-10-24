@@ -79,11 +79,11 @@ class SslConnector : public Connector
 
     ~SslConnector();
 
-    void readbuff(qpid::sys::ssl::SslIO&, qpid::sys::ssl::SslIOBufferBase*);
-    void writebuff(qpid::sys::ssl::SslIO&);
+    void readbuff(AsynchIO&, AsynchIOBufferBase*);
+    void writebuff(AsynchIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
-    void eof(qpid::sys::ssl::SslIO&);
-    void disconnected(qpid::sys::ssl::SslIO&);
+    void eof(AsynchIO&);
+    void disconnected(AsynchIO&);
 
     void connect(const std::string& host, const std::string& port);
     void close();
@@ -96,7 +96,7 @@ class SslConnector : public Connector
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     const SecuritySettings* getSecuritySettings();
-    void socketClosed(qpid::sys::ssl::SslIO&, const qpid::sys::ssl::SslSocket&);
+    void socketClosed(AsynchIO&, const Socket&);
 
     size_t decode(const char* buffer, size_t size);
     size_t encode(char* buffer, size_t size);
@@ -168,7 +168,7 @@ void SslConnector::connect(const std::string& host, const std::string& port){
     Mutex::ScopedLock l(lock);
     assert(closed);
     try {
-        socket.connect(host, port);
+        socket.connect(SocketAddress(host, port));
     } catch (const std::exception& e) {
         socket.close();
         throw TransportFailure(e.what());
@@ -199,7 +199,7 @@ void SslConnector::close() {
     }
 }
 
-void SslConnector::socketClosed(SslIO&, const SslSocket&) {
+void SslConnector::socketClosed(AsynchIO&, const Socket&) {
     if (aio)
         aio->queueForDeletion();
     if (shutdownHandler)
@@ -255,7 +255,7 @@ void SslConnector::send(AMQFrame& frame) {
     }
 }
 
-void SslConnector::writebuff(SslIO& /*aio*/)
+void SslConnector::writebuff(AsynchIO& /*aio*/)
 {
     // It's possible to be disconnected and be writable
     if (closed)
@@ -304,7 +304,7 @@ size_t SslConnector::encode(char* buffer, size_t size)
     return bytesWritten;
 }
 
-void SslConnector::readbuff(SslIO& aio, SslIO::BufferBase* buff)
+void SslConnector::readbuff(AsynchIO& aio, AsynchIOBufferBase* buff)
 {
     int32_t decoded = decode(buff->bytes+buff->dataStart, buff->dataCount);
     // TODO: unreading needs to go away, and when we can cope
@@ -351,11 +351,11 @@ void SslConnector::writeDataBlock(const AMQDataBlock& data) {
     aio->queueWrite(buff);
 }
 
-void SslConnector::eof(SslIO&) {
+void SslConnector::eof(AsynchIO&) {
     close();
 }
 
-void SslConnector::disconnected(SslIO&) {
+void SslConnector::disconnected(AsynchIO&) {
     close();
     socketClosed(*aio, socket);
 }
