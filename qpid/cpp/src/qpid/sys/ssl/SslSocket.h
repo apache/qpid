@@ -57,6 +57,7 @@ public:
     void setCertName(const std::string& certName);
 
     void connect(const SocketAddress&) const;
+    void finishConnect(const SocketAddress&) const;
 
     void close() const;
 
