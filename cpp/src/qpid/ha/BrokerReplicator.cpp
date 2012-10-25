@@ -271,7 +271,7 @@ class BrokerReplicator::UpdateTracker {
     ReplicationTest repTest;
 };
 
-template <class E> BrokerReplicator::EventKey eventKey() {
+template <class E> pair<string,string> eventKey() {
     return make_pair(E::PACKAGE_NAME, E::EVENT_NAME);
 }
 
