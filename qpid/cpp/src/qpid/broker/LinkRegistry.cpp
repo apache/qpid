@@ -254,6 +254,7 @@ void LinkRegistry::destroyBridge(Bridge *bridge)
     Link *link = b->second->getLink();
     if (link) {
         link->cancel(b->second);
+        link->returnChannel( bridge->getChannel() );
     }
     if (b->second->isDurable())
         store->destroy(*(b->second));
