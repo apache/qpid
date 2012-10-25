@@ -65,6 +65,7 @@ class Bridge : public PersistableConfig,
 
     QPID_BROKER_EXTERN void close();
     bool isDurable() { return args.i_durable; }
+    framing::ChannelId getChannel() const { return channel; }
     Link *getLink() const { return link; }
     const std::string getSrc() const { return args.i_src; }
     const std::string getDest() const { return args.i_dest; }
