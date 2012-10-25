@@ -82,7 +82,7 @@ class Link : public PersistableConfig, public management::Manageable {
     Bridges created;   // Bridges pending creation
     Bridges active;    // Bridges active
     Bridges cancellations;    // Bridges pending cancellation
-    uint channelCounter;
+    RangeSet<framing::ChannelId> freeChannels;
     Connection* connection;
     management::ManagementAgent* agent;
     boost::function<void(Link*)> listener;
@@ -151,7 +151,8 @@ class Link : public PersistableConfig, public management::Manageable {
 
     bool isDurable() { return durable; }
     void maintenanceVisit ();
-    uint nextChannel();
+    framing::ChannelId nextChannel();        // allocate channel from link free pool
+    void returnChannel(framing::ChannelId);  // return channel to link free pool
     void add(Bridge::shared_ptr);
     void cancel(Bridge::shared_ptr);
 
