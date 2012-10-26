@@ -32,7 +32,7 @@
   </condition>
 
   <property name="modules.core"       value="common management/common amqp-1-0-common broker client amqp-1-0-client amqp-1-0-client-jms tools"/>
-  <property name="modules.examples"   value="client/example management/example"/>
+  <property name="modules.examples"   value="client/example management/example amqp-1-0-client/example amqp-1-0-client-jms/example"/>
   <property name="modules.tests"      value="systests perftests"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
   <property name="modules.jca"        value="jca"/>
