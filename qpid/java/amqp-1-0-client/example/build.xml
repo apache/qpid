@@ -7,9 +7,9 @@
  - to you under the Apache License, Version 2.0 (the
  - "License"); you may not use this file except in compliance
  - with the License.  You may obtain a copy of the License at
- -
+ - 
  -   http://www.apache.org/licenses/LICENSE-2.0
- -
+ - 
  - Unless required by applicable law or agreed to in writing,
  - software distributed under the License is distributed on an
  - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,15 +18,11 @@
  - under the License.
  -
  -->
-<project name="AMQP 1.0 Client" default="build">
+<project name="AMQ 1.0 Client Example" default="build">
 
-  <property name="module.genpom" value="true"/>
-  <property name="module.depends" value="amqp-1-0-common"/>
+  <property name="module.depends" value="amqp-1-0-client amqp-1-0-common"/>
+  <property name="module.test.depends" value=""/>
 
-  <property name="example.src.dir" value="${project.root}/amqp-1-0-client/example/src/main/java" />
-  <property name="example.jar.file" value="${build.lib}/qpid-amqp-1-0-client-example-${project.version}.jar" />
-
-
-  <import file="../module.xml"/>
+  <import file="../../module.xml"/>
 
 </project>

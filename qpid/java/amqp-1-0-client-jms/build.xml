@@ -24,6 +24,9 @@
   <property name="module.depends" value="amqp-1-0-common amqp-1-0-client"/>
   <property name="module.genpom.args" value="-Sgeronimo-jms_1.1_spec=provided"/>
 
+  <property name="example.src.dir" value="${project.root}/amqp-1-0-client-jms/example/src/main/java" />
+  <property name="example.jar.file" value="${build.lib}/qpid-amqp-1-0-client-jms-example-${project.version}.jar" />
+
 
   <target name="release-bin-copy-readme">
       <copy todir="${module.release}" overwrite="true" failonerror="true">
