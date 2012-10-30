@@ -25,6 +25,12 @@ endif(COMMAND cmake_policy)
 
 include(BuildInstallSettings.cmake)
 
+if (${CMAKE_VERSION} VERSION_LESS "2.8.0")
+    set (OPTIONAL_ARG "")
+else()
+    set (OPTIONAL_ARG OPTIONAL)
+endif()
+
 set (qpidc_version ${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR})
 
 enable_testing()
@@ -77,6 +83,15 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${QPID_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${QPID_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "qpidc-${qpidc_version}")
+
+# Add custom target for docs since we don't include a cmake file there directly.
+# If we can't use OPTIONAL in the install command then we have to make the docs
+# every time so that the install target succeeds
+if (OPTIONAL_ARG)
+  add_custom_target(docs)
+else (OPTIONAL_ARG)
+  add_custom_target(docs ALL)
+endif (OPTIONAL_ARG)
 
 add_subdirectory(managementgen)
 add_subdirectory(src)
