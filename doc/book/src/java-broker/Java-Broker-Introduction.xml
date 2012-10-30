@@ -1,4 +1,8 @@
 <?xml version="1.0"?>
+<!DOCTYPE chapter[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -22,4 +26,65 @@
 
 <chapter id="Java-Broker-Introduction">
   <title>Introduction</title>
+  <para>The Java Broker is a powerful open-source message broker that implements all versions of the
+      <ulink url="http://www.amqp.org"> Advanced Message Queuing Protocol (AMQP)</ulink>. The Java
+    Broker is actually one of two message brokers provided by the <ulink
+      url="http://qpid.apache.org">Apache Qpid project</ulink>: the Java Broker and the C++
+    Broker.</para>
+  <para>This document relates to the Java Broker. The <ulink url="&qpidCppBook;">C++ Broker is
+    described separately</ulink>.</para>
+  <para><emphasis>Headline features</emphasis></para>
+  <itemizedlist mark="circle">
+    <listitem>
+      <para>100% Java implementation - runs on any platform supporting Java 1.6 or higher</para>
+    </listitem>
+    <listitem>
+      <para>Messaging clients support in Java, C++, Python.</para>
+    </listitem>
+    <listitem>
+      <para>JMS 1.1 compliance (Java client).</para>
+    </listitem>
+    <listitem>
+      <para>Transient and persistent message support</para>
+    </listitem>
+    <listitem>
+      <para>Supports for all common messaging patterns (point-to-point, publish/subscribe, fan-out
+        etc).</para>
+    </listitem>
+    <listitem>
+      <para>Transaction support including XA<footnote>
+          <para>XA provided by AMQP 0-10 and above</para>
+        </footnote></para>
+    </listitem>
+    <listitem>
+      <para>Supports for all versions of the AMQP protocol</para>
+    </listitem>
+    <listitem>
+      <para>Automatic translation between the AMQP protocols allowing clients using different AMQP
+        versions to communicate</para>
+    </listitem>
+    <listitem>
+      <para>Pluggable authentication architecture with out-of-the-box support for Kerberos, LDAP,
+        External, and file-based authentication mechanisms.</para>
+    </listitem>
+    <listitem>
+      <para>Pluggable message store architecture with implementations based on <ulink
+          url="http://db.apache.org/derby/">Apache Derby</ulink>, <ulink
+          url="&oracleBdbProductOverviewUrl;">Oracle BDB</ulink><footnote>
+          <para>Oracle BDB JE JAR must be downloaded separately.</para>
+        </footnote>, and Memory Store</para>
+    </listitem>
+    <listitem>
+      <para>Web based management interface and programmatic management interfaces  via REST and JMX
+        APIs.</para>
+    </listitem>
+    <listitem>
+      <para>SSL support</para>
+    </listitem>
+    <listitem>
+      <para>High availability (HA) support<footnote>
+          <para>HA currently available to users of the BDB-store only</para>
+        </footnote></para>
+    </listitem>
+  </itemizedlist>
 </chapter>
