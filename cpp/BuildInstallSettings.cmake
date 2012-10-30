@@ -132,6 +132,16 @@ function(set_absolute_install_path var input)
   endif ()
 endfunction(set_absolute_install_path)
 
+# Figure out the default library suffix
+if (NOT DEFINED LIB_SUFFIX)
+    get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+    if (${LIB64} STREQUAL "TRUE" AND ${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+        set(LIB_SUFFIX 64)
+    else()
+        set(LIB_SUFFIX "")
+    endif()
+endif()
+
 # In rpm builds the build sets some variables:
 #  CMAKE_INSTALL_PREFIX - this is a standard cmake variable
 #  INCLUDE_INSTALL_DIR
@@ -141,7 +151,7 @@ endfunction(set_absolute_install_path)
 # So make these cached variables and the specific variables non cached and
 # derived from them.
   set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
-  set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
+  set (LIB_INSTALL_DIR lib${LIB_SUFFIX} CACHE PATH "Library object file directory")
   set (SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
   set (SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
   set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION_FULL} CACHE PATH "Shared read only data directory")
