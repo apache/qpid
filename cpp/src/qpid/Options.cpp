@@ -150,6 +150,7 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
         if (!configFile.empty()) {
             parsing="configuration file "+configFile;
             ifstream conf(configFile.c_str());
+            conf.peek();
             if (conf.good()) {
                 // Remove this hack when we get a stable version of boost that
                 // can allow unregistered options in config files.
