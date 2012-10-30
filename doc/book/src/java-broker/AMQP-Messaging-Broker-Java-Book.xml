@@ -20,10 +20,10 @@
 
 -->
 
-<book>
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
 <title>AMQP Messaging Broker (Java)</title>
 
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Introduction.xml"/>
+<xi:include  href="Java-Broker-Introduction.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Installation.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Getting-Started.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts.xml"/>

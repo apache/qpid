@@ -1,4 +1,8 @@
 <?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -22,4 +26,171 @@
 
 <chapter id="Java-Broker-Installation">
   <title>Installation</title>
+  <section role="h2" id="Java-Broker-Installation-Introduction">
+    <title>Introduction</title>
+    <para>This document describes how to install the Java Broker on both Windows and UNIX
+      platforms.</para>
+  </section>
+  <section role="h2" id="Java-Broker-Installation-Prerequistes">
+    <title>Prerequisites</title>
+    <section role="h3" id="Java-Broker-Installation-Prerequistes-Java">
+      <title>Java Platform</title>
+      <para>The Java Broker is an 100% Java implementation and as such it can be used on any operating
+        system supporting Java 1.6 or higher. This includes Linux, Solaris and Mac OS X, Windows XP/Vista/7.</para>
+      <para>The Java Broker has been tested with Java implementations from both Oracle and IBM.  Whatever
+      platform you chose, it is recommended that you ensure it is patched with any critical updates made
+      available from the vendor.</para>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-Prerequistes-Disk">
+      <title>Disk</title>
+      <para>The Java Broker installation requires approximately 20MB of free disk space.</para>
+      <para>The Java Broker also requires a working directory.  The working directory is used for
+        the message store, that is, the area of the file-system used to record persistent messages whilst they
+        are passing through the Broker.  The working directory is also used for the default location of the log file.
+        The size of the working directory will depend on the how the Broker is used.</para>
+      <para>The performance of the file system hosting the work directory is key to the performance of Broker as
+        a whole.  For best performance, choose a device that has low latency and one that is uncontended by other
+        applications.</para>
+      <para>Be aware that there are additional considerations if you are considering hosting the working directory on NFS. See
+        <xref linkend="Java-Broker-Stores"/> for further details.</para>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-Prerequistes-Memory">
+      <title>Memory</title>
+      <para>Qpid caches messages on the heap for performance reasons, so in general, the Broker will
+        benefit from as much heap as possible. However, on a 32bit JVM, the maximum addressable memory range
+        for a process is 4GB, after leaving space for the JVM's own use this will give a maximum heap size
+        of approximately ~3.7GB.</para>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-Prerequistes-OperatingSystemAccount">
+      <title>Operating System Account</title>
+      <para>Installation or operation of Qpid does <emphasis>not</emphasis> require a privileged account (i.e. root
+      on UNIX platforms or Administrator on Windows).  However it is suggested that you use an dedicated account
+      (e.g. qpid) for the installation and operation of Java Broker.</para>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-Prerequistes-OracleBDBJE">
+      <title>Oracle BDB JE JAR (optional)</title>
+      <para>The Java Broker ships with two persistent message store modules, the DerbyMessageStore which uses
+        Apache Derby and the BDBMessageStore which uses Oracle JE BDB.</para>
+      <para>If you wish to use the BDBMessageStore, then you must download the <ulink
+          url="&oracleJeDownloadUrl;">Oracle BDB JE JAR version 5.0.x</ulink> from the Oracle
+          website as it cannot be distributed with Qpid owing to licence restrictions.</para>
+      <para>The download has a name in the form je-&oracleBdbProductVersion;.tar.gz. It is recommended that you
+        confirm the integrity of the download by verifying the MD5.</para>
+    </section>
+  </section>
+
+  <section role="h2" id="Java-Broker-Installation-Download">
+    <title>Download</title>
+    <para>Download the latest qpid-java-broker-x.x.tar.gz package from <ulink
+        url="&qpidDownloadUrl;">&qpidDownloadUrl;</ulink>. It is recommended that you confirm the
+      integrity of the download by verifying the PGP signature matches that available on the
+      site.</para>
+  </section>
+
+  <section role="h2" id="Java-Broker-Installation-InstallationWindows">
+    <title>Installation on Windows</title>
+    <para>Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
+      following at the command prompt:</para>
+    <programlisting><![CDATA[echo %JAVA_HOME%]]></programlisting>
+    <para>if JAVA_HOME is set you will see something similar to the following:</para>
+    <screen><![CDATA[c:"\PROGRA~1"\Java\jdk1.6.0_24\]]>
+    </screen>
+    <para>Then confirm that a Java installation (1.6 or higher) is available:</para>
+    <programlisting><![CDATA[java -version]]></programlisting>
+    <para>If java is available on the path, output similar to the following will be seen:</para>
+    <screen><![CDATA[java version "1.6.0_24"
+Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
+Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)]]></screen>
+    <para>Now chose a directory for Qpid broker installation.  This directory will be used for the Qpid JARs and configuration files.
+      It need not be the same location as the store used for the persistent messages or the log file (you will chose this
+      location later).   For the remainder this example we will assumed that location c:\qpid has been chosen.</para>
+    <para>Now using WinZip<footnote><para>WinZip is a Registered Trademark of WinZip International LLC</para></footnote> (or similar)
+      extract the Qpid package qpid-java-broker-&qpidCurrentRelease;.tar.gz into the directory.</para>
+    <para>The extraction of the Qpid package will have created a directory qpid-broker-&qpidCurrentRelease; within c:\qpid</para>
+    <screen>Volume in drive C has no label
+
+ Directory of c:\qpid\qpid-broker-&qpidCurrentRelease;
+
+07/25/2012  11:22 PM                   .
+09/30/2012  10:51 AM                   ..
+09/30/2012  12:24 AM                   bin
+08/21/2012  11:17 PM                   etc
+07/25/2012  11:22 PM                   lib
+07/20/2012  08:10 PM            65,925 LICENSE
+07/20/2012  08:10 PM             3,858 NOTICE
+07/20/2012  08:10 PM             1,346 README.txt
+               3 File(s)         71,129 bytes
+               5 Dir(s)  743,228,796,928 bytes free</screen>
+    <section role="h3" id="Java-Broker-Installation-InstallationWindows-OracleBDBJE">
+      <title>Installation of Oracle BDB JE JAR (optional)</title>
+      <para>If you wish to use the BDBMessageStore, copy the je-&oracleBdbProductVersion;.jar downloaded
+        <link linkend="Java-Broker-Installation-Prerequistes-OracleBDBJE">above</link> into the following directory.</para>
+      <programlisting>mkdir c:\qpid\qpid-broker-x.x\lib\opt
+copy je-&oracleBdbProductVersion;.jar c:\qpid\qpid-broker-x.x\lib\opt</programlisting>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-InstallationWindows-SettingQPIDWORK">
+      <title>Setting the working directory</title>
+      <para>Qpid requires a work directory.  This directory is used for the default location of the Qpid log
+        file and is used for the storage of persistent messages.  The work directory can be set on the
+        command-line (for the lifetime of the command interpreter), but you will normally want to set
+        the environment variable permanently via the Advanced System Settings in the Control Panel.</para>
+      <screen>set QPID_WORK=S:\qpidwork</screen>
+      <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
+         on start-up.</para>
+    </section>
+  </section>
+
+  <section role="h2" id="Java-Broker-Installation-InstallationUnix">
+    <title>Installation on UNIX platforms</title>
+    <para>Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
+      following at the command prompt:</para>
+    <programlisting><![CDATA[echo $JAVA_HOME]]></programlisting>
+    <para>if JAVA_HOME is set you will see something similar to the following:</para>
+    <screen><![CDATA[/usr/java/jdk1.6.0_35]]>
+    </screen>
+    <para>Then confirm that a Java installation (1.6 or higher) is available:</para>
+    <programlisting><![CDATA[java -version]]></programlisting>
+    <para>If java is available on the path, output similar to the following will be seen:</para>
+    <screen><![CDATA[java version "1.6.0_35"
+Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-11M3811)
+Java HotSpot(TM) 64-Bit Server VM (build 20.10-b01-428, mixed mode)]]></screen>
+    <para>Now chose a directory for Qpid broker installation.  This directory will be used for the Qpid JARs and configuration files.
+      It need not be the same location as the store used for the persistent messages or the log file (you will chose this
+      location later).   For the remainder this example we will assumed that location /usr/local/qpid has been chosen.</para>
+    <para>Extract the Qpid package qpid-java-broker-&qpidCurrentRelease;.tar.gz into the directory.</para>
+    <programlisting>mkdir /usr/local/qpid
+cd /usr/local/qpid
+tar xvzf qpid-java-broker-&qpidCurrentRelease;.tar.gz></programlisting>
+    <para>The extraction of the Qpid package will have created a directory qpid-broker-x.x</para>
+    <screen>ls -la qpid-broker-&qpidCurrentRelease;/
+total 152
+drwxr-xr-x   8 qpid  qpid    272 25 Jul 23:22 .
+drwxr-xr-x  45 qpid  qpid   1530 30 Sep 10:51 ..
+-rw-r--r--@  1 qpid  qpid  65925 20 Jul 20:10 LICENSE
+-rw-r--r--@  1 qpid  qpid   3858 20 Jul 20:10 NOTICE
+-rw-r--r--@  1 qpid  qpid   1346 20 Jul 20:10 README.txt
+drwxr-xr-x  10 qpid  qpid    340 30 Sep 00:24 bin
+drwxr-xr-x   9 qpid  qpid    306 21 Aug 23:17 etc
+drwxr-xr-x  34 qpid  qpid   1156 25 Jul 23:22 lib
+    </screen>
+    <section role="h3" id="Java-Broker-Installation-InstallationUnix-OracleBDBJE">
+      <title>Installation of Oracle BDB JE JAR (optional)</title>
+      <para>If you wish to use the BDBMessageStore, copy the je-&oracleBdbProductVersion;.jar downloaded
+        <link linkend="Java-Broker-Installation-Prerequistes-OracleBDBJE">above</link> into the following directory.</para>
+      <programlisting>mkdir qpid-broker-x.x/lib/opt
+cp je-&oracleBdbProductVersion;.jar qpid-broker-x.x/lib/opt</programlisting>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-InstallationUnix-SettingQPIDWORK">
+      <title>Setting the working directory</title>
+      <para>Qpid requires a work directory.  This directory is used for the default location of the Qpid log
+        file and is used for the storage of persistent messages.  The work directory can be set on the
+        command-line (for the lifetime of the current shell), but you will normally want to set
+        the environment variable permanently the user's shell profile file (~/.bash_profile for Bash etc).</para>
+      <screen><![CDATA[export QPID_WORK=/var/qpidwork]]>
+      </screen>
+      <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
+         on start-up.
+      </para>
+    </section>
+  </section>
 </chapter>
