@@ -26,7 +26,7 @@ from brokertest import *
 from ha_test import *
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG, INFO
-from qpidtoollibs import BrokerAgent
+from qpidtoollibs import BrokerAgent, EventHelper
 from uuid import UUID
 
 log = getLogger(__name__)
@@ -801,6 +801,27 @@ acl deny all all
         # The backup does not log this as an error so we only check the backup log for errors.
         self.assert_log_no_errors(cluster[1])
 
+    def test_qmf_replication(self):
+        """QPID-4401: Verify that QMF built-in exchanges have default replication"""
+        cluster = HaCluster(self, 2)
+        sn = cluster.connect(0).session()
+        events = sn.receiver("events;{create:always,node:{x-bindings:[{exchange:'qmf.default.topic',queue:'events',key:'agent.ind.event.org_apache_qpid_broker.#'}]}}")
+        def verify_qmf_events(qname):
+            sn.sender("%s;{create:always}"%(qname)).close() # Generate a QMF event
+            found = False
+            try:
+                while not found:
+                    m = events.fetch(timeout=1)      # Receive
+                    def class_name(m): return m.content[0]['_schema_id']['_class_name']
+                    def q_name(m): return m.content[0]['_values']['qName']
+                    if class_name(m) == 'queueDeclare' and q_name(m) == qname: found = True
+            except Empty: pass
+            assert(found)
+        verify_qmf_events("q1")
+        cluster[1].wait_status("ready")
+        cluster.kill(0)
+        verify_qmf_events("q2")
+
 def fairshare(msgs, limit, levels):
     """
     Generator to return prioritised messages in expected order for a given fairshare limit
@@ -936,6 +957,7 @@ class RecoveryTests(HaBrokerTest):
             for b in cluster: b.wait_backup("q1")
             for i in xrange(100): s1.send(str(i))
             # Kill primary and 2 backups
+            cluster[3].wait_status("ready")
             for i in [0,1,2]: cluster.kill(i, False)
             cluster[3].promote()    # New primary, backups will be 1 and 2
             cluster[3].wait_status("recovering")
