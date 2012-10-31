@@ -21,7 +21,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Org.Apache.Qpid.Messaging", "..\src\msvc9\org.apache.qpid.messaging.vcproj", "{AA5A3B83-5F98-406D-A01C-5A921467A57D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.apache.qpid.messaging.sessionreceiver", "..\src\msvc9\sessionreceiver\org.apache.qpid.messaging.sessionreceiver.csproj", "{B0A51CEC-30A2-4C2E-90BE-AE95107EAA05}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.apache.qpid.messaging.sessionreceiver", "..\src\sessionreceiver\msvc9\org.apache.qpid.messaging.sessionreceiver.csproj", "{B0A51CEC-30A2-4C2E-90BE-AE95107EAA05}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
