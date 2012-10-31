@@ -613,14 +613,6 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
         throw Exception(QPID_MSG("Unexpected queue response: " << values));
     if (!queueTracker->response(name)) return; // Response is out-of-date
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
-    if (broker.getQueues().find(name)) { // Already exists
-        if (findQueueReplicator(name))
-            return; // Already replicated
-        else {
-            QPID_LOG(debug, logPrefix << "Deleting queue to make way for replica: " << name);
-            broker.deleteQueue(name, userId, remoteHost);
-        }
-    }
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
     boost::shared_ptr<QueueReplicator> qr = replicateQueue(
@@ -642,21 +634,11 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
         throw Exception(QPID_MSG("Unexpected exchange response: " << values));
     if (!exchangeTracker->response(name)) return; // Response is out of date.
     QPID_LOG(debug, logPrefix << "Exchange response: " << name);
-    if (broker.getExchanges().find(name)) {
-        if (replicatedExchanges.find(name) != replicatedExchanges.end())
-            return; // Already replicated
-        else {
-            QPID_LOG(debug, logPrefix << "Deleting exchange to make way for replica: "
-                     << name);
-            broker.deleteExchange(name, userId, remoteHost);
-        }
-    }
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
     CreateExchangeResult result = createExchange(
         name, values[TYPE].asString(), values[DURABLE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
-    assert(result.second);
     replicatedExchanges.insert(name);
 }
 
@@ -778,11 +760,9 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::replicateQueue(
             remoteHost);
     boost::shared_ptr<QueueReplicator> qr;
     if (!findQueueReplicator(name)) qr = startQueueReplicator(result.first);
-    if (result.second) {
-        if (!alternateExchange.empty()) {
-            alternates.setAlternate(
-                alternateExchange, boost::bind(&Queue::setAlternateExchange, result.first, _1));
-        }
+    if (result.second && !alternateExchange.empty()) {
+        alternates.setAlternate(
+            alternateExchange, boost::bind(&Queue::setAlternateExchange, result.first, _1));
     }
     return qr;
 }
@@ -803,7 +783,6 @@ BrokerReplicator::CreateExchangeResult BrokerReplicator::createExchange(
             args,
             userId,
             remoteHost);
-
     alternates.addExchange(result.first);
     if (!alternateExchange.empty()) {
         alternates.setAlternate(
