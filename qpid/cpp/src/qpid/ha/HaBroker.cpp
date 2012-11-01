@@ -123,7 +123,7 @@ void HaBroker::initialize() {
 }
 
 HaBroker::~HaBroker() {
-    QPID_LOG(notice, logPrefix << "Shut down: " << brokerInfo);
+    QPID_LOG(notice, logPrefix << "Shut down");
     broker.getConnectionObservers().remove(observer);
 }
 

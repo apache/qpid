@@ -59,7 +59,9 @@ class QueueRegistry : QueueFactory {
         const std::string& name,
         const QueueSettings& settings,
         boost::shared_ptr<Exchange> alternateExchange = boost::shared_ptr<Exchange>(),
-        bool recovering = false);
+        bool recovering = false,
+        const OwnershipToken* owner = 0,
+        std::string connectionId=std::string(), std::string userId=std::string());
 
     /**
      * Destroy the named queue.
@@ -73,7 +75,11 @@ class QueueRegistry : QueueFactory {
      * subsequent calls to find or declare with the same name.
      *
      */
-    QPID_BROKER_EXTERN void destroy(const std::string& name);
+    QPID_BROKER_EXTERN void destroy(
+        const std::string& name,
+        const std::string& connectionId=std::string(),
+        const std::string& userId=std::string());
+
     template <class Test> bool destroyIf(const std::string& name, Test test)
     {
         if (test()) {
