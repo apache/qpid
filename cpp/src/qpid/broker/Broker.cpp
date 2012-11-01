@@ -48,8 +48,6 @@
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetTimestampConfig.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
-#include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
-#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 #include "qmf/org/apache/qpid/broker/EventBind.h"
 #include "qmf/org/apache/qpid/broker/EventUnbind.h"
 #include "qpid/amqp_0_10/Codecs.h"
@@ -1112,21 +1110,12 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, settings, alternate);
+    std::pair<Queue::shared_ptr, bool> result =
+        queues.declare(name, settings, alternate, false/*recovering*/,
+                       owner, connectionId, userId);
     if (result.second) {
         //add default binding:
         result.first->bind(exchanges.getDefault(), name);
-
-        if (managementAgent.get()) {
-            //TODO: debatable whether we should raise an event here for
-            //create when this is a 'declare' event; ideally add a create
-            //event instead?
-            managementAgent->raiseEvent(
-                _qmf::EventQueueDeclare(connectionId, userId, name,
-                                        settings.durable, owner, settings.autodelete, alternateExchange,
-                                        settings.asMap(),
-                                        "created"));
-        }
         QPID_LOG_CAT(debug, model, "Create queue. name:" << name
             << " user:" << userId
             << " rhost:" << connectionId
@@ -1150,17 +1139,14 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
         if (check) check(queue);
         if (acl)
             acl->recordDestroyQueue(name);
-        queues.destroy(name);
+        queues.destroy(name, connectionId, userId);
         queue->destroyed();
     } else {
         throw framing::NotFoundException(QPID_MSG("Delete failed. No such queue: " << name));
     }
-
-    if (managementAgent.get())
-        managementAgent->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, name));
     QPID_LOG_CAT(debug, model, "Delete queue. name:" << name
-        << " user:" << userId
-        << " rhost:" << connectionId
+                 << " user:" << userId
+                 << " rhost:" << connectionId
     );
 
 }

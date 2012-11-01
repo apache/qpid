@@ -318,11 +318,6 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             if (exclusive && queue->setExclusiveOwner(&session)) {
                 exclusiveQueues.push_back(queue);
             }
-            ManagementAgent* agent = getBroker().getManagementAgent();
-            if (agent)
-                agent->raiseEvent(_qmf::EventQueueDeclare(getConnection().getUrl(), getConnection().getUserId(),
-                                                          name, durable, exclusive, autoDelete, alternateExchange, ManagementAgent::toMap(arguments),
-                                                          "existing"));
             QPID_LOG_CAT(debug, model, "Create queue. name:" << name
                 << " user:" << getConnection().getUserId()
                 << " rhost:" << getConnection().getUrl()

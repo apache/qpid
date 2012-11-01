@@ -34,6 +34,7 @@
 #include "qmf/org/apache/qpid/broker/Agent.h"
 #include "qmf/org/apache/qpid/broker/Memory.h"
 #include "qpid/sys/MemStat.h"
+#include "qpid/sys/PollableQueue.h"
 #include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
 #include <qpid/framing/ResizableBuffer.h>
@@ -340,6 +341,11 @@ private:
     typedef std::map<std::string, DeletedObjectList> PendingDeletedObjsMap;
     PendingDeletedObjsMap pendingDeletedObjs;
 
+    // Pollable queue to serialize event messages
+    typedef std::pair<boost::shared_ptr<broker::Exchange>,
+                      broker::Message> ExchangeAndMessage;
+    typedef sys::PollableQueue<ExchangeAndMessage> EventQueue;
+
     //
     // Memory statistics object
     //
@@ -350,6 +356,7 @@ private:
     void deleteObjectNow(const ObjectId& oid);
     void encodeHeader       (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
     bool checkHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
+    EventQueue::Batch::const_iterator sendEvents(const EventQueue::Batch& batch);
     void sendBuffer(framing::Buffer&             buf,
                     qpid::broker::Exchange::shared_ptr exchange,
                     const std::string&           routingKey);
@@ -417,6 +424,7 @@ private:
 
     std::string summarizeAgents();
     void debugSnapshot(const char* title);
+    std::auto_ptr<EventQueue> sendQueue;
 };
 
 void setManagementExecutionContext(const qpid::broker::ConnectionState*);
