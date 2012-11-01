@@ -21,7 +21,19 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import java.net.InetSocketAddress;
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -30,99 +42,86 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.transport.QpidAcceptor;
-
-import java.net.InetSocketAddress;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import org.apache.qpid.server.util.MapValueConverter;
 
 public class PortAdapter extends AbstractAdapter implements Port
 {
-    private final BrokerAdapter _broker;
-    private final QpidAcceptor _acceptor;
-    private final InetSocketAddress _address;
-    private final Collection<Protocol> _protocols;
 
-    public PortAdapter(BrokerAdapter brokerAdapter, QpidAcceptor acceptor, InetSocketAddress address)
+    private final String _name;
+    private final Broker _broker;
+    private final Set<Protocol> _protocols;
+    private final Set<Transport> _transports;
+    private final InetSocketAddress _bindingSocketAddress;
+    private final boolean _tcpNoDelay;
+    private final int _receiveBufferSize;
+    private final int _sendBufferSize;
+    private final boolean _needClientAuth;
+    private final boolean _wantClientAuth;
+    private final String _authenticationManager;
+    private AuthenticationProvider _authenticationProvider;
+
+    /*
+     * TODO register PortAceptor as a listener. For supporting multiple
+     * protocols on the same port we need to introduce a special entity like
+     * PortAceptor which will be responsible for port binding/unbinding
+     */
+    public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(UUIDGenerator.generateRandomUUID());
-        _broker = brokerAdapter;
-        _acceptor = acceptor;
-        _address = address;
+        super(id);
+        _broker = broker;
 
-        List<Protocol> protocols = new ArrayList<Protocol>();
+        addParent(Broker.class, broker);
 
-        for(AmqpProtocolVersion pv : _acceptor.getSupported())
-        {
-             switch(pv)
-             {
-                 case v0_8:
-                     protocols.add(Protocol.AMQP_0_8);
-                     break;
-                 case v0_9:
-                     protocols.add(Protocol.AMQP_0_9);
-                     break;
-                 case v0_9_1:
-                     protocols.add(Protocol.AMQP_0_9_1);
-                     break;
-                 case v0_10:
-                     protocols.add(Protocol.AMQP_0_10);
-                     break;
-                 case v1_0_0:
-                     protocols.add(Protocol.AMQP_1_0);
-                     break;
-             }
-        }
+        String bindingAddress = MapValueConverter.getStringAttribute(BINDING_ADDRESS, attributes, null);
+        int portNumber = MapValueConverter.getIntegerAttribute(PORT, attributes, null);
 
-        _protocols = Collections.unmodifiableCollection(protocols);
+        final Set<Protocol> protocolSet = MapValueConverter.getSetAttribute(PROTOCOLS, attributes);
+        final Set<Transport> transportSet = MapValueConverter.getSetAttribute(TRANSPORTS, attributes);
 
+        _bindingSocketAddress = determineBindingAddress(bindingAddress, portNumber);
+        _name = MapValueConverter.getStringAttribute(NAME, attributes, _bindingSocketAddress.getHostName() + ":" + portNumber);
+        _protocols = Collections.unmodifiableSet(new TreeSet<Protocol>(protocolSet));
+        _transports = Collections.unmodifiableSet(new TreeSet<Transport>(transportSet));
+        _tcpNoDelay = MapValueConverter.getBooleanAttribute(TCP_NO_DELAY, attributes);
+        _receiveBufferSize = MapValueConverter.getIntegerAttribute(RECEIVE_BUFFER_SIZE, attributes);
+        _sendBufferSize = MapValueConverter.getIntegerAttribute(SEND_BUFFER_SIZE, attributes);
+        _needClientAuth = MapValueConverter.getBooleanAttribute(NEED_CLIENT_AUTH, attributes);
+        _wantClientAuth = MapValueConverter.getBooleanAttribute(WANT_CLIENT_AUTH, attributes);
+        _authenticationManager = MapValueConverter.getStringAttribute(AUTHENTICATION_MANAGER, attributes, null);
     }
 
     @Override
     public String getBindingAddress()
     {
-        return _address.getHostName();
+        return _bindingSocketAddress.getAddress().getHostAddress();
     }
 
     @Override
     public int getPort()
     {
-        return _address.getPort();
+        return _bindingSocketAddress.getPort();
     }
 
     @Override
     public Collection<Transport> getTransports()
     {
-        switch (_acceptor.getTransport())
-        {
-            case TCP:
-                return Collections.singleton(Transport.TCP);
-            case SSL:
-                return Collections.singleton(Transport.SSL);
-        }
-
-        return null;  // TODO - Implement
+        return _transports;
     }
 
     @Override
     public void addTransport(Transport transport)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        throw new IllegalStateException(); // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
     public Transport removeTransport(Transport transport)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        throw new IllegalStateException();   // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
@@ -135,14 +134,14 @@ public class PortAdapter extends AbstractAdapter implements Port
     public void addProtocol(Protocol protocol)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        throw new IllegalStateException(); // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
     public Protocol removeProtocol(Protocol protocol)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        throw new IllegalStateException();   // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
@@ -165,19 +164,19 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public Collection<Connection> getConnections()
     {
-        return null;  // TODO - Implement
+        return null;
     }
 
     @Override
     public String getName()
     {
-        return getBindingAddress() + ":" + getPort();  // TODO - Implement
+        return _name;
     }
 
     @Override
     public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
     {
-        throw new IllegalStateException();  // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
@@ -189,7 +188,7 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public boolean isDurable()
     {
-        return false;  // TODO - Implement
+        return false;
     }
 
     @Override
@@ -209,20 +208,20 @@ public class PortAdapter extends AbstractAdapter implements Port
     public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        throw new IllegalStateException();   // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
     public long getTimeToLive()
     {
-        return 0;  // TODO - Implement
+        return 0;
     }
 
     @Override
     public long setTimeToLive(long expected, long desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        throw new IllegalStateException();  // TODO - Implement
+        throw new IllegalStateException();
     }
 
     @Override
@@ -301,8 +300,31 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
             return getTransports();
         }
-
-        return super.getAttribute(name);    //TODO - Implement
+        else if(TCP_NO_DELAY.equals(name))
+        {
+            return isTcpNoDelay();
+        }
+        else if(SEND_BUFFER_SIZE.equals(name))
+        {
+            return getSendBufferSize();
+        }
+        else if(RECEIVE_BUFFER_SIZE.equals(name))
+        {
+            return getReceiveBufferSize();
+        }
+        else if(NEED_CLIENT_AUTH.equals(name))
+        {
+            return isNeedClientAuth();
+        }
+        else if(WANT_CLIENT_AUTH.equals(name))
+        {
+            return isWantClientAuth();
+        }
+        else if(AUTHENTICATION_MANAGER.equals(name))
+        {
+            return getAuthenticationManager();
+        }
+        return super.getAttribute(name);
     }
 
     @Override
@@ -315,6 +337,89 @@ public class PortAdapter extends AbstractAdapter implements Port
     public Object setAttribute(String name, Object expected, Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        return super.setAttribute(name, expected, desired);    //TODO - Implement
+        return super.setAttribute(name, expected, desired);
     }
+
+    @Override
+    public boolean setState(State currentState, State desiredState)
+    {
+        if (desiredState == State.DELETED)
+        {
+            return true;
+        }
+        else if (desiredState == State.ACTIVE)
+        {
+            onActivate();
+            return true;
+        }
+        else if (desiredState == State.STOPPED)
+        {
+            onStop();
+            return true;
+        }
+        return false;
+    }
+
+    protected void onActivate()
+    {
+        // no-op: expected to be overridden by subclass
+    }
+
+    protected void onStop()
+    {
+        // no-op: expected to be overridden by subclass
+    }
+
+    private InetSocketAddress determineBindingAddress(String bindingAddress, int portNumber)
+    {
+        return bindingAddress == null ? new InetSocketAddress(portNumber) : new InetSocketAddress(bindingAddress, portNumber);
+    }
+
+    @Override
+    public boolean isTcpNoDelay()
+    {
+        return _tcpNoDelay;
+    }
+
+    @Override
+    public int getReceiveBufferSize()
+    {
+        return _receiveBufferSize;
+    }
+
+    @Override
+    public int getSendBufferSize()
+    {
+        return _sendBufferSize;
+    }
+
+    @Override
+    public boolean isNeedClientAuth()
+    {
+        return _needClientAuth;
+    }
+
+    @Override
+    public boolean isWantClientAuth()
+    {
+        return _wantClientAuth;
+    }
+
+    @Override
+    public String getAuthenticationManager()
+    {
+        return _authenticationManager;
+    }
+
+    @Override
+    public AuthenticationProvider getAuthenticationProvider()
+    {
+        return _authenticationProvider;
+    }
+
+    public void setAuthenticationProvider(AuthenticationProvider authenticationProvider)
+    {
+        _authenticationProvider = authenticationProvider;
+    }
+
 }

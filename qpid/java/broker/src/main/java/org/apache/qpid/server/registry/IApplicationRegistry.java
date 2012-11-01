@@ -26,18 +26,11 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
-import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public interface IApplicationRegistry extends StatisticsGatherer
@@ -68,22 +61,11 @@ public interface IApplicationRegistry extends StatisticsGatherer
      */
     SubjectCreator getSubjectCreator(SocketAddress localAddress);
 
-    IAuthenticationManagerRegistry getAuthenticationManagerRegistry();
-
-    List<GroupManager> getGroupManagers();
-
     VirtualHostRegistry getVirtualHostRegistry();
 
     SecurityManager getSecurityManager();
 
     RootMessageLogger getRootMessageLogger();
-
-    /**
-     * Register any acceptors for this registry
-     * @param bindAddress The address that the acceptor has been bound with
-     * @param acceptor The acceptor in use
-     */
-    void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor);
 
     public UUID getBrokerId();
 
@@ -92,33 +74,4 @@ public interface IApplicationRegistry extends StatisticsGatherer
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
 
     void initialiseStatisticsReporting();
-
-    Map<InetSocketAddress, QpidAcceptor> getAcceptors();
-
-    void addPortBindingListener(PortBindingListener listener);
-
-    boolean useHTTPManagement();
-
-    int getHTTPManagementPort();
-
-    boolean useHTTPSManagement();
-
-    int getHTTPSManagementPort();
-
-    void addAuthenticationManagerRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
-
-    public interface PortBindingListener
-    {
-        public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress);
-        public void unbound(QpidAcceptor acceptor);
-
-    }
-
-    void addGroupManagerChangeListener(GroupManagerChangeListener groupManagerChangeListener);
-
-    public static interface GroupManagerChangeListener
-    {
-        void groupManagerRegistered(GroupManager groupManager);
-        void groupManagerUnregistered(GroupManager groupManager);
-    }
 }

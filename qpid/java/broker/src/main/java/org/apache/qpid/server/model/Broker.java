@@ -44,6 +44,7 @@ public interface Broker extends ConfiguredObject
     String STATE = "state";
     String TIME_TO_LIVE = "timeToLive";
     String UPDATED = "updated";
+    String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
 
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
@@ -62,7 +63,8 @@ public interface Broker extends ConfiguredObject
                               NAME,
                               STATE,
                               TIME_TO_LIVE,
-                              UPDATED));
+                              UPDATED,
+                              DEFAULT_AUTHENTICATION_PROVIDER));
 
     //children
     Collection < VirtualHost > getVirtualHosts();
@@ -75,6 +77,7 @@ public interface Broker extends ConfiguredObject
                                   LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
-    void deleteVirtualHost(VirtualHost virtualHost)
-            throws AccessControlException, IllegalStateException;
+    AuthenticationProvider getDefaultAuthenticationProvider();
+
+    Collection<GroupProvider> getGroupProviders();
 }

@@ -48,7 +48,9 @@
   <property name="module.api"          location="${build.api}/${module}/"/>
   <property name="module.test.api"     location="${build.test.api}/${module}"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
+  <property name="module.test.metainf" location="${module.build}/test/META-INF"/>
   <property name="module.test.resources" location="${module.build}/test/resources"/>
+  <property name="module.test.resources.metainf" location="src/test/resources/META-INF"/>
   <property name="module.results"      location="${build.results}/${module}"/>
   <property name="module.failed"       location="${module.results}/FAILED"/>
   <property name="module.src"          location="src/main/java"/>
@@ -314,7 +316,12 @@
     </copy>
   </target>
 
-  <target name="precompile-tests" if="module.test.src.exists"/>
+  <target name="precompile-tests" if="module.test.src.exists">
+      <mkdir dir="${module.test.resources}"/>
+      <copy todir="${module.test.resources}" failonerror="false">
+          <fileset dir="src/test/resources"/>
+      </copy>
+  </target>
 
   <target name="compile-tests" depends="compile,precompile-tests" if="module.test.src.exists"
           description="compilte unit tests">
@@ -515,7 +522,13 @@
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
 
   <target name="jar-tests" depends="compile-tests" description="create unit test jar">
-    <jar destfile="${module.test.jar}" basedir="${module.test.classes}"/>
+    <mkdir dir="${module.test.metainf}"/>
+    <copy todir="${module.test.metainf}" failonerror="false">
+      <fileset dir="${module.test.resources.metainf}"/>
+    </copy>
+    <jar destfile="${module.test.jar}" basedir="${module.test.classes}">
+      <metainf dir="${module.test.metainf}" />
+    </jar>
   </target>
 
   <target name="jar-sources" depends="prepare" description="create sources jar">

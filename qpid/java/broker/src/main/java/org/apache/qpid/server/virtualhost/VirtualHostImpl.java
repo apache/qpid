@@ -58,6 +58,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.HAMessageStore;
@@ -79,7 +80,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final ScheduledThreadPoolExecutor _houseKeepingTasks;
 
-    private final IApplicationRegistry _appRegistry;
+    private final VirtualHostRegistry _virtualHostRegistry;
+
+    private final StatisticsGatherer _statisticsGatherer;
 
     private final SecurityManager _securityManager;
 
@@ -106,7 +109,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
     private boolean _blocked;
 
-    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
+    public VirtualHostImpl(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer statisticsGatherer, SecurityManager parentSecurityManager, VirtualHostConfiguration hostConfig) throws Exception
     {
         if (hostConfig == null)
         {
@@ -118,7 +121,8 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             throw new IllegalArgumentException("Illegal name (" + hostConfig.getName() + ") for virtualhost.");
         }
 
-        _appRegistry = appRegistry;
+        _virtualHostRegistry = virtualHostRegistry;
+        _statisticsGatherer = statisticsGatherer;
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
@@ -127,7 +131,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(_appRegistry.getSecurityManager(), _vhostConfig.getConfig());
+        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig());
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
@@ -461,14 +465,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
 
-    public UUID getBrokerId()
+    public VirtualHostRegistry getVirtualHostRegistry()
     {
-        return _appRegistry.getBrokerId();
-    }
-
-    public IApplicationRegistry getApplicationRegistry()
-    {
-        return _appRegistry;
+        return _virtualHostRegistry;
     }
 
     public BindingFactory getBindingFactory()
@@ -480,14 +479,14 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     {
         _messagesDelivered.registerEvent(1L);
         _dataDelivered.registerEvent(messageSize);
-        _appRegistry.registerMessageDelivered(messageSize);
+        _statisticsGatherer.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
         _messagesReceived.registerEvent(1L, timestamp);
         _dataReceived.registerEvent(messageSize, timestamp);
-        _appRegistry.registerMessageReceived(messageSize, timestamp);
+        _statisticsGatherer.registerMessageReceived(messageSize, timestamp);
     }
 
     public StatisticsCounter getMessageReceiptStatistics()

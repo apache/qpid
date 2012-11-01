@@ -219,14 +219,14 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     }
 
     @Override
-    public State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
+    protected boolean setState(State currentState, State desiredState) throws IllegalStateTransitionException,
             AccessControlException
     {
         if (desiredState == State.DELETED)
         {
             delete();
-            return State.DELETED;
+            return true;
         }
-        return super.setDesiredState(currentState, desiredState);
+        return false;
     }
 }

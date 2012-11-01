@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 
 import java.util.Set;
@@ -36,7 +35,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private final Set<AmqpProtocolVersion> _supported;
     private final AmqpProtocolVersion _defaultSupportedReply;
 
-    public MultiVersionProtocolEngineFactory(final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
+    public MultiVersionProtocolEngineFactory(IApplicationRegistry appRegistry, final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
     {
         if(defaultSupportedReply != null && !supportedVersions.contains(defaultSupportedReply))
         {
@@ -44,7 +43,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
                                              + ") to an unsupported protocol version initiation is itself not supported!");
         }
 
-        _appRegistry = ApplicationRegistry.getInstance();
+        _appRegistry = appRegistry;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
     }

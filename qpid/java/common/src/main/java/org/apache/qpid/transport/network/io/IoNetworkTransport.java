@@ -248,14 +248,14 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                     }
                     catch(RuntimeException e)
                     {
-                        LOGGER.error("Error in Acceptor thread on port " + _config.getPort(), e);
+                        LOGGER.error("Error in Acceptor thread on address " + _config.getAddress(), e);
                         closeSocketIfNecessary(socket);
                     }
                     catch(IOException e)
                     {
                         if(!_closed)
                         {
-                            LOGGER.error("Error in Acceptor thread on port " + _config.getPort(), e);
+                            LOGGER.error("Error in Acceptor thread on address " + _config.getAddress(), e);
                             closeSocketIfNecessary(socket);
                             try
                             {
@@ -275,7 +275,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             {
                 if(LOGGER.isDebugEnabled())
                 {
-                    LOGGER.debug("Acceptor exiting, no new connections will be accepted on port " + _config.getPort());
+                    LOGGER.debug("Acceptor exiting, no new connections will be accepted on address " + _config.getAddress());
                 }
             }
         }

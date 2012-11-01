@@ -18,10 +18,11 @@
  */
 package org.apache.qpid.server.plugin;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
 import org.apache.qpid.server.security.group.GroupManager;
 
 public interface GroupManagerFactory
 {
-    GroupManager createInstance(Configuration securityConfiguration);
+    GroupManager createInstance(Map<String, Object> attributes);
 }

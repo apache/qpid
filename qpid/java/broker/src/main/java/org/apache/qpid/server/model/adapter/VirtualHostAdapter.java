@@ -31,16 +31,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueType;
 import org.apache.qpid.server.model.State;
@@ -56,16 +61,20 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
+public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
                                                                   QueueRegistry.RegistryChangeListener,
                                                                   IConnectionRegistry.RegistryChangeListener
 {
 
-    private final org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
+    private org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
 
     private final Map<AMQConnectionModel, ConnectionAdapter> _connectionAdapters =
             new HashMap<AMQConnectionModel, ConnectionAdapter>();
@@ -76,35 +85,34 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     private final Map<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter> _exchangeAdapters =
             new HashMap<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter>();
 
-    private final StatisticsAdapter _statistics;
+    private StatisticsAdapter _statistics;
 
-    private final BrokerAdapter _broker;
+    private final Broker _broker;
 
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
 
+    private final String _name;
 
-    VirtualHostAdapter(BrokerAdapter brokerAdapter,
-                       final org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
+    private VirtualHostRegistry _virtualHostRegistry;
+
+    private VirtualHostConfiguration _configuration;
+
+    private StatisticsGatherer _statisticsGatherer;
+
+    private SecurityManager _securityManager;
+
+    public VirtualHostAdapter(UUID id, Broker broker, Map<String, Object> attributes, VirtualHostRegistry virtualHostRegistry,
+            StatisticsGatherer statisticsGatherer, SecurityManager securityManager, VirtualHostConfiguration configuration)
     {
-        super(virtualHost.getId());
-        _broker = brokerAdapter;
-        _virtualHost = virtualHost;
-        _statistics = new VirtualHostStatisticsAdapter(virtualHost);
-        virtualHost.getQueueRegistry().addRegistryChangeListener(this);
-        populateQueues();
-        virtualHost.getExchangeRegistry().addRegistryChangeListener(this);
-        populateExchanges();
-        virtualHost.getConnectionRegistry().addRegistryChangeListener(this);
-        populateConnections();
-
-
-
-        for(Port port :_broker.getPorts())
-        {
-            _aliases.add(new VirtualHostAliasAdapter(this, port));
-        }
+        super(id);
+        _broker = broker;
+        _name = (String)attributes.get(NAME);
+        _virtualHostRegistry = virtualHostRegistry;
+        _configuration = configuration;
+        _statisticsGatherer = statisticsGatherer;
+        _securityManager = securityManager;
+        addParent(Broker.class, broker);
     }
-
 
     private void populateExchanges()
     {
@@ -127,14 +135,16 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     private void populateQueues()
     {
         Collection<AMQQueue> actualQueues = _virtualHost.getQueueRegistry().getQueues();
-
-        synchronized(_queueAdapters)
+        if ( actualQueues != null )
         {
-            for(AMQQueue queue : actualQueues)
+            synchronized(_queueAdapters)
             {
-                if(!_queueAdapters.containsKey(queue))
+                for(AMQQueue queue : actualQueues)
                 {
-                    _queueAdapters.put(queue, new QueueAdapter(this,queue));
+                    if(!_queueAdapters.containsKey(queue))
+                    {
+                        _queueAdapters.put(queue, new QueueAdapter(this,queue));
+                    }
                 }
             }
         }
@@ -158,6 +168,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
     }
 
+    @Override
     public String getReplicationGroupName()
     {
         return null;  //TODO
@@ -199,12 +210,12 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
     {
         attributes = new HashMap<String, Object>(attributes);
 
-        String         name     = getStringAttribute(Exchange.NAME, attributes, null);
-        State          state    = getEnumAttribute(State.class, Exchange.STATE, attributes, State.ACTIVE);
-        boolean        durable  = getBooleanAttribute(Exchange.DURABLE, attributes, false);
-        LifetimePolicy lifetime = getEnumAttribute(LifetimePolicy.class, Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
-        String         type     = getStringAttribute(Exchange.TYPE, attributes, null);
-        long           ttl      = getLongAttribute(Exchange.TIME_TO_LIVE, attributes, 0l);
+        String         name     = MapValueConverter.getStringAttribute(Exchange.NAME, attributes, null);
+        State          state    = MapValueConverter.getEnumAttribute(State.class, Exchange.STATE, attributes, State.ACTIVE);
+        boolean        durable  = MapValueConverter.getBooleanAttribute(Exchange.DURABLE, attributes, false);
+        LifetimePolicy lifetime = MapValueConverter.getEnumAttribute(LifetimePolicy.class, Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
+        String         type     = MapValueConverter.getStringAttribute(Exchange.TYPE, attributes, null);
+        long           ttl      = MapValueConverter.getLongAttribute(Exchange.TIME_TO_LIVE, attributes, 0l);
 
         attributes.remove(Exchange.NAME);
         attributes.remove(Exchange.STATE);
@@ -267,7 +278,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
         if (attributes.containsKey(Queue.TYPE))
         {
-            String typeAttribute = getStringAttribute(Queue.TYPE, attributes, null);
+            String typeAttribute = MapValueConverter.getStringAttribute(Queue.TYPE, attributes, null);
             QueueType queueType = null;
             try
             {
@@ -290,12 +301,12 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
                 throw new IllegalArgumentException("Sort key is not specified for sorted queue");
             }
         }
-        String         name     = getStringAttribute(Queue.NAME, attributes, null);
-        State          state    = getEnumAttribute(State.class, Queue.STATE, attributes, State.ACTIVE);
-        boolean        durable  = getBooleanAttribute(Queue.DURABLE, attributes, false);
-        LifetimePolicy lifetime = getEnumAttribute(LifetimePolicy.class, Queue.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
-        long           ttl      = getLongAttribute(Queue.TIME_TO_LIVE, attributes, 0l);
-        boolean        exclusive= getBooleanAttribute(Queue.EXCLUSIVE, attributes, false);
+        String         name     = MapValueConverter.getStringAttribute(Queue.NAME, attributes, null);
+        State          state    = MapValueConverter.getEnumAttribute(State.class, Queue.STATE, attributes, State.ACTIVE);
+        boolean        durable  = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);
+        LifetimePolicy lifetime = MapValueConverter.getEnumAttribute(LifetimePolicy.class, Queue.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
+        long           ttl      = MapValueConverter.getLongAttribute(Queue.TIME_TO_LIVE, attributes, 0l);
+        boolean        exclusive= MapValueConverter.getBooleanAttribute(Queue.EXCLUSIVE, attributes, false);
 
         attributes.remove(Queue.NAME);
         attributes.remove(Queue.STATE);
@@ -370,7 +381,7 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
 
     public String getName()
     {
-        return _virtualHost.getName();
+        return _name;
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -883,6 +894,61 @@ final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, E
                 return super.getStatistic(name);
             }
         }
+    }
+
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        if (desiredState == State.ACTIVE)
+        {
+            try
+            {
+                _virtualHost = new VirtualHostImpl(_virtualHostRegistry, _statisticsGatherer, _securityManager, _configuration);
+            }
+            catch (Exception e)
+            {
+               throw new RuntimeException("Failed to create virtual host", e);
+            }
+
+            _virtualHostRegistry.registerVirtualHost(_virtualHost);
+
+            _statistics = new VirtualHostStatisticsAdapter(_virtualHost);
+            _virtualHost.getQueueRegistry().addRegistryChangeListener(this);
+            populateQueues();
+            _virtualHost.getExchangeRegistry().addRegistryChangeListener(this);
+            populateExchanges();
+            _virtualHost.getConnectionRegistry().addRegistryChangeListener(this);
+            populateConnections();
+
+            synchronized(_aliases)
+            {
+                for(Port port :_broker.getPorts())
+                {
+                   if (Protocol.hasAmqpProtocol(port.getProtocols()))
+                   {
+                       _aliases.add(new VirtualHostAliasAdapter(this, port));
+                   }
+                }
+            }
+            return true;
+        }
+        else if (desiredState == State.STOPPED)
+        {
+            if (_virtualHost != null)
+            {
+                try
+                {
+                    _virtualHost.close();
+                }
+                finally
+                {
+                    _virtualHostRegistry.unregisterVirtualHost(_virtualHost);
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
 }

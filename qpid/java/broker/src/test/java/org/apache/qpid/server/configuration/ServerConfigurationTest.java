@@ -1124,7 +1124,7 @@ public class ServerConfigurationTest extends QpidTestCase
         // Test config
         VirtualHostConfiguration virtualHost = config.getVirtualHostConfig("a");
 
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
+        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
         assertEquals("Incorrect virtualhost name", "a", virtualHost.getName());
     }
 
@@ -1162,7 +1162,7 @@ public class ServerConfigurationTest extends QpidTestCase
         // Test config
         VirtualHostConfiguration virtualHost = config.getVirtualHostConfig("one");
 
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
+        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
         assertEquals("Incorrect virtualhost name", "one", virtualHost.getName());
     }
 
@@ -1219,7 +1219,7 @@ public class ServerConfigurationTest extends QpidTestCase
         VirtualHostConfiguration fishHost = config.getVirtualHostConfig("fish");
         ExchangeConfiguration fishExchange = fishHost.getExchangeConfiguration("fish.topic");
 
-        assertEquals("Incorrect virtualhost count", 2, config.getVirtualHosts().length);
+        assertEquals("Incorrect virtualhost count", 2, config.getVirtualHostsNames().length);
         assertEquals("Incorrect virtualhost name", "test", testHost.getName());
         assertFalse("Incorrect exchange durable property", testExchange.getDurable());
         assertEquals("Incorrect virtualhost name", "fish", fishHost.getName());
@@ -1271,7 +1271,7 @@ public class ServerConfigurationTest extends QpidTestCase
         VirtualHostConfiguration testHost = config.getVirtualHostConfig("test");
         ExchangeConfiguration testExchange = testHost.getExchangeConfiguration("test.topic");
 
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
+        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
         assertEquals("Incorrect virtualhost name", "test", testHost.getName());
         assertFalse("Incorrect exchange durable property", testExchange.getDurable());
     }
@@ -1308,7 +1308,7 @@ public class ServerConfigurationTest extends QpidTestCase
         // Test config
         VirtualHostConfiguration oneHost = config.getVirtualHostConfig("test-one");
 
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
+        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
         assertEquals("Incorrect virtualhost name", "test-one", oneHost.getName());
     }
 

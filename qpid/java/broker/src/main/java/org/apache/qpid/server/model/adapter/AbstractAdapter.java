@@ -26,8 +26,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
 
@@ -46,114 +48,6 @@ abstract class AbstractAdapter implements ConfiguredObject
         _id = id;
     }
 
-    static String getStringAttribute(String name, Map<String,Object> attributes, String defaultVal)
-    {
-        final Object value = attributes.get(name);
-        return value == null ? defaultVal : String.valueOf(value);
-    }
-
-    static Map getMapAttribute(String name, Map<String,Object> attributes, Map defaultVal)
-    {
-        final Object value = attributes.get(name);
-        if(value == null)
-        {
-            return defaultVal;
-        }
-        else if(value instanceof Map)
-        {
-            return (Map) value;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Map");
-        }
-    }
-
-
-    static <E extends Enum> E getEnumAttribute(Class<E> clazz, String name, Map<String,Object> attributes, E defaultVal)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultVal;
-        }
-        else if(clazz.isInstance(obj))
-        {
-            return (E) obj;
-        }
-        else if(obj instanceof String)
-        {
-            return (E) Enum.valueOf(clazz, (String)obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type " + clazz.getSimpleName());
-        }
-    }
-
-    static Boolean getBooleanAttribute(String name, Map<String,Object> attributes, Boolean defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Boolean)
-        {
-            return (Boolean) obj;
-        }
-        else if(obj instanceof String)
-        {
-            return Boolean.parseBoolean((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Boolean");
-        }
-    }
-
-    static Integer getIntegerAttribute(String name, Map<String,Object> attributes, Integer defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Number)
-        {
-            return ((Number) obj).intValue();
-        }
-        else if(obj instanceof String)
-        {
-            return Integer.valueOf((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Integer");
-        }
-    }
-
-    static Long getLongAttribute(String name, Map<String,Object> attributes, Long defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Number)
-        {
-            return ((Number) obj).longValue();
-        }
-        else if(obj instanceof String)
-        {
-            return Long.valueOf((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Long");
-        }
-    }
-
     public final UUID getId()
     {
         return _id;
@@ -164,10 +58,31 @@ abstract class AbstractAdapter implements ConfiguredObject
         return null;  //TODO
     }
 
-    public State setDesiredState(final State currentState, final State desiredState)
+    @Override
+    public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-        return null;  //TODO
+        if (setState(currentState, desiredState))
+        {
+            notifyStateChanged(currentState, desiredState);
+        }
+        return getActualState();
+    }
+
+    /**
+     * @return true when the state has been successfully updated to desiredState or false otherwise
+     */
+    protected abstract boolean setState(State currentState, State desiredState);
+
+    protected void notifyStateChanged(final State currentState, final State desiredState)
+    {
+        synchronized (this)
+        {
+            for(ConfigurationChangeListener listener : _changeListeners)
+            {
+                listener.stateChanged(this, currentState, desiredState);
+            }
+        }
     }
 
     public void addChangeListener(final ConfigurationChangeListener listener)
@@ -280,4 +195,15 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
+    @Override
+    public ConfiguredObjectType getConfiguredObjectType()
+    {
+        throw new RuntimeException("Not implemented"); //XXX: implement this method in each concrete adapter class
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " [id=" + _id + "]";
+    }
 }

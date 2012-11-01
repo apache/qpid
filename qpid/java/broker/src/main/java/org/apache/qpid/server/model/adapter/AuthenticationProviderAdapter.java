@@ -29,38 +29,44 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import javax.security.auth.login.AccountNotFoundException;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
 {
     private static final Logger LOGGER = Logger.getLogger(AuthenticationProviderAdapter.class);
 
-    private final BrokerAdapter _broker;
     private final T _authManager;
 
-    private AuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
-                                          final T authManager)
-    {
-        super(UUIDGenerator.generateRandomUUID());
-        _broker = brokerAdapter;
-        _authManager = authManager;
-    }
+    private GroupPrincipalAccessor _groupAccessor;
 
-    public static AuthenticationProviderAdapter createAuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
-                                                                             final AuthenticationManager authManager)
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager)
     {
-        return authManager instanceof PrincipalDatabaseAuthenticationManager
-                ? new PrincipalDatabaseAuthenticationManagerAdapter(brokerAdapter, (PrincipalDatabaseAuthenticationManager) authManager)
-                : new SimpleAuthenticationProviderAdapter(brokerAdapter, authManager);
+        super(id);
+        _authManager = authManager;
+        addParent(Broker.class, broker);
     }
 
     T getAuthManager()
@@ -199,23 +205,59 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                                            " creating children of type: " + childClass);
     }
 
-    private static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
+    @Override
+    public boolean setState(State currentState, State desiredState)
+            throws IllegalStateTransitionException, AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            return true;
+        }
+        else if(desiredState == State.ACTIVE)
+        {
+            if (_groupAccessor == null)
+            {
+                throw new IllegalStateTransitionException("Cannot transit into ACTIVE state with null group accessor!");
+            }
+            _authManager.initialise();
+            return true;
+        }
+        else if(desiredState == State.STOPPED)
+        {
+            _authManager.close();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public SubjectCreator getSubjectCreator()
+    {
+        return new SubjectCreator(_authManager, _groupAccessor);
+    }
+
+    public void setGroupAccessor(GroupPrincipalAccessor groupAccessor)
+    {
+        _groupAccessor = groupAccessor;
+    }
+
+    public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
         public SimpleAuthenticationProviderAdapter(
-                BrokerAdapter brokerAdapter, AuthenticationManager authManager)
+                UUID id, Broker broker, AuthenticationManager authManager)
         {
-            super(brokerAdapter,authManager);
+            super(id, broker,authManager);
         }
     }
 
-    private static class PrincipalDatabaseAuthenticationManagerAdapter
+    public static class PrincipalDatabaseAuthenticationManagerAdapter
             extends AuthenticationProviderAdapter<PrincipalDatabaseAuthenticationManager>
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                BrokerAdapter brokerAdapter, PrincipalDatabaseAuthenticationManager authManager)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager)
         {
-            super(brokerAdapter, authManager);
+            super(id, broker, authManager);
         }
 
         @Override
@@ -275,7 +317,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             Map<String, Map<String,String>> users = new HashMap<String, Map<String, String>>();
             for(Principal principal : getPrincipalDatabase().getUsers())
             {
-                users.put(principal.getName(), Collections.EMPTY_MAP);
+                users.put(principal.getName(), Collections.<String, String>emptyMap());
             }
             return users;
         }
@@ -298,7 +340,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
                 if(createUser(username, password,null))
                 {
-                    return (C) new PrincipalAdapter(p);
+                    @SuppressWarnings("unchecked")
+                    C pricipalAdapter = (C) new PrincipalAdapter(p);
+                    return pricipalAdapter;
                 }
                 else
                 {
@@ -321,7 +365,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 {
                     principals.add(new PrincipalAdapter(user));
                 }
-                return (Collection<C>) Collections.unmodifiableCollection(principals);
+                @SuppressWarnings("unchecked")
+                Collection<C> unmodifiablePrincipals = (Collection<C>) Collections.unmodifiableCollection(principals);
+                return unmodifiablePrincipals;
             }
             else
             {
@@ -470,7 +516,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
 
             @Override
-            public State setDesiredState(State currentState, State desiredState)
+            protected boolean setState(State currentState, State desiredState)
                     throws IllegalStateTransitionException, AccessControlException
             {
                 if(desiredState == State.DELETED)
@@ -483,9 +529,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     {
                         LOGGER.warn("Failed to delete user " + _user, e);
                     }
-                    return State.DELETED;
+                    return true;
                 }
-                return super.setDesiredState(currentState, desiredState);
+                return false;
             }
         }
     }

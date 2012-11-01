@@ -20,25 +20,22 @@
  */
 package org.apache.qpid.test.utils;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.Broker;
+import org.apache.qpid.server.BrokerLauncher;
 
 public class InternalBrokerHolder implements BrokerHolder
 {
     private static final Logger LOGGER = Logger.getLogger(InternalBrokerHolder.class);
 
-    private final Broker _broker;
+    private final BrokerLauncher _broker;
     private final String _workingDirectory;
 
     private Set<Integer> _portsUsedByBroker;
 
-    public InternalBrokerHolder(final Broker broker, String workingDirectory, Set<Integer> portsUsedByBroker)
+    public InternalBrokerHolder(final BrokerLauncher broker, String workingDirectory, Set<Integer> portsUsedByBroker)
     {
         if(broker == null)
         {

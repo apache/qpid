@@ -25,13 +25,16 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * An object that can be "managed" (eg via the web interface) and usually read from configuration.
+ */
 public interface ConfiguredObject
 {
 
     /**
      * Get the universally unique identifier for the object
      *
-     * @return the objects id
+     * @return the object's id
      */
     UUID getId();
 
@@ -47,7 +50,7 @@ public interface ConfiguredObject
      * Attempt to change the name of the object
      *
      * Request a change to the name of the object.  The caller must pass in the name it believes the object currently
-     * has. If the current name differes from this expected value, then no name change will occur
+     * has. If the current name differs from this expected value, then no name change will occur
      *
      * @param currentName the name the caller believes the object to have
      * @param desiredName the name the caller would like the object to have
@@ -243,4 +246,7 @@ public interface ConfiguredObject
     <C extends ConfiguredObject> C createChild(Class<C> childClass,
                                                Map<String, Object> attributes,
                                                ConfiguredObject... otherParents);
+
+    ConfiguredObjectType getConfiguredObjectType();
+
 }

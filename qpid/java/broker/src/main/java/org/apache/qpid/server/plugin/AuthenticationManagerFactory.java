@@ -18,11 +18,15 @@
  */
 package org.apache.qpid.server.plugin;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 
 public interface AuthenticationManagerFactory
 {
-    AuthenticationManager createInstance(Configuration securityConfiguration);
+    public static final String TYPE =  AuthenticationProvider.TYPE;
+
+    AuthenticationManager createInstance(Map<String, Object> attributes);
 }

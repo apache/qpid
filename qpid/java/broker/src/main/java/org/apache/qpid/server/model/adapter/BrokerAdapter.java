@@ -20,89 +20,63 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.net.InetSocketAddress;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
-import org.apache.qpid.server.security.group.GroupManager;
-import org.apache.qpid.server.transport.QpidAcceptor;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHostRegistry.RegistryChangeListener,
-                                                              IApplicationRegistry.PortBindingListener,
-                                                              IAuthenticationManagerRegistry.RegistryChangeListener,
-                                                              IApplicationRegistry.GroupManagerChangeListener
+public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
+    private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
-
-    private final IApplicationRegistry _applicationRegistry;
+    private IApplicationRegistry _applicationRegistry;
     private String _name;
-    private final Map<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter> _vhostAdapters =
-            new HashMap<org.apache.qpid.server.virtualhost.VirtualHost, VirtualHostAdapter>();
-    private final StatisticsAdapter _statistics;
-    private final Map<QpidAcceptor, PortAdapter> _portAdapters = new HashMap<QpidAcceptor, PortAdapter>();
-    private Collection<HTTPPortAdapter> _httpManagementPorts;
+    private StatisticsAdapter _statistics;
 
-    private final Map<AuthenticationManager, AuthenticationProviderAdapter> _authManagerAdapters =
-            new HashMap<AuthenticationManager, AuthenticationProviderAdapter>();
-    private final Map<GroupManager, GroupProviderAdapter> _groupManagerAdapters =
-            new HashMap<GroupManager, GroupProviderAdapter>();
+    private final Map<String, VirtualHost> _vhostAdapters = new HashMap<String, VirtualHost>();
+    private final Map<Integer, Port> _portAdapters = new HashMap<Integer, Port>();
+    private final Map<String, AuthenticationProvider> _authenticationProviders = new HashMap<String, AuthenticationProvider>();
+    private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
 
+    private final AuthenticationProviderFactory _authenticationProviderFactory;
+    private AuthenticationProvider _defaultAuthenticationProvider;
 
-    public BrokerAdapter(final IApplicationRegistry instance)
+    private final PortFactory _portFactory;
+
+    public BrokerAdapter(UUID id, IApplicationRegistry instance, AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
     {
-        super(UUIDGenerator.generateRandomUUID());
+        super(id);
+        _name = "Broker";
         _applicationRegistry = instance;
         _name = "Broker";
         _statistics = new StatisticsAdapter(instance);
-
-        instance.getVirtualHostRegistry().addRegistryChangeListener(this);
-        populateVhosts();
-        instance.addPortBindingListener(this);
-        populatePorts();
-        instance.addAuthenticationManagerRegistryChangeListener(this);
-        populateAuthenticationManagers();
-        instance.addGroupManagerChangeListener(this);
-        populateGroupManagers();
+        _authenticationProviderFactory = authenticationProviderFactory;
+        _portFactory = portFactory;
     }
-
-    private void populateVhosts()
-    {
-        synchronized(_vhostAdapters)
-        {
-            Collection<org.apache.qpid.server.virtualhost.VirtualHost> actualVhosts =
-                    _applicationRegistry.getVirtualHostRegistry().getVirtualHosts();
-            for(org.apache.qpid.server.virtualhost.VirtualHost vh : actualVhosts)
-            {
-                if(!_vhostAdapters.containsKey(vh))
-                {
-                    _vhostAdapters.put(vh, new VirtualHostAdapter(this, vh));
-                }
-            }
-
-        }
-    }
-
 
     public Collection<VirtualHost> getVirtualHosts()
     {
@@ -112,107 +86,55 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         }
 
     }
-    private void populatePorts()
-    {
-        synchronized (_portAdapters)
-        {
-            Map<InetSocketAddress, QpidAcceptor> acceptors = _applicationRegistry.getAcceptors();
-
-            for(Map.Entry<InetSocketAddress, QpidAcceptor> entry : acceptors.entrySet())
-            {
-                if(!_portAdapters.containsKey(entry.getValue()))
-                {
-                    _portAdapters.put(entry.getValue(), new PortAdapter(this, entry.getValue(), entry.getKey()));
-                }
-            }
-            if(_applicationRegistry.useHTTPManagement() || _applicationRegistry.useHTTPSManagement())
-            {
-                ArrayList<HTTPPortAdapter> httpPorts = new ArrayList<HTTPPortAdapter>();
-                if (_applicationRegistry.useHTTPManagement())
-                {
-                    httpPorts.add(new HTTPPortAdapter(this, _applicationRegistry.getHTTPManagementPort()));
-                }
-                if (_applicationRegistry.useHTTPSManagement())
-                {
-                    httpPorts.add(new HTTPPortAdapter(this, _applicationRegistry.getHTTPSManagementPort(), Protocol.HTTPS, Transport.SSL));
-                }
-                _httpManagementPorts = Collections.unmodifiableCollection(httpPorts);
-            }
-        }
-    }
 
     public Collection<Port> getPorts()
     {
         synchronized (_portAdapters)
         {
             final ArrayList<Port> ports = new ArrayList<Port>(_portAdapters.values());
-            if(_httpManagementPorts != null)
-            {
-                ports.addAll(_httpManagementPorts);
-            }
             return ports;
-        }
-    }
-
-    private void populateAuthenticationManagers()
-    {
-        synchronized (_authManagerAdapters)
-        {
-            IAuthenticationManagerRegistry authenticationManagerRegistry =
-                    _applicationRegistry.getAuthenticationManagerRegistry();
-            if(authenticationManagerRegistry != null)
-            {
-                Map<String, AuthenticationManager> authenticationManagers =
-                        authenticationManagerRegistry.getAvailableAuthenticationManagers();
-
-                for(Map.Entry<String, AuthenticationManager> entry : authenticationManagers.entrySet())
-                {
-                    if(!_authManagerAdapters.containsKey(entry.getValue()))
-                    {
-                        _authManagerAdapters.put(entry.getValue(),
-                                                 AuthenticationProviderAdapter.createAuthenticationProviderAdapter(this,
-                                                                                                                   entry.getValue()));
-                    }
-                }
-            }
-        }
-    }
-
-    private void populateGroupManagers()
-    {
-        synchronized (_groupManagerAdapters)
-        {
-            List<GroupManager> groupManagers = _applicationRegistry.getGroupManagers();
-            if(groupManagers != null)
-            {
-                for (GroupManager groupManager : groupManagers)
-                {
-                    if(!_groupManagerAdapters.containsKey(groupManager))
-                    {
-                        _groupManagerAdapters.put(groupManager,
-                                                 GroupProviderAdapter.createGroupProviderAdapter(this, groupManager));
-                    }
-                }
-            }
         }
     }
 
     public Collection<AuthenticationProvider> getAuthenticationProviders()
     {
-        synchronized (_authManagerAdapters)
+        synchronized (_authenticationProviders)
         {
-            final ArrayList<AuthenticationProvider> authManagers =
-                    new ArrayList<AuthenticationProvider>(_authManagerAdapters.values());
-            return authManagers;
+            return new ArrayList<AuthenticationProvider>(_authenticationProviders.values());
         }
     }
 
+    public AuthenticationProvider getAuthenticationProviderByName(String authenticationProviderName)
+    {
+        Collection<AuthenticationProvider> providers = getAuthenticationProviders();
+        for (AuthenticationProvider authenticationProvider : providers)
+        {
+            if (authenticationProvider.getName().equals(authenticationProviderName))
+            {
+                return authenticationProvider;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public AuthenticationProvider getDefaultAuthenticationProvider()
+    {
+        return _defaultAuthenticationProvider;
+    }
+
+    public void setDefaultAuthenticationProvider(AuthenticationProvider provider)
+    {
+        _defaultAuthenticationProvider = provider;
+    }
+
+    @Override
     public Collection<GroupProvider> getGroupProviders()
     {
-        synchronized (_groupManagerAdapters)
+        synchronized (_groupProviders)
         {
             final ArrayList<GroupProvider> groupManagers =
-                    new ArrayList<GroupProvider>(_groupManagerAdapters.values());
+                    new ArrayList<GroupProvider>(_groupProviders.values());
             return groupManagers;
         }
     }
@@ -228,16 +150,32 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         return null;  //TODO
     }
 
-    public VirtualHost createVirtualHost(final Map<String, Object> attributes)
+    private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        return null;  //TODO
+        String virtualHostName = (String) attributes.get(VirtualHost.NAME);
+        VirtualHostConfiguration vhostConfig = _applicationRegistry.getConfiguration().getVirtualHostConfig(virtualHostName);
+
+        VirtualHostRegistry virtualHostRegistry = _applicationRegistry.getVirtualHostRegistry();
+        final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), this,
+                attributes, virtualHostRegistry, (StatisticsGatherer)_applicationRegistry,
+                _applicationRegistry.getSecurityManager(), vhostConfig);
+
+        synchronized (_vhostAdapters)
+        {
+            _vhostAdapters.put(virtualHostAdapter.getName(), virtualHostAdapter);
+        }
+
+        virtualHostAdapter.setState(State.INITIALISING, State.ACTIVE);
+        childAdded(virtualHostAdapter);
+
+        return virtualHostAdapter;
     }
 
-    public void deleteVirtualHost(final VirtualHost vhost)
+    private boolean deleteVirtualHost(final VirtualHost vhost)
         throws AccessControlException, IllegalStateException
     {
-        //TODO
+        //TODO implement deleteVirtualHost
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
@@ -297,6 +235,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         return _statistics;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -320,6 +259,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         return Collections.emptySet();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
@@ -341,111 +281,73 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         }
     }
 
+    public void addPort(Port port)
+    {
+        synchronized (_portAdapters)
+        {
+            int portNumber = port.getPort();
+            if(_portAdapters.containsKey(portNumber))
+            {
+                throw new IllegalArgumentException("Cannot add port " + port + " because port number " + portNumber + " already configured");
+            }
+            _portAdapters.put(portNumber, port);
+        }
+        port.addChangeListener(this);
+    }
+
     private Port createPort(Map<String, Object> attributes)
     {
-        // TODO
-        return null;
+        Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
+        addPort(port);
+        childAdded(port);
+        return port;
     }
 
-    private AuthenticationProvider createAuthenticationProvider(Map<String,Object> attributes)
+    private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
-        // TODO
-        return null;
+        // it's cheap to create the groupPrincipalAccessor on the fly
+        GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(_groupProviders.values());
+
+        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes, groupPrincipalAccessor);
+        addAuthenticationProvider(authenticationProvider);
+        childAdded(authenticationProvider);
+        return authenticationProvider;
     }
 
-
-    public void virtualHostRegistered(org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
+    /**
+     * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
+     */
+    public void addAuthenticationProvider(AuthenticationProvider authenticationProvider)
     {
-        VirtualHostAdapter adapter = null;
-        synchronized (_vhostAdapters)
+        String name = authenticationProvider.getName();
+        synchronized (_authenticationProviders)
         {
-            if(!_vhostAdapters.containsKey(virtualHost))
+            if(_authenticationProviders.containsKey(name))
             {
-                adapter = new VirtualHostAdapter(this, virtualHost);
-                _vhostAdapters.put(virtualHost, adapter);
+                throw new IllegalConfigurationException("Cannot add AuthenticationProvider because one with name " + name + " already exists");
             }
+            _authenticationProviders.put(name, authenticationProvider);
         }
-        if(adapter != null)
-        {
-            childAdded(adapter);
-        }
+        authenticationProvider.addChangeListener(this);
     }
 
-    public void virtualHostUnregistered(org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
+    public void addGroupProvider(GroupProvider groupProvider)
     {
-        VirtualHostAdapter adapter = null;
-
-        synchronized (_vhostAdapters)
+        synchronized (_groupProviders)
         {
-            adapter = _vhostAdapters.remove(virtualHost);
-        }
-        if(adapter != null)
-        {
-            childRemoved(adapter);
-        }
-    }
-
-    @Override
-    public void authenticationManagerRegistered(AuthenticationManager authenticationManager)
-    {
-        AuthenticationProviderAdapter adapter = null;
-        synchronized (_authManagerAdapters)
-        {
-            if(!_authManagerAdapters.containsKey(authenticationManager))
+            String name = groupProvider.getName();
+            if(_groupProviders.containsKey(name))
             {
-                adapter =
-                        AuthenticationProviderAdapter.createAuthenticationProviderAdapter(this, authenticationManager);
-                _authManagerAdapters.put(authenticationManager, adapter);
+                throw new IllegalConfigurationException("Cannot add GroupProvider because one with name " + name + " already exists");
             }
+            _groupProviders.put(name, groupProvider);
         }
-        if(adapter != null)
-        {
-            childAdded(adapter);
-        }
+        groupProvider.addChangeListener(this);
     }
 
-    @Override
-    public void authenticationManagerUnregistered(AuthenticationManager authenticationManager)
+    private boolean deleteGroupProvider(GroupProvider object)
     {
-        AuthenticationProviderAdapter adapter;
-        synchronized (_authManagerAdapters)
-        {
-            adapter = _authManagerAdapters.remove(authenticationManager);
-        }
-        if(adapter != null)
-        {
-            childRemoved(adapter);
-        }
-    }
-
-
-    @Override
-    public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress)
-    {
-        synchronized (_portAdapters)
-        {
-            if(!_portAdapters.containsKey(acceptor))
-            {
-                PortAdapter adapter = new PortAdapter(this, acceptor, bindAddress);
-                _portAdapters.put(acceptor, adapter);
-                childAdded(adapter);
-            }
-        }
-    }
-
-    @Override
-    public void unbound(QpidAcceptor acceptor)
-    {
-        PortAdapter adapter = null;
-
-        synchronized (_portAdapters)
-        {
-            adapter = _portAdapters.remove(acceptor);
-        }
-        if(adapter != null)
-        {
-            childRemoved(adapter);
-        }
+        throw new UnsupportedOperationException("Not implemented yet!");
     }
 
     @Override
@@ -520,7 +422,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         {
             // TODO
         }
-
+        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
+        {
+            return getDefaultAuthenticationProvider();
+        }
         return super.getAttribute(name);    //TODO - Implement.
     }
 
@@ -531,35 +436,137 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, VirtualHos
         return super.setAttribute(name, expected, desired);    //TODO - Implement.
     }
 
-    @Override
-    public void groupManagerRegistered(GroupManager groupManager)
+    private boolean deletePort(Port portAdapter)
     {
-        GroupProviderAdapter adapter = null;
-        synchronized (_groupManagerAdapters)
+        Port removedPort = null;
+        synchronized (_portAdapters)
         {
-            if(!_groupManagerAdapters.containsKey(groupManager))
-            {
-                adapter = GroupProviderAdapter.createGroupProviderAdapter(this, groupManager);
-                _groupManagerAdapters.put(groupManager, adapter);
-            }
+            removedPort = _portAdapters.remove(portAdapter.getPort());
         }
-        if(adapter != null)
+        return removedPort != null;
+    }
+
+    private boolean deleteAuthenticationProvider(AuthenticationProvider authenticationProvider)
+    {
+        AuthenticationProvider removedAuthenticationProvider = null;
+        synchronized (_authenticationProviders)
         {
-            childAdded(adapter);
+            removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getName());
+        }
+        return removedAuthenticationProvider != null;
+    }
+
+    public void addVirtualHost(VirtualHost virtualHost)
+    {
+        synchronized (_vhostAdapters)
+        {
+            String name = virtualHost.getName();
+            if (_vhostAdapters.containsKey(name))
+            {
+                throw new IllegalConfigurationException("Virtual host with name " + name + " is already specified!");
+            }
+            _vhostAdapters.put(name, virtualHost);
+        }
+        virtualHost.addChangeListener(this);
+    }
+
+    @Override
+    public boolean setState(State currentState, State desiredState)
+    {
+        if (desiredState == State.ACTIVE)
+        {
+            changeState(_groupProviders, currentState, State.ACTIVE, false);
+            changeState(_authenticationProviders, currentState, State.ACTIVE, false);
+
+            CurrentActor.set(new BrokerActor(_applicationRegistry.getRootMessageLogger()));
+            try
+            {
+                changeState(_vhostAdapters, currentState, State.ACTIVE, false);
+            }
+            finally
+            {
+                CurrentActor.remove();
+            }
+
+            changeState(_portAdapters, currentState,State.ACTIVE, false);
+            return true;
+        }
+        else if (desiredState == State.STOPPED)
+        {
+            changeState(_portAdapters, currentState, State.STOPPED, true);
+            changeState(_vhostAdapters,currentState, State.STOPPED, true);
+            changeState(_authenticationProviders, currentState, State.STOPPED, true);
+            changeState(_groupProviders, currentState, State.STOPPED, true);
+            return true;
+        }
+        return false;
+    }
+
+    private void changeState(Map<?, ? extends ConfiguredObject> configuredObjectMap, State currentState, State desiredState, boolean swallowException)
+    {
+        synchronized(configuredObjectMap)
+        {
+            Collection<? extends ConfiguredObject> adapters = configuredObjectMap.values();
+            for (ConfiguredObject configuredObject : adapters)
+            {
+                try
+                {
+                    configuredObject.setDesiredState(currentState, desiredState);
+                }
+                catch(RuntimeException e)
+                {
+                    if (swallowException)
+                    {
+                        LOGGER.error("Failed to stop " + configuredObject, e);
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
+            }
         }
     }
 
     @Override
-    public void groupManagerUnregistered(GroupManager groupManager)
+    public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
-        GroupProviderAdapter adapter;
-        synchronized (_groupManagerAdapters)
+        if(newState == State.DELETED)
         {
-            adapter = _groupManagerAdapters.remove(groupManager);
-        }
-        if(adapter != null)
-        {
-            childRemoved(adapter);
+            boolean childDeleted = false;
+            if(object instanceof AuthenticationProvider)
+            {
+                childDeleted = deleteAuthenticationProvider((AuthenticationProvider)object);
+            }
+            else if(object instanceof Port)
+            {
+                childDeleted = deletePort((Port)object);
+            }
+            else if(object instanceof VirtualHost)
+            {
+                childDeleted = deleteVirtualHost((VirtualHost)object);
+            }
+            else if(object instanceof GroupProvider)
+            {
+                childDeleted = deleteGroupProvider((GroupProvider)object);
+            }
+            if(childDeleted)
+            {
+                childRemoved(object);
+            }
         }
     }
+
+    @Override
+    public void childAdded(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
+    @Override
+    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
 }

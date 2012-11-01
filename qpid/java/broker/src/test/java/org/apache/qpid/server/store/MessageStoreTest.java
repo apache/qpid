@@ -121,8 +121,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             try
             {
                 getVirtualHost().close();
-                getVirtualHost().getApplicationRegistry().
-                getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
+                getVirtualHost().getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
             }
             catch (Exception e)
             {

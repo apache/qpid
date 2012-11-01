@@ -58,8 +58,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     void close();
 
-    UUID getBrokerId();
-
     UUID getId();
 
     void scheduleHouseKeepingTask(long period, HouseKeepingTask task);
@@ -74,7 +72,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     int getHouseKeepingActiveCount();
 
-    IApplicationRegistry getApplicationRegistry();
+    VirtualHostRegistry getVirtualHostRegistry();
 
     BindingFactory getBindingFactory();
 

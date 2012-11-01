@@ -20,11 +20,7 @@
  */
 package org.apache.qpid.server.util;
 
-import java.net.SocketAddress;
-import java.util.Collections;
-import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
-
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
@@ -32,14 +28,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
-
-import java.util.Properties;
+import org.apache.qpid.server.security.auth.manager.TestAuthenticationManagerFactory;
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
@@ -52,53 +41,14 @@ public class TestApplicationRegistry extends ApplicationRegistry
     @Override
     public void initialise() throws Exception
     {
+        LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
+        getConfiguration().getConfig().addProperty("security." + TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER, "");
+        super.initialise();
+
         CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));
         GenericActor.setDefaultMessageLogger(new NullRootMessageLogger());
-        LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
-
-        super.initialise();
     }
 
-    @Override
-    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(
-            ServerConfiguration configuration, final GroupPrincipalAccessor groupPrincipalAccessor)
-            throws ConfigurationException
-    {
-        final Properties users = new Properties();
-        users.put("guest","guest");
-        users.put("admin","admin");
-
-        final PropertiesPrincipalDatabase ppd = new PropertiesPrincipalDatabase(users);
-
-        final AuthenticationManager pdam =  new PrincipalDatabaseAuthenticationManager(ppd);
-        pdam.initialise();
-
-        return new IAuthenticationManagerRegistry()
-        {
-            @Override
-            public void close()
-            {
-                pdam.close();
-            }
-
-            @Override
-            public SubjectCreator getSubjectCreator(SocketAddress address)
-            {
-                return new SubjectCreator(pdam, groupPrincipalAccessor);
-            }
-
-            @Override
-            public Map<String, AuthenticationManager> getAvailableAuthenticationManagers()
-            {
-                return Collections.singletonMap(pdam.getClass().getName(), pdam);
-            }
-
-            @Override
-            public void addRegistryChangeListener(RegistryChangeListener listener)
-            {
-            }
-        };
-    }
 }
 
 

@@ -74,17 +74,27 @@ public class VirtualHostImplTest extends QpidTestCase
      */
     public void testSpecifyingCustomBindingForDefaultExchangeThrowsException() throws Exception
     {
-        File config = writeConfigFile(getName(), getName(), null, false, new String[]{"custom-binding"});
+        final String queueName = getName();
+        final String customBinding = "custom-binding";
+        File config = writeConfigFile(queueName, queueName, null, false, new String[]{customBinding});
 
         try
         {
-            createVirtualHost(getName(), config);
+            createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
         catch (RuntimeException e)
         {
-            assertEquals(ConfigurationException.class, e.getCause().getClass());
-            //expected
+            // PASS
+            assertEquals("Failed to create virtual host", e.getMessage());
+
+            assertNotNull(e.getCause());
+            assertNotNull(e.getCause().getCause());
+
+            assertEquals(ConfigurationException.class, e.getCause().getCause().getClass());
+
+            Throwable configException = e.getCause().getCause();
+            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, configException.getMessage());
         }
     }
 
@@ -112,17 +122,27 @@ public class VirtualHostImplTest extends QpidTestCase
      */
     public void testSpecifyingUnknownExchangeThrowsException() throws Exception
     {
-        File config = writeConfigFile(getName(), getName(), "made-up-exchange", true, new String[0]);
+        final String queueName = getName();
+        final String exchangeName = "made-up-exchange";
+        File config = writeConfigFile(queueName, queueName, exchangeName, true, new String[0]);
 
         try
         {
-            createVirtualHost(getName(), config);
+            createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
         catch (RuntimeException e)
         {
-            assertEquals(ConfigurationException.class, e.getCause().getClass());
-            //expected
+            // PASS
+            assertEquals("Failed to create virtual host", e.getMessage());
+
+            assertNotNull(e.getCause());
+            assertNotNull(e.getCause().getCause());
+
+            assertEquals(ConfigurationException.class, e.getCause().getCause().getClass());
+
+            Throwable configException = e.getCause().getCause();
+            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, configException.getMessage());
         }
     }
 

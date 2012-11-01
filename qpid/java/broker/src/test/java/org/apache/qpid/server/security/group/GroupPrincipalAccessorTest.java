@@ -29,15 +29,14 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.security.group.GroupManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.model.GroupProvider;
 
 public class GroupPrincipalAccessorTest extends TestCase
 {
     private static final String USERNAME = "username";
 
-    private GroupManager _groupManager1 = mock(GroupManager.class);
-    private GroupManager _groupManager2 = mock(GroupManager.class);
+    private GroupProvider _groupManager1 = mock(GroupProvider.class);
+    private GroupProvider _groupManager2 = mock(GroupProvider.class);
 
     private Principal _group1 = mock(Principal.class);
     private Principal _group2 = mock(Principal.class);

@@ -140,4 +140,11 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
     {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO: state is not supported at the moment
+        return false;
+    }
 }

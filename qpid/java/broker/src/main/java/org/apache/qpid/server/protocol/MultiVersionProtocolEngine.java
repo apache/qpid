@@ -309,7 +309,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             conn.setConnectionDelegate(connDelegate);
             conn.setRemoteAddress(_network.getRemoteAddress());
             conn.setLocalAddress(_network.getLocalAddress());
-            return new ProtocolEngine_0_10( conn, _network, _appRegistry);
+            return new ProtocolEngine_0_10( conn, _network);
         }
     };
 

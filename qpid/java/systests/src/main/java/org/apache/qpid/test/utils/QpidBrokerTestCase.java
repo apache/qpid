@@ -57,7 +57,7 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.server.Broker;
+import org.apache.qpid.server.BrokerLauncher;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.ProtocolInclusion;
@@ -413,7 +413,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             //set on the JVM by the JUnit runner task in module.xml.
             options.setLogConfigFile(_logConfigFile.getAbsolutePath());
 
-            Broker broker = new Broker();
+            BrokerLauncher broker = new BrokerLauncher();
             _logger.info("starting internal broker (same JVM)");
             broker.startup(options);
 

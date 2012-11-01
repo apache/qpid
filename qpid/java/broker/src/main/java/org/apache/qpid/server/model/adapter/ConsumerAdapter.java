@@ -222,4 +222,11 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
             return null;  // TODO - Implement
         }
     }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO : Add state management
+        return false;
+    }
 }

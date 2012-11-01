@@ -22,10 +22,8 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
@@ -37,11 +35,8 @@ import javax.management.JMException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
-import javax.management.Notification;
-import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.RuntimeErrorException;
-import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationHandler;
@@ -51,13 +46,12 @@ import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.Arrays;
-import java.util.Map;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. It delegates
  * JMX access decisions to the SecurityPlugin.
  */
-public class MBeanInvocationHandlerImpl implements InvocationHandler, NotificationListener
+public class MBeanInvocationHandlerImpl implements InvocationHandler
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
 
@@ -361,51 +355,5 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         return (methodName.startsWith("query") || methodName.startsWith("get") || methodName.startsWith("is"));
     }
 
-    /**
-     * Receives notifications from the MBeanServer.
-     */
-    public void handleNotification(final Notification notification, final Object handback)
-    {
-        assert notification instanceof JMXConnectionNotification;
-
-        final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();
-        final String type = notification.getType();
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Notification connectionId : " + connectionId + " type : " + type
-                    + " Notification handback : " + handback);
-        }
-
-        // Normally JMXManagedObjectRegistry provides a Map as handback data containing a map
-        // between connection id and username.
-        String user = null;
-        if (handback instanceof Map)
-        {
-            @SuppressWarnings("unchecked")
-            final Map<String, String> connectionIdUsernameMap = (Map<String, String>) handback;
-            user = connectionIdUsernameMap.get(connectionId);
-        }
-
-        // If user is still null, fallback to an unordered list of Principals from the connection id.
-        if (user == null)
-        {
-            final String[] splitConnectionId = connectionId.split(" ");
-            user = splitConnectionId[1];
-        }
-
-        // use a separate instance of actor as subject is not set on connect/disconnect
-        // we need to pass principal name explicitly into log actor
-        LogActor logActor = new ManagementActor(_appRegistry.getRootMessageLogger(), user);
-        if (JMXConnectionNotification.OPENED.equals(type))
-        {
-            logActor.message(ManagementConsoleMessages.OPEN(user));
-        }
-        else if (JMXConnectionNotification.CLOSED.equals(type) ||
-                 JMXConnectionNotification.FAILED.equals(type))
-        {
-            logActor.message(ManagementConsoleMessages.CLOSE(user));
-        }
-    }
 }
 

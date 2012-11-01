@@ -20,43 +20,60 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.*;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.startup.AuthenticationProviderRecoverer;
+import org.apache.qpid.server.configuration.startup.BrokerRecoverer;
+import org.apache.qpid.server.configuration.startup.GroupProviderRecoverer;
+import org.apache.qpid.server.configuration.startup.PortRecoverer;
+import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
+import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
+import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
+import org.apache.qpid.server.logging.Log4jMessageLogger;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.management.plugin.ManagementPlugin;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
+import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.ManagementFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManagerRegistry;
-import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
-import org.apache.qpid.server.security.group.GroupManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -73,11 +90,6 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private final ServerConfiguration _configuration;
 
-    private final Map<InetSocketAddress, QpidAcceptor> _acceptors =
-            Collections.synchronizedMap(new HashMap<InetSocketAddress, QpidAcceptor>());
-
-    private IAuthenticationManagerRegistry _authenticationManagerRegistry;
-
     private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
 
     private SecurityManager _securityManager;
@@ -91,31 +103,11 @@ public class ApplicationRegistry implements IApplicationRegistry
     private Timer _reportingTimer;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
-    private final List<PortBindingListener> _portBindingListeners = new ArrayList<PortBindingListener>();
-
-    private int _httpManagementPort = -1, _httpsManagementPort = -1;
-
     private LogRecorder _logRecorder;
-
-    private List<IAuthenticationManagerRegistry.RegistryChangeListener> _authManagerChangeListeners =
-            new ArrayList<IAuthenticationManagerRegistry.RegistryChangeListener>();
-
-    private List<GroupManagerChangeListener> _groupManagerChangeListeners =
-            new ArrayList<GroupManagerChangeListener>();
-
-    private List<GroupManager> _groupManagerList = new ArrayList<GroupManager>();
-
-    private QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader = new QpidServiceLoader<GroupManagerFactory>();
 
     private final List<ManagementPlugin> _managmentInstanceList = new ArrayList<ManagementPlugin>();
 
-    public Map<InetSocketAddress, QpidAcceptor> getAcceptors()
-    {
-        synchronized (_acceptors)
-        {
-            return new HashMap<InetSocketAddress, QpidAcceptor>(_acceptors);
-        }
-    }
+    private final BrokerOptions _brokerOptions;
 
     protected void setSecurityManager(SecurityManager securityManager)
     {
@@ -158,10 +150,17 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
         catch (Exception e)
         {
-            _instance.set(null);
+            try
+            {
+                instance.close();
+            }
+            catch(Exception e1)
+            {
+                _logger.error("Failed to close uninitialized registry", e1);
+            }
 
             //remove the Broker instance, then re-throw
-
+            _instance.set(null);
             throw e;
         }
     }
@@ -191,9 +190,16 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    /** intended to be used when broker options are not applicable, eg from tests */
     public ApplicationRegistry(ServerConfiguration configuration)
     {
+        this(configuration, new BrokerOptions());
+    }
+
+    public ApplicationRegistry(ServerConfiguration configuration, BrokerOptions brokerOptions)
+    {
         _configuration = configuration;
+        _brokerOptions = brokerOptions;
     }
 
     public void initialise() throws Exception
@@ -212,69 +218,87 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
+
             initialiseStatistics();
-
-            if(_configuration.getHTTPManagementEnabled())
-            {
-                _httpManagementPort = _configuration.getHTTPManagementPort();
-            }
-            if (_configuration.getHTTPSManagementEnabled())
-            {
-                _httpsManagementPort = _configuration.getHTTPSManagementPort();
-            }
-
-            _broker = new BrokerAdapter(this);
-
             _configuration.initialise();
-            logStartupMessages(CurrentActor.get());
 
-            // Management needs to be registered so that JMXManagement.childAdded can create optional management objects
-            createAndStartManagementPlugins(_configuration, _broker);
+            // We have already loaded the BrokerMessages class by this point so we
+            // need to refresh the locale setting in case we had a different value in
+            // the configuration.
+            BrokerMessages.reload();
+
+            // AR.initialise() sets and removes its own actor so we now need to set the actor
+            // for the remainder of the startup, and the default actor if the stack is empty
+            //CurrentActor.set(new BrokerActor(applicationRegistry.getCompositeStartupMessageLogger()));
+            CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
+            GenericActor.setDefaultMessageLogger(_rootMessageLogger);
+
+            logStartupMessages(CurrentActor.get());
 
             _securityManager = new SecurityManager(_configuration.getConfig());
 
-            _groupManagerList = createGroupManagers(_configuration);
+            createBroker();
 
-            _authenticationManagerRegistry = createAuthenticationManagerRegistry(_configuration, new GroupPrincipalAccessor(_groupManagerList));
-
-            if(!_authManagerChangeListeners.isEmpty())
-            {
-                for(IAuthenticationManagerRegistry.RegistryChangeListener listener : _authManagerChangeListeners)
-                {
-
-                    _authenticationManagerRegistry.addRegistryChangeListener(listener);
-                    for(AuthenticationManager authMgr : _authenticationManagerRegistry.getAvailableAuthenticationManagers().values())
-                    {
-                        listener.authenticationManagerRegistered(authMgr);
-                    }
-                }
-                _authManagerChangeListeners.clear();
-            }
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
-
-        CurrentActor.set(new BrokerActor(_rootMessageLogger));
-        try
-        {
-            initialiseVirtualHosts();
+            getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
             initialiseStatisticsReporting();
+
+            // starting the broker
+            _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+            createAndStartManagementPlugins(_configuration);
+            CurrentActor.get().message(BrokerMessages.READY());
         }
         finally
         {
-            // Startup complete, so pop the current actor
             CurrentActor.remove();
         }
+
     }
 
-    private void createAndStartManagementPlugins(ServerConfiguration configuration, Broker broker) throws Exception
+    private void createBroker()
+    {
+        // XXX move all the code below into store and broker creator
+        ConfigurationEntryStore store = new XMLConfigurationEntryStore(_configuration, _brokerOptions);
+
+        Map<String, VirtualHostConfiguration> virtualHostConfigurations = new HashMap<String, VirtualHostConfiguration>();
+        String[] vhNames = _configuration.getVirtualHostsNames();
+        for (String name : vhNames)
+        {
+            virtualHostConfigurations.put(name, _configuration.getVirtualHostConfig(name));
+        }
+
+        // XXX : introduce RecovererGeneraor/Registry/Factory?
+
+        PortFactory portFactory = new PortFactory(this);
+        PortRecoverer portRecoverer = new PortRecoverer(portFactory);
+        VirtualHostRecoverer virtualHostRecoverer = new VirtualHostRecoverer(getVirtualHostRegistry(),
+                this, getSecurityManager(), virtualHostConfigurations);
+
+        AuthenticationProviderFactory authenticationProviderFactory =
+                new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
+        AuthenticationProviderRecoverer authenticationProviderRecoverer =
+                new AuthenticationProviderRecoverer(authenticationProviderFactory);
+
+        GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(new QpidServiceLoader<GroupManagerFactory>());
+
+        BrokerRecoverer brokerRecoverer =  new BrokerRecoverer(
+                portRecoverer,
+                virtualHostRecoverer,
+                authenticationProviderRecoverer,
+                authenticationProviderFactory,
+                portFactory,
+                groupProviderRecoverer,
+                this);
+
+        _broker = brokerRecoverer.create(store.getRootEntry());
+    }
+
+    private void createAndStartManagementPlugins(ServerConfiguration configuration) throws Exception
     {
         QpidServiceLoader<ManagementFactory> factories = new QpidServiceLoader<ManagementFactory>();
         for (ManagementFactory managementFactory: factories.instancesOf(ManagementFactory.class))
         {
-            ManagementPlugin managementPlugin = managementFactory.createInstance(configuration, broker);
+            ManagementPlugin managementPlugin = managementFactory.createInstance(configuration, _broker);
             if(managementPlugin != null)
             {
                 try
@@ -311,46 +335,6 @@ public class ApplicationRegistry implements IApplicationRegistry
                 _logger.error("Exception thrown whilst stopping management plugin " + managementPlugin.getClass().getSimpleName(), e);
             }
         }
-    }
-
-    private List<GroupManager> createGroupManagers(ServerConfiguration configuration) throws ConfigurationException
-    {
-        List<GroupManager> groupManagerList = new ArrayList<GroupManager>();
-        Configuration securityConfig = configuration.getConfig().subset("security");
-
-        for(GroupManagerFactory factory : _groupManagerServiceLoader.instancesOf(GroupManagerFactory.class))
-        {
-            GroupManager groupManager = factory.createInstance(securityConfig);
-            if (groupManager != null)
-            {
-                groupManagerList.add(groupManager);
-                for(GroupManagerChangeListener listener : _groupManagerChangeListeners)
-                {
-                    listener.groupManagerRegistered(groupManager);
-                }
-            }
-        }
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Configured " + groupManagerList.size() + " group manager(s)");
-        }
-        return groupManagerList;
-    }
-
-    protected IAuthenticationManagerRegistry createAuthenticationManagerRegistry(ServerConfiguration configuration, GroupPrincipalAccessor groupPrincipalAccessor)
-            throws ConfigurationException
-    {
-        return new AuthenticationManagerRegistry(configuration, groupPrincipalAccessor);
-    }
-
-    protected void initialiseVirtualHosts() throws Exception
-    {
-        for (String name : _configuration.getVirtualHosts())
-        {
-            createVirtualHost(_configuration.getVirtualHostConfig(name));
-        }
-        getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
     }
 
     public void initialiseStatisticsReporting()
@@ -487,19 +471,20 @@ public class ApplicationRegistry implements IApplicationRegistry
                 _reportingTimer.cancel();
             }
 
-            //Stop incoming connections
-            unbind();
+            closeAllManagementPlugins();
+
+            if (_broker != null)
+            {
+                _broker.setDesiredState(_broker.getActualState(), State.STOPPED);
+            }
 
             //Shutdown virtualhosts
             close(_virtualHostRegistry);
-
-            close(_authenticationManagerRegistry);
 
             CurrentActor.get().message(BrokerMessages.STOPPED());
 
             _logRecorder.closeLogRecorder();
 
-            closeAllManagementPlugins();
         }
         finally
         {
@@ -507,58 +492,9 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    private void unbind()
-    {
-        List<QpidAcceptor> removedAcceptors = new ArrayList<QpidAcceptor>();
-        synchronized (_acceptors)
-        {
-            for (InetSocketAddress bindAddress : _acceptors.keySet())
-            {
-                QpidAcceptor acceptor = _acceptors.get(bindAddress);
-
-                removedAcceptors.add(acceptor);
-                try
-                {
-                    acceptor.getNetworkTransport().close();
-                }
-                catch (Throwable e)
-                {
-                    _logger.error("Unable to close network driver due to:" + e.getMessage());
-                }
-
-               CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
-            }
-        }
-        synchronized (_portBindingListeners)
-        {
-            for(QpidAcceptor acceptor : removedAcceptors)
-            {
-                for(PortBindingListener listener : _portBindingListeners)
-                {
-                    listener.unbound(acceptor);
-                }
-            }
-        }
-    }
-
     public ServerConfiguration getConfiguration()
     {
         return _configuration;
-    }
-
-    public void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor)
-    {
-        synchronized (_acceptors)
-        {
-            _acceptors.put(bindAddress, acceptor);
-        }
-        synchronized (_portBindingListeners)
-        {
-            for(PortBindingListener listener : _portBindingListeners)
-            {
-                listener.bound(acceptor, bindAddress);
-            }
-        }
     }
 
     public VirtualHostRegistry getVirtualHostRegistry()
@@ -574,19 +510,18 @@ public class ApplicationRegistry implements IApplicationRegistry
     @Override
     public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
-        return _authenticationManagerRegistry.getSubjectCreator(localAddress);
-    }
-
-    @Override
-    public IAuthenticationManagerRegistry getAuthenticationManagerRegistry()
-    {
-        return _authenticationManagerRegistry;
-    }
-
-    @Override
-    public List<GroupManager> getGroupManagers()
-    {
-        return _groupManagerList;
+        AuthenticationProvider provider = _broker.getDefaultAuthenticationProvider();
+        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
+        Collection<Port> ports = _broker.getPorts();
+        for (Port p : ports)
+        {
+            if (inetSocketAddress.getPort() == p.getPort())
+            {
+                provider = p.getAuthenticationProvider();
+                break;
+            }
+        }
+        return provider.getSubjectCreator();
     }
 
     public RootMessageLogger getRootMessageLogger()
@@ -606,7 +541,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
-        VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
+        VirtualHostImpl virtualHost = new VirtualHostImpl(this.getVirtualHostRegistry(), this, this.getSecurityManager(), vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
         return virtualHost;
     }
@@ -682,61 +617,8 @@ public class ApplicationRegistry implements IApplicationRegistry
         return _broker;
     }
 
-    @Override
-    public void addPortBindingListener(PortBindingListener listener)
-    {
-        synchronized (_portBindingListeners)
-        {
-            _portBindingListeners.add(listener);
-        }
-    }
-
-
-    @Override
-    public boolean useHTTPManagement()
-    {
-        return _httpManagementPort != -1;
-    }
-
-    @Override
-    public int getHTTPManagementPort()
-    {
-        return _httpManagementPort;
-    }
-
-    @Override
-    public boolean useHTTPSManagement()
-    {
-        return _httpsManagementPort != -1;
-    }
-
-    @Override
-    public int getHTTPSManagementPort()
-    {
-        return _httpsManagementPort;
-    }
-
     public LogRecorder getLogRecorder()
     {
         return _logRecorder;
-    }
-
-    @Override
-    public void addAuthenticationManagerRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener)
-    {
-        if(_authenticationManagerRegistry == null)
-        {
-            _authManagerChangeListeners.add(registryChangeListener);
-        }
-        else
-        {
-            _authenticationManagerRegistry.addRegistryChangeListener(registryChangeListener);
-        }
-    }
-
-    @Override
-    public void addGroupManagerChangeListener(GroupManagerChangeListener groupManagerChangeListener)
-    {
-        _groupManagerChangeListeners.add(groupManagerChangeListener);
     }
 }

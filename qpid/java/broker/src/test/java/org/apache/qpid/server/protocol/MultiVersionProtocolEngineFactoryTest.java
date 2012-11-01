@@ -35,13 +35,14 @@ import java.util.Set;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
+    private TestApplicationRegistry _appRegistry;
 
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        //the factory needs a registry instance
-        ApplicationRegistry.initialise(new TestApplicationRegistry(new ServerConfiguration(new XMLConfiguration())));
+        _appRegistry = new TestApplicationRegistry(new ServerConfiguration(new XMLConfiguration()));
+        ApplicationRegistry.initialise(_appRegistry);
     }
 
     protected void tearDown()
@@ -108,6 +109,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
                     (byte) 0
             };
 
+
     private byte[] getAmqpHeader(final AmqpProtocolVersion version)
     {
         switch(version)
@@ -137,7 +139,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(versions, null);
+            new MultiVersionProtocolEngineFactory(_appRegistry, versions, null);
 
         //create a dummy to retrieve the 'current' ID number
         long previousId = factory.newProtocolEngine().getConnectionId();
@@ -174,7 +176,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         try
         {
-            new MultiVersionProtocolEngineFactory(versions, AmqpProtocolVersion.v0_9);
+            new MultiVersionProtocolEngineFactory(_appRegistry, versions, AmqpProtocolVersion.v0_9);
             fail("should not have been allowed to create the factory");
         }
         catch(IllegalArgumentException iae)

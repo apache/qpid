@@ -74,8 +74,6 @@ public class ServerConfiguration extends AbstractConfiguration
 
     private File _configFile;
     private File _vhostsFile;
-    private String _qpidWork;
-    private String _qpidHome;
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -455,31 +453,6 @@ public class ServerConfiguration extends AbstractConfiguration
         return _configFile == null ? "" : _configFile.getAbsolutePath();
     }
 
-
-    public String getQpidWork()
-    {
-        if ( _qpidWork == null )
-        {
-            return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
-        }
-        else
-        {
-            return _qpidWork;
-        }
-    }
-
-    public String getQpidHome()
-    {
-        if ( _qpidHome == null )
-        {
-            return System.getProperty(QPID_HOME);
-        }
-        else
-        {
-            return _qpidHome;
-        }
-    }
-
     public void setJMXPortRegistryServer(int registryServerPort)
     {
         getConfig().setProperty(MGMT_JMXPORT_REGISTRYSERVER, registryServerPort);
@@ -564,7 +537,7 @@ public class ServerConfiguration extends AbstractConfiguration
         return getBooleanValue("management.https.sasl-auth", true);
     }
 
-    public String[] getVirtualHosts()
+    public String[] getVirtualHostsNames()
     {
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
     }
@@ -978,17 +951,4 @@ public class ServerConfiguration extends AbstractConfiguration
 
         return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
     }
-
-    public void setQpidWork(String path)
-    {
-        _qpidWork = path;
-    }
-
-    public void setQpidHome(String path)
-    {
-        _qpidHome = path;
-    }
-
-
-
 }

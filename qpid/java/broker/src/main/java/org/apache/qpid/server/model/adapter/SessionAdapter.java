@@ -237,4 +237,11 @@ final class SessionAdapter extends AbstractAdapter implements Session
             return null;  // TODO - Implement
         }
     }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO : add state management
+        return false;
+    }
 }

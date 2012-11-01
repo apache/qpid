@@ -21,7 +21,6 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.ArrayList;
@@ -38,40 +37,25 @@ public class VirtualHostRegistry implements Closeable
 
     private String _defaultVirtualHostName;
     private ApplicationRegistry _applicationRegistry;
-    private final Collection<RegistryChangeListener> _listeners =
-            Collections.synchronizedCollection(new ArrayList<RegistryChangeListener>());
+
 
     public VirtualHostRegistry(ApplicationRegistry applicationRegistry)
     {
         _applicationRegistry = applicationRegistry;
     }
 
-    public synchronized void registerVirtualHost(VirtualHost host) throws Exception
+    public synchronized void registerVirtualHost(VirtualHost host)
     {
         if(_registry.containsKey(host.getName()))
         {
-            throw new Exception("Virtual Host with name " + host.getName() + " already registered.");
+            throw new IllegalArgumentException("Virtual Host with name " + host.getName() + " already registered.");
         }
         _registry.put(host.getName(),host);
-        synchronized (_listeners)
-        {
-            for(RegistryChangeListener listener : _listeners)
-            {
-                listener.virtualHostRegistered(host);
-            }
-        }
     }
-    
+
     public synchronized void unregisterVirtualHost(VirtualHost host)
     {
         _registry.remove(host.getName());
-        synchronized (_listeners)
-        {
-            for(RegistryChangeListener listener : _listeners)
-            {
-                listener.virtualHostUnregistered(host);
-            }
-        }
     }
 
     public VirtualHost getVirtualHost(String name)
@@ -116,19 +100,6 @@ public class VirtualHostRegistry implements Closeable
         {
             virtualHost.close();
         }
-
-    }
-
-    public static interface RegistryChangeListener
-    {
-        void virtualHostRegistered(VirtualHost virtualHost);
-        void virtualHostUnregistered(VirtualHost virtualHost);
-
-    }
-
-    public void addRegistryChangeListener(RegistryChangeListener listener)
-    {
-        _listeners.add(listener);
     }
 
 }

@@ -30,7 +30,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.server.Broker.InitException;
+import org.apache.qpid.server.BrokerLauncher.InitException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 
@@ -383,7 +383,7 @@ private static final Option OPTION_INCLUDE_0_8 =
 
     protected void startBroker(final BrokerOptions options) throws Exception
     {
-        Broker broker = new Broker();
+        BrokerLauncher broker = new BrokerLauncher();
         broker.startup(options);
     }
 

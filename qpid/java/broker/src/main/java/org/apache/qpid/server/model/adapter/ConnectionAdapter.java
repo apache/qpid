@@ -310,4 +310,11 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             return super.getStatistic(name);
         }
     }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO: add state management
+        return false;
+    }
 }

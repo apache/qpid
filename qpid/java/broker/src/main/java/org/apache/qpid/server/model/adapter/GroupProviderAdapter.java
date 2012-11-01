@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -46,24 +47,16 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 {
     private final GroupManager _groupManager;
 
-    protected GroupProviderAdapter(GroupManager groupManager)
+    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker)
     {
-        super(UUIDGenerator.generateRandomUUID());
+        super(id);
 
         if (groupManager == null)
         {
             throw new IllegalArgumentException("GroupManager must not be null");
         }
         _groupManager = groupManager;
-    }
-
-    public static GroupProviderAdapter createGroupProviderAdapter(
-            BrokerAdapter brokerAdapter, GroupManager groupManager)
-    {
-        final GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(
-                groupManager);
-        groupProviderAdapter.addParent(Broker.class, brokerAdapter);
-        return groupProviderAdapter;
+       addParent(Broker.class, broker);
     }
 
     @Override
@@ -386,7 +379,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
 
         @Override
-        public State setDesiredState(State currentState, State desiredState)
+        protected boolean setState(State currentState, State desiredState)
                 throws IllegalStateTransitionException, AccessControlException
         {
             if (desiredState == State.DELETED)
@@ -394,16 +387,15 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                 if (getSecurityManager().authoriseGroupOperation(Operation.DELETE, _group))
                 {
                     _groupManager.removeGroup(_group);
-                    return State.DELETED;
+                    return true;
                 }
                 else
                 {
-                    throw new AccessControlException("Do not have permission" +
-                    " to delete group");
+                    throw new AccessControlException("Do not have permission to delete group");
                 }
             }
 
-            return super.setDesiredState(currentState, desiredState);
+            return false;
         }
 
         private class GroupMemberAdapter extends AbstractAdapter implements
@@ -522,7 +514,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             }
 
             @Override
-            public State setDesiredState(State currentState, State desiredState)
+            protected boolean setState(State currentState, State desiredState)
                     throws IllegalStateTransitionException,
                     AccessControlException
             {
@@ -531,18 +523,38 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                     if (getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group))
                     {
                         _groupManager.removeUserFromGroup(_memberName, _group);
-                        return State.DELETED;
+                        return true;
                     }
                     else
                     {
-                        throw new AccessControlException("Do not have permission" +
-                        " to remove group member");
+                        throw new AccessControlException("Do not have permission to remove group member");
                     }
                 }
-                
-                return super.setDesiredState(currentState, desiredState);
+                return false;
             }
 
         }
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        if (desiredState == State.ACTIVE)
+        {
+            return true;
+        }
+        else if (desiredState == State.STOPPED)
+        {
+            return true;
+        }
+        // TODO: DELETE state is ignored for now
+        // in case if we need to delete group provider, then we need AuthenticationProvider to be a change listener of it
+        // in order to remove deleted group provider from its group provider list
+        return false;
+    }
+
+    public Set<Principal> getGroupPrincipalsForUser(String username)
+    {
+        return _groupManager.getGroupPrincipalsForUser(username);
     }
 }

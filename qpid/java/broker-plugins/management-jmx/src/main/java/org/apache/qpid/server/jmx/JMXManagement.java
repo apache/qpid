@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.jmx;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.management.JMException;
@@ -35,10 +36,13 @@ import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.management.plugin.ManagementPlugin;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
@@ -46,6 +50,9 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
 public class JMXManagement implements ConfigurationChangeListener, ManagementPlugin
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
+
+    private static final String REGISTRY_PORT_NAME = "registry";
+    private static final String CONNECTOR_PORT_NAME = "connector";
 
     private final Broker _broker;
     private JMXManagedObjectRegistry _objectRegistry;
@@ -63,16 +70,56 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
     @Override
     public void start() throws Exception
     {
-        _objectRegistry = new JMXManagedObjectRegistry(_serverConfiguration);
+        Port connectorPort = null;
+        Port registryPort = null;
+        Collection<Port> ports = _broker.getPorts();
+        for (Port port : ports)
+        {
+            if (port.getProtocols().contains(Protocol.JMX_RMI))
+            {
+                if(REGISTRY_PORT_NAME.equals(port.getName()))
+                {
+                    registryPort = port;
+                }
+                else if(CONNECTOR_PORT_NAME.equals(port.getName()))
+                {
+                    connectorPort = port;
+                }
+            }
+        }
+        if(connectorPort == null)
+        {
+            throw new IllegalStateException("No JMX port found with name " + CONNECTOR_PORT_NAME);
+        }
+        if(registryPort == null)
+        {
+            throw new IllegalStateException("No JMX port found with name " + REGISTRY_PORT_NAME);
+        }
+
+        //XXX review MBean creation process
+        _objectRegistry = new JMXManagedObjectRegistry(_serverConfiguration, connectorPort, registryPort);
 
         _broker.addChangeListener(this);
+
         synchronized (_children)
         {
             for(VirtualHost virtualHost : _broker.getVirtualHosts())
             {
                 if(!_children.containsKey(virtualHost))
                 {
-                    _children.put(virtualHost, new VirtualHostMBean(virtualHost, _objectRegistry));
+                    VirtualHostMBean mbean = new VirtualHostMBean(virtualHost, _objectRegistry);
+                    createAdditionalMBeansFromProviders(virtualHost, mbean);
+                }
+            }
+            Collection<AuthenticationProvider> authenticationProviders = _broker.getAuthenticationProviders();
+            for (AuthenticationProvider authenticationProvider : authenticationProviders)
+            {
+                if(authenticationProvider instanceof PasswordCredentialManagingAuthenticationProvider)
+                {
+                    UserManagementMBean mbean = new UserManagementMBean(
+                            (PasswordCredentialManagingAuthenticationProvider) authenticationProvider,
+                            _objectRegistry);
+                    _children.put(authenticationProvider, mbean);
                 }
             }
         }
@@ -86,16 +133,37 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
     @Override
     public void stop()
     {
+        synchronized (_children)
+        {
+            for(ConfiguredObject object : _children.keySet())
+            {
+                AMQManagedObject mbean = _children.get(object);
+                if (mbean instanceof ConfigurationChangeListener)
+                {
+                    object.removeChangeListener((ConfigurationChangeListener)mbean);
+                }
+                try
+                {
+                    mbean.unregister();
+                }
+                catch (JMException e)
+                {
+                    LOGGER.error("Error unregistering mbean", e);
+                }
+            }
+            _children.clear();
+        }
         _broker.removeChangeListener(this);
-
         _objectRegistry.close();
     }
 
+    @Override
     public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
-
+        // no-op
     }
 
+    @Override
     public void childAdded(ConfiguredObject object, ConfiguredObject child)
     {
         synchronized (_children)
@@ -130,7 +198,7 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
         }
     }
 
-
+    @Override
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
         // TODO - implement vhost removal (possibly just removing the instanceof check below)

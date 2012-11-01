@@ -180,7 +180,7 @@ public class Asserts
 
     public static void assertPortAttributes(Map<String, Object> port)
     {
-        assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED);
+        assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_MANAGER);
 
         assertNotNull("Unexpected value of attribute " + Port.ID, port.get(Port.ID));
         assertEquals("Unexpected value of attribute " + Port.DURABLE, Boolean.FALSE, port.get(Port.DURABLE));

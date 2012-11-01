@@ -21,9 +21,9 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 
@@ -32,7 +32,7 @@ import junit.framework.TestCase;
 public class PrincipalDatabaseAuthManagerFactoryTest extends  TestCase
 {
     PrincipalDatabaseAuthManagerFactory _factory = new PrincipalDatabaseAuthManagerFactory();
-    private Configuration _configuration = new XMLConfiguration();
+    private Map<String, Object> _configuration = new HashMap<String, Object>();
     private File _emptyPasswordFile;
 
     @Override
@@ -45,9 +45,10 @@ public class PrincipalDatabaseAuthManagerFactoryTest extends  TestCase
 
     public void testPlainInstanceCreated() throws Exception
     {
-        _configuration.setProperty("pd-auth-manager.principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.name", "passwordFile");
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.value", _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(PrincipalDatabaseAuthManagerFactory.TYPE, "pd-auth-manager");
+        _configuration.put("principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
+        _configuration.put("principal-database.attributes.attribute.name", "passwordFile");
+        _configuration.put("principal-database.attributes.attribute.value", _emptyPasswordFile.getAbsolutePath());
 
         AuthenticationManager manager = _factory.createInstance(_configuration);
         assertNotNull(manager);
@@ -57,9 +58,10 @@ public class PrincipalDatabaseAuthManagerFactoryTest extends  TestCase
 
     public void testBase64MD5nstanceCreated() throws Exception
     {
-        _configuration.setProperty("pd-auth-manager.principal-database.class", Base64MD5PasswordFilePrincipalDatabase.class.getName());
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.name", "passwordFile");
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.value", _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(PrincipalDatabaseAuthManagerFactory.TYPE, "pd-auth-manager");
+        _configuration.put("principal-database.class", Base64MD5PasswordFilePrincipalDatabase.class.getName());
+        _configuration.put("principal-database.attributes.attribute.name", "passwordFile");
+        _configuration.put("principal-database.attributes.attribute.value", _emptyPasswordFile.getAbsolutePath());
 
         AuthenticationManager manager = _factory.createInstance(_configuration);
         assertNotNull(manager);
@@ -71,9 +73,10 @@ public class PrincipalDatabaseAuthManagerFactoryTest extends  TestCase
     {
         _emptyPasswordFile.delete();
 
-        _configuration.setProperty("pd-auth-manager.principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.name", "passwordFile");
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.value", _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(PrincipalDatabaseAuthManagerFactory.TYPE, "pd-auth-manager");
+        _configuration.put("principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
+        _configuration.put("principal-database.attributes.attribute.name", "passwordFile");
+        _configuration.put("principal-database.attributes.attribute.value", _emptyPasswordFile.getAbsolutePath());
 
         try
         {
@@ -93,16 +96,17 @@ public class PrincipalDatabaseAuthManagerFactoryTest extends  TestCase
 
     public void testReturnsNullWhenConfigForOtherPDImplementation() throws Exception
     {
-        _configuration.setProperty("pd-auth-manager.principal-database.class", "mypdimpl");
-
+        _configuration.put("principal-database.class", "mypdimpl");
+        _configuration.put(PrincipalDatabaseAuthManagerFactory.TYPE, "pd-auth-manager");
         AuthenticationManager manager = _factory.createInstance(_configuration);
         assertNull(manager);
     }
 
     public void testReturnsNullWhenConfigForPlainPDImplementationNoPasswordFileValueSpecified() throws Exception
     {
-        _configuration.setProperty("pd-auth-manager.principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.name", "passwordFile");
+        _configuration.put("principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
+        _configuration.put("principal-database.attributes.attribute.name", "passwordFile");
+        _configuration.put(PrincipalDatabaseAuthManagerFactory.TYPE, "pd-auth-manager");
         // no pd-auth-manager.attributes.attribute.value
 
         AuthenticationManager manager = _factory.createInstance(_configuration);
@@ -111,9 +115,10 @@ public class PrincipalDatabaseAuthManagerFactoryTest extends  TestCase
 
     public void testReturnsNullWhenConfigForPlainPDImplementationWrongArgumentName() throws Exception
     {
-        _configuration.setProperty("pd-auth-manager.principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.name", "wrong");
-        _configuration.setProperty("pd-auth-manager.principal-database.attributes.attribute.value", "/does/not/matter");
+        _configuration.put("principal-database.class", PlainPasswordFilePrincipalDatabase.class.getName());
+        _configuration.put("principal-database.attributes.attribute.name", "wrong");
+        _configuration.put("principal-database.attributes.attribute.value", "/does/not/matter");
+        _configuration.put(PrincipalDatabaseAuthManagerFactory.TYPE, "pd-auth-manager");
 
         AuthenticationManager manager = _factory.createInstance(_configuration);
         assertNull(manager);

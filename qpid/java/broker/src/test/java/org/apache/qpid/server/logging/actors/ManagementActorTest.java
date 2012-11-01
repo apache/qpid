@@ -57,7 +57,7 @@ public class ManagementActorTest extends BaseActorTestCase
      *
      * The test sends a message then verifies that it entered the logs.
      *
-     * The log message should be fully repalaced (no '{n}' values) and should
+     * The log message should be fully replaced (no '{n}' values) and should
      * not contain any channel identification.
      */
     public void testConnection()

@@ -21,8 +21,9 @@
 package org.apache.qpid.server.management.plugin;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -50,7 +51,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.eclipse.jetty.server.Connector;
@@ -72,79 +73,135 @@ public class HttpManagement implements ManagementPlugin
 
     private final Broker _broker;
 
-    private final Collection<Server> _servers = new ArrayList<Server>();
+    private final Map<Integer, Server> _servers = new ConcurrentHashMap<Integer, Server>();
 
-    private final String _keyStorePassword;
-    private final String _keyStorePath;
-    private final int _sessionTimeout;
+    private String _keyStorePassword;
+    private String _keyStorePath;
+    private int _sessionTimeout;
 
+    // XXX refactor back to use a single instance of server and add connectors for different ports
     public HttpManagement(Broker broker, String keyStorePath, String keyStorePassword, int sessionTimeout) throws ConfigurationException
     {
         _broker = broker;
         _keyStorePassword = keyStorePassword;
         _keyStorePath = keyStorePath;
         _sessionTimeout = sessionTimeout;
+    }
 
-        Collection<Port> ports = broker.getPorts();
-        int httpPort = -1, httpsPort = -1;
+    @Override
+    public void start() throws Exception
+    {
+        CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
+
+        Collection<Port> ports = _broker.getPorts();
         for (Port port : ports)
         {
-            if (port.getProtocols().contains(Protocol.HTTP))
+            if (isManagementHttp(port))
             {
-                if (port.getTransports().contains(Transport.TCP))
+                if(port.getActualState() == State.ACTIVE)
                 {
-                    httpPort = port.getPort();
-                }
-            }
-            if (port.getProtocols().contains(Protocol.HTTPS))
-            {
-                if (port.getTransports().contains(Transport.SSL))
-                {
-                    httpsPort = port.getPort();
+                    startServer(port);
                 }
             }
         }
 
-        if (httpPort != -1 || httpsPort != -1)
+        CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
+    }
+
+    @Override
+    public void stop() throws Exception
+    {
+        Collection<Port> ports = _broker.getPorts();
+        for (Port port : ports)
         {
-            _servers.add(createServer(httpPort, httpsPort));
-            if (_logger.isDebugEnabled())
+            if (isManagementHttp(port))
             {
-                _logger.debug(_servers.size() + " server(s) defined");
+                stopServer(port);
             }
         }
-        else
+        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
+    }
+
+    /** Added for testing purposes */
+    Broker getBroker()
+    {
+        return _broker;
+    }
+
+    /** Added for testing purposes */
+    String getKeyStorePassword()
+    {
+        return _keyStorePassword;
+    }
+
+    /** Added for testing purposes */
+    String getKeyStorePath()
+    {
+        return _keyStorePath;
+    }
+
+    /** Added for testing purposes */
+    int getSessionTimeout()
+    {
+        return _sessionTimeout;
+    }
+
+    protected void stopServer(Port port)
+    {
+        Server server = _servers.remove(port.getPort());
+        if (server != null)
         {
-            if (_logger.isInfoEnabled())
+            try
             {
-                _logger.info("Cannot create web server as neither HTTP nor HTTPS port specified");
+                server.stop();
+                logOperationalShutdownMessage(server);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Failed to stop http management on port " + port.getPort());
             }
         }
     }
 
+    private void startServer(Port port)
+    {
+        Server server = createServer(port);
+        try
+        {
+            server.start();
+
+            logOperationalListenMessages(server);
+
+            _servers.put(port.getPort(), server);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Failed to start http management on port " + port.getPort());
+        }
+    }
+
+    private boolean isManagementHttp(Port port)
+    {
+        return port.getProtocols().contains(Protocol.HTTP) || port.getProtocols().contains(Protocol.HTTPS);
+    }
+
     @SuppressWarnings("unchecked")
-    private Server createServer(int port, int sslPort) throws ConfigurationException
+    private Server createServer(Port port)
     {
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Starting up web server on" + (port == -1 ? "" : " HTTP port " + port)
-                    + (sslPort == -1 ? "" : " HTTPS port " + sslPort));
+            _logger.info("Starting up web server on " + port.getPort());
         }
 
         Server server = new Server();
 
-        if (port != -1)
+        final Collection<Protocol> protocols = port.getProtocols();
+        Connector connector = null;
+        if (protocols.contains(Protocol.HTTP))
         {
-            SelectChannelConnector connector = new SelectChannelConnector();
-            connector.setPort(port);
-            if (sslPort != -1)
-            {
-                connector.setConfidentialPort(sslPort);
-            }
-            server.addConnector(connector);
+            connector = new SelectChannelConnector();
         }
-
-        if (sslPort != -1)
+        else if (protocols.contains(Protocol.HTTPS))
         {
             checkKeyStorePath(_keyStorePath);
 
@@ -152,10 +209,14 @@ public class HttpManagement implements ManagementPlugin
             factory.setKeyStorePath(_keyStorePath);
             factory.setKeyStorePassword(_keyStorePassword);
 
-            SslSocketConnector connector = new SslSocketConnector(factory);
-            connector.setPort(sslPort);
-            server.addConnector(connector);
+            connector = new SslSocketConnector(factory);
         }
+        else
+        {
+            throw new IllegalArgumentException("Unexpected protocol " + protocols);
+        }
+        connector.setPort(port.getPort());
+        server.addConnector(connector);
 
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
         root.setContextPath("/");
@@ -209,50 +270,22 @@ public class HttpManagement implements ManagementPlugin
         root.addServlet(new ServletHolder(new RestServlet(_broker, hierarchy)), "/rest/" + name + "/*");
     }
 
-    @Override
-    public void start() throws Exception
-    {
-        CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
-
-        for (Server server : _servers)
-        {
-            server.start();
-
-            logOperationalListenMessages(server);
-        }
-
-        CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
-    }
-
-    @Override
-    public void stop() throws Exception
-    {
-        for (Server server : _servers)
-        {
-            logOperationalShutdownMessage(server);
-
-            server.stop();
-        }
-
-        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
-    }
-
-    private void checkKeyStorePath(String keyStorePath) throws ConfigurationException
+    private void checkKeyStorePath(String keyStorePath)
     {
         if (keyStorePath == null)
         {
-            throw new ConfigurationException("Management SSL keystore path not defined, unable to start SSL protected HTTP connector");
+            throw new RuntimeException("Management SSL keystore path not defined, unable to start SSL protected HTTP connector");
         }
         else
         {
             File ksf = new File(keyStorePath);
             if (!ksf.exists())
             {
-                throw new ConfigurationException("Cannot find management SSL keystore file: " + ksf);
+                throw new RuntimeException("Cannot find management SSL keystore file: " + ksf);
             }
             if (!ksf.canRead())
             {
-                throw new ConfigurationException("Cannot read management SSL keystore file: " + ksf + ". Check permissions.");
+                throw new RuntimeException("Cannot read management SSL keystore file: " + ksf + ". Check permissions.");
             }
         }
     }
@@ -286,29 +319,5 @@ public class HttpManagement implements ManagementPlugin
     private String stringifyConnectorScheme(Connector connector)
     {
         return connector instanceof SslSocketConnector ? "HTTPS" : "HTTP";
-    }
-
-    /** Added for testing purposes */
-    Broker getBroker()
-    {
-        return _broker;
-    }
-
-    /** Added for testing purposes */
-    String getKeyStorePassword()
-    {
-        return _keyStorePassword;
-    }
-
-    /** Added for testing purposes */
-    String getKeyStorePath()
-    {
-        return _keyStorePath;
-    }
-
-    /** Added for testing purposes */
-    int getSessionTimeout()
-    {
-        return _sessionTimeout;
     }
 }

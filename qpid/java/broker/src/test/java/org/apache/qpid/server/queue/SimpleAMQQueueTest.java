@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
@@ -114,7 +115,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         PropertiesConfiguration env = new PropertiesConfiguration();
         final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env);
         vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
-        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vhostConfig);
+        _virtualHost = new VirtualHostImpl( applicationRegistry.getVirtualHostRegistry(), (StatisticsGatherer)applicationRegistry,
+                applicationRegistry.getSecurityManager(), vhostConfig);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));

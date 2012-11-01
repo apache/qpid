@@ -69,7 +69,7 @@ public class SubscriptionFactoryImplTest extends InternalBrokerBaseCase
 
         //create a 0-10 subscription
         ServerConnection conn = new ServerConnection(1);
-        ProtocolEngine_0_10 engine = new ProtocolEngine_0_10(conn, new TestNetworkConnection(), getRegistry());
+        ProtocolEngine_0_10 engine = new ProtocolEngine_0_10(conn, new TestNetworkConnection());
         conn.setVirtualHost(getVirtualHost());
         ServerSessionDelegate sesDel = new ServerSessionDelegate();
         Binary name = new Binary(new byte[]{new Byte("1")});

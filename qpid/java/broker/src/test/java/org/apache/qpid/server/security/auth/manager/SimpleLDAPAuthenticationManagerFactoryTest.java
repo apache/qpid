@@ -19,20 +19,22 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.XMLConfiguration;
+import java.util.HashMap;
+import java.util.Map;
+
 
 import junit.framework.TestCase;
 
 public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 {
     private SimpleLDAPAuthenticationManagerFactory _factory = new SimpleLDAPAuthenticationManagerFactory();
-    private Configuration _configuration = new XMLConfiguration();
+    private Map<String, Object> _configuration = new HashMap<String, Object>();
 
     public void testInstanceCreated() throws Exception
     {
-        _configuration.setProperty("simple-ldap-auth-manager.provider-url", "ldaps://example.com:636/");
-        _configuration.setProperty("simple-ldap-auth-manager.search-context", "dc=example");
+        _configuration.put(SimpleLDAPAuthenticationManagerFactory.TYPE, "simple-ldap-auth-manager");
+        _configuration.put("provider-url", "ldaps://example.com:636/");
+        _configuration.put("search-context", "dc=example");
 
         AuthenticationManager manager = _factory.createInstance(_configuration);
         assertNotNull(manager);

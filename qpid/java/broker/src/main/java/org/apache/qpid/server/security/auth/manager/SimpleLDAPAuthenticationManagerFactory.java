@@ -19,7 +19,8 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationManagerFactory
@@ -28,23 +29,33 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
     private static final String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
     @Override
-    public AuthenticationManager createInstance(Configuration configuration)
+    public AuthenticationManager createInstance(Map<String, Object> attributes)
     {
-
-        final Configuration subset = configuration.subset("simple-ldap-auth-manager");
-        if(subset.isEmpty())
+        if (attributes == null || !"simple-ldap-auth-manager".equals(attributes.get(TYPE)))
         {
             return null;
         }
+        String providerUrl = (String) attributes.get("provider-url");
+        String providerSearchUrl = (String) attributes.get("provider-search-url");
+        if (providerSearchUrl == null)
+        {
+            providerSearchUrl = providerUrl;
+        }
+        String providerAuthUrl = (String) attributes.get("provider-auth-url");
+        if (providerAuthUrl == null)
+        {
+            providerAuthUrl = providerUrl;
+        }
+        String searchContext = (String) attributes.get("search-context");
+        String searchFilter = (String) attributes.get("search-filter");
+        String ldapContextFactory = (String) attributes.get("ldap-context-factory");
+        if (ldapContextFactory == null)
+        {
+            ldapContextFactory = DEFAULT_LDAP_CONTEXT_FACTORY;
+        }
 
-        String providerUrl = configuration.getString("simple-ldap-auth-manager.provider-url");
-        String providerSearchUrl = configuration.getString("simple-ldap-auth-manager.provider-search-url", providerUrl);
-        String providerAuthUrl = configuration.getString("simple-ldap-auth-manager.provider-auth-url", providerUrl);
-        String searchContext = configuration.getString("simple-ldap-auth-manager.search-context");
-        String searchFilter = configuration.getString("simple-ldap-auth-manager.search-filter");
-        String ldapContextFactory = configuration.getString("simple-ldap-auth-manager.ldap-context-factory", DEFAULT_LDAP_CONTEXT_FACTORY);
-
-        return new SimpleLDAPAuthenticationManager(providerSearchUrl, providerAuthUrl, searchContext, searchFilter, ldapContextFactory);
+        return new SimpleLDAPAuthenticationManager(providerSearchUrl, providerAuthUrl, searchContext, searchFilter,
+                ldapContextFactory);
     }
 
 }
