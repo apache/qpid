@@ -18,10 +18,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import pdb
-
 import os
-from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
+from optparse import OptionParser, OptionGroup, IndentedHelpFormatter, SUPPRESS_HELP
 import sys
 import locale
 
@@ -49,7 +47,7 @@ description = """
 Examples:
 
 $ qpid-config add queue q
-$ qpid-config add exchange direct d -a localhost:5672
+$ qpid-config add exchange direct d -b localhost:5672
 $ qpid-config exchanges -b 10.1.1.7:10000
 $ qpid-config queues -b guest/guest@broker-host:10000
 
@@ -175,6 +173,7 @@ def OptionsAndArguments(argv):
     group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
     group1.add_option("-r", "--recursive", action="store_true", help="Show bindings in queue or exchange list")
     group1.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
+    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help=SUPPRESS_HELP)
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     group1.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
     group1.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
@@ -245,6 +244,8 @@ def OptionsAndArguments(argv):
         config._recursive = True
     if opts.broker:
         config._host = opts.broker
+    if opts.broker_addr:
+        config._host = opts.broker_addr
     if opts.timeout is not None:
         config._connTimeout = opts.timeout
         if config._connTimeout == 0:
