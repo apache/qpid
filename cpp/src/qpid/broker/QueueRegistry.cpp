@@ -23,10 +23,14 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/log/Statement.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
 #include <sstream>
 #include <assert.h>
 
+namespace _qmf = qmf::org::apache::qpid::broker;
 using namespace qpid::broker;
 using namespace qpid::sys;
 using std::string;
@@ -44,7 +48,10 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
                        bool recovering/*true if this declare is a
                                         result of recovering queue
                                         definition from persistent
-                                        record*/)
+                                        record*/,
+                       const OwnershipToken* owner,
+                       std::string connectionId,
+                       std::string userId)
 {
     std::pair<Queue::shared_ptr, bool> result;
     {
@@ -66,12 +73,25 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
         } else {
             result = std::pair<Queue::shared_ptr, bool>(i->second, false);
         }
+        // NOTE: raiseEvent must be called with the lock held in order to
+        // ensure management events are generated in the correct order.
+        if (getBroker() && getBroker()->getManagementAgent() && connectionId.size() && userId.size()) {
+            getBroker()->getManagementAgent()->raiseEvent(
+                _qmf::EventQueueDeclare(
+                    connectionId, userId, name,
+                    settings.durable, owner, settings.autodelete,
+                    alternate ? alternate->getName() : string(),
+                    settings.asMap(),
+                    result.second ? "created" : "existing"));
+        }
     }
     if (getBroker() && result.second) getBroker()->getConfigurationObservers().queueCreate(result.first);
     return result;
 }
 
-void QueueRegistry::destroy(const string& name) {
+void QueueRegistry::destroy(
+    const string& name, const string& connectionId, const string& userId)
+{
     Queue::shared_ptr q;
     {
         qpid::sys::RWlock::ScopedWlock locker(lock);
@@ -79,6 +99,14 @@ void QueueRegistry::destroy(const string& name) {
         if (i != queues.end()) {
             q = i->second;
             queues.erase(i);
+            if (getBroker() && getBroker()->getManagementAgent() &&
+                connectionId.size() && userId.size())
+            {
+                // NOTE: raiseEvent must be called with the lock held in order to
+                // ensure management events are generated in the correct order.
+                getBroker()->getManagementAgent()->raiseEvent(
+                    _qmf::EventQueueDelete(connectionId, userId, name));
+            }
         }
     }
     if (getBroker() && q) getBroker()->getConfigurationObservers().queueDestroy(q);
