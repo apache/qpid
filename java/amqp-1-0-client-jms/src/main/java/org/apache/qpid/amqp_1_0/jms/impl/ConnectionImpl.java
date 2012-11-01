@@ -282,7 +282,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 {
                     task.onClose();
                 }
-                if(_state != State.UNCONNECTED ) {
+                if(_conn != null && _state != State.UNCONNECTED ) {
                     _conn.close();
                 }
                 _state = State.CLOSED;
