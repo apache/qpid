@@ -76,8 +76,9 @@ const string EVENT("_event");
 const string OBJECT_NAME("_object_name");
 const string PACKAGE_NAME("_package_name");
 const string QUERY_RESPONSE("_query_response");
-const string SCHEMA_ID("_schema_id");
 const string VALUES("_values");
+const string SCHEMA_ID("_schema_id");
+const string WHAT("_what");
 
 const string ALTEX("altEx");
 const string ALTEXCHANGE("altExchange");
@@ -114,10 +115,6 @@ const string QMF_CONTENT("qmf.content");
 const string QMF_DEFAULT_TOPIC("qmf.default.topic");
 const string QMF_OPCODE("qmf.opcode");
 
-const string _WHAT("_what");
-const string _CLASS_NAME("_class_name");
-const string _PACKAGE_NAME("_package_name");
-const string _SCHEMA_ID("_schema_id");
 const string OBJECT("OBJECT");
 const string ORG_APACHE_QPID_BROKER("org.apache.qpid.broker");
 const string ORG_APACHE_QPID_HA("org.apache.qpid.ha");
@@ -132,11 +129,11 @@ void sendQuery(const string& packageName, const string& className, const string&
 {
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     Variant::Map request;
-    request[_WHAT] = OBJECT;
+    request[WHAT] = OBJECT;
     Variant::Map schema;
-    schema[_CLASS_NAME] = className;
-    schema[_PACKAGE_NAME] = packageName;
-    request[_SCHEMA_ID] = schema;
+    schema[CLASS_NAME] = className;
+    schema[PACKAGE_NAME] = packageName;
+    request[SCHEMA_ID] = schema;
 
     AMQFrame method((MessageTransferBody(ProtocolVersion(), QMF_DEFAULT_DIRECT, 0, 0)));
     method.setBof(true);
@@ -271,10 +268,6 @@ class BrokerReplicator::UpdateTracker {
     ReplicationTest repTest;
 };
 
-template <class E> pair<string,string> eventKey() {
-    return make_pair(E::PACKAGE_NAME, E::EVENT_NAME);
-}
-
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
       logPrefix("Backup: "), replicationTest(hb.getReplicationTest()),
@@ -289,14 +282,14 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
         boost::shared_ptr<broker::ConnectionObserver>(new ConnectionObserver(*this)));
     getArgs().setString(QPID_REPLICATE, printable(NONE).str());
 
-    dispatch[eventKey<EventQueueDeclare>()] = &BrokerReplicator::doEventQueueDeclare;
-    dispatch[eventKey<EventQueueDelete>()] = &BrokerReplicator::doEventQueueDelete;
-    dispatch[eventKey<EventExchangeDeclare>()] = &BrokerReplicator::doEventExchangeDeclare;
-    dispatch[eventKey<EventExchangeDelete>()] = &BrokerReplicator::doEventExchangeDelete;
-    dispatch[eventKey<EventBind>()] = &BrokerReplicator::doEventBind;
-    dispatch[eventKey<EventUnbind>()] = &BrokerReplicator::doEventUnbind;
-    dispatch[eventKey<EventMembersUpdate>()] = &BrokerReplicator::doEventMembersUpdate;
-    dispatch[eventKey<EventSubscribe>()] = &BrokerReplicator::doEventSubscribe;
+    dispatch[EventQueueDeclare::getFullName()] = &BrokerReplicator::doEventQueueDeclare;
+    dispatch[EventQueueDelete::getFullName()] = &BrokerReplicator::doEventQueueDelete;
+    dispatch[EventExchangeDeclare::getFullName()] = &BrokerReplicator::doEventExchangeDeclare;
+    dispatch[EventExchangeDelete::getFullName()] = &BrokerReplicator::doEventExchangeDelete;
+    dispatch[EventBind::getFullName()] = &BrokerReplicator::doEventBind;
+    dispatch[EventUnbind::getFullName()] = &BrokerReplicator::doEventUnbind;
+    dispatch[EventMembersUpdate::getFullName()] = &BrokerReplicator::doEventMembersUpdate;
+    dispatch[EventSubscribe::getFullName()] = &BrokerReplicator::doEventSubscribe;
 }
 
 void BrokerReplicator::initialize() {

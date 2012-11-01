@@ -34,27 +34,29 @@ QPID_BROKER_CLASS_EXTERN class Event/*MGEN:Event.NameCap*/ : public ::qpid::mana
   private:
     static void writeSchema (std::string& schema);
     static uint8_t md5Sum[MD5_LEN];
+    static std::string packageName;
+    static std::string eventName;
 
 /*MGEN:Event.ArgDeclarations*/
 
   public:
-    QPID_BROKER_EXTERN static std::string PACKAGE_NAME;
-    QPID_BROKER_EXTERN static std::string EVENT_NAME;
-
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
 
     QPID_BROKER_EXTERN Event/*MGEN:Event.NameCap*/(/*MGEN:Event.ConstructorArgs*/);
     QPID_BROKER_EXTERN ~Event/*MGEN:Event.NameCap*/() {};
 
     static void registerSelf(::qpid::management::ManagementAgent* agent);
-    std::string& getPackageName() const { return PACKAGE_NAME; }
-    std::string& getEventName() const { return EVENT_NAME; }
+    std::string& getPackageName() const { return packageName; }
+    std::string& getEventName() const { return eventName; }
     uint8_t* getMd5Sum() const { return md5Sum; }
     uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
     QPID_BROKER_EXTERN void encode(std::string& buffer) const;
     QPID_BROKER_EXTERN void mapEncode(::qpid::types::Variant::Map& map) const;
 
     QPID_BROKER_EXTERN static bool match(const std::string& evt, const std::string& pkg);
+    static std::pair<std::string,std::string> getFullName() {
+        return std::make_pair(packageName, eventName);
+    }
 };
 
 }/*MGEN:Event.CloseNamespaces*/
