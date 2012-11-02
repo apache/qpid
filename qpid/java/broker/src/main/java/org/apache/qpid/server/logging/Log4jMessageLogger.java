@@ -21,7 +21,6 @@
 package org.apache.qpid.server.logging;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 
 public class Log4jMessageLogger extends AbstractRootMessageLogger
 {
@@ -30,9 +29,9 @@ public class Log4jMessageLogger extends AbstractRootMessageLogger
         super();
     }
 
-    public Log4jMessageLogger(ServerConfiguration config)
+    public Log4jMessageLogger(boolean statusUpdatesEnabled)
     {
-        super(config);
+        super(statusUpdatesEnabled);
     }
     
     @Override

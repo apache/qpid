@@ -23,11 +23,12 @@ package org.apache.qpid.server.configuration.startup;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 
-public class AuthenticationProviderRecoverer
+public class AuthenticationProviderRecoverer extends AbstractBrokerChildRecoverer<AuthenticationProvider>
 {
     private final AuthenticationProviderFactory _authenticationProviderFactory;
 
@@ -36,7 +37,8 @@ public class AuthenticationProviderRecoverer
         _authenticationProviderFactory = authenticationProviderFactory;
     }
 
-    public AuthenticationProvider create(ConfigurationEntry configurationEntry, Broker broker)
+    @Override
+    AuthenticationProvider createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, Broker broker)
     {
         Map<String, Object> attributes = configurationEntry.getAttributes();
         AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(
@@ -46,4 +48,5 @@ public class AuthenticationProviderRecoverer
 
         return authenticationProvider;
     }
+
 }

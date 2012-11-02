@@ -45,7 +45,7 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     {
         super.createBroker();
 
-        _rawLogger = new UnitTestMessageLogger(getConfiguration());
+        _rawLogger = new UnitTestMessageLogger(getConfiguration().getStatusUpdatesEnabled());
         _rootLogger = _rawLogger;
     }
 

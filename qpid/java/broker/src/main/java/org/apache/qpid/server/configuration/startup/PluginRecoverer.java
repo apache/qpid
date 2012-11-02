@@ -25,12 +25,13 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
-public class PluginRecoverer
+public class PluginRecoverer extends AbstractBrokerChildRecoverer<ConfiguredObject>
 {
     private QpidServiceLoader<PluginFactory> _serviceLoader;
 
@@ -39,7 +40,8 @@ public class PluginRecoverer
         _serviceLoader = serviceLoader;
     }
 
-    public ConfiguredObject create(ConfigurationEntry configurationEntry, Broker broker)
+    @Override
+    ConfiguredObject createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, Broker broker)
     {
         Map<String, Object> attributes = configurationEntry.getAttributes();
         Iterable<PluginFactory> factories = _serviceLoader.instancesOf(PluginFactory.class);

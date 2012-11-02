@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
@@ -51,27 +47,23 @@ import java.util.List;
  */
 public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
 {
-    protected Configuration _config = new PropertiesConfiguration();
     protected LogSubject _subject = null;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-
-        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "ON");
     }
 
 
-    protected List<Object> performLog() throws ConfigurationException
+    protected List<Object> performLog(boolean statusUpdatesEnabled)
     {
         if (_subject == null)
         {
             throw new NullPointerException("LogSubject has not been set");
         }
 
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        UnitTestMessageLogger logger = new UnitTestMessageLogger(serverConfig);
+        UnitTestMessageLogger logger = new UnitTestMessageLogger(statusUpdatesEnabled);
 
         LogActor actor = new TestLogActor(logger);
 
@@ -247,11 +239,10 @@ public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
     /**
      * Test that when Logging occurs a single log statement is provided
      *
-     * @throws ConfigurationException
      */
-    public void testEnabled() throws ConfigurationException
+    public void testEnabled()
     {
-        List<Object> logs = performLog();
+        List<Object> logs = performLog(true);
 
         assertEquals("Log has incorrect message count", 1, logs.size());
 
@@ -271,11 +262,10 @@ public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
      *
      * @throws ConfigurationException
      */
-    public void testDisabled() throws ConfigurationException
+    public void testDisabled()
     {
-        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "OFF");
 
-        List<Object> logs = performLog();
+        List<Object> logs = performLog(false);
 
         assertEquals("Log has incorrect message count", 0, logs.size());
     }

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
@@ -32,7 +33,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public class VirtualHostRecoverer
+public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHost>
 {
     private VirtualHostRegistry _virtualHostRegistry;
     private StatisticsGatherer _statisticsGatherer;
@@ -49,15 +50,24 @@ public class VirtualHostRecoverer
         _configurations = configurations;
     }
 
-    public VirtualHost create(ConfigurationEntry entry, Broker parent)
+
+    @Override
+    VirtualHost createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry entry, Broker broker)
     {
-        String name = (String) entry.getAttributes().get(VirtualHost.NAME);
+        Map<String, Object> attributes = entry.getAttributes();
+        String name = (String) attributes.get(VirtualHost.NAME);
         if (name == null)
         {
             throw new IllegalConfigurationException("Mandatory attribute name is not found in virtual host configuration :"
                     + entry);
         }
-        return new VirtualHostAdapter(entry.getId(), parent, entry.getAttributes(), _virtualHostRegistry,
+        // XXX hack
+        VirtualHostConfiguration virtualHostConfiguration = (VirtualHostConfiguration)attributes.get("configuration");
+
+        // String configurationPath = attributes.get("configuration");
+        // VirtualHostConfiguration virtualHostConfiguration = new VirtualHostConfiguration(configurationPath);
+
+        return new VirtualHostAdapter(entry.getId(), broker, attributes, _virtualHostRegistry,
                 _statisticsGatherer, _securityManager, _configurations.get(name));
     }
 

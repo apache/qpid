@@ -72,7 +72,7 @@ public class GroupProviderRecovererTest extends TestCase
         String name = groupManager.getClass().getSimpleName();
         when(_factory.createInstance(_attributes)).thenReturn(groupManager);
         GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(_groupManagerServiceLoader);
-        GroupProvider groupProvider = groupProviderRecoverer.create(_configurationEntry, _broker);
+        GroupProvider groupProvider = groupProviderRecoverer.create(null, _configurationEntry, _broker);
         assertNotNull("Null group provider", groupProvider);
         assertEquals("Unexpected name", name, groupProvider.getName());
         assertEquals("Unexpected ID", _id, groupProvider.getId());
@@ -85,7 +85,7 @@ public class GroupProviderRecovererTest extends TestCase
         GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(_groupManagerServiceLoader);
         try
         {
-            groupProviderRecoverer.create(_configurationEntry, _broker);
+            groupProviderRecoverer.create(null, _configurationEntry, _broker);
             fail("Configuration exception should be thrown when group manager is not created");
         }
         catch(IllegalConfigurationException e)

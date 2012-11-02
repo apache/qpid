@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration.store;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.tree.ConfigurationNode;
@@ -64,13 +66,19 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
     private PortConfigurationHelper _portConfigurationHelper;
 
-    public XMLConfigurationEntryStore(ServerConfiguration config, BrokerOptions options)
+    public XMLConfigurationEntryStore(File configFile, BrokerOptions options) throws ConfigurationException
+    {
+        this(new ServerConfiguration(configFile), options);
+    }
+
+    public XMLConfigurationEntryStore(ServerConfiguration config, BrokerOptions options)  throws ConfigurationException
     {
         _serverConfiguration = config;
+        _serverConfiguration.initialise();
+
         _configuration = ConfigurationUtils.convertToHierarchical(config.getConfig());
         _rootId = UUID.randomUUID();
         _rootChildren = new HashMap<UUID, ConfigurationEntry>();
-
         _portConfigurationHelper = new PortConfigurationHelper(this);
 
         updateManagementPorts(_serverConfiguration, options);
@@ -380,6 +388,11 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     {
         // TODO Auto-generated method stub
 
+    }
+
+    public ServerConfiguration getConfiguration()
+    {
+        return _serverConfiguration;
     }
 
 }

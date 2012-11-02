@@ -21,29 +21,33 @@
 package org.apache.qpid.server.configuration.startup;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
-import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.model.ConfiguredObject;
 
-public class PortRecoverer extends AbstractBrokerChildRecoverer<Port>
+public abstract class AbstractBrokerChildRecoverer<T extends ConfiguredObject> implements ConfiguredObjectRecoverer<T>
 {
-    /**
-     * delegates to a {@link PortFactory} so that the logic can be shared by
-     * {@link BrokerAdapter}
-     */
-    private final PortFactory _portFactory;
-
-    public PortRecoverer(PortFactory portFactory)
-    {
-        _portFactory = portFactory;
-    }
 
     @Override
-    Port createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, Broker broker)
+    public T create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
-        return _portFactory.createPort(configurationEntry.getId(), broker, configurationEntry.getAttributes());
+        if (parents == null || parents.length == 0)
+        {
+            throw new IllegalArgumentException("Broker parent is not passed!");
+        }
+        if (parents.length != 1)
+        {
+            throw new IllegalArgumentException("Only one parent is expected!");
+        }
+        if (!(parents[0] instanceof Broker))
+        {
+            throw new IllegalArgumentException("Parent is not a broker");
+        }
+        Broker broker = (Broker)parents[0];
+        return createBrokerChild(recovererProvider, entry, broker);
     }
+
+    abstract T createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry entry, Broker broker);
 
 }

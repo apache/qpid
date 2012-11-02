@@ -30,19 +30,17 @@ import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.configuration.startup.AuthenticationProviderRecoverer;
-import org.apache.qpid.server.configuration.startup.BrokerRecoverer;
-import org.apache.qpid.server.configuration.startup.GroupProviderRecoverer;
-import org.apache.qpid.server.configuration.startup.PluginRecoverer;
-import org.apache.qpid.server.configuration.startup.PortRecoverer;
-import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
+import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
@@ -58,14 +56,10 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
-import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.plugin.GroupManagerFactory;
-import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -94,8 +88,6 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private volatile RootMessageLogger _rootMessageLogger;
 
-    private CompositeStartupMessageLogger _startupMessageLogger;
-
     private Broker _broker;
 
     private Timer _reportingTimer;
@@ -103,7 +95,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private LogRecorder _logRecorder;
 
-    private final BrokerOptions _brokerOptions;
+    private ConfigurationEntryStore _store;
 
     protected void setSecurityManager(SecurityManager securityManager)
     {
@@ -113,16 +105,6 @@ public class ApplicationRegistry implements IApplicationRegistry
     protected void setRootMessageLogger(RootMessageLogger rootMessageLogger)
     {
         _rootMessageLogger = rootMessageLogger;
-    }
-
-    protected CompositeStartupMessageLogger getStartupMessageLogger()
-    {
-        return _startupMessageLogger;
-    }
-
-    protected void setStartupMessageLogger(CompositeStartupMessageLogger startupMessageLogger)
-    {
-        _startupMessageLogger = startupMessageLogger;
     }
 
     public static void initialise(IApplicationRegistry instance) throws Exception
@@ -186,48 +168,38 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    /** intended to be used when broker options are not applicable, eg from tests */
-    public ApplicationRegistry(ServerConfiguration configuration)
-    {
-        this(configuration, new BrokerOptions());
-    }
-
-    public ApplicationRegistry(ServerConfiguration configuration, BrokerOptions brokerOptions)
+    // XXX remove this constructor
+    public ApplicationRegistry(ServerConfiguration configuration) throws ConfigurationException
     {
         _configuration = configuration;
-        _brokerOptions = brokerOptions;
+    }
+
+    public ApplicationRegistry(ConfigurationEntryStore store)
+    {
+        _store = store;
+        _configuration = ((XMLConfigurationEntryStore)store).getConfiguration();
     }
 
     public void initialise() throws Exception
     {
+        // only in tests store is null
+        if (_store == null)
+        {
+            _store = new XMLConfigurationEntryStore(_configuration,  new BrokerOptions());
+        }
         _logRecorder = new LogRecorder();
-        //Create the RootLogger to be used during broker operation
-        _rootMessageLogger = new Log4jMessageLogger(_configuration);
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
-        RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
-        _startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
+        RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), new Log4jMessageLogger(true)};
+        CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
 
-        BrokerActor actor = new BrokerActor(_startupMessageLogger);
+        BrokerActor actor = new BrokerActor(startupMessageLogger);
         CurrentActor.setDefault(actor);
         CurrentActor.set(actor);
 
         try
         {
-
             initialiseStatistics();
-            _configuration.initialise();
-
-            // We have already loaded the BrokerMessages class by this point so we
-            // need to refresh the locale setting in case we had a different value in
-            // the configuration.
-            BrokerMessages.reload();
-
-            // AR.initialise() sets and removes its own actor so we now need to set the actor
-            // for the remainder of the startup, and the default actor if the stack is empty
-            //CurrentActor.set(new BrokerActor(applicationRegistry.getCompositeStartupMessageLogger()));
-            CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
-            GenericActor.setDefaultMessageLogger(_rootMessageLogger);
 
             logStartupMessages(CurrentActor.get());
 
@@ -237,6 +209,19 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
             initialiseStatisticsReporting();
+
+
+            // We have already loaded the BrokerMessages class by this point so we
+            // need to refresh the locale setting in case we had a different value in
+            // the configuration.
+            BrokerMessages.reload();
+
+            // Create the RootLogger to be used during broker operation
+            // XXX this setting should be retrieved from the broker
+            _rootMessageLogger = new Log4jMessageLogger(_configuration.getStatusUpdatesEnabled()); // _broker.getStatusUpdatesEnabled()
+
+            CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
+            GenericActor.setDefaultMessageLogger(_rootMessageLogger);
 
             // starting the broker
             _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
@@ -252,43 +237,15 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private void createBroker()
     {
-        // XXX move all the code below into store and broker creator
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(_configuration, _brokerOptions);
-
         Map<String, VirtualHostConfiguration> virtualHostConfigurations = new HashMap<String, VirtualHostConfiguration>();
         String[] vhNames = _configuration.getVirtualHostsNames();
         for (String name : vhNames)
         {
             virtualHostConfigurations.put(name, _configuration.getVirtualHostConfig(name));
         }
-
-        // XXX : introduce RecovererGeneraor/Registry/Factory?
-
-        PortFactory portFactory = new PortFactory(this);
-        PortRecoverer portRecoverer = new PortRecoverer(portFactory);
-        VirtualHostRecoverer virtualHostRecoverer = new VirtualHostRecoverer(getVirtualHostRegistry(),
-                this, getSecurityManager(), virtualHostConfigurations);
-
-        AuthenticationProviderFactory authenticationProviderFactory =
-                new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
-        AuthenticationProviderRecoverer authenticationProviderRecoverer =
-                new AuthenticationProviderRecoverer(authenticationProviderFactory);
-
-        GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(new QpidServiceLoader<GroupManagerFactory>());
-
-        PluginRecoverer pluginRecoverer = new PluginRecoverer(new QpidServiceLoader<PluginFactory>());
-
-        BrokerRecoverer brokerRecoverer =  new BrokerRecoverer(
-                portRecoverer,
-                virtualHostRecoverer,
-                authenticationProviderRecoverer,
-                authenticationProviderFactory,
-                portFactory,
-                groupProviderRecoverer,
-                pluginRecoverer,
-                this);
-
-        _broker = brokerRecoverer.create(store.getRootEntry());
+        RecovererProvider provider = new DefaultRecovererProvider(this, virtualHostConfigurations);
+        ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(ConfiguredObjectType.BROKER);
+        _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
     }
 
     public void initialiseStatisticsReporting()
@@ -479,11 +436,6 @@ public class ApplicationRegistry implements IApplicationRegistry
     public RootMessageLogger getRootMessageLogger()
     {
         return _rootMessageLogger;
-    }
-
-    public RootMessageLogger getCompositeStartupMessageLogger()
-    {
-        return _startupMessageLogger;
     }
 
     public UUID getBrokerId()

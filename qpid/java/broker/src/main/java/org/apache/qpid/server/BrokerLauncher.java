@@ -30,7 +30,8 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -112,10 +113,9 @@ public class BrokerLauncher
 
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
-        // XXX create ConfigurationEntryStore and pass it into registry constructor
-        ServerConfiguration serverConfig = new ServerConfiguration(configFile);
+        ConfigurationEntryStore store = new XMLConfigurationEntryStore(configFile, options);
 
-        ApplicationRegistry applicationRegistry = new ApplicationRegistry(serverConfig, options);
+        ApplicationRegistry applicationRegistry = new ApplicationRegistry(store);
 
         ApplicationRegistry.initialise(applicationRegistry);
 

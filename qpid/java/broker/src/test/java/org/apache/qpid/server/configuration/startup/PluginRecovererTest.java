@@ -73,7 +73,7 @@ public class PluginRecovererTest extends TestCase
         when(_factory.createInstance(_id, _attributes, _broker)).thenReturn(pluginFromFactory);
 
         PluginRecoverer pluginRecoverer = new PluginRecoverer(_pluginFactoryServiceLoader);
-        ConfiguredObject pluginFromRecoverer = pluginRecoverer.create(_configurationEntry, _broker);
+        ConfiguredObject pluginFromRecoverer = pluginRecoverer.create(null, _configurationEntry, _broker);
         assertNotNull("Null group provider", pluginFromRecoverer);
         assertSame("Unexpected plugin", pluginFromFactory, pluginFromRecoverer);
         assertEquals("Unexpected ID", _id, pluginFromRecoverer.getId());
@@ -88,7 +88,7 @@ public class PluginRecovererTest extends TestCase
         PluginRecoverer pluginRecoverer = new PluginRecoverer(_pluginFactoryServiceLoader);
         try
         {
-            pluginRecoverer.create(_configurationEntry, _broker);
+            pluginRecoverer.create(null, _configurationEntry, _broker);
             fail("An exception should be thrown for incorrect id");
         }
         catch(IllegalStateException e)
@@ -104,7 +104,7 @@ public class PluginRecovererTest extends TestCase
         PluginRecoverer pluginRecoverer = new PluginRecoverer(_pluginFactoryServiceLoader);
         try
         {
-            pluginRecoverer.create(_configurationEntry, _broker);
+            pluginRecoverer.create(null, _configurationEntry, _broker);
             fail("Configuration exception should be thrown when plugin is not created");
         }
         catch(IllegalConfigurationException e)

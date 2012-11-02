@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.configuration;
 
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectType;
 
 public interface RecovererProvider
 {
-    ConfiguredObjectRecoverer<?> getRecoverer(ConfiguredObjectType type);
+    ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(ConfiguredObjectType type);
 }

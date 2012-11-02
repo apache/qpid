@@ -54,7 +54,7 @@ public class VirtualHostRecovererTest extends TestCase
         when(entry.getAttributes()).thenReturn(attributes);
         configurations.put(getName(), mock(VirtualHostConfiguration.class));
 
-        VirtualHost host = recoverer.create(entry, parent);
+        VirtualHost host = recoverer.create(null, entry, parent);
 
         assertNotNull("Null is returned", host);
         assertEquals("Unexpected name", getName(), host.getName());
