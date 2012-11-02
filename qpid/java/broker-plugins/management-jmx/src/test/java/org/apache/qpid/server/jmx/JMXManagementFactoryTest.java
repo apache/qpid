@@ -19,33 +19,39 @@
 package org.apache.qpid.server.jmx;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class JMXManagementFactoryTest extends QpidTestCase
 {
     private final JMXManagementFactory _jmxManagementFactory = new JMXManagementFactory();
-    private final ServerConfiguration _serverConfiguration = mock(ServerConfiguration.class);
+    private final Map<String, Object> _attributes = new HashMap<String, Object>();
     private final Broker _broker = mock(Broker.class);
+    private UUID _id = UUID.randomUUID();
 
     public void testJMXConfigured() throws Exception
     {
-        when(_serverConfiguration.getJMXManagementEnabled()).thenReturn(true);
+        _attributes.put(PluginFactory.PLUGIN_TYPE, JMXManagementFactory.PLUGIN_NAME);
 
-        JMXManagement jmxManagement = _jmxManagementFactory.createInstance(_serverConfiguration, _broker);
+        JMXManagement jmxManagement = (JMXManagement) _jmxManagementFactory.createInstance(_id, _attributes, _broker);
 
         assertNotNull(jmxManagement);
     }
 
-    public void testJMXNotConfigured() throws Exception
+    public void testCreateInstanceReturnsNullWhenPluginTypeMissing()
     {
-        when(_serverConfiguration.getJMXManagementEnabled()).thenReturn(false);
+        assertNull(_jmxManagementFactory.createInstance(_id, _attributes, _broker));
+    }
 
-        JMXManagement jmxManagement = _jmxManagementFactory.createInstance(_serverConfiguration, _broker);
-
-        assertNull(jmxManagement);
+    public void testCreateInstanceReturnsNullWhenPluginTypeNotJmx()
+    {
+        _attributes.put(PluginFactory.PLUGIN_TYPE, "notJmx");
+        assertNull(_jmxManagementFactory.createInstance(_id, _attributes, _broker));
     }
 }

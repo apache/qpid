@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,11 +16,13 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.server.management.plugin;
+package org.apache.qpid.server.configuration;
 
-public interface ManagementPlugin
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public interface ConfiguredObjectRecoverer<T extends ConfiguredObject>
 {
-    void start() throws Exception;
-    void stop() throws Exception;
+    T create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents);
 }

@@ -28,6 +28,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
+// XXX delete it and rename DefaultBrokerRecoverer into BrokerRecoverer
 public class BrokerRecoverer
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerRecoverer.class);
@@ -55,10 +57,12 @@ public class BrokerRecoverer
 
     private final GroupProviderRecoverer _groupProviderRecoverer;
 
+    private final PluginRecoverer _pluginRecoverer;
+
     public BrokerRecoverer(PortRecoverer portRecoverer, VirtualHostRecoverer virtualHostRecoverer,
             AuthenticationProviderRecoverer authenticationProviderRecoverer,
             AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
-            GroupProviderRecoverer groupProviderRecoverer, IApplicationRegistry registry)
+            GroupProviderRecoverer groupProviderRecoverer, PluginRecoverer pluginRecoverer, IApplicationRegistry registry)
     {
         _registry = registry;
         _virtualHostRecoverer = virtualHostRecoverer;
@@ -67,6 +71,7 @@ public class BrokerRecoverer
         _authenticationProviderRecoverer = authenticationProviderRecoverer;
         _authenticationProviderFactory = authenticationProviderFactory;
         _groupProviderRecoverer = groupProviderRecoverer;
+        _pluginRecoverer = pluginRecoverer;
     }
 
     public Broker create(ConfigurationEntry entry)
@@ -77,6 +82,7 @@ public class BrokerRecoverer
         recoverPorts(broker, childEntries);
         recoverGroupProviders(broker, childEntries);
         recoverAuthenticationProviders(broker, childEntries);
+        recoverPlugins(broker, childEntries);
 
         wireUpAuthenticationProviders(broker, entry.getAttributesAsAttributeMap());
 
@@ -93,7 +99,7 @@ public class BrokerRecoverer
         {
             LOGGER.error("No authentication providers configured");
             return;
-            // XXX reinstate when wire-up has been separated from createion: throw new IllegalConfigurationException("No authentication providers configured");
+            // XXX reinstate when wire-up has been separated from creation: throw new IllegalConfigurationException("No authentication providers configured");
         }
         else if (numberOfAuthenticationProviders == 1)
         {
@@ -192,6 +198,26 @@ public class BrokerRecoverer
             {
                 GroupProvider groupProvider = _groupProviderRecoverer.create(entry, broker);
                 broker.addGroupProvider(groupProvider);
+            }
+        }
+    }
+
+    private void recoverPlugins(BrokerAdapter broker, Map<ConfiguredObjectType, Collection<ConfigurationEntry>> childEntries)
+    {
+        Collection<ConfigurationEntry> entries = childEntries.get(ConfiguredObjectType.PLUGIN);
+        if (entries != null)
+        {
+            for (ConfigurationEntry entry : entries)
+            {
+                ConfiguredObject pluginObject = _pluginRecoverer.create(entry, broker);
+                if (pluginObject == null)
+                {
+                    LOGGER.warn("Cannot instantiate plugin for configuration entry:" + entry);
+                }
+                else
+                {
+                    broker.addPlugin(pluginObject);
+                }
             }
         }
     }

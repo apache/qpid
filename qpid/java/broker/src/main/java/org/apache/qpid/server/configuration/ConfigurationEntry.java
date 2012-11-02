@@ -145,7 +145,7 @@ public class ConfigurationEntry
     public String toString()
     {
         return "ConfigurationEntry [_id=" + _id + ", _type=" + _type + ", _attributes=" + _attributes + ", _childrenIds="
-                + _childrenIds + ", _store=" + _store + "]";
+                + _childrenIds + "]";
     }
 
 }

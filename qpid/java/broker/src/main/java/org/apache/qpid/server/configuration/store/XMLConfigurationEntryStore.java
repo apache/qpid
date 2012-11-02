@@ -49,6 +49,8 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class XMLConfigurationEntryStore implements ConfigurationEntryStore
@@ -73,11 +75,19 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
         updateManagementPorts(_serverConfiguration, options);
 
-        getGroupProviders(_configuration, _rootChildren);
-        getAuthenticationProviders(_configuration, _rootChildren);
-        getAmqpPorts(_serverConfiguration, _rootChildren, options);
-        getManagementPorts(_serverConfiguration, _rootChildren, options);
-        getVirtualHosts(_serverConfiguration, _rootChildren);
+        createGroupProviderConfig(_configuration, _rootChildren);
+        createAuthenticationProviderConfig(_configuration, _rootChildren);
+        createAmqpPortConfig(_serverConfiguration, _rootChildren, options);
+        createManagementPortConfig(_serverConfiguration, _rootChildren, options);
+        createVirtualHostConfig(_serverConfiguration, _rootChildren);
+
+        // In order to avoid plugin recoverer failures for broker tests we are checking whether plugins classes are present in classpath
+        Iterable<PluginFactory> factories= new QpidServiceLoader().instancesOf(PluginFactory.class);
+        if (factories.iterator().hasNext())
+        {
+            createHttpManagementConfig(_serverConfiguration, _rootChildren);
+            createJmxManagementConfig(_serverConfiguration, _rootChildren);
+        }
         _logger.warn("Root children are: " + _rootChildren);
     }
 
@@ -95,7 +105,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         return rootEntry;
     }
 
-    private void getAuthenticationProviders(Configuration configuration, Map<UUID, ConfigurationEntry> rootChildren)
+    private void createAuthenticationProviderConfig(Configuration configuration, Map<UUID, ConfigurationEntry> rootChildren)
     {
         HierarchicalConfiguration securityConfiguration = ConfigurationUtils.convertToHierarchical(
                 configuration.subset("security"));
@@ -140,7 +150,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     }
 
     /** hard-coded values match those in {@link FileGroupManagerFactory} */
-    private void getGroupProviders(Configuration configuration, Map<UUID, ConfigurationEntry> rootChildren)
+    private void createGroupProviderConfig(Configuration configuration, Map<UUID, ConfigurationEntry> rootChildren)
     {
         Configuration fileGroupManagerConfig = configuration.subset("security.file-group-manager");
         if(fileGroupManagerConfig != null && !fileGroupManagerConfig.isEmpty())
@@ -154,7 +164,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         }
     }
 
-    private void getAmqpPorts(ServerConfiguration serverConfig, Map<UUID, ConfigurationEntry> rootChildren,
+    private void createAmqpPortConfig(ServerConfiguration serverConfig, Map<UUID, ConfigurationEntry> rootChildren,
             BrokerOptions options)
     {
         Map<UUID, ConfigurationEntry> amqpPortConfiguration = _portConfigurationHelper.getPortConfiguration(serverConfig,
@@ -163,7 +173,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
     }
 
-    private void getManagementPorts(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren,
+    private void createManagementPortConfig(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren,
             BrokerOptions options)
     {
         if (serverConfiguration.getHTTPManagementEnabled())
@@ -250,7 +260,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         return new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT, attributes, null, this);
     }
 
-    private void getVirtualHosts(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren)
+    private void createVirtualHostConfig(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren)
     {
         for (String name : serverConfiguration.getVirtualHostsNames())
         {
@@ -302,6 +312,37 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT, attributes, null,
                 this);
         return entry;
+    }
+
+    private void createHttpManagementConfig(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren)
+    {
+        if(serverConfiguration.getHTTPManagementEnabled() || serverConfiguration.getHTTPSManagementEnabled())
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(PluginFactory.PLUGIN_TYPE, "MANAGEMENT-HTTP");
+            attributes.put("keyStorePath", serverConfiguration.getManagementKeyStorePath());
+            attributes.put("keyStorePassword", serverConfiguration.getManagementKeyStorePassword());
+            attributes.put("sessionTimeout", serverConfiguration.getHTTPManagementSessionTimeout());
+
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);
+            rootChildren.put(entry.getId(), entry);
+        }
+    }
+
+    private void createJmxManagementConfig(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren)
+    {
+        if(serverConfiguration.getJMXManagementEnabled())
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(PluginFactory.PLUGIN_TYPE, "MANAGEMENT-JMX");
+            attributes.put("keyStorePath", serverConfiguration.getManagementKeyStorePath());
+            attributes.put("keyStorePassword", serverConfiguration.getManagementKeyStorePassword());
+            attributes.put("useCustomRMISocketFactory", serverConfiguration.getUseCustomRMISocketFactory());
+            attributes.put("usePlatformMBeanServer", serverConfiguration.getPlatformMbeanserver());
+
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);
+            rootChildren.put(entry.getId(), entry);
+        }
     }
 
     private String getBindAddress(ServerConfiguration serverConfig)

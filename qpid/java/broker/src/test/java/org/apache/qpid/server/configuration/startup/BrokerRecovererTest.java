@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,6 +38,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
@@ -65,13 +67,14 @@ public class BrokerRecovererTest extends TestCase
     private UUID _brokerId = UUID.randomUUID();
     private Map<ConfiguredObjectType, Collection<ConfigurationEntry>> _entryChildren = new HashMap<ConfiguredObjectType, Collection<ConfigurationEntry>>();
 
+    private PluginRecoverer _pluginRecoverer = mock(PluginRecoverer.class);
+
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
-
         _brokerRecoverer = new BrokerRecoverer(_portRecoverer, _virtualHostRecoverer, _authenticationProviderRecoverer,
-                _authenticationProviderFactory, _portFactory, _groupProviderRecoverer, _applicationRegistry);
+                _authenticationProviderFactory, _portFactory, _groupProviderRecoverer, _pluginRecoverer, _applicationRegistry);
         when(_entry.getId()).thenReturn(_brokerId);
         when(_entry.getChildren()).thenReturn(_entryChildren);
 
@@ -141,5 +144,20 @@ public class BrokerRecovererTest extends TestCase
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
         assertEquals(Collections.singletonList(groupProvider), broker.getGroupProviders());
+    }
+
+    public void testCreateBrokerWithPlugins()
+    {
+        ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
+        ConfiguredObject plugin = mock(ConfiguredObject.class);
+        _entryChildren.put(ConfiguredObjectType.PLUGIN, Arrays.asList(pluginEntry));
+
+        when(_pluginRecoverer.create(same(pluginEntry), any(Broker.class))).thenReturn(plugin);
+
+        Broker broker = _brokerRecoverer.create(_entry);
+
+        assertNotNull(broker);
+        assertEquals(_brokerId, broker.getId());
+        assertEquals(Collections.singleton(plugin), new HashSet<ConfiguredObject>(broker.getChildren(ConfiguredObject.class)));
     }
 }

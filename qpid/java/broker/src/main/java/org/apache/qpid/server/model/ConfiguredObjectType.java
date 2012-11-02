@@ -20,6 +20,16 @@
  */
 package org.apache.qpid.server.model;
 
+/**
+ * This enum declares the types of all possible configured objects.
+ * At the moment, we have got fixed number of types.
+ * <p>
+ * In future, we might need to convert this enum into abstract class and
+ * implement the subclasses for each type of configured object, which in turn
+ * will register themselves in the static map.
+ * <p>
+ * That would allow us to implement plugins more effectively instead of relying on {@link ConfiguredObjectType#PLUGIN}.
+ */
 public enum ConfiguredObjectType
 {
     BROKER(Broker.class),
@@ -39,7 +49,8 @@ public enum ConfiguredObjectType
     PUBLISHER(Publisher.class),
     QUEUE(Queue.class),
     CONNECTION(Connection.class),
-    GROUP_PROVIDER(GroupProvider.class);
+    GROUP_PROVIDER(GroupProvider.class),
+    PLUGIN(ConfiguredObject.class);
 
     private final Class<? extends ConfiguredObject> _type;
 

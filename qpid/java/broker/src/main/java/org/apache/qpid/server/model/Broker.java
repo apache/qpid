@@ -80,4 +80,5 @@ public interface Broker extends ConfiguredObject
     AuthenticationProvider getDefaultAuthenticationProvider();
 
     Collection<GroupProvider> getGroupProviders();
+
 }

@@ -18,11 +18,15 @@
  */
 package org.apache.qpid.server.plugin;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.management.plugin.ManagementPlugin;
-import org.apache.qpid.server.model.Broker;
+import java.util.Map;
+import java.util.UUID;
 
-public interface ManagementFactory
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public interface PluginFactory
 {
-    ManagementPlugin createInstance(ServerConfiguration configuration, Broker broker);
+    static final String PLUGIN_TYPE = "pluginType";
+
+    ConfiguredObject createInstance(UUID id, Map<String, Object> attributes, Broker broker);
 }

@@ -200,6 +200,7 @@ public class SaslServlet extends AbstractServlet
         boolean saslAuthEnabled;
         if (request.isSecure())
         {
+            // XXX replace getHTTPSManagementSaslAuthEnabled with access to a field set from config
             saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementSaslAuthEnabled();
         }
         else

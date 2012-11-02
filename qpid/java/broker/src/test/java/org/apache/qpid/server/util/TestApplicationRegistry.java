@@ -43,6 +43,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
     {
         LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
         getConfiguration().getConfig().addProperty("security." + TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER, "");
+
         super.initialise();
 
         CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));

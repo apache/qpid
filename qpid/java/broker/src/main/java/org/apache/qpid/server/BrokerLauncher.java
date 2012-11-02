@@ -23,11 +23,7 @@ package org.apache.qpid.server;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -38,13 +34,8 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class BrokerLauncher
@@ -121,33 +112,13 @@ public class BrokerLauncher
 
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
+        // XXX create ConfigurationEntryStore and pass it into registry constructor
         ServerConfiguration serverConfig = new ServerConfiguration(configFile);
 
         ApplicationRegistry applicationRegistry = new ApplicationRegistry(serverConfig, options);
 
         ApplicationRegistry.initialise(applicationRegistry);
 
-        // We have already loaded the BrokerMessages class by this point so we
-        // need to refresh the locale setting in case we had a different value in
-        // the configuration.
-       // BrokerMessages.reload();
-
-        // AR.initialise() sets and removes its own actor so we now need to set the actor
-        // for the remainder of the startup, and the default actor if the stack is empty
-        //CurrentActor.set(new BrokerActor(applicationRegistry.getCompositeStartupMessageLogger()));
-        //CurrentActor.setDefault(new BrokerActor(applicationRegistry.getRootMessageLogger()));
-        //GenericActor.setDefaultMessageLogger(applicationRegistry.getRootMessageLogger());
-/*
-        try
-        {
-            CurrentActor.get().message(BrokerMessages.READY());
-        }
-        finally
-        {
-            // Startup is complete so remove the AR initialised Startup actor
-            CurrentActor.remove();
-        }
-        */
     }
 
 

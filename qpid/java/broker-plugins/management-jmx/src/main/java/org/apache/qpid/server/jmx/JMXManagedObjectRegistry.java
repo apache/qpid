@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.model.Port;
@@ -48,7 +46,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NoSuchObjectException;
@@ -73,32 +70,37 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     private final MBeanServer _mbeanServer;
     private final boolean _useCustomSocketFactory;
-    private final ServerConfiguration _serverConfiguration;
 
     private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
 
-    private Port _registryPort;
-    private Port _connectorPort;
+    private final Port _registryPort;
+    private final Port _connectorPort;
 
-    // XXX get rid from ServerConfiguration
-    public JMXManagedObjectRegistry(ServerConfiguration serverConfiguration, Port connectorPort, Port registryPort) throws AMQException
+    private final String _managementKeyStorePath;
+    private final String  _managementKeyStorePassword;
+
+    public JMXManagedObjectRegistry(
+            Port connectorPort, Port registryPort,
+            JMXConfiguration jmxConfiguration)
     {
-        _serverConfiguration = serverConfiguration;
         _registryPort = registryPort;
         _connectorPort = connectorPort;
 
         // Retrieve the config parameters
-        _useCustomSocketFactory = _serverConfiguration.getUseCustomRMISocketFactory();
-        boolean platformServer = _serverConfiguration.getPlatformMbeanserver();
+        _useCustomSocketFactory = jmxConfiguration.isUseCustomRMISocketFactory();
+        boolean platformServer = jmxConfiguration.isPlatformMBeanServer();
 
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
                 : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
+
+        _managementKeyStorePath = jmxConfiguration.getManagementKeyStorePath();
+        _managementKeyStorePassword = jmxConfiguration.getManagementKeyStorePassword();
     }
 
     @Override
-    public void start() throws IOException, ConfigurationException
+    public void start() throws IOException
     {
         CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
@@ -113,9 +115,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
     }
 
-    private void startRegistryAndConnector() throws ConfigurationException,
-            FileNotFoundException, RemoteException, IOException,
-            MalformedURLException
+    private void startRegistryAndConnector() throws IOException
     {
         //Socket factories for the RMIConnectorServer, either default or SSL depending on configuration
         RMIClientSocketFactory csf;
@@ -129,19 +129,18 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             //set the SSL related system properties used by the SSL RMI socket factories to the values
             //given in the configuration file
-            String keyStorePath = _serverConfiguration.getManagementKeyStorePath();
-            checkKeyStorePathExistsAndIsReadable(keyStorePath);
+            checkKeyStorePathExistsAndIsReadable(_managementKeyStorePath);
 
-            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStorePath));
+            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(_managementKeyStorePath));
 
-            if (_serverConfiguration.getManagementKeyStorePassword() == null)
+            if (_managementKeyStorePassword == null)
             {
-                throw new ConfigurationException("JMX management SSL keystore password not defined, " +
-                                                 "unable to start requested SSL protected JMX server");
+                throw new IllegalConfigurationException(
+                        "JMX management SSL keystore password not defined, unable to start requested SSL protected JMX server");
             }
             else
             {
-               System.setProperty("javax.net.ssl.keyStorePassword", _serverConfiguration.getManagementKeyStorePassword());
+               System.setProperty("javax.net.ssl.keyStorePassword", _managementKeyStorePassword);
             }
 
             //create the SSL RMI socket factories
@@ -276,14 +275,13 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         return rmiRegistry;
     }
 
-    private void checkKeyStorePathExistsAndIsReadable(String keyStorePath)
-            throws ConfigurationException, FileNotFoundException
+    private void checkKeyStorePathExistsAndIsReadable(String keyStorePath) throws FileNotFoundException
     {
         //check the keystore path value is valid
         if (keyStorePath == null)
         {
-            throw new ConfigurationException("JMX management SSL keystore path not defined, " +
-                                             "unable to start SSL protected JMX ConnectorServer");
+            throw new IllegalConfigurationException(
+                    "JMX management SSL keystore path not defined, unable to start SSL protected JMX ConnectorServer");
         }
         else
         {

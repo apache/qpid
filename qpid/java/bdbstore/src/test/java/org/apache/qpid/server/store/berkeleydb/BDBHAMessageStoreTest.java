@@ -63,6 +63,8 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         FileUtils.delete(new File(_workDir), true);
         _configXml = new XMLConfiguration();
+        _configXml.addProperty("management.enabled", "false");
+        _configXml.addProperty("management.http.enabled", "false");
     }
 
     public void tearDown() throws Exception

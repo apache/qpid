@@ -98,7 +98,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         getConfigXml().addProperty("management.enabled", "false");
-
+        getConfigXml().addProperty("management.http.enabled", "false");
         super.setUp();
 
         String storePath = System.getProperty("QPID_WORK") + File.separator + getName();

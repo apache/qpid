@@ -21,21 +21,21 @@
 
 package org.apache.qpid.server.jmx;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
 import javax.management.JMException;
-import javax.management.StandardMBean;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
-import org.apache.qpid.server.management.plugin.ManagementPlugin;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
@@ -45,9 +45,10 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
-public class JMXManagement implements ConfigurationChangeListener, ManagementPlugin
+public class JMXManagement extends AbstractPluginAdapter implements ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
 
@@ -59,16 +60,43 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
 
     private final Map<ConfiguredObject, AMQManagedObject> _children = new HashMap<ConfiguredObject, AMQManagedObject>();
 
-    private final ServerConfiguration _serverConfiguration;
+    private final JMXConfiguration _jmxConfiguration;
 
-    public JMXManagement(ServerConfiguration serverConfiguration, Broker broker)
+    public JMXManagement(UUID id, Broker broker, JMXConfiguration jmxConfiguration)
     {
+        super(id);
         _broker = broker;
-        _serverConfiguration = serverConfiguration;
+        _jmxConfiguration = jmxConfiguration;
     }
 
     @Override
-    public void start() throws Exception
+    protected boolean setState(State currentState, State desiredState)
+    {
+        if(desiredState == State.ACTIVE)
+        {
+            try
+            {
+                start();
+            }
+            catch (JMException e)
+            {
+                throw new RuntimeException("Couldn't start JMX management", e);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Couldn't start JMX management", e);
+            }
+            return true;
+        }
+        else if(desiredState == State.STOPPED)
+        {
+            stop();
+            return true;
+        }
+        return false;
+    }
+
+    private void start() throws JMException, IOException
     {
         Port connectorPort = null;
         Port registryPort = null;
@@ -96,8 +124,7 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
             throw new IllegalStateException("No JMX port found with name " + REGISTRY_PORT_NAME);
         }
 
-        //XXX review MBean creation process
-        _objectRegistry = new JMXManagedObjectRegistry(_serverConfiguration, connectorPort, registryPort);
+        _objectRegistry = new JMXManagedObjectRegistry(connectorPort, registryPort, _jmxConfiguration);
 
         _broker.addChangeListener(this);
 
@@ -107,7 +134,9 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
             {
                 if(!_children.containsKey(virtualHost))
                 {
+                    LOGGER.debug("Create MBean for virtual host:" + virtualHost.getName());
                     VirtualHostMBean mbean = new VirtualHostMBean(virtualHost, _objectRegistry);
+                    LOGGER.debug("Check for additional MBeans for virtual host:" + virtualHost.getName());
                     createAdditionalMBeansFromProviders(virtualHost, mbean);
                 }
             }
@@ -130,8 +159,7 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
         _objectRegistry.start();
     }
 
-    @Override
-    public void stop()
+    private void stop()
     {
         synchronized (_children)
         {
@@ -228,7 +256,7 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
     private void createAdditionalMBeansFromProviders(ConfiguredObject child, AMQManagedObject mbean) throws JMException
     {
         _children.put(child, mbean);
-
+        // XXX: MBeanProvider does not work at the moment
         QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
         for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
         {
@@ -236,7 +264,7 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
             if (provider.isChildManageableByMBean(child))
             {
                 LOGGER.debug("Provider will create mbean ");
-                StandardMBean bean = provider.createMBean(child, mbean);
+                provider.createMBean(child, mbean);
                 // TODO track the mbeans that have been created on behalf of a child in a map, then
                 // if the child is ever removed, destroy these beans too.
             }
@@ -249,9 +277,9 @@ public class JMXManagement implements ConfigurationChangeListener, ManagementPlu
         return _broker;
     }
 
-    /** Added for testing purposes */
-    ServerConfiguration getServerConfiguration()
+    @Override
+    public String getName()
     {
-        return _serverConfiguration;
+        return "JMXManagement";
     }
 }

@@ -18,37 +18,36 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.ManagementFactory;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.util.MapValueConverter;
 
-public class HttpManagementFactory implements ManagementFactory
+public class HttpManagementFactory implements PluginFactory
 {
-    private static final Logger LOGGER = Logger.getLogger(HttpManagementFactory.class);
+    // 10 minutes by default
+    private static final int DEFAULT_TIMEOUT_IN_SECONDS = 60 * 10;
 
+    public static final String TIME_OUT = "sessionTimeout";
+    public static final String KEY_STORE_PATH = "keyStorePath";
+    public static final String KEY_STORE_PASSWORD = "keyStorePassword";
+
+    public static final String PLUGIN_NAME = "MANAGEMENT-HTTP";
+
+    // XXX create a configuration POJO containing SASL and basic auth configuration
     @Override
-    public HttpManagement createInstance(ServerConfiguration configuration, Broker broker)
+    public ConfiguredObject createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
-
-        if (!configuration.getHTTPManagementEnabled() && !configuration.getHTTPSManagementEnabled())
+        if (!PLUGIN_NAME.equals(attributes.get(PLUGIN_TYPE)))
         {
-            LOGGER.info("HttpManagement is disabled");
             return null;
         }
-
-        try
-        {
-            return new HttpManagement(
-                    broker,
-                    configuration.getManagementKeyStorePath(),
-                    configuration.getManagementKeyStorePassword(),
-                    configuration.getHTTPManagementSessionTimeout());
-        }
-        catch (ConfigurationException e)
-        {
-            throw new RuntimeException(e);
-        }
+        Integer sessionTimeout = MapValueConverter.getIntegerAttribute(TIME_OUT, attributes, DEFAULT_TIMEOUT_IN_SECONDS);
+        String keyStorePath = MapValueConverter.getStringAttribute(KEY_STORE_PATH, attributes, null);
+        String keyStorePasssword = MapValueConverter.getStringAttribute(KEY_STORE_PASSWORD, attributes, null);
+        return new HttpManagement( id, broker, keyStorePath, keyStorePasssword, sessionTimeout);
     }
 }

@@ -61,11 +61,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Map<Integer, Port> _portAdapters = new HashMap<Integer, Port>();
     private final Map<String, AuthenticationProvider> _authenticationProviders = new HashMap<String, AuthenticationProvider>();
     private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
+    private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
 
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private AuthenticationProvider _defaultAuthenticationProvider;
 
     private final PortFactory _portFactory;
+
 
     public BrokerAdapter(UUID id, IApplicationRegistry instance, AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
     {
@@ -254,6 +256,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         else if(clazz == GroupProvider.class)
         {
             return (Collection<C>) getGroupProviders();
+        }
+        else if(clazz == ConfiguredObject.class)
+        {
+            return (Collection<C>) getPlugins();
         }
 
         return Collections.emptySet();
@@ -489,10 +495,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             }
 
             changeState(_portAdapters, currentState,State.ACTIVE, false);
+            changeState(_plugins, currentState,State.ACTIVE, false);
             return true;
         }
         else if (desiredState == State.STOPPED)
         {
+            changeState(_plugins, currentState,State.STOPPED, true);
             changeState(_portAdapters, currentState, State.STOPPED, true);
             changeState(_vhostAdapters,currentState, State.STOPPED, true);
             changeState(_authenticationProviders, currentState, State.STOPPED, true);
@@ -569,4 +577,49 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         // no-op
     }
 
+    public void addPlugin(ConfiguredObject plugin)
+    {
+        synchronized(_plugins)
+        {
+            if (_plugins.containsKey(plugin.getId()))
+            {
+                throw new IllegalConfigurationException("Plugin with id '" + plugin.getId() + "' is already registered!");
+            }
+            _plugins.put(plugin.getId(), plugin);
+        }
+        plugin.addChangeListener(this);
+    }
+
+
+    private Collection<ConfiguredObject> getPlugins()
+    {
+        synchronized(_plugins)
+        {
+            return Collections.unmodifiableCollection(_plugins.values());
+        }
+    }
+
+    public void recoverChild(ConfiguredObject object)
+    {
+        if(object instanceof AuthenticationProvider)
+        {
+            addAuthenticationProvider((AuthenticationProvider)object);
+        }
+        else if(object instanceof Port)
+        {
+            addPort((Port)object);
+        }
+        else if(object instanceof VirtualHost)
+        {
+            addVirtualHost((VirtualHost)object);
+        }
+        else if(object instanceof GroupProvider)
+        {
+            addGroupProvider((GroupProvider)object);
+        }
+        else
+        {
+            addPlugin(object);
+        }
+    }
 }

@@ -22,10 +22,8 @@ package org.apache.qpid.server.registry;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -42,6 +40,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.startup.AuthenticationProviderRecoverer;
 import org.apache.qpid.server.configuration.startup.BrokerRecoverer;
 import org.apache.qpid.server.configuration.startup.GroupProviderRecoverer;
+import org.apache.qpid.server.configuration.startup.PluginRecoverer;
 import org.apache.qpid.server.configuration.startup.PortRecoverer;
 import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
@@ -57,7 +56,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
-import org.apache.qpid.server.management.plugin.ManagementPlugin;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -66,7 +64,7 @@ import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
-import org.apache.qpid.server.plugin.ManagementFactory;
+import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -104,8 +102,6 @@ public class ApplicationRegistry implements IApplicationRegistry
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private LogRecorder _logRecorder;
-
-    private final List<ManagementPlugin> _managmentInstanceList = new ArrayList<ManagementPlugin>();
 
     private final BrokerOptions _brokerOptions;
 
@@ -245,7 +241,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             // starting the broker
             _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-            createAndStartManagementPlugins(_configuration);
             CurrentActor.get().message(BrokerMessages.READY());
         }
         finally
@@ -281,6 +276,8 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(new QpidServiceLoader<GroupManagerFactory>());
 
+        PluginRecoverer pluginRecoverer = new PluginRecoverer(new QpidServiceLoader<PluginFactory>());
+
         BrokerRecoverer brokerRecoverer =  new BrokerRecoverer(
                 portRecoverer,
                 virtualHostRecoverer,
@@ -288,53 +285,10 @@ public class ApplicationRegistry implements IApplicationRegistry
                 authenticationProviderFactory,
                 portFactory,
                 groupProviderRecoverer,
+                pluginRecoverer,
                 this);
 
         _broker = brokerRecoverer.create(store.getRootEntry());
-    }
-
-    private void createAndStartManagementPlugins(ServerConfiguration configuration) throws Exception
-    {
-        QpidServiceLoader<ManagementFactory> factories = new QpidServiceLoader<ManagementFactory>();
-        for (ManagementFactory managementFactory: factories.instancesOf(ManagementFactory.class))
-        {
-            ManagementPlugin managementPlugin = managementFactory.createInstance(configuration, _broker);
-            if(managementPlugin != null)
-            {
-                try
-                {
-                    managementPlugin.start();
-                }
-                catch(Exception e)
-                {
-                    _logger.error("Management plugin " + managementPlugin.getClass().getSimpleName() + " failed to start normally, stopping it now", e);
-                    managementPlugin.stop();
-                    throw e;
-                }
-
-                _managmentInstanceList.add(managementPlugin);
-            }
-        }
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Configured " + _managmentInstanceList.size() + " management instance(s)");
-        }
-    }
-
-    private void closeAllManagementPlugins()
-    {
-        for (ManagementPlugin managementPlugin : _managmentInstanceList)
-        {
-            try
-            {
-                managementPlugin.stop();
-            }
-            catch (Exception e)
-            {
-                _logger.error("Exception thrown whilst stopping management plugin " + managementPlugin.getClass().getSimpleName(), e);
-            }
-        }
     }
 
     public void initialiseStatisticsReporting()
@@ -470,8 +424,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             {
                 _reportingTimer.cancel();
             }
-
-            closeAllManagementPlugins();
 
             if (_broker != null)
             {

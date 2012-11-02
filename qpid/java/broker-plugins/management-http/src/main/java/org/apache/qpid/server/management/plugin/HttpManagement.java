@@ -23,9 +23,9 @@ package org.apache.qpid.server.management.plugin;
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -54,6 +54,7 @@ import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
@@ -63,7 +64,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-public class HttpManagement implements ManagementPlugin
+public class HttpManagement extends AbstractPluginAdapter
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
 
@@ -80,16 +81,34 @@ public class HttpManagement implements ManagementPlugin
     private int _sessionTimeout;
 
     // XXX refactor back to use a single instance of server and add connectors for different ports
-    public HttpManagement(Broker broker, String keyStorePath, String keyStorePassword, int sessionTimeout) throws ConfigurationException
+    public HttpManagement(UUID id, Broker broker, String keyStorePath, String keyStorePassword, int sessionTimeout)
     {
+        super(id);
         _broker = broker;
         _keyStorePassword = keyStorePassword;
         _keyStorePath = keyStorePath;
         _sessionTimeout = sessionTimeout;
+        addParent(Broker.class, broker);
     }
 
     @Override
-    public void start() throws Exception
+    protected boolean setState(State currentState, State desiredState)
+    {
+        if(desiredState == State.ACTIVE)
+        {
+            start();
+            return true;
+        }
+        else if(desiredState == State.STOPPED)
+        {
+            stop();
+            return true;
+        }
+        return false;
+    }
+
+
+    private void start()
     {
         CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
@@ -108,8 +127,7 @@ public class HttpManagement implements ManagementPlugin
         CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
-    @Override
-    public void stop() throws Exception
+    private void stop()
     {
         Collection<Port> ports = _broker.getPorts();
         for (Port port : ports)
@@ -319,5 +337,12 @@ public class HttpManagement implements ManagementPlugin
     private String stringifyConnectorScheme(Connector connector)
     {
         return connector instanceof SslSocketConnector ? "HTTPS" : "HTTP";
+    }
+
+
+    @Override
+    public String getName()
+    {
+        return "HttpManagement";
     }
 }

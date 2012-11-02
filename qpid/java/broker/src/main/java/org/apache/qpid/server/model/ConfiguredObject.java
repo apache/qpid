@@ -234,7 +234,7 @@ public interface ConfiguredObject
     /**
      * Return children of the ConfiguredObject of the given class
      *
-     * @param clazz the class of the children to return
+     * @param clazz the class of the children to return.
      * @return the children
      *
      * @throws NullPointerException if the supplied class null
