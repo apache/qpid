@@ -159,7 +159,7 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
             super.receiveFlow(flow);
             _remoteDrain = Boolean.TRUE.equals((Boolean)flow.getDrain());
             setAvailable(flow.getAvailable());
-            _remoteTransferCount = flow.getDeliveryCount();
+            setDeliveryCount(flow.getDeliveryCount());
             getLock().notifyAll();
         }
     }
