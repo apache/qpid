@@ -34,12 +34,13 @@ QPID_BROKER_CLASS_EXTERN class Event/*MGEN:Event.NameCap*/ : public ::qpid::mana
   private:
     static void writeSchema (std::string& schema);
     static uint8_t md5Sum[MD5_LEN];
-    static std::string packageName;
-    static std::string eventName;
 
 /*MGEN:Event.ArgDeclarations*/
 
   public:
+    QPID_BROKER_EXTERN static std::string packageName;
+    QPID_BROKER_EXTERN static std::string eventName;
+
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
 
     QPID_BROKER_EXTERN Event/*MGEN:Event.NameCap*/(/*MGEN:Event.ConstructorArgs*/);
