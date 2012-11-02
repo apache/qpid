@@ -1484,8 +1484,8 @@ set (VERSION ${QPID_VERSION})
 
 #add_custom_target(pkgconfig ALL echo DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc)
 #add_dependencies(pkgconfig ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
-configure_file(qpid.pc.in qpid.pc @ONLY)
-configure_file(qmf2.pc.in qmf2.pc @ONLY)
+configure_file(qpid.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc @ONLY)
+configure_file(qmf2.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc @ONLY)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
          DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
          COMPONENT ${QPID_COMPONENT_COMMON})
