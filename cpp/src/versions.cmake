@@ -24,15 +24,15 @@
 #              Bump if implementation changes but API/ABI doesn't
 #  AGE      => Number of API/ABI versions this is backward compatible with
 
-set (qmf_version           4.0.0)
-set (qmf2_version          1.0.0)
-set (qmfconsole_version    5.0.0)
-set (qmfengine_version     4.0.0)
-set (qpidbroker_version    5.0.0)
-set (qpidclient_version    5.0.0)
-set (qpidcommon_version    5.0.0)
-set (qpidmessaging_version 4.0.1)
-set (qpidtypes_version     3.0.2)
-set (rdmawrap_version      5.0.0)
-set (sslcommon_version     5.0.0)
+set (qmf_version 1.0.0)
+set (qmf2_version 1.0.0)
+set (qmfconsole_version 2.0.0)
+set (qmfengine_version 1.1.0)
+set (qpidbroker_version 2.0.0)
+set (qpidclient_version 2.0.0)
+set (qpidcommon_version 2.0.0)
+set (qpidmessaging_version 2.0.0)
+set (qpidtypes_version 1.0.0)
+set (rdmawrap_version 2.0.0)
+set (sslcommon_version 2.0.0)
 
