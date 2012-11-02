@@ -105,8 +105,8 @@
         <File Id="InstallNotesHTML" Source="INSTALL_NOTES.html"/>
       </Component>
       <Component Id="Legal" Guid="{D98B2A06-4A7E-488a-A7A9-BFB1B9D594A0}">
-        <File Id="LICENSE" Source="$(var.staging_dir)\LICENSE"/>
-        <File Id="NOTICE"  Source="$(var.staging_dir)\NOTICE"/>
+        <File Id="LICENSE" Source="$(var.staging_dir)\docs\LICENSE"/>
+        <File Id="NOTICE"  Source="$(var.staging_dir)\docs\NOTICE"/>
       </Component>
     </DirectoryRef>
 
