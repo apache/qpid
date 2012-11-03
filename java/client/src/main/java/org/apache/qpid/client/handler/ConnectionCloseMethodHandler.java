@@ -36,6 +36,7 @@ import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
 
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener<ConnectionCloseBody>
 {
@@ -102,7 +103,16 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
             }
 
             // Close the open TCP connection
-            sender.close();
+            try
+            {
+                sender.close();
+            }
+            catch(TransportException e)
+            {
+                //Ignore, they are already logged by the Sender and this
+                //is a connection-close being processed by the IoReceiver
+                //which will as it closes initiate failover if necessary.
+            }
         }
     }
 
