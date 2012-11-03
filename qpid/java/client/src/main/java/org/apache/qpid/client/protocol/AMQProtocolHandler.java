@@ -56,6 +56,7 @@ import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.io.IOException;
@@ -67,7 +68,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AMQProtocolHandler is the client side protocol handler for AMQP, it handles all protocol events received from the
@@ -317,17 +317,29 @@ public class AMQProtocolHandler implements ProtocolEngine
      */
     public void exception(Throwable cause)
     {
-        boolean connectionClosed = (cause instanceof AMQConnectionClosedException || cause instanceof IOException);
-        if (connectionClosed)
+        boolean causeIsAConnectionProblem =
+                cause instanceof AMQConnectionClosedException ||
+                cause instanceof IOException ||
+                cause instanceof TransportException;
+
+        if (causeIsAConnectionProblem)
         {
-            _network.close();
+            //ensure the IoSender and IoReceiver are closed
+            try
+            {
+                _network.close();
+            }
+            catch (Exception e)
+            {
+                //ignore
+            }
         }
         FailoverState state = getFailoverState();
         if (state == FailoverState.NOT_STARTED)
         {
-            if (connectionClosed)
+            if (causeIsAConnectionProblem)
             {
-                _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
+                _logger.info("Connection exception caught therefore going to attempt failover: " + cause, cause);
             }
             else
             {
