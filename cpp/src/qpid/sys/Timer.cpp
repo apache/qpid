@@ -107,7 +107,7 @@ Timer::Timer() :
     late(50 * TIME_MSEC),
     overran(2 * TIME_MSEC),
     lateCancel(500 * TIME_MSEC),
-    warn(5 * TIME_SEC)
+    warn(60 * TIME_SEC)
 {
     start();
 }
@@ -171,8 +171,8 @@ void Timer::run()
                 if (!tasks.empty()) {
                     overrun = Duration(tasks.top()->nextFireTime, end);
                 }
-                bool warningsEnabled;
-                QPID_LOG_TEST(warning, warningsEnabled);
+                bool warningsEnabled;                  // TimerWarning enabled
+                QPID_LOG_TEST(debug, warningsEnabled); // TimerWarning emitted at debug level
                 if (warningsEnabled) {
                     if (overrun > overran) {
                         if (delay > overran) // if delay is significant to an overrun.
