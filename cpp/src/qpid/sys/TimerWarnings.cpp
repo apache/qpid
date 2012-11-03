@@ -56,18 +56,18 @@ void TimerWarnings::log() {
             std::string task = i->first;
             TaskStats& stats = i->second;
             if (stats.lateDelay.count)
-                QPID_LOG(info, task << " task late "
+                QPID_LOG(debug, task << " task late "
                          << stats.lateDelay.count << " times by "
                          << stats.lateDelay.average()/TIME_MSEC << "ms on average.");
 
             if (stats.overranOverrun.count)
-                QPID_LOG(info, task << " task overran "
+                QPID_LOG(debug, task << " task overran "
                          << stats.overranOverrun.count << " times by "
                          << stats.overranOverrun.average()/TIME_MSEC << "ms (taking "
                          << stats.overranTime.average() << "ns) on average.");
 
             if (stats.lateAndOverranOverrun.count)
-                QPID_LOG(info, task << " task late and overran "
+                QPID_LOG(debug, task << " task late and overran "
                          << stats.lateAndOverranOverrun.count << " times: late "
                          << stats.lateAndOverranDelay.average()/TIME_MSEC << "ms, overran "
                          << stats.lateAndOverranOverrun.average()/TIME_MSEC << "ms (taking "
