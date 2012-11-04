@@ -21,6 +21,85 @@
 -->
 
 <section id="Java-Broker-Security-SSL">
-<title>SSL</title>
+    <title>SSL</title>
 
+    <para>
+        This section will show how to use SSL to enable secure
+        connections between an AMQP message client and the broker.
+    </para>
+    <section role="h2" id="SSL-Keystore">
+        <title>Keystore Configuration</title>
+        <para>
+            The broker configuration file (config.xml) needs to be updated to include the required SSL keystore
+            configuration, an example of which can be found below.
+        </para>
+
+        <example>
+        <title>Configuring an SSL Keystore</title>
+        <programlisting><![CDATA[
+<connector>
+  ...
+  <ssl>
+    <enabled>true</enabled>
+    <port>5671</port>
+    <sslOnly>false</sslOnly>
+    <keyStorePath>/path/to/keystore.ks</keyStorePath>
+    <keyStorePassword>keystorepass</keyStorePassword>
+    <certAlias>alias<certAlias>
+  </ssl>
+  ...
+<connector>]]></programlisting>
+        </example>
+
+        <para>
+            The certAlias element is an optional way of specifying which certificate the broker should use
+            if the keystore contains multiple entries.
+        </para>
+
+        <para>
+            The sslOnly element controls whether the broker will <emphasis role="bold">only</emphasis> bind
+            the configured SSL port(s) or will also bind the non-SSL port(s). Setting sslOnly to true will
+            disable the non-SSL ports.
+        </para>
+    </section>
+
+    <section role="h2" id="SSL-Truststore-ClientCertificate">
+        <title>Truststore / Client Certificate Authentication</title>
+        <para>
+            The SSL trustore and related Client Certificate Authentication behaviour can be configured with
+            additional configuration as shown in the example below, in which the broker requires client
+            certificate authentication.
+        </para>
+
+        <example>
+        <title>Configuring an SSL Truststore and client auth</title>
+        <programlisting><![CDATA[
+<connector>
+  ...
+  <ssl>
+    ...
+    <trustStorePath>/path/to/truststore.ks</trustStorePath>
+    <trustStorePassword>truststorepass</trustStorePassword>
+    <needClientAuth>true</needClientAuth>
+    <wantClientAuth>false</wantClientAuth>
+    ...
+  </ssl>
+  ...
+<connector>]]></programlisting>
+        </example>
+
+        <para>
+            The needClientAuth and wantClientAuth elements allow control of whether the client must present an
+            SSL certificate. Only one of these elements is needed but both may be used at the same time.
+            A socket's client authentication setting is one of three states: required (needClientAuth = true),
+            requested (wantClientAuth = true), or none desired (both false, the default). If both elements are
+            set to true, needClientAuth takes precedence.
+        </para>
+
+        <para>
+            When using Client Certificate Authentication it may be desirable to use the External Authentication
+            Manager, for details see <xref linkend="ExternalAuthManager"></xref>
+        </para>
+
+    </section>
 </section>

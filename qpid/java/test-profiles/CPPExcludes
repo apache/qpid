@@ -178,3 +178,6 @@ org.apache.qpid.systest.rest.acl.*
 
 // Exclude failover tests requiring virtual host functionality
 org.apache.qpid.client.failover.MultipleBrokersFailoverTest#*
+
+// Uses Java broker specific configuration
+org.apache.qpid.client.ssl.SSLTest#testClientCertMissingWhilstWanting
