@@ -129,6 +129,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_PERSITENT = "broker.persistent";
     public static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocol.excludes";
     public static final String BROKER_PROTOCOL_INCLUDES = "broker.protocol.includes";
+    public static final String PROFILE_USE_SSL = "profile.use_ssl";
 
     // values
     protected static final String JAVA = "java";
@@ -1066,7 +1067,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         _logger.info("get ConnectionFactory");
         if (_connectionFactory == null)
         {
-            if (Boolean.getBoolean("profile.use_ssl"))
+            if (Boolean.getBoolean(PROFILE_USE_SSL))
             {
                 _connectionFactory = getConnectionFactory("default.ssl");
             }
@@ -1354,11 +1355,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void setMessageSize(int byteSize)
     {
         _messageSize = byteSize;
-    }
-
-    public ConnectionURL getConnectionURL() throws NamingException
-    {
-        return getConnectionFactory().getConnectionURL();
     }
 
     public BrokerDetails getBroker()

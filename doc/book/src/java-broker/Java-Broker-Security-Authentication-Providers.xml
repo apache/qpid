@@ -26,55 +26,22 @@
   <para>
     In order to successfully establish a connection to the Java Broker, the connection must be
     authenticated. The Java Broker supports a number of different authentication schemes, each
-    with its own "authentication manager". Different managers may be used on different ports.
-    Each manager has its own configuration element, the presence of which within the
-    &lt;security&gt; section denotes the use of that authentication provider. Where only one
-    such manager is configured, that manager will be used on all ports (including JMX). Where
-    more than one authentication manager is configured the configuration must define which
-    manager is the "default", and (if required) the mapping of non-default authentication
-    managers to other ports.
-  </para>
-  <para>
-    The following configuration sets up three authentication managers, using a password file as
-    the default (e.g. for the JMX port), Kerberos on port 5672 and Anonymous on 5673.
+    with its own "authentication manager". Each of these are outlined below, along with details
+    of <link linkend="MultipleAuthProviders"> using more than one at a time</link>.
   </para>
 
-  <example>
-    <title>Configuring different authentication schemes on different ports</title>
-    <programlisting><![CDATA[
-<security>
-    <pd-auth-manager>
-	<principal-database>
-	    <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
-	    <attributes>
-		<attribute>
-		    <name>passwordFile</name>
-		    <value>${conf}/passwd</value>
-		</attribute>
-	    </attributes>
-	</principal-database>
-    </pd-auth-manager>
-    <kerberos-auth-manager><auth-name>sib</auth-name></kerberos-auth-manager>
-    <anonymous-auth-manager></anonymous-auth-manager>
-    <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
-    <port-mappings>
-	<port-mapping>
-	    <port>5672</port>
-	    <auth-manager>KerberosAuthenticationManager</auth-manager>
-	</port-mapping>
-	<port-mapping>
-	    <port>5673</port>
-	    <auth-manager>AnonymousAuthenticationManager</auth-manager>
-	</port-mapping>
-    </port-mappings>
-</security>]]>
-    </programlisting>
-  </example>
+  <section>
+    <title>Password File</title>
+    <para>
+      TODO
+    </para>
 
-  <section><title>Password File</title></section>
-  <section><title>LDAP</title>
+  </section>
+
+  <section>
+  <title>LDAP</title>
   <example>
-    <title>Configuring a LDAP authentication</title>
+    <title>Configuring LDAP authentication</title>
     <programlisting><![CDATA[
 <security>
     <simple-ldap-auth-manager>
@@ -82,8 +49,8 @@
       <search-context>dc=example\,dc=com</search-context>
       <search-filter>(uid={0})</search-filter>
     </simple-ldap-auth-manager>
-</security>]]>
-    </programlisting>
+    ...
+</security>]]></programlisting>
   </example>
 
   <para>
@@ -111,9 +78,10 @@
     By default com.sun.jndi.ldap.LdapCtxFactory is used to create the context, however this can be
     overridden by specifying &lt;ldap-context-factory&gt; in the configuration.
   </para>
-
   </section>
-  <section><title>Kerberos</title>
+
+  <section>
+  <title>Kerberos</title>
 
   <para>
     Kereberos Authentication is configured using the &lt;kerberos-auth-manager&gt; element within
@@ -128,30 +96,30 @@
   </para>
 
   <example>
-    <title>Configuring a Kerberos authentication</title>
+    <title>Configuring Kerberos authentication</title>
     <programlisting><![CDATA[
 <security>
-    <pd-auth-manager>
-	<principal-database>
-	    <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
-	    <attributes>
-		<attribute>
-		    <name>passwordFile</name>
-		    <value>${conf}/passwd</value>
-		</attribute>
-	    </attributes>
-	</principal-database>
-    </pd-auth-manager>
-    <kerberos-auth-manager></kerberos-auth-manager>
-    <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
-    <port-mappings>
-	<port-mapping>
-	    <port>5672</port>
-	    <auth-manager>KerberosAuthenticationManager</auth-manager>
-	</port-mapping>
-    </port-mappings>
-</security>]]>
-    </programlisting>
+  <pd-auth-manager>
+    <principal-database>
+      <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+      <attributes>
+        <attribute>
+          <name>passwordFile</name>
+          <value>${conf}/passwd</value>
+        </attribute>
+      </attributes>
+    </principal-database>
+  </pd-auth-manager>
+  <kerberos-auth-manager/>
+  <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
+  <port-mappings>
+    <port-mapping>
+      <port>5672</port>
+      <auth-manager>KerberosAuthenticationManager</auth-manager>
+    </port-mapping>
+  </port-mappings>
+  ...
+</security>]]></programlisting>
   </example>
 
   <para>
@@ -177,8 +145,7 @@ com.sun.security.jgss.accept {
     kdc="kerberos.example.com"
     keyTab="/path/to/keytab-file"
     principal="<name>/<host>";
-};]]>
-  </programlisting>
+};]]></programlisting>
 
   <para>
     Where realm, kdc, keyTab and principal should obviously be set correctly for the environment
@@ -191,7 +158,137 @@ com.sun.security.jgss.accept {
     Jurisdiction Policy Files" appropriate for your JDK in order to get Kerberos support working.
   </para>
   </section>
-  <section><title>SSL Client Certificates</title></section>
-  <section><title>Anonymous</title></section>
+
+  <section id="ExternalAuthManager">
+    <title>External (SSL Client Certificates)</title>
+
+    <para>
+      When <link linkend="SSL-Truststore-ClientCertificate"> requiring SSL Client Certificates</link> be
+      presented the ExternalAuthenticationManager can be used, such that the user is authenticated based on
+      trust of their certificate alone, and the X500Principal from the SSL session is then used as the username
+      for the connection, instead of also requiring the user to present a valid username and password.
+    </para>
+
+    <para>
+      The ExternalAuthenticationManager may be enabled by adding an empty &lt;external-auth-manager&gt; element to
+      the &lt;security&gt; section, as shown below. When referencing it from the default-auth-manager or port-mapping
+      sections, its name is ExternalAuthenticationManager.
+    </para>
+
+    <para>
+      <emphasis role="bold">Note:</emphasis> The ExternalAuthenticationManager should typically only be used on the
+      AMQP ports, in conjunction with <link linkend="SSL-Truststore-ClientCertificate">SSL client certificate
+      authentication</link>. It is not intended for other uses such as the JMX management port and will treat any
+      non-sasl authentication processes on these ports as successfull with the given username. As such you should
+      <link linkend="MultipleAuthProviders">include another Authentication Manager for use on non-AMQP ports</link>,
+      as is done in the example below. Perhaps the only exception to this would be where the broker is embedded in a
+      container that is itself externally protecting the HTTP interface and then providing the remote users name.
+    </para>
+
+    <example>
+      <title>Configuring external authentication (SSL client auth)</title>
+      <programlisting><![CDATA[
+<security>
+  <pd-auth-manager>
+    <principal-database>
+      <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+      <attributes>
+        <attribute>
+          <name>passwordFile</name>
+          <value>${conf}/passwd</value>
+        </attribute>
+      </attributes>
+    </principal-database>
+  </pd-auth-manager>
+  <external-auth-manager/>
+  <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
+  <port-mappings>
+    <port-mapping>
+      <port>5672</port>
+      <auth-manager>ExternalAuthenticationManager</auth-manager>
+    </port-mapping>
+  </port-mappings>
+  ...
+</security>]]></programlisting>
+    </example>
+
+  </section>
+
+  <section id="AnonymousAuthManager">
+    <title>Anonymous</title>
+
+    <para>
+      The AnonymousAuthenticationManager will allow users to connect with or without credentials and result
+      in their identification on the broker as the user ANONYMOUS. It may be enabled by adding an empty
+      anonymous-auth-manager element to the security configuration section, as shown below.
+    </para>
+
+    <example>
+      <title>Configuring anonymous authentication</title>
+
+      <programlisting><![CDATA[
+<security>
+  <anonymous-auth-manager/>
+  ...
+</security>]]></programlisting>
+    </example>
+
+    <para>
+      When referencing it from the default-auth-manager or port-mapping sections, its name is
+      AnonymousAuthenticationManager.
+    </para>
+  </section>
+
+  <section id="MultipleAuthProviders">
+    <title>Configuring multiple Authentication Providers</title>
+    <para>
+      Different managers may be used on different ports. Each manager has its own configuration element,
+      the presence of which within the &lt;security&gt; section denotes the use of that authentication
+      provider. Where only one such manager is configured, it will be used on all ports (including JMX
+      and HTTP). Where more than one authentication manager is configured the configuration must define
+      which is the "default", and (if required) the mapping of non-default authentication managers to
+      other ports.
+    </para>
+    <para>
+      The following configuration sets up three authentication managers, using a password file as the
+      default (e.g. for the JMX and HTTP ports), Kerberos on port 5672 (the regular AMQP port) and Anonymous
+      on port 5673 (e.g a second AMQP port the broker could have been configured with).
+    </para>
+
+    <example>
+      <title>Configuring multiple (per-port) authentication schemes</title>
+      <programlisting><![CDATA[
+<security>
+  <pd-auth-manager>
+    <principal-database>
+      <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+      <attributes>
+        <attribute>
+          <name>passwordFile</name>
+          <value>${conf}/passwd</value>
+        </attribute>
+      </attributes>
+    </principal-database>
+  </pd-auth-manager>
+  <kerberos-auth-manager>
+    <auth-name>sib</auth-name>
+  </kerberos-auth-manager>
+  <anonymous-auth-manager/>
+  <default-auth-manager>PrincipalDatabaseAuthenticationManager</default-auth-manager>
+  <port-mappings>
+    <port-mapping>
+      <port>5672</port>
+        <auth-manager>KerberosAuthenticationManager</auth-manager>
+      </port-mapping>
+    <port-mapping>
+      <port>5673</port>
+        <auth-manager>AnonymousAuthenticationManager</auth-manager>
+    </port-mapping>
+  </port-mappings>
+  ...
+</security>]]></programlisting>
+    </example>
+  </section>
+
 </section>
 
