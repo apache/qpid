@@ -130,7 +130,6 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
     public void accept(NetworkTransportConfiguration config, ProtocolEngineFactory factory, SSLContext sslContext)
     {
-
         try
         {
             _acceptor = new AcceptingThread(config, factory, sslContext);
@@ -141,8 +140,6 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         {
             throw new TransportException("Unable to start server socket", e);
         }
-
-
     }
 
     private class AcceptingThread extends Thread
@@ -155,8 +152,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
         private AcceptingThread(NetworkTransportConfiguration config,
                                 ProtocolEngineFactory factory,
-                                SSLContext sslContext)
-                throws IOException
+                                SSLContext sslContext) throws IOException
         {
             _config = config;
             _factory = factory;
@@ -172,15 +168,19 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             {
                 SSLServerSocketFactory socketFactory = _sslContext.getServerSocketFactory();
                 _serverSocket = socketFactory.createServerSocket();
-                ((SSLServerSocket)_serverSocket).setNeedClientAuth(config.needClientAuth());
-                ((SSLServerSocket)_serverSocket).setWantClientAuth(config.wantClientAuth());
 
+                if(config.needClientAuth())
+                {
+                    ((SSLServerSocket)_serverSocket).setNeedClientAuth(true);
+                }
+                else if(config.wantClientAuth())
+                {
+                    ((SSLServerSocket)_serverSocket).setWantClientAuth(true);
+                }
             }
 
             _serverSocket.setReuseAddress(true);
             _serverSocket.bind(address);
-
-
         }
 
 
@@ -223,7 +223,6 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
                         socket.setSendBufferSize(sendBufferSize);
                         socket.setReceiveBufferSize(receiveBufferSize);
-
 
                         ProtocolEngine engine = _factory.newProtocolEngine();
 
