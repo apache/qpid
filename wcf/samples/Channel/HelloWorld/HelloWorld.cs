@@ -113,6 +113,7 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
             byte[] binaryContent = Encoding.UTF8.GetBytes("Hello world!");
             writer.WriteStartElement("Binary");
             writer.WriteBase64(binaryContent, 0, binaryContent.Length);
+            writer.WriteEndElement();
         }
     }
 }
