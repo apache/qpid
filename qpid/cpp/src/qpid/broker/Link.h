@@ -82,6 +82,7 @@ class Link : public PersistableConfig, public management::Manageable {
     Bridges created;   // Bridges pending creation
     Bridges active;    // Bridges active
     Bridges cancellations;    // Bridges pending cancellation
+    framing::ChannelId nextFreeChannel;
     RangeSet<framing::ChannelId> freeChannels;
     Connection* connection;
     management::ManagementAgent* agent;
