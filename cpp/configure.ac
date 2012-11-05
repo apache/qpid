@@ -210,10 +210,11 @@ AS_IF([test -n "$PYTHON"], [
     # location
     AC_MSG_WARN([Didn't find Python 2.7 developer libs - looking for older version])
     PYTHON_INC=$($PYTHON -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
-    AC_CHECK_LIB([python$PYTHON_VERSION],[Py_Initialize])
+    AC_CHECK_LIB([python$PYTHON_VERSION],[Py_Initialize],[
+        PYTHON_LIBS="-lpython$PYTHON_VERSION"
+    ])
     AC_CHECK_FILE(["$PYTHON_INC/Python.h"],[
         PYTHON_CFLAGS="-I$PYTHON_INC"
-        PYTHON_LIBS="-lpython$PYTHON_VERSION"
         have_python_dev=yes
     ],[
         if test yes = "$with_python" ; then
