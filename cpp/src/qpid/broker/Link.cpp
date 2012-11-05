@@ -149,6 +149,7 @@ Link::Link(const string&  _name,
       currentInterval(1),
       closing(false),
       reconnectNext(0),         // Index of next address for reconnecting in url.
+      nextFreeChannel(1),
       freeChannels(1, framing::CHANNEL_MAX),
       connection(0),
       agent(0),
@@ -548,13 +549,28 @@ framing::ChannelId Link::nextChannel()
 {
     Mutex::ScopedLock mutex(lock);
     if (!freeChannels.empty()) {
-        framing::ChannelId c = freeChannels.front();
-        freeChannels -= c;
-        QPID_LOG(debug, "Link " << name << " allocates channel: " << c);
-        return c;
-    } else {
-        throw Exception(Msg() << "Link " << name << " channel pool is empty");
+        // A free channel exists.
+        for (framing::ChannelId i = 1; i <= framing::CHANNEL_MAX; i++)
+        {
+            // extract proposed free channel
+            framing::ChannelId c = nextFreeChannel;
+            // calculate next free channel
+            if (framing::CHANNEL_MAX == nextFreeChannel)
+                nextFreeChannel = 1;
+            else
+                nextFreeChannel += 1;
+            // if proposed channel is free, use it
+            if (freeChannels.contains(c))
+            {
+                freeChannels -= c;
+                QPID_LOG(debug, "Link " << name << " allocates channel: " << c);
+                return c;
+            }
+        }
+        assert (false);
     }
+
+    throw Exception(Msg() << "Link " << name << " channel pool is empty");
 }
 
 // Return channel to link free pool
