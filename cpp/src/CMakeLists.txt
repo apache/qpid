@@ -276,11 +276,14 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
       set (GCC_CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+   set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
+   set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
   set (WARNING_FLAGS "+w")
+  set (HIDE_SYMBOL_FLAGS "")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
@@ -1058,29 +1061,17 @@ install (DIRECTORY ../include/qpid
          PATTERN ".svn" EXCLUDE)
 install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
-
-set (qpidmessaging_SOURCES
-	 ${qpidmessaging_platform_SOURCES}
-     qpid/messaging/Address.cpp
+set (qpidmessaging_SOURCES_hidden
      qpid/messaging/AddressParser.h
-     qpid/messaging/AddressParser.cpp
-     qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ConnectionOptions.h
      qpid/messaging/ConnectionOptions.cpp
-     qpid/messaging/Duration.cpp
-     qpid/messaging/exceptions.cpp
-     qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
      qpid/messaging/ProtocolRegistry.cpp
-     qpid/messaging/Receiver.cpp
      qpid/messaging/ReceiverImpl.h
-     qpid/messaging/Session.cpp
      qpid/messaging/SessionImpl.h
-     qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
-     qpid/messaging/FailoverUpdates.cpp
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
      qpid/client/amqp0_10/AcceptTracker.h
@@ -1101,6 +1092,25 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
+)
+set_source_files_properties(
+     ${qpidmessaging_SOURCES_hidden}
+     PROPERTIES
+     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
+
+set (qpidmessaging_SOURCES
+     ${qpidmessaging_platform_SOURCES}
+     ${qpidmessaging_SOURCES_hidden}
+     qpid/messaging/Address.cpp
+     qpid/messaging/AddressParser.cpp # The functions in here are not in the public interface, but qmf uses them
+     qpid/messaging/Connection.cpp
+     qpid/messaging/Duration.cpp
+     qpid/messaging/exceptions.cpp
+     qpid/messaging/FailoverUpdates.cpp
+     qpid/messaging/Message.cpp
+     qpid/messaging/Receiver.cpp
+     qpid/messaging/Session.cpp
+     qpid/messaging/Sender.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
