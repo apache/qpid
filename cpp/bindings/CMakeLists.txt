@@ -24,7 +24,14 @@ include(FindRuby)
 include(FindPythonLibs)
 include(FindPerlLibs)
 
+set (SWIG_MINIMUM_VERSION "1.3.32")
+
 if (SWIG_FOUND)
+
+    if (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
+      message(FATAL_ERROR "Swig >= ${SWIG_MINIMUM_VERSION} required.")
+    endif()
+
     set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
 
     if (PYTHONLIBS_FOUND)
