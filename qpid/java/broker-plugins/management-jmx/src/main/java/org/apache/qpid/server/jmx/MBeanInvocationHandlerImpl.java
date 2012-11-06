@@ -59,6 +59,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
     private final ManagementActor _logActor = new ManagementActor(_appRegistry.getRootMessageLogger());
+
+    // XXX remove reference to ServerConfiguration
     private final boolean _managementRightsInferAllAccess =
         _appRegistry.getConfiguration().getManagementRightsInferAllAccess();
 

@@ -883,6 +883,7 @@ public class ServerConfiguration extends AbstractConfiguration
         return disabledFeatures;
     }
 
+    // XXX move into management attributes for JMX & HTTP plugins
     public boolean getManagementRightsInferAllAccess()
     {
         return getBooleanValue("management.managementRightsInferAllAccess", true);

@@ -131,6 +131,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
+    // XXX remove references to ServerConfiguration
     /** max allowed size(KB) of a single message */
     private long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
 

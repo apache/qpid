@@ -80,6 +80,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         return _name;
     }
 
+    // XXX remove reference on ServerConfiguration
     public long getHousekeepingCheckPeriod()
     {
         return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
@@ -157,6 +158,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         return getLongValue("queues.maximumMessageCount");
     }
 
+    // XXX remove reference on ServerConfiguration
     public Long getMinimumAlertRepeatGap()
     {
         return getLongValue("queues.minimumAlertRepeatGap", ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap());
@@ -223,6 +225,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         return getLongValue("transactionTimeout.idleClose", 0L);
     }
 
+    // XXX remove reference on ServerConfiguration
     public int getMaxDeliveryCount()
     {
         return getIntValue("queues.maximumDeliveryCount", ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount());
@@ -231,6 +234,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
     /**
      * Check if dead letter queue delivery is enabled, deferring to the broker configuration if not set.
      */
+    // XXX remove reference on ServerConfiguration
     public boolean isDeadLetterQueueEnabled()
     {
         return getBooleanValue("queues.deadLetterQueues", ApplicationRegistry.getInstance().getConfiguration().isDeadLetterQueueEnabled());

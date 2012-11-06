@@ -73,10 +73,12 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         _appRegistry = appRegistry;
         _localFQDN = localFQDN;
+     // XXX remove reference on ServerConfiguration
         _maxNoOfChannels = appRegistry.getConfiguration().getMaxChannelCount();
         _subjectCreator = subjectCreator;
     }
 
+    // XXX remove reference on ServerConfiguration
     private static List<String> getFeatures(IApplicationRegistry appRegistry)
     {
         final List<String> features = new ArrayList<String>();

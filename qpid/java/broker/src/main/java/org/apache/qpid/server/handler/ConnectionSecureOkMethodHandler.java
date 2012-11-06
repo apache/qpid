@@ -95,6 +95,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 }
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
+                // XXX remove reference on ServerConfiguration
                 ConnectionTuneBody tuneBody =
                         methodRegistry.createConnectionTuneBody(ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount(),
                                                                 ConnectionStartOkMethodHandler.getConfiguredFrameSize(),

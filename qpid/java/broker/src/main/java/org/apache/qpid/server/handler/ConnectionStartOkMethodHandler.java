@@ -111,6 +111,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
+                 // XXX remove reference on ServerConfiguration
                     ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount(),
                                                                                           getConfiguredFrameSize(),
                                                                                           ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
@@ -149,6 +150,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
     static int getConfiguredFrameSize()
     {
+        // XXX remove reference to ServerConfiguration and introduce FRAME_SIZE attribute in Broker interface
         final ServerConfiguration config = ApplicationRegistry.getInstance().getConfiguration();
         final int framesize = config.getFrameSize();
         _logger.info("Framesize set to " + framesize);

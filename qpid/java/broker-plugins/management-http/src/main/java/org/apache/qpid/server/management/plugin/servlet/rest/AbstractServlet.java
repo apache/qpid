@@ -380,6 +380,7 @@ public abstract class AbstractServlet extends HttpServlet
         return subject;
     }
 
+ // XXX remove reference on ServerConfiguration
     private boolean isBasicAuthSupported(HttpServletRequest req)
     {
         return req.isSecure()  ? ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementBasicAuth()

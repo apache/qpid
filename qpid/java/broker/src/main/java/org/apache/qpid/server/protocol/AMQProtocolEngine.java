@@ -110,6 +110,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private volatile boolean _closed;
 
+    // XXX remove reference on ServerConfiguration
     // maximum number of channels this session should have
     private long _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
 
@@ -735,6 +736,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      *
      * @param delay delay in seconds (not ms)
      */
+    // XXX remove reference on ServerConfiguration
     public void initHeartbeats(int delay)
     {
         if (delay > 0)

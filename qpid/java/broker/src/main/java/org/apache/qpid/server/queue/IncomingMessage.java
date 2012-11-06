@@ -46,7 +46,8 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     /** Used for debugging purposes. */
     private static final Logger _logger = Logger.getLogger(IncomingMessage.class);
-
+ 
+    // XXX remove reference on ServerConfiguration
     private static final boolean SYNCHED_CLOCKS =
             ApplicationRegistry.getInstance().getConfiguration().getSynchedClocks();
 

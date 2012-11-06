@@ -97,7 +97,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public static final int DEFAULT_PREFETCH = 4096;
 
     private static final Logger _logger = Logger.getLogger(AMQChannel.class);
-
+ 
+    // XXX remove reference on ServerConfiguration
     private static final boolean MSG_AUTH =
         ApplicationRegistry.getInstance().getConfiguration().getMsgAuth();
 

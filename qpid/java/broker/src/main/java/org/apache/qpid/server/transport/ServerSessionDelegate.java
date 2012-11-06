@@ -1266,6 +1266,8 @@ public class ServerSessionDelegate extends SessionDelegate
                             }
                         }
                         queueRegistry.registerQueue(queue);
+
+                        // XXX remove reference on ServerConfiguration
                         boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
                         if (autoRegister)

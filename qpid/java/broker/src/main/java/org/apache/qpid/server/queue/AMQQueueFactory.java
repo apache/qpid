@@ -411,6 +411,7 @@ public class AMQQueueFactory
      */
     protected static String getDeadLetterQueueName(String name)
     {
+        //XXX remove reference to ServerConfiguration
         ServerConfiguration serverConfig = ApplicationRegistry.getInstance().getConfiguration();
         String dlQueueName = name + serverConfig.getDeadLetterQueueSuffix();
         return dlQueueName;
@@ -425,6 +426,7 @@ public class AMQQueueFactory
      */
     protected static String getDeadLetterExchangeName(String name)
     {
+        //XXX remove reference to ServerConfiguration
         ServerConfiguration serverConfig = ApplicationRegistry.getInstance().getConfiguration();
         String dlExchangeName = name + serverConfig.getDeadLetterExchangeSuffix();
         return dlExchangeName;

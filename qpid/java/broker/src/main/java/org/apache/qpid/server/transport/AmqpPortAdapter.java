@@ -107,6 +107,7 @@ public class AmqpPortAdapter extends PortAdapter
     /** This will be delegated to the KeyStore and TrustStore model objects */
     private SSLContext createSslContext()
     {
+        // XXX: remove reference to ServerConfiguration
         ServerConfiguration configuration = _appRegistry.getConfiguration();
         final String keystorePath = configuration.getConnectorKeyStorePath();
         final String keystorePassword = configuration.getConnectorKeyStorePassword();
@@ -144,6 +145,7 @@ public class AmqpPortAdapter extends PortAdapter
     /** This will be refactored later into AmqpPort model */
     private AmqpProtocolVersion getDefaultAmqpSupportedReply()
     {
+        // XXX: remove reference to server configuration. Add attribute on a Broker interface or Port? 
         ServerConfiguration configuration = _appRegistry.getConfiguration();
         return configuration.getDefaultSupportedProtocolReply();
     }

@@ -58,6 +58,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         _monitor = new LogMonitor(_outputFile);
     }
 
+    // XXX remove reference on ServerConfiguration
     protected ServerConfiguration getServerConfig() throws ConfigurationException
     {
         ServerConfiguration _serverConfiguration;
