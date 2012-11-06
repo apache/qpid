@@ -271,10 +271,10 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    set (WARNING_FLAGS
         "-Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
 
-   set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
+   set (CATCH_UNDEFINED "-Wl,--no-undefined")
    # gcc on SunOS uses native linker whose "-z defs" is too fussy
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-      set (GCC_CATCH_UNDEFINED "")
+      set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
    set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
    set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
@@ -283,6 +283,7 @@ endif (CMAKE_COMPILER_IS_GNUCXX)
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
   set (WARNING_FLAGS "+w")
+  set (CATCH_UNDEFINED "")
   set (HIDE_SYMBOL_FLAGS "")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
@@ -574,13 +575,10 @@ if (BUILD_XML)
                qpid/xml/XmlExchange.cpp
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
-  set_target_properties (xml PROPERTIES PREFIX "")
   target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties (xml PROPERTIES
-                           PREFIX ""
-                           LINK_FLAGS ${GCC_CATCH_UNDEFINED})
-  endif (CMAKE_COMPILER_IS_GNUCXX)
+  set_target_properties (xml PROPERTIES
+                         PREFIX ""
+                         LINK_FLAGS "${CATCH_UNDEFINED}")
   install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
@@ -613,13 +611,10 @@ if (BUILD_ACL)
   # the qpidbroker platform-specific source list.
   if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_library (acl MODULE ${acl_SOURCES})
-    set_target_properties (acl PROPERTIES PREFIX "")
     target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set_target_properties (acl PROPERTIES
-                             PREFIX ""
-                             LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties (acl PROPERTIES
+                           PREFIX ""
+                           LINK_FLAGS "${CATCH_UNDEFINED}")
     install (TARGETS acl
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
@@ -811,10 +806,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     add_definitions(-pthread)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${GCC_CATCH_UNDEFINED} -pthread")
-      set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CATCH_UNDEFINED} -pthread")
+    set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
     # On Linux override memory status module
     set (qpid_memstat_module
       qpid/sys/posix/MemStat.cpp
