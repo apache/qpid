@@ -18,6 +18,10 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,10 +38,13 @@ public class HttpManagementFactory implements PluginFactory
     public static final String TIME_OUT = "sessionTimeout";
     public static final String KEY_STORE_PATH = "keyStorePath";
     public static final String KEY_STORE_PASSWORD = "keyStorePassword";
+    public static final String HTTP_BASIC_AUTHENTICATION_ENABLED = "httpBasicAuthenticationEnabled";
+    public static final String HTTPS_BASIC_AUTHENTICATION_ENABLED = "httpsBasicAuthenticationEnabled";
+    public static final String HTTP_SASL_AUTHENTICATION_ENABLED = "httpSaslAuthenticationEnabled";
+    public static final String HTTPS_SASL_AUTHENTICATION_ENABLED = "httpsSaslAuthenticationEnabled";
 
     public static final String PLUGIN_NAME = "MANAGEMENT-HTTP";
 
-    // XXX create a configuration POJO containing SASL and basic auth configuration
     @Override
     public ConfiguredObject createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
@@ -45,9 +52,16 @@ public class HttpManagementFactory implements PluginFactory
         {
             return null;
         }
-        Integer sessionTimeout = MapValueConverter.getIntegerAttribute(TIME_OUT, attributes, DEFAULT_TIMEOUT_IN_SECONDS);
-        String keyStorePath = MapValueConverter.getStringAttribute(KEY_STORE_PATH, attributes, null);
-        String keyStorePasssword = MapValueConverter.getStringAttribute(KEY_STORE_PASSWORD, attributes, null);
-        return new HttpManagement( id, broker, keyStorePath, keyStorePasssword, sessionTimeout);
+
+        HttpConfiguration configuration = new HttpConfiguration(
+                getIntegerAttribute(TIME_OUT, attributes, DEFAULT_TIMEOUT_IN_SECONDS),
+                getBooleanAttribute(HTTP_BASIC_AUTHENTICATION_ENABLED, attributes, false),
+                getBooleanAttribute(HTTPS_BASIC_AUTHENTICATION_ENABLED, attributes, true),
+                getBooleanAttribute(HTTP_SASL_AUTHENTICATION_ENABLED, attributes, true),
+                getBooleanAttribute(HTTPS_SASL_AUTHENTICATION_ENABLED, attributes, true),
+                getStringAttribute(KEY_STORE_PATH, attributes, null),
+                getStringAttribute(KEY_STORE_PASSWORD, attributes, null)
+                );
+        return new HttpManagement( id, broker, configuration);
     }
 }

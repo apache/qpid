@@ -331,6 +331,10 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             attributes.put("keyStorePath", serverConfiguration.getManagementKeyStorePath());
             attributes.put("keyStorePassword", serverConfiguration.getManagementKeyStorePassword());
             attributes.put("sessionTimeout", serverConfiguration.getHTTPManagementSessionTimeout());
+            attributes.put("httpBasicAuthenticationEnabled", serverConfiguration.getHTTPManagementBasicAuth());
+            attributes.put("httpsBasicAuthenticationEnabled", serverConfiguration.getHTTPSManagementBasicAuth());
+            attributes.put("httpSaslAuthenticationEnabled", serverConfiguration.getHTTPManagementSaslAuthEnabled());
+            attributes.put("httpsSaslAuthenticationEnabled", serverConfiguration.getHTTPSManagementSaslAuthEnabled());
 
             ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);
             rootChildren.put(entry.getId(), entry);

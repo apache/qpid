@@ -25,6 +25,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -33,6 +34,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +50,9 @@ import java.util.Random;
 
 public class SaslServlet extends AbstractServlet
 {
+    private static final String HTTPS_SASL_AUTHENTICATION_ENABLED = "https-sasl-authentication-enabled";
+    private static final String HTTP_SASL_AUTHENTICATION_ENABLED = "http-sasl-authentication-enabled";
+
     private static final Logger LOGGER = Logger.getLogger(SaslServlet.class);
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -57,15 +62,38 @@ public class SaslServlet extends AbstractServlet
     private static final String ATTR_EXPIRY = "SaslServlet.Expiry";
     private static final long SASL_EXCHANGE_EXPIRY = 1000L;
 
+    private boolean _httpSaslAuthenticationEnabled;
+    private boolean _httpsSaslAuthenticationEnabled;
 
     public SaslServlet()
     {
         super();
     }
 
-    public SaslServlet(Broker broker)
+    public SaslServlet(Broker broker, HttpConfiguration configuration)
     {
-        super(broker);
+        super(broker, configuration);
+        _httpSaslAuthenticationEnabled = configuration.isHttpSaslAuthenticationEnabled();
+        _httpsSaslAuthenticationEnabled = configuration.isHttpsSaslAuthenticationEnabled();
+    }
+
+    @Override
+    public void init() throws ServletException
+    {
+        if (isInitializationRequired())
+        {
+            super.init();
+            doInitialization();
+        }
+    }
+
+    private void doInitialization()
+    {
+        ServletConfig servletConfig = getServletConfig();
+        String httpSaslAuthentication = servletConfig.getInitParameter(HTTP_SASL_AUTHENTICATION_ENABLED);
+        String httpsSaslAuthentication = servletConfig.getInitParameter(HTTPS_SASL_AUTHENTICATION_ENABLED);
+        _httpSaslAuthenticationEnabled = httpSaslAuthentication == null ? true : Boolean.parseBoolean(httpSaslAuthentication);
+        _httpsSaslAuthenticationEnabled = httpsSaslAuthentication == null ? true : Boolean.parseBoolean(httpsSaslAuthentication);
     }
 
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws
@@ -200,12 +228,11 @@ public class SaslServlet extends AbstractServlet
         boolean saslAuthEnabled;
         if (request.isSecure())
         {
-            // XXX replace getHTTPSManagementSaslAuthEnabled with access to a field set from config
-            saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementSaslAuthEnabled();
+            saslAuthEnabled = _httpsSaslAuthenticationEnabled;
         }
         else
         {
-            saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementSaslAuthEnabled();
+            saslAuthEnabled = _httpSaslAuthenticationEnabled;
         }
 
         if (!saslAuthEnabled)

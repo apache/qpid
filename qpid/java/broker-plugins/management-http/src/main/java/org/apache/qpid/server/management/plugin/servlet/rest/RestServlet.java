@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -47,29 +48,26 @@ public class RestServlet extends AbstractServlet
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
-    private volatile boolean initializationRequired = false;
-
     private final ConfiguredObjectToMapConverter _objectConverter = new ConfiguredObjectToMapConverter();
 
     public RestServlet()
     {
         super();
-        initializationRequired = true;
     }
 
-    public RestServlet(Broker broker, Class<? extends ConfiguredObject>... hierarchy)
+    public RestServlet(Broker broker, HttpConfiguration configuration, Class<? extends ConfiguredObject>... hierarchy)
     {
-        super(broker);
+        super(broker, configuration);
         _hierarchy = hierarchy;
     }
 
     @Override
     public void init() throws ServletException
     {
-        if (initializationRequired)
+        if (isInitializationRequired())
         {
+            super.init();
             doInitialization();
-            initializationRequired = false;
         }
     }
 

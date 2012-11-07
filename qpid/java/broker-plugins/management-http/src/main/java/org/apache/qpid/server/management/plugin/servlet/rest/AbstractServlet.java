@@ -28,6 +28,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.HttpManagementActor;
+import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -57,9 +59,16 @@ public abstract class AbstractServlet extends HttpServlet
     private static final String ATTR_SUBJECT = "AbstractServlet.subject";
     private static final String ATTR_LOG_ACTOR = "AbstractServlet.logActor";
 
+    private static final String HTTP_BASIC_AUTHENTICATION_ENABLED = "http-basic-authentication-enabled";
+    private static final String HTTPS_BASIC_AUTHENTICATION_ENABLED = "https-basic-authentication-enabled";
+
     private final Broker _broker;
 
     private RootMessageLogger _rootLogger;
+
+    private volatile boolean initializationRequired = false;
+    private boolean _httpBasicAuthenticationEnabled;
+    private boolean _httpsBasicAuthenticationEnabled;
 
     protected AbstractServlet()
     {
@@ -68,10 +77,33 @@ public abstract class AbstractServlet extends HttpServlet
         _rootLogger = ApplicationRegistry.getInstance().getRootMessageLogger();
     }
 
-    protected AbstractServlet(Broker broker)
+    protected AbstractServlet(Broker broker, HttpConfiguration configuration)
     {
         _broker = broker;
         _rootLogger = ApplicationRegistry.getInstance().getRootMessageLogger();
+        _httpBasicAuthenticationEnabled = configuration.isHttpBasicAuthenticationEnabled();
+        _httpsBasicAuthenticationEnabled = configuration.isHttpsBasicAuthenticationEnabled();
+        initializationRequired = false;
+    }
+
+    @Override
+    public void init() throws ServletException
+    {
+        if (initializationRequired)
+        {
+            doInitialization();
+            initializationRequired = false;
+        }
+        super.init();
+    }
+
+    private void doInitialization()
+    {
+        ServletConfig servletConfig = getServletConfig();
+        String httpSaslAuthentication = servletConfig.getInitParameter(HTTP_BASIC_AUTHENTICATION_ENABLED);
+        String httpsSaslAuthentication = servletConfig.getInitParameter(HTTPS_BASIC_AUTHENTICATION_ENABLED);
+        _httpBasicAuthenticationEnabled = Boolean.parseBoolean(httpSaslAuthentication);
+        _httpsBasicAuthenticationEnabled = httpsSaslAuthentication == null ? true : Boolean.parseBoolean(httpsSaslAuthentication);
     }
 
     @Override
@@ -380,11 +412,9 @@ public abstract class AbstractServlet extends HttpServlet
         return subject;
     }
 
- // XXX remove reference on ServerConfiguration
     private boolean isBasicAuthSupported(HttpServletRequest req)
     {
-        return req.isSecure()  ? ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementBasicAuth()
-                               : ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementBasicAuth();
+        return req.isSecure()  ? _httpsBasicAuthenticationEnabled : _httpBasicAuthenticationEnabled;
     }
 
     private HttpManagementActor getLogActorAndCacheInSession(HttpServletRequest req)
@@ -440,6 +470,14 @@ public abstract class AbstractServlet extends HttpServlet
     private HttpManagementActor createHttpManagementActor(HttpServletRequest request)
     {
         return new HttpManagementActor(_rootLogger, request.getRemoteAddr(), request.getRemotePort());
+    }
+
+    /**
+     * Only should be called from init method
+     */
+    protected boolean isInitializationRequired()
+    {
+        return initializationRequired;
     }
 
 

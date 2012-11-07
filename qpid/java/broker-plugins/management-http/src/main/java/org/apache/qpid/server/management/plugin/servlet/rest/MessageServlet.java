@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -56,9 +57,9 @@ public class MessageServlet extends AbstractServlet
         super();
     }
 
-    public MessageServlet(Broker broker)
+    public MessageServlet(Broker broker, HttpConfiguration configuration)
     {
-        super(broker);
+        super(broker, configuration);
     }
 
     @Override

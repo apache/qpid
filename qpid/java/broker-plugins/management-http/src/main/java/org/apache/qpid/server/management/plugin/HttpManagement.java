@@ -76,18 +76,14 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private final Map<Integer, Server> _servers = new ConcurrentHashMap<Integer, Server>();
 
-    private String _keyStorePassword;
-    private String _keyStorePath;
-    private int _sessionTimeout;
+    private final HttpConfiguration _configuration;
 
     // XXX refactor back to use a single instance of server and add connectors for different ports
-    public HttpManagement(UUID id, Broker broker, String keyStorePath, String keyStorePassword, int sessionTimeout)
+    public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration)
     {
         super(id);
         _broker = broker;
-        _keyStorePassword = keyStorePassword;
-        _keyStorePath = keyStorePath;
-        _sessionTimeout = sessionTimeout;
+        _configuration = configuration;
         addParent(Broker.class, broker);
     }
 
@@ -149,19 +145,19 @@ public class HttpManagement extends AbstractPluginAdapter
     /** Added for testing purposes */
     String getKeyStorePassword()
     {
-        return _keyStorePassword;
+        return _configuration.getKeyStorePassword();
     }
 
     /** Added for testing purposes */
     String getKeyStorePath()
     {
-        return _keyStorePath;
+        return _configuration.getKeyStorePath();
     }
 
     /** Added for testing purposes */
     int getSessionTimeout()
     {
-        return _sessionTimeout;
+        return _configuration.getSessionTimeout();
     }
 
     protected void stopServer(Port port)
@@ -221,11 +217,12 @@ public class HttpManagement extends AbstractPluginAdapter
         }
         else if (protocols.contains(Protocol.HTTPS))
         {
-            checkKeyStorePath(_keyStorePath);
+            String keyStorePath = _configuration.getKeyStorePath();
+            checkKeyStorePath(keyStorePath);
 
             SslContextFactory factory = new SslContextFactory();
-            factory.setKeyStorePath(_keyStorePath);
-            factory.setKeyStorePassword(_keyStorePassword);
+            factory.setKeyStorePath(keyStorePath);
+            factory.setKeyStorePassword(_configuration.getKeyStorePassword());
 
             connector = new SslSocketConnector(factory);
         }
@@ -254,13 +251,13 @@ public class HttpManagement extends AbstractPluginAdapter
         addRestServlet(root, "port", Port.class);
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
 
-        root.addServlet(new ServletHolder(new StructureServlet(_broker)), "/rest/structure");
-        root.addServlet(new ServletHolder(new MessageServlet(_broker)), "/rest/message/*");
-        root.addServlet(new ServletHolder(new MessageContentServlet(_broker)), "/rest/message-content/*");
+        root.addServlet(new ServletHolder(new StructureServlet(_broker,  _configuration)), "/rest/structure");
+        root.addServlet(new ServletHolder(new MessageServlet(_broker,  _configuration)), "/rest/message/*");
+        root.addServlet(new ServletHolder(new MessageContentServlet(_broker, _configuration)), "/rest/message-content/*");
 
-        root.addServlet(new ServletHolder(new LogRecordsServlet(_broker)), "/rest/logrecords");
+        root.addServlet(new ServletHolder(new LogRecordsServlet(_broker, _configuration)), "/rest/logrecords");
 
-        root.addServlet(new ServletHolder(new SaslServlet(_broker)), "/rest/sasl");
+        root.addServlet(new ServletHolder(new SaslServlet(_broker, _configuration)), "/rest/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), ENTRY_POINT_PATH);
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
@@ -278,14 +275,14 @@ public class HttpManagement extends AbstractPluginAdapter
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
 
-        sessionManager.setMaxInactiveInterval(_sessionTimeout);
+        sessionManager.setMaxInactiveInterval(_configuration.getSessionTimeout());
 
         return server;
     }
 
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
-        root.addServlet(new ServletHolder(new RestServlet(_broker, hierarchy)), "/rest/" + name + "/*");
+        root.addServlet(new ServletHolder(new RestServlet(_broker, _configuration, hierarchy)), "/rest/" + name + "/*");
     }
 
     private void checkKeyStorePath(String keyStorePath)

@@ -27,6 +27,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
@@ -42,9 +43,9 @@ public class MessageContentServlet extends AbstractServlet
         super();
     }
 
-    public MessageContentServlet(Broker broker)
+    public MessageContentServlet(Broker broker, HttpConfiguration configuration)
     {
-        super(broker);
+        super(broker, configuration);
     }
 
     @Override

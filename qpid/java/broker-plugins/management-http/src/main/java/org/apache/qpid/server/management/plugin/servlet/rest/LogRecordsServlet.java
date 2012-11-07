@@ -26,6 +26,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -35,12 +36,12 @@ public class LogRecordsServlet extends AbstractServlet
 {
     public LogRecordsServlet()
     {
-        super(ApplicationRegistry.getInstance().getBroker());
+        super();
     }
 
-    public LogRecordsServlet(Broker broker)
+    public LogRecordsServlet(Broker broker, HttpConfiguration configuration)
     {
-        super(broker);
+        super(broker, configuration);
     }
 
     @Override
