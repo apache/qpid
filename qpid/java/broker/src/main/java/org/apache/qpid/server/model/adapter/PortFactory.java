@@ -63,6 +63,7 @@ public class PortFactory
     private boolean isAmqpProtocol(Map<String, Object> portAttributes)
     {
         Set<Object> protocolStrings = MapValueConverter.getSetAttribute(Port.PROTOCOLS, portAttributes);
+        // XXX fix this for non AMQP ports, f.e, JMX_RMI,HTTP
         int amqpProtocolsFound = 0;
         int nonAmqpProtocolsFound = 0;
         for (Object protocolObject : protocolStrings)

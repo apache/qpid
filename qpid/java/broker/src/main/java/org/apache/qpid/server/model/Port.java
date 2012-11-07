@@ -115,7 +115,7 @@ public interface Port extends ConfiguredObject
 
     boolean isWantClientAuth();
 
-    String getAuthenticationManager();
+    String getAuthenticationManagerName();
 
     AuthenticationProvider getAuthenticationProvider();
 

@@ -42,14 +42,14 @@ import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticat
 public class AuthenticationProviderFactoryTest extends TestCase
 {
 
-    public void testCreateInternalAuthenticationManager()
+    public void testCreatePasswordCredentialManagingAuthenticationProvider()
     {
         AuthenticationProvider provider = testForFactory(mock(PrincipalDatabaseAuthenticationManager.class));
         assertTrue("The created provider should match the factory's AuthenticationManager type",
                 provider instanceof PasswordCredentialManagingAuthenticationProvider);
     }
 
-    public void testCreateExternalAuthenticationManager()
+    public void testCreateNonPasswordCredentialManagingAuthenticationProvider()
     {
         AuthenticationProvider provider = testForFactory(mock(AuthenticationManager.class));
         assertFalse("The created provider should match the factory's AuthenticationManager type",

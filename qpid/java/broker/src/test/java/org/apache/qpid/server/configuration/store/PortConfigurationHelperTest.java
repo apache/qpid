@@ -191,6 +191,7 @@ public class PortConfigurationHelperTest extends TestCase
         protocols.remove(Protocol.HTTP);
         protocols.remove(Protocol.HTTPS);
         protocols.remove(Protocol.JMX_RMI);
+        protocols.remove(Protocol.RMI);
         return protocols;
     }
 

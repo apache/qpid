@@ -237,6 +237,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private void createBroker()
     {
+        // XXX get rid of it!!
         Map<String, VirtualHostConfiguration> virtualHostConfigurations = new HashMap<String, VirtualHostConfiguration>();
         String[] vhNames = _configuration.getVirtualHostsNames();
         for (String name : vhNames)

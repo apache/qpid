@@ -62,7 +62,7 @@ public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHo
                     + entry);
         }
         // XXX hack
-        VirtualHostConfiguration virtualHostConfiguration = (VirtualHostConfiguration)attributes.get("configuration");
+        //VirtualHostConfiguration virtualHostConfiguration = (VirtualHostConfiguration)attributes.get("configuration");
 
         // String configurationPath = attributes.get("configuration");
         // VirtualHostConfiguration virtualHostConfiguration = new VirtualHostConfiguration(configurationPath);

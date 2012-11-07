@@ -85,22 +85,26 @@ public class ConfigurationEntry
      */
     public Map<ConfiguredObjectType, Collection<ConfigurationEntry>> getChildren()
     {
+        Map<ConfiguredObjectType, Collection<ConfigurationEntry>> children = null;
         if (_childrenIds == null)
         {
-            return Collections.emptyMap();
+            children = Collections.emptyMap();
         }
-        Map<ConfiguredObjectType, Collection<ConfigurationEntry>> children = new HashMap<ConfiguredObjectType, Collection<ConfigurationEntry>>();
-        for (UUID childId : _childrenIds)
+        else
         {
-            ConfigurationEntry entry = _store.getEntry(childId);
-            ConfiguredObjectType type = entry.getType();
-            Collection<ConfigurationEntry> childrenOfType = children.get(type);
-            if (childrenOfType == null)
+            children = new HashMap<ConfiguredObjectType, Collection<ConfigurationEntry>>();
+            for (UUID childId : _childrenIds)
             {
-                childrenOfType = new ArrayList<ConfigurationEntry>();
-                children.put(type, childrenOfType);
+                ConfigurationEntry entry = _store.getEntry(childId);
+                ConfiguredObjectType type = entry.getType();
+                Collection<ConfigurationEntry> childrenOfType = children.get(type);
+                if (childrenOfType == null)
+                {
+                    childrenOfType = new ArrayList<ConfigurationEntry>();
+                    children.put(type, childrenOfType);
+                }
+                childrenOfType.add(entry);
             }
-            childrenOfType.add(entry);
         }
         return Collections.unmodifiableMap(children);
     }

@@ -63,4 +63,7 @@ public interface AuthenticationProvider extends ConfiguredObject
      * TODO: move all the functionality from SubjectCreator into AuthenticationProvider
      */
     SubjectCreator getSubjectCreator();
+
+    // XXX just an idea
+    //setGroupProviders(Collection<GroupProvider> groupProviders);
 }

@@ -322,7 +322,7 @@ public class PortAdapter extends AbstractAdapter implements Port
         }
         else if(AUTHENTICATION_MANAGER.equals(name))
         {
-            return getAuthenticationManager();
+            return getAuthenticationManagerName();
         }
         return super.getAttribute(name);
     }
@@ -406,7 +406,7 @@ public class PortAdapter extends AbstractAdapter implements Port
     }
 
     @Override
-    public String getAuthenticationManager()
+    public String getAuthenticationManagerName()
     {
         return _authenticationManager;
     }
