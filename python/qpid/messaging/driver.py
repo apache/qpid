@@ -31,7 +31,7 @@ from qpid.messaging.exceptions import *
 from qpid.messaging.message import get_codec, Disposition, Message
 from qpid.ops import *
 from qpid.selector import Selector
-from qpid.util import URL, default
+from qpid.util import URL, default,get_client_properties_with_defaults
 from qpid.validator import And, Context, List, Map, Types, Values
 from threading import Condition, Thread
 
@@ -89,20 +89,6 @@ class Pattern:
 SUBJECT_DEFAULTS = {
   "topic": "#"
   }
-
-# XXX
-ppid = 0
-try:
-  ppid = os.getppid()
-except:
-  pass
-
-CLIENT_PROPERTIES = {"product": "qpid python client",
-                     "version": "development",
-                     "platform": os.name,
-                     "qpid.client_process": os.path.basename(sys.argv[0]),
-                     "qpid.client_pid": os.getpid(),
-                     "qpid.client_ppid": ppid}
 
 def noop(): pass
 def sync_noop(): pass
@@ -710,8 +696,7 @@ class Engine:
     except sasl.SASLError, e:
       raise AuthenticationFailure(text=str(e))
 
-    client_properties = CLIENT_PROPERTIES.copy()
-    client_properties.update(self.connection.client_properties)
+    client_properties = get_client_properties_with_defaults(provided_client_properties=self.connection.client_properties);
     self.write_op(ConnectionStartOk(client_properties=client_properties,
                                     mechanism=mech, response=initial))
 
