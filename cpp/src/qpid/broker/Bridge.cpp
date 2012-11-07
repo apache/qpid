@@ -121,28 +121,30 @@ void Bridge::create(Connection& c)
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         QPID_LOG(debug, "Activated bridge " << name << " for route from queue " << args.i_src << " to " << args.i_dest);
     } else {
-        FieldTable queueSettings;
+        if (!useExistingQueue) {
+            FieldTable queueSettings;
 
-        if (args.i_tag.size()) {
-            queueSettings.setString("qpid.trace.id", args.i_tag);
-        } else {
-            const string& peerTag = c.getFederationPeerTag();
-            if (peerTag.size())
-                queueSettings.setString("qpid.trace.id", peerTag);
+            if (args.i_tag.size()) {
+                queueSettings.setString("qpid.trace.id", args.i_tag);
+            } else {
+                const string& peerTag = c.getFederationPeerTag();
+                if (peerTag.size())
+                    queueSettings.setString("qpid.trace.id", peerTag);
+            }
+
+            if (args.i_excludes.size()) {
+                queueSettings.setString("qpid.trace.exclude", args.i_excludes);
+            } else {
+                const string& localTag = link->getBroker()->getFederationTag();
+                if (localTag.size())
+                    queueSettings.setString("qpid.trace.exclude", localTag);
+            }
+
+            bool durable = false;//should this be an arg, or would we use srcIsQueue for durable queues?
+            bool exclusive = true;  // only exclusive if the queue is owned by the bridge
+            bool autoDelete = exclusive && !durable;//auto delete transient queues?
+            peer->getQueue().declare(queueName, altEx, false, durable, exclusive, autoDelete, queueSettings);
         }
-
-        if (args.i_excludes.size()) {
-            queueSettings.setString("qpid.trace.exclude", args.i_excludes);
-        } else {
-            const string& localTag = link->getBroker()->getFederationTag();
-            if (localTag.size())
-                queueSettings.setString("qpid.trace.exclude", localTag);
-        }
-
-        bool durable = false;//should this be an arg, or would we use srcIsQueue for durable queues?
-        bool exclusive = !useExistingQueue;  // only exclusive if the queue is owned by the bridge
-        bool autoDelete = exclusive && !durable;//auto delete transient queues?
-        peer->getQueue().declare(queueName, altEx, false, durable, exclusive, autoDelete, queueSettings);
         if (!args.i_dynamic)
             peer->getExchange().bind(queueName, args.i_src, args.i_key, FieldTable());
         peer->getMessage().subscribe(queueName, args.i_dest, (useExistingQueue && args.i_sync) ? 0 : 1, 0, false, "", 0, options);
