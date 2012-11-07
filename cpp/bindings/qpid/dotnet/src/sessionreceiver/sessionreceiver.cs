@@ -37,6 +37,7 @@ namespace Org.Apache.Qpid.Messaging.SessionReceiver
     public interface ISessionReceiver
     {
         void SessionReceiver(Receiver receiver, Message message);
+        void SessionException(Exception exception);
     }
 
     
@@ -67,25 +68,32 @@ namespace Org.Apache.Qpid.Messaging.SessionReceiver
         {
             Receiver rcvr;
             Message  msg;
-
-            keepRunning = true;
-            while (keepRunning)
+            try
             {
-                rcvr = session.NextReceiver(DurationConstants.SECOND);
-
-                if (null != rcvr)
+                keepRunning = true;
+                while (keepRunning)
                 {
-                    if (keepRunning)
+                    rcvr = session.NextReceiver(DurationConstants.SECOND);
+
+                    if (null != rcvr)
                     {
-                        msg = rcvr.Fetch(DurationConstants.SECOND);
-                        this.callback.SessionReceiver(rcvr, msg);
+                        if (keepRunning)
+                        {
+                            msg = rcvr.Fetch(DurationConstants.SECOND);
+                            this.callback.SessionReceiver(rcvr, msg);
+                        }
                     }
+                    //else
+                    //    receive timed out
+                    //    EventEngine exits the nextReceiver() function periodically
+                    //    in order to test the keepRunning flag
                 }
-                //else
-                //    receive timed out
-                //    EventEngine exits the nextReceiver() function periodically
-                //    in order to test the keepRunning flag
             }
+            catch (Exception e)
+            {
+                this.callback.SessionException(e);
+            }
+
             // Private thread is now exiting.
         }
 
