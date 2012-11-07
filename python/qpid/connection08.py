@@ -28,6 +28,9 @@ from cStringIO import StringIO
 from codec import EOF
 from compat import SHUT_RDWR
 from exceptions import VersionError
+from logging import getLogger, DEBUG
+
+log = getLogger("qpid.connection08")
 
 class SockIO:
 
@@ -35,7 +38,8 @@ class SockIO:
     self.sock = sock
 
   def write(self, buf):
-#    print "OUT: %r" % buf
+    if log.isEnabledFor(DEBUG):
+      log.debug("OUT: %r", buf)
     self.sock.sendall(buf)
 
   def read(self, n):
@@ -47,8 +51,9 @@ class SockIO:
         break
       if len(s) == 0:
         break
-#      print "IN: %r" % s
       data += s
+    if log.isEnabledFor(DEBUG):
+      log.debug("IN: %r", data)
     return data
 
   def flush(self):
@@ -120,19 +125,25 @@ class Connection:
                            (self.spec.major, self.spec.minor, major, minor))
       else:
         raise FramingError("unknown frame type: %s" % tid)
-    channel = c.decode_short()
-    body = c.decode_longstr()
-    dec = codec.Codec(StringIO(body), self.spec)
-    frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
-    frame.channel = channel
-    end = c.decode_octet()
-    if end != self.FRAME_END:
-      garbage = ""
-      while end != self.FRAME_END:
-        garbage += chr(end)
-        end = c.decode_octet()
-      raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
-    return frame
+    try:
+      channel = c.decode_short()
+      body = c.decode_longstr()
+      dec = codec.Codec(StringIO(body), self.spec)
+      frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
+      frame.channel = channel
+      end = c.decode_octet()
+      if end != self.FRAME_END:
+	garbage = ""
+	while end != self.FRAME_END:
+	  garbage += chr(end)
+	  end = c.decode_octet()
+	raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
+      return frame
+    except EOF:
+      # An EOF caught here can indicate an error decoding the frame,
+      # rather than that a disconnection occurred,so it's worth logging it.
+      log.exception("Error occurred when reading frame with tid %s" % tid)
+      raise
 
   def write_0_9(self, frame):
     self.write_8_0(frame)
