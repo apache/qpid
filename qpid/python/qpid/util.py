@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import os, socket, time, textwrap, re
+import os, socket, time, textwrap, re, sys
 
 try:
   from ssl import wrap_socket as ssl
@@ -41,6 +41,24 @@ except ImportError:
 
     def close(self):
       self.sock.close()
+
+def get_client_properties_with_defaults(provided_client_properties={}):
+  ppid = 0
+  try:
+    ppid = os.getppid()
+  except:
+    pass
+
+  client_properties = {"product": "qpid python client",
+                       "version": "development",
+                       "platform": os.name,
+                       "qpid.client_process": os.path.basename(sys.argv[0]),
+                       "qpid.client_pid": os.getpid(),
+                       "qpid.client_ppid": ppid}
+
+  if provided_client_properties:
+    client_properties.update(provided_client_properties)
+  return client_properties
 
 def connect(host, port):
   for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):

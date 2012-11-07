@@ -37,6 +37,7 @@ import qpid.tests.datatypes
 import qpid.tests.connection
 import qpid.tests.spec010
 import qpid.tests.codec010
+import qpid.tests.util
 
 class TestTestsXXX(Test):
 

@@ -18,13 +18,14 @@
 #
 
 """
-An AQMP client implementation that uses a custom delegate for
+An AMQP client implementation that uses a custom delegate for
 interacting with the server.
 """
 
 import os, threading
 from peer import Peer, Channel, Closed
 from delegate import Delegate
+from util import get_client_properties_with_defaults
 from connection08 import Connection, Frame, connect
 from spec08 import load
 from queue import Queue
@@ -76,12 +77,12 @@ class Client:
       self.lock.release()
     return q
 
-  def start(self, response, mechanism="AMQPLAIN", locale="en_US", tune_params=None):
+  def start(self, response, mechanism="AMQPLAIN", locale="en_US", tune_params=None, client_properties=None):
     self.mechanism = mechanism
     self.response = response
     self.locale = locale
     self.tune_params = tune_params
-
+    self.client_properties=get_client_properties_with_defaults(provided_client_properties=client_properties)
     self.socket = connect(self.host, self.port)
     self.conn = Connection(self.socket, self.spec)
     self.peer = Peer(self.conn, ClientDelegate(self), Session)
@@ -128,7 +129,8 @@ class ClientDelegate(Delegate):
   def connection_start(self, ch, msg):
     msg.start_ok(mechanism=self.client.mechanism,
                  response=self.client.response,
-                 locale=self.client.locale)
+                 locale=self.client.locale,
+                 client_properties=self.client.client_properties)
 
   def connection_tune(self, ch, msg):
     if self.client.tune_params:
