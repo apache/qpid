@@ -77,7 +77,8 @@ public class JMXTestUtils
 
     public void setUp() throws IOException, ConfigurationException, Exception
     {
-        _test.setConfigurationProperty("management.enabled", "true");       
+        _test.setConfigurationProperty("management.enabled", "true");
+        _test.setSystemProperty("qpid.use_custom_rmi_socket_factory", "false");
     }
 
     public void open() throws Exception

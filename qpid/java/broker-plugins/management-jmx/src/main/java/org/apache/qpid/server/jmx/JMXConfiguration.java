@@ -22,23 +22,16 @@ package org.apache.qpid.server.jmx;
 
 public class JMXConfiguration
 {
-    private final boolean _useCustomRMISocketFactory;
     private final boolean _platformMBeanServer;
     private final String _managementKeyStorePath;
     private final String  _managementKeyStorePassword;
 
-    public JMXConfiguration(boolean useCustomRMISocketFactory, boolean platformMBeanServer, String managementKeyStorePath,
+    public JMXConfiguration( boolean platformMBeanServer, String managementKeyStorePath,
             String managementKeyStorePassword)
     {
-        _useCustomRMISocketFactory = useCustomRMISocketFactory;
         _platformMBeanServer = platformMBeanServer;
         _managementKeyStorePath = managementKeyStorePath;
         _managementKeyStorePassword = managementKeyStorePassword;
-    }
-
-    public boolean isUseCustomRMISocketFactory()
-    {
-        return _useCustomRMISocketFactory;
     }
 
     public boolean isPlatformMBeanServer()

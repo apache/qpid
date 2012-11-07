@@ -33,7 +33,6 @@ public class JMXManagementFactory implements PluginFactory
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagementFactory.class);
 
-    public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = "useCustomRMISocketFactory";
     public static final String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
     public static final String KEY_STORE_PATH = "keyStorePath";
     public static final String KEY_STORE_PASSWORD = "keyStorePassword";
@@ -46,7 +45,6 @@ public class JMXManagementFactory implements PluginFactory
         if (PLUGIN_NAME.equals(attributes.get(PLUGIN_TYPE)))
         {
             JMXConfiguration jmxConfiguration = new JMXConfiguration(
-                    getBooleanAttribute(USE_CUSTOM_RMI_SOCKET_FACTORY, attributes, false),
                     getBooleanAttribute(USE_PLATFORM_MBEAN_SERVER, attributes, true),
                     getStringAttribute(KEY_STORE_PATH, attributes, null),
                     getStringAttribute(KEY_STORE_PASSWORD, attributes, null));

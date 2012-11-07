@@ -63,7 +63,7 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
     public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
     public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
-    public static final String SKIP_SIGHUP_HANDLER_REGISTRATION = "qpid.skip_sighup_handler_registration";
+
     public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = "qpid.use_custom_rmi_socket_factory";
 
     public static final String QPID_HOME = "QPID_HOME";

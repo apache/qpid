@@ -64,12 +64,13 @@ import java.util.HashMap;
  */
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
+    public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = "qpid.use_custom_rmi_socket_factory";
+
     private static final Logger _log = Logger.getLogger(JMXManagedObjectRegistry.class);
 
     private static final String OPERATIONAL_LOGGING_NAME = "JMX";
 
     private final MBeanServer _mbeanServer;
-    private final boolean _useCustomSocketFactory;
 
     private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
@@ -87,8 +88,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _registryPort = registryPort;
         _connectorPort = connectorPort;
 
-        // Retrieve the config parameters
-        _useCustomSocketFactory = jmxConfiguration.isUseCustomRMISocketFactory();
         boolean platformServer = jmxConfiguration.isPlatformMBeanServer();
 
         _mbeanServer =
@@ -163,13 +162,15 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
+        System.setProperty("java.rmi.server.randomIDs", "true");
+        boolean useCustomSocketFactory = Boolean.parseBoolean(System.getProperty(USE_CUSTOM_RMI_SOCKET_FACTORY, Boolean.TRUE.toString()));
+
         /*
          * Start a RMI registry on the management port, to hold the JMX RMI ConnectorServer stub.
          * Using custom socket factory to prevent anyone (including us unfortunately) binding to the registry using RMI.
          * As a result, only binds made using the object reference will succeed, thus securing it from external change.
          */
-        System.setProperty("java.rmi.server.randomIDs", "true");
-        _rmiRegistry = createRmiRegistry(jmxPortRegistryServer, _useCustomSocketFactory);
+        _rmiRegistry = createRmiRegistry(jmxPortRegistryServer, useCustomSocketFactory);
 
         /*
          * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls

@@ -331,7 +331,6 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             attributes.put(PluginFactory.PLUGIN_TYPE, "MANAGEMENT-JMX");
             attributes.put("keyStorePath", serverConfiguration.getManagementKeyStorePath());
             attributes.put("keyStorePassword", serverConfiguration.getManagementKeyStorePassword());
-            attributes.put("useCustomRMISocketFactory", serverConfiguration.getUseCustomRMISocketFactory());
             attributes.put("usePlatformMBeanServer", serverConfiguration.getPlatformMbeanserver());
 
             ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);

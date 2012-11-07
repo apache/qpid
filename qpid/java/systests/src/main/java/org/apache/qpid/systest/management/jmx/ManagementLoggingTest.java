@@ -266,6 +266,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
     {
         if (isJavaBroker())
         {
+            setSystemProperty("qpid.use_custom_rmi_socket_factory", "false");
             startBrokerAndCreateMonitor(true, false);
 
             final JMXTestUtils jmxUtils = new JMXTestUtils(this);
