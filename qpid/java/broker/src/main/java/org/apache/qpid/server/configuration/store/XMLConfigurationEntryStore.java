@@ -186,25 +186,22 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     {
         if (serverConfiguration.getHTTPManagementEnabled())
         {
-            ConfigurationEntry entry = createManagementHttpPort(serverConfiguration.getHTTPManagementPort(), Protocol.HTTP,
+            ConfigurationEntry entry = createManagementPort(serverConfiguration.getHTTPManagementPort(), Protocol.HTTP,
                     Transport.TCP);
             rootChildren.put(entry.getId(), entry);
         }
         if (serverConfiguration.getHTTPSManagementEnabled())
         {
-            ConfigurationEntry entry = createManagementHttpPort(serverConfiguration.getHTTPSManagementPort(),
+            ConfigurationEntry entry = createManagementPort(serverConfiguration.getHTTPSManagementPort(),
                     Protocol.HTTPS, Transport.SSL);
             rootChildren.put(entry.getId(), entry);
         }
         if (serverConfiguration.getJMXManagementEnabled())
         {
-            // XXX: change JMX port to not rely on names
-            ConfigurationEntry entryRegistry = createManagementJmxPort(serverConfiguration.getJMXPortRegistryServer(),
-                    "registry", Protocol.JMX_RMI, Transport.TCP);
+            ConfigurationEntry entryRegistry = createManagementPort(serverConfiguration.getJMXPortRegistryServer(), Protocol.RMI, Transport.TCP);
             rootChildren.put(entryRegistry.getId(), entryRegistry);
             Transport connectorTransport = serverConfiguration.getManagementSSLEnabled() ? Transport.SSL : Transport.TCP;
-            ConfigurationEntry entryConnector = createManagementJmxPort(serverConfiguration.getJMXConnectorServerPort(),
-                    "connector", Protocol.JMX_RMI, connectorTransport);
+            ConfigurationEntry entryConnector = createManagementPort(serverConfiguration.getJMXConnectorServerPort(), Protocol.JMX_RMI, connectorTransport);
             rootChildren.put(entryConnector.getId(), entryConnector);
         }
     }
@@ -243,24 +240,9 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         }
     }
 
-    private ConfigurationEntry createManagementHttpPort(int port, final Protocol protocol, final Transport transport)
+    private ConfigurationEntry createManagementPort(int port, final Protocol protocol, final Transport transport)
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Port.PROTOCOLS, Collections.singleton(protocol));
-        attributes.put(Port.TRANSPORTS, Collections.singleton(transport));
-        attributes.put(Port.PORT, port);
-        attributes.put(Port.BINDING_ADDRESS, null);
-        return new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT, attributes, null, this);
-    }
-
-    private ConfigurationEntry createManagementJmxPort(int port, String name, final Protocol protocol,
-            final Transport transport)
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        // We current use the a special port name to distinguish between the
-        // connection/registry servers. We need another 'type' attribute so we can determine its
-        // role.
-        attributes.put(Port.NAME, name);
         attributes.put(Port.PROTOCOLS, Collections.singleton(protocol));
         attributes.put(Port.TRANSPORTS, Collections.singleton(transport));
         attributes.put(Port.PORT, port);

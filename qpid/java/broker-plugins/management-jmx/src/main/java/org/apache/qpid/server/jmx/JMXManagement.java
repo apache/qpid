@@ -52,9 +52,6 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
 
-    private static final String REGISTRY_PORT_NAME = "registry";
-    private static final String CONNECTOR_PORT_NAME = "connector";
-
     private final Broker _broker;
     private JMXManagedObjectRegistry _objectRegistry;
 
@@ -103,25 +100,22 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         Collection<Port> ports = _broker.getPorts();
         for (Port port : ports)
         {
-            if (port.getProtocols().contains(Protocol.JMX_RMI))
+            if(isRegistryPort(port))
             {
-                if(REGISTRY_PORT_NAME.equals(port.getName()))
-                {
-                    registryPort = port;
-                }
-                else if(CONNECTOR_PORT_NAME.equals(port.getName()))
-                {
-                    connectorPort = port;
-                }
+                registryPort = port;
+            }
+            else if(isConnectorPort(port))
+            {
+                connectorPort = port;
             }
         }
         if(connectorPort == null)
         {
-            throw new IllegalStateException("No JMX port found with name " + CONNECTOR_PORT_NAME);
+            throw new IllegalStateException("No JMX connector port found supporting protocol " + Protocol.JMX_RMI);
         }
         if(registryPort == null)
         {
-            throw new IllegalStateException("No JMX port found with name " + REGISTRY_PORT_NAME);
+            throw new IllegalStateException("No JMX RMI port found supporting protocol " + Protocol.RMI);
         }
 
         _objectRegistry = new JMXManagedObjectRegistry(connectorPort, registryPort, _jmxConfiguration);
@@ -155,8 +149,17 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         new Shutdown(_objectRegistry);
         new ServerInformationMBean(_objectRegistry, _broker);
         new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
-
         _objectRegistry.start();
+    }
+
+    private boolean isConnectorPort(Port port)
+    {
+        return port.getProtocols().contains(Protocol.JMX_RMI);
+    }
+
+    private boolean isRegistryPort(Port port)
+    {
+        return port.getProtocols().contains(Protocol.RMI);
     }
 
     private void stop()
@@ -256,7 +259,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     private void createAdditionalMBeansFromProviders(ConfiguredObject child, AMQManagedObject mbean) throws JMException
     {
         _children.put(child, mbean);
-        // XXX: MBeanProvider does not work at the moment
+
         QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
         for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
         {
