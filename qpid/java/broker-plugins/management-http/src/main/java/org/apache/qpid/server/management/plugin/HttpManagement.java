@@ -22,9 +22,8 @@ package org.apache.qpid.server.management.plugin;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -74,7 +73,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private final Broker _broker;
 
-    private final Map<Integer, Server> _servers = new ConcurrentHashMap<Integer, Server>();
+    private Server _server;
 
     private final HttpConfiguration _configuration;
 
@@ -103,21 +102,20 @@ public class HttpManagement extends AbstractPluginAdapter
         return false;
     }
 
-
     private void start()
     {
         CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
-        Collection<Port> ports = _broker.getPorts();
-        for (Port port : ports)
+        Collection<Port> httpPorts = getHttpPorts(_broker.getPorts());
+        _server = createServer(httpPorts);
+        try
         {
-            if (isManagementHttp(port))
-            {
-                if(port.getActualState() == State.ACTIVE)
-                {
-                    startServer(port);
-                }
-            }
+            _server.start();
+            logOperationalListenMessages(_server);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Failed to start http management on ports " + httpPorts);
         }
 
         CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
@@ -125,14 +123,19 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private void stop()
     {
-        Collection<Port> ports = _broker.getPorts();
-        for (Port port : ports)
+        if (_server != null)
         {
-            if (isManagementHttp(port))
+            try
             {
-                stopServer(port);
+                _server.stop();
+                logOperationalShutdownMessage(_server);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Failed to stop http management on port " + getHttpPorts(_broker.getPorts()));
             }
         }
+
         CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
@@ -160,78 +163,46 @@ public class HttpManagement extends AbstractPluginAdapter
         return _configuration.getSessionTimeout();
     }
 
-    protected void stopServer(Port port)
-    {
-        Server server = _servers.remove(port.getPort());
-        if (server != null)
-        {
-            try
-            {
-                server.stop();
-                logOperationalShutdownMessage(server);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Failed to stop http management on port " + port.getPort());
-            }
-        }
-    }
-
-    private void startServer(Port port)
-    {
-        Server server = createServer(port);
-        try
-        {
-            server.start();
-
-            logOperationalListenMessages(server);
-
-            _servers.put(port.getPort(), server);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Failed to start http management on port " + port.getPort());
-        }
-    }
-
     private boolean isManagementHttp(Port port)
     {
         return port.getProtocols().contains(Protocol.HTTP) || port.getProtocols().contains(Protocol.HTTPS);
     }
 
     @SuppressWarnings("unchecked")
-    private Server createServer(Port port)
+    private Server createServer(Collection<Port> ports)
     {
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Starting up web server on " + port.getPort());
+            _logger.info("Starting up web server on " + ports);
         }
 
         Server server = new Server();
-
-        final Collection<Protocol> protocols = port.getProtocols();
-        Connector connector = null;
-        if (protocols.contains(Protocol.HTTP))
+        for (Port port : ports)
         {
-            connector = new SelectChannelConnector();
-        }
-        else if (protocols.contains(Protocol.HTTPS))
-        {
-            String keyStorePath = _configuration.getKeyStorePath();
-            checkKeyStorePath(keyStorePath);
+            final Collection<Protocol> protocols = port.getProtocols();
+            Connector connector = null;
+            if (protocols.contains(Protocol.HTTP))
+            {
+                connector = new SelectChannelConnector();
+            }
+            else if (protocols.contains(Protocol.HTTPS))
+            {
+                String keyStorePath = _configuration.getKeyStorePath();
+                checkKeyStorePath(keyStorePath);
 
-            SslContextFactory factory = new SslContextFactory();
-            factory.setKeyStorePath(keyStorePath);
-            factory.setKeyStorePassword(_configuration.getKeyStorePassword());
+                SslContextFactory factory = new SslContextFactory();
+                factory.setKeyStorePath(keyStorePath);
+                factory.setKeyStorePassword(_configuration.getKeyStorePassword());
 
-            connector = new SslSocketConnector(factory);
+                connector = new SslSocketConnector(factory);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Unexpected protocol " + protocols);
+            }
+            connector.setPort(port.getPort());
+            server.addConnector(connector);
         }
-        else
-        {
-            throw new IllegalArgumentException("Unexpected protocol " + protocols);
-        }
-        connector.setPort(port.getPort());
-        server.addConnector(connector);
 
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
         root.setContextPath("/");
@@ -334,6 +305,19 @@ public class HttpManagement extends AbstractPluginAdapter
     private String stringifyConnectorScheme(Connector connector)
     {
         return connector instanceof SslSocketConnector ? "HTTPS" : "HTTP";
+    }
+
+    private Collection<Port> getHttpPorts(Collection<Port> ports)
+    {
+        Collection<Port> httpPorts = new HashSet<Port>();
+        for (Port port : ports)
+        {
+            if (isManagementHttp(port))
+            {
+                httpPorts.add(port);
+            }
+        }
+        return httpPorts;
     }
 
 

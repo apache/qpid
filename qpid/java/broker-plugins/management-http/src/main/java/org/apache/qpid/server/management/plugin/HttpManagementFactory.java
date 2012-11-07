@@ -28,7 +28,6 @@ import java.util.UUID;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class HttpManagementFactory implements PluginFactory
 {
