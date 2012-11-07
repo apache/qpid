@@ -162,6 +162,7 @@ namespace Org.Apache.Qpid.Messaging.Examples
         /// <param name="exception">The exception.</param>
         public void SessionException(Exception exception)
         {
+            // A typical application will take more action here.
             Console.WriteLine("{0} Exception caught.", exception.ToString());
         }
 
@@ -273,8 +274,17 @@ namespace Org.Apache.Qpid.Messaging.Examples
             //
             // Close the receiver and the connection.
             //
-            receiver.Close();
-            connection.Close();
+            try
+            {
+                receiver.Close();
+                connection.Close();
+            }
+            catch (Exception exception)
+            {
+                // receiver or connection may throw if they closed in error.
+                // A typical application will take more action here.
+                Console.WriteLine("{0} Closing exception caught.", exception.ToString());
+            }
             return 0;
         }
     }

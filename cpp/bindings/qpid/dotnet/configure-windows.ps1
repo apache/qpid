@@ -496,7 +496,7 @@ if ($make32) {
     $env:BOOST_ROOT = "$boost32"
     cd "$build32"
     Write-Host "Running 32-bit CMake in $build32 ..."
-    CMake -G "$global:cmakeGenerator" "-DCMAKE_INSTALL_PREFIX=install_x86" $cppDir
+    CMake -G "$global:cmakeGenerator" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x86" $cppDir
 } else {
     Write-Host "Skipped 32-bit CMake."
 }
@@ -508,7 +508,7 @@ if ($make64) {
     $env:BOOST_ROOT = "$boost64"
     cd "$build64"
     Write-Host "Running 64-bit CMake in $build64"
-    CMake -G "$global:cmakeGenerator Win64" "-DCMAKE_INSTALL_PREFIX=install_x64" $cppDir
+    CMake -G "$global:cmakeGenerator Win64" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x64" $cppDir
 } else {
     Write-Host "Skipped 64-bit CMake."
 }
