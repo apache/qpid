@@ -153,6 +153,20 @@ namespace Org.Apache.Qpid.Messaging.Examples
 
 
         /// <summary>
+        /// SessionReceiver implements the ISessionReceiver interface.
+        /// It is the exception function that receives all exception messages
+        /// It may be called any time server is running.
+        /// It is always called on server's private thread.
+        /// After this is called then the sessionReceiver and private thread are closed.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        public void SessionException(Exception exception)
+        {
+            Console.WriteLine("{0} Exception caught.", exception.ToString());
+        }
+
+
+        /// <summary>
         /// Usage
         /// </summary>
         /// <param name="url">Connection target</param>
