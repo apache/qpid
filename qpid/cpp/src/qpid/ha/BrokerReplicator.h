@@ -133,7 +133,7 @@ class BrokerReplicator : public broker::Exchange,
     void deleteQueue(const std::string& name, bool purge=true);
     void deleteExchange(const std::string& name);
 
-    void autoDeleteCheck(boost::shared_ptr<broker::Exchange>, std::set<std::string>&);
+    void autoDeleteCheck(boost::shared_ptr<broker::Exchange>);
     void disconnected();
 
     std::string logPrefix;
