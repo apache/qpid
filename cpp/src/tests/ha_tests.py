@@ -753,11 +753,16 @@ acl deny all all
 
     def test_auto_delete_timeout(self):
         cluster = HaCluster(self, 2)
-        s = cluster[0].connect().session().receiver("q;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
-        cluster[1].wait_queue("q")
+        # Test timeout
+        r1 = cluster[0].connect().session().receiver("q1;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
+        # Test special case of timeout = 0
+        r0 = cluster[0].connect().session().receiver("q0;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':0}}}}")
+        cluster[1].wait_queue("q0")
+        cluster[1].wait_queue("q1")
         cluster[0].kill()
-        cluster[1].wait_queue("q")    # Not timed out yet
-        cluster[1].wait_no_queue("q") # Wait for timeout
+        cluster[1].wait_queue("q1")                       # Not timed out yet
+        cluster[1].wait_no_queue("q1", timeout=2)         # Wait for timeout
+        cluster[1].wait_no_queue("q0", timeout=2)
 
     def test_alt_exchange_dup(self):
         """QPID-4349: if a queue has an alterante exchange and is deleted the
@@ -817,10 +822,13 @@ acl deny all all
                     if class_name(m) == 'queueDeclare' and q_name(m) == qname: found = True
             except Empty: pass
             assert(found)
-        verify_qmf_events("q1")
-        cluster[1].wait_status("ready")
-        cluster.kill(0)
-        verify_qmf_events("q2")
+        try:
+            verify_qmf_events("q1")
+            cluster[1].wait_status("ready")
+            l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
+            cluster.kill(0)
+            verify_qmf_events("q2")
+        finally: l.restore()
 
 def fairshare(msgs, limit, levels):
     """
