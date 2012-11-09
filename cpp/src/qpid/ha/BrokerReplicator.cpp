@@ -63,6 +63,7 @@ using qmf::org::apache::qpid::ha::EventMembersUpdate;
 using qpid::broker::amqp_0_10::MessageTransfer;
 using namespace framing;
 using namespace std;
+using namespace boost;
 using std::ostream;
 using types::Variant;
 using namespace broker;
@@ -790,9 +791,7 @@ bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, co
 
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
 
-void BrokerReplicator::autoDeleteCheck(
-    boost::shared_ptr<Exchange> ex, set<string>& result)
-{
+void BrokerReplicator::autoDeleteCheck(boost::shared_ptr<Exchange> ex) {
     boost::shared_ptr<QueueReplicator> qr(boost::dynamic_pointer_cast<QueueReplicator>(ex));
     if (!qr) return;
     assert(qr);
@@ -802,8 +801,9 @@ void BrokerReplicator::autoDeleteCheck(
             Queue::tryAutoDelete(broker, qr->getQueue(), remoteHost, userId);
         }
         else {
-            // Mark for immediate deletion.
-            result.insert(qr->getQueue()->getName());
+            // Delete immediately. Don't purge, the primary is gone so we need
+            // to reroute the deleted messages.
+            deleteQueue(qr->getQueue()->getName(), false);
         }
     }
 }
@@ -812,13 +812,12 @@ void BrokerReplicator::disconnected() {
     QPID_LOG(info, logPrefix << "Disconnected");
     connection = 0;
     // Clean up auto-delete queues
-    set<string> deleteQueues;
-    exchanges.eachExchange(boost::bind(&BrokerReplicator::autoDeleteCheck,
-                                           this, _1, boost::ref(deleteQueues)));
-    // Don't purge before deleting, the primary is gone so we need to
-    // reroute the deleted messages.
-    for_each(deleteQueues.begin(), deleteQueues.end(),
-             boost::bind(&BrokerReplicator::deleteQueue, this, _1, false));
+    vector<boost::shared_ptr<Exchange> > collect;
+    // Make a copy so we can work outside the ExchangeRegistry lock
+    exchanges.eachExchange(
+        boost::bind(&vector<boost::shared_ptr<Exchange> >::push_back, ref(collect), _1));
+    for_each(collect.begin(), collect.end(),
+             boost::bind(&BrokerReplicator::autoDeleteCheck, this, _1));
 }
 
 }} // namespace broker
