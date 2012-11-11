@@ -275,9 +275,7 @@
     </jython>
   </target>
 
-  <target name="release-mvn" depends="pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release">
-    <antcall target="build"/>
-
+  <target name="release-mvn" depends="build,pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release artifacts">
     <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
     <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
@@ -288,6 +286,29 @@
       <attach file="${module.source.jar}" classifier="sources"/>
       <localRepository path="${maven.local.repo}"/>
       <remoteRepository url="${maven.remote.repo}"/>
+    </artifact:deploy>
+  </target>
+
+  <target name="deploy-snapshot" depends="build,pom" if="module.genpom" description="deploy a snapshot build to nexus">
+    <!-- In order to use this target you need to have predefined a username and password for the
+    server with id ${maven.snapshots.repo.id} in your m2 settings file, e.g ~/.m2/settings.xml -->
+    <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
+
+    <fail message="The pom version must include -SNAPSHOT. Version found was: ${module.pom.version}">
+      <condition>
+        <not>
+          <contains substring="-SNAPSHOT" string="${module.pom.version}" />
+        </not>
+      </condition>
+    </fail>
+
+    <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
+        <localRepository path="${maven.local.repo}"/>
+    </artifact:install>
+
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom">
+      <localRepository path="${maven.local.repo}"/>
+      <remoteRepository id="${maven.snapshots.repo.id}" url="${maven.snapshots.repo.url}"/>
     </artifact:deploy>
   </target>
 
