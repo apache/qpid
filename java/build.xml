@@ -77,6 +77,10 @@
     <iterate target="release-mvn"/>
   </target>
 
+  <target name="deploy-snapshot" description="deploy snapshot artifacts to nexus">
+    <iterate target="deploy-snapshot"/>
+  </target>
+
   <target name="compile" description="compile sources">
     <iterate target="compile"/>
   </target>

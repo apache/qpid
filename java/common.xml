@@ -93,6 +93,10 @@
   <property name="nexus.host"            value="repository.apache.org"/>
   <property name="nexus.upload.url"      value="https://${nexus.host}/service/local/staging/deploy/maven2"/>
 
+  <!-- properties for deplying snapshot artifacts -->
+  <property name="maven.snapshots.repo.id"     value="apache.snapshots.https"/>
+  <property name="maven.snapshots.repo.url"     value="https://${nexus.host}/content/repositories/snapshots"/>
+
   <!-- properties for downloading ivy, and then our dependencies -->
   <property name="ivy.jar.dir"         value="${project.root}/lib/ivy" />
   <property name="ivy.install.version" value="2.2.0" />
