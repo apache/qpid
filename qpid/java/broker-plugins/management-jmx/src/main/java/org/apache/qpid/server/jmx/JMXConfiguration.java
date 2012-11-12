@@ -25,13 +25,15 @@ public class JMXConfiguration
     private final boolean _platformMBeanServer;
     private final String _managementKeyStorePath;
     private final String  _managementKeyStorePassword;
+    private final boolean _managementRightsInferAllAccess;
 
     public JMXConfiguration( boolean platformMBeanServer, String managementKeyStorePath,
-            String managementKeyStorePassword)
+            String managementKeyStorePassword, boolean managementRightsInferAllAccess)
     {
         _platformMBeanServer = platformMBeanServer;
         _managementKeyStorePath = managementKeyStorePath;
         _managementKeyStorePassword = managementKeyStorePassword;
+        _managementRightsInferAllAccess = managementRightsInferAllAccess;
     }
 
     public boolean isPlatformMBeanServer()
@@ -47,6 +49,11 @@ public class JMXConfiguration
     public String getManagementKeyStorePassword()
     {
         return _managementKeyStorePassword;
+    }
+
+    public boolean isManagementRightsInferAllAccess()
+    {
+        return _managementRightsInferAllAccess;
     }
 
 }

@@ -37,7 +37,7 @@ public class DefaultRecovererProviderTest extends TestCase
                 ConfiguredObjectType.VIRTUAL_HOST, ConfiguredObjectType.AUTHENTICATION_PROVIDER,
                 ConfiguredObjectType.GROUP_PROVIDER, ConfiguredObjectType.PLUGIN, ConfiguredObjectType.PORT};
 
-        DefaultRecovererProvider provider = new DefaultRecovererProvider(mock(IApplicationRegistry.class), null);
+        DefaultRecovererProvider provider = new DefaultRecovererProvider(mock(IApplicationRegistry.class));
         for (ConfiguredObjectType configuredObjectType : supportedTypes)
         {
             ConfiguredObjectRecoverer<?> recovever = provider.getRecoverer(configuredObjectType);

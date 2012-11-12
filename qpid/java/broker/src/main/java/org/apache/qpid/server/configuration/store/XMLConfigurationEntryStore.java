@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.HierarchicalConfiguration;
@@ -53,6 +54,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
+
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class XMLConfigurationEntryStore implements ConfigurationEntryStore
@@ -256,6 +258,27 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, name);
+            File configuration = serverConfiguration.getVirtualHostsFile();
+            if (configuration == null)
+            {
+                try
+                {
+                    HierarchicalConfiguration virtualHostConfig = ConfigurationUtils.convertToHierarchical(serverConfiguration.getVirtualHostConfig(name).getConfig());
+                    virtualHostConfig.getRootNode().setName(name);
+                    configuration = File.createTempFile("_virtualhost", ".xml");
+                    XMLConfiguration config = new XMLConfiguration();
+                    config.setRootElementName("virtualhosts");
+                    config.setProperty("virtualhost.name", name);
+                    config.addNodes("virtualhost", Collections.singletonList(virtualHostConfig.getRootNode()));
+                    config.save(configuration);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Cannot store virtual host configuration!", e);
+                }
+            }
+
+            attributes.put(org.apache.qpid.server.model.VirtualHost.CONFIGURATION, configuration.getAbsolutePath());
             ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.VIRTUAL_HOST,
                     attributes, null, this);
             rootChildren.put(entry.getId(), entry);
@@ -332,6 +355,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             attributes.put("keyStorePath", serverConfiguration.getManagementKeyStorePath());
             attributes.put("keyStorePassword", serverConfiguration.getManagementKeyStorePassword());
             attributes.put("usePlatformMBeanServer", serverConfiguration.getPlatformMbeanserver());
+            attributes.put("managementRightsInferAllAccess", serverConfiguration.getManagementRightsInferAllAccess());
 
             ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);
             rootChildren.put(entry.getId(), entry);

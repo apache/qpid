@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +29,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Protocol.ProtocolType;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.AmqpPortAdapter;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -63,34 +65,18 @@ public class PortFactory
     private boolean isAmqpProtocol(Map<String, Object> portAttributes)
     {
         Set<Object> protocolStrings = MapValueConverter.getSetAttribute(Port.PROTOCOLS, portAttributes);
-        // XXX fix this for non AMQP ports, f.e, JMX_RMI,HTTP
-        int amqpProtocolsFound = 0;
-        int nonAmqpProtocolsFound = 0;
+        Set<ProtocolType> protocolTypes = new HashSet<ProtocolType>();
         for (Object protocolObject : protocolStrings)
         {
             Protocol protocol = Protocol.valueOfObject(protocolObject);
-            if (protocol.isAMQP())
-            {
-                amqpProtocolsFound++;
-            }
-            else
-            {
-                nonAmqpProtocolsFound++;
-            }
+            protocolTypes.add(protocol.getProtocolType());
         }
 
-        if (amqpProtocolsFound > 0)
+        if (protocolTypes.size() > 1)
         {
-            if (nonAmqpProtocolsFound > 0)
-            {
-                throw new IllegalConfigurationException("Found AMQP and non-AMQP protocols on port configuration: "
-                        + portAttributes);
-            }
-            return true;
+            throw new IllegalConfigurationException("Found different protocol types '" + protocolTypes + "' on port configuration: " + portAttributes);
         }
-        else
-        {
-            return false;
-        }
+
+        return protocolTypes.contains(ProtocolType.AMQP);
     }
 }

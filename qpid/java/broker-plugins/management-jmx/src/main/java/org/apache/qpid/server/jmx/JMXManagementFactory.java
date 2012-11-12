@@ -36,6 +36,7 @@ public class JMXManagementFactory implements PluginFactory
     public static final String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
     public static final String KEY_STORE_PATH = "keyStorePath";
     public static final String KEY_STORE_PASSWORD = "keyStorePassword";
+    public static final String MANAGEMENT_RIGHTS_INFER_ALL_ACCESS = "managementRightsInferAllAccess";
 
     public static final String PLUGIN_NAME = "MANAGEMENT-JMX";
 
@@ -47,7 +48,8 @@ public class JMXManagementFactory implements PluginFactory
             JMXConfiguration jmxConfiguration = new JMXConfiguration(
                     getBooleanAttribute(USE_PLATFORM_MBEAN_SERVER, attributes, true),
                     getStringAttribute(KEY_STORE_PATH, attributes, null),
-                    getStringAttribute(KEY_STORE_PASSWORD, attributes, null));
+                    getStringAttribute(KEY_STORE_PASSWORD, attributes, null),
+                    getBooleanAttribute(MANAGEMENT_RIGHTS_INFER_ALL_ACCESS, attributes, true));
 
             return new JMXManagement(id, broker, jmxConfiguration);
         }

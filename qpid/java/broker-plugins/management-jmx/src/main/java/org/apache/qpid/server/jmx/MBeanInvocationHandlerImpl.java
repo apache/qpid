@@ -60,13 +60,16 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private MBeanServer _mbs;
     private final ManagementActor _logActor = new ManagementActor(_appRegistry.getRootMessageLogger());
 
-    // XXX remove reference to ServerConfiguration
-    private final boolean _managementRightsInferAllAccess =
-        _appRegistry.getConfiguration().getManagementRightsInferAllAccess();
+    private final boolean _managementRightsInferAllAccess;
 
-    public static MBeanServerForwarder newProxyInstance()
+    MBeanInvocationHandlerImpl(boolean managementRightsInferAllAccess)
     {
-        final InvocationHandler handler = new MBeanInvocationHandlerImpl();
+        _managementRightsInferAllAccess = managementRightsInferAllAccess;
+    }
+
+    public static MBeanServerForwarder newProxyInstance(JMXConfiguration configuration)
+    {
+        final InvocationHandler handler = new MBeanInvocationHandlerImpl(configuration.isManagementRightsInferAllAccess());
         final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
 
         Object proxy = Proxy.newProxyInstance(MBeanServerForwarder.class.getClassLoader(), interfaces, handler);

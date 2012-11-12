@@ -78,8 +78,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private final Port _registryPort;
     private final Port _connectorPort;
 
-    private final String _managementKeyStorePath;
-    private final String  _managementKeyStorePassword;
+    private final JMXConfiguration _jmxConfiguration;
 
     public JMXManagedObjectRegistry(
             Port connectorPort, Port registryPort,
@@ -93,9 +92,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
                 : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
-
-        _managementKeyStorePath = jmxConfiguration.getManagementKeyStorePath();
-        _managementKeyStorePassword = jmxConfiguration.getManagementKeyStorePassword();
+        _jmxConfiguration = jmxConfiguration;
     }
 
     @Override
@@ -126,20 +123,23 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         if (connectorSslEnabled)
         {
+            String managementKeyStorePath = _jmxConfiguration.getManagementKeyStorePath();
+            String managementKeyStorePassword = _jmxConfiguration.getManagementKeyStorePath();
+
             //set the SSL related system properties used by the SSL RMI socket factories to the values
             //given in the configuration file
-            checkKeyStorePathExistsAndIsReadable(_managementKeyStorePath);
+            checkKeyStorePathExistsAndIsReadable(managementKeyStorePath );
 
-            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(_managementKeyStorePath));
+            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(managementKeyStorePath));
 
-            if (_managementKeyStorePassword == null)
+            if (managementKeyStorePassword == null)
             {
                 throw new IllegalConfigurationException(
                         "JMX management SSL keystore password not defined, unable to start requested SSL protected JMX server");
             }
             else
             {
-               System.setProperty("javax.net.ssl.keyStorePassword", _managementKeyStorePassword);
+               System.setProperty("javax.net.ssl.keyStorePassword", managementKeyStorePassword);
             }
 
             //create the SSL RMI socket factories
@@ -240,7 +240,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         };
 
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
-        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
+        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance(_jmxConfiguration);
         _cs.setMBeanServerForwarder(mbsf);
 
         // Install a ManagementLogonLogoffReporter so we can report as users logon/logoff

@@ -46,6 +46,7 @@ public interface VirtualHost extends ConfiguredObject
     public static final String QUEUE_COUNT = "queueCount";
     public static final String EXCHANGE_COUNT = "exchangeCount";
     public static final String CONNECTION_COUNT = "connectionCount";
+    public static final String CONFIGURATION = "configuration";
 
     public static final Collection<String> AVAILABLE_STATISTICS =
             Collections.unmodifiableList(
@@ -109,7 +110,8 @@ public interface VirtualHost extends ConfiguredObject
                             ALERT_THRESHOLD_MESSAGE_AGE,
                             ALERT_THRESHOLD_MESSAGE_SIZE,
                             ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
+                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                            CONFIGURATION));
 
 
 

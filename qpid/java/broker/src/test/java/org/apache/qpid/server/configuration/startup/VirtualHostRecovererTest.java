@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
@@ -44,15 +43,13 @@ public class VirtualHostRecovererTest extends TestCase
         VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         SecurityManager securityManager = mock(SecurityManager.class);
-        Map<String, VirtualHostConfiguration> configurations = new HashMap<String, VirtualHostConfiguration>();
-        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(virtualHostRegistry, statisticsGatherer, securityManager, configurations);
+        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(virtualHostRegistry, statisticsGatherer, securityManager);
 
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         when(entry.getAttributes()).thenReturn(attributes);
-        configurations.put(getName(), mock(VirtualHostConfiguration.class));
 
         VirtualHost host = recoverer.create(null, entry, parent);
 

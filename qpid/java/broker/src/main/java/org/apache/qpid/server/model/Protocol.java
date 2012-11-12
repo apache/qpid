@@ -107,7 +107,7 @@ public enum Protocol
         return false;
     }
 
-    static enum ProtocolType
+    public static enum ProtocolType
     {
         AMQP, HTTP, JMX, RMI;
     }

@@ -23,20 +23,14 @@ package org.apache.qpid.server.configuration;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationFactory;
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
@@ -147,7 +141,7 @@ public class ServerConfiguration extends AbstractConfiguration
      */
     public ServerConfiguration(File configurationURL) throws ConfigurationException
     {
-        this(parseConfig(configurationURL));
+        this(XmlConfigurationUtilities.parseConfig(configurationURL, envVarMap));
         _configFile = configurationURL;
     }
 
@@ -304,7 +298,7 @@ public class ServerConfiguration extends AbstractConfiguration
                 {
                     throw new ConfigurationException("Virtualhosts file does not exist");
                 }
-	        	vhostConfiguration = parseConfig(new File(fileName));
+                vhostConfiguration = XmlConfigurationUtilities.parseConfig(new File(fileName), envVarMap);
 
                 // save the default virtualhost name
                 String defaultVirtualHost = vhostConfiguration.getString("default");
@@ -322,36 +316,6 @@ public class ServerConfiguration extends AbstractConfiguration
             VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)));
             _virtualHosts.put(virtualhost.getName(), virtualhost);
         }
-    }
-
-    private static void substituteEnvironmentVariables(Configuration conf)
-    {
-        for (Entry<String, String> var : envVarMap.entrySet())
-        {
-            String val = System.getenv(var.getKey());
-            if (val != null)
-            {
-                conf.setProperty(var.getValue(), val);
-            }
-        }
-    }
-
-    private static Configuration parseConfig(File file) throws ConfigurationException
-    {
-        ConfigurationFactory factory = new ConfigurationFactory();
-        factory.setConfigurationFileName(file.getAbsolutePath());
-        Configuration conf = factory.getConfiguration();
-
-        Iterator<?> keys = conf.getKeys();
-        if (!keys.hasNext())
-        {
-            keys = null;
-            conf = flatConfig(file);
-        }
-
-        substituteEnvironmentVariables(conf);
-
-        return conf;
     }
 
     /**
@@ -411,41 +375,6 @@ public class ServerConfiguration extends AbstractConfiguration
         }
 
         return locale;
-    }
-
-    // Our configuration class needs to make the interpolate method
-    // public so it can be called below from the config method.
-    public static class MyConfiguration extends CompositeConfiguration
-    {
-        public String interpolate(String obj)
-        {
-            return super.interpolate(obj);
-        }
-    }
-
-    public final static Configuration flatConfig(File file) throws ConfigurationException
-    {
-        // We have to override the interpolate methods so that
-        // interpolation takes place across the entirety of the
-        // composite configuration. Without doing this each
-        // configuration object only interpolates variables defined
-        // inside itself.
-        final MyConfiguration conf = new MyConfiguration();
-        conf.addConfiguration(new SystemConfiguration()
-        {
-            protected String interpolate(String o)
-            {
-                return conf.interpolate(o);
-            }
-        });
-        conf.addConfiguration(new XMLConfiguration(file)
-        {
-            protected String interpolate(String o)
-            {
-                return conf.interpolate(o);
-            }
-        });
-        return conf;
     }
 
     public String getConfigurationURL()
@@ -883,7 +812,6 @@ public class ServerConfiguration extends AbstractConfiguration
         return disabledFeatures;
     }
 
-    // XXX move into management attributes for JMX & HTTP plugins
     public boolean getManagementRightsInferAllAccess()
     {
         return getBooleanValue("management.managementRightsInferAllAccess", true);
@@ -952,4 +880,10 @@ public class ServerConfiguration extends AbstractConfiguration
 
         return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
     }
+
+    public File getVirtualHostsFile()
+    {
+        return _vhostsFile;
+    }
+
 }

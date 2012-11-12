@@ -20,12 +20,10 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
@@ -42,16 +40,14 @@ public class DefaultRecovererProvider implements RecovererProvider
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final PortFactory _portFactory;
     private final IApplicationRegistry _registry;
-    private final Map<String, VirtualHostConfiguration> _virtualHostConfiguration;
     private final QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader;
     private final QpidServiceLoader<PluginFactory> _pluginFactoryServiceLoader;
 
-    public DefaultRecovererProvider(IApplicationRegistry registry, Map<String, VirtualHostConfiguration> virtualHostConfiguration)
+    public DefaultRecovererProvider(IApplicationRegistry registry)
     {
         _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
         _portFactory = new PortFactory(registry);
         _registry = registry;
-        _virtualHostConfiguration = virtualHostConfiguration;
         _groupManagerServiceLoader = new QpidServiceLoader<GroupManagerFactory>();
         _pluginFactoryServiceLoader = new QpidServiceLoader<PluginFactory>();
     }
@@ -64,7 +60,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         case BROKER:
             return new BrokerRecoverer(_authenticationProviderFactory, _portFactory, _registry);
         case VIRTUAL_HOST:
-            return new VirtualHostRecoverer(_registry.getVirtualHostRegistry(),(StatisticsGatherer)_registry, _registry.getSecurityManager(), _virtualHostConfiguration);
+            return new VirtualHostRecoverer(_registry.getVirtualHostRegistry(),(StatisticsGatherer)_registry, _registry.getSecurityManager());
         case AUTHENTICATION_PROVIDER:
             return new AuthenticationProviderRecoverer(_authenticationProviderFactory);
         case PORT:

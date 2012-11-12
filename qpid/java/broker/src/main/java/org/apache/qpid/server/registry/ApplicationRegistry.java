@@ -23,8 +23,6 @@ package org.apache.qpid.server.registry;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -205,7 +203,9 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             _securityManager = new SecurityManager(_configuration.getConfig());
 
-            createBroker();
+            RecovererProvider provider = new DefaultRecovererProvider(this);
+            ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(ConfiguredObjectType.BROKER);
+            _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
             getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
             initialiseStatisticsReporting();
@@ -233,20 +233,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             CurrentActor.remove();
         }
 
-    }
-
-    private void createBroker()
-    {
-        // XXX get rid of it!!
-        Map<String, VirtualHostConfiguration> virtualHostConfigurations = new HashMap<String, VirtualHostConfiguration>();
-        String[] vhNames = _configuration.getVirtualHostsNames();
-        for (String name : vhNames)
-        {
-            virtualHostConfigurations.put(name, _configuration.getVirtualHostConfig(name));
-        }
-        RecovererProvider provider = new DefaultRecovererProvider(this, virtualHostConfigurations);
-        ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(ConfiguredObjectType.BROKER);
-        _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
     }
 
     public void initialiseStatisticsReporting()

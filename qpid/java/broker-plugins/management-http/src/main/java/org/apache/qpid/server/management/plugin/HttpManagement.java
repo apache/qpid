@@ -77,7 +77,6 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private final HttpConfiguration _configuration;
 
-    // XXX refactor back to use a single instance of server and add connectors for different ports
     public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration)
     {
         super(id);
