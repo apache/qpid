@@ -1,7 +1,7 @@
 [Unit]
 Description=An AMQP message broker daemon.
 Documentation=man:qpidd(1) http://qpid.apache.org/
-After=network.target
+Requires=network.target
 
 [Service]
 User=qpidd
