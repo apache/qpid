@@ -26,11 +26,14 @@ include(FindPerlLibs)
 
 set (SWIG_MINIMUM_VERSION "1.3.32")
 
-if (SWIG_FOUND)
+if (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
+  message("Found Swig < ${SWIG_MINIMUM_VERSION} - skipping language bindings")
+  set(SWIG_SUFFICIENT_VERSION FALSE)
+else()
+  set(SWIG_SUFFICIENT_VERSION TRUE)
+endif()
 
-    if (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
-      message(FATAL_ERROR "Swig >= ${SWIG_MINIMUM_VERSION} required.")
-    endif()
+if (SWIG_FOUND AND SWIG_SUFFICIENT_VERSION)
 
     set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
 
@@ -65,4 +68,4 @@ if (SWIG_FOUND)
 
         add_subdirectory(qpid/perl)
     endif (PERLLIBS_FOUND)
-endif (SWIG_FOUND)
+endif (SWIG_FOUND AND SWIG_SUFFICIENT_VERSION)
