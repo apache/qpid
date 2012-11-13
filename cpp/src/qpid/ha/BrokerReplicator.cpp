@@ -63,7 +63,6 @@ using qmf::org::apache::qpid::ha::EventMembersUpdate;
 using qpid::broker::amqp_0_10::MessageTransfer;
 using namespace framing;
 using namespace std;
-using namespace boost;
 using std::ostream;
 using types::Variant;
 using namespace broker;
