@@ -29,6 +29,10 @@ AC_PROG_CXX
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG([C++])
 
+# Check whether a C++ was found (AC_PROG_CXX sets $CXX to "g++" even when it
+# doesn't exist)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],[],[AC_MSG_ERROR([No C++ compiler found])])
+
 # Check for optional use of help2man
 AC_CHECK_PROG([HELP2MAN], [help2man], [help2man])
 AC_ARG_WITH([help2man],
