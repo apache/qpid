@@ -33,7 +33,7 @@ public class SimpleAMQQueueThreadPoolTest extends InternalBrokerBaseCase
     public void test() throws AMQException
     {
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
-        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        VirtualHost test = getRegistry().getVirtualHostRegistry().getVirtualHost("test");
 
         try
         {

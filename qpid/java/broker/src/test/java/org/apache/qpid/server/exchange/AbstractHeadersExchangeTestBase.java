@@ -53,7 +53,7 @@ import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
@@ -92,7 +92,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
     private TestQueue bind(String key, String queueName, Map<String,Object> args) throws AMQException
     {
-        TestQueue queue = new TestQueue(new AMQShortString(queueName));
+        TestQueue queue = new TestQueue(new AMQShortString(queueName), getRegistry());
         queues.add(queue);
         exchange.onBind(new Binding(null, key, queue, exchange, args));
         return queue;
@@ -273,10 +273,10 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             return getNameShortString().toString();
         }
 
-        public TestQueue(AMQShortString name) throws AMQException
+        public TestQueue(AMQShortString name, IApplicationRegistry registry) throws AMQException
         {
-            super(UUIDGenerator.generateRandomUUID(), name, false, new AMQShortString("test"), true, false,ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"), Collections.EMPTY_MAP);
-            ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry().registerQueue(this);
+            super(UUIDGenerator.generateRandomUUID(), name, false, new AMQShortString("test"), true, false, registry.getVirtualHostRegistry().getVirtualHost("test"), Collections.EMPTY_MAP);
+            registry.getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry().registerQueue(this);
         }
 
 

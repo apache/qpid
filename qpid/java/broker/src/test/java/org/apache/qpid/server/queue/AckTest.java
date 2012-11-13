@@ -44,6 +44,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -70,9 +71,10 @@ public class AckTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
+        _virtualHost = registry.getVirtualHost("test");
         _messageStore = new TestableMemoryMessageStore();
-        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, registry);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 
         _protocolSession.addChannel(_channel);

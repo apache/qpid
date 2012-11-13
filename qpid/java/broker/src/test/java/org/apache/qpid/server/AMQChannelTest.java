@@ -22,9 +22,9 @@ package org.apache.qpid.server;
 
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class AMQChannelTest extends InternalBrokerBaseCase
 {
@@ -35,8 +35,9 @@ public class AMQChannelTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
-        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
+        _virtualHost = registry.getVirtualHosts().iterator().next();
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, registry);
     }
 
     public void testCompareTo() throws Exception
@@ -44,7 +45,7 @@ public class AMQChannelTest extends InternalBrokerBaseCase
         AMQChannel channel1 = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
 
         // create a channel with the same channelId but on a different session
-        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost), 1, _virtualHost.getMessageStore());
+        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, getRegistry().getVirtualHostRegistry()), 1, _virtualHost.getMessageStore());
         assertFalse("Unexpected compare result", channel1.compareTo(channel2) == 0);
         assertEquals("Unexpected compare result", 0, channel1.compareTo(channel1));
     }

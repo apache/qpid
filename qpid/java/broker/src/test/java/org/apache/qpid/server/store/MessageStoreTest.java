@@ -38,7 +38,6 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
@@ -49,13 +48,12 @@ import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.FileUtils;
-import org.mockito.Mockito;
 
 import java.io.File;
 import java.util.HashMap;
@@ -116,6 +114,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     protected void reloadVirtualHost()
     {
+        IApplicationRegistry registry = getRegistry();
         VirtualHost original = getVirtualHost();
 
         if (getVirtualHost() != null)
@@ -134,7 +133,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            setVirtualHost(ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, Mockito.mock(Broker.class))));
+            setVirtualHost(registry.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, registry.getBroker())));
         }
         catch (Exception e)
         {

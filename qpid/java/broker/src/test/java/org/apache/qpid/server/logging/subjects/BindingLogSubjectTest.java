@@ -24,7 +24,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -42,7 +41,7 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
+        _testVhost = getRegistry().getVirtualHostRegistry().
                 getVirtualHost("test");
         // Configure items for subjectCreation
         _routingKey = new AMQShortString("RoutingKey");

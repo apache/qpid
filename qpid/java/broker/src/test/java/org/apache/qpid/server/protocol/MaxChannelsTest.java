@@ -26,6 +26,7 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends InternalBrokerBaseCase
@@ -34,8 +35,9 @@ public class MaxChannelsTest extends InternalBrokerBaseCase
 
     public void testChannels() throws Exception
     {
-        VirtualHost vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
-        _session = new InternalTestProtocolSession(vhost);
+        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
+        VirtualHost vhost = registry.getVirtualHost("test");
+        _session = new InternalTestProtocolSession(vhost, registry);
 
         // check the channel count is correct
         int channelCount = _session.getChannels().size();

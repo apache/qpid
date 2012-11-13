@@ -21,7 +21,6 @@
 package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 
@@ -37,7 +36,7 @@ public class ExchangeLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
+        _testVhost = getRegistry().getVirtualHostRegistry().
                 getVirtualHost("test");
 
         _exchange = _testVhost.getExchangeRegistry().getDefaultExchange();

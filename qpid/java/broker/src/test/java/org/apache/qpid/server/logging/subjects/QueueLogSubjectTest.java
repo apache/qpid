@@ -39,7 +39,7 @@ public class QueueLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
+        _testVhost = getRegistry().getVirtualHostRegistry().
                 getVirtualHost("test");
 
         _queue = new MockAMQQueue("QueueLogSubjectTest");

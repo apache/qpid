@@ -351,13 +351,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
             assertTrue("Unexpected exception message!", e.getMessage().contains("DLQ queue name")
                     && e.getMessage().contains("length exceeds limit of 255"));
         }
-        finally
-        {
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
-        }
     }
 
     /**
@@ -383,13 +376,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
             assertTrue("Unexpected exception is thrown!", e instanceof IllegalArgumentException);
             assertTrue("Unexpected exception message!", e.getMessage().contains("DL exchange name")
                     && e.getMessage().contains("length exceeds limit of 255"));
-        }
-        finally
-        {
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
         }
     }
 

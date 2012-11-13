@@ -36,11 +36,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class TopicExchangeTest extends InternalBrokerBaseCase
 {
@@ -58,9 +58,10 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
     {
         super.setUp();
         _exchange = new TopicExchange();
-        _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
+        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
+        _vhost = registry.getVirtualHosts().iterator().next();
         _store = new MemoryMessageStore();
-        _protocolSession = new InternalTestProtocolSession(_vhost);
+        _protocolSession = new InternalTestProtocolSession(_vhost, registry);
     }
 
     public void testNoRoute() throws AMQException

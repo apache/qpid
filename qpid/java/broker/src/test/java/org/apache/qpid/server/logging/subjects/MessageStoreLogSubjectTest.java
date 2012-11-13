@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -34,7 +33,7 @@ public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
+        _testVhost = getRegistry().getVirtualHostRegistry().
                 getVirtualHost("test");
 
         _subject = new MessageStoreLogSubject(_testVhost, _testVhost.getMessageStore().getClass().getSimpleName());

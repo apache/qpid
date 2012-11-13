@@ -106,7 +106,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
         _virtualHost.getBindingFactory().addBinding(getName(), _queue, defaultExchange, null);
 
-        _session = new InternalTestProtocolSession(_virtualHost);
+        _session = new InternalTestProtocolSession(_virtualHost, _registry.getVirtualHostRegistry());
         CurrentActor.set(_session.getLogActor());
 
         _channel = new AMQChannel(_session, 1, _messageStore);

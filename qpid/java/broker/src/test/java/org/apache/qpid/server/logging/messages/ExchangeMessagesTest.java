@@ -33,7 +33,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     public void testExchangeCreated_Transient()
     {
         // Get the Default Exchange on the Test Vhost for testing
-        Exchange exchange = ApplicationRegistry.getInstance().
+        Exchange exchange = getRegistry().
                 getVirtualHostRegistry().getVirtualHost("test").
                 getExchangeRegistry().getDefaultExchange();
 
@@ -51,7 +51,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     public void testExchangeCreated_Persistent()
     {
         // Get the Default Exchange on the Test Vhost for testing
-        Exchange exchange = ApplicationRegistry.getInstance().
+        Exchange exchange = getRegistry().
                 getVirtualHostRegistry().getVirtualHost("test").
                 getExchangeRegistry().getDefaultExchange();
 
@@ -79,7 +79,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     public void testExchangeDiscardedMessage()
     {
         // Get the Default Exchange on the Test Vhost for testing
-        final Exchange exchange = ApplicationRegistry.getInstance().
+        final Exchange exchange = getRegistry().
                 getVirtualHostRegistry().getVirtualHost("test").
                 getExchangeRegistry().getDefaultExchange();
 

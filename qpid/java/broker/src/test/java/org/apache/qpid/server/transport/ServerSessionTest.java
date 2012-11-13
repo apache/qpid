@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Binary;
@@ -32,7 +31,7 @@ public class ServerSessionTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
+        _virtualHost = getRegistry().getVirtualHostRegistry().getVirtualHosts().iterator().next();
     }
 
     public void testCompareTo() throws Exception

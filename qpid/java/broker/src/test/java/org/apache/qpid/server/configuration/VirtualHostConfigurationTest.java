@@ -25,7 +25,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -68,8 +67,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         // Start the broker now.
         super.createBroker();
 
-        VirtualHost vhost =
-                ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost vhost = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
         // Check that atest was a priority queue with 5 priorities
         AMQQueue atest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
@@ -105,8 +103,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         // Start the broker now.
         super.createBroker();
 
-        VirtualHost vhost =
-                ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost vhost = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
         // Check specifically configured values
         AMQQueue aTest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
@@ -133,7 +130,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         super.createBroker();
 
         // Get vhosts
-        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost test = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
         // Enabled specifically
         assertEquals("Test vhost MDC was configured as enabled", 5 ,test.getConfiguration().getMaxDeliveryCount());
@@ -167,8 +164,8 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         super.createBroker();
 
         // Get vhosts
-        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
-        VirtualHost extra = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName() + "Extra");
+        VirtualHost test = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost extra = getRegistry().getVirtualHostRegistry().getVirtualHost(getName() + "Extra");
 
         // Enabled specifically
         assertTrue("Test vhost DLQ was configured as enabled", test.getConfiguration().isDeadLetterQueueEnabled());
@@ -218,8 +215,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         // Start the broker now.
         super.createBroker();
 
-        VirtualHost vhost =
-                ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost vhost = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
         assertEquals("HouseKeeping PoolSize not set correctly.",
                      initialPoolSize, vhost.getHouseKeepingPoolSize());
@@ -235,8 +231,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
         // Start the broker now.
         super.createBroker();
 
-        VirtualHost vhost =
-                ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+        VirtualHost vhost = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
         assertEquals("Default houseKeeping task count incorrect.", 1,
                      vhost.getHouseKeepingTaskCount());
@@ -260,8 +255,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
          // Start the broker now.
          super.createBroker();
 
-         VirtualHost vhost =
-                 ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+         VirtualHost vhost = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
          assertEquals("HouseKeeping PoolSize not set correctly.",
                       initialPoolSize, vhost.getHouseKeepingPoolSize());
@@ -336,7 +330,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
          super.createBroker();
 
          // Get vhosts
-         VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(getName());
+         VirtualHost test = getRegistry().getVirtualHostRegistry().getVirtualHost(getName());
 
          // Check, that the property stored within the <dot.in.a.name> tag has been properly loaded
          assertEquals("queue with dots in its name has been properly loaded", 5, test.getConfiguration().getQueueConfiguration("dot.in.a.name").getMaxDeliveryCount());
@@ -359,7 +353,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
          super.createBroker();
 
          // Get vhosts
-         VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("dot.in.a.name");
+         VirtualHost test = getRegistry().getVirtualHostRegistry().getVirtualHost("dot.in.a.name");
 
          // Check, that the property stored within the <dot.in.a.name> tag has been properly loaded
          assertEquals("virtual host with dots in the name has been properly loaded", TestableMemoryMessageStore.class.getName(), test.getMessageStore().getClass().getName());
