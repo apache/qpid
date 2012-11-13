@@ -70,7 +70,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         case PLUGIN:
             return new PluginRecoverer(_pluginFactoryServiceLoader);
         }
-        throw new IllegalConfigurationException("Cannot create a recoverer for the type: " + type);
+        return null;
     }
 
 }

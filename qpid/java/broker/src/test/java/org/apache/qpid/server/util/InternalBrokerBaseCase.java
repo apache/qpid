@@ -32,7 +32,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -58,7 +57,6 @@ public class InternalBrokerBaseCase extends QpidTestCase
     private VirtualHost _virtualHost;
     private AMQQueue _queue;
     private AMQShortString QUEUE_NAME;
-    private ServerConfiguration _configuration;
     private XMLConfiguration _configXml = new XMLConfiguration();
     private boolean _started = false;
 
@@ -79,8 +77,6 @@ public class InternalBrokerBaseCase extends QpidTestCase
     {
         _started = true;
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-
-        _configuration = new ServerConfiguration(_configXml);
 
         configure();
 
@@ -120,7 +116,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
     protected IApplicationRegistry createApplicationRegistry() throws ConfigurationException
     {
-        return new TestApplicationRegistry(_configuration);
+        return new TestApplicationRegistry(_configXml);
     }
 
     protected void configure()
@@ -338,16 +334,6 @@ public class InternalBrokerBaseCase extends QpidTestCase
     public void setQUEUE_NAME(AMQShortString QUEUE_NAME)
     {
         this.QUEUE_NAME = QUEUE_NAME;
-    }
-
-    public ServerConfiguration getConfiguration()
-    {
-        return _configuration;
-    }
-
-    public void setConfiguration(ServerConfiguration configuration)
-    {
-        _configuration = configuration;
     }
 
     public XMLConfiguration getConfigXml()

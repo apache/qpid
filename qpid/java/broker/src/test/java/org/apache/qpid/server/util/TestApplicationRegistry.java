@@ -20,8 +20,15 @@
  */
 package org.apache.qpid.server.util;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.commons.configuration.ConfigurationUtils;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -33,16 +40,15 @@ import org.apache.qpid.server.security.auth.manager.TestAuthenticationManagerFac
 public class TestApplicationRegistry extends ApplicationRegistry
 {
 
-    public TestApplicationRegistry(ServerConfiguration config) throws ConfigurationException
+    public TestApplicationRegistry(Configuration config) throws ConfigurationException
     {
-        super(config);
+        super(createStore(config));
     }
 
     @Override
     public void initialise() throws Exception
     {
         LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
-        getConfiguration().getConfig().addProperty("security." + TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER, "");
 
         super.initialise();
 
@@ -50,6 +56,30 @@ public class TestApplicationRegistry extends ApplicationRegistry
         GenericActor.setDefaultMessageLogger(new NullRootMessageLogger());
     }
 
+    private static ConfigurationEntryStore createStore(Configuration config) throws ConfigurationException
+    {
+        File file;
+        try
+        {
+            file = File.createTempFile("_config", ".xml");
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Cannot create configuration file");
+        }
+        XMLConfiguration xmlConfiguration = null;
+        if (config instanceof XMLConfiguration)
+        {
+            xmlConfiguration = (XMLConfiguration)config;
+        }
+        else
+        {
+            xmlConfiguration = new XMLConfiguration(ConfigurationUtils.convertToHierarchical(config));
+        }
+        xmlConfiguration.addProperty("security." + TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER, "");
+        xmlConfiguration.save(file);
+        return new XMLConfigurationEntryStore(file);
+    }
 }
 
 

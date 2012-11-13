@@ -46,6 +46,17 @@ public interface Broker extends ConfiguredObject
     String UPDATED = "updated";
     String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
 
+    String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
+    String ALERT_THRESHOLD_MESSAGE_COUNT = "alertThresholdMessageCount";
+    String ALERT_THRESHOLD_QUEUE_DEPTH = "alertThresholdQueueDepth";
+    String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
+    String ALERT_REPEAT_GAP = "alertRepeatGap";
+    String FLOW_CONTROL_SIZE_BYTES = "queueFlowControlSizeBytes";
+    String FLOW_CONTROL_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
+    String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
+    String DEAD_LETTER_QUEUE_ENABLED = "deadLetterQueueEnabled";
+    String HOUSEKEEPING_CHECK_PERIOD = "housekeepingCheckPeriod";
+
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -64,7 +75,17 @@ public interface Broker extends ConfiguredObject
                               STATE,
                               TIME_TO_LIVE,
                               UPDATED,
-                              DEFAULT_AUTHENTICATION_PROVIDER));
+                              DEFAULT_AUTHENTICATION_PROVIDER,
+                              ALERT_THRESHOLD_MESSAGE_AGE,
+                              ALERT_THRESHOLD_MESSAGE_COUNT,
+                              ALERT_THRESHOLD_QUEUE_DEPTH,
+                              ALERT_THRESHOLD_MESSAGE_SIZE,
+                              ALERT_REPEAT_GAP,
+                              FLOW_CONTROL_SIZE_BYTES,
+                              FLOW_CONTROL_RESUME_SIZE_BYTES,
+                              MAXIMUM_DELIVERY_ATTEMPTS,
+                              DEAD_LETTER_QUEUE_ENABLED,
+                              HOUSEKEEPING_CHECK_PERIOD));
 
     //children
     Collection < VirtualHost > getVirtualHosts();

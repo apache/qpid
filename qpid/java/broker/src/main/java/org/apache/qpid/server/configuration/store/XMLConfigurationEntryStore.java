@@ -68,6 +68,11 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
     private PortConfigurationHelper _portConfigurationHelper;
 
+    public XMLConfigurationEntryStore(File configFile) throws ConfigurationException
+    {
+        this(new ServerConfiguration(configFile), new BrokerOptions());
+    }
+
     public XMLConfigurationEntryStore(File configFile, BrokerOptions options) throws ConfigurationException
     {
         this(new ServerConfiguration(configFile), options);
@@ -106,6 +111,17 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     {
         // XXX include all broker attributes
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, _serverConfiguration.getMaximumMessageAge());
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, _serverConfiguration.getMaximumMessageSize());
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, _serverConfiguration.getMaximumQueueDepth());
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, _serverConfiguration.getMaximumMessageCount());
+        brokerAttributes.put(Broker.ALERT_REPEAT_GAP, _serverConfiguration.getMinimumAlertRepeatGap());
+        brokerAttributes.put(Broker.FLOW_CONTROL_RESUME_SIZE_BYTES, _serverConfiguration.getFlowResumeCapacity());
+        brokerAttributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, _serverConfiguration.getCapacity());
+        brokerAttributes.put(Broker.MAXIMUM_DELIVERY_ATTEMPTS, _serverConfiguration.getMaxDeliveryCount());
+        brokerAttributes.put(Broker.DEAD_LETTER_QUEUE_ENABLED, _serverConfiguration.isDeadLetterQueueEnabled());
+        brokerAttributes.put(Broker.HOUSEKEEPING_CHECK_PERIOD, _serverConfiguration.getHousekeepingCheckPeriod());
+
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, _serverConfiguration.getDefaultAuthenticationManager());
         ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, ConfiguredObjectType.BROKER, brokerAttributes,
                 Collections.unmodifiableSet(_rootChildren.keySet()), this);

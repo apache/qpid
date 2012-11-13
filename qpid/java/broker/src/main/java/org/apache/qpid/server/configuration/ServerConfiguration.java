@@ -37,6 +37,7 @@ import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
 public class ServerConfiguration extends AbstractConfiguration
@@ -95,30 +96,17 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final String CONNECTOR_INCLUDE_08 = "connector.include08";
 
     {
-        envVarMap.put("QPID_PORT", "connector.port");
-        envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
-        envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
-        envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
-        envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
-        envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
-        envVarMap.put("QPID_AUTOREGISTER", "auto_register");
-        envVarMap.put("QPID_MANAGEMENTENABLED", "management.enabled");
-        envVarMap.put("QPID_HTTPMANAGEMENTENABLED", "management.http.enabled");
-        envVarMap.put("QPID_HTTPMANAGEMENTPORT", "management.http.port");
-        envVarMap.put("QPID_HEARTBEATDELAY", "heartbeat.delay");
-        envVarMap.put("QPID_HEARTBEATTIMEOUTFACTOR", "heartbeat.timeoutFactor");
-        envVarMap.put("QPID_MAXIMUMMESSAGEAGE", "maximumMessageAge");
-        envVarMap.put("QPID_MAXIMUMMESSAGECOUNT", "maximumMessageCount");
-        envVarMap.put("QPID_MAXIMUMQUEUEDEPTH", "maximumQueueDepth");
-        envVarMap.put("QPID_MAXIMUMMESSAGESIZE", "maximumMessageSize");
-        envVarMap.put("QPID_MAXIMUMCHANNELCOUNT", "maximumChannelCount");
-        envVarMap.put("QPID_MINIMUMALERTREPEATGAP", "minimumAlertRepeatGap");
-        envVarMap.put("QPID_QUEUECAPACITY", "capacity");
-        envVarMap.put("QPID_FLOWRESUMECAPACITY", "flowResumeCapacity");
-        envVarMap.put("QPID_SOCKETRECEIVEBUFFER", "connector.socketReceiveBuffer");
-        envVarMap.put("QPID_SOCKETWRITEBUFFER", "connector.socketWriteBuffer");
-        envVarMap.put("QPID_TCPNODELAY", "connector.tcpNoDelay");
-        envVarMap.put("QPID_STATUS-UPDATES", "status-updates");
+        envVarMap.put(BrokerProperties.PROPERTY_FRAME_SIZE, "advanced.framesize");
+        envVarMap.put(BrokerProperties.PROPERTY_MSG_AUTH, "security.msg-auth");
+        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_AGE, "maximumMessageAge");
+        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_COUNT, "maximumMessageCount");
+        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_QUEUE_DEPTH, "maximumQueueDepth");
+        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_SIZE, "maximumMessageSize");
+        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_CHANNEL_COUNT, "maximumChannelCount");
+        envVarMap.put(BrokerProperties.PROPERTY_MINIMUM_ALERT_REPEAT_GAP, "minimumAlertRepeatGap");
+        envVarMap.put(BrokerProperties.PROPERTY_FLOW_CAPACITY, "capacity");
+        envVarMap.put(BrokerProperties.PROPERTY_FLOW_RESUME_CAPACITY, "flowResumeCapacity");
+        envVarMap.put(BrokerProperties.PROPERTY_STATUS_UPDATES, "status-updates");
     }
 
     /**
@@ -313,7 +301,7 @@ public class ServerConfiguration extends AbstractConfiguration
             String name = (String) hosts.get(j);
 
             // Add the virtual hosts to the server configuration
-            VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)));
+            VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)), null);
             _virtualHosts.put(virtualhost.getName(), virtualhost);
         }
     }
@@ -555,36 +543,43 @@ public class ServerConfiguration extends AbstractConfiguration
         return getDoubleValue("heartbeat.timeoutFactor", 2.0);
     }
 
+    @Deprecated
     public long getMaximumMessageAge()
     {
         return getLongValue("maximumMessageAge");
     }
 
+    @Deprecated
     public long getMaximumMessageCount()
     {
         return getLongValue("maximumMessageCount");
     }
 
+    @Deprecated
     public long getMaximumQueueDepth()
     {
         return getLongValue("maximumQueueDepth");
     }
 
+    @Deprecated
     public long getMaximumMessageSize()
     {
         return getLongValue("maximumMessageSize");
     }
 
+    @Deprecated
     public long getMinimumAlertRepeatGap()
     {
         return getLongValue("minimumAlertRepeatGap", DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
     }
 
+    @Deprecated
     public long getCapacity()
     {
         return getLongValue("capacity");
     }
 
+    @Deprecated
     public long getFlowResumeCapacity()
     {
         return getLongValue("flowResumeCapacity", getCapacity());
@@ -760,6 +755,7 @@ public class ServerConfiguration extends AbstractConfiguration
         getConfig().setProperty("housekeeping.checkPeriod", value);
     }
 
+    @Deprecated
     public long getHousekeepingCheckPeriod()
     {
         return getLongValue("housekeeping.checkPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
@@ -817,6 +813,7 @@ public class ServerConfiguration extends AbstractConfiguration
         return getBooleanValue("management.managementRightsInferAllAccess", true);
     }
 
+    @Deprecated
     public int getMaxDeliveryCount()
     {
         return getConfig().getInt("maximumDeliveryCount", 0);
@@ -825,6 +822,7 @@ public class ServerConfiguration extends AbstractConfiguration
     /**
      * Check if dead letter queue delivery is enabled, defaults to disabled if not set.
      */
+    @Deprecated
     public boolean isDeadLetterQueueEnabled()
     {
         return getConfig().getBoolean("deadLetterQueues", false);
@@ -833,6 +831,7 @@ public class ServerConfiguration extends AbstractConfiguration
     /**
      * String to affix to end of queue name when generating an alternate exchange for DLQ purposes.
      */
+    @Deprecated
     public String getDeadLetterExchangeSuffix()
     {
         return getConfig().getString("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
@@ -841,6 +840,7 @@ public class ServerConfiguration extends AbstractConfiguration
     /**
      * String to affix to end of queue name when generating a queue for DLQ purposes.
      */
+    @Deprecated
     public String getDeadLetterQueueSuffix()
     {
         return getConfig().getString("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);

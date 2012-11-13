@@ -25,7 +25,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
 import java.util.HashMap;
@@ -38,10 +38,12 @@ public class VirtualHostConfiguration extends AbstractConfiguration
     private final String _name;
     private final Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
     private final Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private final Broker _broker;
 
-    public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
+    public VirtualHostConfiguration(String name, Configuration config, Broker broker) throws ConfigurationException
     {
         _name = name;
+        _broker = broker;
         setConfiguration(config);
     }
 
@@ -80,10 +82,9 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         return _name;
     }
 
-    // XXX remove reference on ServerConfiguration
     public long getHousekeepingCheckPeriod()
     {
-        return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
+        return getLongValue("housekeeping.checkPeriod", getBrokerAttributeAsLong(Broker.HOUSEKEEPING_CHECK_PERIOD));
     }
 
     public Configuration getStoreConfiguration()
@@ -140,38 +141,37 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public int getMaximumMessageAge()
     {
-        return getIntValue("queues.maximumMessageAge");
+        return getIntValue("queues.maximumMessageAge", getBrokerAttributeAsInt(Broker.ALERT_THRESHOLD_MESSAGE_AGE));
     }
 
     public Long getMaximumQueueDepth()
     {
-        return getLongValue("queues.maximumQueueDepth");
+        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH));
     }
 
     public Long getMaximumMessageSize()
     {
-        return getLongValue("queues.maximumMessageSize");
+        return getLongValue("queues.maximumMessageSize", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_MESSAGE_SIZE));
     }
 
     public Long getMaximumMessageCount()
     {
-        return getLongValue("queues.maximumMessageCount");
+        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_MESSAGE_COUNT));
     }
 
-    // XXX remove reference on ServerConfiguration
     public Long getMinimumAlertRepeatGap()
     {
-        return getLongValue("queues.minimumAlertRepeatGap", ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap());
+        return getLongValue("queues.minimumAlertRepeatGap", getBrokerAttributeAsLong(Broker.ALERT_REPEAT_GAP));
     }
 
     public long getCapacity()
     {
-        return getLongValue("queues.capacity");
+        return getLongValue("queues.capacity", getBrokerAttributeAsLong(Broker.FLOW_CONTROL_SIZE_BYTES));
     }
 
     public long getFlowResumeCapacity()
     {
-        return getLongValue("queues.flowResumeCapacity", getCapacity());
+        return getLongValue("queues.flowResumeCapacity", getBrokerAttributeAsLong(Broker.FLOW_CONTROL_RESUME_SIZE_BYTES));
     }
 
     public String[] getElementsProcessed()
@@ -225,19 +225,35 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         return getLongValue("transactionTimeout.idleClose", 0L);
     }
 
-    // XXX remove reference on ServerConfiguration
     public int getMaxDeliveryCount()
     {
-        return getIntValue("queues.maximumDeliveryCount", ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount());
+        return getIntValue("queues.maximumDeliveryCount", getBrokerAttributeAsInt(Broker.MAXIMUM_DELIVERY_ATTEMPTS));
     }
 
     /**
      * Check if dead letter queue delivery is enabled, deferring to the broker configuration if not set.
      */
-    // XXX remove reference on ServerConfiguration
     public boolean isDeadLetterQueueEnabled()
     {
-        return getBooleanValue("queues.deadLetterQueues", ApplicationRegistry.getInstance().getConfiguration().isDeadLetterQueueEnabled());
+        return getBooleanValue("queues.deadLetterQueues", getBrokerAttributeAsBoolean(Broker.DEAD_LETTER_QUEUE_ENABLED));
+    }
+
+    private long getBrokerAttributeAsLong(String name)
+    {
+        Number brokerValue = (Number)_broker.getAttribute(name);
+        return brokerValue == null? 0 : brokerValue.longValue();
+    }
+
+    private int getBrokerAttributeAsInt(String name)
+    {
+        Number brokerValue = (Number)_broker.getAttribute(name);
+        return brokerValue == null? 0 : brokerValue.intValue();
+    }
+
+    private boolean getBrokerAttributeAsBoolean(String name)
+    {
+        Boolean brokerValue = (Boolean)_broker.getAttribute(name);
+        return brokerValue == null? false : brokerValue.booleanValue();
     }
 
 }

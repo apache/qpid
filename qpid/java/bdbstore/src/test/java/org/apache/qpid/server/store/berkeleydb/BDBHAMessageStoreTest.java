@@ -24,7 +24,6 @@ import java.io.File;
 import java.net.InetAddress;
 
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
@@ -158,8 +157,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
     private TestApplicationRegistry initialize() throws Exception
     {
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        ServerConfiguration configuration = new ServerConfiguration(_configXml);
-        TestApplicationRegistry registry = new TestApplicationRegistry(configuration);
+        TestApplicationRegistry registry = new TestApplicationRegistry(_configXml);
         ApplicationRegistry.initialise(registry);
         registry.getVirtualHostRegistry().setDefaultVirtualHostName("test" + _masterPort);
         return registry;

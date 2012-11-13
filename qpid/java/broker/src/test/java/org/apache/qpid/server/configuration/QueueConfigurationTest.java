@@ -25,8 +25,10 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.mockito.Mockito;
 
 public class QueueConfigurationTest extends TestCase
 {
@@ -34,11 +36,13 @@ public class QueueConfigurationTest extends TestCase
     private VirtualHostConfiguration _emptyConf;
     private PropertiesConfiguration _env;
     private VirtualHostConfiguration _fullHostConf;
+    private Broker _broker;
 
     public void setUp() throws Exception
     {
+        _broker = Mockito.mock(Broker.class);
         _env = new PropertiesConfiguration();
-        _emptyConf = new VirtualHostConfiguration("test", _env);
+        _emptyConf = new VirtualHostConfiguration("test", _env, _broker);
 
         PropertiesConfiguration fullEnv = new PropertiesConfiguration();
         fullEnv.setProperty("queues.maximumMessageAge", 1);
@@ -49,7 +53,7 @@ public class QueueConfigurationTest extends TestCase
         fullEnv.setProperty("queues.deadLetterQueues", true);
         fullEnv.setProperty("queues.maximumDeliveryCount", 5);
 
-        _fullHostConf = new VirtualHostConfiguration("test", fullEnv);
+        _fullHostConf = new VirtualHostConfiguration("test", fullEnv, _broker);
 
     }
 
@@ -57,8 +61,10 @@ public class QueueConfigurationTest extends TestCase
     {
         try
         {
-            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
+            ApplicationRegistry registry = new TestApplicationRegistry(_env);
             ApplicationRegistry.initialise(registry);
+
+            Mockito.when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(0);
 
             // Check default value
             QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
@@ -89,8 +95,10 @@ public class QueueConfigurationTest extends TestCase
     {
         try
         {
-            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
+            ApplicationRegistry registry = new TestApplicationRegistry(_env);
             ApplicationRegistry.initialise(registry);
+
+            Mockito.when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(false);
 
             // Check default value
             QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
@@ -180,8 +188,11 @@ public class QueueConfigurationTest extends TestCase
     {
         try
         {
-            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
+            ApplicationRegistry registry = new TestApplicationRegistry(_env);
             ApplicationRegistry.initialise(registry);
+
+            Mockito.when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
+
             // Check default value
             QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
             assertEquals(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP, qConf.getMinimumAlertRepeatGap());
@@ -235,6 +246,6 @@ public class QueueConfigurationTest extends TestCase
         config.addConfiguration(_fullHostConf.getConfig());
         config.addConfiguration(queueConfig);
 
-        return new VirtualHostConfiguration("test", config);
+        return new VirtualHostConfiguration("test", config, _broker);
     }
 }

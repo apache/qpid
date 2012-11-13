@@ -131,25 +131,24 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
-    // XXX remove references to ServerConfiguration
     /** max allowed size(KB) of a single message */
-    private long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
+    private long _maximumMessageSize;
 
     /** max allowed number of messages on a queue. */
-    private long _maximumMessageCount = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageCount();
+    private long _maximumMessageCount;
 
     /** max queue depth for the queue */
-    private long _maximumQueueDepth = ApplicationRegistry.getInstance().getConfiguration().getMaximumQueueDepth();
+    private long _maximumQueueDepth;
 
     /** maximum message age before alerts occur */
-    private long _maximumMessageAge = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageAge();
+    private long _maximumMessageAge;
 
     /** the minimum interval between sending out consecutive alerts of the same type */
-    private long _minimumAlertRepeatGap = ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap();
+    private long _minimumAlertRepeatGap;
 
-    private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
+    private long _capacity;
 
-    private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
+    private long _flowResumeCapacity;
 
     private final Set<NotificationCheck> _notificationChecks = EnumSet.noneOf(NotificationCheck.class);
 

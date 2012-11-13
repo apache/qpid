@@ -38,7 +38,6 @@ import java.io.IOException;
 
 public class VirtualHostImplTest extends QpidTestCase
 {
-    private ServerConfiguration _configuration;
     private ApplicationRegistry _registry;
 
     @Override
@@ -174,9 +173,7 @@ public class VirtualHostImplTest extends QpidTestCase
 
     private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
     {
-        _configuration = new ServerConfiguration(new XMLConfiguration(config));
-
-        _registry = new TestApplicationRegistry(_configuration);
+        _registry = new TestApplicationRegistry(new XMLConfiguration(config));
         ApplicationRegistry.initialise(_registry);
 
         return _registry.getVirtualHostRegistry().getVirtualHost(vhostName);

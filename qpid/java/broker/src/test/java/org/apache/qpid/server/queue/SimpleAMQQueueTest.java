@@ -44,6 +44,7 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
@@ -113,7 +114,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env);
+        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env, mock(Broker.class));
         vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
         _virtualHost = new VirtualHostImpl( applicationRegistry.getVirtualHostRegistry(), (StatisticsGatherer)applicationRegistry,
                 applicationRegistry.getSecurityManager(), vhostConfig);

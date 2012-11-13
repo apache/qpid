@@ -39,11 +39,15 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
-        BrokerAdapter broker = new BrokerAdapter(entry.getId(), _registry, _authenticationProviderFactory, _portFactory);
+        BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _registry, _authenticationProviderFactory, _portFactory);
         Map<ConfiguredObjectType, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
         for (ConfiguredObjectType type : childEntries.keySet())
         {
             ConfiguredObjectRecoverer<?> recoverer = recovererProvider.getRecoverer(type);
+            if (recoverer == null)
+            {
+                throw new IllegalConfigurationException("Cannot recover entry for the type '" + type + "' from broker");
+            }
             Collection<ConfigurationEntry> entries = childEntries.get(type);
             for (ConfigurationEntry childEntry : entries)
             {

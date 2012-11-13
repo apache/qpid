@@ -85,7 +85,7 @@ public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
         //Close the registry which will perform the close the AuthenticationManager
         stopBroker();
 
-        //Validate that the SASL plugFins have been removed.
+        //Validate that the SASL plugins have been removed.
         Provider[] providersAfterClose = Security.getProviders();
 
         assertTrue("No providers unregistered", providersAfterInitialisation.length > providersAfterClose.length);

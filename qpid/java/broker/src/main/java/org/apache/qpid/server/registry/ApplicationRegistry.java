@@ -28,11 +28,9 @@ import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
@@ -77,8 +75,6 @@ public class ApplicationRegistry implements IApplicationRegistry
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
-
-    private final ServerConfiguration _configuration;
 
     private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
 
@@ -166,25 +162,13 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    // XXX remove this constructor
-    public ApplicationRegistry(ServerConfiguration configuration) throws ConfigurationException
-    {
-        _configuration = configuration;
-    }
-
     public ApplicationRegistry(ConfigurationEntryStore store)
     {
         _store = store;
-        _configuration = ((XMLConfigurationEntryStore)store).getConfiguration();
     }
 
     public void initialise() throws Exception
     {
-        // only in tests store is null
-        if (_store == null)
-        {
-            _store = new XMLConfigurationEntryStore(_configuration,  new BrokerOptions());
-        }
         _logRecorder = new LogRecorder();
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
@@ -201,13 +185,15 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             logStartupMessages(CurrentActor.get());
 
-            _securityManager = new SecurityManager(_configuration.getConfig());
+            // XXX hack
+            ServerConfiguration configuration =  ((XMLConfigurationEntryStore)_store).getConfiguration();
+            _securityManager = new SecurityManager(configuration.getConfig());
 
             RecovererProvider provider = new DefaultRecovererProvider(this);
             ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(ConfiguredObjectType.BROKER);
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
-            getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
+            getVirtualHostRegistry().setDefaultVirtualHostName(configuration.getDefaultVirtualHost());
             initialiseStatisticsReporting();
 
 
@@ -218,7 +204,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             // Create the RootLogger to be used during broker operation
             // XXX this setting should be retrieved from the broker
-            _rootMessageLogger = new Log4jMessageLogger(_configuration.getStatusUpdatesEnabled()); // _broker.getStatusUpdatesEnabled()
+            _rootMessageLogger = new Log4jMessageLogger(configuration.getStatusUpdatesEnabled()); // _broker.getStatusUpdatesEnabled()
 
             CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
             GenericActor.setDefaultMessageLogger(_rootMessageLogger);
@@ -237,10 +223,12 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     public void initialiseStatisticsReporting()
     {
-        long report = _configuration.getStatisticsReportingPeriod() * 1000; // convert to ms
-        final boolean broker = _configuration.isStatisticsGenerationBrokerEnabled();
-        final boolean virtualhost = _configuration.isStatisticsGenerationVirtualhostsEnabled();
-        final boolean reset = _configuration.isStatisticsReportResetEnabled();
+        // XXX hack
+        ServerConfiguration configuration = ((XMLConfigurationEntryStore)_store).getConfiguration();
+        long report = configuration.getStatisticsReportingPeriod() * 1000; // convert to ms
+        final boolean broker = configuration.isStatisticsGenerationBrokerEnabled();
+        final boolean virtualhost = configuration.isStatisticsGenerationVirtualhostsEnabled();
+        final boolean reset = configuration.isStatisticsReportResetEnabled();
 
         /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
         if (report > 0L && (broker || virtualhost))
@@ -386,11 +374,14 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             CurrentActor.remove();
         }
+        _store = null;
+        _broker = null;
     }
 
     public ServerConfiguration getConfiguration()
     {
-        return _configuration;
+        // XXX hack
+        return ((XMLConfigurationEntryStore)_store).getConfiguration();
     }
 
     public VirtualHostRegistry getVirtualHostRegistry()

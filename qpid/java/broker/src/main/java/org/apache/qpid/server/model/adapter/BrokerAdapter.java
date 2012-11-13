@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import static org.apache.qpid.server.util.MapValueConverter.getLongAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
+
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,8 +34,8 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -68,8 +72,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private final PortFactory _portFactory;
 
+    private long _maximumMessageAge;
+    private long _maximumMessageCount;
+    private long _maximumQueueDepth;
+    private long _maximumMessageSize;
+    private long _minimumAlertRepeatGap;
+    private long _flowResumeCapacity;
+    private long _flowCapacity;
+    private int _maximumDeliveryCount;
+    private boolean _deadLetterQueueEnabled;
+    private long _housekeepingCheckPeriod;
 
-    public BrokerAdapter(UUID id, IApplicationRegistry instance, AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
+
+    public BrokerAdapter(UUID id, Map<String, Object> attributes, IApplicationRegistry instance,
+            AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
     {
         super(id);
         _name = "Broker";
@@ -78,6 +94,17 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _statistics = new StatisticsAdapter(instance);
         _authenticationProviderFactory = authenticationProviderFactory;
         _portFactory = portFactory;
+
+        _maximumMessageAge = getLongAttribute(ALERT_THRESHOLD_MESSAGE_AGE, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_AGE, 0));
+        _maximumMessageCount = getLongAttribute(ALERT_THRESHOLD_MESSAGE_COUNT, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_COUNT, 0));
+        _maximumQueueDepth = getLongAttribute(ALERT_THRESHOLD_QUEUE_DEPTH, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_QUEUE_DEPTH, 0));
+        _maximumMessageSize = getLongAttribute(ALERT_THRESHOLD_MESSAGE_SIZE, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_SIZE, 0));
+        _minimumAlertRepeatGap = getLongAttribute(ALERT_REPEAT_GAP, attributes, Long.getLong(BrokerProperties.PROPERTY_MINIMUM_ALERT_REPEAT_GAP, BrokerProperties.DEFAULT_MINIMUM_ALERT_REPEAT_GAP));
+        _flowCapacity = getLongAttribute(FLOW_CONTROL_SIZE_BYTES, attributes, Long.getLong(BrokerProperties.PROPERTY_FLOW_CAPACITY, 0));
+        _flowResumeCapacity = getLongAttribute(FLOW_CONTROL_RESUME_SIZE_BYTES, attributes, Long.getLong(BrokerProperties.PROPERTY_FLOW_RESUME_CAPACITY, _flowCapacity));
+        _maximumDeliveryCount = getIntegerAttribute(MAXIMUM_DELIVERY_ATTEMPTS, attributes, 0);
+        _deadLetterQueueEnabled = getBooleanAttribute(DEAD_LETTER_QUEUE_ENABLED, attributes, false);
+        _housekeepingCheckPeriod = getLongAttribute(HOUSEKEEPING_CHECK_PERIOD, attributes, Long.getLong(BrokerProperties.PROPERTY_HOUSE_KEEPING_CHECK_PERIOD, BrokerProperties.DEFAULT_HOUSEKEEPING_PERIOD));
     }
 
     public Collection<VirtualHost> getVirtualHosts()
@@ -155,13 +182,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        String virtualHostName = (String) attributes.get(VirtualHost.NAME);
-        VirtualHostConfiguration vhostConfig = _applicationRegistry.getConfiguration().getVirtualHostConfig(virtualHostName);
-
         VirtualHostRegistry virtualHostRegistry = _applicationRegistry.getVirtualHostRegistry();
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), this,
                 attributes, virtualHostRegistry, (StatisticsGatherer)_applicationRegistry,
-                _applicationRegistry.getSecurityManager(), vhostConfig);
+                _applicationRegistry.getSecurityManager(), null);
 
         synchronized (_vhostAdapters)
         {
@@ -432,6 +456,46 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return getDefaultAuthenticationProvider();
         }
+        else if (ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+        {
+            return _maximumMessageAge;
+        }
+        else if (ALERT_THRESHOLD_MESSAGE_COUNT.equals(name))
+        {
+            return _maximumMessageCount;
+        }
+        else if (ALERT_THRESHOLD_QUEUE_DEPTH.equals(name))
+        {
+            return _maximumQueueDepth;
+        }
+        else if (ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+        {
+            return _maximumMessageSize;
+        }
+        else if (ALERT_REPEAT_GAP.equals(name))
+        {
+            return _minimumAlertRepeatGap;
+        }
+        else if (FLOW_CONTROL_SIZE_BYTES.equals(name))
+        {
+            return _flowCapacity;
+        }
+        else if (FLOW_CONTROL_RESUME_SIZE_BYTES.equals(name))
+        {
+            return _flowResumeCapacity;
+        }
+        else if (MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+        {
+            return _maximumDeliveryCount;
+        }
+        else if (DEAD_LETTER_QUEUE_ENABLED.equals(name))
+        {
+            return _deadLetterQueueEnabled;
+        }
+        else if (HOUSEKEEPING_CHECK_PERIOD.equals(name))
+        {
+            return _housekeepingCheckPeriod;
+        }
         return super.getAttribute(name);    //TODO - Implement.
     }
 
@@ -622,4 +686,5 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             addPlugin(object);
         }
     }
+
 }

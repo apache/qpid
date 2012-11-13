@@ -63,6 +63,7 @@ public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHo
         Configuration conf = null;
         if (configuration == null)
         {
+            // TODO throw an exception
             conf = new XMLConfiguration();
         }
         else
@@ -83,10 +84,11 @@ public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHo
                 throw new IllegalConfigurationException("Cannot load configuration for virtual host '" + name + "' from file " + configurationFile);
             }
         }
+        // TODO: remove virtual host configuration
         VirtualHostConfiguration virtualHostConfiguration = null;
         try
         {
-            virtualHostConfiguration = new VirtualHostConfiguration(name, conf);
+            virtualHostConfiguration = new VirtualHostConfiguration(name, conf, broker);
         }
         catch (ConfigurationException e)
         {

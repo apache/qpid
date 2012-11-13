@@ -50,16 +50,15 @@ public class XmlConfigurationUtilities
         ConfigurationFactory factory = new ConfigurationFactory();
         factory.setConfigurationFileName(file.getAbsolutePath());
         Configuration conf = factory.getConfiguration();
-    
+
         Iterator<?> keys = conf.getKeys();
         if (!keys.hasNext())
         {
             keys = null;
             conf = flatConfig(file);
         }
-    
+
         XmlConfigurationUtilities.substituteEnvironmentVariables(conf, envVarMap);
-    
         return conf;
     }
 

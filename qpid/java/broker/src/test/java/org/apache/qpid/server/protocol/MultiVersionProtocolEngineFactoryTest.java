@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol;
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -41,7 +40,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
     {
         super.setUp();
 
-        _appRegistry = new TestApplicationRegistry(new ServerConfiguration(new XMLConfiguration()));
+        _appRegistry = new TestApplicationRegistry(new XMLConfiguration());
         ApplicationRegistry.initialise(_appRegistry);
     }
 
