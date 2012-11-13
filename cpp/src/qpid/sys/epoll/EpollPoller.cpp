@@ -384,6 +384,7 @@ void PollerPrivate::resetMode(PollerHandlePrivate& eh) {
         int rc = ::epoll_ctl(epollFd, EPOLL_CTL_MOD, eh.fd(), &epe);
         // If something has closed the fd in the meantime try adding it back
         if (rc ==-1 && errno == ENOENT) {
+            eh.setIdle(); // Reset our handle as if starting from scratch
             rc = ::epoll_ctl(epollFd, EPOLL_CTL_ADD, eh.fd(), &epe);
         }
         QPID_POSIX_CHECK(rc);
