@@ -807,31 +807,6 @@ acl deny all all
         # The backup does not log this as an error so we only check the backup log for errors.
         self.assert_log_no_errors(cluster[1])
 
-    def test_qmf_replication(self):
-        """QPID-4401: Verify that QMF built-in exchanges have default replication"""
-        cluster = HaCluster(self, 2)
-        cluster[0].wait_status("active")
-        sn = cluster.connect(0).session()
-        events = sn.receiver("events;{create:always,node:{x-bindings:[{exchange:'qmf.default.topic',queue:'events',key:'agent.ind.event.org_apache_qpid_broker.#'}]}}")
-        def verify_qmf_events(qname):
-            sn.sender("%s;{create:always}"%(qname)).close() # Generate a QMF event
-            found = False
-            try:
-                while not found:
-                    m = events.fetch(timeout=1)      # Receive
-                    def class_name(m): return m.content[0]['_schema_id']['_class_name']
-                    def q_name(m): return m.content[0]['_values']['qName']
-                    if class_name(m) == 'queueDeclare' and q_name(m) == qname: found = True
-            except Empty: pass
-            assert(found)
-        try:
-            l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
-            verify_qmf_events("q1")
-            cluster[1].wait_status("ready")
-            cluster.kill(0)
-            verify_qmf_events("q2")
-        finally: l.restore()
-
     def test_missed_recreate(self):
         """If a queue or exchange is destroyed and one with the same name re-created
         while a backup is disconnected, the backup should also delete/recreate
