@@ -319,9 +319,9 @@ Broker::Broker(const Broker::Options& conf) :
         std::string qmfDirect("qmf.default.direct");
 
         std::pair<Exchange::shared_ptr, bool> topicPair(
-            exchanges.declare(qmfTopic, ManagementTopicExchange::typeName, false));
+            exchanges.declare(qmfTopic, ManagementTopicExchange::typeName, false, noReplicateArgs()));
         std::pair<Exchange::shared_ptr, bool> directPair(
-            exchanges.declare(qmfDirect, ManagementDirectExchange::typeName, false));
+            exchanges.declare(qmfDirect, ManagementDirectExchange::typeName, false, noReplicateArgs()));
 
         boost::dynamic_pointer_cast<ManagementDirectExchange>(directPair.first)->setManagmentAgent(managementAgent.get(), 2);
         boost::dynamic_pointer_cast<ManagementTopicExchange>(topicPair.first)->setManagmentAgent(managementAgent.get(), 2);
