@@ -40,6 +40,7 @@
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
 const std::string TYPE_NAME("qpid.queue-replicator");
+const std::string QPID_HA("qpid.ha-");
 }
 
 namespace qpid {
@@ -49,8 +50,8 @@ using namespace framing;
 using namespace std;
 using sys::Mutex;
 
-const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_PREFIX+"dequeue");
-const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA_PREFIX+"position");
+const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA+"dequeue");
+const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA+"position");
 const std::string QueueReplicator::QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 
 std::string QueueReplicator::replicatorName(const std::string& queueName) {
@@ -62,7 +63,7 @@ bool QueueReplicator::isReplicatorName(const std::string& name) {
 }
 
 bool QueueReplicator::isEventKey(const std::string key) {
-    const std::string& prefix = QPID_HA_PREFIX;
+    const std::string& prefix = QPID_HA;
     bool ret = key.size() > prefix.size() && key.compare(0, prefix.size(), prefix) == 0;
     return ret;
 }

@@ -99,7 +99,6 @@ inline bool isBackup(BrokerStatus s) { return !isPrimary(s); }
 
 // String constants.
 extern const std::string QPID_REPLICATE;
-extern const std::string QPID_HA_PREFIX;
 extern const std::string QPID_HA_UUID;
 
 /** Define IdSet type, not a typedef so we can overload operator << */
