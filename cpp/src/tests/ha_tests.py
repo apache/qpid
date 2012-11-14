@@ -810,6 +810,7 @@ acl deny all all
     def test_qmf_replication(self):
         """QPID-4401: Verify that QMF built-in exchanges have default replication"""
         cluster = HaCluster(self, 2)
+        cluster[0].wait_status("active")
         sn = cluster.connect(0).session()
         events = sn.receiver("events;{create:always,node:{x-bindings:[{exchange:'qmf.default.topic',queue:'events',key:'agent.ind.event.org_apache_qpid_broker.#'}]}}")
         def verify_qmf_events(qname):
