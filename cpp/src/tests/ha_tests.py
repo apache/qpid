@@ -823,9 +823,9 @@ acl deny all all
             except Empty: pass
             assert(found)
         try:
+            l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
             verify_qmf_events("q1")
             cluster[1].wait_status("ready")
-            l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
             cluster.kill(0)
             verify_qmf_events("q2")
         finally: l.restore()
