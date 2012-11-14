@@ -650,7 +650,7 @@ VariantImpl* VariantImpl::create(const Variant& v)
     }
 }
 
-Variant::Variant() : impl(0) {}
+Variant::Variant() : impl(new VariantImpl()) {}
 Variant::Variant(bool b) : impl(new VariantImpl(b)) {}
 Variant::Variant(uint8_t i) : impl(new VariantImpl(i)) {}
 Variant::Variant(uint16_t i) : impl(new VariantImpl(i)) {}
@@ -892,6 +892,8 @@ bool operator==(const Variant& a, const Variant& b)
 {
     return a.isEqualTo(b);
 }
+
+bool operator!=(const Variant& a, const Variant& b) { return !(a == b); }
 
 bool Variant::isEqualTo(const Variant& other) const
 {

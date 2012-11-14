@@ -46,14 +46,23 @@ class ExchangeRegistry{
                              bool, const qpid::framing::FieldTable&, qpid::management::Manageable*, qpid::broker::Broker*> FactoryFunction;
 
     ExchangeRegistry (Broker* b = 0) : parent(0), broker(b) {}
-    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
-      (const std::string& name, const std::string& type);
-    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
-      (const std::string& name,
-       const std::string& type, 
-       bool durable,
-       const qpid::framing::FieldTable& args = framing::FieldTable());
-    QPID_BROKER_EXTERN void destroy(const std::string& name);
+    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare(
+        const std::string& name, const std::string& type);
+
+    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare(
+        const std::string& name,
+        const std::string& type,
+        bool durable,
+        const qpid::framing::FieldTable& args = framing::FieldTable(),
+        Exchange::shared_ptr alternate = Exchange::shared_ptr(),
+        const std::string& connectionId = std::string(),
+        const std::string& userId = std::string());
+
+    QPID_BROKER_EXTERN void destroy(
+        const std::string& name,
+        const std::string& connectionId = std::string(),
+        const std::string& userId = std::string());
+
     QPID_BROKER_EXTERN Exchange::shared_ptr getDefault();
 
     /**

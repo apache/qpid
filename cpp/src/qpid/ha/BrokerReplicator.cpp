@@ -29,6 +29,7 @@
 #include "qpid/broker/Link.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/SessionHandler.h"
@@ -280,7 +281,9 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
 {
     broker.getConnectionObservers().add(
         boost::shared_ptr<broker::ConnectionObserver>(new ConnectionObserver(*this)));
-    getArgs().setString(QPID_REPLICATE, printable(NONE).str());
+    framing::FieldTable args = getArgs();
+    args.setString(QPID_REPLICATE, printable(NONE).str());
+    setArgs(args);
 
     dispatch[EventQueueDeclare::getFullName()] = &BrokerReplicator::doEventQueueDeclare;
     dispatch[EventQueueDelete::getFullName()] = &BrokerReplicator::doEventQueueDelete;
@@ -458,7 +461,8 @@ void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
         // If we already have a queue with this name, replace it.
         // The queue was definitely created on the primary.
         if (queues.find(name)) {
-            QPID_LOG(warning, logPrefix << "Replacing exsiting queue: " << name);
+            QPID_LOG(warning, logPrefix << "Declare event, replacing exsiting queue: "
+                     << name);
             deleteQueue(name);
         }
         replicateQueue(name, values[DURABLE].asBool(), autoDel, args,
@@ -499,7 +503,8 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
         // The exchange was definitely created on the primary.
         if (exchanges.find(name)) {
             deleteExchange(name);
-            QPID_LOG(warning, logPrefix << "Replaced existing exchange: " << name);
+            QPID_LOG(warning, logPrefix << "Declare event, replacing existing exchange: "
+                     << name);
         }
         CreateExchangeResult result = createExchange(
             name, values[EXTYPE].asString(), values[DURABLE].asBool(), args,
@@ -591,7 +596,14 @@ string getAltExchange(const types::Variant& var) {
     }
     else return string();
 }
+
+Variant getHaUuid(const Variant::Map& map) {
+    Variant::Map::const_iterator i = map.find(QPID_HA_UUID);
+    return i == map.end() ? Variant() : i->second;
 }
+
+} // namespace
+
 
 void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
@@ -606,6 +618,14 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
         throw Exception(QPID_MSG("Unexpected queue response: " << values));
     if (!queueTracker->response(name)) return; // Response is out-of-date
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
+    // If we see a queue with the same name as one we have, but not the same UUID,
+    // then replace the one we have.
+    boost::shared_ptr<Queue> queue = queues.find(name);
+    if (queue && getHaUuid(queue->getSettings().original) != getHaUuid(argsMap)) {
+        QPID_LOG(warning, logPrefix << "UUID mismatch, replacing queue: "
+                 << name);
+        deleteQueue(name);
+    }
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
     boost::shared_ptr<QueueReplicator> qr = replicateQueue(
@@ -629,6 +649,16 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     QPID_LOG(debug, logPrefix << "Exchange response: " << name);
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
+    // If we see an exchange with the same name as one we have, but not the same UUID,
+    // then replace the one we have.
+    boost::shared_ptr<Exchange> exchange = exchanges.find(name);
+    if (exchange &&
+        exchange->getArgs().getAsString(QPID_HA_UUID) != args.getAsString(QPID_HA_UUID))
+    {
+        QPID_LOG(warning, logPrefix << "UUID mismatch, replacing exchange: "
+                 << name);
+        deleteExchange(name);
+    }
     CreateExchangeResult result = createExchange(
         name, values[TYPE].asString(), values[DURABLE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
