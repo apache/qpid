@@ -594,9 +594,14 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       There are some built-in exchanges created automatically by the broker, these
       exchangs are never replicated. The built-in exchanges are the default (nameless)
-      exchange, the AMQP standard exchanges (amq.direct, amq.topic, amq.fanout and
-      amq.match) and the management exchanges (qpid.management, qmf.default.direct and
-      qmf.default.topic)
+      exchange, the AMQP standard exchanges (<literal>amq.direct, amq.topic, amq.fanout</literal> and
+      <literal>amq.match</literal>) and the management exchanges (<literal>qpid.management, qmf.default.direct</literal> and
+      <literal>qmf.default.topic</literal>)
+    </para>
+    <para>
+      Note that if you bind a replicated queue to one of these exchanges, the
+      binding wil <emphasis>not</emphasis> be replicated, so the queue will not
+      have the binding after a fail-over.
     </para>
   </section>
 
