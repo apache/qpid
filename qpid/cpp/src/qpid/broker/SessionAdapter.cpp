@@ -98,17 +98,6 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                 //exchange already there, not created
                 checkType(response.first, type);
                 checkAlternate(response.first, alternate);
-                ManagementAgent* agent = getBroker().getManagementAgent();
-                if (agent)
-                    agent->raiseEvent(_qmf::EventExchangeDeclare(getConnection().getUrl(),
-                                                                 getConnection().getUserId(),
-                                                                 exchange,
-                                                                 type,
-                                                                 alternateExchange,
-                                                                 durable,
-                                                                 false,
-                                                                 ManagementAgent::toMap(args),
-                                                                 "existing"));
                 QPID_LOG_CAT(debug, model, "Create exchange. name:" << exchange
                     << " user:" << getConnection().getUserId()
                     << " rhost:" << getConnection().getUrl()

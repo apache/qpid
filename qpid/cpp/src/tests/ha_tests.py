@@ -270,6 +270,7 @@ class ReplicationTests(HaBrokerTest):
     def test_qpid_config_replication(self):
         """Set up replication via qpid-config"""
         brokers = HaCluster(self,2)
+        brokers[0].wait_status("active")
         brokers[0].config_declare("q","all")
         brokers[0].connect().session().sender("q").send("foo")
         brokers[1].assert_browse_backup("q", ["foo"])
@@ -829,6 +830,41 @@ acl deny all all
             cluster.kill(0)
             verify_qmf_events("q2")
         finally: l.restore()
+
+    def test_missed_recreate(self):
+        """If a queue or exchange is destroyed and one with the same name re-created
+        while a backup is disconnected, the backup should also delete/recreate
+        the object when it re-connects"""
+        cluster = HaCluster(self, 3)
+        sn = cluster[0].connect().session()
+        # Create a queue with messages
+        s = sn.sender("qq;{create:always}")
+        msgs = [str(i) for i in xrange(3)]
+        for m in msgs: s.send(m)
+        cluster[1].assert_browse_backup("qq", msgs)
+        cluster[2].assert_browse_backup("qq", msgs)
+        # Set up an exchange with a binding.
+        sn.sender("xx;{create:always,node:{type:topic}}")
+        sn.sender("xxq;{create:always,node:{x-bindings:[{exchange:'xx',queue:'xxq',key:xxq}]}}")
+        cluster[1].wait_address("xx")
+        self.assertEqual(cluster[1].agent().getExchange("xx").values["bindingCount"], 1)
+        cluster[2].wait_address("xx")
+        self.assertEqual(cluster[2].agent().getExchange("xx").values["bindingCount"], 1)
+
+        # Simulate the race by re-creating the objects before promoting the new primary
+        cluster.kill(0, False)
+        sn = cluster[1].connect_admin().session()
+        sn.sender("qq;{delete:always}").close()
+        s = sn.sender("qq;{create:always}")
+        s.send("foo")
+        sn.sender("xx;{delete:always}").close()
+        sn.sender("xx;{create:always,node:{type:topic}}")
+        cluster[1].promote()
+        cluster[1].wait_status("active")
+        # Verify we are not still using the old objects on cluster[2]
+        cluster[2].assert_browse_backup("qq", ["foo"])
+        cluster[2].wait_address("xx")
+        self.assertEqual(cluster[2].agent().getExchange("xx").values["bindingCount"], 0)
 
 def fairshare(msgs, limit, levels):
     """

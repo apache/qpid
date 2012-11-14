@@ -177,6 +177,7 @@ QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream& out, const Variant& val
 QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::Map& map);
 QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::List& list);
 QPID_TYPES_EXTERN bool operator==(const Variant& a, const Variant& b);
+QPID_TYPES_EXTERN bool operator!=(const Variant& a, const Variant& b);
 #endif
 }} // namespace qpid::types
 

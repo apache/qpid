@@ -1176,28 +1176,11 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
     }
 
     std::pair<Exchange::shared_ptr, bool> result;
-    result = exchanges.declare(name, type, durable, arguments);
+    result = exchanges.declare(
+        name, type, durable, arguments, alternate, connectionId, userId);
     if (result.second) {
-        if (alternate) {
-            result.first->setAlternate(alternate);
-            alternate->incAlternateUsers();
-        }
         if (durable) {
             store->create(*result.first, arguments);
-        }
-        if (managementAgent.get()) {
-            //TODO: debatable whether we should raise an event here for
-            //create when this is a 'declare' event; ideally add a create
-            //event instead?
-            managementAgent->raiseEvent(_qmf::EventExchangeDeclare(connectionId,
-                                                         userId,
-                                                         name,
-                                                         type,
-                                                         alternateExchange,
-                                                         durable,
-                                                         false,
-                                                         ManagementAgent::toMap(arguments),
-                                                         "created"));
         }
         QPID_LOG_CAT(debug, model, "Create exchange. name:" << name
             << " user:" << userId
@@ -1225,10 +1208,7 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
     if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
     if (exchange->isDurable()) store->destroy(*exchange);
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
-    exchanges.destroy(name);
-
-    if (managementAgent.get())
-        managementAgent->raiseEvent(_qmf::EventExchangeDelete(connectionId, userId, name));
+    exchanges.destroy(name, connectionId,  userId);
     QPID_LOG_CAT(debug, model, "Delete exchange. name:" << name
         << " user:" << userId
         << " rhost:" << connectionId);

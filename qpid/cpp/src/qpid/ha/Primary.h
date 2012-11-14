@@ -60,6 +60,7 @@ class Primary
 {
   public:
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
+    typedef boost::shared_ptr<broker::Exchange> ExchangePtr;
 
     static Primary* get() { return instance; }
 
@@ -72,6 +73,8 @@ class Primary
     // Called via ConfigurationObserver
     void queueCreate(const QueuePtr&);
     void queueDestroy(const QueuePtr&);
+    void exchangeCreate(const ExchangePtr&);
+    void exchangeDestroy(const ExchangePtr&);
 
     // Called via ConnectionObserver
     void opened(broker::Connection& connection);

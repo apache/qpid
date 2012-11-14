@@ -69,23 +69,25 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
                 queue->create();
             }
             queues[name] = queue;
+            // NOTE: raiseEvent and queueCreate must be called with the lock held in
+            // order to ensure events are generated in the correct order.
+            // Call queueCreate before raiseEvents so it can add arguments that
+            // will be included in the management event.
+            if (getBroker()) getBroker()->getConfigurationObservers().queueCreate(queue);
             result = std::pair<Queue::shared_ptr, bool>(queue, true);
         } else {
             result = std::pair<Queue::shared_ptr, bool>(i->second, false);
         }
-        // NOTE: raiseEvent must be called with the lock held in order to
-        // ensure management events are generated in the correct order.
-        if (getBroker() && getBroker()->getManagementAgent() && connectionId.size() && userId.size()) {
+            if (getBroker() && getBroker()->getManagementAgent()) {
             getBroker()->getManagementAgent()->raiseEvent(
                 _qmf::EventQueueDeclare(
                     connectionId, userId, name,
                     settings.durable, owner, settings.autodelete,
                     alternate ? alternate->getName() : string(),
-                    settings.asMap(),
+                    result.first->getSettings().asMap(),
                     result.second ? "created" : "existing"));
         }
     }
-    if (getBroker() && result.second) getBroker()->getConfigurationObservers().queueCreate(result.first);
     return result;
 }
 
@@ -99,17 +101,17 @@ void QueueRegistry::destroy(
         if (i != queues.end()) {
             q = i->second;
             queues.erase(i);
-            if (getBroker() && getBroker()->getManagementAgent() &&
-                connectionId.size() && userId.size())
-            {
-                // NOTE: raiseEvent must be called with the lock held in order to
-                // ensure management events are generated in the correct order.
-                getBroker()->getManagementAgent()->raiseEvent(
-                    _qmf::EventQueueDelete(connectionId, userId, name));
+            if (getBroker()) {
+                // NOTE: queueDestroy and raiseEvent must be called with the
+                // lock held in order to ensure events are generated
+                // in the correct order.
+                getBroker()->getConfigurationObservers().queueDestroy(q);
+                if (getBroker()->getManagementAgent())
+                    getBroker()->getManagementAgent()->raiseEvent(
+                        _qmf::EventQueueDelete(connectionId, userId, name));
             }
         }
     }
-    if (getBroker() && q) getBroker()->getConfigurationObservers().queueDestroy(q);
 }
 
 Queue::shared_ptr QueueRegistry::find(const string& name){
