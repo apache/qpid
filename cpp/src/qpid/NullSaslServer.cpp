@@ -39,7 +39,10 @@ NullSaslServer::Status NullSaslServer::start(const std::string& mechanism, const
             } else if (i != std::string::npos) {
                 //authorization id is first null delimited field
                 uid = response->substr(0, i);
-            }//else not a valid SASL PLAIN response, throw error?
+            } else {
+                QPID_LOG(error, "Invalid PLAIN request, null delimiter not found in response data");
+                return FAIL;
+            }
             if (!uid.empty()) {
                 //append realm if it has not already been added
                 i = uid.find(realm);
