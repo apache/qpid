@@ -48,8 +48,9 @@ int main(int argc, char** argv) {
         Sender sender = session.createSender("service_queue");
 
         //create temp queue & receiver...
-        Address responseQueue("#response-queue; {create:always, delete:always}");
-        Receiver receiver = session.createReceiver(responseQueue);
+        std::stringstream replies;
+        replies << "amq.direct/" << qpid::types::Uuid(true) << "; {node: {type:topic}}";
+        Receiver receiver = session.createReceiver(replies.str());
 
 	// Now send some messages ...
 	string s[] = {
@@ -60,7 +61,7 @@ int main(int argc, char** argv) {
         };
 
     	Message request;
-        request.setReplyTo(responseQueue);
+        request.setReplyTo(replies.str());
 	for (int i=0; i<4; i++) {
             request.setContent(s[i]);
             sender.send(request);
