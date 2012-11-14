@@ -38,6 +38,10 @@ class Exchange;
 
 /**
  * Observer for changes to configuration (aka wiring)
+ *
+ * NOTE: create and destroy functions are called with
+ * the registry lock held. This is necessary to ensure
+ * they are called in the correct sequence.
  */
 class ConfigurationObserver
 {

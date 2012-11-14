@@ -145,7 +145,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     mutable qpid::sys::Mutex messageLock;
     mutable qpid::sys::Mutex ownershipLock;
     mutable uint64_t persistenceId;
-    const QueueSettings settings;
+    QueueSettings settings;
     qpid::framing::FieldTable encodableSettings;
     QueueDepth current;
     QueueBindings bindings;
@@ -423,6 +423,10 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     QPID_BROKER_EXTERN void setDequeueSincePurge(uint32_t value);
+
+    /** Add an argument to be included in management messages about this queue. */
+    void addArgument(const std::string& key, const types::Variant& value);
+
   friend class QueueFactory;
 };
 }

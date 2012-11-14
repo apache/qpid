@@ -49,9 +49,8 @@ using namespace framing;
 using namespace std;
 using sys::Mutex;
 
-const std::string QPID_HA_EVENT_PREFIX("qpid.ha-");
-const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_EVENT_PREFIX+"dequeue");
-const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA_EVENT_PREFIX+"position");
+const std::string QueueReplicator::DEQUEUE_EVENT_KEY(QPID_HA_PREFIX+"dequeue");
+const std::string QueueReplicator::POSITION_EVENT_KEY(QPID_HA_PREFIX+"position");
 const std::string QueueReplicator::QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 
 std::string QueueReplicator::replicatorName(const std::string& queueName) {
@@ -63,7 +62,7 @@ bool QueueReplicator::isReplicatorName(const std::string& name) {
 }
 
 bool QueueReplicator::isEventKey(const std::string key) {
-    const std::string& prefix = QPID_HA_EVENT_PREFIX;
+    const std::string& prefix = QPID_HA_PREFIX;
     bool ret = key.size() > prefix.size() && key.compare(0, prefix.size(), prefix) == 0;
     return ret;
 }
@@ -114,7 +113,9 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
     args.setString(QPID_REPLICATE, printable(NONE).str());
     Uuid uuid(true);
     bridgeName = replicatorName(q->getName()) + std::string(".") + uuid.str();
-    getArgs().setString(QPID_REPLICATE, printable(NONE).str());
+    framing::FieldTable args = getArgs();
+    args.setString(QPID_REPLICATE, printable(NONE).str());
+    setArgs(args);
 }
 
 // This must be separate from the constructor so we can call shared_from_this.

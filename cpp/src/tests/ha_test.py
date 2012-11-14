@@ -142,7 +142,9 @@ class HaBroker(Broker):
     # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
         assert subprocess.call(
-            [self.qpid_config_path, "--broker", self.host_port()]+args) == 0
+            [self.qpid_config_path, "--broker", self.host_port()]+args,
+            stdout=1, stderr=subprocess.STDOUT
+            ) == 0
 
     def config_replicate(self, from_broker, queue):
         self.qpid_config(["add", "queue", "--start-replica", from_broker, queue])
@@ -160,11 +162,13 @@ class HaBroker(Broker):
         else:
             return Broker.connect(self, client_properties={"qpid.ha-admin":1}, **kwargs)
 
-    def wait_backup(self, address):
-        """Wait for address to become valid on a backup broker."""
+    def wait_address(self, address):
+        """Wait for address to become valid on the broker."""
         bs = self.connect_admin().session()
         try: wait_address(bs, address)
         finally: bs.connection.close()
+
+    def wait_backup(self, address): self.wait_address(address)
 
     def assert_browse(self, queue, expected, **kwargs):
         """Verify queue contents by browsing."""

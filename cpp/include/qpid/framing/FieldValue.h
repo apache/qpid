@@ -175,9 +175,17 @@ class FixedWidthValue : public FieldValue::Data {
         return v;
     }
     uint8_t* rawOctets() { return octets; }
-    uint8_t* rawOctets() const { return octets; }
+    const uint8_t* rawOctets() const { return octets; }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
+};
+
+class UuidData : public FixedWidthValue<16> {
+  public:
+    UuidData();
+    UuidData(const unsigned char* bytes);
+    bool convertsToString() const;
+    std::string getString() const;
 };
 
 template <class T, int W>
@@ -356,7 +364,7 @@ class Var16Value : public FieldValue {
 class Var32Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Var32Value(const std::string& v, uint8_t code);
-};
+ };
 
 class Struct32Value : public FieldValue {
   public:
@@ -453,6 +461,7 @@ class ListValue : public FieldValue {
 
 class UuidValue : public FieldValue {
   public:
+    QPID_COMMON_EXTERN UuidValue();
     QPID_COMMON_EXTERN UuidValue(const unsigned char*);
 };
 
