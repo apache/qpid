@@ -33,8 +33,7 @@ namespace ha {
 using namespace std;
 
 const string QPID_REPLICATE("qpid.replicate");
-const string QPID_HA_PREFIX("qpid.ha-");
-const string QPID_HA_UUID(QPID_HA_PREFIX+"uuid");
+const string QPID_HA_UUID("qpid.ha-uuid");
 
 string EnumBase::str() const {
     assert(value < count);

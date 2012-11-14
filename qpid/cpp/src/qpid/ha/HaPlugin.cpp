@@ -69,10 +69,16 @@ struct HaPlugin : public Plugin {
     void earlyInitialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (broker) {
-            // Must create the HaBroker in earlyInitialize so it can set up its
-            // connection observer before clients start connecting.
-            haBroker.reset(new ha::HaBroker(*broker, settings));
-            broker->addFinalizer(boost::bind(&HaPlugin::finalize, this));
+            if (!broker->getManagementAgent()) {
+                QPID_LOG(info, "HA plugin disabled because management is disabled");
+                if (settings.cluster)
+                    throw Exception("Cannot start HA: management is disabled");
+            } else {
+                // Must create the HaBroker in earlyInitialize so it can set up its
+                // connection observer before clients start connecting.
+                haBroker.reset(new ha::HaBroker(*broker, settings));
+                broker->addFinalizer(boost::bind(&HaPlugin::finalize, this));
+            }
         }
     }
 
