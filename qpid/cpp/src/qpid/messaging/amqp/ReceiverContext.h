@@ -21,11 +21,13 @@
  * under the License.
  *
  */
+#include "qpid/messaging/Address.h"
 #include <string>
 #include "qpid/sys/IntegerTypes.h"
 
 struct pn_link_t;
 struct pn_session_t;
+struct pn_terminus_t;
 
 namespace qpid {
 namespace messaging {
@@ -41,22 +43,25 @@ namespace amqp {
 class ReceiverContext
 {
   public:
-    ReceiverContext(pn_session_t* session, const std::string& name, const std::string& source);
+    ReceiverContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& source);
     ~ReceiverContext();
     void setCapacity(uint32_t);
     uint32_t getCapacity();
     uint32_t getAvailable();
     uint32_t getUnsettled();
+    void attach();
     void close();
     const std::string& getName() const;
     const std::string& getSource() const;
     bool isClosed() const;
+    void configure() const;
   private:
     friend class ConnectionContext;
     const std::string name;
-    const std::string source;
+    const Address address;
     pn_link_t* receiver;
     uint32_t capacity;
+    void configure(pn_terminus_t*) const;
 };
 }}} // namespace qpid::messaging::amqp
 
