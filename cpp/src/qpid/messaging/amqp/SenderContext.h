@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include "qpid/sys/IntegerTypes.h"
+#include "qpid/messaging/Address.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
 
 struct pn_delivery_t;
@@ -48,7 +49,7 @@ class SenderContext
     {
       public:
         Delivery(int32_t id);
-        void encode(const qpid::messaging::MessageImpl& message);
+        void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
         void send(pn_link_t*);
         bool accepted();
       private:
@@ -57,7 +58,7 @@ class SenderContext
         EncodedMessage encoded;
     };
 
-    SenderContext(pn_session_t* session, const std::string& name, const std::string& target);
+    SenderContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& target);
     ~SenderContext();
     void close();
     void setCapacity(uint32_t);
@@ -71,7 +72,7 @@ class SenderContext
     typedef std::deque<Delivery> Deliveries;
 
     const std::string name;
-    const std::string target;
+    const qpid::messaging::Address address;
     pn_link_t* sender;
     int32_t nextId;
     Deliveries deliveries;
