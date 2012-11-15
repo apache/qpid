@@ -48,6 +48,12 @@ dmoduleexec_LTLIBRARIES += ssl.la
 sslconnector_la_SOURCES = \
   qpid/client/SslConnector.cpp
 
+if HAVE_PROTON
+sslconnector_la_SOURCES += \
+  qpid/messaging/amqp/SslTransport.cpp
+endif #HAVE_PROTON
+
+
 sslconnector_la_LIBADD = \
   libqpidclient.la \
   libsslcommon.la

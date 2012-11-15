@@ -24,6 +24,7 @@
 #include "qpid/messaging/amqp/Transport.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
@@ -51,7 +52,7 @@ class TcpTransport : public Transport
     void giveReadCredit(int32_t) {}
 
   private:
-    qpid::sys::Socket socket;
+    boost::scoped_ptr<qpid::sys::Socket> socket;
     TransportContext& context;
     qpid::sys::AsynchConnector* connector;
     qpid::sys::AsynchIO* aio;

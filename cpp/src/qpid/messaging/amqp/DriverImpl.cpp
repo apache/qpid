@@ -53,7 +53,7 @@ void DriverImpl::stop()
 boost::shared_ptr<Transport> DriverImpl::getTransport(const std::string& protocol, TransportContext& connection)
 {
     boost::shared_ptr<Transport> t(Transport::create(protocol, connection, poller));
-    if (!t) throw new qpid::messaging::ConnectionError("No such transport: " + protocol);
+    if (!t) throw qpid::messaging::ConnectionError("No such transport: " + protocol);
     return t;
 }
 
