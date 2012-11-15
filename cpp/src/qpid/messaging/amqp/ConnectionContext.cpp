@@ -262,10 +262,9 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
 
 void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
-    pn_terminus_t* source = pn_link_source((pn_link_t*) lnk->receiver);
-    pn_terminus_set_address(source, lnk->getSource().c_str());
-    attach(ssn->session, (pn_link_t*) lnk->receiver, lnk->capacity);
-    if (!pn_link_remote_source((pn_link_t*) lnk->receiver)) {
+    lnk->configure();
+    attach(ssn->session, lnk->receiver, lnk->capacity);
+    if (!pn_link_remote_source(lnk->receiver)) {
         std::string msg("No such source : ");
         msg += lnk->getSource();
         throw qpid::messaging::NotFound(msg);
