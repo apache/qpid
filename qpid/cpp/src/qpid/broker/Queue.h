@@ -425,7 +425,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void setDequeueSincePurge(uint32_t value);
 
     /** Add an argument to be included in management messages about this queue. */
-    void addArgument(const std::string& key, const types::Variant& value);
+    QPID_BROKER_EXTERN void addArgument(const std::string& key, const types::Variant& value);
 
   friend class QueueFactory;
 };

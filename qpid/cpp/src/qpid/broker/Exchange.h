@@ -173,8 +173,8 @@ public:
 
     const std::string& getName() const { return name; }
     bool isDurable() { return durable; }
-    const qpid::framing::FieldTable& getArgs() const { return args; }
-    void setArgs(const framing::FieldTable&);
+    QPID_BROKER_EXTERN const qpid::framing::FieldTable& getArgs() const { return args; }
+    QPID_BROKER_EXTERN void setArgs(const framing::FieldTable&);
 
     QPID_BROKER_EXTERN Exchange::shared_ptr getAlternate() { return alternate; }
     QPID_BROKER_EXTERN void setAlternate(Exchange::shared_ptr _alternate);
