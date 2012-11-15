@@ -100,7 +100,7 @@ if (BUILD_SSL)
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
 
-    add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
+    add_library (sslconnector MODULE qpid/client/SslConnector.cpp qpid/messaging/amqp/SslTransport.cpp)
     target_link_libraries (sslconnector qpidclient sslcommon)
     set_target_properties (sslconnector PROPERTIES
                            PREFIX ""
