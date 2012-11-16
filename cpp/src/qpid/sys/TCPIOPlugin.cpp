@@ -28,6 +28,7 @@
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/SocketAddress.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Poller.h"
 
 #include <boost/bind.hpp>
@@ -47,10 +48,7 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
     const bool tcpNoDelay;
 
   public:
-    AsynchIOProtocolFactory(const std::string& host, const std::string& port,
-                            int backlog, bool nodelay,
-                            Timer& timer, uint32_t maxTime,
-                            bool shouldListen);
+    AsynchIOProtocolFactory(const qpid::broker::Broker::Options& opts, Timer& timer, bool shouldListen);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
@@ -93,14 +91,9 @@ static class TCPIOPlugin : public Plugin {
             bool shouldListen = !sslMultiplexEnabled();
 
             ProtocolFactory::shared_ptr protocolt(
-                new AsynchIOProtocolFactory(
-                    "", boost::lexical_cast<std::string>(opts.port),
-                    opts.connectionBacklog,
-                    opts.tcpNoDelay,
-                    broker->getTimer(), opts.maxNegotiateTime,
-                    shouldListen));
+                new AsynchIOProtocolFactory(opts, broker->getTimer(),shouldListen));
 
-            if (shouldListen) {
+            if (shouldListen && protocolt->getPort()!=0 ) {
                 QPID_LOG(notice, "Listening on TCP/TCP6 port " << protocolt->getPort());
             }
 
@@ -109,41 +102,73 @@ static class TCPIOPlugin : public Plugin {
     }
 } tcpPlugin;
 
-AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const std::string& port,
-                                                 int backlog, bool nodelay,
-                                                 Timer& timer, uint32_t maxTime,
-                                                 bool shouldListen) :
+namespace {
+    // Expand list of Interfaces and addresses to a list of addresses
+    std::vector<std::string> expandInterfaces(const std::vector<std::string>& interfaces) {
+        std::vector<std::string> addresses;
+        // If there are no specific interfaces listed use a single "" to listen on every interface
+        if (interfaces.empty()) {
+            addresses.push_back("");
+            return addresses;
+        }
+        for (unsigned i = 0; i < interfaces.size(); ++i) {
+            const std::string& interface = interfaces[i];
+            if (!(SystemInfo::getInterfaceAddresses(interface, addresses))) {
+                // We don't have an interface of that name -
+                // Check for IPv6 ('[' ']') brackets and remove them
+                // then pass to be looked up directly
+                if (interface[0]=='[' && interface[interface.size()-1]==']') {
+                    addresses.push_back(interface.substr(1, interface.size()-2));
+                } else {
+                    addresses.push_back(interface);
+                }
+            }
+        }
+        return addresses;
+    }
+}
+
+AsynchIOProtocolFactory::AsynchIOProtocolFactory(const qpid::broker::Broker::Options& opts, Timer& timer, bool shouldListen) :
     brokerTimer(timer),
-    maxNegotiateTime(maxTime),
-    tcpNoDelay(nodelay)
+    maxNegotiateTime(opts.maxNegotiateTime),
+    tcpNoDelay(opts.tcpNoDelay)
 {
     if (!shouldListen) {
-        listeningPort = boost::lexical_cast<uint16_t>(port);
+        listeningPort = boost::lexical_cast<uint16_t>(opts.port);
         return;
     }
 
-    SocketAddress sa(host, port);
-
-    // We must have at least one resolved address
-    QPID_LOG(info, "Listening to: " << sa.asString())
-    Socket* s = createSocket();
-    uint16_t lport = s->listen(sa, backlog);
-    QPID_LOG(debug, "Listened to: " << lport);
-    listeners.push_back(s);
-
-    listeningPort = lport;
-
-    // Try any other resolved addresses
-    while (sa.nextAddress()) {
-        // Hack to ensure that all listening connections are on the same port
-        sa.setAddrInfoPort(listeningPort);
-        QPID_LOG(info, "Listening to: " << sa.asString())
-        Socket* s = createSocket();
-        uint16_t lport = s->listen(sa, backlog);
-        QPID_LOG(debug, "Listened to: " << lport);
-        listeners.push_back(s);
+    std::vector<std::string> addresses = expandInterfaces(opts.listenInterfaces);
+    if (addresses.empty()) {
+        // We specified some interfaces, but couldn't find addresses for them
+        QPID_LOG(warning, "TCP/TCP6: No specified network interfaces found: Not Listening");
+        listeningPort = 0;
     }
 
+    for (unsigned i = 0; i<addresses.size(); ++i) {
+        QPID_LOG(debug, "Using interface: " << addresses[i]);
+        SocketAddress sa(addresses[i], boost::lexical_cast<std::string>(opts.port));
+
+        // We must have at least one resolved address
+        QPID_LOG(info, "Listening to: " << sa.asString())
+        Socket* s = createSocket();
+        uint16_t lport = s->listen(sa, opts.connectionBacklog);
+        QPID_LOG(debug, "Listened to: " << lport);
+        listeners.push_back(s);
+
+        listeningPort = lport;
+
+        // Try any other resolved addresses
+        while (sa.nextAddress()) {
+            // Hack to ensure that all listening connections are on the same port
+            sa.setAddrInfoPort(listeningPort);
+            QPID_LOG(info, "Listening to: " << sa.asString())
+            Socket* s = createSocket();
+            uint16_t lport = s->listen(sa, opts.connectionBacklog);
+            QPID_LOG(debug, "Listened to: " << lport);
+            listeners.push_back(s);
+        }
+    }
 }
 
 void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
