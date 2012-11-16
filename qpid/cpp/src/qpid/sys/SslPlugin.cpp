@@ -29,6 +29,7 @@
 #include "qpid/sys/ssl/util.h"
 #include "qpid/sys/ssl/SslSocket.h"
 #include "qpid/sys/SocketAddress.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Poller.h"
 
 #include <boost/bind.hpp>
@@ -72,10 +73,8 @@ class SslProtocolFactory : public ProtocolFactory {
     bool nodict;
 
   public:
-    SslProtocolFactory(const std::string& host, const std::string& port,
-                           const SslServerOptions&,
-                           int backlog, bool nodelay,
-                           Timer& timer, uint32_t maxTime);
+    SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options,
+                       Timer& timer);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
@@ -133,15 +132,15 @@ static struct SslPlugin : public Plugin {
                     const broker::Broker::Options& opts = broker->getOptions();
 
                     ProtocolFactory::shared_ptr protocol(
-                        static_cast<ProtocolFactory*>(new SslProtocolFactory("", boost::lexical_cast<std::string>(options.port),
-                                                                             options,
-                                                                             opts.connectionBacklog,
-                                                                             opts.tcpNoDelay,
-                                                                             broker->getTimer(), opts.maxNegotiateTime)));
-                    QPID_LOG(notice, "Listening for " <<
-                                     (options.multiplex ? "SSL or TCP" : "SSL") <<
-                                     " connections on TCP/TCP6 port " <<
-                                     protocol->getPort());
+                        static_cast<ProtocolFactory*>(new SslProtocolFactory(opts, options, broker->getTimer())));
+
+                    if (protocol->getPort()!=0 ) {
+                        QPID_LOG(notice, "Listening for " <<
+                                        (options.multiplex ? "SSL or TCP" : "SSL") <<
+                                        " connections on TCP/TCP6 port " <<
+                                        protocol->getPort());
+                    }
+
                     broker->registerProtocolFactory("ssl", protocol);
                 } catch (const std::exception& e) {
                     QPID_LOG(error, "Failed to initialise SSL plugin: " << e.what());
@@ -151,41 +150,74 @@ static struct SslPlugin : public Plugin {
     }
 } sslPlugin;
 
-SslProtocolFactory::SslProtocolFactory(const std::string& host, const std::string& port,
-                                                  const SslServerOptions& options,
-                                                  int backlog, bool nodelay,
-                                                  Timer& timer, uint32_t maxTime) :
+namespace {
+    // Expand list of Interfaces and addresses to a list of addresses
+    std::vector<std::string> expandInterfaces(const std::vector<std::string>& interfaces) {
+        std::vector<std::string> addresses;
+        // If there are no specific interfaces listed use a single "" to listen on every interface
+        if (interfaces.empty()) {
+            addresses.push_back("");
+            return addresses;
+        }
+        for (unsigned i = 0; i < interfaces.size(); ++i) {
+            const std::string& interface = interfaces[i];
+            if (!(SystemInfo::getInterfaceAddresses(interface, addresses))) {
+                // We don't have an interface of that name -
+                // Check for IPv6 ('[' ']') brackets and remove them
+                // then pass to be looked up directly
+                if (interface[0]=='[' && interface[interface.size()-1]==']') {
+                    addresses.push_back(interface.substr(1, interface.size()-2));
+                } else {
+                    addresses.push_back(interface);
+                }
+            }
+        }
+        return addresses;
+    }
+}
+
+SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options,
+                                       Timer& timer) :
     brokerTimer(timer),
-    maxNegotiateTime(maxTime),
-    tcpNoDelay(nodelay),
+    maxNegotiateTime(opts.maxNegotiateTime),
+    tcpNoDelay(opts.tcpNoDelay),
     nodict(options.nodict)
 {
-    SocketAddress sa(host, port);
+    std::vector<std::string> addresses = expandInterfaces(opts.listenInterfaces);
+    if (addresses.empty()) {
+        // We specified some interfaces, but couldn't find addresses for them
+        QPID_LOG(warning, "SSL: No specified network interfaces found: Not Listening");
+        listeningPort = 0;
+    }
 
-    // We must have at least one resolved address
-    QPID_LOG(info, "Listening to: " << sa.asString())
-    Socket* s = options.multiplex ?
-        new SslMuxSocket(options.certName, options.clientAuth) :
-        new SslSocket(options.certName, options.clientAuth);
-    uint16_t lport = s->listen(sa, backlog);
-    QPID_LOG(debug, "Listened to: " << lport);
-    listeners.push_back(s);
+    for (unsigned i = 0; i<addresses.size(); ++i) {
+        QPID_LOG(debug, "Using interface: " << addresses[i]);
+        SocketAddress sa(addresses[i], boost::lexical_cast<std::string>(options.port));
 
-    listeningPort = lport;
-
-    // Try any other resolved addresses
-    while (sa.nextAddress()) {
-        // Hack to ensure that all listening connections are on the same port
-        sa.setAddrInfoPort(listeningPort);
+        // We must have at least one resolved address
         QPID_LOG(info, "Listening to: " << sa.asString())
         Socket* s = options.multiplex ?
             new SslMuxSocket(options.certName, options.clientAuth) :
             new SslSocket(options.certName, options.clientAuth);
-        uint16_t lport = s->listen(sa, backlog);
+        uint16_t lport = s->listen(sa, opts.connectionBacklog);
         QPID_LOG(debug, "Listened to: " << lport);
         listeners.push_back(s);
-    }
 
+        listeningPort = lport;
+
+        // Try any other resolved addresses
+        while (sa.nextAddress()) {
+            // Hack to ensure that all listening connections are on the same port
+            sa.setAddrInfoPort(listeningPort);
+            QPID_LOG(info, "Listening to: " << sa.asString())
+            Socket* s = options.multiplex ?
+                new SslMuxSocket(options.certName, options.clientAuth) :
+                new SslSocket(options.certName, options.clientAuth);
+            uint16_t lport = s->listen(sa, opts.connectionBacklog);
+            QPID_LOG(debug, "Listened to: " << lport);
+            listeners.push_back(s);
+        }
+    }
 }
 
 
