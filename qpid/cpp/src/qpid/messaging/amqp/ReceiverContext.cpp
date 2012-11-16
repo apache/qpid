@@ -21,6 +21,7 @@
 #include "ReceiverContext.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
+#include "qpid/amqp/descriptors.h"
 extern "C" {
 #include <proton/engine.h>
 }
@@ -94,6 +95,15 @@ pn_bytes_t convert(const std::string& s)
     result.size = s.size();
     return result;
 }
+bool hasWildcards(const std::string& key)
+{
+    return key.find('*') != std::string::npos || key.find('#') != std::string::npos;
+}
+
+uint64_t getFilterDescriptor(const std::string& key)
+{
+    return hasWildcards(key) ? qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE : qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE;
+}
 }
 
 void ReceiverContext::configure() const
@@ -110,7 +120,7 @@ void ReceiverContext::configure(pn_terminus_t* source) const
     pn_data_put_symbol(filter, convert("subject"));
     pn_data_put_described(filter);
     pn_data_enter(filter);
-    pn_data_put_ulong(filter, 0x0000468C00000001/*LEGACY_TOPIC_FILTER*/);
+    pn_data_put_ulong(filter, getFilterDescriptor(address.getSubject()));
     pn_data_put_string(filter, convert(address.getSubject()));
     pn_data_exit(filter);
     pn_data_exit(filter);

@@ -73,7 +73,14 @@ const Descriptor SASL_INIT(SASL_INIT_CODE);
 const Descriptor SASL_CHALLENGE(SASL_CHALLENGE_CODE);
 const Descriptor SASL_RESPONSE(SASL_RESPONSE_CODE);
 const Descriptor SASL_OUTCOME(SASL_OUTCOME_CODE);
+}
 
+namespace filters {
+const std::string LEGACY_DIRECT_FILTER_SYMBOL("apache.org:legacy-amqp-direct-binding:string");
+const std::string LEGACY_TOPIC_FILTER_SYMBOL("apache.org:legacy-amqp-direct-binding:string");
+
+const uint64_t LEGACY_DIRECT_FILTER_CODE(0x0000468C00000000);
+const uint64_t LEGACY_TOPIC_FILTER_CODE(0x0000468C00000001);
 }
 
 }} // namespace qpid::amqp
