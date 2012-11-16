@@ -53,12 +53,6 @@ QPID_COMMON_EXTERN bool getLocalHostname (Address &address);
 QPID_COMMON_EXTERN void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
 
 /**
- * Return true if host names an address of the local host.
- *@param host host name or IP address.
- */
-QPID_COMMON_EXTERN bool isLocalHost(const std::string& host);
-
-/**
  * Retrieve system identifiers and versions. This is information that can
  * generally be retrieved via POSIX uname().
  *
