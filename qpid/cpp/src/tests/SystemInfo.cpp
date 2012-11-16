@@ -31,22 +31,6 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(SystemInfoTestSuite)
 
-QPID_AUTO_TEST_CASE(TestIsLocalHost) {
-    // Test that local hostname and addresses are considered local
-    Address a;
-    BOOST_ASSERT(SystemInfo::getLocalHostname(a));
-    BOOST_ASSERT(SystemInfo::isLocalHost(a.host));
-    std::vector<Address> addrs;
-    SystemInfo::getLocalIpAddresses(0, addrs);
-    for (std::vector<Address>::iterator i = addrs.begin(); i != addrs.end(); ++i)
-        BOOST_ASSERT(SystemInfo::isLocalHost(i->host));
-    // Check some non-local addresses
-    BOOST_ASSERT(!SystemInfo::isLocalHost("123.4.5.6"));
-    BOOST_ASSERT(!SystemInfo::isLocalHost("nosuchhost"));
-    BOOST_ASSERT(SystemInfo::isLocalHost("127.0.0.1"));
-    BOOST_ASSERT(SystemInfo::isLocalHost("::1"));
-}
-
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
