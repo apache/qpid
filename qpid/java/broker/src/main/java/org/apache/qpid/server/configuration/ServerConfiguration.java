@@ -75,7 +75,6 @@ public class ServerConfiguration extends AbstractConfiguration
 
     // Configuration values to be read from the configuration file
     //todo Move all properties to static values to ensure system testing can be performed.
-    public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
     public static final String MGMT_JMXPORT_REGISTRYSERVER = "management.jmxport.registryServer";
     public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
     public static final String SECURITY_DEFAULT_AUTH_MANAGER = "security.default-auth-manager";
@@ -388,17 +387,6 @@ public class ServerConfiguration extends AbstractConfiguration
     public int getJMXConnectorServerPort()
     {
         return getIntValue(MGMT_JMXPORT_CONNECTORSERVER, getJMXPortRegistryServer() + JMXPORT_CONNECTORSERVER_OFFSET);
-    }
-
-    public boolean getUseCustomRMISocketFactory()
-    {
-        return getBooleanValue(MGMT_CUSTOM_REGISTRY_SOCKET,
-                               Boolean.parseBoolean(System.getProperty(USE_CUSTOM_RMI_SOCKET_FACTORY, "true")));
-    }
-
-    public void setUseCustomRMISocketFactory(boolean bool)
-    {
-        getConfig().setProperty(MGMT_CUSTOM_REGISTRY_SOCKET, bool);
     }
 
     public boolean getPlatformMbeanserver()

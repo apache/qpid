@@ -34,10 +34,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.ConfigurationNode;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.BrokerOptions;
@@ -47,14 +47,14 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class XMLConfigurationEntryStore implements ConfigurationEntryStore
@@ -123,7 +123,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         brokerAttributes.put(Broker.HOUSEKEEPING_CHECK_PERIOD, _serverConfiguration.getHousekeepingCheckPeriod());
 
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, _serverConfiguration.getDefaultAuthenticationManager());
-        ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, ConfiguredObjectType.BROKER, brokerAttributes,
+        ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, Broker.class.getSimpleName(), brokerAttributes,
                 Collections.unmodifiableSet(_rootChildren.keySet()), this);
 
         _logger.warn("Returning root entry: " + rootEntry);
@@ -168,7 +168,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
                     }
                 }
                 ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(),
-                        ConfiguredObjectType.AUTHENTICATION_PROVIDER, attributes, null, this);
+                        AuthenticationProvider.class.getSimpleName(), attributes, null, this);
                 rootChildren.put(entry.getId(), entry);
             }
         }
@@ -185,7 +185,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(GroupProvider.TYPE, "file-group-manager");
             attributes.put("file", file);
-            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.GROUP_PROVIDER, attributes, null, this);
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), GroupProvider.class.getSimpleName(), attributes, null, this);
             rootChildren.put(entry.getId(), entry);
         }
     }
@@ -265,7 +265,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         attributes.put(Port.TRANSPORTS, Collections.singleton(transport));
         attributes.put(Port.PORT, port);
         attributes.put(Port.BINDING_ADDRESS, null);
-        return new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT, attributes, null, this);
+        return new ConfigurationEntry(UUID.randomUUID(), Port.class.getSimpleName(), attributes, null, this);
     }
 
     private void createVirtualHostConfig(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren)
@@ -295,7 +295,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             }
 
             attributes.put(org.apache.qpid.server.model.VirtualHost.CONFIGURATION, configuration.getAbsolutePath());
-            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.VIRTUAL_HOST,
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                     attributes, null, this);
             rootChildren.put(entry.getId(), entry);
         }
@@ -338,7 +338,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         attributes.put(Port.WANT_CLIENT_AUTH, serverConfiguration.wantClientAuth());
         attributes.put(Port.AUTHENTICATION_MANAGER, serverConfiguration.getPortAuthenticationMappings().get(portNumber));
 
-        ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT, attributes, null,
+        ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), Port.class.getSimpleName(), attributes, null,
                 this);
         return entry;
     }
@@ -357,7 +357,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             attributes.put("httpSaslAuthenticationEnabled", serverConfiguration.getHTTPManagementSaslAuthEnabled());
             attributes.put("httpsSaslAuthenticationEnabled", serverConfiguration.getHTTPSManagementSaslAuthEnabled());
 
-            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), Plugin.class.getSimpleName(), attributes, null, this);
             rootChildren.put(entry.getId(), entry);
         }
     }
@@ -373,7 +373,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
             attributes.put("usePlatformMBeanServer", serverConfiguration.getPlatformMbeanserver());
             attributes.put("managementRightsInferAllAccess", serverConfiguration.getManagementRightsInferAllAccess());
 
-            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PLUGIN, attributes, null, this);
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), Plugin.class.getSimpleName(), attributes, null, this);
             rootChildren.put(entry.getId(), entry);
         }
     }

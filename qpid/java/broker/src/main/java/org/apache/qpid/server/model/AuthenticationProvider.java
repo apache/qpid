@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 public interface AuthenticationProvider extends ConfiguredObject
 {
@@ -64,6 +65,5 @@ public interface AuthenticationProvider extends ConfiguredObject
      */
     SubjectCreator getSubjectCreator();
 
-    // XXX just an idea
-    //setGroupProviders(Collection<GroupProvider> groupProviders);
+	void setGroupAccessor(GroupPrincipalAccessor groupPrincipalAccessor);
 }

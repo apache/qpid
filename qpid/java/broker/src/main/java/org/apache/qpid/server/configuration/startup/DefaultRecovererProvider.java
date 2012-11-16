@@ -20,11 +20,14 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.model.ConfiguredObjectType;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
@@ -53,23 +56,33 @@ public class DefaultRecovererProvider implements RecovererProvider
     }
 
     @Override
-    public ConfiguredObjectRecoverer<?> getRecoverer(ConfiguredObjectType type)
+    public ConfiguredObjectRecoverer<?> getRecoverer(String type)
     {
-        switch(type)
+        if(Broker.class.getSimpleName().equals(type))
         {
-        case BROKER:
             return new BrokerRecoverer(_authenticationProviderFactory, _portFactory, _registry);
-        case VIRTUAL_HOST:
+        }
+        else if(VirtualHost.class.getSimpleName().equals(type))
+        {
             return new VirtualHostRecoverer(_registry.getVirtualHostRegistry(),(StatisticsGatherer)_registry, _registry.getSecurityManager());
-        case AUTHENTICATION_PROVIDER:
+        }
+        else if(AuthenticationProvider.class.getSimpleName().equals(type))
+        {
             return new AuthenticationProviderRecoverer(_authenticationProviderFactory);
-        case PORT:
+        }
+        else if(Port.class.getSimpleName().equals(type))
+        {
             return new PortRecoverer(_portFactory);
-        case GROUP_PROVIDER:
+        }
+        else if(GroupProvider.class.getSimpleName().equals(type))
+        {
             return new GroupProviderRecoverer(_groupManagerServiceLoader);
-        case PLUGIN:
+        }
+        else if(Plugin.class.getSimpleName().equals(type))
+        {
             return new PluginRecoverer(_pluginFactoryServiceLoader);
         }
+
         return null;
     }
 

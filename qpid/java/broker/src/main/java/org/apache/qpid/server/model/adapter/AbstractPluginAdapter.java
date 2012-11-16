@@ -28,10 +28,11 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 
-public abstract class AbstractPluginAdapter extends AbstractAdapter
+public abstract class AbstractPluginAdapter extends AbstractAdapter implements Plugin
 {
 
     protected AbstractPluginAdapter(UUID id)

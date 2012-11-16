@@ -18,11 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
+package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-
-public interface RecovererProvider
+public interface Plugin extends ConfiguredObject
 {
-    ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(String type);
+	//Hack, using it for the class name only for consistency with the other things.
 }

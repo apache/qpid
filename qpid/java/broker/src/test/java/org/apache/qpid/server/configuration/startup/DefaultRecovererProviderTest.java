@@ -21,27 +21,30 @@
 package org.apache.qpid.server.configuration.startup;
 
 import static org.mockito.Mockito.mock;
+import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.model.ConfiguredObjectType;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-
-import junit.framework.TestCase;
 
 public class DefaultRecovererProviderTest extends TestCase
 {
-
     public void testGetRecoverer()
     {
-        ConfiguredObjectType[] supportedTypes = {ConfiguredObjectType.BROKER,
-                ConfiguredObjectType.VIRTUAL_HOST, ConfiguredObjectType.AUTHENTICATION_PROVIDER,
-                ConfiguredObjectType.GROUP_PROVIDER, ConfiguredObjectType.PLUGIN, ConfiguredObjectType.PORT};
+        String[] supportedTypes = {Broker.class.getSimpleName(),
+        		VirtualHost.class.getSimpleName(), AuthenticationProvider.class.getSimpleName(),
+                GroupProvider.class.getSimpleName(), Plugin.class.getSimpleName(), Port.class.getSimpleName()};
 
         DefaultRecovererProvider provider = new DefaultRecovererProvider(mock(IApplicationRegistry.class));
-        for (ConfiguredObjectType configuredObjectType : supportedTypes)
+        for (String configuredObjectType : supportedTypes)
         {
             ConfiguredObjectRecoverer<?> recovever = provider.getRecoverer(configuredObjectType);
-            assertNotNull("Null recoveverer for type: " + configuredObjectType, recovever);
+            assertNotNull("Null recoverer for type: " + configuredObjectType, recovever);
         }
     }
 

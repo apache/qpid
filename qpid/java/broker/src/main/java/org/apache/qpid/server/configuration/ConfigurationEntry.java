@@ -29,17 +29,16 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.startup.AttributeMap;
-import org.apache.qpid.server.model.ConfiguredObjectType;
 
 public class ConfigurationEntry
 {
     private final UUID _id;
-    private final ConfiguredObjectType _type;
+    private final String _type;
     private final Map<String, Object> _attributes;
     private final Set<UUID> _childrenIds;
     private final ConfigurationEntryStore _store;
 
-    public ConfigurationEntry(UUID id, ConfiguredObjectType type, Map<String, Object> attributes, Set<UUID> childrenIds,
+    public ConfigurationEntry(UUID id, String type, Map<String, Object> attributes, Set<UUID> childrenIds,
             ConfigurationEntryStore store)
     {
         super();
@@ -55,7 +54,7 @@ public class ConfigurationEntry
         return _id;
     }
 
-    public ConfiguredObjectType getType()
+    public String getType()
     {
         return _type;
     }
@@ -63,11 +62,6 @@ public class ConfigurationEntry
     public Map<String, Object> getAttributes()
     {
         return _attributes;
-    }
-
-    public AttributeMap getAttributesAsAttributeMap()
-    {
-        return new AttributeMap(getAttributes());
     }
 
     public Set<UUID> getChildrenIds()
@@ -83,20 +77,20 @@ public class ConfigurationEntry
     /**
      * Returns this entry's children. The collection should not be modified.
      */
-    public Map<ConfiguredObjectType, Collection<ConfigurationEntry>> getChildren()
+    public Map<String, Collection<ConfigurationEntry>> getChildren()
     {
-        Map<ConfiguredObjectType, Collection<ConfigurationEntry>> children = null;
+        Map<String, Collection<ConfigurationEntry>> children = null;
         if (_childrenIds == null)
         {
             children = Collections.emptyMap();
         }
         else
         {
-            children = new HashMap<ConfiguredObjectType, Collection<ConfigurationEntry>>();
+            children = new HashMap<String, Collection<ConfigurationEntry>>();
             for (UUID childId : _childrenIds)
             {
                 ConfigurationEntry entry = _store.getEntry(childId);
-                ConfiguredObjectType type = entry.getType();
+                String type = entry.getType();
                 Collection<ConfigurationEntry> childrenOfType = children.get(type);
                 if (childrenOfType == null)
                 {

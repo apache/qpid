@@ -11,12 +11,10 @@ import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
-import org.apache.qpid.server.model.adapter.PortAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
@@ -40,8 +38,8 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _registry, _authenticationProviderFactory, _portFactory);
-        Map<ConfiguredObjectType, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
-        for (ConfiguredObjectType type : childEntries.keySet())
+        Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
+        for (String type : childEntries.keySet())
         {
             ConfiguredObjectRecoverer<?> recoverer = recovererProvider.getRecoverer(type);
             if (recoverer == null)
@@ -59,24 +57,20 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
                 broker.recoverChild(object);
             }
         }
-        wireUpConfiguredObjects(broker, entry.getAttributesAsAttributeMap());
+        wireUpConfiguredObjects(broker, entry.getAttributes());
 
         return broker;
     }
 
     // XXX unit test this
-    private void wireUpConfiguredObjects(BrokerAdapter broker, AttributeMap brokerAttributes)
+    private void wireUpConfiguredObjects(BrokerAdapter broker, Map<String,Object> brokerAttributes)
     {
         AuthenticationProvider defaultAuthenticationProvider = null;
         Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
         int numberOfAuthenticationProviders = authenticationProviders.size();
         if (numberOfAuthenticationProviders == 0)
         {
-            LOGGER.error("No authentication providers configured");
-            return;
-            // XXX reinstate when wire-up has been separated from creation:
-            // throw new
-            // IllegalConfigurationException("No authentication providers configured");
+        	throw new IllegalConfigurationException("No authentication provider was onfigured");
         }
         else if (numberOfAuthenticationProviders == 1)
         {
@@ -84,7 +78,12 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         }
         else
         {
-            String name = brokerAttributes.getStringAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER);
+            String name = (String) brokerAttributes.get(Broker.DEFAULT_AUTHENTICATION_PROVIDER);
+            if (name == null)
+            {
+            	throw new IllegalConfigurationException("Multiple authentication providers defined, but no default was configured.");
+            }
+            
             defaultAuthenticationProvider = getAuthenticationProviderByName(broker, name);
         }
         broker.setDefaultAuthenticationProvider(defaultAuthenticationProvider);
@@ -92,12 +91,9 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(broker.getGroupProviders());
         for (AuthenticationProvider authenticationProvider : authenticationProviders)
         {
-            // XXX : review this cast
-            if (authenticationProvider instanceof AuthenticationProviderAdapter)
-            {
-                ((AuthenticationProviderAdapter<?>) authenticationProvider).setGroupAccessor(groupPrincipalAccessor);
-            }
+            authenticationProvider.setGroupAccessor(groupPrincipalAccessor);
         }
+
         Collection<Port> ports = broker.getPorts();
         for (Port port : ports)
         {
@@ -111,7 +107,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
             {
                 provider = defaultAuthenticationProvider;
             }
-            ((PortAdapter) port).setAuthenticationProvider(provider);
+            port.setAuthenticationProvider(provider);
         }
     }
 

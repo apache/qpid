@@ -393,7 +393,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
-            setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
+            setSystemProperty("qpid.use_custom_rmi_socket_factory", "false");
             testConfig = saveTestConfiguration(port, testConfiguration);
             _logger.info("Set test.config property to: " + testConfig);
             _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);

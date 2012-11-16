@@ -53,7 +53,6 @@ import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.SecurityManager;
@@ -190,7 +189,7 @@ public class ApplicationRegistry implements IApplicationRegistry
             _securityManager = new SecurityManager(configuration.getConfig());
 
             RecovererProvider provider = new DefaultRecovererProvider(this);
-            ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(ConfiguredObjectType.BROKER);
+            ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
             getVirtualHostRegistry().setDefaultVirtualHostName(configuration.getDefaultVirtualHost());

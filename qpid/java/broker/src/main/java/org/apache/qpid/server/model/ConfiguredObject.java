@@ -246,7 +246,4 @@ public interface ConfiguredObject
     <C extends ConfiguredObject> C createChild(Class<C> childClass,
                                                Map<String, Object> attributes,
                                                ConfiguredObject... otherParents);
-
-    ConfiguredObjectType getConfiguredObjectType();
-
 }

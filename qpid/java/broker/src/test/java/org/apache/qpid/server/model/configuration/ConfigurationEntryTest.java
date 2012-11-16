@@ -36,7 +36,8 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.model.ConfiguredObjectType;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 
 public class ConfigurationEntryTest extends TestCase
@@ -45,11 +46,11 @@ public class ConfigurationEntryTest extends TestCase
     {
         ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
 
-        ConfigurationEntry virtualHostEntry1 = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.VIRTUAL_HOST,
+        ConfigurationEntry virtualHostEntry1 = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
-        ConfigurationEntry virtualHostEntry2 = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.VIRTUAL_HOST,
+        ConfigurationEntry virtualHostEntry2 = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
-        ConfigurationEntry portEntry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT,
+        ConfigurationEntry portEntry = new ConfigurationEntry(UUID.randomUUID(), Port.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
 
         when(store.getEntry(virtualHostEntry1.getId())).thenReturn(virtualHostEntry1);
@@ -60,14 +61,14 @@ public class ConfigurationEntryTest extends TestCase
         childrenIds.add(virtualHostEntry1.getId());
         childrenIds.add(virtualHostEntry2.getId());
         childrenIds.add(portEntry.getId());
-        ConfigurationEntry parentEntry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.BROKER,
+        ConfigurationEntry parentEntry = new ConfigurationEntry(UUID.randomUUID(), Broker.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), childrenIds, store);
 
-        Map<ConfiguredObjectType, Collection<ConfigurationEntry>> children = parentEntry.getChildren();
+        Map<String, Collection<ConfigurationEntry>> children = parentEntry.getChildren();
         assertNotNull("Null is returned for children", children);
         assertEquals("Unexpected size", 2, children.size());
-        Collection<ConfigurationEntry> virtualHosts = children.get(ConfiguredObjectType.VIRTUAL_HOST);
-        Collection<ConfigurationEntry> ports = children.get(ConfiguredObjectType.PORT);
+        Collection<ConfigurationEntry> virtualHosts = children.get(VirtualHost.class.getSimpleName());
+        Collection<ConfigurationEntry> ports = children.get(Port.class.getSimpleName());
         assertEquals("Unexpected virtual hosts",
                 new HashSet<ConfigurationEntry>(Arrays.asList(virtualHostEntry1, virtualHostEntry2)),
                 new HashSet<ConfigurationEntry>(virtualHosts));
@@ -80,12 +81,12 @@ public class ConfigurationEntryTest extends TestCase
         ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
 
         UUID id = UUID.randomUUID();
-        ConfigurationEntry entry1 = new ConfigurationEntry(id, ConfiguredObjectType.VIRTUAL_HOST,
+        ConfigurationEntry entry1 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
-        ConfigurationEntry entry2 = new ConfigurationEntry(id, ConfiguredObjectType.VIRTUAL_HOST,
+        ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
         ConfigurationEntry entryWithDifferentId = new ConfigurationEntry(UUID.randomUUID(),
-                ConfiguredObjectType.VIRTUAL_HOST, Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
+        		VirtualHost.class.getSimpleName(), Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
 
         assertTrue(entry1.hashCode() == entry2.hashCode());
         assertFalse(entry1.hashCode() == entryWithDifferentId.hashCode());
@@ -98,16 +99,16 @@ public class ConfigurationEntryTest extends TestCase
         UUID id = UUID.randomUUID();
         Map<String, Object> attributes1 = new HashMap<String, Object>();
         attributes1.put(VirtualHost.NAME, "name1");
-        ConfigurationEntry entry1 = new ConfigurationEntry(id, ConfiguredObjectType.VIRTUAL_HOST, attributes1,
+        ConfigurationEntry entry1 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes1,
                 Collections.singleton(UUID.randomUUID()), store);
 
         Map<String, Object> attributes2 = new HashMap<String, Object>();
         attributes2.put(VirtualHost.NAME, "name2");
 
-        ConfigurationEntry entry2 = new ConfigurationEntry(id, ConfiguredObjectType.VIRTUAL_HOST, attributes2,
+        ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes2,
                 Collections.singleton(UUID.randomUUID()), store);
         ConfigurationEntry entryWithDifferentId = new ConfigurationEntry(UUID.randomUUID(),
-                ConfiguredObjectType.VIRTUAL_HOST, attributes1, Collections.singleton(UUID.randomUUID()), store);
+        		VirtualHost.class.getSimpleName(), attributes1, Collections.singleton(UUID.randomUUID()), store);
 
         assertTrue(entry1.equals(entry2));
         assertFalse(entry1.equals(entryWithDifferentId));

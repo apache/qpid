@@ -29,7 +29,6 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
 
@@ -193,12 +192,6 @@ abstract class AbstractAdapter implements ConfiguredObject
         {
             return new ArrayList<String>(_attributes.keySet());
         }
-    }
-
-    @Override
-    public ConfiguredObjectType getConfiguredObjectType()
-    {
-        throw new RuntimeException("Not implemented"); //XXX: implement this method in each concrete adapter class
     }
 
     @Override

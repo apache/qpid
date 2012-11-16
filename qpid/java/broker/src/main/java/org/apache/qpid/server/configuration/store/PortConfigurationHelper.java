@@ -38,7 +38,6 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.model.ConfiguredObjectType;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
@@ -213,7 +212,7 @@ public class PortConfigurationHelper
             attributes.put(Port.WANT_CLIENT_AUTH, serverConfig.wantClientAuth());
             attributes.put(Port.AUTHENTICATION_MANAGER, serverConfig.getPortAuthenticationMappings().get(port));
 
-            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), ConfiguredObjectType.PORT, attributes,
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), Port.class.getSimpleName(), attributes,
                     null, _configurationEntryStore);
 
             portConfiguration.put(entry.getId(), entry);

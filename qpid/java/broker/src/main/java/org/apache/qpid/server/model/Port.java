@@ -119,4 +119,5 @@ public interface Port extends ConfiguredObject
 
     AuthenticationProvider getAuthenticationProvider();
 
+    void setAuthenticationProvider(AuthenticationProvider authenticationProvider);
 }
