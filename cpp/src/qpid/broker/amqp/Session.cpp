@@ -24,10 +24,13 @@
 #include "ManagedConnection.h"
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/Descriptor.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/broker/AsyncCompletion.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
@@ -134,13 +137,33 @@ void Session::attach(pn_link_t* link)
                                 c.size = d.size;
                                 descriptor = qpid::amqp::Descriptor(c);
                             } else {
-                                QPID_LOG(notice, "Ignoring filter with descriptor with key " << std::string(fname.start, fname.size) << " and type " << pn_data_type(filter));
+                                QPID_LOG(notice, "Ignoring filter " << std::string(fname.start, fname.size) << " with descriptor of type " << pn_data_type(filter));
                                 continue;
                             }
-                            QPID_LOG(debug, "Got filter with descriptor " << descriptor);
+                            if (descriptor.match(qpid::amqp::filters::LEGACY_TOPIC_FILTER_SYMBOL, qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE)) {
+                                if (exchange->getType() == qpid::broker::DirectExchange::typeName) {
+                                    QPID_LOG(info, "Interpreting legacy topic filter as direct binding key for " << exchange->getName());
+                                } else if (exchange->getType() == qpid::broker::FanOutExchange::typeName) {
+                                    QPID_LOG(info, "Ignoring legacy topic filter on fanout exchange " << exchange->getName());
+                                    for (int i = 0; i < 3; ++i) pn_data_next(filter);//move off descriptor, then skip key and value
+                                    continue;
+                                }
+                            } else if (descriptor.match(qpid::amqp::filters::LEGACY_DIRECT_FILTER_SYMBOL, qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE)) {
+                                if (exchange->getType() == qpid::broker::TopicExchange::typeName) {
+                                    QPID_LOG(info, "Interpreting legacy direct filter as topic binding key for " << exchange->getName());
+                                } else if (exchange->getType() == qpid::broker::FanOutExchange::typeName) {
+                                    QPID_LOG(info, "Ignoring legacy direct filter on fanout exchange " << exchange->getName());
+                                    for (int i = 0; i < 3; ++i) pn_data_next(filter);//move off descriptor, then skip key and value
+                                    continue;
+                                }
+                            } else {
+                                QPID_LOG(notice, "Ignoring filter with unsupported descriptor " << descriptor);
+                                for (int i = 0; i < 3; ++i) pn_data_next(filter);//move off descriptor, then skip key and value
+                                continue;
+                            }
                             pn_data_next(filter);
                         } else {
-                            QPID_LOG(debug, "Got undescribed filter of type " << pn_data_type(filter));
+                            QPID_LOG(info, "Got undescribed filter of type " << pn_data_type(filter));
                         }
                         if (pn_data_type(filter) == PN_STRING) {
                             pn_bytes_t value = pn_data_get_string(filter);
@@ -180,7 +203,7 @@ void Session::attach(pn_link_t* link)
             } else if (exchange->getType() == TopicExchange::typeName) {
                 exchange->bind(queue, "#", 0);
             } else {
-                throw qpid::Exception("Exchange type not yet supported over 1.0: " + exchange->getType());/*not-supported?*/
+                throw qpid::Exception("Exchange type requires a filter: " + exchange->getType());/*not-supported?*/
             }
             boost::shared_ptr<Outgoing> q(new Outgoing(broker, queue, link, *this, out, true));
             senders[link] = q;
