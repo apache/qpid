@@ -31,6 +31,7 @@
 struct pn_delivery_t;
 struct pn_link_t;
 struct pn_session_t;
+struct pn_terminus_t;
 
 namespace qpid {
 namespace messaging {
@@ -67,6 +68,7 @@ class SenderContext
     const std::string& getName() const;
     const std::string& getTarget() const;
     Delivery* send(const qpid::messaging::Message& message);
+    void configure() const;
   private:
     friend class ConnectionContext;
     typedef std::deque<Delivery> Deliveries;
@@ -79,6 +81,7 @@ class SenderContext
     uint32_t capacity;
 
     uint32_t processUnsettled();
+    void configure(pn_terminus_t*) const;
 };
 }}} // namespace qpid::messaging::amqp
 

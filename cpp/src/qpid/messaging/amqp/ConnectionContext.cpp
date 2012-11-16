@@ -250,8 +250,7 @@ void ConnectionContext::acknowledge(boost::shared_ptr<SessionContext> ssn, qpid:
 
 void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
 {
-    pn_terminus_t* target = pn_link_target((pn_link_t*) lnk->sender);
-    pn_terminus_set_address(target, lnk->getTarget().c_str());
+    lnk->configure();
     attach(ssn->session, (pn_link_t*) lnk->sender);
     if (!pn_link_remote_target((pn_link_t*) lnk->sender)) {
         std::string msg("No such target : ");
