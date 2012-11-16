@@ -21,7 +21,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/posix/check.h"
-#include <set>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
@@ -120,41 +119,6 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
     if (addrList.empty()) {
         addrList.push_back(Address(TCP, LOOPBACK, port));
     }
-}
-
-namespace {
-struct AddrInfo {
-    struct addrinfo* ptr;
-    AddrInfo(const std::string& host) : ptr(0) {
-        ::addrinfo hints;
-        ::memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_UNSPEC; // Allow both IPv4 and IPv6
-        if (::getaddrinfo(host.c_str(), NULL, &hints, &ptr) != 0)
-            ptr = 0;
-    }
-    ~AddrInfo() { if (ptr) ::freeaddrinfo(ptr); }
-};
-}
-
-bool SystemInfo::isLocalHost(const std::string& host) {
-    std::vector<Address> myAddrs;
-    getLocalIpAddresses(0, myAddrs);
-    std::set<string> localHosts;
-    for (std::vector<Address>::const_iterator i = myAddrs.begin(); i != myAddrs.end(); ++i)
-        localHosts.insert(i->host);
-    // Resolve host
-    AddrInfo ai(host);
-    if (!ai.ptr) return false;
-    for (struct addrinfo *res = ai.ptr; res != NULL; res = res->ai_next) {
-        if (isLoopback(res->ai_addr)) return true;
-        // Get string form of IP addr
-        char addr[NI_MAXHOST] = "";
-        int error = ::getnameinfo(res->ai_addr, res->ai_addrlen, addr, NI_MAXHOST, NULL, 0,
-                                  NI_NUMERICHOST | NI_NUMERICSERV);
-        if (error) return false;
-        if (localHosts.find(addr) != localHosts.end()) return true;
-    }
-    return false;
 }
 
 void SystemInfo::getSystemId (std::string &osName,
