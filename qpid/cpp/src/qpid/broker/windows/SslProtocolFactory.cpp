@@ -93,9 +93,7 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
     CredHandle credHandle;
 
   public:
-    SslProtocolFactory(const SslServerOptions&, const std::string& host, const std::string& port,
-                       int backlog, bool nodelay,
-                       Timer& timer, uint32_t maxTime);
+    SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions&, Timer& timer);
     ~SslProtocolFactory();
     void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
     void connect(sys::Poller::shared_ptr, const std::string& host, const std::string& port,
@@ -129,10 +127,7 @@ static struct SslPlugin : public Plugin {
         if (broker) {
             try {
                 const broker::Broker::Options& opts = broker->getOptions();
-                ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
-                                                                            "", boost::lexical_cast<std::string>(options.port),
-                                                                            opts.connectionBacklog, opts.tcpNoDelay,
-                                                                            broker->getTimer(), opts.maxNegotiateTime));
+                ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(opts, options, broker->getTimer()));
                 QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
                 broker->registerProtocolFactory("ssl", protocol);
             } catch (const std::exception& e) {
@@ -142,13 +137,36 @@ static struct SslPlugin : public Plugin {
     }
 } sslPlugin;
 
-SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
-                                       const std::string& host, const std::string& port,
-                                       int backlog, bool nodelay,
-                                       Timer& timer, uint32_t maxTime)
+namespace {
+    // Expand list of Interfaces and addresses to a list of addresses
+    std::vector<std::string> expandInterfaces(const std::vector<std::string>& interfaces) {
+        std::vector<std::string> addresses;
+        // If there are no specific interfaces listed use a single "" to listen on every interface
+        if (interfaces.empty()) {
+            addresses.push_back("");
+            return addresses;
+        }
+        for (unsigned i = 0; i < interfaces.size(); ++i) {
+            const std::string& interface = interfaces[i];
+            if (!(SystemInfo::getInterfaceAddresses(interface, addresses))) {
+                // We don't have an interface of that name -
+                // Check for IPv6 ('[' ']') brackets and remove them
+                // then pass to be looked up directly
+                if (interface[0]=='[' && interface[interface.size()-1]==']') {
+                    addresses.push_back(interface.substr(1, interface.size()-2));
+                } else {
+                    addresses.push_back(interface);
+                }
+            }
+        }
+        return addresses;
+    }
+}
+
+SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options, Timer& timer)
     : brokerTimer(timer),
-      maxNegotiateTime(maxTime),
-      tcpNoDelay(nodelay),
+      maxNegotiateTime(opts.maxNegotiateTime),
+      tcpNoDelay(opts.tcpNoDelay),
       clientAuthSelected(options.clientAuth) {
 
     // Make sure that certificate store is good before listening to sockets
@@ -212,21 +230,31 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
     ::CertFreeCertificateContext(certContext);
     ::CertCloseStore(certStoreHandle, 0);
 
-    // Listen to socket(s)
-    SocketAddress sa(host, port);
+    std::vector<std::string> addresses = expandInterfaces(opts.listenInterfaces);
+    if (addresses.empty()) {
+        // We specified some interfaces, but couldn't find addresses for them
+        QPID_LOG(warning, "TCP/TCP6: No specified network interfaces found: Not Listening");
+        listeningPort = 0;
+    }
 
-    // We must have at least one resolved address
-    QPID_LOG(info, "SSL Listening to: " << sa.asString())
-    Socket* s = createSocket();
-    listeningPort = s->listen(sa, backlog);
-    listeners.push_back(s);
+    for (unsigned i = 0; i<addresses.size(); ++i) {
+        QPID_LOG(debug, "Using interface: " << addresses[i]);
+        SocketAddress sa(addresses[i], boost::lexical_cast<std::string>(options.port));
 
-    // Try any other resolved addresses
-    while (sa.nextAddress()) {
+
+        // We must have at least one resolved address
         QPID_LOG(info, "SSL Listening to: " << sa.asString())
         Socket* s = createSocket();
-        s->listen(sa, backlog);
+        listeningPort = s->listen(sa, opts.connectionBacklog);
         listeners.push_back(s);
+
+        // Try any other resolved addresses
+        while (sa.nextAddress()) {
+            QPID_LOG(info, "SSL Listening to: " << sa.asString())
+            Socket* s = createSocket();
+            s->listen(sa, opts.connectionBacklog);
+            listeners.push_back(s);
+        }
     }
 }
 
