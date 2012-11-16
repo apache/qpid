@@ -20,6 +20,7 @@
  */
 #include "qpid/messaging/amqp/SenderContext.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
+#include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
 #include "qpid/messaging/exceptions.h"
@@ -336,4 +337,17 @@ bool SenderContext::Delivery::accepted()
     return pn_delivery_remote_state(token) == PN_ACCEPTED;
 }
 
+void SenderContext::configure() const
+{
+    configure(pn_link_target(sender));
+}
+void SenderContext::configure(pn_terminus_t* target) const
+{
+    pn_terminus_set_address(target, address.getName().c_str());
+    //dynamic create:
+    AddressHelper helper(address);
+    if (helper.createEnabled(AddressHelper::FOR_SENDER)) {
+        helper.setNodeProperties(target);
+    }
+}
 }}} // namespace qpid::messaging::amqp

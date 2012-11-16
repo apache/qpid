@@ -35,7 +35,10 @@
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/broker/amqp/Filter.h"
+#include "qpid/broker/amqp/NodeProperties.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include <boost/intrusive_ptr.hpp>
@@ -84,6 +87,30 @@ class Exchange : public Target
 Session::Session(pn_session_t* s, qpid::broker::Broker& b, ManagedConnection& c, qpid::sys::OutputControl& o)
     : ManagedSession(b, c, (boost::format("%1%") % s).str()), session(s), broker(b), connection(c), out(o), deleted(false) {}
 
+
+Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus)
+{
+    ResolvedNode node;
+    node.exchange = broker.getExchanges().find(name);
+    node.queue = broker.getQueues().find(name);
+    if (!node.queue && !node.exchange && pn_terminus_is_dynamic(terminus)) {
+        //TODO: handle dynamic creation
+        //is it a queue or an exchange?
+        NodeProperties properties;
+        properties.read(pn_terminus_properties(terminus));
+        if (properties.isQueue()) {
+            node.queue = broker.createQueue(name, properties.getQueueSettings(), this, "", connection.getUserid(), connection.getId()).first;
+        } else {
+            qpid::framing::FieldTable args;
+            node.exchange = broker.createExchange(name, "topic"/*type*/, false/*durable*/, ""/*alternateExchange*/, args, connection.getUserid(), connection.getId()).first;
+        }
+    } else if (node.queue && node.exchange) {
+        QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
+        node.exchange.reset();
+    }
+    return node;
+}
+
 void Session::attach(pn_link_t* link)
 {
     if (pn_link_is_sender(link)) {
@@ -96,120 +123,33 @@ void Session::attach(pn_link_t* link)
         QPID_LOG(debug, "Received attach request for outgoing link from " << name);
         pn_terminus_set_address(pn_link_source(link), name.c_str());
 
-        boost::shared_ptr<qpid::broker::Exchange> exchange = broker.getExchanges().find(name);
-        boost::shared_ptr<qpid::broker::Queue> queue = broker.getQueues().find(name);
-        if (queue) {
-            if (exchange) {
-                QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
-            }
-            boost::shared_ptr<Outgoing> q(new Outgoing(broker, queue, link, *this, out, false));
+        ResolvedNode node = resolve(name, source);
+
+        if (node.queue) {
+            boost::shared_ptr<Outgoing> q(new Outgoing(broker, node.queue, link, *this, out, false));
             q->init();
             senders[link] = q;
-        } else if (exchange) {
+        } else if (node.exchange) {
             QueueSettings settings(false, true);
             //TODO: populate settings from source details when available from engine
-            queue = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
-            pn_data_t* filter = pn_terminus_filter(source);
-            pn_data_next(filter);
-            if (filter && !pn_data_is_null(filter)) {
-                if (pn_data_type(filter) == PN_MAP) {
-                    pn_data_t* echo = pn_terminus_filter(pn_link_source(link));
-                    pn_data_put_map(echo);
-                    pn_data_enter(echo);
-                    size_t count = pn_data_get_map(filter)/2;
-                    QPID_LOG(debug, "Got filter map with " << count << " entries");
-                    pn_data_enter(filter);
-                    for (size_t i = 0; i < count; i++) {
-                        pn_bytes_t fname = pn_data_get_symbol(filter);
-                        pn_data_next(filter);
-                        bool isDescribed = pn_data_is_described(filter);
-                        qpid::amqp::Descriptor descriptor(0);
-                        if (isDescribed) {
-                            pn_data_enter(filter);
-                            pn_data_next(filter);
-                            //TODO: use or at least verify descriptor
-                            if (pn_data_type(filter) == PN_ULONG) {
-                                descriptor = qpid::amqp::Descriptor(pn_data_get_ulong(filter));
-                            } else if (pn_data_type(filter) == PN_SYMBOL) {
-                                pn_bytes_t d = pn_data_get_symbol(filter);
-                                qpid::amqp::CharSequence c;
-                                c.data = d.start;
-                                c.size = d.size;
-                                descriptor = qpid::amqp::Descriptor(c);
-                            } else {
-                                QPID_LOG(notice, "Ignoring filter " << std::string(fname.start, fname.size) << " with descriptor of type " << pn_data_type(filter));
-                                continue;
-                            }
-                            if (descriptor.match(qpid::amqp::filters::LEGACY_TOPIC_FILTER_SYMBOL, qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE)) {
-                                if (exchange->getType() == qpid::broker::DirectExchange::typeName) {
-                                    QPID_LOG(info, "Interpreting legacy topic filter as direct binding key for " << exchange->getName());
-                                } else if (exchange->getType() == qpid::broker::FanOutExchange::typeName) {
-                                    QPID_LOG(info, "Ignoring legacy topic filter on fanout exchange " << exchange->getName());
-                                    for (int i = 0; i < 3; ++i) pn_data_next(filter);//move off descriptor, then skip key and value
-                                    continue;
-                                }
-                            } else if (descriptor.match(qpid::amqp::filters::LEGACY_DIRECT_FILTER_SYMBOL, qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE)) {
-                                if (exchange->getType() == qpid::broker::TopicExchange::typeName) {
-                                    QPID_LOG(info, "Interpreting legacy direct filter as topic binding key for " << exchange->getName());
-                                } else if (exchange->getType() == qpid::broker::FanOutExchange::typeName) {
-                                    QPID_LOG(info, "Ignoring legacy direct filter on fanout exchange " << exchange->getName());
-                                    for (int i = 0; i < 3; ++i) pn_data_next(filter);//move off descriptor, then skip key and value
-                                    continue;
-                                }
-                            } else {
-                                QPID_LOG(notice, "Ignoring filter with unsupported descriptor " << descriptor);
-                                for (int i = 0; i < 3; ++i) pn_data_next(filter);//move off descriptor, then skip key and value
-                                continue;
-                            }
-                            pn_data_next(filter);
-                        } else {
-                            QPID_LOG(info, "Got undescribed filter of type " << pn_data_type(filter));
-                        }
-                        if (pn_data_type(filter) == PN_STRING) {
-                            pn_bytes_t value = pn_data_get_string(filter);
-                            pn_data_next(filter);
-                            exchange->bind(queue, std::string(value.start, value.size), 0);
-                            pn_data_put_symbol(echo, fname);
-                            if (isDescribed) {
-                                pn_data_put_described(echo);
-                                pn_data_enter(echo);
-                                pn_bytes_t symbol;
-                                switch (descriptor.type) {
-                                  case qpid::amqp::Descriptor::NUMERIC:
-                                    pn_data_put_ulong(echo, descriptor.value.code);
-                                    break;
-                                  case qpid::amqp::Descriptor::SYMBOLIC:
-                                    symbol.start = const_cast<char*>(descriptor.value.symbol.data);
-                                    symbol.size = descriptor.value.symbol.size;
-                                    pn_data_put_symbol(echo, symbol);
-                                    break;
-                                }
-                            }
-                            pn_data_put_string(echo, value);
-                            if (isDescribed) pn_data_exit(echo);
-
-                            QPID_LOG(debug, "Binding using filter " << std::string(fname.start, fname.size) << ":" << std::string(value.start, value.size));
-                        } else {
-                            //TODO: handle headers exchange filters
-                            QPID_LOG(warning, "Ignoring unsupported filter type with key " << std::string(fname.start, fname.size) << " and type " << pn_data_type(filter));
-                        }
-                    }
-                    pn_data_exit(echo);
-                } else {
-                    QPID_LOG(warning, "Filter should be map, got type: " << pn_data_type(filter));
-                }
-            } else if (exchange->getType() == FanOutExchange::typeName) {
-                exchange->bind(queue, std::string(), 0);
-            } else if (exchange->getType() == TopicExchange::typeName) {
-                exchange->bind(queue, "#", 0);
+            boost::shared_ptr<qpid::broker::Queue> queue
+                = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
+            Filter filter;
+            filter.read(pn_terminus_filter(source));
+            if (filter.hasSubjectFilter()) {
+                filter.bind(node.exchange, queue);
+                filter.write(pn_terminus_filter(pn_link_source(link)));
+            } else if (node.exchange->getType() == FanOutExchange::typeName) {
+                node.exchange->bind(queue, std::string(), 0);
+            } else if (node.exchange->getType() == TopicExchange::typeName) {
+                node.exchange->bind(queue, "#", 0);
             } else {
-                throw qpid::Exception("Exchange type requires a filter: " + exchange->getType());/*not-supported?*/
+                throw qpid::Exception("Exchange type requires a filter: " + node.exchange->getType());/*not-supported?*/
             }
             boost::shared_ptr<Outgoing> q(new Outgoing(broker, queue, link, *this, out, true));
             senders[link] = q;
             q->init();
         } else {
-            //TODO: handle dynamic creation
             pn_terminus_set_type(pn_link_source(link), PN_UNSPECIFIED);
             throw qpid::Exception("Node not found: " + name);/*not-found*/
         }
@@ -223,22 +163,17 @@ void Session::attach(pn_link_t* link)
         QPID_LOG(debug, "Received attach request for incoming link to " << name);
         pn_terminus_set_address(pn_link_target(link), name.c_str());
 
+        ResolvedNode node = resolve(name, target);
 
-        boost::shared_ptr<qpid::broker::Queue> queue = broker.getQueues().find(name);
-        boost::shared_ptr<qpid::broker::Exchange> exchange = broker.getExchanges().find(name);
-        if (queue) {
-            if (exchange) {
-                QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
-            }
-            boost::shared_ptr<Target> q(new Queue(queue, link));
+        if (node.queue) {
+            boost::shared_ptr<Target> q(new Queue(node.queue, link));
             targets[link] = q;
             q->flow();
-        } else if (exchange) {
-            boost::shared_ptr<Target> e(new Exchange(exchange, link));
+        } else if (node.exchange) {
+            boost::shared_ptr<Target> e(new Exchange(node.exchange, link));
             targets[link] = e;
             e->flow();
         } else {
-            //TODO: handle dynamic creation
             pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
             throw qpid::Exception("Node not found: " + name);/*not-found*/
         }

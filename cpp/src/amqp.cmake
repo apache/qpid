@@ -50,6 +50,10 @@ if (BUILD_AMQP)
     set (amqp_SOURCES
          qpid/broker/amqp/Connection.h
          qpid/broker/amqp/Connection.cpp
+         qpid/broker/amqp/DataReader.h
+         qpid/broker/amqp/DataReader.cpp
+         qpid/broker/amqp/Filter.h
+         qpid/broker/amqp/Filter.cpp
          qpid/broker/amqp/Header.h
          qpid/broker/amqp/Header.cpp
          qpid/broker/amqp/ManagedConnection.h
@@ -60,6 +64,8 @@ if (BUILD_AMQP)
          qpid/broker/amqp/ManagedOutgoingLink.cpp
          qpid/broker/amqp/Message.h
          qpid/broker/amqp/Message.cpp
+         qpid/broker/amqp/NodeProperties.h
+         qpid/broker/amqp/NodeProperties.cpp
          qpid/broker/amqp/Outgoing.h
          qpid/broker/amqp/Outgoing.cpp
          qpid/broker/amqp/ProtocolPlugin.cpp
@@ -82,6 +88,8 @@ if (BUILD_AMQP)
 
 
     set (amqpc_SOURCES
+         qpid/messaging/amqp/AddressHelper.h
+         qpid/messaging/amqp/AddressHelper.cpp
          qpid/messaging/amqp/ConnectionContext.h
          qpid/messaging/amqp/ConnectionContext.cpp
          qpid/messaging/amqp/ConnectionHandle.h
