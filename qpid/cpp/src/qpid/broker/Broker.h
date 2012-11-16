@@ -103,6 +103,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         bool noDataDir;
         std::string dataDir;
         uint16_t port;
+        std::vector<std::string> listenInterfaces;
         int workerThreads;
         int connectionBacklog;
         bool enableMgmt;
