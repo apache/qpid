@@ -32,6 +32,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <map>
 #include <netdb.h>
 #include <string.h>
 
@@ -118,6 +119,72 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
 
     if (addrList.empty()) {
         addrList.push_back(Address(TCP, LOOPBACK, port));
+    }
+}
+
+namespace {
+    inline socklen_t sa_len(::sockaddr* sa)
+    {
+        switch (sa->sa_family) {
+            case AF_INET:
+                return sizeof(struct sockaddr_in);
+            case AF_INET6:
+                return sizeof(struct sockaddr_in6);
+            default:
+                return sizeof(struct sockaddr_storage);
+        }
+    }
+
+    inline bool isInetOrInet6(::sockaddr* sa) {
+        switch (sa->sa_family) {
+            case AF_INET:
+            case AF_INET6:
+                return true;
+            default:
+                return false;
+        }
+    }
+    typedef std::map<std::string, std::vector<std::string> > InterfaceInfo;
+    std::map<std::string, std::vector<std::string> > cachedInterfaces;
+
+    void cacheInterfaceInfo() {
+        // Get interface info
+        ::ifaddrs* interfaceInfo;
+        QPID_POSIX_CHECK( ::getifaddrs(&interfaceInfo) );
+
+        char name[NI_MAXHOST];
+        for (::ifaddrs* info = interfaceInfo; info != 0; info = info->ifa_next) {
+
+            // Only use IPv4/IPv6 interfaces
+            if (!isInetOrInet6(info->ifa_addr)) continue;
+
+            int rc=::getnameinfo(info->ifa_addr, sa_len(info->ifa_addr),
+                                 name, sizeof(name), 0, 0,
+                                 NI_NUMERICHOST);
+            if (rc >= 0) {
+                std::string address(name);
+                cachedInterfaces[info->ifa_name].push_back(address);
+            } else {
+                throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
+            }
+        }
+        ::freeifaddrs(interfaceInfo);
+    }
+}
+
+bool SystemInfo::getInterfaceAddresses(const std::string& interface, std::vector<std::string>& addresses) {
+    if ( cachedInterfaces.empty() ) cacheInterfaceInfo();
+    InterfaceInfo::iterator i = cachedInterfaces.find(interface);
+    if ( i==cachedInterfaces.end() ) return false;
+    std::copy(i->second.begin(), i->second.end(), std::back_inserter(addresses));
+    return true;
+}
+
+void SystemInfo::getInterfaceNames(std::vector<std::string>& names ) {
+    if ( cachedInterfaces.empty() ) cacheInterfaceInfo();
+
+    for (InterfaceInfo::const_iterator i = cachedInterfaces.begin(); i!=cachedInterfaces.end(); ++i) {
+        names.push_back(i->first);
     }
 }
 
