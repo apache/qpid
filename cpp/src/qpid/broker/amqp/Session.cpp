@@ -122,18 +122,21 @@ void Session::attach(pn_link_t* link)
         pn_terminus_set_address(pn_link_source(link), name.c_str());
 
         ResolvedNode node = resolve(name, source);
+        Filter filter;
+        filter.read(pn_terminus_filter(source));
 
         if (node.queue) {
             boost::shared_ptr<Outgoing> q(new Outgoing(broker, node.queue, link, *this, out, false));
             q->init();
+            if (filter.hasSubjectFilter()) {
+                q->setSubjectFilter(filter.getSubjectFilter());
+            }
             senders[link] = q;
         } else if (node.exchange) {
             QueueSettings settings(false, true);
             //TODO: populate settings from source details when available from engine
             boost::shared_ptr<qpid::broker::Queue> queue
                 = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
-            Filter filter;
-            filter.read(pn_terminus_filter(source));
             if (filter.hasSubjectFilter()) {
                 filter.bind(node.exchange, queue);
                 filter.write(pn_terminus_filter(pn_link_source(link)));
