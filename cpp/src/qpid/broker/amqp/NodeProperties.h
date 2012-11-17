@@ -53,8 +53,15 @@ class NodeProperties : public qpid::amqp::MapReader
     void onSymbolValue(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor*);
     bool isQueue() const;
     QueueSettings getQueueSettings();
+    bool isDurable() const;
+    std::string getExchangeType() const;
+    std::string getAlternateExchange() const;
   private:
     bool queue;
+    bool durable;
+    bool autoDelete;
+    std::string exchangeType;
+    std::string alternateExchange;
     qpid::types::Variant::Map properties;
 
     void process(const std::string&, const qpid::types::Variant&);
