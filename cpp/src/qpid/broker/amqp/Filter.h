@@ -39,6 +39,7 @@ class Filter : qpid::amqp::MapReader
     void read(pn_data_t*);
     void write(pn_data_t*);
     bool hasSubjectFilter() const;
+    std::string getSubjectFilter() const;
     void bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue);
   private:
     struct StringFilter

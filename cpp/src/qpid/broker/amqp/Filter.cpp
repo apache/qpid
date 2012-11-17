@@ -74,6 +74,11 @@ bool Filter::hasSubjectFilter() const
     return !subjectFilter.value.empty();
 }
 
+std::string Filter::getSubjectFilter() const
+{
+    return subjectFilter.value;
+}
+
 
 void Filter::setSubjectFilter(const StringFilter& filter)
 {
