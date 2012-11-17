@@ -60,6 +60,7 @@ class Outgoing : public qpid::broker::Consumer, public boost::enable_shared_from
 {
   public:
     Outgoing(Broker&,boost::shared_ptr<Queue> q, pn_link_t* l, ManagedSession&, qpid::sys::OutputControl& o, bool topic);
+    void setSubjectFilter(const std::string&);
     void init();
     bool dispatch();
     void write(const char* data, size_t size);
@@ -71,6 +72,7 @@ class Outgoing : public qpid::broker::Consumer, public boost::enable_shared_from
     bool deliver(const QueueCursor& cursor, const qpid::broker::Message& msg);
     void notify();
     bool accept(const qpid::broker::Message&);
+    bool filter(const qpid::broker::Message&);
     void cancel();
     void acknowledged(const qpid::broker::DeliveryRecord&);
     qpid::broker::OwnershipToken* getSession();
@@ -99,6 +101,7 @@ class Outgoing : public qpid::broker::Consumer, public boost::enable_shared_from
     size_t current;
     int outstanding;
     std::vector<char> buffer;
+    std::string subjectFilter;
 };
 }}} // namespace qpid::broker::amqp
 
