@@ -22,9 +22,6 @@
 #include "Outgoing.h"
 #include "Message.h"
 #include "ManagedConnection.h"
-#include "qpid/amqp/CharSequence.h"
-#include "qpid/amqp/Descriptor.h"
-#include "qpid/amqp/descriptors.h"
 #include "qpid/broker/AsyncCompletion.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
@@ -99,10 +96,11 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
         NodeProperties properties;
         properties.read(pn_terminus_properties(terminus));
         if (properties.isQueue()) {
-            node.queue = broker.createQueue(name, properties.getQueueSettings(), this, "", connection.getUserid(), connection.getId()).first;
+            node.queue = broker.createQueue(name, properties.getQueueSettings(), this, properties.getAlternateExchange(), connection.getUserid(), connection.getId()).first;
         } else {
             qpid::framing::FieldTable args;
-            node.exchange = broker.createExchange(name, "topic"/*type*/, false/*durable*/, ""/*alternateExchange*/, args, connection.getUserid(), connection.getId()).first;
+            node.exchange = broker.createExchange(name, properties.getExchangeType(), properties.isDurable(), properties.getAlternateExchange(),
+                                                  args, connection.getUserid(), connection.getId()).first;
         }
     } else if (node.queue && node.exchange) {
         QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");

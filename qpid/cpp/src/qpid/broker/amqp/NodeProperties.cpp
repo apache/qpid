@@ -35,11 +35,16 @@ namespace {
 //distribution modes:
 const std::string MOVE("move");
 const std::string COPY("copy");
-
 const std::string SUPPORTED_DIST_MODES("supported-dist-modes");
+
+//AMQP 0-10 standard parameters:
+const std::string DURABLE("durable");
+const std::string AUTO_DELETE("auto-delete");
+const std::string ALTERNATE_EXCHANGE("alternate-exchange");
+const std::string EXCHANGE_TYPE("exchange-type");
 }
 
-NodeProperties::NodeProperties() : queue(true) {}
+NodeProperties::NodeProperties() : queue(true), durable(false), autoDelete(false), exchangeType("topic") {}
 
 void NodeProperties::read(pn_data_t* data)
 {
@@ -53,6 +58,14 @@ void NodeProperties::process(const std::string& key, const qpid::types::Variant&
     if (key == SUPPORTED_DIST_MODES) {
         if (value == MOVE) queue = true;
         else if (value == COPY) queue = false;
+    } else if (key == DURABLE) {
+        durable = value;
+    } else if (key == AUTO_DELETE) {
+        autoDelete = value;
+    } else if (key == ALTERNATE_EXCHANGE) {
+        alternateExchange = value.asString();
+    } else if (key == EXCHANGE_TYPE) {
+        exchangeType = value.asString();
     } else {
         properties[key] = value;
     }
@@ -140,7 +153,7 @@ void NodeProperties::onSymbolValue(const CharSequence& key, const CharSequence& 
 
 QueueSettings NodeProperties::getQueueSettings()
 {
-    QueueSettings settings(false/*durable*/, false/*auto-delete*/);
+    QueueSettings settings(durable, autoDelete);
     qpid::types::Variant::Map unused;
     settings.populate(properties, unused);
     return settings;
@@ -149,6 +162,18 @@ QueueSettings NodeProperties::getQueueSettings()
 bool NodeProperties::isQueue() const
 {
     return queue;
+}
+bool NodeProperties::isDurable() const
+{
+    return durable;
+}
+std::string NodeProperties::getExchangeType() const
+{
+    return exchangeType;
+}
+std::string NodeProperties::getAlternateExchange() const
+{
+    return alternateExchange;
 }
 
 }}} // namespace qpid::broker::amqp
