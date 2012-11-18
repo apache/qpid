@@ -22,8 +22,6 @@ package org.apache.qpid.framing;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQPInvalidClassException;
 
@@ -33,10 +31,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class PropertyFieldTableTest extends TestCase
+public class FieldTableTest extends TestCase
 {
-    private static final Logger _logger = LoggerFactory.getLogger(PropertyFieldTableTest.class);
-
     /**
      * Test that setting a similar named value replaces any previous value set on that name
      */
@@ -696,65 +692,7 @@ public class PropertyFieldTableTest extends TestCase
         result.setObject("object-short", Short.MAX_VALUE);
         size += 1 + EncodingUtils.encodedShortStringLength("object-short") + EncodingUtils.encodedShortLength();
         Assert.assertEquals(size, result.getEncodedSize());
-
     }
-
-    // public void testEncodingSize1()
-    // {
-    // PropertyFieldTable table = new PropertyFieldTable();
-    // int length = 0;
-    // result.put("one", 1L);
-    // length = EncodingUtils.encodedShortStringLength("one");
-    // length += 1 + EncodingUtils.encodedLongLength();
-    // assertEquals(length, result.getEncodedSize());
-    //
-    // result.put("two", 2L);
-    // length += EncodingUtils.encodedShortStringLength("two");
-    // length += 1 + EncodingUtils.encodedLongLength();
-    // assertEquals(length, result.getEncodedSize());
-    //
-    // result.put("three", 3L);
-    // length += EncodingUtils.encodedShortStringLength("three");
-    // length += 1 + EncodingUtils.encodedLongLength();
-    // assertEquals(length, result.getEncodedSize());
-    //
-    // result.put("four", 4L);
-    // length += EncodingUtils.encodedShortStringLength("four");
-    // length += 1 + EncodingUtils.encodedLongLength();
-    // assertEquals(length, result.getEncodedSize());
-    //
-    // result.put("five", 5L);
-    // length += EncodingUtils.encodedShortStringLength("five");
-    // length += 1 + EncodingUtils.encodedLongLength();
-    // assertEquals(length, result.getEncodedSize());
-    //
-    // //fixme should perhaps be expanded to incorporate all types.
-    //
-    // final ByteBuffer buffer = ByteBuffer.allocate((int) result.getEncodedSize()); // FIXME XXX: Is cast a problem?
-    //
-    // result.writeToBuffer(buffer);
-    //
-    // buffer.flip();
-    //
-    // long length = buffer.getUnsignedInt();
-    //
-    // try
-    // {
-    // PropertyFieldTable table2 = new PropertyFieldTable(buffer, length);
-    //
-    // Assert.assertEquals((Long) 1L, table2.getLong("one"));
-    // Assert.assertEquals((Long) 2L, table2.getLong("two"));
-    // Assert.assertEquals((Long) 3L, table2.getLong("three"));
-    // Assert.assertEquals((Long) 4L, table2.getLong("four"));
-    // Assert.assertEquals((Long) 5L, table2.getLong("five"));
-    // }
-    // catch (AMQFrameDecodingException e)
-    // {
-    // e.printStackTrace();
-    // fail("PFT should be instantiated from bytes." + e.getCause());
-    // }
-    //
-    // }
 
     /**
      * Additional test for setObject
@@ -883,7 +821,6 @@ public class PropertyFieldTableTest extends TestCase
         {
             fail("property name are allowed to start with # and $s");
         }
-
     }
 
     /**
@@ -919,7 +856,6 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals("1", table.getObject("n1"));
         Assert.assertEquals("2", table.getObject("n2"));
         Assert.assertEquals("3", table.getObject("n3"));
-
     }
 
     public void testAddAll()
@@ -952,6 +888,38 @@ public class PropertyFieldTableTest extends TestCase
         assertEquals("Unexpected number of entries in table1 after addAll", 2, table1.size());
     }
 
+    /**
+     * Tests that when copying properties into a new FielTable using the addAll() method, the
+     *  properties are successfully added to the destination table when the source FieldTable
+     * was created from encoded input bytes,
+     */
+    public void testAddingAllFromFieldTableCreatedUsingEncodedBytes() throws Exception
+    {
+        AMQShortString myBooleanTestProperty = new AMQShortString("myBooleanTestProperty");
+
+        //Create a new FieldTable and use it to encode data into a byte array.
+        FieldTable encodeTable = new FieldTable();
+        encodeTable.put(myBooleanTestProperty, true);
+        byte[] data = encodeTable.getDataAsBytes();
+        int length = data.length;
+
+        //Verify we got the expected mount of encoded data (1B type hdr + 21B for name + 1B type hdr + 1B for boolean)
+        assertEquals("unexpected data length", 24, length);
+
+        //Create a second FieldTable from the encoded bytes
+        FieldTable tableFromBytes = new FieldTable(new DataInputStream(new ByteArrayInputStream(data)), length);
+
+        //Create a final FieldTable and addAll() from the table created with encoded bytes
+        FieldTable destinationTable = new FieldTable();
+        assertTrue("unexpected size", destinationTable.isEmpty());
+        destinationTable.addAll(tableFromBytes);
+
+        //Verify that the destination table now contains the expected entry
+        assertEquals("unexpected size", 1, destinationTable.size());
+        assertTrue("expected property not present", destinationTable.containsKey(myBooleanTestProperty));
+        assertTrue("unexpected property value", destinationTable.getBoolean(myBooleanTestProperty));
+    }
+
     private void assertBytesEqual(byte[] expected, byte[] actual)
     {
         Assert.assertEquals(expected.length, actual.length);
@@ -962,19 +930,9 @@ public class PropertyFieldTableTest extends TestCase
         }
     }
 
-    private void assertBytesNotEqual(byte[] expected, byte[] actual)
-    {
-        Assert.assertEquals(expected.length, actual.length);
-
-        for (int index = 0; index < expected.length; index++)
-        {
-            Assert.assertFalse(expected[index] == actual[index]);
-        }
-    }
-
     public static junit.framework.Test suite()
     {
-        return new junit.framework.TestSuite(PropertyFieldTableTest.class);
+        return new junit.framework.TestSuite(FieldTableTest.class);
     }
 
 }
