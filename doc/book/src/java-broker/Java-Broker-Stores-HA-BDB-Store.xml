@@ -21,6 +21,42 @@
 -->
 
 <section id="Java-Broker-Stores-HA-BDB-Store">
-<title>High Availability BDB Store</title>
+  <title>High Availability BDB Store</title>
+  <para>
+    The Java broker has an <emphasis>optional</emphasis> High Availability message store implementation backed by Oracle BDB JE HA.
+    This section references information on where to download the optional dependency from, how to add it to the broker
+    installation, and how to configure the BDBHAMessageStore.
+  </para>
+  <para>
+    For more detailed information about use of this store, see <xref linkend="Java-Broker-High-Availability"></xref>.
+  </para>
+
+  <section role="h3" id="Java-Broker-Stores-HA-BDB-Store-BDBJE-Download">
+    <title>Oracle BDB JE download</title>
+    <para>
+      For details, see <xref linkend="Java-Broker-Stores-BDB-Store-BDBJE-Download"></xref>.
+    </para>
+  </section>
+
+  <section role="h3" id="Java-Broker-Stores-HA-BDB-Store-BDBJE-Installation">
+    <title>Oracle BDB JE jar installation</title>
+    <para>
+      For details, see <xref linkend="Java-Broker-Stores-BDB-Store-BDBJE-Installation"></xref>.
+    </para>
+  </section>
+
+  <section role="h3" id="Java-Broker-Stores-HA-BDB-Store-Configuration">
+    <title>Configuration</title>
+    <para>
+      In order to use the BDBHAMessageStore, you must configure it for each VirtualHost desired by updating the store element
+      to specify the associated store class, provide a directory location for the data to be written, and configure the
+      replication group and policies used by BDB JA HA.
+    </para>
+    <para>
+      A general configuration example is shown <link linkend="Java-Broker-High-Availability-Configuration">here</link>, however it
+      is strongly recommended you examine the wider context of <xref linkend="Java-Broker-High-Availability"></xref> for a fuller
+      discussion of the various configuration options and how to use them.
+    </para>
+  </section>
 
 </section>
