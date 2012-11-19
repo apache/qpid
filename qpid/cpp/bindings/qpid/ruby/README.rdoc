@@ -3,7 +3,7 @@
 Qpid is an cross-platform enterprise messaging system based on the open-source
 AMQP protocol.
 
-Version :: 0.19.0
+Version :: 0.21.0
 
 = Links
 
