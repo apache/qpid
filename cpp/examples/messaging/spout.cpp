@@ -91,6 +91,7 @@ struct Options : OptionParser
         std::string value;
         if (nameval(property, name, value)) {
             message.getProperties()[name] = value;
+            message.getProperties()[name].setEncoding("utf8");
         } else {
             message.getProperties()[name] = Variant();
         }    
