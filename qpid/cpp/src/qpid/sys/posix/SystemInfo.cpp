@@ -21,7 +21,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/posix/check.h"
-#include <set>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
@@ -33,6 +32,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <map>
 #include <netdb.h>
 #include <string.h>
 
@@ -123,38 +123,69 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
 }
 
 namespace {
-struct AddrInfo {
-    struct addrinfo* ptr;
-    AddrInfo(const std::string& host) : ptr(0) {
-        ::addrinfo hints;
-        ::memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_UNSPEC; // Allow both IPv4 and IPv6
-        if (::getaddrinfo(host.c_str(), NULL, &hints, &ptr) != 0)
-            ptr = 0;
+    inline socklen_t sa_len(::sockaddr* sa)
+    {
+        switch (sa->sa_family) {
+            case AF_INET:
+                return sizeof(struct sockaddr_in);
+            case AF_INET6:
+                return sizeof(struct sockaddr_in6);
+            default:
+                return sizeof(struct sockaddr_storage);
+        }
     }
-    ~AddrInfo() { if (ptr) ::freeaddrinfo(ptr); }
-};
+
+    inline bool isInetOrInet6(::sockaddr* sa) {
+        switch (sa->sa_family) {
+            case AF_INET:
+            case AF_INET6:
+                return true;
+            default:
+                return false;
+        }
+    }
+    typedef std::map<std::string, std::vector<std::string> > InterfaceInfo;
+    std::map<std::string, std::vector<std::string> > cachedInterfaces;
+
+    void cacheInterfaceInfo() {
+        // Get interface info
+        ::ifaddrs* interfaceInfo;
+        QPID_POSIX_CHECK( ::getifaddrs(&interfaceInfo) );
+
+        char name[NI_MAXHOST];
+        for (::ifaddrs* info = interfaceInfo; info != 0; info = info->ifa_next) {
+
+            // Only use IPv4/IPv6 interfaces
+            if (!isInetOrInet6(info->ifa_addr)) continue;
+
+            int rc=::getnameinfo(info->ifa_addr, sa_len(info->ifa_addr),
+                                 name, sizeof(name), 0, 0,
+                                 NI_NUMERICHOST);
+            if (rc >= 0) {
+                std::string address(name);
+                cachedInterfaces[info->ifa_name].push_back(address);
+            } else {
+                throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
+            }
+        }
+        ::freeifaddrs(interfaceInfo);
+    }
 }
 
-bool SystemInfo::isLocalHost(const std::string& host) {
-    std::vector<Address> myAddrs;
-    getLocalIpAddresses(0, myAddrs);
-    std::set<string> localHosts;
-    for (std::vector<Address>::const_iterator i = myAddrs.begin(); i != myAddrs.end(); ++i)
-        localHosts.insert(i->host);
-    // Resolve host
-    AddrInfo ai(host);
-    if (!ai.ptr) return false;
-    for (struct addrinfo *res = ai.ptr; res != NULL; res = res->ai_next) {
-        if (isLoopback(res->ai_addr)) return true;
-        // Get string form of IP addr
-        char addr[NI_MAXHOST] = "";
-        int error = ::getnameinfo(res->ai_addr, res->ai_addrlen, addr, NI_MAXHOST, NULL, 0,
-                                  NI_NUMERICHOST | NI_NUMERICSERV);
-        if (error) return false;
-        if (localHosts.find(addr) != localHosts.end()) return true;
+bool SystemInfo::getInterfaceAddresses(const std::string& interface, std::vector<std::string>& addresses) {
+    if ( cachedInterfaces.empty() ) cacheInterfaceInfo();
+    InterfaceInfo::iterator i = cachedInterfaces.find(interface);
+    if ( i==cachedInterfaces.end() ) return false;
+    std::copy(i->second.begin(), i->second.end(), std::back_inserter(addresses));
+    return true;
+}
+
+void SystemInfo::getInterfaceNames(std::vector<std::string>& names ) {
+    if ( cachedInterfaces.empty() ) cacheInterfaceInfo();
+
+    for (InterfaceInfo::const_iterator i = cachedInterfaces.begin(); i!=cachedInterfaces.end(); ++i) {
+        names.push_back(i->first);
     }
-    return false;
 }
 
 void SystemInfo::getSystemId (std::string &osName,

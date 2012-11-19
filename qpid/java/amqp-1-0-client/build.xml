@@ -23,6 +23,9 @@
   <property name="module.genpom" value="true"/>
   <property name="module.depends" value="amqp-1-0-common"/>
 
+  <property name="example.src.dir" value="${project.root}/amqp-1-0-client/example/src/main/java" />
+  <property name="example.jar.file" value="${build.lib}/qpid-amqp-1-0-client-example-${project.version}.jar" />
+
 
   <import file="../module.xml"/>
 

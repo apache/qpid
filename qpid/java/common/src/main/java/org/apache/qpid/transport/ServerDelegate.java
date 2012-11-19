@@ -71,7 +71,8 @@ public class ServerDelegate extends ConnectionDelegate
 
         if (mechanism == null || mechanism.length() == 0)
         {
-            tuneAuthorizedConnection(conn);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED,
+                    "No Sasl mechanism was specified");
             return;
         }
 
@@ -82,7 +83,7 @@ public class ServerDelegate extends ConnectionDelegate
             if (ss == null)
             {
                 conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED,
-                     "null SASL mechanism: " + mechanism);
+                     "No SaslServer could be created for mechanism: " + mechanism);
                 return;
             }
             conn.setSaslServer(ss);

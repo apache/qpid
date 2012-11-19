@@ -1,4 +1,8 @@
 <?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -22,4 +26,109 @@
 
 <chapter id="Java-Broker-Getting-Started">
   <title>Getting Started</title>
+  <para>This section describes how to start the Java Broker for the first time.</para>
+  <section role="h2" id="Java-Broker-Getting-Started-Starting">
+    <title>Starting/Stopping the Broker</title>
+    <para>To start the Broker, use the <command>qpid-server</command> script (UNIX) or <command>qpid-server.bat</command> (Windows)
+      provided within distribution.</para>
+  </section>
+  <section role="h2" id="Java-Broker-Getting-Started-Starting-Stopping-Windows">
+    <title>Starting/Stopping on Windows</title>
+    <para>Firstly change to the installation directory used during the <link linkend="Java-Broker-Installation-InstallationWindows">installation</link>
+      and ensure that the <link linkend="Java-Broker-Installation-InstallationWindows-SettingQPIDWORK">QPID_WORK environment variable is set</link>.</para>
+    <para>Now use the qpid-server.bat to start the server</para>
+    <programlisting><![CDATA[bin\qpid-server.bat]]></programlisting>
+    <para>Output similar to the following will be seen:</para>
+    <screen>[Broker] BRK-1006 : Using configuration : C:\qpid\qpid-broker-&qpidCurrentRelease;\etc\config.xml
+[Broker] BRK-1007 : Using logging configuration : C:\qpid\qpid-broker-&qpidCurrentRelease;\etc\log4j.xml
+[Broker] MNG-1001 : Startup
+[Broker] MNG-1002 : Starting : RMI Registry : Listening on port 8999
+[Broker] MNG-1002 : Starting : JMX RMIConnectorServer : Listening on port 9099
+[Broker] MNG-1004 : Ready
+[Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: 1363863
+[Broker] BRK-1010 : Platform : JVM : Sun Microsystems Inc. version: 1.6.0_24-b07 OS : Windows 7 version: 6.1 arch: amd64
+[Broker] BRK-1011 : Maximum Memory : 1,069,416,448 bytes
+[Broker] BRK-1002 : Starting : Listening on TCP port 5672
+[Broker] BRK-1004 : Qpid Broker Ready</screen>
+    <para>The BRK-1004 message confirms that the Broker is ready for work.  The MNG-1002 and BRK-1004 confirm the ports to
+      which the Broker is listening (for JMX management and AMQP respectively).</para>
+    <para>To stop the Broker, use Control-C or use the Shutdown MBean made from the <xref
+        linkend="Java-Broker-Configuring-And-Managing-JMX"/></para>
+  </section>
+  <section role="h2" id="Java-Broker-Getting-Started-Starting-Stopping-Unix">
+    <title>Starting/Stopping on Unix</title>
+    <para>Firstly change to the installation directory used during the <link linkend="Java-Broker-Installation-InstallationUnix">installation</link>
+      and ensure that the <link linkend="Java-Broker-Installation-InstallationUnix-SettingQPIDWORK">QPID_WORK environment variable is set</link>.</para>
+    <para>Now use the <command>qpid-server</command> script to start the server:</para>
+    <programlisting><![CDATA[bin\qpid-server]]></programlisting>
+    <para>Output similar to the following will be seen:</para>
+    <screen>[Broker] BRK-1006 : Using configuration : /usr/local/qpid/qpid-broker-&qpidCurrentRelease;/etc/config.xml
+[Broker] BRK-1007 : Using logging configuration : /usr/local/qpid/qpid-broker-&qpidCurrentRelease;/etc/log4j.xml
+[Broker] MNG-1001 : Startup
+[Broker] MNG-1002 : Starting : RMI Registry : Listening on port 8999
+[Broker] MNG-1002 : Starting : JMX RMIConnectorServer : Listening on port 9099
+[Broker] MNG-1004 : Ready
+[Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: 1363863
+[Broker] BRK-1010 : Platform : JVM : Apple Inc. version: 1.6.0_35-b10-428-11M3811 OS : Mac OS X version: 10.8.2 arch: x86_64
+[Broker] BRK-1011 : Maximum Memory : 1,069,416,448 bytes
+[Broker] BRK-1002 : Starting : Listening on TCP port 5672
+[Broker] BRK-1004 : Qpid Broker Ready</screen>
+    <para>The BRK-1004 message confirms that the Broker is ready for work.  The MNG-1002 and BRK-1004 confirm the ports to
+    which the Broker is listening (for JMX management and AMQP respectively).</para>
+    <para>To stop the Broker, use Control-C from the controlling shell, use the
+        <command>bin/qpid.stop</command> script, or use <command>kill -TERM &lt;pid&gt;</command> or
+      the Shutdown MBean from <xref linkend="Java-Broker-Configuring-And-Managing-JMX"/></para>
+  </section>
+  <section role="h2" id="Java-Broker-Getting-Started-LogFile">
+    <title>Log file</title>
+    <para>The Java Broker writes a log file to record both details of its normal operation and any exceptional
+      conditions.  By default the log file is written within the log subdirectory beneath the work directory
+      - <computeroutput>$QPID_WORK/log/qpid.log</computeroutput> (UNIX) and
+      <computeroutput>%QPID_WORK%\log\qpid.log</computeroutput> (Windows).</para>
+    <para>For details of how to control the logging, see <xref linkend="Java-Broker-Runtime-Log-Files"/></para>
+  </section>
+  <section role="h2" id="Java-Broker-Getting-Started-CommandLine">
+    <title>Using the command line</title>
+    <para>The Java Broker understands a number of command line options which may be used to override the configuration.</para>
+    <para>To see usage information for all command line options, use the option <option>--help</option></para>
+    <programlisting><![CDATA[bin/qpid-server --help]]></programlisting>
+    <screen><![CDATA[usage: Qpid [-b address>] [-c <file>] [--exclude-0-10 <port>] [--exclude-0-8 <port>] [--exclude-0-9 <port>] [--exclude-0-9-1
+       <port>] [--exclude-1-0 <port>] [-h] [--include-0-10 <port>] [--include-0-8 <port>] [--include-0-9 <port>] [--include-0-9-1
+       <port>] [--include-1-0 <port>] [--jmxconnectorport <port>] [-l <file>] [-m <port>] [-p <port>] [-s <port>] [-v] [-w <period>]
+ -b,--bind <address>            bind to the specified address. Overrides any value in the config file
+ -c,--config <file>             use given configuration file
+    --exclude-0-10 <port>       when listening on the specified port do not accept AMQP0-10 connections. The
+                                specified port must be one specified on the command line
+    --exclude-0-8 <port>        when listening on the specified port do not accept AMQP0-8 connections. The
+                                specified port must be one specified on the command line
+    --exclude-0-9 <port>        when listening on the specified port do not accept AMQP0-9 connections. The
+                                specified port must be one specified on the command line
+    --exclude-0-9-1 <port>      when listening on the specified port do not accept AMQP0-9-1 connections. The
+                                specified port must be one specified on the command line
+    --exclude-1-0 <port>        when listening on the specified port do not accept AMQP1-0 connections. The
+                                specified port must be one specified on the command line
+ -h,--help                      print this message
+    --include-0-10 <port>       accept AMQP0-10 connections on this port, overriding configuration to the contrary.
+                                The specified port must be one specified on the command line
+    --include-0-8 <port>        accept AMQP0-8 connections on this port, overriding configuration to the contrary.
+                                The specified port must be one specified on the command line
+    --include-0-9 <port>        accept AMQP0-9 connections on this port, overriding configuration to the contrary.
+                                The specified port must be one specified on the command line
+    --include-0-9-1 <port>      accept AMQP0-9-1 connections on this port, overriding configuration to the contrary.
+                                The specified port must be one specified on the command line
+    --include-1-0 <port>        accept AMQP1-0 connections on this port, overriding configuration to the contrary.
+                                The specified port must be one specified on the command line
+    --jmxconnectorport <port>   listen on the specified management (connector server) port. Overrides any
+                                value in the config file
+ -l,--logconfig <file>          use the specified log4j xml configuration file. By default looks for a file named
+                                etc/log4j.xml in the same directory as the configuration file
+ -m,--jmxregistryport <port>    listen on the specified management (registry server) port. Overrides any
+                                value in the config file
+ -p,--port <port>               listen on the specified port. Overrides any value in the config file
+ -s,--sslport <port>            SSL port. Overrides any value in the config file
+ -v,--version                   print the version information and exit
+ -w,--logwatch <period>         monitor the log file configuration file for changes. Units are seconds. Zero means
+                                do not check for changes.]]></screen>
+  </section>
+
 </chapter>

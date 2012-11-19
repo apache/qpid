@@ -941,7 +941,65 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                     e.getMessage());
         }
     }
-    
+
+    public void testDurableSubscription() throws Exception
+    {
+        Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTopic("ADDR:amq.topic/" + getTestQueueName());
+        MessageProducer publisher = session.createProducer(topic);
+        MessageConsumer subscriber = session.createDurableSubscriber(topic, getTestQueueName());
+
+        TextMessage messageToSend = session.createTextMessage("Test0");
+        publisher.send(messageToSend);
+        ((AMQSession<?,?>)session).sync();
+
+        Message receivedMessage = subscriber.receive(1000);
+        assertNotNull("Message has not been received", receivedMessage);
+        assertEquals("Unexpected message", messageToSend.getText(), ((TextMessage)receivedMessage).getText());
+
+        subscriber.close();
+
+        messageToSend = session.createTextMessage("Test1");
+        publisher.send(messageToSend);
+        ((AMQSession<?,?>)session).sync();
+
+        subscriber = session.createDurableSubscriber(topic, getTestQueueName());
+        receivedMessage = subscriber.receive(1000);
+        assertNotNull("Message has not been received", receivedMessage);
+        assertEquals("Unexpected message", messageToSend.getText(), ((TextMessage)receivedMessage).getText());
+    }
+
+    public void testDurableSubscriptionnWithSelector() throws Exception
+    {
+        Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTopic("ADDR:amq.topic/" + getTestQueueName());
+        MessageProducer publisher = session.createProducer(topic);
+        MessageConsumer subscriber = session.createDurableSubscriber(topic, getTestQueueName(), "id=1", false);
+
+        TextMessage messageToSend = session.createTextMessage("Test0");
+        messageToSend.setIntProperty("id", 1);
+        publisher.send(messageToSend);
+        ((AMQSession<?,?>)session).sync();
+
+        Message receivedMessage = subscriber.receive(1000);
+        assertNotNull("Message has not been received", receivedMessage);
+        assertEquals("Unexpected message", messageToSend.getText(), ((TextMessage)receivedMessage).getText());
+        assertEquals("Unexpected id", 1, receivedMessage.getIntProperty("id"));
+
+        subscriber.close();
+
+        messageToSend = session.createTextMessage("Test1");
+        messageToSend.setIntProperty("id", 1);
+        publisher.send(messageToSend);
+        ((AMQSession<?,?>)session).sync();
+
+        subscriber = session.createDurableSubscriber(topic, getTestQueueName(), "id=1", false);
+        receivedMessage = subscriber.receive(1000);
+        assertNotNull("Message has not been received", receivedMessage);
+        assertEquals("Unexpected message", messageToSend.getText(), ((TextMessage)receivedMessage).getText());
+        assertEquals("Unexpected id", 1, receivedMessage.getIntProperty("id"));
+    }
+
     private void createDurableSubscriber(Context ctx,Session ssn,String destName,Topic topic, String producerAddr) throws Exception
     {        
         MessageConsumer cons = ssn.createDurableSubscriber(topic, destName);

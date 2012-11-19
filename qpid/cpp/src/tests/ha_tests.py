@@ -26,10 +26,24 @@ from brokertest import *
 from ha_test import *
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG, INFO
-from qpidtoollibs import BrokerAgent
+from qpidtoollibs import BrokerAgent, EventHelper
 from uuid import UUID
 
-class ReplicationTests(BrokerTest):
+log = getLogger(__name__)
+
+def grep(filename, regexp):
+    for line in open(filename).readlines():
+        if (regexp.search(line)): return True
+    return False
+
+class HaBrokerTest(BrokerTest):
+    """Base class for HA broker tests"""
+    def assert_log_no_errors(self, broker):
+        log = broker.get_log()
+        if grep(log, re.compile("] error|] critical")):
+            self.fail("Errors in log file %s"%(log))
+
+class ReplicationTests(HaBrokerTest):
     """Correctness tests for  HA replication."""
 
     def test_replication(self):
@@ -256,6 +270,7 @@ class ReplicationTests(BrokerTest):
     def test_qpid_config_replication(self):
         """Set up replication via qpid-config"""
         brokers = HaCluster(self,2)
+        brokers[0].wait_status("active")
         brokers[0].config_declare("q","all")
         brokers[0].connect().session().sender("q").send("foo")
         brokers[1].assert_browse_backup("q", ["foo"])
@@ -739,11 +754,16 @@ acl deny all all
 
     def test_auto_delete_timeout(self):
         cluster = HaCluster(self, 2)
-        s = cluster[0].connect().session().receiver("q;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
-        cluster[1].wait_queue("q")
+        # Test timeout
+        r1 = cluster[0].connect().session().receiver("q1;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':1}}}}")
+        # Test special case of timeout = 0
+        r0 = cluster[0].connect().session().receiver("q0;{create:always,node:{x-declare:{auto-delete:True,arguments:{'qpid.auto_delete_timeout':0}}}}")
+        cluster[1].wait_queue("q0")
+        cluster[1].wait_queue("q1")
         cluster[0].kill()
-        cluster[1].wait_queue("q")    # Not timed out yet
-        cluster[1].wait_no_queue("q") # Wait for timeout
+        cluster[1].wait_queue("q1")                       # Not timed out yet
+        cluster[1].wait_no_queue("q1", timeout=2)         # Wait for timeout
+        cluster[1].wait_no_queue("q0", timeout=2)
 
     def test_alt_exchange_dup(self):
         """QPID-4349: if a queue has an alterante exchange and is deleted the
@@ -773,6 +793,54 @@ acl deny all all
         send_ttl_messages()
         cluster.start()
         send_ttl_messages()
+
+    def test_stale_response(self):
+        """Check for race condition where a stale response is processed after an
+        event for the same queue/exchange """
+        cluster = HaCluster(self, 2)
+        s = cluster[0].connect().session()
+        s.sender("keep;{create:always}") # Leave this queue in place.
+        for i in xrange(100):            # FIXME aconway 2012-10-23: ??? IS this an issue?
+            s.sender("deleteme%s;{create:always,delete:always}"%(i)).close()
+        # It is possible for the backup to attempt to subscribe after the queue
+        # is deleted. This is not an error, but is logged as an error on the primary.
+        # The backup does not log this as an error so we only check the backup log for errors.
+        self.assert_log_no_errors(cluster[1])
+
+    def test_missed_recreate(self):
+        """If a queue or exchange is destroyed and one with the same name re-created
+        while a backup is disconnected, the backup should also delete/recreate
+        the object when it re-connects"""
+        cluster = HaCluster(self, 3)
+        sn = cluster[0].connect().session()
+        # Create a queue with messages
+        s = sn.sender("qq;{create:always}")
+        msgs = [str(i) for i in xrange(3)]
+        for m in msgs: s.send(m)
+        cluster[1].assert_browse_backup("qq", msgs)
+        cluster[2].assert_browse_backup("qq", msgs)
+        # Set up an exchange with a binding.
+        sn.sender("xx;{create:always,node:{type:topic}}")
+        sn.sender("xxq;{create:always,node:{x-bindings:[{exchange:'xx',queue:'xxq',key:xxq}]}}")
+        cluster[1].wait_address("xx")
+        self.assertEqual(cluster[1].agent().getExchange("xx").values["bindingCount"], 1)
+        cluster[2].wait_address("xx")
+        self.assertEqual(cluster[2].agent().getExchange("xx").values["bindingCount"], 1)
+
+        # Simulate the race by re-creating the objects before promoting the new primary
+        cluster.kill(0, False)
+        sn = cluster[1].connect_admin().session()
+        sn.sender("qq;{delete:always}").close()
+        s = sn.sender("qq;{create:always}")
+        s.send("foo")
+        sn.sender("xx;{delete:always}").close()
+        sn.sender("xx;{create:always,node:{type:topic}}")
+        cluster[1].promote()
+        cluster[1].wait_status("active")
+        # Verify we are not still using the old objects on cluster[2]
+        cluster[2].assert_browse_backup("qq", ["foo"])
+        cluster[2].wait_address("xx")
+        self.assertEqual(cluster[2].agent().getExchange("xx").values["bindingCount"], 0)
 
 def fairshare(msgs, limit, levels):
     """
@@ -808,7 +876,7 @@ def priority_level(value, levels):
     offset = 5-math.ceil(levels/2.0)
     return min(max(value - offset, 0), levels-1)
 
-class LongTests(BrokerTest):
+class LongTests(HaBrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
 
     def duration(self):
@@ -891,7 +959,64 @@ class LongTests(BrokerTest):
             if unexpected_dead:
                 raise Exception("Brokers not running: %s"%unexpected_dead)
 
-class RecoveryTests(BrokerTest):
+    def test_qmf_order(self):
+        """QPID 4402:  HA QMF events can be out of order.
+        This test mimics the test described in the JIRA. Two threads repeatedly
+        declare the same auto-delete queue and close their connection.
+        """
+        broker = Broker(self)
+        class Receiver(Thread):
+            def __init__(self, qname):
+                Thread.__init__(self)
+                self.qname = qname
+                self.stopped = False
+
+            def run(self):
+                while not self.stopped:
+                    self.connection = broker.connect()
+                    try:
+                        self.connection.session().receiver(
+                            self.qname+";{create:always,node:{x-declare:{auto-delete:True}}}")
+                    except NotFound: pass # Can occur occasionally, not an error.
+                    try: self.connection.close()
+                    except: pass
+
+        class QmfObject(object):
+            """Track existance of an object and validate QMF events"""
+            def __init__(self, type_name, name_field, name):
+                self.type_name, self.name_field, self.name = type_name, name_field, name
+                self.exists = False
+
+            def qmf_event(self, event):
+                content = event.content[0]
+                event_type = content['_schema_id']['_class_name']
+                values = content['_values']
+                if event_type == self.type_name+"Declare" and values[self.name_field] == self.name:
+                    disp = values['disp']
+                    log.debug("Event %s: disp=%s exists=%s"%(
+                            event_type, values['disp'], self.exists))
+                    if self.exists: assert values['disp'] == 'existing'
+                    else: assert values['disp'] == 'created'
+                    self.exists = True
+                elif event_type == self.type_name+"Delete" and values[self.name_field] == self.name:
+                    log.debug("Event %s: exists=%s"%(event_type, self.exists))
+                    assert self.exists
+                    self.exists = False
+
+        # Verify order of QMF events.
+        helper = EventHelper()
+        r = broker.connect().session().receiver(helper.eventAddress())
+        threads = [Receiver("qq"), Receiver("qq")]
+        for t in threads: t.start()
+        queue = QmfObject("queue", "qName", "qq")
+        finish = time.time() + self.duration()
+        try:
+            while time.time() < finish:
+                queue.qmf_event(r.fetch())
+        finally:
+            for t in threads: t.stopped = True; t.join()
+
+class RecoveryTests(HaBrokerTest):
     """Tests for recovery after a failure."""
 
     def test_queue_hold(self):
@@ -909,6 +1034,7 @@ class RecoveryTests(BrokerTest):
             for b in cluster: b.wait_backup("q1")
             for i in xrange(100): s1.send(str(i))
             # Kill primary and 2 backups
+            cluster[3].wait_status("ready")
             for i in [0,1,2]: cluster.kill(i, False)
             cluster[3].promote()    # New primary, backups will be 1 and 2
             cluster[3].wait_status("recovering")

@@ -196,6 +196,13 @@ void AsynchConnector::connComplete(DispatchHandle& h)
     int errCode = socket.getError();
     if (errCode == 0) {
         h.stopWatch();
+        try {
+            socket.finishConnect(sa);
+        } catch (const std::exception& e) {
+            failCallback(socket, 0, e.what());
+            DispatchHandle::doDelete();
+            return;
+        }
         connCallback(socket);
     } else {
         // Retry while we cause an immediate exception
@@ -251,6 +258,7 @@ public:
     virtual void stopReading();
     virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
+    virtual SecuritySettings getSecuritySettings();
 
 private:
     ~AsynchIO();
@@ -624,6 +632,13 @@ void AsynchIO::close(DispatchHandle& h) {
     if (closedCallback) {
         closedCallback(*this, socket);
     }
+}
+
+SecuritySettings AsynchIO::getSecuritySettings() {
+    SecuritySettings settings;
+    settings.ssf = socket.getKeyLen();
+    settings.authid = socket.getClientAuthId();
+    return settings;
 }
 
 } // namespace posix

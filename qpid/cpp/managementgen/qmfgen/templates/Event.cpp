@@ -35,8 +35,8 @@ using           qpid::management::Args;
 using           qpid::management::Mutex;
 using           std::string;
 
-string  Event/*MGEN:Event.NameCap*/::PACKAGE_NAME  = string ("/*MGEN:Event.NamePackageLower*/");
-string  Event/*MGEN:Event.NameCap*/::EVENT_NAME    = string ("/*MGEN:Event.Name*/");
+string  Event/*MGEN:Event.NameCap*/::packageName  = string ("/*MGEN:Event.NamePackageLower*/");
+string  Event/*MGEN:Event.NameCap*/::eventName    = string ("/*MGEN:Event.Name*/");
 uint8_t Event/*MGEN:Event.NameCap*/::md5Sum[16]   =
     {/*MGEN:Event.SchemaMD5*/};
 
@@ -54,7 +54,7 @@ namespace {
 
 void Event/*MGEN:Event.NameCap*/::registerSelf(ManagementAgent* agent)
 {
-    agent->registerEvent(PACKAGE_NAME, EVENT_NAME, md5Sum, writeSchema);
+    agent->registerEvent(packageName, eventName, md5Sum, writeSchema);
 }
 
 void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
@@ -66,8 +66,8 @@ void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
 
     // Schema class header:
     buf.putOctet       (CLASS_KIND_EVENT);
-    buf.putShortString (PACKAGE_NAME); // Package Name
-    buf.putShortString (EVENT_NAME);   // Event Name
+    buf.putShortString (packageName); // Package Name
+    buf.putShortString (eventName);   // Event Name
     buf.putBin128      (md5Sum);      // Schema Hash
     buf.putShort       (/*MGEN:Event.ArgCount*/); // Argument Count
 
@@ -102,5 +102,5 @@ void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::types::Variant::Map& map) co
 
 bool Event/*MGEN:Event.NameCap*/::match(const std::string& evt, const std::string& pkg)
 {
-    return EVENT_NAME == evt && PACKAGE_NAME == pkg;
+    return eventName == evt && packageName == pkg;
 }

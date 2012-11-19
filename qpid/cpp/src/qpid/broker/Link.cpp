@@ -30,6 +30,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/amqp_types.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/UrlArray.h"
@@ -148,7 +149,8 @@ Link::Link(const string&  _name,
       currentInterval(1),
       closing(false),
       reconnectNext(0),         // Index of next address for reconnecting in url.
-      channelCounter(1),
+      nextFreeChannel(1),
+      freeChannels(1, framing::CHANNEL_MAX),
       connection(0),
       agent(0),
       listener(l),
@@ -542,12 +544,41 @@ bool Link::hideManagement() const {
     return !mgmtObject || ( broker && broker->isInCluster());
 }
 
-uint Link::nextChannel()
+// Allocate channel from link free pool
+framing::ChannelId Link::nextChannel()
 {
     Mutex::ScopedLock mutex(lock);
-    if (channelCounter >= framing::CHANNEL_MAX)
-        channelCounter = 1;
-    return channelCounter++;
+    if (!freeChannels.empty()) {
+        // A free channel exists.
+        for (framing::ChannelId i = 1; i <= framing::CHANNEL_MAX; i++)
+        {
+            // extract proposed free channel
+            framing::ChannelId c = nextFreeChannel;
+            // calculate next free channel
+            if (framing::CHANNEL_MAX == nextFreeChannel)
+                nextFreeChannel = 1;
+            else
+                nextFreeChannel += 1;
+            // if proposed channel is free, use it
+            if (freeChannels.contains(c))
+            {
+                freeChannels -= c;
+                QPID_LOG(debug, "Link " << name << " allocates channel: " << c);
+                return c;
+            }
+        }
+        assert (false);
+    }
+
+    throw Exception(Msg() << "Link " << name << " channel pool is empty");
+}
+
+// Return channel to link free pool
+void Link::returnChannel(framing::ChannelId c)
+{
+    Mutex::ScopedLock mutex(lock);
+    QPID_LOG(debug, "Link " << name << " frees channel: " << c);
+    freeChannels += c;
 }
 
 void Link::notifyConnectionForced(const string text)

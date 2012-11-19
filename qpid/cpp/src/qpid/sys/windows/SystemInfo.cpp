@@ -96,10 +96,10 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
     }
 }
 
-bool SystemInfo::isLocalHost(const std::string& candidateHost) {
-    // FIXME aconway 2012-05-03: not implemented.
-    assert(0);
-    throw Exception("Not implemented: isLocalHost");
+// Null function which always fails to find an network interface name
+bool SystemInfo::getInterfaceAddresses(const std::string&, std::vector<std::string>&)
+{
+    return false;
 }
 
 void SystemInfo::getSystemId (std::string &osName,

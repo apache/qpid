@@ -20,7 +20,8 @@
  */
 #include "SslTransport.h"
 #include "TransportContext.h"
-#include "qpid/sys/ssl/SslIo.h"
+#include "qpid/sys/ssl/SslSocket.h"
+#include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/log/Statement.h"
@@ -51,18 +52,19 @@ struct StaticInit
 }
 
 
-SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : context(c), aio(0), poller(p) {}
+SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : context(c), connector(0), aio(0), poller(p) {}
 
 void SslTransport::connect(const std::string& host, const std::string& port)
 {
+    assert(!connector);
     assert(!aio);
-    try {
-        socket.connect(host, port);
-        connected(socket);
-    } catch (const std::exception& e) {
-        failed(e.what());
-    }
+    connector = AsynchConnector::create(
+        socket,
+        host, port,
+        boost::bind(&SslTransport::connected, this, _1),
+        boost::bind(&SslTransport::failed, this, _3));
 
+    connector->start(poller);
 }
 
 void SslTransport::failed(const std::string& msg)
@@ -72,22 +74,22 @@ void SslTransport::failed(const std::string& msg)
     context.closed();
 }
 
-void SslTransport::connected(const SslSocket&)
+void SslTransport::connected(const Socket&)
 {
     context.opened();
-    aio = new SslIO(socket,
-                        boost::bind(&SslTransport::read, this, _1, _2),
-                        boost::bind(&SslTransport::eof, this, _1),
-                        boost::bind(&SslTransport::disconnected, this, _1),
-                        boost::bind(&SslTransport::socketClosed, this, _1, _2),
-                        0, // nobuffs
-                        boost::bind(&SslTransport::write, this, _1));
+    aio = AsynchIO::create(socket,
+                           boost::bind(&SslTransport::read, this, _1, _2),
+                           boost::bind(&SslTransport::eof, this, _1),
+                           boost::bind(&SslTransport::disconnected, this, _1),
+                           boost::bind(&SslTransport::socketClosed, this, _1, _2),
+                           0, // nobuffs
+                           boost::bind(&SslTransport::write, this, _1));
     aio->createBuffers(std::numeric_limits<uint16_t>::max());//note: AMQP 1.0 _can_ handle large frame sizes
     id = boost::str(boost::format("[%1%]") % socket.getFullAddress());
     aio->start(poller);
 }
 
-void SslTransport::read(SslIO&, SslIO::BufferBase* buffer)
+void SslTransport::read(AsynchIO&, AsynchIO::BufferBase* buffer)
 {
     int32_t decoded = context.getCodec().decode(buffer->bytes+buffer->dataStart, buffer->dataCount);
     if (decoded < buffer->dataCount) {
@@ -101,10 +103,10 @@ void SslTransport::read(SslIO&, SslIO::BufferBase* buffer)
     }
 }
 
-void SslTransport::write(SslIO&)
+void SslTransport::write(AsynchIO&)
 {
     if (context.getCodec().canEncode()) {
-        SslIO::BufferBase* buffer = aio->getQueuedBuffer();
+        AsynchIO::BufferBase* buffer = aio->getQueuedBuffer();
         if (buffer) {
             size_t encoded = context.getCodec().encode(buffer->bytes, buffer->byteCount);
 
@@ -123,18 +125,18 @@ void SslTransport::close()
         aio->queueWriteClose();
 }
 
-void SslTransport::eof(SslIO&)
+void SslTransport::eof(AsynchIO&)
 {
     close();
 }
 
-void SslTransport::disconnected(SslIO&)
+void SslTransport::disconnected(AsynchIO&)
 {
     close();
     socketClosed(*aio, socket);
 }
 
-void SslTransport::socketClosed(SslIO&, const SslSocket&)
+void SslTransport::socketClosed(AsynchIO&, const Socket&)
 {
     if (aio)
         aio->queueForDeletion();

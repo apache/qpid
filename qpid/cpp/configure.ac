@@ -29,6 +29,10 @@ AC_PROG_CXX
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG([C++])
 
+# Check whether a C++ was found (AC_PROG_CXX sets $CXX to "g++" even when it
+# doesn't exist)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],[],[AC_MSG_ERROR([No C++ compiler found])])
+
 # Check for optional use of help2man
 AC_CHECK_PROG([HELP2MAN], [help2man], [help2man])
 AC_ARG_WITH([help2man],
@@ -146,7 +150,7 @@ AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 AC_CHECK_PROG([RUBY], [ruby], [ruby])
 
 # Swig binding generator is needed for the script (Ruby, Python, etc.) bindings.
-AC_PROG_SWIG(1.3.26)
+AC_PROG_SWIG(1.3.32)
 test ! -x "$SWIG" && SWIG=""
 AC_ARG_WITH([swig],
   [AS_HELP_STRING([--with-swig], [Use swig to generate qmf bindings.])],
@@ -210,10 +214,11 @@ AS_IF([test -n "$PYTHON"], [
     # location
     AC_MSG_WARN([Didn't find Python 2.7 developer libs - looking for older version])
     PYTHON_INC=$($PYTHON -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
-    AC_CHECK_LIB([python$PYTHON_VERSION],[Py_Initialize])
+    AC_CHECK_LIB([python$PYTHON_VERSION],[Py_Initialize],[
+        PYTHON_LIBS="-lpython$PYTHON_VERSION"
+    ])
     AC_CHECK_FILE(["$PYTHON_INC/Python.h"],[
         PYTHON_CFLAGS="-I$PYTHON_INC"
-        PYTHON_LIBS="-lpython$PYTHON_VERSION"
         have_python_dev=yes
     ],[
         if test yes = "$with_python" ; then

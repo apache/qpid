@@ -1,7 +1,8 @@
-#ifndef QPID_SYS_ALLOCA_H
-#define QPID_SYS_ALLOCA_H
+#ifndef QPID_BROKER_AMQP_DATAREADER_H
+#define QPID_BROKER_AMQP_DATAREADER_H
 
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,23 +21,33 @@
  * under the License.
  *
  */
+#include "qpid/amqp/Reader.h"
 
-#if (defined(_WINDOWS) || defined (WIN32))
-#  include <malloc.h>
+struct pn_data_t;
 
-#  if defined(_MSC_VER)
-#    ifdef alloc
-#      undef alloc
-#    endif
-#    define alloc _alloc
-#    ifdef alloca
-#      undef alloca
-#    endif
-#    define alloca _alloca
-#  endif
-#endif
-#if !defined _WINDOWS && !defined WIN32
-#  include <alloca.h>
-#endif
+namespace qpid {
+namespace amqp {
+struct Descriptor;
+}
+namespace broker {
+namespace amqp {
 
-#endif  /*!QPID_SYS_ALLOCA_H*/
+/**
+ * Allows use of Reader interface to read pn_data_t* data.
+ */
+class DataReader
+{
+  public:
+    DataReader(qpid::amqp::Reader& reader);
+    void read(pn_data_t*);
+  private:
+    qpid::amqp::Reader& reader;
+
+    void readOne(pn_data_t*);
+    void readMap(pn_data_t*, const qpid::amqp::Descriptor*);
+    void readList(pn_data_t*, const qpid::amqp::Descriptor*);
+    void readArray(pn_data_t*, const qpid::amqp::Descriptor*);
+};
+}}} // namespace qpid::broker::amqp
+
+#endif  /*!QPID_BROKER_AMQP_DATAREADER_H*/

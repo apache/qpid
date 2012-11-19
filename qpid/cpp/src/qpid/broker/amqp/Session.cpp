@@ -26,11 +26,16 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/broker/amqp/Filter.h"
+#include "qpid/broker/amqp/NodeProperties.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include <boost/intrusive_ptr.hpp>
@@ -79,6 +84,31 @@ class Exchange : public Target
 Session::Session(pn_session_t* s, qpid::broker::Broker& b, ManagedConnection& c, qpid::sys::OutputControl& o)
     : ManagedSession(b, c, (boost::format("%1%") % s).str()), session(s), broker(b), connection(c), out(o), deleted(false) {}
 
+
+Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus)
+{
+    ResolvedNode node;
+    node.exchange = broker.getExchanges().find(name);
+    node.queue = broker.getQueues().find(name);
+    if (!node.queue && !node.exchange && pn_terminus_is_dynamic(terminus)) {
+        //TODO: handle dynamic creation
+        //is it a queue or an exchange?
+        NodeProperties properties;
+        properties.read(pn_terminus_properties(terminus));
+        if (properties.isQueue()) {
+            node.queue = broker.createQueue(name, properties.getQueueSettings(), this, properties.getAlternateExchange(), connection.getUserid(), connection.getId()).first;
+        } else {
+            qpid::framing::FieldTable args;
+            node.exchange = broker.createExchange(name, properties.getExchangeType(), properties.isDurable(), properties.getAlternateExchange(),
+                                                  args, connection.getUserid(), connection.getId()).first;
+        }
+    } else if (node.queue && node.exchange) {
+        QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
+        node.exchange.reset();
+    }
+    return node;
+}
+
 void Session::attach(pn_link_t* link)
 {
     if (pn_link_is_sender(link)) {
@@ -91,32 +121,36 @@ void Session::attach(pn_link_t* link)
         QPID_LOG(debug, "Received attach request for outgoing link from " << name);
         pn_terminus_set_address(pn_link_source(link), name.c_str());
 
-        boost::shared_ptr<qpid::broker::Exchange> exchange = broker.getExchanges().find(name);
-        boost::shared_ptr<qpid::broker::Queue> queue = broker.getQueues().find(name);
-        if (queue) {
-            if (exchange) {
-                QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
-            }
-            boost::shared_ptr<Outgoing> q(new Outgoing(broker, queue, link, *this, out, false));
+        ResolvedNode node = resolve(name, source);
+        Filter filter;
+        filter.read(pn_terminus_filter(source));
+
+        if (node.queue) {
+            boost::shared_ptr<Outgoing> q(new Outgoing(broker, node.queue, link, *this, out, false));
             q->init();
+            if (filter.hasSubjectFilter()) {
+                q->setSubjectFilter(filter.getSubjectFilter());
+            }
             senders[link] = q;
-        } else if (exchange) {
+        } else if (node.exchange) {
             QueueSettings settings(false, true);
             //TODO: populate settings from source details when available from engine
-            queue = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
-            //TODO: bind based on filter when that is exposed by engine
-            if (exchange->getType() == FanOutExchange::typeName) {
-                exchange->bind(queue, std::string(), 0);
-            } else if (exchange->getType() == TopicExchange::typeName) {
-                exchange->bind(queue, "#", 0);
+            boost::shared_ptr<qpid::broker::Queue> queue
+                = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
+            if (filter.hasSubjectFilter()) {
+                filter.bind(node.exchange, queue);
+                filter.write(pn_terminus_filter(pn_link_source(link)));
+            } else if (node.exchange->getType() == FanOutExchange::typeName) {
+                node.exchange->bind(queue, std::string(), 0);
+            } else if (node.exchange->getType() == TopicExchange::typeName) {
+                node.exchange->bind(queue, "#", 0);
             } else {
-                throw qpid::Exception("Exchange type not yet supported over 1.0: " + exchange->getType());/*not-supported?*/
+                throw qpid::Exception("Exchange type requires a filter: " + node.exchange->getType());/*not-supported?*/
             }
             boost::shared_ptr<Outgoing> q(new Outgoing(broker, queue, link, *this, out, true));
             senders[link] = q;
             q->init();
         } else {
-            //TODO: handle dynamic creation
             pn_terminus_set_type(pn_link_source(link), PN_UNSPECIFIED);
             throw qpid::Exception("Node not found: " + name);/*not-found*/
         }
@@ -130,22 +164,17 @@ void Session::attach(pn_link_t* link)
         QPID_LOG(debug, "Received attach request for incoming link to " << name);
         pn_terminus_set_address(pn_link_target(link), name.c_str());
 
+        ResolvedNode node = resolve(name, target);
 
-        boost::shared_ptr<qpid::broker::Queue> queue = broker.getQueues().find(name);
-        boost::shared_ptr<qpid::broker::Exchange> exchange = broker.getExchanges().find(name);
-        if (queue) {
-            if (exchange) {
-                QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
-            }
-            boost::shared_ptr<Target> q(new Queue(queue, link));
+        if (node.queue) {
+            boost::shared_ptr<Target> q(new Queue(node.queue, link));
             targets[link] = q;
             q->flow();
-        } else if (exchange) {
-            boost::shared_ptr<Target> e(new Exchange(exchange, link));
+        } else if (node.exchange) {
+            boost::shared_ptr<Target> e(new Exchange(node.exchange, link));
             targets[link] = e;
             e->flow();
         } else {
-            //TODO: handle dynamic creation
             pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
             throw qpid::Exception("Node not found: " + name);/*not-found*/
         }

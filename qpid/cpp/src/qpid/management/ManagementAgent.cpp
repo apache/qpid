@@ -34,6 +34,7 @@
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/PollableQueue.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/types/Variant.h"
@@ -62,23 +63,23 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 
 namespace {
-    const size_t qmfV1BufferSize(65536);
-    const string defaultVendorName("vendor");
-    const string defaultProductName("product");
+const size_t qmfV1BufferSize(65536);
+const string defaultVendorName("vendor");
+const string defaultProductName("product");
 
-    // Create a valid binding key substring by
-    // replacing all '.' chars with '_'
-    const string keyifyNameStr(const string& name)
-    {
-        string n2 = name;
+// Create a valid binding key substring by
+// replacing all '.' chars with '_'
+const string keyifyNameStr(const string& name)
+{
+    string n2 = name;
 
-        size_t pos = n2.find('.');
-        while (pos != n2.npos) {
-            n2.replace(pos, 1, "_");
-            pos = n2.find('.', pos);
-        }
-        return n2;
+    size_t pos = n2.find('.');
+    while (pos != n2.npos) {
+        n2.replace(pos, 1, "_");
+        pos = n2.find('.', pos);
     }
+    return n2;
+}
 
 struct ScopedManagementContext
 {
@@ -166,6 +167,9 @@ void ManagementAgent::configure(const string& _dataDir, bool _publish, uint16_t 
     broker         = _broker;
     threadPoolSize = _threads;
     ManagementObject::maxThreads = threadPoolSize;
+    sendQueue.reset(
+        new EventQueue(boost::bind(&ManagementAgent::sendEvents, this, _1), broker->getPoller()));
+    sendQueue->start();
 
     // Get from file or generate and save to file.
     if (dataDir.empty())
@@ -235,13 +239,13 @@ void ManagementAgent::setName(const string& vendor, const string& product, const
     } else
         inst = instance;
 
-   name_address = vendor + ":" + product + ":" + inst;
-   attrMap["_instance"] = inst;
-   attrMap["_name"] = name_address;
+    name_address = vendor + ":" + product + ":" + inst;
+    attrMap["_instance"] = inst;
+    attrMap["_name"] = name_address;
 
-   vendorNameKey = keyifyNameStr(vendor);
-   productNameKey = keyifyNameStr(product);
-   instanceNameKey = keyifyNameStr(inst);
+    vendorNameKey = keyifyNameStr(vendor);
+    productNameKey = keyifyNameStr(product);
+    instanceNameKey = keyifyNameStr(inst);
 }
 
 
@@ -541,14 +545,9 @@ void ManagementAgent::sendBuffer(Buffer&  buf,
     dp->setRoutingKey(routingKey);
 
     transfer->getFrames().append(content);
-
     Message msg(transfer, transfer);
     msg.setIsManagementMessage(true);
-
-    DeliverableMessage deliverable (msg, 0);
-    try {
-        exchange->route(deliverable);
-    } catch(exception&) {}
+    sendQueue->push(make_pair(exchange, msg));
     buf.reset();
 }
 
@@ -617,10 +616,7 @@ void ManagementAgent::sendBuffer(const string& data,
     msg.setIsManagementMessage(true);
     msg.computeExpiration(broker->getExpiryPolicy());
 
-    DeliverableMessage deliverable (msg,0);
-    try {
-        exchange->route(deliverable);
-    } catch(exception&) {}
+    sendQueue->push(make_pair(exchange, msg));
 }
 
 
@@ -1418,7 +1414,7 @@ void ManagementAgent::handleMethodRequest (const string& body, const string& rte
 
         if (!acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_METHOD, methodName, &params)) {
             sendException(rte, rtk, cid, Manageable::StatusText(Manageable::STATUS_FORBIDDEN),
-                            Manageable::STATUS_FORBIDDEN, viaLocal);
+                          Manageable::STATUS_FORBIDDEN, viaLocal);
             return;
         }
     }
@@ -2123,7 +2119,7 @@ bool ManagementAgent::authorizeAgentMessage(Message& msg)
 
     qpid::broker::amqp_0_10::MessageTransfer& transfer(qpid::broker::amqp_0_10::MessageTransfer::get(msg));
     const framing::MessageProperties* p =
-      transfer.getFrames().getHeaders()->get<framing::MessageProperties>();
+        transfer.getFrames().getHeaders()->get<framing::MessageProperties>();
 
     const framing::FieldTable *headers = p ? &p->getApplicationHeaders() : 0;
 
@@ -2937,6 +2933,21 @@ bool ManagementAgent::moveDeletedObjects() {
         managementObjects.erase(iter->first);
     }
     return !deleteList.empty();
+}
+
+ManagementAgent::EventQueue::Batch::const_iterator ManagementAgent::sendEvents(
+    const EventQueue::Batch& batch)
+{
+    EventQueue::Batch::const_iterator i;
+    for (i = batch.begin(); i != batch.end(); ++i) {
+        DeliverableMessage deliverable (i->second, 0);
+        try {
+            i->first->route(deliverable);
+        } catch(exception& e) {
+            QPID_LOG(warning, "ManagementAgent failed to route event: " << e.what());
+        }
+    }
+    return i;
 }
 
 namespace {

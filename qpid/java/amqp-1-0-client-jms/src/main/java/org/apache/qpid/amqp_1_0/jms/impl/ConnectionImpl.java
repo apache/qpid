@@ -282,7 +282,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 {
                     task.onClose();
                 }
-                if(_state != State.UNCONNECTED ) {
+                if(_conn != null && _state != State.UNCONNECTED ) {
                     _conn.close();
                 }
                 _state = State.CLOSED;
@@ -331,6 +331,10 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                                                               final int i) throws JMSException
     {
         checkClosed();
+        if (_isQueueConnection)
+        {
+            throw new IllegalStateException("QueueConnection cannot be used to create Pub/Sub based resources.");
+        } 
         return null;  //TODO
     }
 

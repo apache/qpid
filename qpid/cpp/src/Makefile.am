@@ -46,7 +46,6 @@ windows_dist = \
   qpid/sys/windows/QpidDllMain.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/SocketAddress.cpp \
-  qpid/sys/windows/Socket.cpp \
   qpid/sys/windows/SslAsynchIO.cpp \
   qpid/sys/windows/SslAsynchIO.h \
   qpid/sys/windows/StrError.cpp \
@@ -56,6 +55,8 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
+  qpid/sys/windows/WinSocket.cpp \
+  qpid/sys/windows/WinSocket.h \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
@@ -158,7 +159,8 @@ qpidd_SOURCES = qpidd.cpp qpidd.h $(posix_qpidd_src)
 libqpidcommon_la_SOURCES +=			\
   qpid/log/posix/SinkOptions.cpp		\
   qpid/sys/posix/IOHandle.cpp			\
-  qpid/sys/posix/Socket.cpp			\
+  qpid/sys/posix/BSDSocket.cpp			\
+  qpid/sys/posix/BSDSocket.h			\
   qpid/sys/posix/SocketAddress.cpp		\
   qpid/sys/posix/AsynchIO.cpp			\
   qpid/sys/posix/FileSysDir.cpp			\
@@ -510,7 +512,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/TimerWarnings.cpp			\
   qpid/sys/TimerWarnings.h			\
   qpid/sys/Waitable.h				\
-  qpid/sys/alloca.h				\
   qpid/sys/uuid.h				\
   qpid/sys/unordered_map.h			\
   qpid/amqp_0_10/Codecs.cpp			\
@@ -527,6 +528,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/amqp/Encoder.cpp                       	\
   qpid/amqp/ListReader.h			\
   qpid/amqp/LoggingReader.h			\
+  qpid/amqp/MapReader.h                       	\
+  qpid/amqp/MapReader.cpp                       \
   qpid/amqp/MessageEncoder.h                    \
   qpid/amqp/MessageEncoder.cpp                  \
   qpid/amqp/MessageId.h		                \
@@ -763,6 +766,10 @@ amqp_la_LIBADD = libqpidcommon.la
 amqp_la_SOURCES = \
   qpid/broker/amqp/Connection.h \
   qpid/broker/amqp/Connection.cpp \
+  qpid/broker/amqp/DataReader.h \
+  qpid/broker/amqp/DataReader.cpp \
+  qpid/broker/amqp/Filter.h \
+  qpid/broker/amqp/Filter.cpp \
   qpid/broker/amqp/Header.h \
   qpid/broker/amqp/Header.cpp \
   qpid/broker/amqp/ManagedConnection.h \
@@ -773,6 +780,8 @@ amqp_la_SOURCES = \
   qpid/broker/amqp/ManagedOutgoingLink.cpp \
   qpid/broker/amqp/Message.h \
   qpid/broker/amqp/Message.cpp \
+  qpid/broker/amqp/NodeProperties.h \
+  qpid/broker/amqp/NodeProperties.cpp \
   qpid/broker/amqp/Outgoing.h \
   qpid/broker/amqp/Outgoing.cpp \
   qpid/broker/amqp/ProtocolPlugin.cpp \
@@ -789,6 +798,8 @@ amqp_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
 cmoduleexec_LTLIBRARIES += amqpc.la
 amqpc_la_LIBADD = libqpidcommon.la
 amqpc_la_SOURCES = \
+  qpid/messaging/amqp/AddressHelper.h		\
+  qpid/messaging/amqp/AddressHelper.cpp		\
   qpid/messaging/amqp/ConnectionContext.h	\
   qpid/messaging/amqp/ConnectionContext.cpp	\
   qpid/messaging/amqp/ConnectionHandle.h	\

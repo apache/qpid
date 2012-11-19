@@ -155,6 +155,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
     {
         final Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
+
         conn.addConnectionListener(new ConnectionListener()
         {
             public void opened(Connection conn) {}
@@ -224,6 +225,12 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
                 Session ssn = super.getSession(conn, atc);
                 ssn.setSessionListener(ConnectionTest.this);
                 return ssn;
+            }
+
+            @Override
+            public void connectionStartOk(Connection conn, ConnectionStartOk ok)
+            {
+                tuneAuthorizedConnection(conn);
             }
         };
 

@@ -49,7 +49,7 @@ boost::shared_ptr<SenderContext> SessionContext::createSender(const qpid::messag
     for (SenderMap::const_iterator i = senders.find(name); i != senders.end(); i = senders.find(name)) {
         name = (boost::format("%1%_%2%") % address.getName() % ++count).str();
     }
-    boost::shared_ptr<SenderContext> s(new SenderContext(session, name, address.str()));
+    boost::shared_ptr<SenderContext> s(new SenderContext(session, name, address));
     senders[name] = s;
     return s;
 }
@@ -62,7 +62,7 @@ boost::shared_ptr<ReceiverContext> SessionContext::createReceiver(const qpid::me
     for (ReceiverMap::const_iterator i = receivers.find(name); i != receivers.end(); i = receivers.find(name)) {
         name = (boost::format("%1%_%2%") % address.getName() % ++count).str();
     }
-    boost::shared_ptr<ReceiverContext> r(new ReceiverContext(session, name, address.str()));
+    boost::shared_ptr<ReceiverContext> r(new ReceiverContext(session, name, address));
     receivers[name] = r;
     return r;
 }

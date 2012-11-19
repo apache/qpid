@@ -18,9 +18,11 @@
  * under the License.
  *
  */
-#include "ReceiverContext.h"
+#include "qpid/messaging/amqp/ReceiverContext.h"
+#include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
+#include "qpid/amqp/descriptors.h"
 extern "C" {
 #include <proton/engine.h>
 }
@@ -29,10 +31,10 @@ namespace qpid {
 namespace messaging {
 namespace amqp {
 //TODO: proper conversion to wide string for address
-ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, const std::string& s)
+ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, const qpid::messaging::Address& a)
   : name(n),
-    source(s),
-    receiver(pn_receiver(session, source.c_str())),
+    address(a),
+    receiver(pn_receiver(session, name.c_str())),
     capacity(0) {}
 ReceiverContext::~ReceiverContext()
 {
@@ -84,7 +86,52 @@ const std::string& ReceiverContext::getName() const
 
 const std::string& ReceiverContext::getSource() const
 {
-    return source;
+    return address.getName();
+}
+namespace {
+pn_bytes_t convert(const std::string& s)
+{
+    pn_bytes_t result;
+    result.start = const_cast<char*>(s.data());
+    result.size = s.size();
+    return result;
+}
+bool hasWildcards(const std::string& key)
+{
+    return key.find('*') != std::string::npos || key.find('#') != std::string::npos;
+}
+
+uint64_t getFilterDescriptor(const std::string& key)
+{
+    return hasWildcards(key) ? qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE : qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE;
+}
+}
+
+void ReceiverContext::configure() const
+{
+    configure(pn_link_source(receiver));
+}
+void ReceiverContext::configure(pn_terminus_t* source) const
+{
+    pn_terminus_set_address(source, address.getName().c_str());
+    //dynamic create:
+    AddressHelper helper(address);
+    if (helper.createEnabled(AddressHelper::FOR_RECEIVER)) {
+        helper.setNodeProperties(source);
+    }
+
+    //filter:
+    pn_data_t* filter = pn_terminus_filter(source);
+    pn_data_put_map(filter);
+    pn_data_enter(filter);
+    pn_data_put_symbol(filter, convert("subject"));
+    //TODO: At present inserting described values into the map doesn't seem to work; correct this once resolved
+    //pn_data_put_described(filter);
+    //pn_data_enter(filter);
+    //pn_data_put_ulong(filter, getFilterDescriptor(address.getSubject()));
+    pn_data_put_string(filter, convert(address.getSubject()));
+    //pn_data_exit(filter);
+    pn_data_exit(filter);
 }
 
 bool ReceiverContext::isClosed() const

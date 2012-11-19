@@ -31,6 +31,8 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Timer.h"
 #include <boost/bind.hpp>
@@ -39,6 +41,8 @@ namespace qpid {
 namespace ha {
 
 using sys::Mutex;
+using namespace std;
+using namespace framing;
 
 namespace {
 
@@ -58,6 +62,8 @@ class PrimaryConfigurationObserver : public broker::ConfigurationObserver
     PrimaryConfigurationObserver(Primary& p) : primary(p) {}
     void queueCreate(const Primary::QueuePtr& q) { primary.queueCreate(q); }
     void queueDestroy(const Primary::QueuePtr& q) { primary.queueDestroy(q); }
+    void exchangeCreate(const Primary::ExchangePtr& q) { primary.exchangeCreate(q); }
+    void exchangeDestroy(const Primary::ExchangePtr& q) { primary.exchangeDestroy(q); }
   private:
     Primary& primary;
 };
@@ -178,9 +184,12 @@ void Primary::readyReplica(const ReplicatingSubscription& rs) {
     }
 }
 
+// NOTE: Called with queue registry lock held.
 void Primary::queueCreate(const QueuePtr& q) {
-    // Throw if there is an invalid replication level in the queue settings.
-    haBroker.getReplicationTest().replicateLevel(q->getSettings().storeSettings);
+    if (haBroker.getReplicationTest().isReplicated(CONFIGURATION, *q)) {
+        // Give each queue a unique id to avoid confusion of same-named queues.
+        q->addArgument(QPID_HA_UUID, types::Variant(Uuid(true)));
+    }
     Mutex::ScopedLock l(lock);
     for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i) {
         i->second->queueCreate(q);
@@ -188,12 +197,28 @@ void Primary::queueCreate(const QueuePtr& q) {
     }
 }
 
+// NOTE: Called with queue registry lock held.
 void Primary::queueDestroy(const QueuePtr& q) {
     Mutex::ScopedLock l(lock);
     for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
         i->second->queueDestroy(q);
     checkReady(l);
 }
+
+// NOTE: Called with exchange registry lock held.
+void Primary::exchangeCreate(const ExchangePtr& ex) {
+    if (haBroker.getReplicationTest().isReplicated(CONFIGURATION, *ex)) {
+        // Give each exchange a unique id to avoid confusion of same-named exchanges.
+        FieldTable args = ex->getArgs();
+        args.set(QPID_HA_UUID, FieldTable::ValuePtr(new UuidValue(&Uuid(true)[0])));
+        ex->setArgs(args);
+    }
+}
+
+// NOTE: Called with exchange registry lock held.
+void Primary::exchangeDestroy(const ExchangePtr&) {
+    // Do nothing
+ }
 
 void Primary::opened(broker::Connection& connection) {
     BrokerInfo info;

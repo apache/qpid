@@ -105,7 +105,7 @@ namespace Rdma {
     }
 
     QueuePair::QueuePair(boost::shared_ptr< ::rdma_cm_id > i) :
-        qpid::sys::IOHandle(new qpid::sys::IOHandlePrivate),
+        handle(new qpid::sys::IOHandle),
         pd(allocPd(i->verbs)),
         cchannel(mkCChannel(i->verbs)),
         scq(mkCq(i->verbs, DEFAULT_CQ_ENTRIES, 0, cchannel.get())),
@@ -113,7 +113,7 @@ namespace Rdma {
         outstandingSendEvents(0),
         outstandingRecvEvents(0)
     {
-        impl->fd = cchannel->fd;
+        handle->fd = cchannel->fd;
 
         // Set cq context to this QueuePair object so we can find
         // ourselves again
@@ -161,6 +161,11 @@ namespace Rdma {
         if (smr) delete [] static_cast<char*>(smr->addr);
 
         // The buffers vectors automatically deletes all the buffers we've allocated
+    }
+
+    QueuePair::operator qpid::sys::IOHandle&() const
+    {
+        return *handle;
     }
 
     // Create buffers to use for writing
@@ -359,11 +364,11 @@ namespace Rdma {
     // Wrap the passed in rdma_cm_id with a Connection
     // this basically happens only on connection request
     Connection::Connection(::rdma_cm_id* i) :
-        qpid::sys::IOHandle(new qpid::sys::IOHandlePrivate),
+        handle(new qpid::sys::IOHandle),
         id(mkId(i)),
         context(0)
     {
-        impl->fd = id->channel->fd;
+        handle->fd = id->channel->fd;
 
         // Just overwrite the previous context as it will
         // have come from the listening connection
@@ -372,17 +377,22 @@ namespace Rdma {
     }
 
     Connection::Connection() :
-        qpid::sys::IOHandle(new qpid::sys::IOHandlePrivate),
+        handle(new qpid::sys::IOHandle),
         channel(mkEChannel()),
         id(mkId(channel.get(), this, RDMA_PS_TCP)),
         context(0)
     {
-        impl->fd = channel->fd;
+        handle->fd = channel->fd;
     }
 
     Connection::~Connection() {
         // Reset the id context in case someone else has it
         id->context = 0;
+    }
+
+    Connection::operator qpid::sys::IOHandle&() const
+    {
+        return *handle;
     }
 
     void Connection::ensureQueuePair() {

@@ -30,10 +30,9 @@ namespace qpid {
 namespace sys {
 class ConnectionCodec;
 class Poller;
-namespace ssl {
-class SslIO;
-class SslIOBufferBase;
-}
+class AsynchConnector;
+class AsynchIO;
+class AsynchIOBufferBase;
 }
 
 namespace messaging {
@@ -54,18 +53,19 @@ class SslTransport : public Transport
   private:
     qpid::sys::ssl::SslSocket socket;
     TransportContext& context;
-    qpid::sys::ssl::SslIO* aio;
+    qpid::sys::AsynchConnector* connector;
+    qpid::sys::AsynchIO* aio;
     boost::shared_ptr<qpid::sys::Poller> poller;
     bool closed;
     std::string id;
 
-    void connected(const qpid::sys::ssl::SslSocket&);
+    void connected(const qpid::sys::Socket&);
     void failed(const std::string& msg);
-    void read(qpid::sys::ssl::SslIO&, qpid::sys::ssl::SslIOBufferBase*);
-    void write(qpid::sys::ssl::SslIO&);
-    void eof(qpid::sys::ssl::SslIO&);
-    void disconnected(qpid::sys::ssl::SslIO&);
-    void socketClosed(qpid::sys::ssl::SslIO&, const qpid::sys::ssl::SslSocket&);
+    void read(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
+    void write(qpid::sys::AsynchIO&);
+    void eof(qpid::sys::AsynchIO&);
+    void disconnected(qpid::sys::AsynchIO&);
+    void socketClosed(qpid::sys::AsynchIO&, const qpid::sys::Socket&);
 
   friend class DriverImpl;
 };

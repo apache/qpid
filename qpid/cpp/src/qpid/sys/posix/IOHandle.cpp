@@ -19,26 +19,11 @@
  *
  */
 
-#include "qpid/sys/IOHandle.h"
-
 #include "qpid/sys/posix/PrivatePosix.h"
 
 namespace qpid {
 namespace sys {
 
-int toFd(const IOHandlePrivate* h)
-{
-    return h->fd;
-}
-
 NullIOHandle DummyIOHandle;
-
-IOHandle::IOHandle(IOHandlePrivate* h) :
-  impl(h)
-{}
-
-IOHandle::~IOHandle() {
-	delete impl;
-}
 
 }} // namespace qpid::sys

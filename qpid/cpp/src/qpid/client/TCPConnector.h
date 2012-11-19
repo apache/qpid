@@ -35,7 +35,7 @@
 #include "qpid/sys/Thread.h"
 
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <deque>
 #include <string>
 
@@ -66,7 +66,7 @@ class TCPConnector : public Connector, public sys::Codec
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
 
-    sys::Socket socket;
+    boost::scoped_ptr<sys::Socket> socket;
 
     sys::AsynchConnector* connector;
     sys::AsynchIO* aio;

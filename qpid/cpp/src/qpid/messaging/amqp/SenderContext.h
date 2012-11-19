@@ -25,11 +25,13 @@
 #include <string>
 #include <vector>
 #include "qpid/sys/IntegerTypes.h"
+#include "qpid/messaging/Address.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
 
 struct pn_delivery_t;
 struct pn_link_t;
 struct pn_session_t;
+struct pn_terminus_t;
 
 namespace qpid {
 namespace messaging {
@@ -48,7 +50,7 @@ class SenderContext
     {
       public:
         Delivery(int32_t id);
-        void encode(const qpid::messaging::MessageImpl& message);
+        void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
         void send(pn_link_t*);
         bool accepted();
       private:
@@ -57,7 +59,7 @@ class SenderContext
         EncodedMessage encoded;
     };
 
-    SenderContext(pn_session_t* session, const std::string& name, const std::string& target);
+    SenderContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& target);
     ~SenderContext();
     void close();
     void setCapacity(uint32_t);
@@ -66,18 +68,20 @@ class SenderContext
     const std::string& getName() const;
     const std::string& getTarget() const;
     Delivery* send(const qpid::messaging::Message& message);
+    void configure() const;
   private:
     friend class ConnectionContext;
     typedef std::deque<Delivery> Deliveries;
 
     const std::string name;
-    const std::string target;
+    const qpid::messaging::Address address;
     pn_link_t* sender;
     int32_t nextId;
     Deliveries deliveries;
     uint32_t capacity;
 
     uint32_t processUnsettled();
+    void configure(pn_terminus_t*) const;
 };
 }}} // namespace qpid::messaging::amqp
 

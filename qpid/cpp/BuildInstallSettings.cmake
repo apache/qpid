@@ -31,6 +31,7 @@ else()
 endif(EXISTS "${PROJECT_SOURCE_DIR}/../QPID_VERSION.txt")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\1" QPID_VERSION_MAJOR "${QPID_VERSION}")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\2" QPID_VERSION_MINOR "${QPID_VERSION}")
+set (QPID_VERSION_FULL "${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR}")
 
 # When doing installs, there are a number of components that the item can
 # be associated with. Since there may be different sets of components desired
@@ -131,6 +132,16 @@ function(set_absolute_install_path var input)
   endif ()
 endfunction(set_absolute_install_path)
 
+# Figure out the default library suffix
+if (NOT DEFINED LIB_SUFFIX)
+    get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+    if (${LIB64} STREQUAL "TRUE" AND ${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+        set(LIB_SUFFIX 64)
+    else()
+        set(LIB_SUFFIX "")
+    endif()
+endif()
+
 # In rpm builds the build sets some variables:
 #  CMAKE_INSTALL_PREFIX - this is a standard cmake variable
 #  INCLUDE_INSTALL_DIR
@@ -140,10 +151,10 @@ endfunction(set_absolute_install_path)
 # So make these cached variables and the specific variables non cached and
 # derived from them.
   set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
-  set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
+  set (LIB_INSTALL_DIR lib${LIB_SUFFIX} CACHE PATH "Library object file directory")
   set (SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
   set (SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
-  set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION} CACHE PATH "Shared read only data directory")
+  set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION_FULL} CACHE PATH "Shared read only data directory")
   
   set (QPID_COMPONENT_BROKER runtime)
   set (QPID_COMPONENT_CLIENT runtime)

@@ -855,6 +855,7 @@ public class FieldTable
     public void addAll(FieldTable fieldTable)
     {
         initMapIfNecessary();
+        fieldTable.initMapIfNecessary();
         if (fieldTable._properties != null)
         {
             _encodedForm = null;

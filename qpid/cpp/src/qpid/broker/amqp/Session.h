@@ -32,11 +32,14 @@
 struct pn_delivery_t;
 struct pn_link_t;
 struct pn_session_t;
+struct pn_terminus_t;
 
 namespace qpid {
 namespace broker {
 
 class Broker;
+class Exchange;
+class Queue;
 
 namespace amqp {
 
@@ -71,6 +74,13 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     std::deque<pn_delivery_t*> completed;
     bool deleted;
     qpid::sys::Mutex lock;
+    struct ResolvedNode
+    {
+        boost::shared_ptr<qpid::broker::Exchange> exchange;
+        boost::shared_ptr<qpid::broker::Queue> queue;
+    };
+
+    ResolvedNode resolve(const std::string name, pn_terminus_t* terminus);
 };
 }}} // namespace qpid::broker::amqp
 

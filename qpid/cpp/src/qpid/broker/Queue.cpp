@@ -1169,14 +1169,10 @@ void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue, const std::strin
 {
     if (broker.getQueues().destroyIf(queue->getName(),
                                      boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue))) {
-        QPID_LOG(debug, "Auto-deleting " << queue->getName());
-        queue->destroyed();
-
-        if (broker.getManagementAgent())
-            broker.getManagementAgent()->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, queue->getName()));
-        QPID_LOG_CAT(debug, model, "Delete queue. name:" << queue->getName()
+        QPID_LOG_CAT(debug, model, "Auto-delete queue: " << queue->getName()
             << " user:" << userId
             << " rhost:" << connectionId );
+        queue->destroyed();
     }
 }
 
@@ -1596,6 +1592,11 @@ void Queue::UsageBarrier::destroy()
     Monitor::ScopedLock l(usageLock);
     parent.deleted = true;
     while (count) usageLock.wait();
+}
+
+void Queue::addArgument(const string& key, const types::Variant& value) {
+    settings.original.insert(types::Variant::Map::value_type(key, value));
+    if (mgmtObject != 0) mgmtObject->set_arguments(settings.asMap());
 }
 
 }}

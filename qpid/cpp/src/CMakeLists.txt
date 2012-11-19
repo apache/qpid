@@ -271,16 +271,20 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    set (WARNING_FLAGS
         "-Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
 
-   set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
+   set (CATCH_UNDEFINED "-Wl,--no-undefined")
    # gcc on SunOS uses native linker whose "-z defs" is too fussy
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-      set (GCC_CATCH_UNDEFINED "")
+      set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+   set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
+   set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
   set (WARNING_FLAGS "+w")
+  set (CATCH_UNDEFINED "")
+  set (HIDE_SYMBOL_FLAGS "")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
@@ -571,13 +575,10 @@ if (BUILD_XML)
                qpid/xml/XmlExchange.cpp
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
-  set_target_properties (xml PROPERTIES PREFIX "")
   target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties (xml PROPERTIES
-                           PREFIX ""
-                           LINK_FLAGS ${GCC_CATCH_UNDEFINED})
-  endif (CMAKE_COMPILER_IS_GNUCXX)
+  set_target_properties (xml PROPERTIES
+                         PREFIX ""
+                         LINK_FLAGS "${CATCH_UNDEFINED}")
   install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
@@ -610,13 +611,10 @@ if (BUILD_ACL)
   # the qpidbroker platform-specific source list.
   if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_library (acl MODULE ${acl_SOURCES})
-    set_target_properties (acl PROPERTIES PREFIX "")
     target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set_target_properties (acl PROPERTIES
-                             PREFIX ""
-                             LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties (acl PROPERTIES
+                           PREFIX ""
+                           LINK_FLAGS "${CATCH_UNDEFINED}")
     install (TARGETS acl
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
@@ -748,7 +746,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/PipeHandle.cpp
     qpid/sys/windows/PollableCondition.cpp
     qpid/sys/windows/Shlib.cpp
-    qpid/sys/windows/Socket.cpp
+    qpid/sys/windows/WinSocket.cpp
     qpid/sys/windows/SocketAddress.cpp
     qpid/sys/windows/StrError.cpp
     qpid/sys/windows/SystemInfo.cpp
@@ -808,10 +806,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     add_definitions(-pthread)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${GCC_CATCH_UNDEFINED} -pthread")
-      set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CATCH_UNDEFINED} -pthread")
+    set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
     # On Linux override memory status module
     set (qpid_memstat_module
       qpid/sys/posix/MemStat.cpp
@@ -853,7 +849,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/PollableCondition.cpp
     qpid/sys/posix/Shlib.cpp
     qpid/log/posix/SinkOptions.cpp
-    qpid/sys/posix/Socket.cpp
+    qpid/sys/posix/BSDSocket.cpp
     qpid/sys/posix/SocketAddress.cpp
     qpid/sys/posix/StrError.cpp
     qpid/sys/posix/Thread.cpp
@@ -958,6 +954,8 @@ set (qpidcommon_SOURCES
      qpid/amqp/Descriptor.cpp
      qpid/amqp/Encoder.h
      qpid/amqp/Encoder.cpp
+     qpid/amqp/MapReader.h
+     qpid/amqp/MapReader.cpp
      qpid/amqp/MessageEncoder.h
      qpid/amqp/MessageEncoder.cpp
      qpid/amqp/MessageId.h
@@ -1058,29 +1056,17 @@ install (DIRECTORY ../include/qpid
          PATTERN ".svn" EXCLUDE)
 install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
-
-set (qpidmessaging_SOURCES
-	 ${qpidmessaging_platform_SOURCES}
-     qpid/messaging/Address.cpp
+set (qpidmessaging_SOURCES_hidden
      qpid/messaging/AddressParser.h
-     qpid/messaging/AddressParser.cpp
-     qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ConnectionOptions.h
      qpid/messaging/ConnectionOptions.cpp
-     qpid/messaging/Duration.cpp
-     qpid/messaging/exceptions.cpp
-     qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
      qpid/messaging/ProtocolRegistry.cpp
-     qpid/messaging/Receiver.cpp
      qpid/messaging/ReceiverImpl.h
-     qpid/messaging/Session.cpp
      qpid/messaging/SessionImpl.h
-     qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
-     qpid/messaging/FailoverUpdates.cpp
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
      qpid/client/amqp0_10/AcceptTracker.h
@@ -1101,6 +1087,25 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
+)
+set_source_files_properties(
+     ${qpidmessaging_SOURCES_hidden}
+     PROPERTIES
+     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
+
+set (qpidmessaging_SOURCES
+     ${qpidmessaging_platform_SOURCES}
+     ${qpidmessaging_SOURCES_hidden}
+     qpid/messaging/Address.cpp
+     qpid/messaging/AddressParser.cpp # The functions in here are not in the public interface, but qmf uses them
+     qpid/messaging/Connection.cpp
+     qpid/messaging/Duration.cpp
+     qpid/messaging/exceptions.cpp
+     qpid/messaging/FailoverUpdates.cpp
+     qpid/messaging/Message.cpp
+     qpid/messaging/Receiver.cpp
+     qpid/messaging/Session.cpp
+     qpid/messaging/Sender.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
@@ -1484,8 +1489,8 @@ set (VERSION ${QPID_VERSION})
 
 #add_custom_target(pkgconfig ALL echo DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc)
 #add_dependencies(pkgconfig ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
-configure_file(qpid.pc.in qpid.pc @ONLY)
-configure_file(qmf2.pc.in qmf2.pc @ONLY)
+configure_file(qpid.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc @ONLY)
+configure_file(qmf2.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc @ONLY)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
          DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
          COMPONENT ${QPID_COMPONENT_COMMON})

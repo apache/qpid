@@ -408,5 +408,10 @@ bool Exchange::routeWithAlternate(Deliverable& msg)
     return msg.delivered;
 }
 
+void Exchange::setArgs(const framing::FieldTable& newArgs) {
+    args = newArgs;
+    if (mgmtExchange) mgmtExchange->set_arguments(ManagementAgent::toMap(args));
+}
+
 }}
 

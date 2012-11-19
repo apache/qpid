@@ -48,14 +48,14 @@ struct StaticInit
 } init;
 }
 
-TcpTransport::TcpTransport(TransportContext& c, boost::shared_ptr<Poller> p) : context(c), connector(0), aio(0), poller(p) {}
+TcpTransport::TcpTransport(TransportContext& c, boost::shared_ptr<Poller> p) : socket(createSocket()), context(c), connector(0), aio(0), poller(p) {}
 
 void TcpTransport::connect(const std::string& host, const std::string& port)
 {
     assert(!connector);
     assert(!aio);
     connector = AsynchConnector::create(
-        socket,
+        *socket,
         host, port,
         boost::bind(&TcpTransport::connected, this, _1),
         boost::bind(&TcpTransport::failed, this, _3));
@@ -67,7 +67,7 @@ void TcpTransport::failed(const std::string& msg)
 {
     QPID_LOG(debug, "Failed to connect: " << msg);
     connector = 0;
-    socket.close();
+    socket->close();
     context.closed();
 }
 
@@ -75,7 +75,7 @@ void TcpTransport::connected(const Socket&)
 {
     context.opened();
     connector = 0;
-    aio = AsynchIO::create(socket,
+    aio = AsynchIO::create(*socket,
                            boost::bind(&TcpTransport::read, this, _1, _2),
                            boost::bind(&TcpTransport::eof, this, _1),
                            boost::bind(&TcpTransport::disconnected, this, _1),
@@ -83,7 +83,7 @@ void TcpTransport::connected(const Socket&)
                            0, // nobuffs
                            boost::bind(&TcpTransport::write, this, _1));
     aio->createBuffers(std::numeric_limits<uint16_t>::max());//note: AMQP 1.0 _can_ handle large frame sizes
-    id = boost::str(boost::format("[%1%]") % socket.getFullAddress());
+    id = boost::str(boost::format("[%1%]") % socket->getFullAddress());
     aio->start(poller);
 }
 
@@ -131,7 +131,7 @@ void TcpTransport::eof(AsynchIO&)
 void TcpTransport::disconnected(AsynchIO&)
 {
     close();
-    socketClosed(*aio, socket);
+    socketClosed(*aio, *socket);
 }
 
 void TcpTransport::socketClosed(AsynchIO&, const Socket&)

@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+#include <string>
+
 namespace qpid {
 namespace sys {
 

@@ -22,6 +22,7 @@
 #include "qpid/broker/amqp/Header.h"
 #include "qpid/broker/amqp/Translation.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/TopicKeyNode.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/amqp/MessageEncoder.h"
 #include "qpid/log/Statement.h"
@@ -161,6 +162,57 @@ void Outgoing::notify()
 bool Outgoing::accept(const qpid::broker::Message&)
 {
     return canDeliver();
+}
+
+void Outgoing::setSubjectFilter(const std::string& f)
+{
+    subjectFilter = f;
+}
+
+namespace {
+
+bool match(TokenIterator& filter, TokenIterator& target)
+{
+    bool wild = false;
+    while (!filter.finished())
+    {
+        if (filter.match1('*')) {
+            if (target.finished()) return false;
+            //else move to next word in filter target
+            filter.next();
+            target.next();
+        } else if (filter.match1('#')) {
+            // i.e. filter word is '#' which can match a variable number of words in the target
+            filter.next();
+            if (filter.finished()) return true;
+            else if (target.finished()) return false;
+            wild = true;
+        } else {
+            //filter word needs to match target exactly
+            if (target.finished()) return false;
+            std::string word;
+            target.pop(word);
+            if (filter.match(word)) {
+                wild = false;
+                filter.next();
+            } else if (!wild) {
+                return false;
+            }
+        }
+    }
+    return target.finished();
+}
+bool match(const std::string& filter, const std::string& target)
+{
+    TokenIterator lhs(filter);
+    TokenIterator rhs(target);
+    return match(lhs, rhs);
+}
+}
+
+bool Outgoing::filter(const qpid::broker::Message& m)
+{
+    return subjectFilter.empty() || subjectFilter == m.getRoutingKey() || match(subjectFilter, m.getRoutingKey());
 }
 
 void Outgoing::cancel() {}
