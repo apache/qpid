@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -21,6 +25,72 @@
 -->
 
 <section id="Java-Broker-Stores-BDB-Store">
-<title>BDB Store</title>
+  <title>BDB Store</title>
+  <para>
+    The Java broker has an <emphasis>optional</emphasis> message store implementation backed by Oracle BDB JE.
+    This section will detail where to download the optional dependency from, how to add it to the broker installation,
+    and provide an example configuration for using the BDBMessageStore.
+  </para>
+
+  <section role="h3" id="Java-Broker-Stores-BDB-Store-BDBJE-Download">
+    <title>Oracle BDB JE download</title>
+    <para>
+      The BDB based message store is optional due to its dependency on Oracle BDB JE, which is distributed under the Sleepycat
+      licence. As a result of this, the dependency cant be distributed by the Apache Qpid project as part of the broker release package.
+    </para>
+    <para>
+       If you wish to use the BDBMessageStore, then you must download the Oracle BDB JE &oracleBdbProductVersion; release
+      <ulink url="&oracleJeDownloadUrl;">from the Oracle website.</ulink>
+    </para>
+    <para>
+      The download has a name in the form je-&oracleBdbProductVersion;.tar.gz. It is recommended that you
+      confirm the integrity of the download by verifying the MD5.
+    </para>
+  </section>
+
+  <section role="h3" id="Java-Broker-Stores-BDB-Store-BDBJE-Installation">
+    <title>Oracle BDB JE jar installation</title>
+    <para>
+      If you wish to use the BDBMessageStore, copy the je-&oracleBdbProductVersion;.jar from within the release
+      downloaded <link linkend="Java-Broker-Stores-BDB-Store-BDBJE-Download">above</link> into an 'opt' sub-directory
+      of the brokers 'lib' directory.
+    </para>
+
+    <programlisting>Unix:
+mkdir qpid-broker-&qpidCurrentRelease;/lib/opt
+cp je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;/lib/opt</programlisting>
+
+      <programlisting>Windows:
+mkdir qpid-broker-&qpidCurrentRelease;\lib\opt
+copy je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;\lib\opt</programlisting>
+  </section>
+
+
+
+  <section role="h3" id="Java-Broker-Stores-BDB-Store-Configuration">
+    <title>Configuration</title>
+    <para>
+      In order to use the BDBMessageStore, you must configure it for each VirtualHost desired by updating the store element
+      to specify the associated store class and provide a directory location for the data to be written, as shown below.
+    </para>
+
+    <example>
+      <title>Configuring a VirtualHost to use the BDBMessageStore</title>
+      <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+        <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+        <environment-path>${QPID_WORK}/bdbstore/vhostname</environment-path>
+      </store>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+]]></programlisting>
+    </example>
+  </section>
 
 </section>

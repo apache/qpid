@@ -294,6 +294,9 @@
     <title>Configuring a Virtual Host to be a node</title>
     <para>To configure a virtualhost as a cluster node, configure the virtualhost.xml in the following manner:</para>
     <para>
+
+    <example>
+      <title>Configuring a VirtualHost to use the BDBHAMessageStore</title>
       <programlisting language="xml"><![CDATA[
 <virtualhost>
   <name>myhost</name>
@@ -314,6 +317,7 @@
     ...
  </myvhost>
 </virtualhost>]]></programlisting>
+    </example>
     </para>
     <para>The <varname>groupName</varname> is the name of logical name of the cluster.  All nodes within the
       cluster must use the same <varname>groupName</varname> in order to be considered part of the cluster.</para>

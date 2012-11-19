@@ -21,6 +21,41 @@
 -->
 
 <section id="Java-Broker-Stores-Memory-Store">
-<title>Memory Store</title>
+  <title>Memory Store</title>
+  <para>
+    The Java broker has an in-memory message store implementation.
+    This section will detail configuration for using the MemoryMessageStore.
+  </para>
+  <para>
+    Note: when using this store, the broker will store both persistent and non-persistent messages
+    in memory, which is to say that neither will be available following a broker restart, and the
+    ability to store new messages will be entirely constrained by the JVM heap size.
+  </para>
+
+  <section role="h3" id="Java-Broker-Stores-Derby-Store-Configuration">
+    <title>Configuration</title>
+    <para>
+      In order to use the MemoryMessageStore, you must configure it for each VirtualHost desired by updating the store element
+      to specify the associated store class, as shown below.
+    </para>
+
+    <example>
+      <title>Configuring a VirtualHost to use the MemoryMessageStore</title>
+      <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+        <class>org.apache.qpid.server.store.MemoryMessageStore</class
+      </store>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+]]></programlisting>
+    </example>
+  </section>
+
 
 </section>
