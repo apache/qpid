@@ -21,7 +21,7 @@
 
 <!ENTITY qpidDownloadUrl "http://qpid.apache.org/download.html">
 <!ENTITY qpidProgrammingBook "../../Programming-In-Apache-Qpid/html/">
-<!ENTITY qpidCppBook "../../MQP-Messaging-Broker-CPP-Book/html/">
+<!ENTITY qpidCppBook "../../AMQP-Messaging-Broker-CPP-Book/html/">
 
 <!ENTITY qpidCurrentRelease "0.18">
 
