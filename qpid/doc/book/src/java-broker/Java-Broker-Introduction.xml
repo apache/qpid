@@ -45,7 +45,7 @@
       <para>JMS 1.1 compliance (Java client).</para>
     </listitem>
     <listitem>
-      <para>Transient and persistent message support</para>
+      <para>Persistent and non-persistent (transient) message support</para>
     </listitem>
     <listitem>
       <para>Supports for all common messaging patterns (point-to-point, publish/subscribe, fan-out
@@ -53,15 +53,14 @@
     </listitem>
     <listitem>
       <para>Transaction support including XA<footnote>
-          <para>XA provided by AMQP 0-10 and above</para>
+          <para>XA provided when using AMQP 0-10</para>
         </footnote></para>
     </listitem>
     <listitem>
       <para>Supports for all versions of the AMQP protocol</para>
     </listitem>
     <listitem>
-      <para>Automatic translation between the AMQP protocols allowing clients using different AMQP
-        versions to communicate</para>
+      <para>Automatic message translation, allowing clients using different AMQP versions to communicate with each other.</para>
     </listitem>
     <listitem>
       <para>Pluggable authentication architecture with out-of-the-box support for Kerberos, LDAP,
@@ -70,8 +69,8 @@
     <listitem>
       <para>Pluggable message store architecture with implementations based on <ulink
           url="http://db.apache.org/derby/">Apache Derby</ulink>, <ulink
-          url="&oracleBdbProductOverviewUrl;">Oracle BDB</ulink><footnote>
-          <para>Oracle BDB JE JAR must be downloaded separately.</para>
+          url="&oracleBdbProductOverviewUrl;">Oracle BDB JE</ulink><footnote>
+          <para>Oracle BDB JE must be downloaded separately.</para>
         </footnote>, and Memory Store</para>
     </listitem>
     <listitem>
@@ -82,8 +81,8 @@
       <para>SSL support</para>
     </listitem>
     <listitem>
-      <para>High availability (HA) support<footnote>
-          <para>HA currently available to users of the BDB-store only</para>
+      <para>High availability (HA) support.<footnote>
+          <para>HA currently only available to users of the optional BDB JE HA based message store.</para>
         </footnote></para>
     </listitem>
   </itemizedlist>

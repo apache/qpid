@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="Java-Broker-Miscellaneous">
+  <title>Miscellaneous</title>
+
+  <section role="h2" id="Java-Broker-Miscellaneous-JVM-Verification">
+    <title>JVM Installation verification</title>
+    <section role="h2" id="Java-Broker-Miscellaneous-JVM-Verification-Windows">
+      <title>Verify JVM on Windows</title>
+      <para>
+        Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
+        following at the command prompt:
+      </para>
+      <programlisting><![CDATA[echo %JAVA_HOME%]]></programlisting>
+      <para>
+        If JAVA_HOME is set you will see something similar to the following:
+      </para>
+      <screen><![CDATA[c:"\PROGRA~1"\Java\jdk1.6.0_24\]]>
+      </screen>
+      <para>
+        Then confirm that a Java installation (1.6 or higher) is available:
+      </para>
+      <programlisting><![CDATA[java -version]]></programlisting>
+      <para>
+        If java is available on the path, output similar to the following will be seen:
+      </para>
+      <screen><![CDATA[java version "1.6.0_24"
+Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
+Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)]]></screen>
+    </section>
+
+    <section role="h2" id="Java-Broker-Miscellaneous-JVM-Verification-Unix">
+      <title>Verify JVM on Windows</title>
+      <para>
+        Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
+        following at the command prompt:
+      </para>
+      <programlisting><![CDATA[echo $JAVA_HOME]]></programlisting>
+      <para>
+        If JAVA_HOME is set you will see something similar to the following:
+      </para>
+      <screen><![CDATA[/usr/java/jdk1.6.0_35]]>
+      </screen>
+      <para>
+        Then confirm that a Java installation (1.6 or higher) is available:
+      </para>
+      <programlisting><![CDATA[java -version]]></programlisting>
+      <para>
+        If java is available on the path, output similar to the following will be seen:
+      </para>
+      <screen><![CDATA[java version "1.6.0_35"
+Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-11M3811)
+Java HotSpot(TM) 64-Bit Server VM (build 20.10-b01-428, mixed mode)]]></screen>
+    </section>
+  </section>
+</chapter>

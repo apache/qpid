@@ -35,11 +35,17 @@
     <title>Prerequisites</title>
     <section role="h3" id="Java-Broker-Installation-Prerequistes-Java">
       <title>Java Platform</title>
-      <para>The Java Broker is an 100% Java implementation and as such it can be used on any operating
-        system supporting Java 1.6 or higher. This includes Linux, Solaris and Mac OS X, Windows XP/Vista/7.</para>
-      <para>The Java Broker has been tested with Java implementations from both Oracle and IBM.  Whatever
-      platform you chose, it is recommended that you ensure it is patched with any critical updates made
-      available from the vendor.</para>
+      <para>
+        The Java Broker is an 100% Java implementation and as such it can be used on any operating
+        system supporting Java 1.6 or higher. This includes Linux, Solaris, Mac OS X, and Windows XP/Vista/7/8.</para>
+      <para>
+        The broker has been tested with Java implementations from both Oracle and IBM.  Whatever
+        platform you chose, it is recommended that you ensure it is patched with any critical updates made
+        available from the vendor.
+      </para>
+      <para>
+        Verify that your JVM is installed properly by following <link linkend="Java-Broker-Miscellaneous-JVM-Verification">these instructions.</link>
+      </para>
     </section>
     <section role="h3" id="Java-Broker-Installation-Prerequistes-Disk">
       <title>Disk</title>
@@ -65,42 +71,35 @@
       <title>Operating System Account</title>
       <para>Installation or operation of Qpid does <emphasis>not</emphasis> require a privileged account (i.e. root
       on UNIX platforms or Administrator on Windows).  However it is suggested that you use an dedicated account
-      (e.g. qpid) for the installation and operation of Java Broker.</para>
-    </section>
-    <section role="h3" id="Java-Broker-Installation-Prerequistes-OracleBDBJE">
-      <title>Oracle BDB JE JAR (optional)</title>
-      <para>The Java Broker ships with two persistent message store modules, the DerbyMessageStore which uses
-        Apache Derby and the BDBMessageStore which uses Oracle JE BDB.</para>
-      <para>If you wish to use the BDBMessageStore, then you must download the <ulink
-          url="&oracleJeDownloadUrl;">Oracle BDB JE JAR version 5.0.x</ulink> from the Oracle
-          website as it cannot be distributed with Qpid owing to licence restrictions.</para>
-      <para>The download has a name in the form je-&oracleBdbProductVersion;.tar.gz. It is recommended that you
-        confirm the integrity of the download by verifying the MD5.</para>
+      (e.g. qpid) for the installation and operation of the Java Broker.</para>
     </section>
   </section>
 
   <section role="h2" id="Java-Broker-Installation-Download">
     <title>Download</title>
-    <para>Download the latest qpid-java-broker-x.x.tar.gz package from <ulink
-        url="&qpidDownloadUrl;">&qpidDownloadUrl;</ulink>. It is recommended that you confirm the
-      integrity of the download by verifying the PGP signature matches that available on the
-      site.</para>
+    <section role="h3" id="Java-Broker-Installation-Download-Release">
+      <title>Broker Release</title>
+      <para>You can download the latest qpid-java-broker-&qpidCurrentRelease;.tar.gz package from the <ulink
+        url="&qpidDownloadUrl;">Download Page</ulink>.
+      </para>
+      <para> It is recommended that you confirm the integrity of the download by verifying the PGP signature
+        matches that available on the site. Instrutions are given on the download page.
+      </para>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-Download-OptionalDependencies">
+      <title>Optional Dependencies</title>
+      <para>The broker has an optional message store implementations backed by Oracle BDB JE. If you wish to use these
+        stores you will need to provide the optional Oracle BDB JE dependency. For more details, see <xref linkend="Java-Broker-Stores-BDB-Store"></xref>
+      </para>
+    </section>
   </section>
 
   <section role="h2" id="Java-Broker-Installation-InstallationWindows">
     <title>Installation on Windows</title>
-    <para>Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
-      following at the command prompt:</para>
-    <programlisting><![CDATA[echo %JAVA_HOME%]]></programlisting>
-    <para>if JAVA_HOME is set you will see something similar to the following:</para>
-    <screen><![CDATA[c:"\PROGRA~1"\Java\jdk1.6.0_24\]]>
-    </screen>
-    <para>Then confirm that a Java installation (1.6 or higher) is available:</para>
-    <programlisting><![CDATA[java -version]]></programlisting>
-    <para>If java is available on the path, output similar to the following will be seen:</para>
-    <screen><![CDATA[java version "1.6.0_24"
-Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
-Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)]]></screen>
+    <para>
+      Firstly, verify that your JVM is installed properly by following
+      <link linkend="Java-Broker-Miscellaneous-JVM-Verification-Windows">these instructions.</link>
+    </para>
     <para>Now chose a directory for Qpid broker installation.  This directory will be used for the Qpid JARs and configuration files.
       It need not be the same location as the store used for the persistent messages or the log file (you will chose this
       location later).   For the remainder this example we will assumed that location c:\qpid has been chosen.</para>
@@ -121,13 +120,6 @@ Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)]]></screen>
 07/20/2012  08:10 PM             1,346 README.txt
                3 File(s)         71,129 bytes
                5 Dir(s)  743,228,796,928 bytes free</screen>
-    <section role="h3" id="Java-Broker-Installation-InstallationWindows-OracleBDBJE">
-      <title>Installation of Oracle BDB JE JAR (optional)</title>
-      <para>If you wish to use the BDBMessageStore, copy the je-&oracleBdbProductVersion;.jar downloaded
-        <link linkend="Java-Broker-Installation-Prerequistes-OracleBDBJE">above</link> into the following directory.</para>
-      <programlisting>mkdir c:\qpid\qpid-broker-x.x\lib\opt
-copy je-&oracleBdbProductVersion;.jar c:\qpid\qpid-broker-x.x\lib\opt</programlisting>
-    </section>
     <section role="h3" id="Java-Broker-Installation-InstallationWindows-SettingQPIDWORK">
       <title>Setting the working directory</title>
       <para>Qpid requires a work directory.  This directory is used for the default location of the Qpid log
@@ -138,22 +130,20 @@ copy je-&oracleBdbProductVersion;.jar c:\qpid\qpid-broker-x.x\lib\opt</programli
       <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
          on start-up.</para>
     </section>
+    <section role="h3" id="Java-Broker-Installation-InstallationWindows-OptionalDependencies">
+      <title>Optional Dependencies</title>
+      <para>The broker has an optional message store implementations backed by Oracle BDB JE. If you wish to use these
+        stores you will need to provide the optional Oracle BDB JE dependency. For more details, see <xref linkend="Java-Broker-Stores-BDB-Store"></xref>
+      </para>
+    </section>
   </section>
 
   <section role="h2" id="Java-Broker-Installation-InstallationUnix">
     <title>Installation on UNIX platforms</title>
-    <para>Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
-      following at the command prompt:</para>
-    <programlisting><![CDATA[echo $JAVA_HOME]]></programlisting>
-    <para>if JAVA_HOME is set you will see something similar to the following:</para>
-    <screen><![CDATA[/usr/java/jdk1.6.0_35]]>
-    </screen>
-    <para>Then confirm that a Java installation (1.6 or higher) is available:</para>
-    <programlisting><![CDATA[java -version]]></programlisting>
-    <para>If java is available on the path, output similar to the following will be seen:</para>
-    <screen><![CDATA[java version "1.6.0_35"
-Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-11M3811)
-Java HotSpot(TM) 64-Bit Server VM (build 20.10-b01-428, mixed mode)]]></screen>
+    <para>
+      Firstly, verify that your JVM is installed properly by following
+      <link linkend="Java-Broker-Miscellaneous-JVM-Verification-Unix">these instructions.</link>
+    </para>
     <para>Now chose a directory for Qpid broker installation.  This directory will be used for the Qpid JARs and configuration files.
       It need not be the same location as the store used for the persistent messages or the log file (you will chose this
       location later).   For the remainder this example we will assumed that location /usr/local/qpid has been chosen.</para>
@@ -173,13 +163,6 @@ drwxr-xr-x  10 qpid  qpid    340 30 Sep 00:24 bin
 drwxr-xr-x   9 qpid  qpid    306 21 Aug 23:17 etc
 drwxr-xr-x  34 qpid  qpid   1156 25 Jul 23:22 lib
     </screen>
-    <section role="h3" id="Java-Broker-Installation-InstallationUnix-OracleBDBJE">
-      <title>Installation of Oracle BDB JE JAR (optional)</title>
-      <para>If you wish to use the BDBMessageStore, copy the je-&oracleBdbProductVersion;.jar downloaded
-        <link linkend="Java-Broker-Installation-Prerequistes-OracleBDBJE">above</link> into the following directory.</para>
-      <programlisting>mkdir qpid-broker-x.x/lib/opt
-cp je-&oracleBdbProductVersion;.jar qpid-broker-x.x/lib/opt</programlisting>
-    </section>
     <section role="h3" id="Java-Broker-Installation-InstallationUnix-SettingQPIDWORK">
       <title>Setting the working directory</title>
       <para>Qpid requires a work directory.  This directory is used for the default location of the Qpid log
@@ -190,6 +173,12 @@ cp je-&oracleBdbProductVersion;.jar qpid-broker-x.x/lib/opt</programlisting>
       </screen>
       <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
          on start-up.
+      </para>
+    </section>
+    <section role="h3" id="Java-Broker-Installation-InstallationUnix-OptionalDependencies">
+      <title>Optional Dependencies</title>
+      <para>The broker has an optional message store implementations backed by Oracle BDB JE. If you wish to use these
+        stores you will need to provide the optional Oracle BDB JE dependency. For more details, see <xref linkend="Java-Broker-Stores-BDB-Store"></xref>
       </para>
     </section>
   </section>
