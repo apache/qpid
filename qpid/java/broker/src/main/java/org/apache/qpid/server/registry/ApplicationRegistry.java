@@ -165,6 +165,7 @@ public class ApplicationRegistry implements IApplicationRegistry
     public ApplicationRegistry(ConfigurationEntryStore store)
     {
         _store = store;
+        initialiseStatistics();
     }
 
     public void initialise() throws Exception
@@ -181,7 +182,6 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
-            initialiseStatistics();
 
             logStartupMessages(CurrentActor.get());
 
@@ -194,8 +194,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
             getVirtualHostRegistry().setDefaultVirtualHostName(configuration.getDefaultVirtualHost());
-            initialiseStatisticsReporting();
-
 
             // We have already loaded the BrokerMessages class by this point so we
             // need to refresh the locale setting in case we had a different value in
@@ -234,12 +232,8 @@ public class ApplicationRegistry implements IApplicationRegistry
         if (report > 0L && (broker || virtualhost))
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-
-
-
-            _reportingTimer.scheduleAtFixedRate(new StatisticsReportingTask(broker, virtualhost, reset),
-                                                report / 2,
-                                                report);
+            StatisticsReportingTask task = new StatisticsReportingTask(broker, virtualhost, reset, _rootMessageLogger);
+            _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
         }
     }
 
@@ -248,21 +242,23 @@ public class ApplicationRegistry implements IApplicationRegistry
         private final int DELIVERED = 0;
         private final int RECEIVED = 1;
 
-        private boolean _broker;
-        private boolean _virtualhost;
-        private boolean _reset;
+        private final boolean _broker;
+        private final boolean _virtualhost;
+        private final boolean _reset;
+        private final RootMessageLogger _logger;
 
-
-        public StatisticsReportingTask(boolean broker, boolean virtualhost, boolean reset)
+        public StatisticsReportingTask(boolean broker, boolean virtualhost, boolean reset, RootMessageLogger logger)
         {
             _broker = broker;
             _virtualhost = virtualhost;
             _reset = reset;
+            _logger = logger;
         }
 
         public void run()
         {
-            CurrentActor.set(new AbstractActor(ApplicationRegistry.getInstance().getRootMessageLogger()) {
+            CurrentActor.set(new AbstractActor(_logger)
+            {
                 public String getLogMessage()
                 {
                     return "[" + Thread.currentThread().getName() + "] ";
@@ -308,6 +304,7 @@ public class ApplicationRegistry implements IApplicationRegistry
      * @return the IApplicationRegistry instance
      * @throws IllegalStateException if no registry instance has been initialised.
      */
+    @Deprecated
     public static IApplicationRegistry getInstance() throws IllegalStateException
     {
         IApplicationRegistry iApplicationRegistry = _instance.get();
