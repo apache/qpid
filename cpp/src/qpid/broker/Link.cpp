@@ -292,8 +292,8 @@ void Link::opened() {
     Mutex::ScopedLock mutex(lock);
     if (!connection) return;
 
-    if (!hideManagement() && connection->GetManagementObject()) {
-        mgmtObject->set_connectionRef(connection->GetManagementObject()->getObjectId());
+    if (!hideManagement() && connection->GetManagementObjectShared()) {
+        mgmtObject->set_connectionRef(connection->GetManagementObjectShared()->getObjectId());
     }
 
     // Get default URL from known-hosts if not already set
@@ -669,7 +669,7 @@ uint32_t Link::encodedSize() const
         + password.size() + 1;
 }
 
-ManagementObject::shared_ptr Link::GetManagementObject (void) const
+ManagementObject::shared_ptr Link::GetManagementObjectShared (void) const
 {
     return mgmtObject;
 }

@@ -71,7 +71,7 @@ class HaBroker : public management::Manageable
     void initialize();
 
     // Implement Manageable.
-    qpid::management::ManagementObject::shared_ptr GetManagementObject() const { return mgmtObject; }
+    qpid::management::ManagementObject::shared_ptr GetManagementObjectShared() const { return mgmtObject; }
     management::Manageable::status_t ManagementMethod (
         uint32_t methodId, management::Args& args, std::string& text);
 

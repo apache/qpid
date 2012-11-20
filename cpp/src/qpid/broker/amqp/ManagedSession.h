@@ -40,7 +40,7 @@ class ManagedSession : public qpid::management::Manageable, public OwnershipToke
   public:
     ManagedSession(Broker& broker, ManagedConnection& parent, const std::string id);
     virtual ~ManagedSession();
-    qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
+    qpid::management::ManagementObject::shared_ptr GetManagementObjectShared() const;
     bool isLocal(const ConnectionToken* t) const;
     void incomingMessageReceived();
     void incomingMessageAccepted();
