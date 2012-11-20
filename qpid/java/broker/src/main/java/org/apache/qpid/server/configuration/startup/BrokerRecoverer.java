@@ -3,7 +3,6 @@ package org.apache.qpid.server.configuration.startup;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -12,7 +11,6 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
@@ -21,7 +19,6 @@ import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 {
-    private static final Logger LOGGER = Logger.getLogger(BrokerRecoverer.class);
 
     private final IApplicationRegistry _registry;
     private final PortFactory _portFactory;
@@ -62,7 +59,6 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         return broker;
     }
 
-    // XXX unit test this
     private void wireUpConfiguredObjects(BrokerAdapter broker, Map<String,Object> brokerAttributes)
     {
         AuthenticationProvider defaultAuthenticationProvider = null;
@@ -70,7 +66,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         int numberOfAuthenticationProviders = authenticationProviders.size();
         if (numberOfAuthenticationProviders == 0)
         {
-        	throw new IllegalConfigurationException("No authentication provider was onfigured");
+            throw new IllegalConfigurationException("No authentication provider was onfigured");
         }
         else if (numberOfAuthenticationProviders == 1)
         {
@@ -81,9 +77,9 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
             String name = (String) brokerAttributes.get(Broker.DEFAULT_AUTHENTICATION_PROVIDER);
             if (name == null)
             {
-            	throw new IllegalConfigurationException("Multiple authentication providers defined, but no default was configured.");
+                throw new IllegalConfigurationException("Multiple authentication providers defined, but no default was configured.");
             }
-            
+
             defaultAuthenticationProvider = getAuthenticationProviderByName(broker, name);
         }
         broker.setDefaultAuthenticationProvider(defaultAuthenticationProvider);

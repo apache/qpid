@@ -27,6 +27,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
@@ -48,12 +49,26 @@ public class TestApplicationRegistry extends ApplicationRegistry
     @Override
     public void initialise() throws Exception
     {
+        System.setProperty(BrokerProperties.PROPERTY_NO_STATUS_UPDATES, "true");
         LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
 
         super.initialise();
 
         CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));
         GenericActor.setDefaultMessageLogger(new NullRootMessageLogger());
+    }
+
+    @Override
+    public void close()
+    {
+        try
+        {
+            super.close();
+        }
+        finally
+        {
+            System.clearProperty(BrokerProperties.PROPERTY_NO_STATUS_UPDATES);
+        }
     }
 
     private static ConfigurationEntryStore createStore(Configuration config) throws ConfigurationException

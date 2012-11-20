@@ -23,6 +23,7 @@ package org.apache.qpid.server.model.adapter;
 import static org.apache.qpid.server.util.MapValueConverter.getLongAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private int _maximumDeliveryCount;
     private boolean _deadLetterQueueEnabled;
     private long _housekeepingCheckPeriod;
-
+    private String _defaultVirtualHost;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, IApplicationRegistry instance,
             AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
@@ -105,6 +106,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _maximumDeliveryCount = getIntegerAttribute(MAXIMUM_DELIVERY_ATTEMPTS, attributes, 0);
         _deadLetterQueueEnabled = getBooleanAttribute(DEAD_LETTER_QUEUE_ENABLED, attributes, false);
         _housekeepingCheckPeriod = getLongAttribute(HOUSEKEEPING_CHECK_PERIOD, attributes, Long.getLong(BrokerProperties.PROPERTY_HOUSE_KEEPING_CHECK_PERIOD, BrokerProperties.DEFAULT_HOUSEKEEPING_PERIOD));
+        _defaultVirtualHost = getStringAttribute(DEFAULT_VIRTUAL_HOST, attributes, null);
     }
 
     public Collection<VirtualHost> getVirtualHosts()
@@ -452,9 +454,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             // TODO
         }
-        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
+        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name) && _defaultAuthenticationProvider != null)
         {
-            return getDefaultAuthenticationProvider();
+            return _defaultAuthenticationProvider.getName();
+        }
+        else if (DEFAULT_VIRTUAL_HOST.equals(name) && _defaultVirtualHost != null)
+        {
+            return _defaultVirtualHost;
         }
         else if (ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
         {

@@ -65,5 +65,5 @@ public interface AuthenticationProvider extends ConfiguredObject
      */
     SubjectCreator getSubjectCreator();
 
-	void setGroupAccessor(GroupPrincipalAccessor groupPrincipalAccessor);
+    void setGroupAccessor(GroupPrincipalAccessor groupPrincipalAccessor);
 }

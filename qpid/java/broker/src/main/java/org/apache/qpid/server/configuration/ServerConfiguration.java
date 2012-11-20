@@ -105,7 +105,6 @@ public class ServerConfiguration extends AbstractConfiguration
         envVarMap.put(BrokerProperties.PROPERTY_MINIMUM_ALERT_REPEAT_GAP, "minimumAlertRepeatGap");
         envVarMap.put(BrokerProperties.PROPERTY_FLOW_CAPACITY, "capacity");
         envVarMap.put(BrokerProperties.PROPERTY_FLOW_RESUME_CAPACITY, "flowResumeCapacity");
-        envVarMap.put(BrokerProperties.PROPERTY_STATUS_UPDATES, "status-updates");
     }
 
     /**

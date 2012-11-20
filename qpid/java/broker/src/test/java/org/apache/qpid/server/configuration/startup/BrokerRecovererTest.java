@@ -77,6 +77,42 @@ public class BrokerRecovererTest extends TestCase
         _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1));
     }
 
+    public void testCreateBrokerAttributes()
+    {
+        String[] attributesNames = { Broker.DEFAULT_VIRTUAL_HOST, Broker.DEFAULT_AUTHENTICATION_PROVIDER, Broker.ALERT_THRESHOLD_MESSAGE_AGE,
+                Broker.ALERT_THRESHOLD_MESSAGE_COUNT, Broker.ALERT_THRESHOLD_QUEUE_DEPTH, Broker.ALERT_THRESHOLD_MESSAGE_SIZE,
+                Broker.ALERT_REPEAT_GAP, Broker.FLOW_CONTROL_SIZE_BYTES, Broker.FLOW_CONTROL_RESUME_SIZE_BYTES, Broker.MAXIMUM_DELIVERY_ATTEMPTS,
+                Broker.DEAD_LETTER_QUEUE_ENABLED, Broker.HOUSEKEEPING_CHECK_PERIOD };
+        Object[] attributeValues = { "test", "authenticationProvider1", 9l, 8l, 7l, 6l, 5l, 4l, 3l, 2, true, 1l };
+        Map<String, Object> attributes = new HashMap<String, Object>();
+
+        for (int i = 0; i < attributesNames.length; i++)
+        {
+            attributes.put(attributesNames[i], String.valueOf(attributeValues[i]));
+        }
+
+        when(_brokerEntry.getAttributes()).thenReturn(attributes);
+
+        final ConfigurationEntry virtualHostEntry = mock(ConfigurationEntry.class);
+        String typeName = VirtualHost.class.getSimpleName();
+        when(virtualHostEntry.getType()).thenReturn(typeName);
+        _brokerEntryChildren.put(typeName, Arrays.asList(virtualHostEntry));
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getName()).thenReturn("test");
+
+        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[] { virtualHostEntry, _authenticationProviderEntry1 },
+                new ConfiguredObject[] { virtualHost, _authenticationProvider1 });
+        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
+        assertNotNull(broker);
+        assertEquals(_brokerId, broker.getId());
+
+        for (int i = 0; i < attributesNames.length; i++)
+        {
+            Object attributeValue = broker.getAttribute(attributesNames[i]);
+            assertEquals("Unexpected value of attribute '" + attributesNames[i] + "'", attributeValues[i], attributeValue);
+        }
+    }
+
     public void testCreateBrokerWithVirtualHost()
     {
         final ConfigurationEntry virtualHostEntry = mock(ConfigurationEntry.class);
@@ -96,8 +132,6 @@ public class BrokerRecovererTest extends TestCase
         assertEquals(_brokerId, broker.getId());
         assertEquals(1, broker.getVirtualHosts().size());
         assertEquals(virtualHost, broker.getVirtualHosts().iterator().next());
-
-        // XXX test top-level attributes eg status-updates
     }
 
     public void testCreateBrokerWithPorts()

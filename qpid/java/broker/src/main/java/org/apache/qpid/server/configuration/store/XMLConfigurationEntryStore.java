@@ -121,6 +121,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         brokerAttributes.put(Broker.MAXIMUM_DELIVERY_ATTEMPTS, _serverConfiguration.getMaxDeliveryCount());
         brokerAttributes.put(Broker.DEAD_LETTER_QUEUE_ENABLED, _serverConfiguration.isDeadLetterQueueEnabled());
         brokerAttributes.put(Broker.HOUSEKEEPING_CHECK_PERIOD, _serverConfiguration.getHousekeepingCheckPeriod());
+        brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, _serverConfiguration.getDefaultVirtualHost());
 
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, _serverConfiguration.getDefaultAuthenticationManager());
         ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, Broker.class.getSimpleName(), brokerAttributes,

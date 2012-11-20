@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
@@ -202,8 +203,8 @@ public class ApplicationRegistry implements IApplicationRegistry
             BrokerMessages.reload();
 
             // Create the RootLogger to be used during broker operation
-            // XXX this setting should be retrieved from the broker
-            _rootMessageLogger = new Log4jMessageLogger(configuration.getStatusUpdatesEnabled()); // _broker.getStatusUpdatesEnabled()
+            _rootMessageLogger = new Log4jMessageLogger(!Boolean.getBoolean(BrokerProperties.PROPERTY_NO_STATUS_UPDATES));
+            initialiseStatisticsReporting();
 
             CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
             GenericActor.setDefaultMessageLogger(_rootMessageLogger);

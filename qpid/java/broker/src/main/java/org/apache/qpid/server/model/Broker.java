@@ -45,6 +45,7 @@ public interface Broker extends ConfiguredObject
     String TIME_TO_LIVE = "timeToLive";
     String UPDATED = "updated";
     String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
+    String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
 
     String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
     String ALERT_THRESHOLD_MESSAGE_COUNT = "alertThresholdMessageCount";
@@ -76,6 +77,7 @@ public interface Broker extends ConfiguredObject
                               TIME_TO_LIVE,
                               UPDATED,
                               DEFAULT_AUTHENTICATION_PROVIDER,
+                              DEFAULT_VIRTUAL_HOST,
                               ALERT_THRESHOLD_MESSAGE_AGE,
                               ALERT_THRESHOLD_MESSAGE_COUNT,
                               ALERT_THRESHOLD_QUEUE_DEPTH,
