@@ -177,7 +177,7 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
             mgmtExchange->set_autoDelete(false);
             agent->addObject(mgmtExchange, 0, durable);
             if (broker)
-                brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObject());
+                brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObjectShared());
         }
     }
 }
@@ -198,7 +198,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             mgmtExchange->set_arguments(ManagementAgent::toMap(args));
             agent->addObject(mgmtExchange, 0, durable);
             if (broker)
-                brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObject());
+                brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObjectShared());
         }
     }
 
@@ -227,7 +227,7 @@ void Exchange::setAlternate(Exchange::shared_ptr _alternate)
     alternate = _alternate;
     if (mgmtExchange != 0) {
         if (alternate.get() != 0)
-            mgmtExchange->set_altExchange(alternate->GetManagementObject()->getObjectId());
+            mgmtExchange->set_altExchange(alternate->GetManagementObjectShared()->getObjectId());
         else
             mgmtExchange->clr_altExchange();
     }
@@ -294,7 +294,7 @@ void Exchange::recoveryComplete(ExchangeRegistry& exchanges)
     }
 }
 
-ManagementObject::shared_ptr Exchange::GetManagementObject (void) const
+ManagementObject::shared_ptr Exchange::GetManagementObjectShared (void) const
 {
     return mgmtExchange;
 }
@@ -352,7 +352,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
 Exchange::Binding::~Binding ()
 {
     if (mgmtBinding != 0) {
-        _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObject());
+        _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObjectShared());
         if (mo != 0)
             mo->dec_bindingCount();
         mgmtBinding->resourceDestroy ();
@@ -367,7 +367,7 @@ void Exchange::Binding::startManagement()
         if (broker != 0) {
             ManagementAgent* agent = broker->getManagementAgent();
             if (agent != 0) {
-                _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObject());
+                _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObjectShared());
                 if (mo != 0) {
                     management::ObjectId queueId = mo->getObjectId();
 
@@ -383,7 +383,7 @@ void Exchange::Binding::startManagement()
     }
 }
 
-ManagementObject::shared_ptr Exchange::Binding::GetManagementObject () const
+ManagementObject::shared_ptr Exchange::Binding::GetManagementObjectShared () const
 {
     return mgmtBinding;
 }

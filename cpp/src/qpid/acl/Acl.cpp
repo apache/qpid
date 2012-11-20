@@ -317,7 +317,7 @@ Acl::~Acl(){
     broker->getConnectionObservers().remove(connectionCounter);
 }
 
-ManagementObject::shared_ptr Acl::GetManagementObject(void) const
+ManagementObject::shared_ptr Acl::GetManagementObjectShared(void) const
 {
     return mgmtObject;
 }

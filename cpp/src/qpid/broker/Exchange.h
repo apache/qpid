@@ -58,7 +58,7 @@ public:
                 framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
         ~Binding();
         void startManagement();
-        management::ManagementObject::shared_ptr GetManagementObject() const;
+        management::ManagementObject::shared_ptr GetManagementObjectShared() const;
     };
 
 private:
@@ -210,7 +210,7 @@ public:
     static QPID_BROKER_EXTERN Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
     // Manageable entry points
-    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject(void) const;
+    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObjectShared(void) const;
 
     // Federation hooks
     class DynamicBridge {

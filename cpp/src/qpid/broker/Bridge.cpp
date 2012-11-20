@@ -298,7 +298,7 @@ uint32_t Bridge::encodedSize() const
         + 2;              // sync
 }
 
-management::ManagementObject::shared_ptr Bridge::GetManagementObject (void) const
+management::ManagementObject::shared_ptr Bridge::GetManagementObjectShared (void) const
 {
     return mgmtObject;
 }

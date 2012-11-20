@@ -38,7 +38,7 @@ ManagedSession::ManagedSession(Broker& broker, ManagedConnection& p, const std::
         session->set_attached(true);
         session->set_detachedLifespan(0);
         session->clr_expireTime();
-        session->set_connectionRef(parent.GetManagementObject()->getObjectId());
+        session->set_connectionRef(parent.GetManagementObjectShared()->getObjectId());
         agent->addObject(session);
     }
 }
@@ -48,7 +48,7 @@ ManagedSession::~ManagedSession()
     if (session) session->resourceDestroy();
 }
 
-qpid::management::ManagementObject::shared_ptr ManagedSession::GetManagementObject() const
+qpid::management::ManagementObject::shared_ptr ManagedSession::GetManagementObjectShared() const
 {
     return session;
 }
