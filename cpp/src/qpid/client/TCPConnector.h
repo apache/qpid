@@ -80,6 +80,7 @@ class TCPConnector : public Connector, public sys::Codec
     void close();
     void send(framing::AMQFrame& frame);
     void abort();
+    void connectAborted();
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
