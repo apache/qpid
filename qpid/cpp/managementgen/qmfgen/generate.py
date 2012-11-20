@@ -307,10 +307,21 @@ class Generator:
   def testGenLogs (self, variables):
     return variables["genLogs"]
 
+  def testInBroker (self, variables):
+    return variables['genForBroker']
+
   def genDisclaimer (self, stream, variables):
     prefix = variables["commentPrefix"]
     stream.write (prefix + " This source file was created by a code generator.\n")
     stream.write (prefix + " Please do not edit.")
+
+  def genExternClass (self, stream, variables):
+    if variables['genForBroker']:
+      stream.write("QPID_BROKER_CLASS_EXTERN")
+
+  def genExternMethod (self, stream, variables):
+    if variables['genForBroker']:
+      stream.write("QPID_BROKER_EXTERN")
 
   def fileExt (self, path):
     dot = path.rfind (".")
