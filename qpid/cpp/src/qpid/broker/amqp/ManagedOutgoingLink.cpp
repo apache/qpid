@@ -37,7 +37,7 @@ ManagedOutgoingLink::ManagedOutgoingLink(Broker& broker, Queue& q, ManagedSessio
 {
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent) {
-        subscription = _qmf::Subscription::shared_ptr(new _qmf::Subscription(agent, this, &p, q.GetManagementObject()->getObjectId(), id,
+        subscription = _qmf::Subscription::shared_ptr(new _qmf::Subscription(agent, this, &p, q.GetManagementObjectShared()->getObjectId(), id,
                                                            false/*FIXME*/, true/*FIXME*/, topic, qpid::types::Variant::Map()));
         agent->addObject(subscription);
         subscription->set_creditMode("n/a");
@@ -48,7 +48,7 @@ ManagedOutgoingLink::~ManagedOutgoingLink()
     if (subscription != 0) subscription->resourceDestroy();
 }
 
-qpid::management::ManagementObject::shared_ptr ManagedOutgoingLink::GetManagementObject() const
+qpid::management::ManagementObject::shared_ptr ManagedOutgoingLink::GetManagementObjectShared() const
 {
     return subscription;
 }

@@ -123,7 +123,7 @@ class TestManageable : public qpid::management::Manageable
         mgmtObj = tmp;
     };
     ~TestManageable() { mgmtObj.reset(); }
-    management::ManagementObject::shared_ptr GetManagementObject() const { return mgmtObj; };
+    management::ManagementObject::shared_ptr GetManagementObjectShared() const { return mgmtObj; };
     static void validateTestObjectProperties(_qmf::TestObject& to)
     {
         // verify the default values are as expected.  We don't check 'string1',
@@ -209,11 +209,11 @@ QPID_AUTO_TEST_CASE(v1ObjPublish)
 
     // create a manageable test object
     TestManageable *tm = new TestManageable(agent, std::string("obj1"));
-    uint32_t objLen = tm->GetManagementObject()->writePropertiesSize();
+    uint32_t objLen = tm->GetManagementObjectShared()->writePropertiesSize();
 
     Receiver r1 = fix->createV1DataIndRcvr("org.apache.qpid.broker.mgmt.test", "#");
 
-    agent->addObject(tm->GetManagementObject(), 1);
+    agent->addObject(tm->GetManagementObjectShared(), 1);
 
     // wait for the object to be published
     Message m1;
@@ -234,7 +234,7 @@ QPID_AUTO_TEST_CASE(v1ObjPublish)
 
     // destroy the object
 
-    tm->GetManagementObject()->resourceDestroy();
+    tm->GetManagementObjectShared()->resourceDestroy();
 
     // wait for the deleted object to be published
 
@@ -272,9 +272,9 @@ QPID_AUTO_TEST_CASE(v2ObjPublish)
 
     TestManageable *tm = new TestManageable(agent, std::string("obj2"));
 
-    Receiver r1 = fix->createV2DataIndRcvr(tm->GetManagementObject()->getPackageName(), "#");
+    Receiver r1 = fix->createV2DataIndRcvr(tm->GetManagementObjectShared()->getPackageName(), "#");
 
-    agent->addObject(tm->GetManagementObject(), "testobj-1");
+    agent->addObject(tm->GetManagementObjectShared(), "testobj-1");
 
     // wait for the object to be published
     Message m1;
@@ -295,7 +295,7 @@ QPID_AUTO_TEST_CASE(v2ObjPublish)
 
     // destroy the object
 
-    tm->GetManagementObject()->resourceDestroy();
+    tm->GetManagementObjectShared()->resourceDestroy();
 
     // wait for the deleted object to be published
 
@@ -335,11 +335,11 @@ QPID_AUTO_TEST_CASE(v1ExportDelObj)
 
     // create a manageable test object
     TestManageable *tm = new TestManageable(agent, std::string("myObj"));
-    uint32_t objLen = tm->GetManagementObject()->writePropertiesSize();
+    uint32_t objLen = tm->GetManagementObjectShared()->writePropertiesSize();
 
     Receiver r1 = fix->createV1DataIndRcvr("org.apache.qpid.broker.mgmt.test", "#");
 
-    agent->addObject(tm->GetManagementObject(), 1);
+    agent->addObject(tm->GetManagementObjectShared(), 1);
 
     // wait for the object to be published
     Message m1;
@@ -352,7 +352,7 @@ QPID_AUTO_TEST_CASE(v1ExportDelObj)
     // destroy the object, then immediately export (before the next poll cycle)
 
     ::qpid::management::ManagementAgent::DeletedObjectList delObjs;
-    tm->GetManagementObject()->resourceDestroy();
+    tm->GetManagementObjectShared()->resourceDestroy();
     agent->exportDeletedObjects( delObjs );
     BOOST_CHECK(delObjs.size() == 1);
 
@@ -399,11 +399,11 @@ QPID_AUTO_TEST_CASE(v1ImportDelObj)
 
     // create a manageable test object
     TestManageable *tm = new TestManageable(agent, std::string("anObj"));
-    uint32_t objLen = tm->GetManagementObject()->writePropertiesSize();
+    uint32_t objLen = tm->GetManagementObjectShared()->writePropertiesSize();
 
     Receiver r1 = fix->createV1DataIndRcvr("org.apache.qpid.broker.mgmt.test", "#");
 
-    agent->addObject(tm->GetManagementObject(), 1);
+    agent->addObject(tm->GetManagementObjectShared(), 1);
 
     // wait for the object to be published
     Message m1;
@@ -416,7 +416,7 @@ QPID_AUTO_TEST_CASE(v1ImportDelObj)
     // destroy the object, then immediately export (before the next poll cycle)
 
     ::qpid::management::ManagementAgent::DeletedObjectList delObjs;
-    tm->GetManagementObject()->resourceDestroy();
+    tm->GetManagementObjectShared()->resourceDestroy();
     agent->exportDeletedObjects( delObjs );
     BOOST_CHECK(delObjs.size() == 1);
 
@@ -478,8 +478,8 @@ QPID_AUTO_TEST_CASE(v1ExportFastDelObj)
     // add, then immediately delete and export the object...
 
     ::qpid::management::ManagementAgent::DeletedObjectList delObjs;
-    agent->addObject(tm->GetManagementObject(), 999);
-    tm->GetManagementObject()->resourceDestroy();
+    agent->addObject(tm->GetManagementObjectShared(), 999);
+    tm->GetManagementObjectShared()->resourceDestroy();
     agent->exportDeletedObjects( delObjs );
     BOOST_CHECK(delObjs.size() == 1);
 
@@ -511,8 +511,8 @@ QPID_AUTO_TEST_CASE(v1ImportMultiDelObj)
         // FOR ALL OBJECTS, so objLen will be the same.  Otherwise the
         // decodeV1ObjectUpdates() will fail (v1 lacks explict encoded length).
         TestManageable *tm = new TestManageable(agent, key.str());
-        objLen = tm->GetManagementObject()->writePropertiesSize();
-        agent->addObject(tm->GetManagementObject(), i + 1);
+        objLen = tm->GetManagementObjectShared()->writePropertiesSize();
+        agent->addObject(tm->GetManagementObjectShared(), i + 1);
         tmv.push_back(tm);
     }
 
@@ -531,7 +531,7 @@ QPID_AUTO_TEST_CASE(v1ImportMultiDelObj)
 
     uint32_t delCount = 0;
     for (size_t i = 0; i < objCount; i += 2) {
-        tmv[i]->GetManagementObject()->resourceDestroy();
+        tmv[i]->GetManagementObjectShared()->resourceDestroy();
         delCount++;
     }
 
@@ -604,8 +604,8 @@ QPID_AUTO_TEST_CASE(v2ImportMultiDelObj)
         std::stringstream key;
         key << "testobj-" << i;
         TestManageable *tm = new TestManageable(agent, key.str());
-        if (tm->GetManagementObject()->writePropertiesSize()) {}
-        agent->addObject(tm->GetManagementObject(), key.str());
+        if (tm->GetManagementObjectShared()->writePropertiesSize()) {}
+        agent->addObject(tm->GetManagementObjectShared(), key.str());
         tmv.push_back(tm);
     }
 
@@ -624,7 +624,7 @@ QPID_AUTO_TEST_CASE(v2ImportMultiDelObj)
 
     uint32_t delCount = 0;
     for (size_t i = 0; i < objCount; i += 2) {
-        tmv[i]->GetManagementObject()->resourceDestroy();
+        tmv[i]->GetManagementObjectShared()->resourceDestroy();
         delCount++;
     }
 
@@ -689,12 +689,12 @@ QPID_AUTO_TEST_CASE(v2RapidRestoreObj)
     TestManageable *tm1 = new TestManageable(agent, std::string("obj2"));
     TestManageable *tm2 = new TestManageable(agent, std::string("obj2"));
 
-    Receiver r1 = fix->createV2DataIndRcvr(tm1->GetManagementObject()->getPackageName(), "#");
+    Receiver r1 = fix->createV2DataIndRcvr(tm1->GetManagementObjectShared()->getPackageName(), "#");
 
     // add, then immediately delete and re-add a copy of the object
-    agent->addObject(tm1->GetManagementObject(), "testobj-1");
-    tm1->GetManagementObject()->resourceDestroy();
-    agent->addObject(tm2->GetManagementObject(), "testobj-1");
+    agent->addObject(tm1->GetManagementObjectShared(), "testobj-1");
+    tm1->GetManagementObjectShared()->resourceDestroy();
+    agent->addObject(tm2->GetManagementObjectShared(), "testobj-1");
 
     // expect: a delete notification, then an update notification
     TestObjectVector objs;
