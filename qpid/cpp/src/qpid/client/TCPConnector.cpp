@@ -151,6 +151,11 @@ void TCPConnector::socketClosed(AsynchIO&, const Socket&) {
         shutdownHandler->shutdown();
 }
 
+void TCPConnector::connectAborted() {
+    connector->stop();
+    connectFailed("Connection timedout");
+}
+
 void TCPConnector::abort() {
     // Can't abort a closed connection
     if (!closed) {
@@ -159,8 +164,7 @@ void TCPConnector::abort() {
             aio->requestCallback(boost::bind(&TCPConnector::eof, this, _1));
         } else if (connector) {
             // We're still connecting
-            connector->stop();
-            connectFailed("Connection timedout");
+            connector->requestCallback(boost::bind(&TCPConnector::connectAborted, this));
         }
     }
 }
