@@ -143,6 +143,7 @@ class AsynchConnector : public qpid::sys::AsynchConnector,
 
 private:
     void connComplete(DispatchHandle& handle);
+    void requestedCall(RequestCallback rCb);
 
 private:
     ConnectedCallback connCallback;
@@ -158,6 +159,7 @@ public:
                     FailedCallback failCb);
     void start(Poller::shared_ptr poller);
     void stop();
+    void requestCallback(RequestCallback rCb);
 };
 
 AsynchConnector::AsynchConnector(const Socket& s,
@@ -189,6 +191,18 @@ void AsynchConnector::start(Poller::shared_ptr poller)
 void AsynchConnector::stop()
 {
     stopWatch();
+}
+
+void AsynchConnector::requestCallback(RequestCallback callback) {
+    // TODO creating a function object every time isn't all that
+    // efficient - if this becomes heavily used do something better (what?)
+    assert(callback);
+    DispatchHandle::call(boost::bind(&AsynchConnector::requestedCall, this, callback));
+}
+
+void AsynchConnector::requestedCall(RequestCallback callback) {
+    assert(callback);
+    callback(*this);
 }
 
 void AsynchConnector::connComplete(DispatchHandle& h)
