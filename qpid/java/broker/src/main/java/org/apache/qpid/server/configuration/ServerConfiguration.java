@@ -80,7 +80,6 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final String SECURITY_DEFAULT_AUTH_MANAGER = "security.default-auth-manager";
     public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER = "security.port-mappings.port-mapping.auth-manager";
     public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT = "security.port-mappings.port-mapping.port";
-    public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
     public static final String CONNECTOR_AMQP10ENABLED = "connector.amqp10enabled";
     public static final String CONNECTOR_AMQP010ENABLED = "connector.amqp010enabled";
@@ -302,19 +301,6 @@ public class ServerConfiguration extends AbstractConfiguration
             VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)), null);
             _virtualHosts.put(virtualhost.getName(), virtualhost);
         }
-    }
-
-    /**
-     * Check the configuration file to see if status updates are enabled.
-     *
-     * @return true if status updates are enabled
-     */
-    public boolean getStatusUpdatesEnabled()
-    {
-        // Retrieve the setting from configuration but default to on.
-        String value = getStringValue(STATUS_UPDATES, DEFAULT_STATUS_UPDATES);
-
-        return value.equalsIgnoreCase("on");
     }
 
     /**

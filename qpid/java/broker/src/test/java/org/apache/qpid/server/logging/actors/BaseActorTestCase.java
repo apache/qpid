@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -35,23 +34,20 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     protected RootMessageLogger _rootLogger;
 
     @Override
-    public void configure()
-    {
-        getConfigXml().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
-    }
-
-    @Override
     public void createBroker() throws Exception
     {
         super.createBroker();
 
-        _rawLogger = new UnitTestMessageLogger(getRegistry().getConfiguration().getStatusUpdatesEnabled());
+        _rawLogger = new UnitTestMessageLogger(getRegistry().getRootMessageLogger().isEnabled());
         _rootLogger = _rawLogger;
     }
 
     public void tearDown() throws Exception
     {
-        _rawLogger.clearLogMessages();
+        if(_rawLogger != null)
+        {
+            _rawLogger.clearLogMessages();
+        }
 
         super.tearDown();
     }

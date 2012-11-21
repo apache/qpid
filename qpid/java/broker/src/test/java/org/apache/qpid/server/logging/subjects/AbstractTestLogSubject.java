@@ -258,13 +258,10 @@ public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
     protected abstract void validateLogStatement(String message);
 
     /**
-     * Ensure that when status-updates are off this does not perform logging
-     *
-     * @throws ConfigurationException
+     * Ensure that when status updates are off this does not perform logging
      */
     public void testDisabled()
     {
-
         List<Object> logs = performLog(false);
 
         assertEquals("Log has incorrect message count", 0, logs.size());

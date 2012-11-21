@@ -58,33 +58,6 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         _monitor = new LogMonitor(_outputFile);
     }
 
-    // XXX remove reference on ServerConfiguration
-    protected ServerConfiguration getServerConfig() throws ConfigurationException
-    {
-        ServerConfiguration _serverConfiguration;
-        if (isExternalBroker())
-        {
-            _serverConfiguration = new ServerConfiguration(_configFile)
-            {
-                @Override
-                public void initialise() throws ConfigurationException
-                {
-                    //Overriding initialise to only setup the vhosts and not
-                    //perform the ConfigurationPlugin setup, removing need for
-                    //an ApplicationRegistry to be loaded.
-                    setupVirtualHosts(getConfig());
-                }
-            };
-            _serverConfiguration.initialise();
-        }
-        else
-        {
-            _serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
-        }
-
-        return _serverConfiguration;
-    }
-
     protected void setLogMessagePrefix()
     {
         //set the message prefix to facilitate scraping from the munged test output.

@@ -22,7 +22,7 @@ public class BrokerProperties
     public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
 
-    public static final String PROPERTY_NO_STATUS_UPDATES = "qpid.no_status_updates";
+    public static final String PROPERTY_STATUS_UPDATES = "qpid.status_updates";
 
     private BrokerProperties()
     {

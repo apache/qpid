@@ -22,7 +22,6 @@ package org.apache.qpid.server.logging.actors;
 
 public class BaseConnectionActorTestCase extends BaseActorTestCase
 {
-
     @Override
     public void createBroker() throws Exception
     {

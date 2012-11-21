@@ -62,11 +62,6 @@ public class ServerConfigurationFileTest extends QpidBrokerTestCase
                       _serverConfig.getConfig().getProperty(property));
     }
 
-    public void testStatusUpdates() throws ConfigurationException
-    {
-        validatePropertyDefinedInFile(ServerConfiguration.STATUS_UPDATES);
-    }
-
     public void testLocale() throws ConfigurationException
     {
         validatePropertyDefinedInFile(ServerConfiguration.ADVANCED_LOCALE);

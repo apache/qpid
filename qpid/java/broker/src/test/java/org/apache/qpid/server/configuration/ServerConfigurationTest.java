@@ -129,26 +129,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(23, _serverConfig.getFrameSize());
     }
 
-    public void testGetStatusEnabled() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(ServerConfiguration.DEFAULT_STATUS_UPDATES.equalsIgnoreCase("on"),
-                     _serverConfig.getStatusUpdatesEnabled());
-
-        // Check disabling we set
-        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "off");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getStatusUpdatesEnabled());
-
-        // Check invalid values don't cause error but result in disabled
-        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "Yes Please");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getStatusUpdatesEnabled());
-
-    }
     public void testGetSynchedClocks() throws ConfigurationException
     {
         // Check default

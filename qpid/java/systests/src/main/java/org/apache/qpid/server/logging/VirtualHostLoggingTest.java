@@ -68,7 +68,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         
         try
         {
-            List<String> vhosts = Arrays.asList(getServerConfig().getVirtualHostsNames());
+            List<String> vhosts = Arrays.asList("test");
 
             assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 

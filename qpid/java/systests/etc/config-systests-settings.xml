@@ -96,7 +96,4 @@
     <queue>
         <auto_register>true</auto_register>
     </queue>
-
-    <status-updates>ON</status-updates>
-
 </broker>

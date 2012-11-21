@@ -66,7 +66,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         int numberOfAuthenticationProviders = authenticationProviders.size();
         if (numberOfAuthenticationProviders == 0)
         {
-            throw new IllegalConfigurationException("No authentication provider was onfigured");
+            throw new IllegalConfigurationException("No authentication provider was configured");
         }
         else if (numberOfAuthenticationProviders == 1)
         {

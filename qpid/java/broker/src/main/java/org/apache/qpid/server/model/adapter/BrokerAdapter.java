@@ -454,11 +454,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             // TODO
         }
-        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name) && _defaultAuthenticationProvider != null)
+        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
         {
-            return _defaultAuthenticationProvider.getName();
+            return _defaultAuthenticationProvider == null ? null : _defaultAuthenticationProvider.getName();
         }
-        else if (DEFAULT_VIRTUAL_HOST.equals(name) && _defaultVirtualHost != null)
+        else if (DEFAULT_VIRTUAL_HOST.equals(name))
         {
             return _defaultVirtualHost;
         }

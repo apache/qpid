@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.commons.configuration.ConfigurationException;
-
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.configuration.BrokerProperties;
 
 import java.util.List;
 
@@ -37,14 +35,6 @@ import java.util.List;
  */
 public class AMQPChannelActorTest extends BaseConnectionActorTestCase
 {
-
-    @Override
-    public void configure()
-    {
-        // Prevent defaulting Logging to ON
-    }
-    
-
     @Override
     public void createBroker() throws Exception
     {
@@ -68,8 +58,6 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannel() throws Exception
     {
-        getConfigXml().setProperty("status-updates", "ON");
-
         startBrokerNow();
 
         final String message = sendTestLogMessage(_amqpActor);
@@ -95,18 +83,15 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
         // Verify that the logged message contains the 'ch:1' marker
         assertTrue("Message was not logged as part of channel 1" + logs.get(0),
                    logs.get(0).toString().contains("/ch:1"));
-
     }
 
     /**
-     * Test that if logging is configured to be off in the configuration that
+     * Test that if logging is configured to be off via system property that
      * no logging is presented
-     * @throws ConfigurationException
-     * @throws AMQException
      */
-    public void testChannelLoggingOFF() throws Exception, AMQException
+    public void testChannelLoggingOFF() throws Exception
     {
-        getConfigXml().setProperty("status-updates", "OFF");
+        setTestSystemProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "false");
 
         // Start the broker now.
         startBrokerNow();
@@ -116,107 +101,5 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
         List<Object> logs = _rawLogger.getLogMessages();
 
         assertEquals("Message log size not as expected.", 0, logs.size());
-
     }
-
-      /**
-     * Test that if logging is configured to be off in the configuration that
-     * no logging is presented
-     * @throws ConfigurationException
-     * @throws AMQException
-     */
-    public void testChannelLoggingOfF() throws Exception, AMQException
-    {
-        getConfigXml().setProperty("status-updates", "OfF");
-
-        startBrokerNow();
-
-        sendTestLogMessage(_amqpActor);
-
-        List<Object> logs = _rawLogger.getLogMessages();
-
-        assertEquals("Message log size not as expected.", 0, logs.size());
-
-    }
-
-    /**
-     * Test that if logging is configured to be off in the configuration that
-     * no logging is presented
-     * @throws ConfigurationException
-     * @throws AMQException
-     */
-    public void testChannelLoggingOff() throws Exception, AMQException
-    {
-        getConfigXml().setProperty("status-updates", "Off");
-
-        startBrokerNow();
-
-        sendTestLogMessage(_amqpActor);
-
-        List<Object> logs = _rawLogger.getLogMessages();
-
-        assertEquals("Message log size not as expected.", 0, logs.size());
-
-    }
-
-    /**
-     * Test that if logging is configured to be off in the configuration that
-     * no logging is presented
-     * @throws ConfigurationException
-     * @throws AMQException
-     */
-    public void testChannelLoggingofF() throws Exception, AMQException
-    {
-        getConfigXml().setProperty("status-updates", "ofF");
-
-        startBrokerNow();
-
-        sendTestLogMessage(_amqpActor);
-
-        List<Object> logs = _rawLogger.getLogMessages();
-
-        assertEquals("Message log size not as expected.", 0, logs.size());
-
-    }
-
-    /**
-     * Test that if logging is configured to be off in the configuration that
-     * no logging is presented
-     * @throws ConfigurationException
-     * @throws AMQException
-     */
-    public void testChannelLoggingoff() throws Exception, AMQException
-    {
-        getConfigXml().setProperty("status-updates", "off");
-
-        startBrokerNow();
-
-        sendTestLogMessage(_amqpActor);
-
-        List<Object> logs = _rawLogger.getLogMessages();
-
-        assertEquals("Message log size not as expected.", 0, logs.size());
-
-    }
-
-    /**
-     * Test that if logging is configured to be off in the configuration that
-     * no logging is presented
-     * @throws ConfigurationException
-     * @throws AMQException
-     */
-    public void testChannelLoggingoFf() throws Exception, AMQException
-    {        
-        getConfigXml().setProperty("status-updates", "oFf");
-
-        startBrokerNow();
-
-        sendTestLogMessage(_amqpActor);
-
-        List<Object> logs = _rawLogger.getLogMessages();
-
-        assertEquals("Message log size not as expected.", 0, logs.size());
-
-    }
-
 }

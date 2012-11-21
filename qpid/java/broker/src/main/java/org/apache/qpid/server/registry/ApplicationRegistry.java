@@ -201,7 +201,8 @@ public class ApplicationRegistry implements IApplicationRegistry
             BrokerMessages.reload();
 
             // Create the RootLogger to be used during broker operation
-            _rootMessageLogger = new Log4jMessageLogger(!Boolean.getBoolean(BrokerProperties.PROPERTY_NO_STATUS_UPDATES));
+            boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
+            _rootMessageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
             initialiseStatisticsReporting();
 
             CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
