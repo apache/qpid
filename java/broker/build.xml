@@ -48,9 +48,15 @@
         <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="dos" includes="*.bat"/>
     </target>
 
-    <target name="release-bin-other" depends="release-bin-other-bdbstore" description="copy broker-plugins into module release">
+    <target name="release-bin-other" depends="release-bin-other-lib-opt,release-bin-other-bdbstore,release-bin-copy-broker-plugins"/>
+
+    <target name="release-bin-other-lib-opt" depends="release-bin-other-bdbstore" description="make lib/opt dir in the module release">
+        <mkdir dir="${module.release}/lib/opt"/>
+    </target>
+
+    <target name="release-bin-copy-broker-plugins" description="copy broker-plugins into module release">
         <copy todir="${module.release}/lib/plugins" failonerror="true">
-            <fileset dir="${build.lib}/plugins"/>
+            <fileset dir="${build.lib.broker.plugins}"/>
         </copy>
     </target>
 

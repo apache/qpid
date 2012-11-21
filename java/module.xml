@@ -74,6 +74,7 @@
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
 
+  <property name="module.jar"          location="${build.lib}/${project.name}-${module.name}-${project.version}.jar"/>
   <property name="module.qpid.jar"     location="${module.release.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${module.qpid.jar}"/>
 
@@ -150,15 +151,6 @@
   <path id="module.test.src.path">
     <pathelement location="${module.test.src}"/>
   </path>
-
-  <condition property="module.jar"
-             value="${build.plugins}/${project.name}-${module.name}-${project.version}.jar"
-             else="${build.lib}/${project.name}-${module.name}-${project.version}.jar">
-    <and>
-      <isset property="module.plugin"/>
-      <istrue value="${module.plugin}"/>
-    </and>
-  </condition>
 
   <property name="module.test.jar"
             location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
@@ -248,7 +240,7 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
-    <mkdir dir="${build.plugins}"/>
+    <mkdir dir="${build.lib.broker.plugins}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
@@ -392,8 +384,6 @@
   <property name="QPID_HOME" value="${qpid.home}"/>
   <property name="QPID_WORK" value="${qpid.work}"/>
   <property name="broker.existing.qpid.work" value=""/>
-  <!-- Used by PluginTest -->
-  <property name="example.plugin.target" value="${project.root}/build/lib/plugins"/>
 
   <propertyset id="all.test.systemproperties">
     <propertyref prefix="test"/>
@@ -504,7 +494,7 @@
 
   <target name="postbuild" description="run after a build"/>
 
-  <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
+  <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild,copy-broker-plugin-jars" description="compile and copy resources into build tree"/>
 
   <target name="jar.manifest" depends="compile, copy-module-metainf" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}">
@@ -516,6 +506,10 @@
     <jar destfile="${module.jar}" basedir="${module.classes}">
        <metainf dir="${module.metainf}" />
     </jar>
+  </target>
+
+  <target name="copy-broker-plugin-jars" if="${broker.plugin}" description="copy broker plugins for use in release packaging">
+    <copy file="${module.jar}" todir="${build.lib.broker.plugins}" failonerror="true"/>
   </target>
 
   <target name="copy-module-metainf" depends="copy-metainf-resources" if="module.src.resources.metainf.exists">

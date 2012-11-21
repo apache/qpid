@@ -23,6 +23,8 @@
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-management-jmx=provided -Sqpid-management-common=provided -Sqpid-bdbstore=provided -Sje=provided"/>
 
+    <property name="broker.plugin" value="true"/>
+
     <import file="../../module.xml" />
 
     <target name="bundle" depends="bundle-tasks" />

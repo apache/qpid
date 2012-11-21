@@ -23,6 +23,8 @@
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-management-common=provided"/>
 
+    <property name="broker.plugin" value="true"/>
+
     <property name="broker-plugins-management-jmx.libs" value=""/>
 
     <import file="../../module.xml" />
