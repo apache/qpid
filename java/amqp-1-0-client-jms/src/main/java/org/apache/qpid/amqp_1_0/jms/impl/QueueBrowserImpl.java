@@ -90,10 +90,10 @@ public class QueueBrowserImpl implements QueueBrowser
         }
     }
 
-    private final class MessageEnumeration implements Enumeration<Message>
+    private final class MessageEnumeration implements Enumeration<MessageImpl>
     {
         private Receiver _receiver;
-        private Message _nextElement;
+        private MessageImpl _nextElement;
         private boolean _needNext = true;
 
         MessageEnumeration() throws JMSException
@@ -141,13 +141,13 @@ public class QueueBrowserImpl implements QueueBrowser
             if( _needNext )
             {
                 _needNext = false;
-                _nextElement = _receiver.receive(0L);
+                _nextElement = createJMSMessage(_receiver.receive(0L));
                 if( _nextElement == null )
                 {
                     // Drain to verify there really are no more messages.
                     _receiver.drain();
                     _receiver.drainWait();
-                    _nextElement = _receiver.receive(0L);
+                    _nextElement = createJMSMessage(_receiver.receive(0L));
                     if( _nextElement == null )
                     {
                         close();
@@ -163,11 +163,11 @@ public class QueueBrowserImpl implements QueueBrowser
         }
 
         @Override
-        public Message nextElement()
+        public MessageImpl nextElement()
         {
             if( hasMoreElements() )
             {
-                Message message = _nextElement;
+                MessageImpl message = _nextElement;
                 _nextElement = null;
                 _needNext = true;
                 return message;
@@ -178,4 +178,20 @@ public class QueueBrowserImpl implements QueueBrowser
             }
         }
     }
+
+    MessageImpl createJMSMessage(final Message msg)
+    {
+        if(msg != null)
+        {
+            final MessageImpl message = _session.getMessageFactory().createMessage(_queue, msg);
+            message.setFromQueue(true);
+            message.setFromTopic(false);
+            return message;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
 }
