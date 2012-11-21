@@ -42,7 +42,7 @@
   <property name="build.report"          location="${build}/report"/>
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
-  <property name="build.plugins"         location="${build}/lib/plugins"/>
+  <property name="build.lib.broker.plugins"  location="${build}/lib/broker-plugins"/>
   <property name="build.coverage.report" location="${build}/coverage/report"/>
   <property name="build.coverage.src"    location="${build}/coverage/src"/>
   <property name="build.findbugs"        location="${build}/findbugs"/>
