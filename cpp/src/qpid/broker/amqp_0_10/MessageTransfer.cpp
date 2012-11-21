@@ -116,11 +116,6 @@ void MessageTransfer::computeRequiredCredit()
     requiredCredit = sum.getSize();
     cachedRequiredCredit = true;
 }
-uint32_t MessageTransfer::getRequiredCredit(const qpid::broker::Message& msg)
-{
-    //TODO: may need to reflect annotations and other modifications in this also
-    return get(msg).getRequiredCredit();
-}
 
 qpid::framing::FrameSet& MessageTransfer::getFrames()
 {

@@ -109,7 +109,6 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
     QPID_BROKER_EXTERN bool isLastQMFResponse(const std::string correlation) const;
 
     static bool isImmediateDeliveryRequired(const qpid::broker::Message& message);
-    static uint32_t getRequiredCredit(const qpid::broker::Message&);
     static MessageTransfer& get(qpid::broker::Message& message) {
         return *dynamic_cast<MessageTransfer*>(&message.getEncoding());
     }

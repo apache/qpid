@@ -398,7 +398,8 @@ ostream& operator<<(ostream& o, const ConsumerName& pc) {
 void SemanticState::ConsumerImpl::allocateCredit(const Message& msg)
 {
     Credit original = credit;
-    credit.consume(1, qpid::broker::amqp_0_10::MessageTransfer::getRequiredCredit(msg));
+    boost::intrusive_ptr<const amqp_0_10::MessageTransfer> transfer = protocols.translate(msg);
+    credit.consume(1, transfer->getRequiredCredit());
     QPID_LOG(debug, "Credit allocated for " << ConsumerName(*this)
              << ", was " << original << " now " << credit);
 
@@ -406,9 +407,10 @@ void SemanticState::ConsumerImpl::allocateCredit(const Message& msg)
 
 bool SemanticState::ConsumerImpl::checkCredit(const Message& msg)
 {
-    bool enoughCredit = credit.check(1, qpid::broker::amqp_0_10::MessageTransfer::getRequiredCredit(msg));
+    boost::intrusive_ptr<const amqp_0_10::MessageTransfer> transfer = protocols.translate(msg);
+    bool enoughCredit = credit.check(1, transfer->getRequiredCredit());
     QPID_LOG(debug, "Subscription " << ConsumerName(*this) << " has " << (enoughCredit ? "sufficient " : "insufficient")
-             <<  " credit for message of " << qpid::broker::amqp_0_10::MessageTransfer::getRequiredCredit(msg) << " bytes: "
+             <<  " credit for message of " << transfer->getRequiredCredit() << " bytes: "
              << credit);
     return enoughCredit;
 }
