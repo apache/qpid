@@ -52,16 +52,14 @@
     <title>Oracle BDB JE jar installation</title>
     <para>
       If you wish to use the BDBMessageStore, copy the je-&oracleBdbProductVersion;.jar from within the release
-      downloaded <link linkend="Java-Broker-Stores-BDB-Store-BDBJE-Download">above</link> into an 'opt' sub-directory
+      downloaded <link linkend="Java-Broker-Stores-BDB-Store-BDBJE-Download">above</link> into the 'opt' sub-directory
       of the brokers 'lib' directory.
     </para>
 
     <programlisting>Unix:
-mkdir qpid-broker-&qpidCurrentRelease;/lib/opt
 cp je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;/lib/opt</programlisting>
 
       <programlisting>Windows:
-mkdir qpid-broker-&qpidCurrentRelease;\lib\opt
 copy je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;\lib\opt</programlisting>
   </section>
 
