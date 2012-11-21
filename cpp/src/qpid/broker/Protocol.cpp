@@ -42,6 +42,7 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> ProtocolReg
     for (Protocols::const_iterator i = protocols.begin(); !transfer && i != protocols.end(); ++i) {
         transfer = i->second->translate(m);
     }
+    if (!transfer) throw new Exception("Could not convert message into 0-10");
     return transfer;
 }
 boost::shared_ptr<RecoverableMessage> ProtocolRegistry::recover(qpid::framing::Buffer& b)
