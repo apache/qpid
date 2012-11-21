@@ -53,32 +53,33 @@ namespace amqp {
 class Target
 {
   public:
+    Target(pn_link_t* l) : credit(100), window(0), link(l) {}
     virtual ~Target() {}
-    virtual void flow() = 0;
+    bool flow();
+    bool needFlow();
     virtual void handle(qpid::broker::Message& m) = 0;//TODO: revise this for proper message
-  private:
+  protected:
+    const uint32_t credit;
+    uint32_t window;
+    pn_link_t* link;
 };
 
 class Queue : public Target
 {
   public:
-    Queue(boost::shared_ptr<qpid::broker::Queue> q, pn_link_t* l) : queue(q), link(l) {}
-    void flow();
+    Queue(boost::shared_ptr<qpid::broker::Queue> q, pn_link_t* l) : Target(l), queue(q) {}
     void handle(qpid::broker::Message& m);
   private:
     boost::shared_ptr<qpid::broker::Queue> queue;
-    pn_link_t* link;
 };
 
 class Exchange : public Target
 {
   public:
-    Exchange(boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l) : exchange(e), link(l) {}
-    void flow();
+    Exchange(boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l) : Target(l), exchange(e) {}
     void handle(qpid::broker::Message& m);
   private:
     boost::shared_ptr<qpid::broker::Exchange> exchange;
-    pn_link_t* link;
 };
 
 Session::Session(pn_session_t* s, qpid::broker::Broker& b, ManagedConnection& c, qpid::sys::OutputControl& o)
@@ -169,11 +170,9 @@ void Session::attach(pn_link_t* link)
         if (node.queue) {
             boost::shared_ptr<Target> q(new Queue(node.queue, link));
             targets[link] = q;
-            q->flow();
         } else if (node.exchange) {
             boost::shared_ptr<Target> e(new Exchange(node.exchange, link));
             targets[link] = e;
-            e->flow();
         } else {
             pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
             throw qpid::Exception("Node not found: " + name);/*not-found*/
@@ -253,7 +252,7 @@ void Session::incoming(pn_link_t* link, pn_delivery_t* delivery)
         received->begin();
         Transfer t(delivery, shared_from_this());
         received->end(t);
-        target->second->flow();
+        if (target->second->needFlow()) out.activateOutput();
     }
 }
 void Session::outgoing(pn_link_t* link, pn_delivery_t* delivery)
@@ -283,6 +282,9 @@ bool Session::dispatch()
             accepted(*i, true);
         }
     }
+    for (Targets::iterator t = targets.begin(); t != targets.end(); ++t) {
+        if (t->second->flow()) output = true;
+    }
 
     return output;
 }
@@ -299,24 +301,32 @@ void Session::close()
     deleted = true;
 }
 
-void Queue::flow()
-{
-    pn_link_flow(link, 1);//TODO: proper flow control
-}
-
 void Queue::handle(qpid::broker::Message& message)
 {
     queue->deliver(message);
-}
-
-void Exchange::flow()
-{
-    pn_link_flow(link, 1);//TODO: proper flow control
+    --window;
 }
 
 void Exchange::handle(qpid::broker::Message& message)
 {
     DeliverableMessage deliverable(message, 0);
     exchange->route(deliverable);
+    --window;
 }
+
+bool Target::flow()
+{
+    bool issue = window < credit;
+    if (issue) {
+        pn_link_flow(link, credit - window);//TODO: proper flow control
+        window = credit;
+    }
+    return issue;
+}
+
+bool Target::needFlow()
+{
+    return window <= (credit/2);
+}
+
 }}} // namespace qpid::broker::amqp
