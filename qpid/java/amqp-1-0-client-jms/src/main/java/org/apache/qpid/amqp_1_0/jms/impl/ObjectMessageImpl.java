@@ -40,7 +40,25 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
 {
     static final Symbol CONTENT_TYPE = Symbol.valueOf("application/x-java-serialized-object");
 
-    private Data _objectData;
+    static final Data NULL_OBJECT_DATA;
+    static 
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try
+        {
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(null);
+            oos.flush();
+            oos.close();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+        NULL_OBJECT_DATA = new Data(new Binary(baos.toByteArray()));
+    }
+
+    private Data _objectData = NULL_OBJECT_DATA;
 
     protected ObjectMessageImpl(Header header,
                                 MessageAnnotations messageAnnotations,
