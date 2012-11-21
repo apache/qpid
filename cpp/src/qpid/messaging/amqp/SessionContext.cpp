@@ -144,4 +144,13 @@ void SessionContext::acknowledge(const qpid::framing::SequenceNumber& id, bool c
     }
 }
 
+bool SessionContext::settled()
+{
+    bool result = true;
+    for (SenderMap::iterator i = senders.begin(); i != senders.end(); ++i) {
+        if (!i->second->settled()) result = false;
+    }
+    return result;
+}
+
 }}} // namespace qpid::messaging::amqp

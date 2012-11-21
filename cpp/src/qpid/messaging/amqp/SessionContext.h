@@ -59,6 +59,7 @@ class SessionContext
     boost::shared_ptr<ReceiverContext> nextReceiver(qpid::messaging::Duration timeout);
     uint32_t getReceivable();
     uint32_t getUnsettledAcks();
+    bool settled();
   private:
     friend class ConnectionContext;
     typedef std::map<std::string, boost::shared_ptr<SenderContext> > SenderMap;

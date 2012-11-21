@@ -149,7 +149,14 @@ void ConnectionContext::close()
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (state != CONNECTED) return;
     if (!(pn_connection_state(connection) & PN_LOCAL_CLOSED)) {
-        for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i){
+        for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
+            //wait for outstanding sends to settle
+            while (!i->second->settled()) {
+                QPID_LOG(debug, "Waiting for sends to settle before closing");
+                wait();//wait until message has been confirmed
+            }
+
+
             if (!(pn_session_state(i->second->session) & PN_LOCAL_CLOSED)) {
                 pn_session_close(i->second->session);
             }

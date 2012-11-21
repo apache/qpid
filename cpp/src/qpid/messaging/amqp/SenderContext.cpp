@@ -350,4 +350,10 @@ void SenderContext::configure(pn_terminus_t* target) const
         helper.setNodeProperties(target);
     }
 }
+
+bool SenderContext::settled()
+{
+    return processUnsettled() == 0;
+}
+
 }}} // namespace qpid::messaging::amqp
