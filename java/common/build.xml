@@ -68,11 +68,8 @@
       <arg line='-j -o "${framing.generated.dir}" -t "${project.root}/common/templates" ${xml.spec.list}'/>
       <classpath>
         <pathelement path="${gentools.home}/src" />
-        <fileset dir="${gentools.home}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-        <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
-        <pathelement path="${gentools.home}/lib/velocity-dep-1.4.jar" />
+        <pathelement path="${project.root}/${velocity.jar}" />
+        <pathelement path="${project.root}/${velocity-dep.jar}" />
       </classpath>
     </java>
     <touch file="${gentools.timestamp}" />
