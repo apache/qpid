@@ -120,18 +120,20 @@ void ReceiverContext::configure(pn_terminus_t* source) const
         helper.setNodeProperties(source);
     }
 
-    //filter:
-    pn_data_t* filter = pn_terminus_filter(source);
-    pn_data_put_map(filter);
-    pn_data_enter(filter);
-    pn_data_put_symbol(filter, convert("subject"));
-    //TODO: At present inserting described values into the map doesn't seem to work; correct this once resolved
-    //pn_data_put_described(filter);
-    //pn_data_enter(filter);
-    //pn_data_put_ulong(filter, getFilterDescriptor(address.getSubject()));
-    pn_data_put_string(filter, convert(address.getSubject()));
-    //pn_data_exit(filter);
-    pn_data_exit(filter);
+    if (!address.getSubject().empty()) {
+        //filter:
+        pn_data_t* filter = pn_terminus_filter(source);
+        pn_data_put_map(filter);
+        pn_data_enter(filter);
+        pn_data_put_symbol(filter, convert("subject"));
+        //TODO: At present inserting described values into the map doesn't seem to work; correct this once resolved
+        //pn_data_put_described(filter);
+        //pn_data_enter(filter);
+        //pn_data_put_ulong(filter, getFilterDescriptor(address.getSubject()));
+        pn_data_put_string(filter, convert(address.getSubject()));
+        //pn_data_exit(filter);
+        pn_data_exit(filter);
+    }
 }
 
 bool ReceiverContext::isClosed() const
