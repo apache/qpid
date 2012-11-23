@@ -809,7 +809,7 @@ qpid.name=${project.name}
                deprecation="${javac.deprecation}"
                srcdir="${project.root}/broker/src/velocity/java" >
           <classpath>
-            <pathelement path="${project.root}/${velocity.jar}" />
+            <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
           </classpath>
           <compilerarg line="${javac.compiler.args}"/>
         </javac>
@@ -856,7 +856,7 @@ qpid.name=${project.name}
           <fileset dir="${project.root}/lib/required">
             <include name="**/*.jar"/>
           </fileset>
-          <pathelement path="${project.root}/${velocity.jar}" />
+          <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
         </classpath>
       </java>
       <touch file="${velocity.timestamp}" />
