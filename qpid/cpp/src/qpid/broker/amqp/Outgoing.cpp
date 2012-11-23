@@ -145,6 +145,7 @@ void Outgoing::detached()
 bool Outgoing::deliver(const QueueCursor& cursor, const qpid::broker::Message& msg)
 {
     Record& r = deliveries[current++];
+    if (current >= deliveries.capacity()) current = 0;
     r.cursor = cursor;
     r.msg = msg;
     pn_delivery(link, r.tag);
@@ -161,7 +162,7 @@ void Outgoing::notify()
 
 bool Outgoing::accept(const qpid::broker::Message&)
 {
-    return canDeliver();
+    return true;
 }
 
 void Outgoing::setSubjectFilter(const std::string& f)
