@@ -95,6 +95,7 @@ uint32_t SenderContext::processUnsettled()
 {
     //remove accepted messages from front of deque
     while (!deliveries.empty() && deliveries.front().accepted()) {
+        deliveries.front().settle();
         deliveries.pop_front();
     }
     return deliveries.size();
@@ -336,7 +337,10 @@ bool SenderContext::Delivery::accepted()
 {
     return pn_delivery_remote_state(token) == PN_ACCEPTED;
 }
-
+void SenderContext::Delivery::settle()
+{
+    pn_delivery_settle(token);
+}
 void SenderContext::configure() const
 {
     configure(pn_link_target(sender));
