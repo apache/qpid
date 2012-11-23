@@ -122,5 +122,3 @@ perftests-visualisation-jfc.test.libs=${test.libs}
 bnd=lib/required/bnd-0.0.384.jar
 jython=lib/required/jython-standalone-2.5.2.jar
 maven-ant-tasks=lib/required/maven-ant-tasks-2.1.1.jar
-velocity.jar=lib/required/velocity-1.4.jar
-velocity-dep.jar=lib/required/velocity-dep-1.4.jar

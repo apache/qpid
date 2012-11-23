@@ -69,8 +69,6 @@
     <dependency org="org.eclipse.jetty" name="jetty-util" rev="7.6.3.v20120416" transitive="false"/>
     <dependency org="org.dojotoolkit" name="dojo-war" rev="1.7.2" transitive="false"/>
     <dependency org="xalan" name="xalan" rev="2.7.0" transitive="false"/>
-    <dependency org="velocity" name="velocity" rev="1.4" transitive="false"/>
-    <dependency org="velocity" name="velocity-dep" rev="1.4" transitive="false"/>
 
     <!-- The following are optional dependencies, for modules providing optional functionlity or
     for use in optional build/test steps. Their optional status is usually indicative of licences
