@@ -88,10 +88,10 @@ SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="-DQPID_WORK=$QPID_WORK"
 if [ -n "$QPID_LOG_PREFIX" ]; then
     if [ "X$QPID_LOG_PREFIX" = "XPID" ]; then
         log $INFO Using pid in qpid log name prefix
-        LOG_PREFIX=" -Dlogprefix=$$"
+        LOG_PREFIX="-Dlogprefix=$$"
     else
         log $INFO Using qpid logprefix property
-        LOG_PREFIX=" -Dlogprefix=$QPID_LOG_PREFIX"
+        LOG_PREFIX="-Dlogprefix=$QPID_LOG_PREFIX"
     fi
     SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="${LOG_PREFIX}"
 fi
@@ -99,10 +99,10 @@ fi
 if [ -n "$QPID_LOG_SUFFIX" ]; then
     if [ "X$QPID_LOG_SUFFIX" = "XPID" ]; then
         log $INFO Using pid in qpid log name suffix
-        LOG_SUFFIX=" -Dlogsuffix=$$"
+        LOG_SUFFIX="-Dlogsuffix=$$"
     else
         log $INFO Using qpig logsuffix property
-        LOG_SUFFIX=" -Dlogsuffix=$QPID_LOG_SUFFIX"
+        LOG_SUFFIX="-Dlogsuffix=$QPID_LOG_SUFFIX"
     fi
     SYSTEM_PROPS[${#SYSTEM_PROPS[@]}]="${LOG_SUFFIX}"
 fi
