@@ -22,11 +22,14 @@ package org.apache.qpid.disttest.charting.chartbuilder;
 import java.awt.Color;
 import java.awt.Stroke;
 
-public interface SeriesStokeAndPaintAccessor
+import org.jfree.chart.JFreeChart;
+
+/**
+ * Applies the supplied stroke and color to a series in the target chart.
+ * Multiple implementations exist to because of the various chart types.
+ */
+public interface SeriesStrokeAndPaintApplier
 {
-
-    void setSeriesStroke(int i, Stroke stroke);
-
-    void setSeriesPaint(int i, Color blue);
-
+    void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart);
+    void setSeriesPaint(int seriesIndex, Color color, JFreeChart targetChart);
 }
