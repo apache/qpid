@@ -32,7 +32,7 @@
     ability to store new messages will be entirely constrained by the JVM heap size.
   </para>
 
-  <section role="h3" id="Java-Broker-Stores-Derby-Store-Configuration">
+  <section role="h3" id="Java-Broker-Stores-Memory-Store-Configuration">
     <title>Configuration</title>
     <para>
       In order to use the MemoryMessageStore, you must configure it for each VirtualHost desired by updating the store element
