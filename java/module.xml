@@ -257,7 +257,7 @@
         <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
         <arg line="-u ${project.url}"/>
         <arg line="-g ${project.groupid}"/>
-        <arg line="-v ${project.version}${maven.version.suffix}"/>
+        <arg line="-v ${project.version.maven}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
         <arg line='-m "${module.depends}"'/>
         <arg line="-a ${module.name}"/>
