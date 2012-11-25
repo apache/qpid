@@ -21,12 +21,7 @@
 package org.apache.qpid.transport;
 
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.transport.network.Assembler;
-import org.apache.qpid.transport.network.Disassembler;
-import org.apache.qpid.transport.network.InputHandler;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.OutgoingNetworkTransport;
-import org.apache.qpid.transport.network.Transport;
+import org.apache.qpid.transport.network.*;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 import org.apache.qpid.transport.util.Logger;
@@ -73,6 +68,9 @@ public class Connection extends ConnectionInvoker
     //Usable channels are numbered 0 to <ChannelMax> - 1
     public static final int MAX_CHANNEL_MAX = 0xFFFF;
     public static final int MIN_USABLE_CHANNEL_NUM = 0;
+    private long _lastSendTime;
+    private long _lastReadTime;
+
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
@@ -231,7 +229,8 @@ public class Connection extends ConnectionInvoker
                 addConnectionListener((ConnectionListener)secureReceiver);
             }
 
-            NetworkConnection network = transport.connect(settings, secureReceiver);
+            NetworkConnection network = transport.connect(settings, secureReceiver, null);
+
             setRemoteAddress(network.getRemoteAddress());
             setLocalAddress(network.getLocalAddress());
 
@@ -368,6 +367,7 @@ public class Connection extends ConnectionInvoker
 
     public void received(ProtocolEvent event)
     {
+        _lastReadTime = System.currentTimeMillis();
         if(log.isDebugEnabled())
         {
             log.debug("RECV: [%s] %s", this, event);
@@ -377,6 +377,7 @@ public class Connection extends ConnectionInvoker
 
     public void send(ProtocolEvent event)
     {
+        _lastSendTime = System.currentTimeMillis();
         if(log.isDebugEnabled())
         {
             log.debug("SEND: [%s] %s", this, event);
@@ -744,5 +745,39 @@ public class Connection extends ConnectionInvoker
         sessionDetached.setChannel(channel);
         sessionDetached.setCode(sessionDetachCode);
         invoke(sessionDetached);
+    }
+
+
+    protected void doHeartBeat()
+    {
+        connectionHeartbeat();
+    }
+
+    private class ConnectionActivity implements TransportActivity
+    {
+        @Override
+        public long getLastReadTime()
+        {
+            return _lastReadTime;
+        }
+
+        @Override
+        public long getLastWriteTime()
+        {
+            return _lastSendTime;
+        }
+
+        @Override
+        public void writerIdle()
+        {
+            connectionHeartbeat();
+        }
+
+        @Override
+        public void readerIdle()
+        {
+            // TODO
+
+        }
     }
 }

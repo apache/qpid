@@ -43,6 +43,8 @@ import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.network.NetworkConnection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -226,14 +228,18 @@ public class ServerConnectionDelegate extends ServerDelegate
             return;
         }
 
-        setConnectionTuneOkChannelMax(sconn, okChannelMax);
-    }
+        if(ok.hasHeartbeat())
+        {
+            final int heartbeat = ok.getHeartbeat();
+            if(heartbeat > 0)
+            {
+                final NetworkConnection networkConnection = sconn.getNetworkConnection();
+                networkConnection.setMaxReadIdle(2 * heartbeat);
+                networkConnection.setMaxWriteIdle(heartbeat);
+            }
+        }
 
-    @Override
-    protected int getHeartbeatMax()
-    {
-        //TODO: implement broker support for actually sending heartbeats
-        return 0;
+        setConnectionTuneOkChannelMax(sconn, okChannelMax);
     }
 
     @Override

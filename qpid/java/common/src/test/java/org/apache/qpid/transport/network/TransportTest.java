@@ -127,7 +127,9 @@ public class TransportTest extends QpidTestCase
             throw new UnsupportedOperationException();
         }
 
-        public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate)
+        public NetworkConnection connect(ConnectionSettings settings,
+                                         Receiver<ByteBuffer> delegate,
+                                         TransportActivity transportActivity)
         {
             throw new UnsupportedOperationException();
         }
@@ -147,7 +149,7 @@ public class TransportTest extends QpidTestCase
         }
 
         public void accept(NetworkTransportConfiguration config,
-                ProtocolEngineFactory factory, SSLContext sslContext)
+                           ProtocolEngineFactory factory, SSLContext sslContext)
         {
             throw new UnsupportedOperationException();
         }
