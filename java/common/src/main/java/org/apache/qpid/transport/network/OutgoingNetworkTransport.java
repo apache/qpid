@@ -29,5 +29,7 @@ public interface OutgoingNetworkTransport extends NetworkTransport
 {
     public NetworkConnection getConnection();
 
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate);
+    public NetworkConnection connect(ConnectionSettings settings,
+                                     Receiver<ByteBuffer> delegate,
+                                     TransportActivity transportActivity);
 }

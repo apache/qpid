@@ -24,6 +24,7 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.util.Logger;
 
 import javax.net.ssl.SSLSocket;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,6 +53,8 @@ final class IoReceiver implements Runnable, Closeable
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread receiverThread;
     private static final boolean shutdownBroken;
+
+    private Ticker _ticker;
     static
     {
         String osName = System.getProperty("os.name");
@@ -136,7 +140,7 @@ final class IoReceiver implements Runnable, Closeable
     {
         final int threshold = bufferSize / 2;
 
-        // I set the read buffer size simillar to SO_RCVBUF
+        // I set the read buffer size similar to SO_RCVBUF
         // Haven't tested with a lower value to see if it's better or worse
         byte[] buffer = new byte[bufferSize];
         try
@@ -144,17 +148,60 @@ final class IoReceiver implements Runnable, Closeable
             InputStream in = socket.getInputStream();
             int read = 0;
             int offset = 0;
-            while ((read = in.read(buffer, offset, bufferSize-offset)) != -1)
+            long currentTime;
+            while(read != -1)
             {
-                if (read > 0)
+                try
                 {
-                    ByteBuffer b = ByteBuffer.wrap(buffer,offset,read);
-                    receiver.received(b);
-                    offset+=read;
-                    if (offset > threshold)
+                    while ((read = in.read(buffer, offset, bufferSize-offset)) != -1)
                     {
-                        offset = 0;
-                        buffer = new byte[bufferSize];
+                        if (read > 0)
+                        {
+                            ByteBuffer b = ByteBuffer.wrap(buffer,offset,read);
+                            receiver.received(b);
+                            offset+=read;
+                            if (offset > threshold)
+                            {
+                                offset = 0;
+                                buffer = new byte[bufferSize];
+                            }
+                        }
+                        currentTime =  System.currentTimeMillis();
+
+                        if(_ticker != null)
+                        {
+                            final int tick = _ticker.getTimeToNextTick(currentTime);
+                            try
+                            {
+                                if(!socket.isClosed())
+                                {
+                                    socket.setSoTimeout(tick <= 0 ? 1 : tick);
+                                }
+                            }
+                            catch(SocketException e)
+                            {
+                                // ignore - closed socket
+                            }
+                        }
+                    }
+                }
+                catch (SocketTimeoutException e)
+                {
+                    currentTime = System.currentTimeMillis();
+                    if(_ticker != null)
+                    {
+                        final int tick = _ticker.tick(currentTime);
+                        if(!socket.isClosed())
+                        {
+                            try
+                            {
+                                socket.setSoTimeout(tick <= 0 ? 1 : tick );
+                            }
+                            catch(SocketException ex)
+                            {
+                                // ignore - closed socket
+                            }
+                        }
                     }
                 }
             }
@@ -194,5 +241,16 @@ final class IoReceiver implements Runnable, Closeable
 
         return !brokenClose && !sslSocketClosed;
     }
+
+    public Ticker getTicker()
+    {
+        return _ticker;
+    }
+
+    public void setTicker(Ticker ticker)
+    {
+        _ticker = ticker;
+    }
+
 
 }

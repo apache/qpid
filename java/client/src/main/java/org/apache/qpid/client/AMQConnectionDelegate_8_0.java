@@ -122,7 +122,9 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()));
+
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()),
+                                                      _conn.getProtocolHandler());
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
 
         StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);

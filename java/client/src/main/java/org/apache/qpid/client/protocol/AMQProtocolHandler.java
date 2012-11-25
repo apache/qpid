@@ -178,6 +178,8 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
+    private long _lastReadTime = System.currentTimeMillis();
+    private long _lastWriteTime = System.currentTimeMillis();
 
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
@@ -442,6 +444,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     public void received(ByteBuffer msg)
     {
         _readBytes += msg.remaining();
+        _lastReadTime = System.currentTimeMillis();
         try
         {
             final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
@@ -560,6 +563,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     public  synchronized void writeFrame(AMQDataBlock frame, boolean flush)
     {
         final ByteBuffer buf = asByteBuffer(frame);
+        _lastWriteTime = System.currentTimeMillis();
         _writtenBytes += buf.remaining();
         _sender.send(buf);
         if(flush)
@@ -880,6 +884,18 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         _network = network;
         _sender = sender;
+    }
+
+    @Override
+    public long getLastReadTime()
+    {
+        return _lastReadTime;
+    }
+
+    @Override
+    public long getLastWriteTime()
+    {
+        return _lastWriteTime;
     }
 
     protected Sender<ByteBuffer> getSender()

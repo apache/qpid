@@ -41,9 +41,8 @@ import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.*;
+
 import org.slf4j.LoggerFactory;
 
 public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
@@ -56,7 +55,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
     private IoNetworkConnection _connection;
     private AcceptingThread _acceptor;
 
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate)
+    public NetworkConnection connect(ConnectionSettings settings,
+                                     Receiver<ByteBuffer> delegate,
+                                     TransportActivity transportActivity)
     {
         int sendBufferSize = settings.getWriteBufferSize();
         int receiveBufferSize = settings.getReadBufferSize();
@@ -91,7 +92,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
         try
         {
-            _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, TIMEOUT);
+            IdleTimeoutTicker ticker = new IdleTimeoutTicker(transportActivity, TIMEOUT);
+            _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, TIMEOUT, ticker);
+            ticker.setConnection(_connection);
             _connection.start();
         }
         catch(Exception e)
@@ -128,7 +131,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         return _connection;
     }
 
-    public void accept(NetworkTransportConfiguration config, ProtocolEngineFactory factory, SSLContext sslContext)
+    public void accept(NetworkTransportConfiguration config,
+                       ProtocolEngineFactory factory,
+                       SSLContext sslContext)
     {
         try
         {
@@ -149,6 +154,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         private ProtocolEngineFactory _factory;
         private SSLContext _sslContext;
         private ServerSocket _serverSocket;
+        private int _timeout;
 
         private AcceptingThread(NetworkTransportConfiguration config,
                                 ProtocolEngineFactory factory,
@@ -157,6 +163,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
             _config = config;
             _factory = factory;
             _sslContext = sslContext;
+            _timeout = TIMEOUT;
 
             InetSocketAddress address = config.getAddress();
 
@@ -217,6 +224,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                     {
                         socket = _serverSocket.accept();
                         socket.setTcpNoDelay(_config.getTcpNoDelay());
+                        socket.setSoTimeout(_timeout);
 
                         final Integer sendBufferSize = _config.getSendBufferSize();
                         final Integer receiveBufferSize = _config.getReceiveBufferSize();
@@ -226,7 +234,10 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
                         ProtocolEngine engine = _factory.newProtocolEngine();
 
-                        NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, TIMEOUT);
+                        final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
+                        NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout,
+                                                                               ticker);
+                        ticker.setConnection(connection);
 
                         if(_sslContext != null)
                         {
@@ -293,6 +304,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                 }
             }
         }
+
     }
 
 }
