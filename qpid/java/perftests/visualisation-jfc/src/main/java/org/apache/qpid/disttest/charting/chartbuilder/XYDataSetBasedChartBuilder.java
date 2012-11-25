@@ -98,18 +98,18 @@ public abstract class XYDataSetBasedChartBuilder extends BaseChartBuilder
                 dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
 
         addCommonChartAttributes(chart, chartingDefinition);
-        addSeriesAttributes(chartingDefinition.getSeries(), new SeriesStokeAndPaintAccessor()
+        addSeriesAttributes(chart, chartingDefinition.getSeries(), new SeriesStrokeAndPaintApplier()
         {
             @Override
-            public void setSeriesStroke(int seriesIndex, Stroke stroke)
+            public void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart)
             {
-                chart.getXYPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
+                targetChart.getXYPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
             }
 
             @Override
-            public void setSeriesPaint(int seriesIndex, Color colour)
+            public void setSeriesPaint(int seriesIndex, Color colour, JFreeChart targetChart)
             {
-                chart.getXYPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
+                targetChart.getXYPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
             }
         });
 
