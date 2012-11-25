@@ -41,6 +41,14 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQQueueFactory
 {
+    public static final String X_QPID_FLOW_RESUME_CAPACITY = "x-qpid-flow-resume-capacity";
+    public static final String X_QPID_CAPACITY = "x-qpid-capacity";
+    public static final String X_QPID_MINIMUM_ALERT_REPEAT_GAP = "x-qpid-minimum-alert-repeat-gap";
+    public static final String X_QPID_MAXIMUM_MESSAGE_COUNT = "x-qpid-maximum-message-count";
+    public static final String X_QPID_MAXIMUM_MESSAGE_SIZE = "x-qpid-maximum-message-size";
+    public static final String X_QPID_MAXIMUM_MESSAGE_AGE = "x-qpid-maximum-message-age";
+    public static final String X_QPID_MAXIMUM_QUEUE_DEPTH = "x-qpid-maximum-queue-depth";
+
     public static final String X_QPID_PRIORITIES = "x-qpid-priorities";
     public static final String X_QPID_DESCRIPTION = "x-qpid-description";
     public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
@@ -119,42 +127,49 @@ public class AMQQueueFactory
     }
 
     private static final QueueProperty[] DECLAREABLE_PROPERTIES = {
-            new QueueLongProperty("x-qpid-maximum-message-age")
+            new QueueLongProperty(X_QPID_MAXIMUM_MESSAGE_AGE)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumMessageAge(value);
                 }
             },
-            new QueueLongProperty("x-qpid-maximum-message-size")
+            new QueueLongProperty(X_QPID_MAXIMUM_MESSAGE_SIZE)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumMessageSize(value);
                 }
             },
-            new QueueLongProperty("x-qpid-maximum-message-count")
+            new QueueLongProperty(X_QPID_MAXIMUM_MESSAGE_COUNT)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumMessageCount(value);
                 }
             },
-            new QueueLongProperty("x-qpid-minimum-alert-repeat-gap")
+            new QueueLongProperty(X_QPID_MAXIMUM_QUEUE_DEPTH)
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setMaximumQueueDepth(value);
+                }
+            },
+            new QueueLongProperty(X_QPID_MINIMUM_ALERT_REPEAT_GAP)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMinimumAlertRepeatGap(value);
                 }
             },
-            new QueueLongProperty("x-qpid-capacity")
+            new QueueLongProperty(X_QPID_CAPACITY)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setCapacity(value);
                 }
             },
-            new QueueLongProperty("x-qpid-flow-resume-capacity")
+            new QueueLongProperty(X_QPID_FLOW_RESUME_CAPACITY)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
