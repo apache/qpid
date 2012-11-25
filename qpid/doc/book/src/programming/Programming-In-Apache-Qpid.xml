@@ -3087,6 +3087,22 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  </para>
 	        </entry>
 	      </row>
+	      <row>
+	        <entry>
+		        ssl
+	        </entry>
+	        <entry>
+		        boolean
+	        </entry>
+	        <entry>
+	            <para>
+	                If <literal>ssl='true'</literal>, use SSL for all broker connections. Overrides any per-broker settings in the brokerlist (see below) entries. If not specified, the brokerlist entry for each given broker is used to determine whether SSL is used.
+	            </para>
+	            <para>
+	                Introduced in version 0.22.
+	            </para>
+	        </entry>
+	      </row>
 	    </tbody>
 	  </tgroup>
         </table>
@@ -3237,6 +3253,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  trust_store_password
 	        </entry>
 	        <entry>
+		        --
 	        </entry>
 	        <entry>
 		  Trust store password
@@ -3247,6 +3264,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  key_store
 	        </entry>
 	        <entry>
+		        --
 	        </entry>
 	        <entry>
 		  path to key store
@@ -3271,7 +3289,9 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  Boolean
 	        </entry>
 	        <entry>
-		  If <literal>ssl='true'</literal>, the JMS client will encrypt the connection using SSL.
+	            <para>If <literal>ssl='true'</literal>, the JMS client will encrypt the connection to this broker using SSL.</para>
+
+	            <para>This can also be set/overridden for all brokers using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para>
 	        </entry>
 	      </row>
 	      <row>
@@ -3292,7 +3312,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  ssl_cert_alias
 	        </entry>
 	        <entry>
-
+		        --
 	        </entry>
 	        <entry>
 		  If multiple certificates are present in the keystore, the alias will be used to extract the correct certificate.
