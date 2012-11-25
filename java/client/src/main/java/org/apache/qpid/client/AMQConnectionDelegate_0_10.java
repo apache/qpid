@@ -484,9 +484,13 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             heartbeat = Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME)/1000;
             _logger.warn("JVM arg -Didle_timeout=<mili_secs> is deprecated, please use -Dqpid.heartbeat=<secs>");
         }
-        else
+        else if(Integer.getInteger(ClientProperties.HEARTBEAT) != null)
         {
             heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
+        }
+        else
+        {
+            heartbeat = Integer.getInteger("amqj.heartbeat.delay", ClientProperties.HEARTBEAT_DEFAULT);
         }
         return heartbeat;
     }

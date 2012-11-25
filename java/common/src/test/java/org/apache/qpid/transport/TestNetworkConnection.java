@@ -83,6 +83,18 @@ public class TestNetworkConnection implements NetworkConnection
         return null;
     }
 
+    @Override
+    public int getMaxReadIdle()
+    {
+        return 0;
+    }
+
+    @Override
+    public int getMaxWriteIdle()
+    {
+        return 0;
+    }
+
     public void setMaxWriteIdle(int idleTime)
     {
 

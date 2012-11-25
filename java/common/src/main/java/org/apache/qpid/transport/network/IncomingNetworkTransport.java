@@ -27,5 +27,7 @@ import javax.net.ssl.SSLContext;
 
 public interface IncomingNetworkTransport extends NetworkTransport
 {
-    public void accept(NetworkTransportConfiguration config, ProtocolEngineFactory factory, SSLContext sslContext);
+    public void accept(NetworkTransportConfiguration config,
+                       ProtocolEngineFactory factory,
+                       SSLContext sslContext);
 }
