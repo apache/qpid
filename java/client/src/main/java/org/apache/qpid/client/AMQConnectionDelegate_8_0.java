@@ -100,32 +100,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
 
-        SSLContext sslContext = null;
-        if (settings.isUseSSL())
-        {
-            try
-            {
-                sslContext = SSLContextFactory.buildClientContext(
-                                settings.getTrustStorePath(),
-                                settings.getTrustStorePassword(),
-                                settings.getTrustStoreType(),
-                                settings.getTrustManagerFactoryAlgorithm(),
-                                settings.getKeyStorePath(),
-                                settings.getKeyStorePassword(),
-                                settings.getKeyStoreType(),
-                                settings.getKeyManagerFactoryAlgorithm(),
-                                settings.getCertAlias());
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new AMQException("Unable to create SSLContext: " + e.getMessage(), e);
-            }
-        }
-
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()), sslContext);
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()));
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
 
         StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
