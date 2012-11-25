@@ -143,4 +143,25 @@ public class BrokerDetailsTest extends TestCase
 
         assertEquals("Unexpected toString", expectedToString, actualToString);
     }
+
+    public void testDefaultSsl() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        assertNull("default value should be null", broker.getProperty(BrokerDetails.OPTIONS_SSL));
+    }
+
+    public void testOverridingSsl() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672?ssl='true'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        assertTrue("value should be true", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_SSL)));
+
+        brokerURL = "tcp://localhost:5672?ssl='false''&maxprefetch='1'";
+        broker = new AMQBrokerDetails(brokerURL);
+
+        assertFalse("value should be false", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_SSL)));
+    }
 }

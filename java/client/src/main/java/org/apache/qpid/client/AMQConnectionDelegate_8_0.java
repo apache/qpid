@@ -40,6 +40,7 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -99,6 +100,24 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
+
+        //Check connection-level ssl override setting
+        String connectionSslOption = _conn.getConnectionURL().getOption(ConnectionURL.OPTIONS_SSL);
+        if(connectionSslOption != null)
+        {
+            boolean connUseSsl = Boolean.parseBoolean(connectionSslOption);
+            boolean brokerlistUseSsl = settings.isUseSSL();
+
+            if( connUseSsl != brokerlistUseSsl)
+            {
+                settings.setUseSSL(connUseSsl);
+
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Applied connection ssl option override, setting UseSsl to: " + connUseSsl );
+                }
+            }
+        }
 
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
