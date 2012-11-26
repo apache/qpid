@@ -196,7 +196,14 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         if (data != null && data.hasRemaining())
         {
             ClassLoadingAwareObjectInputStream in = new ClassLoadingAwareObjectInputStream(new ByteBufferInputStream(data));
-            result = (Serializable) in.readObject();
+            try
+            {
+                result = (Serializable) in.readObject();
+            }
+            finally
+            {
+                in.close();
+            }
         }
         return result;
     }
