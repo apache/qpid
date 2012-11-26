@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client.transport;
 
+import org.apache.qpid.client.HeartbeatListener;
+import org.apache.qpid.transport.ConnectionHeartbeat;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
@@ -70,6 +72,7 @@ public class ClientConnectionDelegate extends ClientDelegate
     }
 
     private final ConnectionURL _connectionURL;
+    private HeartbeatListener _heartbeatListener = HeartbeatListener.DEFAULT;
 
     /**
      * @param settings
@@ -164,5 +167,20 @@ public class ClientConnectionDelegate extends ClientDelegate
         }
 
         return null;
+    }
+
+    @Override
+    public void connectionHeartbeat(Connection conn, ConnectionHeartbeat hearbeat)
+    {
+        // ClientDelegate simply responds to heartbeats with heartbeats
+        _heartbeatListener.heartbeatReceived();
+        super.connectionHeartbeat(conn, hearbeat);
+        _heartbeatListener.heartbeatSent();
+    }
+
+
+    public void setHeartbeatListener(HeartbeatListener listener)
+    {
+        _heartbeatListener = listener == null ? HeartbeatListener.DEFAULT : listener;
     }
 }
