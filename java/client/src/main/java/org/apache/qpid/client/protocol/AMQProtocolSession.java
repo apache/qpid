@@ -267,7 +267,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void heartbeatBodyReceived(int channelId, HeartbeatBody body) throws AMQException
     {
-
+        _protocolHandler.heartbeatBodyReceived();
     }
 
     /**

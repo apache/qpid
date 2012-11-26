@@ -78,4 +78,6 @@ public interface AMQConnectionDelegate
      * @return true if the feature is supported by the server
      */
     boolean isSupportedServerFeature(final String featureName);
+
+    void setHeartbeatListener(HeartbeatListener listener);
 }
