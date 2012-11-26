@@ -99,10 +99,14 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
 
 
-    public ProtocolEngine_1_0_0(final IApplicationRegistry appRegistry, long id)
+    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry, long id)
     {
         _appRegistry = appRegistry;
         _connectionId = id;
+        if(networkDriver != null)
+        {
+            setNetworkConnection(networkDriver, networkDriver.getSender());
+        }
     }
 
 
