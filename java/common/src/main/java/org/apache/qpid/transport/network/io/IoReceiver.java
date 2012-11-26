@@ -170,7 +170,11 @@ final class IoReceiver implements Runnable, Closeable
 
                         if(_ticker != null)
                         {
-                            final int tick = _ticker.getTimeToNextTick(currentTime);
+                            int tick = _ticker.getTimeToNextTick(currentTime);
+                            if(tick <= 0)
+                            {
+                                tick = _ticker.tick(currentTime);
+                            }
                             try
                             {
                                 if(!socket.isClosed())

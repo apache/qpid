@@ -64,3 +64,6 @@ org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFlowContro
 
 // QPID-3604: Immediate Prefetch no longer supported by 0-10
 org.apache.qpid.client.AsynchMessageListenerTest#testImmediatePrefetchWithMessageListener
+
+// QPID-2796 : Java 0-10 client only sends heartbeats in response to heartbeats from the server, not timeout based
+org.apache.qpid.client.HeartbeatTest#testReadOnlyConnectionHeartbeats
