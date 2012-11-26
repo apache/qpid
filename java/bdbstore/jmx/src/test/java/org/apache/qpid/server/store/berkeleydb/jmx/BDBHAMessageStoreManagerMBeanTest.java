@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.management.JMException;
+import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.TabularData;
@@ -84,7 +85,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     {
         when(_store.getName()).thenReturn(TEST_STORE_NAME);
 
-        String expectedObjectName = "org.apache.qpid:type=BDBHAMessageStore,name=" + TEST_STORE_NAME;
+        String expectedObjectName = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(TEST_STORE_NAME);
         assertEquals(expectedObjectName, _mBean.getObjectName().toString());
     }
 
