@@ -18,13 +18,17 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.Destination;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class HeartbeatTest extends QpidBrokerTestCase
 {
     public void testHeartbeats() throws Exception
     {
-        setTestSystemProperty("amqj.heartbeat.delay","1");
+        setTestSystemProperty("amqj.heartbeat.delay", "1");
         AMQConnection conn = (AMQConnection) getConnection();
         TestListener listener = new TestListener();
         conn.setHeartbeatListener(listener);
@@ -40,7 +44,7 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
     public void testNoHeartbeats() throws Exception
     {
-         setTestSystemProperty("amqj.heartbeat.delay","0");
+         setTestSystemProperty("amqj.heartbeat.delay", "0");
          AMQConnection conn = (AMQConnection) getConnection();
          TestListener listener = new TestListener();
          conn.setHeartbeatListener(listener);
@@ -52,6 +56,45 @@ public class HeartbeatTest extends QpidBrokerTestCase
          assertEquals("Heartbeats unexpectedly sent ", 0, listener._heartbeatsSent);
 
          conn.close();
+    }
+
+    public void testReadOnlyConnectionHeartbeats() throws Exception
+    {
+        setTestSystemProperty("amqj.heartbeat.delay","1");
+        AMQConnection receiveConn = (AMQConnection) getConnection();
+        AMQConnection sendConn = (AMQConnection) getConnection();
+        Destination destination = getTestQueue();
+        TestListener receiveListener = new TestListener();
+        TestListener sendListener = new TestListener();
+
+
+        Session receiveSession = receiveConn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Session senderSession = sendConn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+        MessageConsumer consumer = receiveSession.createConsumer(destination);
+        MessageProducer producer = senderSession.createProducer(destination);
+
+        receiveConn.setHeartbeatListener(receiveListener);
+        sendConn.setHeartbeatListener(sendListener);
+        receiveConn.start();
+
+        for(int i = 0; i < 5; i++)
+        {
+            producer.send(senderSession.createTextMessage("Msg " + i));
+            Thread.sleep(500);
+            assertNotNull("Expected to received message", consumer.receive(500));
+        }
+
+
+
+        assertTrue("Too few heartbeats sent "+receiveListener._heartbeatsSent+" (expected at least 2)", receiveListener._heartbeatsSent>=2);
+        assertEquals("Unexpected sent at the sender: ",0,sendListener._heartbeatsSent);
+
+        assertTrue("Too few heartbeats received at the sender "+sendListener._heartbeatsReceived+" (expected at least 2)", sendListener._heartbeatsReceived>=2);
+        assertEquals("Unexpected received at the receiver: ",0,receiveListener._heartbeatsReceived);
+
+        receiveConn.close();
+        sendConn.close();
     }
 
     private class TestListener implements HeartbeatListener

@@ -43,14 +43,14 @@ class IdleTimeoutTicker implements Ticker
         long nextTime = -1;
         final long maxReadIdle = 1000l * _connection.getMaxReadIdle();
 
-        if(maxReadIdle != 0)
+        if(maxReadIdle > 0)
         {
             nextTime = _transport.getLastReadTime() + maxReadIdle;
         }
 
         long maxWriteIdle = 1000l * _connection.getMaxWriteIdle();
 
-        if(maxWriteIdle != 0)
+        if(maxWriteIdle > 0)
         {
             long writeTime = _transport.getLastWriteTime() + maxWriteIdle;
             if(nextTime == -1l || writeTime < nextTime)
@@ -66,13 +66,13 @@ class IdleTimeoutTicker implements Ticker
     {
         // writer Idle
         long maxWriteIdle = 1000l * _connection.getMaxWriteIdle();
-        if(maxWriteIdle != 0 && maxWriteIdle+ _transport.getLastWriteTime() <= currentTime)
+        if(maxWriteIdle > 0 && maxWriteIdle+ _transport.getLastWriteTime() <= currentTime)
         {
             _transport.writerIdle();
         }
         // reader Idle
         final long maxReadIdle = 1000l * _connection.getMaxReadIdle();
-        if(maxReadIdle != 0 && maxReadIdle+ _transport.getLastReadTime() <= currentTime)
+        if(maxReadIdle > 0 && maxReadIdle+ _transport.getLastReadTime() <= currentTime)
         {
 
             _transport.readerIdle();
