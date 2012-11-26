@@ -422,6 +422,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return featureSupported;
     }
 
+    @Override
+    public void setHeartbeatListener(HeartbeatListener listener)
+    {
+        ((ClientConnectionDelegate)(_qpidConnection.getConnectionDelegate())).setHeartbeatListener(listener);
+    }
+
     private ConnectionSettings retrieveConnectionSettings(BrokerDetails brokerDetail)
     {
         ConnectionSettings conSettings = brokerDetail.buildConnectionSettings();

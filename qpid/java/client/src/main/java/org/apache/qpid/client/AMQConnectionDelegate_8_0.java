@@ -378,4 +378,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         // we just hardcode JMS selectors as supported.
         return ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR.equals(featureName);
     }
+
+    @Override
+    public void setHeartbeatListener(HeartbeatListener listener)
+    {
+        _conn.getProtocolHandler().setHeartbeatListener(listener);
+    }
 }
