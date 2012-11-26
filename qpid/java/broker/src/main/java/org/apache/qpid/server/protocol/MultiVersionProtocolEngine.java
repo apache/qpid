@@ -341,7 +341,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public ServerProtocolEngine getProtocolEngine()
         {
-            return new ProtocolEngine_1_0_0(_appRegistry,_id);
+            return new ProtocolEngine_1_0_0(_network, _appRegistry,_id);
         }
     };
 
