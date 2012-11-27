@@ -19,7 +19,7 @@
 
 %module cqpid_perl
 %include "std_string.i"
-%include "../../swig_perl_typemaps.i"
+%include "swig_perl_typemaps.i"
 
 /* Define the general-purpose exception handling */
 %exception {
@@ -31,5 +31,5 @@
     }
 }
 
-%include "../qpid.i"
+%include "qpid/qpid.i"
 

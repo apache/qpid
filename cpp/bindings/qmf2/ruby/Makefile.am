@@ -27,7 +27,7 @@ SWIG_FLAGS = -w362,401
 
 rubylibdir = $(RUBY_LIB)
 
-cqmf2.cpp: $(srcdir)/ruby.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_ruby_typemaps.i
+cqmf2.cpp: $(srcdir)/ruby.i
 	$(SWIG) -ruby -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
