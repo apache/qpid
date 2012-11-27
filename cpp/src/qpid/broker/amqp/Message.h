@@ -63,6 +63,7 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     qpid::amqp::CharSequence getApplicationProperties() const;
     qpid::amqp::CharSequence getBareMessage() const;
     qpid::amqp::CharSequence getBody() const;
+    qpid::amqp::CharSequence getFooter() const;
 
     Message(size_t size);
     char* getData();

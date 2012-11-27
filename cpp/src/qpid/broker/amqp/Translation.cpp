@@ -215,6 +215,9 @@ void Translation::write(Outgoing& out)
         //write bare message
         qpid::amqp::CharSequence bareMessage = message->getBareMessage();
         if (bareMessage.size) out.write(bareMessage.data, bareMessage.size);
+        //write footer:
+        qpid::amqp::CharSequence footer = message->getFooter();
+        if (footer.size) out.write(footer.data, footer.size);
     } else {
         const qpid::broker::amqp_0_10::MessageTransfer* transfer = dynamic_cast<const qpid::broker::amqp_0_10::MessageTransfer*>(&original.getEncoding());
         if (transfer) {
