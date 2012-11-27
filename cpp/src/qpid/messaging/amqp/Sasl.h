@@ -47,7 +47,7 @@ class Sasl : public qpid::sys::Codec, qpid::amqp::SaslClient
     bool canEncode();
 
     bool authenticated();
-    qpid::sys::Codec* getCodec();
+    qpid::sys::Codec* getSecurityLayer();
     std::string getAuthenticatedUsername();
  private:
     ConnectionContext& context;

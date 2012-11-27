@@ -53,7 +53,8 @@ ConnectionContext::ConnectionContext(const std::string& u, const qpid::types::Va
       writeHeader(false),
       readHeader(false),
       haveOutput(false),
-      state(DISCONNECTED)
+      state(DISCONNECTED),
+      codecSwitch(*this)
 {
     if (pn_transport_bind(engine, connection)) {
         //error
@@ -563,13 +564,48 @@ bool ConnectionContext::useSasl()
 
 qpid::sys::Codec& ConnectionContext::getCodec()
 {
-    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    if (sasl.get()) {
-        qpid::sys::Codec* c = sasl->getCodec();
-        if (c) return *c;
-        lock.notifyAll();
-    }
-    return *this;
+    return codecSwitch;
 }
+
+ConnectionContext::CodecSwitch::CodecSwitch(ConnectionContext& p) : parent(p) {}
+std::size_t ConnectionContext::CodecSwitch::decode(const char* buffer, std::size_t size)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(parent.lock);
+    size_t decoded = 0;
+    if (parent.sasl.get() && !parent.sasl->authenticated()) {
+        decoded = parent.sasl->decode(buffer, size);
+        if (!parent.sasl->authenticated()) return decoded;
+    }
+    if (decoded < size) {
+        if (parent.sasl.get() && parent.sasl->getSecurityLayer()) decoded += parent.sasl->getSecurityLayer()->decode(buffer+decoded, size-decoded);
+        else decoded += parent.decode(buffer+decoded, size-decoded);
+    }
+    return decoded;
+}
+std::size_t ConnectionContext::CodecSwitch::encode(char* buffer, std::size_t size)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(parent.lock);
+    size_t encoded = 0;
+    if (parent.sasl.get() && parent.sasl->canEncode()) {
+        encoded += parent.sasl->encode(buffer, size);
+        if (!parent.sasl->authenticated()) return encoded;
+    }
+    if (encoded < size) {
+        if (parent.sasl.get() && parent.sasl->getSecurityLayer()) encoded += parent.sasl->getSecurityLayer()->encode(buffer+encoded, size-encoded);
+        else encoded += parent.encode(buffer+encoded, size-encoded);
+    }
+    return encoded;
+}
+bool ConnectionContext::CodecSwitch::canEncode()
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(parent.lock);
+    if (parent.sasl.get()) {
+        if (parent.sasl->canEncode()) return true;
+        else if (!parent.sasl->authenticated()) return false;
+        else if (parent.sasl->getSecurityLayer()) return parent.sasl->getSecurityLayer()->canEncode();
+    }
+    return parent.canEncode();
+}
+
 
 }}} // namespace qpid::messaging::amqp

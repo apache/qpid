@@ -71,6 +71,7 @@ class Decoder
     QPID_COMMON_EXTERN void advance(size_t);
     QPID_COMMON_EXTERN size_t getPosition() const;
     QPID_COMMON_EXTERN void resetSize(size_t size);
+    QPID_COMMON_EXTERN size_t getSize() const;
 
   private:
     const char* const start;

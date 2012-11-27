@@ -123,6 +123,17 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
         CONNECTED
     } state;
     std::auto_ptr<Sasl> sasl;
+    class CodecSwitch : public qpid::sys::Codec
+    {
+      public:
+        CodecSwitch(ConnectionContext&);
+        std::size_t decode(const char* buffer, std::size_t size);
+        std::size_t encode(char* buffer, std::size_t size);
+        bool canEncode();
+      private:
+        ConnectionContext& parent;
+    };
+    CodecSwitch codecSwitch;
 
     void wait();
     void wakeupDriver();
