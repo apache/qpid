@@ -58,7 +58,7 @@ std::size_t Sasl::encode(char* buffer, std::size_t size)
          encoded += writeProtocolHeader(buffer, size);
          writeHeader = !encoded;
     }
-    if (state == NONE && encoded < size) {
+    if (encoded < size) {
         encoded += write(buffer + encoded, size - encoded);
     }
     haveOutput = (encoded == size);
@@ -135,14 +135,9 @@ void Sasl::outcome(uint8_t result)
     context.activateOutput();
 }
 
-qpid::sys::Codec* Sasl::getCodec()
+qpid::sys::Codec* Sasl::getSecurityLayer()
 {
-    switch (state) {
-      case SUCCEEDED: return static_cast<qpid::sys::Codec*>(securityLayer.get());
-      case FAILED: throw qpid::messaging::UnauthorizedAccess("Failed to authenticate");
-      case NONE: return static_cast<qpid::sys::Codec*>(this);
-    }
-    return 0;
+    return securityLayer.get();
 }
 
 bool Sasl::authenticated()
