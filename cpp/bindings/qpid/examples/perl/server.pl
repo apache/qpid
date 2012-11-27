@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,34 +20,35 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 
 my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : ""; 
+my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : "";
 
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+my $connection = new qpid::messaging::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
-    my $session = $connection->createSession();
+    my $session = $connection->create_session();
 
-    my $receiver = $session->createReceiver("service_queue; {create: always}");
+    my $receiver = $session->create_receiver("service_queue; {create: always}");
 
     while (1) {
         my $request = $receiver->fetch();
-        my $address = $request->getReplyTo();
+        my $address = $request->get_reply_to();
+
         if ($address) {
-            my $sender = $session->createSender($address);
-            my $s = $request->getContent();
+            my $sender = $session->create_sender($address);
+            my $s = $request->get_content();
             $s = uc($s);
-            my $response = new cqpid_perl::Message($s);
+            my $response = new qpid::messaging::Message($s);
             $sender->send($response);
-            print "Processed request: " . $request->getContent() . " -> " . $response->getContent() . "\n";
+            print "Processed request: " . $request->get_content() . " -> " . $response->get_content() . "\n";
             $session->acknowledge();
         }
         else {
-            print "Error: no reply address specified for request: " . $request->getContent() . "\n";
+            print "Error: no reply address specified for request: " . $request->get_content() . "\n";
             $session->reject($request);
         }
     }

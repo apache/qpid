@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 use Getopt::Long;
 use Pod::Usage;
 
@@ -48,7 +48,7 @@ if ($#ARGV ge 0) {
 }
 
 sub getTimeout {
-   return ($forever) ? $cqpid_perl::Duration::FOREVER : new cqpid_perl::Duration($timeout*1000);
+   return ($forever) ? qpid::messaging::Duration::FOREVER : new qpid::messaging::Duration($timeout*1000);
 }
 
 sub printProperties {
@@ -56,34 +56,41 @@ sub printProperties {
   return qq[{${\(join', ',map"'$_': '$h->{$_}'",keys%$h)}}]
 }
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+my $connection = new qpid::messaging::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
-    my $session  = $connection->createSession();
-    my $receiver = $session->createReceiver($address);
+    my $session  = $connection->create_session();
+    my $receiver = $session->create_receiver($address);
     my $timeout  = getTimeout();
-
-    my $message = new cqpid_perl::Message();
+    my $message = new qpid::messaging::Message();
     my $i = 0;
 
-    while($receiver->fetch($message, $timeout)) {
-        my $redelivered = ($message->getRedelivered) ? "redelivered=True, " : "";
-        print "Message(" . $redelivered . "properties=" . printProperties($message->getProperties()) . ", content='";        
-        if ($message->getContentType() eq "amqp/map") {
-            my $content = cqpid_perl::decodeMap($message);
+    for (;;) {
+        eval {
+            $message = $receiver->fetch($timeout);
+        };
+
+        if ($@) {
+            last;
+        }
+
+        my $redelivered = ($message->get_redelivered) ? "redelivered=True, " : "";
+        print "Message(" . $redelivered . "properties=" . printProperties($message->get_properties()) . ", content='";        
+        if ($message->get_content_type() eq "amqp/map") {
+            my $content = qpid::messasging::decode_map($message);
             map{ print "\n$_ => $content->{$_}"; } keys %{$content};
         }
         else {
-            print $message->getContent();
+            print $message->get_content();
         }
         print "')\n";
 
-        my $replyto = $message->getReplyTo();
-        if ($replyto->getName()) {
-            print "Replying to " . $message->getReplyTo()->str() . "...\n";
-            my $sender = $session->createSender($replyto);
-            my $response = new cqpid_perl::Message("received by the server.");
+        my $replyto = $message->get_reply_to();
+        if ($replyto->get_name()) {
+            print "Replying to " . $message->get_reply_to()->str() . "...\n";
+            my $sender = $session->create_sender($replyto);
+            my $response = new qpid::messaging::Message("received by the server.");
             $sender->send($response);
         }
         $session->acknowledge();
@@ -92,6 +99,7 @@ eval {
             last;
         }
     }
+
     $receiver->close();
     $session->close();
     $connection->close();

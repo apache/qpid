@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 
 my $broker            = ( @ARGV > 0 ) ? $ARGV[0] : "localhost:5672";
 my $connectionOptions = ( @ARGV > 1 ) ? $ARGV[1] : "";
@@ -36,7 +36,7 @@ END
 
 my $address = <<END;
 xml-exchange; {
-create: always,      
+create: always,
 node: { type: topic, x-declare: { type: xml } },
 link: {
 x-bindings: [{ exchange: xml-exchange, key: weather, arguments: { xquery:" $query" } }]
@@ -44,15 +44,15 @@ x-bindings: [{ exchange: xml-exchange, key: weather, arguments: { xquery:" $quer
 END
 
 
-my $connection = new cqpid_perl::Connection($broker, $connectionOptions);
+my $connection = new qpid::messaging::Connection($broker, $connectionOptions);
 
 eval {
     $connection->open();
-    my $session = $connection->createSession();
+    my $session = $connection->create_session();
 
-    my $receiver = $session->createReceiver($address);
-    
-    my $message = new cqpid_perl::Message();
+    my $receiver = $session->create_receiver($address);
+
+    my $message = new qpid::messaging::Message();
 
     my $content = <<END;
     <weather>
@@ -62,13 +62,13 @@ eval {
     <dewpoint>35</dewpoint>
     </weather>
 END
-    
-    $message->setContent($content);
-    my $sender = $session->createSender('xml-exchange/weather');
+
+    $message->set_content($content);
+    my $sender = $session->create_sender('xml-exchange/weather');
     $sender->send($message);
-    
+
     my $response = $receiver->fetch();
-    print $response->getContent() . "\n";
+    print $response->get_content() . "\n";
 
     $connection->close();
 };
