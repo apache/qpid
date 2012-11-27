@@ -343,6 +343,7 @@ void ConnectionContext::setCapacity(boost::shared_ptr<ReceiverContext> receiver,
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     receiver->setCapacity(capacity);
     pn_link_flow((pn_link_t*) receiver->receiver, receiver->getCapacity());
+    wakeupDriver();
 }
 uint32_t ConnectionContext::getCapacity(boost::shared_ptr<ReceiverContext> receiver)
 {
