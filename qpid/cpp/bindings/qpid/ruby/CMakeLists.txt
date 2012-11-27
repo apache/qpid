@@ -31,7 +31,9 @@ set(GEM_OUTPUT_FILE ${GEM_OUTPUT_PATH}/pkg/qpid-${qpidc_version}.0.gem)
 ##------------------------------------------------------
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES CPLUSPLUS ON)
 
-include_directories(${RUBY_INCLUDE_DIRS} ${qpid-cpp_SOURCE_DIR}/include)
+include_directories(${RUBY_INCLUDE_DIRS}
+                    ${qpid-cpp_SOURCE_DIR}/include
+                    ${qpid-cpp_SOURCE_DIR}/bindings)
 
 swig_add_module(cqpid_ruby ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
 swig_link_libraries(cqpid_ruby qpidmessaging qpidtypes qmf2 ${RUBY_LIBRARY})
