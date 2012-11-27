@@ -22,6 +22,7 @@ use warnings;
 
 use cqpid_perl;
 use Getopt::Long;
+use Pod::Usage;
 use Time::Local;
 
 my $url = "127.0.0.1";
@@ -34,6 +35,7 @@ my @entries;
 my $content = "";
 my $connectionOptions = "";
 my $address = "amq.direct";
+my $help;
 
 my $result = GetOptions(
     "broker|b=s"           => \ $url,
@@ -44,19 +46,15 @@ my $result = GetOptions(
     "property|p=s@"        => \ @properties,
     "map|m=s@"             => \ @entries,
     "content=s"            => \ $content,
-    "connection-options=s" => \ $connectionOptions,   
-);
+    "connection-options=s" => \ $connectionOptions,
+    "help|h"               => \ $help
+    ) || pod2usage(-verbose => 0);
 
-
-if (! $result) {
-    print "Usage: perl drain.pl [OPTIONS]\n";
-}
-
+pod2usage(-verbose => 1) if $help;
 
 if ($#ARGV ge 0) {
     $address = $ARGV[0]
 }
-
 
 sub setEntries {
     my ($content) = @_;
@@ -73,7 +71,7 @@ sub setProperties {
 
     foreach (@properties) {
         my ($name, $value) = split("=", $_);
-        $message->getProperties()->{$name} = $value;
+        $message->setProperty($name, $value);
     }
 }
 
@@ -108,9 +106,9 @@ eval {
     my $s = "$s[3]$s[4]$s[5]";
     my $n = $s;
 
-    for (my $i = 0; 
+    for (my $i = 0;
         ($i < $count || $count == 0) and
-        ($timeout == 0 || abs($n - $s) < $timeout); 
+        ($timeout == 0 || abs($n - $s) < $timeout);
         $i++) {
 
         $sender->send($message);
@@ -134,3 +132,26 @@ if ($@) {
 }
 
 
+__END__
+
+=head1 NAME
+
+spout - Send messages to the specified address
+
+=head1 SYNOPSIS
+
+  Usage: spout [OPTIONS] ADDRESS
+
+  Options:
+  -h, --help                   show this message
+  -b VALUE, --broker VALUE     url of broker to connect to
+  -t VALUE, --timeout VALUE    exit after the specified time
+  -c VALUE, --count VALUE      stop after count messageshave been sent, zero disables
+  -i VALUE, --id VALUE         use the supplied id instead of generating one
+  --reply-to VALUE             specify reply-to value
+  -P VALUE, --property VALUE   specify message property
+  -M VALUE, --map VALUE        specify entry for map content
+  --content VALUE              specify textual content
+  --connection-options VALUE   connection options string in the form {name1:value1, name2:value2}
+
+=cut
