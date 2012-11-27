@@ -21,12 +21,16 @@
 ## Use Swig to generate a literal binding to the C++ API
 ##------------------------------------------------------
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLUSPLUS ON)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i
+   PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
 swig_add_module(cqpid_python python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
 swig_link_libraries(cqpid_python qpidmessaging qpidtypes qmf2 ${PYTHON_LIBRARIES})
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${PYTHON_INCLUDE_PATH} -I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
+include_directories(${PYTHON_INCLUDE_PATH}
+                    ${qpid-cpp_SOURCE_DIR}/include
+                    ${qpid-cpp_SOURCE_DIR}/bindings)
 
 ##------------------------------------
 ## Install the complete Python binding

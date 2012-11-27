@@ -29,7 +29,7 @@ EXTRA_DIST = CMakeLists.txt python.i
 BUILT_SOURCES = $(generated_file_list)
 SWIG_FLAGS = -w362,401
 
-$(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmfengine.i
+$(generated_file_list): $(srcdir)/python.i
 	$(SWIG) -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o qmfengine.cpp $(srcdir)/python.i
 
 pylibdir = $(pyexecdir)
