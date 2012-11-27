@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Hashtable;
+
+import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -40,6 +42,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 
@@ -119,33 +122,74 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     @Override
     public AuthenticationResult authenticate(String username, String password)
     {
-
         try
         {
-            return doLDAPNameAuthentication(getNameFromId(username), password);
+            AuthenticationResult result = doLDAPNameAuthentication(getNameFromId(username), password);
+            if(result.getStatus() == AuthenticationStatus.SUCCESS)
+            {
+                //Return a result based on the supplied username rather than the search name
+                return new AuthenticationResult(new UsernamePrincipal(username));
+            }
+            else
+            {
+                return result;
+            }
         }
         catch (NamingException e)
         {
-
             return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
-
         }
     }
 
-    private AuthenticationResult doLDAPNameAuthentication(String username, String password) throws NamingException
+    private AuthenticationResult doLDAPNameAuthentication(String name, String password)
     {
+        if(name == null)
+        {
+            //The search didn't return anything, class as not-authenticated before it NPEs below
+            return new AuthenticationResult(AuthenticationStatus.CONTINUE);
+        }
+
         Hashtable<Object,Object> env = new Hashtable<Object,Object>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
         env.put(Context.PROVIDER_URL, _providerAuthURL);
 
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
 
-        env.put(Context.SECURITY_PRINCIPAL, username);
+        env.put(Context.SECURITY_PRINCIPAL, name);
         env.put(Context.SECURITY_CREDENTIALS, password);
-        DirContext ctx = new InitialDirContext(env);
-        ctx.close();
 
-        return new AuthenticationResult(new UsernamePrincipal(username));
+        DirContext ctx = null;
+        try
+        {
+            ctx = new InitialDirContext(env);
+
+            //Authentication succeeded
+            return new AuthenticationResult(new UsernamePrincipal(name));
+        }
+        catch(AuthenticationException ae)
+        {
+            //Authentication failed
+            return new AuthenticationResult(AuthenticationStatus.CONTINUE);
+        }
+        catch (NamingException e)
+        {
+            //Some other failure
+            return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
+        }
+        finally
+        {
+            if(ctx != null)
+            {
+                try
+                {
+                    ctx.close();
+                }
+                catch (Exception e)
+                {
+                    _logger.warn("Exception closing InitialDirContext", e);
+                }
+            }
+        }
     }
 
     @Override
@@ -190,19 +234,11 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
                     }
                     catch (NamingException e)
                     {
-                        _logger.info("SASL Authentication Error", e);
+                        _logger.warn("SASL Authentication Exception", e);
                     }
                     if(password != null)
                     {
-                        try
-                        {
-                            authenticated = doLDAPNameAuthentication(name, password);
-
-                        }
-                        catch (NamingException e)
-                        {
-                            authenticated = new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
-                        }
+                        authenticated = doLDAPNameAuthentication(name, password);
                     }
                 }
                 else if (callback instanceof PlainPasswordCallback)
@@ -210,17 +246,10 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
                     password = ((PlainPasswordCallback)callback).getPlainPassword();
                     if(name != null)
                     {
-                        try
+                        authenticated = doLDAPNameAuthentication(name, password);
+                        if(authenticated.getStatus()== AuthenticationResult.AuthenticationStatus.SUCCESS)
                         {
-                            authenticated = doLDAPNameAuthentication(name, password);
-                            if(authenticated.getStatus()== AuthenticationResult.AuthenticationStatus.SUCCESS)
-                            {
-                                ((PlainPasswordCallback)callback).setAuthenticated(true);
-                            }
-                        }
-                        catch (NamingException e)
-                        {
-                            authenticated = new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
+                            ((PlainPasswordCallback)callback).setAuthenticated(true);
                         }
                     }
                 }
@@ -241,7 +270,6 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         Hashtable<Object,Object> env = new Hashtable<Object,Object>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
         env.put(Context.PROVIDER_URL, _providerSearchURL);
-
 
         env.put(Context.SECURITY_AUTHENTICATION, "none");
         DirContext ctx = null;
@@ -267,7 +295,14 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         }
         finally
         {
-            ctx.close();
+            try
+            {
+                ctx.close();
+            }
+            catch (Exception e)
+            {
+                _logger.warn("Exception closing InitialDirContext", e);
+            }
         }
 
     }
