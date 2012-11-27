@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 use Getopt::Long;
 use Pod::Usage;
 use Time::Local;
@@ -75,19 +75,19 @@ sub setProperties {
     }
 }
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+my $connection = new qpid::messaging::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
-    my $session  = $connection->createSession();
-    my $sender = $session->createSender($address);
+    my $session  = $connection->create_session();
+    my $sender = $session->create_sender($address);
 
-    my $message = new cqpid_perl::Message();
+    my $message = new qpid::messaging::Message();
     setProperties($message) if (@properties);
     if (@entries) {
         my $content = {};
         setEntries($content);
-        cqpid_perl::encode($content, $message);
+        qpid::messaging::encode($content, $message);
     }
     elsif ($content) {
         $message->setContent($content);
@@ -96,7 +96,7 @@ eval {
 
     my $receiver;
     if ($replyto) {
-        my $responseQueue = new cqpid_perl::Address($replyto);
+        my $responseQueue = new qpid::messaging::Address($replyto);
         $receiver = $session->createReceiver($responseQueue);
         $message->setReplyTo($responseQueue);
     }
