@@ -38,6 +38,8 @@ include_directories(${PERL_INCLUDE_PATH}
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_perl.so
               ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.pm
               ${CMAKE_CURRENT_SOURCE_DIR}/qpid.pm
+              ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+              ${CMAKE_CURRENT_SOURCE_DIR}/Makefile.PL
         DESTINATION ${PERL_PFX_ARCHLIB}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
