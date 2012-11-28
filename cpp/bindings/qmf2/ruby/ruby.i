@@ -34,4 +34,4 @@
     }
 }
 
-%include "qmf2.i"
+%include "qmf/qmf2.i"
