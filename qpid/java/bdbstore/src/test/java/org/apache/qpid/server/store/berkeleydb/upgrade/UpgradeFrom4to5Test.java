@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.NONEXCLUSIVE_WITH_ERRONEOUS_OWNER;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.NON_DURABLE_QUEUE_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_WITH_DLQ_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.TOPIC_NAME;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +41,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom4To5.BindingRecord;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom4To5.BindingTuple;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom4To5.MessageContentKey;
@@ -50,9 +56,6 @@ import com.sleepycat.je.Transaction;
 
 public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
 {
-    private static final String NON_DURABLE_QUEUE = BDBStoreUpgradeTestPreparer.NON_DURABLE_QUEUE_NAME;
-    private static final String DURABLE_QUEUE = BDBStoreUpgradeTestPreparer.QUEUE_NAME;
-    private static final String NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER = "nonexclusive-with-erroneous-owner";
     private static final String DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR = "clientid:mySelectorDurSubName";
     private static final String DURABLE_SUBSCRIPTION_QUEUE = "clientid:myDurSubName";
     private static final String EXCHANGE_DB_NAME = "exchangeDb_v5";
@@ -85,15 +88,14 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
 
         final List<BindingRecord> queueBindings = loadBindings();
 
-        assertEquals("Unxpected list size", TOTAL_BINDINGS, queueBindings.size());
-        assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE, "amq.topic", BDBStoreUpgradeTestPreparer.TOPIC_NAME, "");
-        assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, "amq.topic",
-                BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME, "testprop='true'");
-        assertBindingRecord(queueBindings, DURABLE_QUEUE, "amq.direct", DURABLE_QUEUE, null);
-        assertBindingRecord(queueBindings, NON_DURABLE_QUEUE, "amq.direct", NON_DURABLE_QUEUE, null);
-        assertBindingRecord(queueBindings, NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, "amq.direct", NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, null);
+        assertEquals("Unxpected bindings size", TOTAL_BINDINGS, queueBindings.size());
+        assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE, "amq.topic", TOPIC_NAME, "");
+        assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, "amq.topic", SELECTOR_TOPIC_NAME, "testprop='true'");
+        assertBindingRecord(queueBindings, QUEUE_NAME, "amq.direct", QUEUE_NAME, null);
+        assertBindingRecord(queueBindings, NON_DURABLE_QUEUE_NAME, "amq.direct", NON_DURABLE_QUEUE_NAME, null);
+        assertBindingRecord(queueBindings, NONEXCLUSIVE_WITH_ERRONEOUS_OWNER, "amq.direct", NONEXCLUSIVE_WITH_ERRONEOUS_OWNER, null);
 
-        assertQueueHasOwner(NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, "misused-owner-as-description");
+        assertQueueHasOwner(NONEXCLUSIVE_WITH_ERRONEOUS_OWNER, "misused-owner-as-description");
 
         assertContent();
     }
@@ -102,26 +104,29 @@ public class UpgradeFrom4to5Test extends AbstractUpgradeTestCase
     {
         UpgradeFrom4To5 upgrade = new UpgradeFrom4To5();
         upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.NO), getVirtualHostName());
-        assertQueues(new HashSet<String>(Arrays.asList(DURABLE_SUBSCRIPTION_QUEUE, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, DURABLE_QUEUE, NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER)));
+        HashSet<String> queues = new HashSet<String>(Arrays.asList(QUEUE_NAMES));
+        assertTrue(NON_DURABLE_QUEUE_NAME + " should be in the list of queues" , queues.remove(NON_DURABLE_QUEUE_NAME));
 
-        assertDatabaseRecordCount(DELIVERY_DB_NAME, 12);
-        assertDatabaseRecordCount(MESSAGE_META_DATA_DB_NAME, 12);
+        assertQueues(queues);
+
+        assertDatabaseRecordCount(DELIVERY_DB_NAME, 13);
+        assertDatabaseRecordCount(MESSAGE_META_DATA_DB_NAME, 13);
         assertDatabaseRecordCount(EXCHANGE_DB_NAME, TOTAL_EXCHANGES);
 
         assertQueueMessages(DURABLE_SUBSCRIPTION_QUEUE, 1);
         assertQueueMessages(DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, 1);
-        assertQueueMessages(DURABLE_QUEUE, 10);
+        assertQueueMessages(QUEUE_NAME, 10);
+        assertQueueMessages(QUEUE_WITH_DLQ_NAME + "_DLQ", 1);
 
         final List<BindingRecord> queueBindings = loadBindings();
 
         assertEquals("Unxpected list size", TOTAL_BINDINGS - 2, queueBindings.size());
-        assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE, "amq.topic", BDBStoreUpgradeTestPreparer.TOPIC_NAME,
-                "");
+        assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE, "amq.topic", TOPIC_NAME, "");
         assertBindingRecord(queueBindings, DURABLE_SUBSCRIPTION_QUEUE_WITH_SELECTOR, "amq.topic",
-                BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME, "testprop='true'");
-        assertBindingRecord(queueBindings, DURABLE_QUEUE, "amq.direct", DURABLE_QUEUE, null);
+                SELECTOR_TOPIC_NAME, "testprop='true'");
+        assertBindingRecord(queueBindings, QUEUE_NAME, "amq.direct", QUEUE_NAME, null);
 
-        assertQueueHasOwner(NON_EXCLUSIVE_WITH_ERRONEOUS_OWNER, "misused-owner-as-description");
+        assertQueueHasOwner(NONEXCLUSIVE_WITH_ERRONEOUS_OWNER, "misused-owner-as-description");
 
         assertContent();
     }

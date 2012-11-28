@@ -302,11 +302,12 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         Queue queue = session.createQueue(NON_DURABLE_QUEUE_NAME);
         MessageConsumer messageConsumer = session.createConsumer(queue);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 1; i <= 3; i++)
         {
             Message message = messageConsumer.receive(1000);
             assertNotNull("Message was not migrated!", message);
             assertTrue("Unexpected message received!", message instanceof TextMessage);
+            assertEquals("ID property did not match", i, message.getIntProperty("ID"));
         }
     }
 
