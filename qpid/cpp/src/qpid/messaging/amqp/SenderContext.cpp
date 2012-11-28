@@ -80,7 +80,7 @@ const std::string& SenderContext::getTarget() const
 
 SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& message)
 {
-    if (processUnsettled() < capacity) {
+    if (processUnsettled() < capacity && pn_link_credit(sender)) {
         deliveries.push_back(Delivery(nextId++));
         Delivery& delivery = deliveries.back();
         delivery.encode(MessageImplAccess::get(message), address);
