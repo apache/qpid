@@ -27,6 +27,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
+import javax.management.ObjectName;
 
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
@@ -41,7 +42,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 
     private static final String VIRTUAL_HOST = "test";
 
-    private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + VIRTUAL_HOST;
+    private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
     private static final int NUMBER_OF_NODES = 2;
 
     private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);

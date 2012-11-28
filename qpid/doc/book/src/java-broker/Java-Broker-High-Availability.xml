@@ -506,7 +506,7 @@ amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?connectdelay='
     <para>Qpid exposes the BDB HA store information via its JMX interface and provides APIs to remove a Node from
      the group, update a Node IP address, and assign a Node as the designated primary.</para>
     <para>An instance of the <classname>BDBHAMessageStore</classname> MBean is instantiated by the broker for the each virtualhost using the HA store.</para>
-    <para>The reference to this MBean can be obtained via JMX API using an ObjectName like <emphasis>org.apache.qpid:type=BDBHAMessageStore,name=&lt;virtualhost name&gt;</emphasis>
+    <para>The reference to this MBean can be obtained via JMX API using an ObjectName like <emphasis>org.apache.qpid:type=BDBHAMessageStore,name=&quot;&lt;virtualhost name&gt;&quot;</emphasis>
                  where &lt;virtualhost name&gt; is the name of a specific virtualhost on the broker.</para>
     <table border="1">
       <title>Mbean <classname>BDBHAMessageStore</classname> attributes</title>
@@ -630,7 +630,7 @@ JMXServiceURL url =  new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:
 JMXConnector jmxConnector = JMXConnectorFactory.connect(url, environment);
 MBeanServerConnection mbsc =  jmxConnector.getMBeanServerConnection();
 
-ObjectName queueObjectName = new ObjectName("org.apache.qpid:type=BDBHAMessageStore,name=test");
+ObjectName queueObjectName = new ObjectName("org.apache.qpid:type=BDBHAMessageStore,name=\"test\"");
 String state = (String)mbsc.getAttribute(queueObjectName, "NodeState");
 
 System.out.println("Node state:" + state);

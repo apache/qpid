@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import javax.jms.Connection;
+import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 
@@ -54,7 +55,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
     private static final Set<String> NON_MASTER_STATES = new HashSet<String>(Arrays.asList(REPLICA.toString(), DETACHED.toString(), UNKNOWN.toString()));;
     private static final String VIRTUAL_HOST = "test";
 
-    private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + VIRTUAL_HOST;
+    private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
     private static final int NUMBER_OF_NODES = 4;
 
     private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
