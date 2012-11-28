@@ -38,18 +38,44 @@
 
   </section>
 
-  <section>
+  <section id="LDAPAuthManager">
   <title>LDAP</title>
+
+  <para>
+    LDAP authentication can be configured using the &lt;simple-ldap-auth-manager&gt; element
+    within the &lt;security&gt; section. An example of how to configure this is shown below.
+    Please note this example also configures an unused &lt;pd-auth-manager&gt; to use an empty
+    password file, this is a workaround for an issue relating to registration of security providers.
+  </para>
+
+  <para>
+    <emphasis>NOTE: When using LDAP authentication, you must also use SSL on the brokers AMQP messaging and
+    JMX/HTTP management ports in order to protect passwords during transmission to the broker.</emphasis>
+  </para>
   <example>
     <title>Configuring LDAP authentication</title>
     <programlisting><![CDATA[
 <security>
-    <simple-ldap-auth-manager>
-      <provider-url>ldaps://example.com:636/</provider-url>
-      <search-context>dc=example\,dc=com</search-context>
-      <search-filter>(uid={0})</search-filter>
-    </simple-ldap-auth-manager>
-    ...
+  <default-auth-manager>SimpleLDAPAuthenticationManager</default-auth-manager>
+  <simple-ldap-auth-manager>
+    <provider-url>ldaps://example.com:636/</provider-url>
+    <search-context>dc=example\,dc=com</search-context>
+    <search-filter>(uid={0})</search-filter>
+  </simple-ldap-auth-manager>
+
+  <!-- Unused pd-auth-manager, a workaround to register the necessary security providers -->
+  <pd-auth-manager>
+    <principal-database>
+      <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+      <attributes>
+        <attribute>
+          <name>passwordFile</name>
+          <value>${conf}/emptyPasswdFile</value>
+        </attribute>
+      </attributes>
+    </principal-database>
+  <pd-auth-manager>
+  ...
 </security>]]></programlisting>
   </example>
 
