@@ -122,7 +122,9 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()));
+
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()),
+                                                      _conn.getProtocolHandler());
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
 
         StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
@@ -375,5 +377,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         // The Qpid Java Broker 0-8..0-9-1 does not advertise features by the qpid.features property, so for now
         // we just hardcode JMS selectors as supported.
         return ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR.equals(featureName);
+    }
+
+    @Override
+    public void setHeartbeatListener(HeartbeatListener listener)
+    {
+        _conn.getProtocolHandler().setHeartbeatListener(listener);
     }
 }

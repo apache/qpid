@@ -51,6 +51,9 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 {
        private long _readBytes;
        private long _writtenBytes;
+
+       private long _lastReadTime;
+       private long _lastWriteTime;
        private final IApplicationRegistry _appRegistry;
        private long _createTime = System.currentTimeMillis();
        private ConnectionEndpoint _conn;
@@ -222,6 +225,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     public synchronized void received(ByteBuffer msg)
     {
+        _lastReadTime = System.currentTimeMillis();
         if(RAW_LOGGER.isLoggable(Level.FINE))
         {
             ByteBuffer dup = msg.duplicate();
@@ -364,7 +368,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
          synchronized(_sendLock)
          {
-
+             _lastWriteTime = System.currentTimeMillis();
              if(FRAME_LOGGER.isLoggable(Level.FINE))
              {
                  FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
@@ -425,4 +429,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
          return _connectionId;
      }
 
+    public long getLastReadTime()
+    {
+        return _lastReadTime;
+    }
+
+    public long getLastWriteTime()
+    {
+        return _lastWriteTime;
+    }
 }

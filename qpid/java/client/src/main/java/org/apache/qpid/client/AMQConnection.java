@@ -1560,4 +1560,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                          + localAddress + " to " + remoteAddress);
         }
     }
+
+    void setHeartbeatListener(HeartbeatListener listener)
+    {
+        _delegate.setHeartbeatListener(listener);
+    }
 }

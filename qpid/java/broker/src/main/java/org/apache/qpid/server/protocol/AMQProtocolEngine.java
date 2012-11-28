@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -150,6 +151,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private boolean _blocking;
 
     private final Lock _receivedLock;
+    private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
+
 
     public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkConnection network, final long connectionId)
     {
@@ -541,7 +544,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         final ByteBuffer buf = asByteBuffer(frame);
         _writtenBytes += buf.remaining();
         _sender.send(buf);
-        _lastIoTime = System.currentTimeMillis();
+        final long time = System.currentTimeMillis();
+        _lastIoTime = time;
+        _lastWriteTime.set(time);
+
         if(!_deferFlush)
         {
             _sender.flush();
@@ -1058,12 +1064,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void readerIdle()
     {
-        // Nothing
+        // TODO - enforce disconnect on lack of inbound data
     }
 
     public synchronized void writerIdle()
     {
-        _sender.send(asByteBuffer(HeartbeatBody.FRAME));
+        writeFrame(HeartbeatBody.FRAME);
     }
 
     public void exception(Throwable throwable)
@@ -1460,5 +1466,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public Lock getReceivedLock()
     {
         return _receivedLock;
+    }
+
+    @Override
+    public long getLastReadTime()
+    {
+        return _lastReceivedTime;
+    }
+
+    @Override
+    public long getLastWriteTime()
+    {
+        return _lastWriteTime.get();
     }
 }

@@ -26,7 +26,9 @@ import java.nio.ByteBuffer;
 import java.security.Principal;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.NetworkConnection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +40,23 @@ public class IoNetworkConnection implements NetworkConnection
     private final IoSender _ioSender;
     private final IoReceiver _ioReceiver;
     private Principal _principal;
+    private int _maxReadIdle;
+    private int _maxWriteIdle;
 
     public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
-            int sendBufferSize, int receiveBufferSize, long timeout)
+                               int sendBufferSize, int receiveBufferSize, long timeout)
+    {
+        this(socket,delegate,sendBufferSize,receiveBufferSize,timeout,null);
+    }
+
+    public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
+            int sendBufferSize, int receiveBufferSize, long timeout, Ticker ticker)
     {
         _socket = socket;
         _timeout = timeout;
 
         _ioReceiver = new IoReceiver(_socket, delegate, receiveBufferSize,_timeout);
+        _ioReceiver.setTicker(ticker);
 
         _ioSender = new IoSender(_socket, 2 * sendBufferSize, _timeout);
 
@@ -88,14 +99,12 @@ public class IoNetworkConnection implements NetworkConnection
 
     public void setMaxWriteIdle(int sec)
     {
-        // TODO implement support for setting heartbeating config in this way
-        // Currently a socket timeout is used in IoSender
+        _maxWriteIdle = sec;
     }
 
     public void setMaxReadIdle(int sec)
     {
-        // TODO implement support for setting heartbeating config in this way
-        // Currently a socket timeout is used in IoSender
+        _maxReadIdle = sec;
     }
 
     @Override
@@ -108,5 +117,17 @@ public class IoNetworkConnection implements NetworkConnection
     public Principal getPeerPrincipal()
     {
         return _principal;
+    }
+
+    @Override
+    public int getMaxReadIdle()
+    {
+        return _maxReadIdle;
+    }
+
+    @Override
+    public int getMaxWriteIdle()
+    {
+        return _maxWriteIdle;
     }
 }

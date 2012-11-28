@@ -217,6 +217,18 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _sender = sender;
     }
 
+    @Override
+    public long getLastReadTime()
+    {
+        return _delegate.getLastReadTime();
+    }
+
+    @Override
+    public long getLastWriteTime()
+    {
+        return _delegate.getLastWriteTime();
+    }
+
 
     private static interface DelegateCreator
     {
@@ -409,6 +421,18 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         }
 
+        @Override
+        public long getLastReadTime()
+        {
+            return 0;
+        }
+
+        @Override
+        public long getLastWriteTime()
+        {
+            return 0;
+        }
+
         public long getConnectionId()
         {
             return _id;
@@ -565,6 +589,18 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
         {
 
+        }
+
+        @Override
+        public long getLastReadTime()
+        {
+            return 0;
+        }
+
+        @Override
+        public long getLastWriteTime()
+        {
+            return 0;
         }
     }
 }
