@@ -48,7 +48,7 @@ qpidd-primary: qpidd-primary.in
 cluster.conf-example.xml: cluster.conf-example.xml.in
 	sed $(SUBST) $< > $@
 
-CLEANFILES = qpidd qpidd-primary cluster.conf-example.xml qpidd.service
+CLEANFILES = qpidd qpidd-primary cluster.conf-example.xml
 
 initddir = $(sysconfdir)/init.d
 nobase_initd_SCRIPTS = qpidd qpidd-primary
