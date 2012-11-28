@@ -56,7 +56,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
     private IoNetworkConnection _connection;
     private AcceptingThread _acceptor;
 
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContext sslContext)
+    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate)
     {
         int sendBufferSize = settings.getWriteBufferSize();
         int receiveBufferSize = settings.getReadBufferSize();

@@ -231,7 +231,7 @@ public class Connection extends ConnectionInvoker
                 addConnectionListener((ConnectionListener)secureReceiver);
             }
 
-            NetworkConnection network = transport.connect(settings, secureReceiver, null);
+            NetworkConnection network = transport.connect(settings, secureReceiver);
             setRemoteAddress(network.getRemoteAddress());
             setLocalAddress(network.getLocalAddress());
 
