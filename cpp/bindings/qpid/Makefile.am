@@ -33,7 +33,7 @@ endif
 
 if HAVE_PERL_DEVEL
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/bindings -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
 
 EXTRA_DIST += perl/perl.i perl/CMakeLists.txt
 BUILT_SOURCES = perl/cqpid_perl.cpp
