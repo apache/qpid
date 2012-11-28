@@ -69,6 +69,7 @@ class SenderContext
     const std::string& getTarget() const;
     Delivery* send(const qpid::messaging::Message& message);
     void configure() const;
+    bool settled();
   private:
     friend class ConnectionContext;
     typedef std::deque<Delivery> Deliveries;
