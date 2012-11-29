@@ -154,7 +154,7 @@ receiver_SOURCES = \
   receiver.cpp \
   TestOptions.h \
   ConnectionOptions.h
-receiver_LDADD = $(lib_client)
+receiver_LDADD = $(lib_client) -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS += sender
 sender_SOURCES = \
@@ -162,7 +162,7 @@ sender_SOURCES = \
   TestOptions.h \
   ConnectionOptions.h \
   Statistics.cpp
-sender_LDADD = $(lib_messaging)
+sender_LDADD = $(lib_messaging) -lboost_program_options -lqpidcommon -lqpidtypes -lqpidclient
 
 qpidexectest_PROGRAMS += qpid-receive
 qpid_receive_SOURCES = \
@@ -171,7 +171,7 @@ qpid_receive_SOURCES = \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_receive_LDADD = $(lib_messaging)
+qpid_receive_LDADD = $(lib_messaging) -lboost_program_options -lqpidcommon -lqpidtypes
 
 qpidexectest_PROGRAMS += qpid-send
 qpid_send_SOURCES = \
@@ -180,42 +180,42 @@ qpid_send_SOURCES = \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_send_LDADD = $(lib_messaging)
+qpid_send_LDADD = $(lib_messaging) -lboost_program_options -lqpidcommon -lqpidtypes
 
 qpidexectest_PROGRAMS+=qpid-perftest
 qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_perftest_INCLUDES=$(PUBLIC_INCLUDES)
-qpid_perftest_LDADD=$(lib_client) 
+qpid_perftest_LDADD=$(lib_client)  -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS+=qpid-txtest
 qpid_txtest_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
-qpid_txtest_LDADD=$(lib_client) 
+qpid_txtest_LDADD=$(lib_client)  -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS+=qpid-latency-test
 qpid_latency_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_latency_test_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
-qpid_latency_test_LDADD=$(lib_client) 
+qpid_latency_test_LDADD=$(lib_client)  -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS+=qpid-client-test
 qpid_client_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
-qpid_client_test_LDADD=$(lib_client) 
+qpid_client_test_LDADD=$(lib_client)  -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS+=qpid-topic-listener
 qpid_topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
-qpid_topic_listener_LDADD=$(lib_client) 
+qpid_topic_listener_LDADD=$(lib_client)  -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS+=qpid-topic-publisher
 qpid_topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
-qpid_topic_publisher_LDADD=$(lib_client) 
+qpid_topic_publisher_LDADD=$(lib_client)  -lboost_program_options -lqpidcommon
 
 qpidexectest_PROGRAMS+=qpid-ping
 qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_ping_SOURCES=qpid-ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
-qpid_ping_LDADD=$(lib_client)
+qpid_ping_LDADD=$(lib_client) -lboost_program_options -lqpidcommon
 
 #
 # Other test programs
