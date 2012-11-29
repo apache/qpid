@@ -146,7 +146,8 @@ libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
-  libqpidcommon.la
+  libqpidcommon.la              \
+  -lboost_program_options
 
 posix_qpidd_src = posix/QpiddBroker.cpp
 

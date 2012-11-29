@@ -33,10 +33,10 @@ hello_xml_SOURCES=hello_xml.cpp
 hello_xml_LDADD=$(CLIENT_LIB)
 
 drain_SOURCES=drain.cpp OptionParser.h OptionParser.cpp
-drain_LDADD=$(CLIENT_LIB)
+drain_LDADD=$(CLIENT_LIB) -lqpidtypes
 
 spout_SOURCES=spout.cpp OptionParser.h OptionParser.cpp
-spout_LDADD=$(CLIENT_LIB)
+spout_LDADD=$(CLIENT_LIB) -lqpidtypes
 
 client_SOURCES=client.cpp
 client_LDADD=$(CLIENT_LIB)
@@ -45,10 +45,10 @@ server_SOURCES=server.cpp
 server_LDADD=$(CLIENT_LIB)
 
 map_sender_SOURCES=map_sender.cpp
-map_sender_LDADD=$(CLIENT_LIB)
+map_sender_LDADD=$(CLIENT_LIB) -lqpidtypes
 
 map_receiver_SOURCES=map_receiver.cpp
-map_receiver_LDADD=$(CLIENT_LIB)
+map_receiver_LDADD=$(CLIENT_LIB) -lqpidtypes
 
 examples_DATA=                 \
 	hello_world.cpp	       \

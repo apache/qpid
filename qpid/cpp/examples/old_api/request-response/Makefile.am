@@ -24,10 +24,10 @@ include $(top_srcdir)/examples/makedist.mk
 noinst_PROGRAMS=client server
 
 client_SOURCES=client.cpp
-client_LDADD=$(CLIENT_LIB)
+client_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 server_SOURCES=server.cpp
-server_LDADD=$(CLIENT_LIB)
+server_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 examples_DATA=               \
 	server.cpp           \
