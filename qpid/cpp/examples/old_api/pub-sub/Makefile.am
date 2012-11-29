@@ -24,10 +24,10 @@ include $(top_srcdir)/examples/makedist.mk
 noinst_PROGRAMS=topic_listener topic_publisher
 
 topic_listener_SOURCES=topic_listener.cpp
-topic_listener_LDADD=$(CLIENT_LIB)
+topic_listener_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 topic_publisher_SOURCES=topic_publisher.cpp
-topic_publisher_LDADD=$(CLIENT_LIB)
+topic_publisher_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 examples_DATA=               \
 	topic_listener.cpp   \

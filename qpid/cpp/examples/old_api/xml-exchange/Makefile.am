@@ -24,13 +24,13 @@ include $(top_srcdir)/examples/makedist.mk
 noinst_PROGRAMS=declare_queues xml_producer listener
 
 declare_queues_SOURCES=declare_queues.cpp
-declare_queues_LDADD=$(CLIENT_LIB)
+declare_queues_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 xml_producer_SOURCES=xml_producer.cpp
-xml_producer_LDADD=$(CLIENT_LIB)
+xml_producer_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 listener_SOURCES=listener.cpp
-listener_LDADD=$(CLIENT_LIB)
+listener_LDADD=$(CLIENT_LIB) -lqpidcommon
 
 EXTRA_DIST=                \
 	README.txt             \
