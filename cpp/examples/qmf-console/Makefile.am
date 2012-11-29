@@ -25,19 +25,19 @@ include $(top_srcdir)/examples/makedist.mk
 noinst_PROGRAMS=console printevents ping queuestats cluster-qmon
 
 console_SOURCES=console.cpp
-console_LDADD=$(CONSOLE_LIB)
+console_LDADD=$(CONSOLE_LIB) -lqpidcommon -lqpidclient
 
 printevents_SOURCES=printevents.cpp
-printevents_LDADD=$(CONSOLE_LIB)
+printevents_LDADD=$(CONSOLE_LIB) -lqpidcommon -lqpidclient
 
 ping_SOURCES=ping.cpp
-ping_LDADD=$(CONSOLE_LIB)
+ping_LDADD=$(CONSOLE_LIB) -lqpidcommon -lqpidclient
 
 queuestats_SOURCES=queuestats.cpp
-queuestats_LDADD=$(CONSOLE_LIB)
+queuestats_LDADD=$(CONSOLE_LIB) -lqpidcommon -lqpidclient
 
 cluster_qmon_SOURCES=cluster-qmon.cpp
-cluster_qmon_LDADD=$(CONSOLE_LIB)
+cluster_qmon_LDADD=$(CONSOLE_LIB) -lqpidcommon -lqpidclient
 
 examples_DATA= \
 	console.cpp \
