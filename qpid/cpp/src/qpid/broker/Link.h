@@ -183,7 +183,7 @@ class Link : public PersistableConfig, public management::Manageable {
     static bool isEncodedLink(const std::string& key);
 
     // Manageable entry points
-    management::ManagementObject::shared_ptr GetManagementObjectShared(void) const;
+    management::ManagementObject::shared_ptr GetManagementObject(void) const;
     management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
 
     // manage the exchange owned by this link

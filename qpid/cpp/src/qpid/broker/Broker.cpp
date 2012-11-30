@@ -234,7 +234,7 @@ Broker::Broker(const Broker::Options& conf) :
         systemObject = System::shared_ptr(system);
 
         mgmtObject = _qmf::Broker::shared_ptr(new _qmf::Broker(managementAgent.get(), this, system, "amqp-broker"));
-        mgmtObject->set_systemRef(system->GetManagementObjectShared()->getObjectId());
+        mgmtObject->set_systemRef(system->GetManagementObject()->getObjectId());
         mgmtObject->set_port(conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
@@ -454,7 +454,7 @@ Broker::~Broker() {
     QPID_LOG(notice, "Shut down");
 }
 
-ManagementObject::shared_ptr Broker::GetManagementObjectShared(void) const
+ManagementObject::shared_ptr Broker::GetManagementObject(void) const
 {
     return mgmtObject;
 }

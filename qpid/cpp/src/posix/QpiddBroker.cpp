@@ -144,7 +144,7 @@ struct QpiddDaemon : public Daemon {
         uint16_t port=brokerPtr->getPort(options->daemon.transport);
         ready(port);            // Notify parent.
         if (options->parent->broker.enableMgmt && (options->parent->broker.port == 0 || options->daemon.transport != TCP)) {
-            boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(brokerPtr->GetManagementObjectShared())->set_port(port);
+            boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(brokerPtr->GetManagementObject())->set_port(port);
         }
         brokerPtr->run();
     }
@@ -200,7 +200,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
             uint16_t port = brokerPtr->getPort(myOptions->daemon.transport);
             cout << port << endl;
             if (options->broker.enableMgmt) {
-                boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(brokerPtr->GetManagementObjectShared())->set_port(port);
+                boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(brokerPtr->GetManagementObject())->set_port(port);
             }
         }
         brokerPtr->run();
