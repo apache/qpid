@@ -158,6 +158,7 @@ add_executable (unit_test unit_test
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidmessaging qpidbroker qmfconsole)
+set_target_properties (unit_test PROPERTIES COMPILE_FLAGS -D_IN_QPID_BROKER)
 remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
@@ -327,7 +328,9 @@ endif (PYTHON_EXECUTABLE)
 
 add_library(test_store MODULE test_store.cpp)
 target_link_libraries (test_store qpidbroker qpidcommon)
-set_target_properties (test_store PROPERTIES PREFIX "")
+set_target_properties (test_store PROPERTIES
+                       COMPILE_FLAGS -D_IN_QPID_BROKER
+                       PREFIX "")
 
 
 add_library (dlclose_noop MODULE dlclose_noop.c)

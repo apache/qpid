@@ -82,6 +82,7 @@ if (BUILD_AMQP)
                            PREFIX ""
                            COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
                            LINK_FLAGS "${PROTON_LINK_FLAGS}")
+    set_target_properties (amqp PROPERTIES COMPILE_FLAGS -D_IN_QPID_BROKER)
     install (TARGETS amqp
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})

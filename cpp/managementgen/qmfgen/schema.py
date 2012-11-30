@@ -1523,12 +1523,8 @@ class SchemaClass:
   def genParentRefAssignment (self, stream, variables):
     for config in self.properties:
       if config.isParentRef == 1:
-        if variables['genForBroker']:
-          stream.write (config.getName () + \
-                        " = _parent->GetManagementObjectShared()->getObjectId ();")
-        else:
-          stream.write (config.getName () + \
-                        " = _parent->GetManagementObject()->getObjectId ();")
+        stream.write (config.getName () + \
+                      " = _parent->GetManagementObject()->getObjectId();")
         return
 
   def genSchemaMD5 (self, stream, variables):

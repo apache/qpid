@@ -139,9 +139,10 @@ tmoduleexecdir = $(libdir)/qpid/tests
 tmoduleexec_LTLIBRARIES=
 
 AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
+BROKER_CXXFLAGS = -D_IN_QPID_BROKER
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) $(BROKER_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
@@ -759,6 +760,7 @@ libqpidbroker_la_SOURCES = \
 
 QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
+libqpidbroker_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS)
 
 if HAVE_PROTON
 
@@ -793,7 +795,7 @@ amqp_la_SOURCES = \
   qpid/broker/amqp/Translation.h \
   qpid/broker/amqp/Translation.cpp
 
-amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(PROTON_CFLAGS)
+amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS) $(PROTON_CFLAGS)
 amqp_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
 
 cmoduleexec_LTLIBRARIES += amqpc.la

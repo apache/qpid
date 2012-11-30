@@ -73,7 +73,7 @@ class Bridge : public PersistableConfig,
 
     bool isDetached() const { return detached; }
 
-    management::ManagementObject::shared_ptr GetManagementObjectShared() const;
+    management::ManagementObject::shared_ptr GetManagementObject() const;
     management::Manageable::status_t ManagementMethod(uint32_t methodId,
                                                       management::Args& args,
                                                       std::string& text);

@@ -43,4 +43,5 @@ if SUNOS
 endif
 
 acl_la_LDFLAGS = $(PLUGINLDFLAGS)
+acl_la_CXXFLAGS = $(AM_CXXFLAGS) -D_IN_QPID_BROKER
 

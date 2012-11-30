@@ -303,14 +303,14 @@ Consumer(_name, type),
     deliveryCount(0),
     protocols(parent->getSession().getBroker().getProtocolRegistry())
 {
-    if (parent != 0 && queue.get() != 0 && queue->GetManagementObjectShared() !=0)
+    if (parent != 0 && queue.get() != 0 && queue->GetManagementObject() !=0)
     {
         ManagementAgent* agent = parent->session.getBroker().getManagementAgent();
         qpid::management::Manageable* ms = dynamic_cast<qpid::management::Manageable*> (&(parent->session));
 
         if (agent != 0)
         {
-            mgmtObject = _qmf::Subscription::shared_ptr(new _qmf::Subscription(agent, this, ms , queue->GetManagementObjectShared()->getObjectId(), getTag(),
+            mgmtObject = _qmf::Subscription::shared_ptr(new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId(), getTag(),
                                                                                !acquire, ackExpected, exclusive, ManagementAgent::toMap(arguments)));
             agent->addObject (mgmtObject);
             mgmtObject->set_creditMode("WINDOW");
@@ -318,7 +318,7 @@ Consumer(_name, type),
     }
 }
 
-ManagementObject::shared_ptr SemanticState::ConsumerImpl::GetManagementObjectShared (void) const
+ManagementObject::shared_ptr SemanticState::ConsumerImpl::GetManagementObject (void) const
 {
     return mgmtObject;
 }
