@@ -48,6 +48,7 @@ import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
@@ -68,6 +69,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
     private Principal _peerPrincipal;
+    private NetworkConnection _networkConnection;
 
     public ServerConnection(final long connectionId)
     {
@@ -489,5 +491,21 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setLocalAddress(SocketAddress localAddress)
     {
         super.setLocalAddress(localAddress);
+    }
+
+    public void setNetworkConnection(NetworkConnection network)
+    {
+        _networkConnection = network;
+    }
+
+    public NetworkConnection getNetworkConnection()
+    {
+        return _networkConnection;
+    }
+
+    public void doHeartbeat()
+    {
+        super.doHeartBeat();
+
     }
 }

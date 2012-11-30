@@ -53,6 +53,8 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
     //private NetworkConnection _networkDriver;
     private long _readBytes;
     private long _writtenBytes;
+    private long _lastReadTime;
+    private long _lastWriteTime;
     private final IApplicationRegistry _appRegistry;
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _conn;
@@ -97,10 +99,14 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
 
 
-    public ProtocolEngine_1_0_0(final IApplicationRegistry appRegistry, long id)
+    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry, long id)
     {
         _appRegistry = appRegistry;
         _connectionId = id;
+        if(networkDriver != null)
+        {
+            setNetworkConnection(networkDriver, networkDriver.getSender());
+        }
     }
 
 
@@ -178,6 +184,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
     public synchronized void received(ByteBuffer msg)
     {
+        _lastReadTime = System.currentTimeMillis();
         if(RAW_LOGGER.isLoggable(Level.FINE))
         {
             ByteBuffer dup = msg.duplicate();
@@ -320,6 +327,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         synchronized(_sendLock)
         {
 
+            _lastWriteTime = System.currentTimeMillis();
             if(FRAME_LOGGER.isLoggable(Level.FINE))
             {
                 FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
@@ -374,4 +382,13 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         return _connectionId;
     }
 
+    public long getLastReadTime()
+    {
+        return _lastReadTime;
+    }
+
+    public long getLastWriteTime()
+    {
+        return _lastWriteTime;
+    }
 }

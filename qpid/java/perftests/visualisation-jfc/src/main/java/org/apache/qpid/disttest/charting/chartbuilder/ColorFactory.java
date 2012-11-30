@@ -23,7 +23,6 @@ import java.awt.Color;
 
 public class ColorFactory
 {
-
     /**
      * Converts a colour name known to the JDK into a {@link Color} instance.  Additionally,
      * if the work dark_ is prepended to the colour, a darker shade of the same colour is
@@ -52,7 +51,7 @@ public class ColorFactory
         }
     }
 
-    protected static Color getColourFromStaticField(String colourName)
+    private static Color getColourFromStaticField(String colourName)
     {
         try
         {

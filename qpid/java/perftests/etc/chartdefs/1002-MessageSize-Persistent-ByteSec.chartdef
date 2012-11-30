@@ -18,7 +18,7 @@
 #
 
 chartType=XYLINE
-chartTitle=Impact of Message Size
+chartTitle=Impact of Message Size Bytes/S
 chartSubtitle=Persistent messages
 chartDescription=1P 1C, persistent, auto-ack, with message payload between 256-262144 bytes.
 

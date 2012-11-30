@@ -41,14 +41,14 @@ public abstract class BaseChartBuilder implements ChartBuilder
         setBackgroundColour(chart);
     }
 
-    public void addSeriesAttributes(List<SeriesDefinition> series, SeriesStokeAndPaintAccessor stokeAndPaintAccessor)
+    protected void addSeriesAttributes(JFreeChart targetChart, List<SeriesDefinition> series, SeriesStrokeAndPaintApplier strokeAndPaintApplier)
     {
         for (int i = 0; i < series.size(); i++)
         {
             SeriesDefinition seriesDefinition = series.get(i);
             if (seriesDefinition.getSeriesColourName() != null)
             {
-                stokeAndPaintAccessor.setSeriesPaint(i, ColorFactory.toColour(seriesDefinition.getSeriesColourName()));
+                strokeAndPaintApplier.setSeriesPaint(i, ColorFactory.toColour(seriesDefinition.getSeriesColourName()), targetChart);
             }
             if (seriesDefinition.getStrokeWidth() != null)
             {
@@ -56,7 +56,7 @@ public abstract class BaseChartBuilder implements ChartBuilder
                 boolean dashed = seriesDefinition.getStrokeWidth() < 0;
                 float width = Math.abs(seriesDefinition.getStrokeWidth());
                 BasicStroke stroke = buildStrokeOfWidth(width, dashed);
-                stokeAndPaintAccessor.setSeriesStroke(i, stroke);
+                strokeAndPaintApplier.setSeriesStroke(i, stroke, targetChart);
             }
         }
     }

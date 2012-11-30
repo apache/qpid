@@ -44,6 +44,13 @@ public interface ConnectionURL
     public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";
 
     /**
+     * This option is used to apply a connection level override of
+     * the {@value BrokerDetails#OPTIONS_SSL} option values in the
+     * {@value ConnectionURL#OPTIONS_BROKERLIST};
+     */
+    public static final String OPTIONS_SSL = "ssl";
+
+    /**
      * This option is only applicable for 0-8/0-9/0-9-1 protocols connection
      * <p>
      * It tells the client to delegate the requeue/DLQ decision to the

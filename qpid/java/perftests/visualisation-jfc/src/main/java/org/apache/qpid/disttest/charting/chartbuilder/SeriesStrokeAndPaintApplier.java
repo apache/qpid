@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,40 +17,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network;
+package org.apache.qpid.disttest.charting.chartbuilder;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import org.apache.qpid.transport.Sender;
+import java.awt.Color;
+import java.awt.Stroke;
 
-public interface NetworkConnection
+import org.jfree.chart.JFreeChart;
+
+/**
+ * Applies the supplied stroke and color to a series in the target chart.
+ * Multiple implementations exist to because of the various chart types.
+ */
+public interface SeriesStrokeAndPaintApplier
 {
-    Sender<ByteBuffer> getSender();
-
-    void start();
-
-    void close();
-
-    /**
-     * Returns the remote address of the underlying socket.
-     */
-    SocketAddress getRemoteAddress();
-
-    /**
-     * Returns the local address of the underlying socket.
-     */
-    SocketAddress getLocalAddress();
-
-    void setMaxWriteIdle(int sec);
-
-    void setMaxReadIdle(int sec);
-
-    void setPeerPrincipal(Principal principal);
-
-    Principal getPeerPrincipal();
-
-    int getMaxReadIdle();
-
-    int getMaxWriteIdle();
+    void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart);
+    void setSeriesPaint(int seriesIndex, Color color, JFreeChart targetChart);
 }

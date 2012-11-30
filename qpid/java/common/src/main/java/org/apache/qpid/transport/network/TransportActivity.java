@@ -18,40 +18,16 @@
  * under the License.
  *
  */
+
 package org.apache.qpid.transport.network;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import org.apache.qpid.transport.Sender;
-
-public interface NetworkConnection
+public interface TransportActivity
 {
-    Sender<ByteBuffer> getSender();
+    long getLastReadTime();
 
-    void start();
+    long getLastWriteTime();
 
-    void close();
+    void writerIdle();
 
-    /**
-     * Returns the remote address of the underlying socket.
-     */
-    SocketAddress getRemoteAddress();
-
-    /**
-     * Returns the local address of the underlying socket.
-     */
-    SocketAddress getLocalAddress();
-
-    void setMaxWriteIdle(int sec);
-
-    void setMaxReadIdle(int sec);
-
-    void setPeerPrincipal(Principal principal);
-
-    Principal getPeerPrincipal();
-
-    int getMaxReadIdle();
-
-    int getMaxWriteIdle();
+    void readerIdle();
 }

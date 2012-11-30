@@ -206,11 +206,39 @@ public class QueueManagementTest extends QpidBrokerTestCase
         managedBroker.createNewQueue(queueName, null, true, arguments);
 
         // Ensure the queue exists
-        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName("test", queueName));
+        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName(VIRTUAL_HOST, queueName));
         assertNotNull("Manager queue expected to be available", _jmxUtils.getManagedQueue(queueName));
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
         assertEquals("Unexpected maximum delivery count", deliveryCount, managedQueue.getMaximumDeliveryCount());
+    }
+
+    public void testCreateQueueWithAlertingThresholdsSet() throws Exception
+    {
+        final String queueName = getName();
+        final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+
+        final Long maximumMessageCount = 100l;
+        final Long maximumMessageSize = 200l;
+        final Long maximumQueueDepth = 300l;
+        final Long maximumMessageAge = 400l;
+        final Map<String, Object> arguments = new HashMap<String, Object>();
+        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_MESSAGE_COUNT, maximumMessageCount);
+        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_MESSAGE_SIZE, maximumMessageSize);
+        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_QUEUE_DEPTH, maximumQueueDepth);
+        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_MESSAGE_AGE, maximumMessageAge);
+
+        managedBroker.createNewQueue(queueName, null, true, arguments);
+
+        // Ensure the queue exists
+        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName(VIRTUAL_HOST, queueName));
+        assertNotNull("Manager queue expected to be available", _jmxUtils.getManagedQueue(queueName));
+
+        ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals("Unexpected maximum message count", maximumMessageCount, managedQueue.getMaximumMessageCount());
+        assertEquals("Unexpected maximum message size", maximumMessageSize, managedQueue.getMaximumMessageSize());
+        assertEquals("Unexpected maximum queue depth", maximumQueueDepth, managedQueue.getMaximumQueueDepth());
+        assertEquals("Unexpected maximum message age", maximumMessageAge, managedQueue.getMaximumMessageAge());
     }
 
     /**

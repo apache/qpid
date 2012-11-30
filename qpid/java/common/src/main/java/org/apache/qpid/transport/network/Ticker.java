@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,16 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting.chartbuilder;
 
-import java.awt.Color;
-import java.awt.Stroke;
+package org.apache.qpid.transport.network;
 
-public interface SeriesStokeAndPaintAccessor
+public interface Ticker
 {
+    int getTimeToNextTick(long currentTime);
 
-    void setSeriesStroke(int i, Stroke stroke);
-
-    void setSeriesPaint(int i, Color blue);
-
+    int tick(long currentTime);
 }

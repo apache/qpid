@@ -28,6 +28,7 @@ import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
@@ -74,6 +75,54 @@ public class SSLTest extends QpidBrokerTestCase
             Connection con = getConnection(new AMQConnectionURL(url));
             assertNotNull("connection should be successful", con);
             Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
+            assertNotNull("create session should be successful", ssn);
+        }
+    }
+
+    /**
+     * Create an SSL connection using the SSL system properties for the trust and key store, but using
+     * the {@link ConnectionURL} ssl='true' option to indicate use of SSL at a Connection level,
+     * without specifying anything at the {@link ConnectionURL#OPTIONS_BROKERLIST} level.
+     */
+    public void testSslConnectionOption() throws Exception
+    {
+        if (shouldPerformTest())
+        {
+            //Start the broker (NEEDing client certificate authentication)
+            configureJavaBrokerIfNecessary(true, true, true, false);
+            super.setUp();
+
+            //Create URL enabling SSL at the connection rather than brokerlist level
+            String url = "amqp://guest:guest@test/?ssl='true'&brokerlist='tcp://localhost:%s'";
+            url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT);
+
+            Connection con = getConnection(new AMQConnectionURL(url));
+            assertNotNull("connection should be successful", con);
+            Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE);
+            assertNotNull("create session should be successful", ssn);
+        }
+    }
+
+    /**
+     * Create an SSL connection using the SSL system properties for the trust and key store, but using
+     * the {@link ConnectionURL} ssl='true' option to indicate use of SSL at a Connection level,
+     * overriding the false setting at the {@link ConnectionURL#OPTIONS_BROKERLIST} level.
+     */
+    public void testSslConnectionOptionOverridesBrokerlistOption() throws Exception
+    {
+        if (shouldPerformTest())
+        {
+            //Start the broker (NEEDing client certificate authentication)
+            configureJavaBrokerIfNecessary(true, true, true, false);
+            super.setUp();
+
+            //Create URL enabling SSL at the connection, overriding the false at the brokerlist level
+            String url = "amqp://guest:guest@test/?ssl='true'&brokerlist='tcp://localhost:%s?ssl='false''";
+            url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT);
+
+            Connection con = getConnection(new AMQConnectionURL(url));
+            assertNotNull("connection should be successful", con);
+            Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE);
             assertNotNull("create session should be successful", ssn);
         }
     }

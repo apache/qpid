@@ -23,7 +23,10 @@
   <dirname property="project.root" file="${ant.file.common}"/>
 
   <property name="project.name"          value="qpid"/>
-  <property name="project.version"       value="0.19"/>
+  <!-- Version used for standard build output -->
+  <property name="project.version"       value="0.21"/>
+  <!-- The release version used for maven output. SNAPSHOT added via maven.version.suffix -->
+  <property name="project.version.maven" value="0.22"/>
   <property name="project.url"           value="http://qpid.apache.org"/>
   <property name="project.groupid"       value="org.apache.qpid"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
@@ -42,7 +45,7 @@
   <property name="build.report"          location="${build}/report"/>
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
-  <property name="build.plugins"         location="${build}/lib/plugins"/>
+  <property name="build.lib.broker.plugins"  location="${build}/lib/broker-plugins"/>
   <property name="build.coverage.report" location="${build}/coverage/report"/>
   <property name="build.coverage.src"    location="${build}/coverage/src"/>
   <property name="build.findbugs"        location="${build}/findbugs"/>

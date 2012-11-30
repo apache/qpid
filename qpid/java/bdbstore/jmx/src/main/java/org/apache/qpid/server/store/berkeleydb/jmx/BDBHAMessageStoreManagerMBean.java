@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.management.JMException;
+import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
@@ -91,7 +92,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public String getObjectInstanceName()
     {
-        return _store.getName();
+        return ObjectName.quote(_store.getName());
     }
 
     @Override

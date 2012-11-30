@@ -36,15 +36,14 @@ import org.apache.qpid.management.common.mbeans.ManagedExchange;
 
 public class AddQueue
 {
-
     public static void main(String[] args)
     {
         //Example: add 'newqueue' to the 'test' virtualhost and bind to the 'amq.direct' exchange
         //TODO: take these parameters as arguments
-        
+
         addQueue("test", "amq.direct", "newqueue");
     }
-    
+
     private static JMXConnector getJMXConnection() throws Exception
     {
         //TODO: Take these parameters as main+method arguments
@@ -52,52 +51,55 @@ public class AddQueue
         int port = 8999;
         String username = "admin";
         String password = "admin";
-        
+
         Map<String, Object> env = new HashMap<String, Object>();
         JMXServiceURL jmxUrl = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi");
 
         //Add user credential's to environment map for RMIConnector startup. 
         env.put(JMXConnector.CREDENTIALS, new String[] {username,password});
-        
+
         return JMXConnectorFactory.connect(jmxUrl, env);
     }
-    
-    public static boolean addQueue(String virHost, String exchName, String queueName) {
 
+    public static boolean addQueue(String virHost, String exchName, String queueName)
+    {
         JMXConnector jmxc = null;
         try 
         {
             jmxc = getJMXConnection();
-            
+
             MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
 
             ObjectName hostManagerObjectName = new ObjectName( 
                     "org.apache.qpid:" + 
                     "type=VirtualHost.VirtualHostManager," + 
-                    "VirtualHost=" + virHost + ",*"); 
+                    "VirtualHost=" + ObjectName.quote(virHost) + ",*");
 
             Set<ObjectName> vhostManagers = mbsc.queryNames(hostManagerObjectName, null);
-            
+
             if(vhostManagers.size() == 0)
             {
+                System.out.println("VirtualHostManager MBean wasnt found: " + virHost);
+
                 //The vhostManager MBean wasnt found, cant procede
                 return false;
             }
-            
+
             ManagedBroker vhostManager = (ManagedBroker) MBeanServerInvocationHandler.newProxyInstance(
                                               mbsc, (ObjectName) vhostManagers.toArray()[0], ManagedBroker.class, false);
                         
             ObjectName customExchangeObjectName = new ObjectName(
                     "org.apache.qpid:" +
                     "type=VirtualHost.Exchange," +
-                    "VirtualHost=" + virHost + "," +
-                    "name=" + exchName + "," + 
-                    "ExchangeType=direct,*");
+                    "VirtualHost=" + ObjectName.quote(virHost) + "," +
+                    "name=" + ObjectName.quote(exchName) + ",*");
 
             Set<ObjectName> exchanges = mbsc.queryNames(customExchangeObjectName, null);
-            
+
             if(exchanges.size() == 0)
             {
+                System.out.println("Exchange wasnt found: " + exchName);
+
                 //The exchange doesnt exist, cant procede.
                 return false;
             }
@@ -105,12 +107,14 @@ public class AddQueue
             //create the MBean proxy
             ManagedExchange managedExchange = (ManagedExchange) MBeanServerInvocationHandler.newProxyInstance(
                         mbsc, (ObjectName) exchanges.toArray()[0], ManagedExchange.class, false);
-              
+
             try
             {
                 //create the new durable queue and bind it.
                 vhostManager.createNewQueue(queueName, null, true);
+                System.out.println("Created queue: " + queueName);
                 managedExchange.createNewBinding(queueName,queueName);
+                System.out.println("Bound queue to exchange: "+ exchName);
             }
             catch (Exception e)
             {
@@ -126,7 +130,7 @@ public class AddQueue
         {
             System.out.println("Could not add queue due to error :" + e.getMessage());
             e.printStackTrace();
-        } 
+        }
         finally
         {
             if(jmxc != null)
@@ -141,9 +145,8 @@ public class AddQueue
                 }
             }
         }
-                
+
         return false;
-        
     }
 
 }

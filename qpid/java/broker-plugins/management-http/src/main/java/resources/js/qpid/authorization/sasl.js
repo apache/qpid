@@ -152,10 +152,45 @@ var saslCramMD5 = function saslCramMD5(user, password)
             });
 };
 
+var containsMechanism = function containsMechanism(mechanisms, mech)
+{
+    for (var i = 0; i < mechanisms.length; i++) {
+        if (mechanisms[i] == mech) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
 var doAuthenticate = function doAuthenticate()
 {
-    saslCramMD5(dojo.byId("username").value, dojo.byId("pass").value);
-    updateAuthentication();
+    dojo.xhrGet({
+        // The URL of the request
+        url: "rest/sasl",
+        handleAs: "json"
+    }).then(function(data)
+            {
+                var mechMap = data.mechanisms;
+
+                if (containsMechanism(mechMap, "CRAM-MD5"))
+                {
+                    saslCramMD5(dojo.byId("username").value, dojo.byId("pass").value);
+                    updateAuthentication();
+                }
+                else if (containsMechanism(mechMap, "PLAIN"))
+                {
+                    saslPlain(dojo.byId("username").value, dojo.byId("pass").value);
+                    updateAuthentication();
+                }
+                else
+                {
+                    alert("No supported SASL mechanism offered: " + mechMap);
+                }
+            }
+        );
+
+
 };
 
 

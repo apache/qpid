@@ -30,7 +30,6 @@ import org.apache.qpid.url.URLSyntaxException;
 
 public class ConnectionURLTest extends TestCase
 {
-
     public void testFailoverURL() throws URLSyntaxException
     {
         String url = "amqp://ritchiem:bob@/test?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin?cyclecount='100''";
@@ -562,6 +561,35 @@ public class ConnectionURLTest extends TestCase
         //check that the reject behaviour option is null as expected
         assertNull("Reject behaviour option was not as expected",
                 connectionurl.getOption(ConnectionURL.OPTIONS_REJECT_BEHAVIOUR));
+    }
+
+    /**
+     * Verify that when the ssl option is not specified, asking for the option returns null,
+     * such that this can later be used to verify it wasnt specified.
+     */
+    public void testDefaultSsl() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&foo='bar'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertNull("default ssl value should be null", connectionURL.getOption(ConnectionURL.OPTIONS_SSL));
+    }
+
+    /**
+     * Verify that when the ssl option is specified, asking for the option returns the value,
+     * such that this can later be used to verify what value it was specified as.
+     */
+    public void testOverridingSsl() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&ssl='true'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertTrue("value should be true", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_SSL)));
+
+        url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&ssl='false'";
+        connectionURL = new AMQConnectionURL(url);
+
+        assertFalse("value should be false", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_SSL)));
     }
 }
 

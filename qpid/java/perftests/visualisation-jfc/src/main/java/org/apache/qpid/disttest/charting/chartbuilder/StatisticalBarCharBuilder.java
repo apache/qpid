@@ -92,18 +92,18 @@ public class StatisticalBarCharBuilder extends BaseChartBuilder
         chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
 
         addCommonChartAttributes(chart, chartingDefinition);
-        addSeriesAttributes(chartingDefinition.getSeries(), new SeriesStokeAndPaintAccessor()
+        addSeriesAttributes(chart, chartingDefinition.getSeries(), new SeriesStrokeAndPaintApplier()
         {
             @Override
-            public void setSeriesStroke(int seriesIndex, Stroke stroke)
+            public void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart)
             {
-                chart.getCategoryPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
+                targetChart.getCategoryPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
             }
 
             @Override
-            public void setSeriesPaint(int seriesIndex, Color colour)
+            public void setSeriesPaint(int seriesIndex, Color colour, JFreeChart targetChart)
             {
-                chart.getCategoryPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
+                targetChart.getCategoryPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
             }
         });
 

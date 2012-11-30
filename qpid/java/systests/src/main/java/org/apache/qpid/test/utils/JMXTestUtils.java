@@ -286,9 +286,7 @@ public class JMXTestUtils
     public ObjectName getQueueObjectName(String virtualHostName, String queue)
     {
         // Get the name of the test manager
-        String query = "org.apache.qpid:type=VirtualHost.Queue,VirtualHost="
-                       + ObjectName.quote(virtualHostName) + ",name="
-                       + ObjectName.quote(queue) + ",*";
+        String query = getQueueObjectNameString(virtualHostName, queue);
 
         Set<ObjectName> objectNames = queryObjects(query);
 
@@ -299,6 +297,12 @@ public class JMXTestUtils
         ObjectName objectName = objectNames.iterator().next();
         _test.getLogger().info("Loading: " + objectName);
         return objectName;
+    }
+
+	public String getQueueObjectNameString(String virtualHostName, String queue) {
+	    return "org.apache.qpid:type=VirtualHost.Queue,VirtualHost="
+                       + ObjectName.quote(virtualHostName) + ",name="
+                       + ObjectName.quote(queue) + ",*";
     }
 
     /**

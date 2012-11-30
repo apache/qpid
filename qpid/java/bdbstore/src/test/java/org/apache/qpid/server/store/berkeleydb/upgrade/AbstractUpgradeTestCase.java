@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.NONEXCLUSIVE_WITH_ERRONEOUS_OWNER;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.NON_DURABLE_QUEUE_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.PRIORITY_QUEUE_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_WITH_DLQ_NAME;
+
 import java.io.File;
 
 import org.apache.qpid.server.logging.LogSubject;
@@ -51,15 +57,15 @@ public abstract class AbstractUpgradeTestCase extends QpidTestCase
         }
     }
 
-    public static final String[] QUEUE_NAMES = { "clientid:myDurSubName", "clientid:mySelectorDurSubName", "myUpgradeQueue",
-            "queue-non-durable", "nonexclusive-with-erroneous-owner" };
-    public static int[] QUEUE_SIZES = { 1, 1, 10, 3, 0};
-    public static int TOTAL_MESSAGE_NUMBER = 15;
+    public static final String[] QUEUE_NAMES = { "clientid:myDurSubName", "clientid:mySelectorDurSubName", QUEUE_NAME, NON_DURABLE_QUEUE_NAME,
+            NONEXCLUSIVE_WITH_ERRONEOUS_OWNER, PRIORITY_QUEUE_NAME, QUEUE_WITH_DLQ_NAME, QUEUE_WITH_DLQ_NAME + "_DLQ" };
+    public static int[] QUEUE_SIZES = { 1, 1, 10, 3, 0, 0, 0, 1};
+    public static int TOTAL_MESSAGE_NUMBER = 16;
     protected static final LogSubject LOG_SUBJECT = new TestBlankSubject();
 
-    // one binding per exchange
-    protected static final int TOTAL_BINDINGS = QUEUE_NAMES.length * 2;
-    protected static final int TOTAL_EXCHANGES = 5;
+    // myQueueWithDLQ_DLQ is not bound to the default exchange
+    protected static final int TOTAL_BINDINGS = QUEUE_NAMES.length * 2 - 1;
+    protected static final int TOTAL_EXCHANGES = 6;
 
     private File _storeLocation;
     protected Environment _environment;
