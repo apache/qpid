@@ -44,7 +44,7 @@ class ManagedConnection : public qpid::management::Manageable, public Connection
     std::string getUserid() const;
     void setSaslMechanism(const std::string&);
     void setSaslSsf(int);
-    qpid::management::ManagementObject::shared_ptr GetManagementObjectShared() const;
+    qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
     bool isLocal(const ConnectionToken* t) const;
     void incomingMessageReceived();
     void outgoingMessageSent();

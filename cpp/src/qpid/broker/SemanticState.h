@@ -163,7 +163,7 @@ class SemanticState : private boost::noncopyable {
 
         // manageable entry points
         QPID_BROKER_EXTERN management::ManagementObject::shared_ptr
-        GetManagementObjectShared(void) const;
+        GetManagementObject(void) const;
 
         QPID_BROKER_EXTERN management::Manageable::status_t
         ManagementMethod(uint32_t methodId, management::Args& args, std::string& text);

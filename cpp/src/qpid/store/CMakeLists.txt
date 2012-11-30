@@ -42,6 +42,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 
   set_target_properties (store PROPERTIES
                          PREFIX ""
+                         COMPILE_FLAGS -D_IN_QPID_BROKER
                          LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
@@ -54,7 +55,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   endif (MSVC)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-set_target_properties (store PROPERTIES VERSION ${qpidc_version})
+set_target_properties (store PROPERTIES
+                       COMPILE_FLAGS -D_IN_QPID_BROKER
+                       VERSION ${qpidc_version})
 install (TARGETS store # RUNTIME
          DESTINATION ${QPIDD_MODULE_DIR}
          COMPONENT ${QPID_COMPONENT_BROKER})

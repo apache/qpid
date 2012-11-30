@@ -698,7 +698,7 @@ void ManagementAgent::periodicProcessing (void)
     //
     if (publish) {
         uint64_t uptime = sys::Duration(startTime, sys::now());
-        boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObjectShared())->set_uptime(uptime);
+        boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObject())->set_uptime(uptime);
         qpid::sys::MemStat::loadMemInfo(memstat.get());
     }
 
@@ -1722,7 +1722,7 @@ void ManagementAgent::handleAttachRequest (Buffer& inBuffer, const string& reply
     string   label;
     uint32_t requestedBrokerBank, requestedAgentBank;
     uint32_t assignedBank;
-    ObjectId connectionRef = ((const ConnectionState*) connToken)->GetManagementObjectShared()->getObjectId();
+    ObjectId connectionRef = ((const ConnectionState*) connToken)->GetManagementObject()->getObjectId();
     Uuid     systemId;
 
     moveNewObjects();
@@ -1754,7 +1754,7 @@ void ManagementAgent::handleAttachRequest (Buffer& inBuffer, const string& reply
     agent->mgmtObject = _qmf::Agent::shared_ptr(new _qmf::Agent (this, agent.get()));
     agent->mgmtObject->set_connectionRef(agent->connectionRef);
     agent->mgmtObject->set_label        (label);
-    agent->mgmtObject->set_registeredTo (broker->GetManagementObjectShared()->getObjectId());
+    agent->mgmtObject->set_registeredTo (broker->GetManagementObject()->getObjectId());
     agent->mgmtObject->set_systemId     ((const unsigned char*)systemId.data());
     agent->mgmtObject->set_brokerBank   (brokerBank);
     agent->mgmtObject->set_agentBank    (assignedBank);
@@ -1831,7 +1831,7 @@ void ManagementAgent::handleGetQuery(Buffer& inBuffer, const string& replyToKey,
 
     if (className == "broker") {
         uint64_t uptime = sys::Duration(startTime, sys::now());
-        boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObjectShared())->set_uptime(uptime);
+        boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObject())->set_uptime(uptime);
     }
 
 
@@ -1945,7 +1945,7 @@ void ManagementAgent::handleGetQuery(const string& body, const string& rte, cons
 
     if (className == "broker") {
         uint64_t uptime = sys::Duration(startTime, sys::now());
-        boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObjectShared())->set_uptime(uptime);
+        boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObject())->set_uptime(uptime);
     }
 
     /*

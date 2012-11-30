@@ -26,6 +26,7 @@
 #include "qpid/management/ManagementObject.h"
 /*MGEN:IF(Root.InBroker)*/
 #include "qmf/BrokerImportExport.h"
+#include <boost/shared_ptr.hpp>
 /*MGEN:ENDIF*/
 #include <limits>
 
@@ -79,7 +80,9 @@ namespace qmf {
     void aggregatePerThreadStats(struct PerThreadStats*) const;
 /*MGEN:ENDIF*/
   public:
+/*MGEN:IF(Root.InBroker)*/
     typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
+/*MGEN:ENDIF*/
 
     /*MGEN:Root.ExternMethod*/ static void writeSchema(std::string& schema);
     /*MGEN:Root.ExternMethod*/ void mapEncodeValues(::qpid::types::Variant::Map& map,

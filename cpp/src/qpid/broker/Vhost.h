@@ -40,7 +40,7 @@ class Vhost : public management::Manageable
 
     Vhost (management::Manageable* parentBroker, Broker* broker = 0);
 
-    management::ManagementObject::shared_ptr GetManagementObjectShared (void) const
+    management::ManagementObject::shared_ptr GetManagementObject (void) const
     { return mgmtObject; }
     void setFederationTag(const std::string& tag);
 };
