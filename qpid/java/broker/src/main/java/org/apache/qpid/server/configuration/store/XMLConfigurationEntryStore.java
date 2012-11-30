@@ -27,8 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -48,13 +46,21 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class XMLConfigurationEntryStore implements ConfigurationEntryStore
@@ -132,6 +138,15 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         return rootEntry;
     }
 
+    private static final Map<String, String> authenticationManagerMap = new HashMap<String, String>();
+    static
+    {
+        authenticationManagerMap.put("anonymous-auth-manager", AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        authenticationManagerMap.put("external-auth-manager", ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
+        authenticationManagerMap.put("kerberos-auth-manager", KerberosAuthenticationManagerFactory.PROVIDER_TYPE);
+        authenticationManagerMap.put("pd-auth-manager", null);
+    }
+
     private void createAuthenticationProviderConfig(Configuration configuration, Map<UUID, ConfigurationEntry> rootChildren)
     {
         HierarchicalConfiguration securityConfiguration = ConfigurationUtils.convertToHierarchical(
@@ -140,34 +155,35 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         Collection<ConfigurationNode> nodes = securityConfiguration.getRootNode().getChildren();
         for (ConfigurationNode configurationNode : nodes)
         {
-            String name = configurationNode.getName();
+            String name = configurationNode.getName().trim();
             if (name.contains("auth-manager") && !"default-auth-manager".equals(name))
             {
                 Map<String, Object> attributes = new HashMap<String, Object>();
-                attributes.put(AuthenticationProvider.TYPE, name);
-                Configuration config = configuration.subset("security." + name);
-                Iterator<String> keysIterator = config.getKeys();
-                while (keysIterator.hasNext())
+                String type = authenticationManagerMap.get(name);
+                if (type == null)
                 {
-                    String key = keysIterator.next();
-                    if (!"".equals(key))
+                    if (name.equals("pd-auth-manager"))
                     {
-                        List<Object> object = configuration.getList("security." + name + "." + key);
-                        int size = object.size();
-                        if (size == 0)
+                        Configuration config = configuration.subset("security." + name);
+                        String pdClass = config.getString("principal-database.class");
+                        if (pdClass.equals(PlainPasswordFilePrincipalDatabase.class.getName()))
                         {
-                            attributes.put(key, null);
+                            type = PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
                         }
-                        else if (size == 1)
+                        else if (pdClass.equals(Base64MD5PasswordFilePrincipalDatabase.class.getName()))
                         {
-                            attributes.put(key, object.get(0));
+                            type = Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
                         }
-                        else
-                        {
-                            attributes.put(key, object);
-                        }
+                        String path = config.getString("principal-database.attributes.attribute.value");
+                        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, path);
+                    }
+                    else
+                    {
+                        type = name;
                     }
                 }
+
+                attributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, type);
                 ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(),
                         AuthenticationProvider.class.getSimpleName(), attributes, null, this);
                 rootChildren.put(entry.getId(), entry);

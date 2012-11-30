@@ -34,7 +34,7 @@ public class TestAuthenticationManagerFactory implements AuthenticationManagerFa
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
     {
-        if (TEST_AUTH_MANAGER_MARKER.equals(attributes.get(TYPE)))
+        if (TEST_AUTH_MANAGER_MARKER.equals(attributes.get(ATTRIBUTE_TYPE)))
         {
             final Properties users = new Properties();
             users.put("guest","guest");

@@ -25,30 +25,38 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-
     private static final String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+
+    public static final String PROVIDER_TYPE = SimpleLDAPAuthenticationManager.class.getSimpleName();
+
+    public static final String ATTRIBUTE_LDAP_CONTEXT_FACTORY = "ldapContextFactory";
+    public static final String ATTRIBUTE_SEARCH_FILTER = "searchFilter";
+    public static final String ATTRIBUTE_SEARCH_CONTEXT = "searchContext";
+    public static final String ATTRIBUTE_PROVIDER_AUTH_URL = "providerAuthUrl";
+    public static final String ATTRIBUTE_PROVIDER_SEARCH_URL = "providerSearchUrl";
+    public static final String ATTRIBUTE_PROVIDER_URL = "providerUrl";
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
     {
-        if (attributes == null || !"simple-ldap-auth-manager".equals(attributes.get(TYPE)))
+        if (attributes == null || !PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {
             return null;
         }
-        String providerUrl = (String) attributes.get("provider-url");
-        String providerSearchUrl = (String) attributes.get("provider-search-url");
+        String providerUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_URL);
+        String providerSearchUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_SEARCH_URL);
         if (providerSearchUrl == null)
         {
             providerSearchUrl = providerUrl;
         }
-        String providerAuthUrl = (String) attributes.get("provider-auth-url");
+        String providerAuthUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_AUTH_URL);
         if (providerAuthUrl == null)
         {
             providerAuthUrl = providerUrl;
         }
-        String searchContext = (String) attributes.get("search-context");
-        String searchFilter = (String) attributes.get("search-filter");
-        String ldapContextFactory = (String) attributes.get("ldap-context-factory");
+        String searchContext = (String) attributes.get(ATTRIBUTE_SEARCH_CONTEXT);
+        String searchFilter = (String) attributes.get(ATTRIBUTE_SEARCH_FILTER);
+        String ldapContextFactory = (String) attributes.get(ATTRIBUTE_LDAP_CONTEXT_FACTORY);
         if (ldapContextFactory == null)
         {
             ldapContextFactory = DEFAULT_LDAP_CONTEXT_FACTORY;

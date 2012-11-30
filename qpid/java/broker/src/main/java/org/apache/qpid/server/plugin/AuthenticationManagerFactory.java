@@ -20,13 +20,12 @@ package org.apache.qpid.server.plugin;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 
 public interface AuthenticationManagerFactory
 {
-    public static final String TYPE =  AuthenticationProvider.TYPE;
+    public static final String ATTRIBUTE_TYPE =  "authenticationProviderType";
 
     AuthenticationManager createInstance(Map<String, Object> attributes);
 }

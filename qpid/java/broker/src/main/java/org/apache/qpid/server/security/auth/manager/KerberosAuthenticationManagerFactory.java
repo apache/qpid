@@ -25,11 +25,12 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class KerberosAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
+    public static final String PROVIDER_TYPE = KerberosAuthenticationManager.class.getSimpleName();
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
     {
-        if (attributes != null && "kerberos-auth-manager".equals(attributes.get(TYPE)))
+        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {
             return new KerberosAuthenticationManager();
         }

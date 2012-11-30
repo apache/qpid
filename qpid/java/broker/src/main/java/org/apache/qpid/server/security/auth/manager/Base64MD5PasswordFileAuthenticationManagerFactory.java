@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,22 +20,23 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import java.util.Map;
+import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-
-public class AnonymousAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractPrincipalDatabaseAuthManagerFactory
 {
-    public static final String PROVIDER_TYPE = AnonymousAuthenticationManager.class.getSimpleName();
+    public static final String PROVIDER_TYPE = "Base64MD5PasswordFileAuthenticationProvider";
 
     @Override
-    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    String getType()
     {
-        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
-        {
-            return new AnonymousAuthenticationManager();
-        }
-        return null;
+        return PROVIDER_TYPE;
+    }
+
+    @Override
+    PrincipalDatabase createPrincipalDatabase()
+    {
+        return new Base64MD5PasswordFilePrincipalDatabase();
     }
 
 }

@@ -32,9 +32,9 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 
     public void testInstanceCreated() throws Exception
     {
-        _configuration.put(SimpleLDAPAuthenticationManagerFactory.TYPE, "simple-ldap-auth-manager");
-        _configuration.put("provider-url", "ldaps://example.com:636/");
-        _configuration.put("search-context", "dc=example");
+        _configuration.put(SimpleLDAPAuthenticationManagerFactory.ATTRIBUTE_TYPE, SimpleLDAPAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put("providerUrl", "ldaps://example.com:636/");
+        _configuration.put("searchContext", "dc=example");
 
         AuthenticationManager manager = _factory.createInstance(_configuration);
         assertNotNull(manager);
