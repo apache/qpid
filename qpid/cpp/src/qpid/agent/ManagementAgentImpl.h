@@ -261,7 +261,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void storeData(bool requested=false);
     void retrieveData(std::string& vendor, std::string& product, std::string& inst);
     PackageMap::iterator findOrAddPackage(const std::string& name);
-    void moveNewObjectsLH();
+    void moveNewObjectsLH(const sys::Mutex::ScopedLock& agentLock);
     void addClassLocal (uint8_t               classKind,
                         PackageMap::iterator  pIter,
                         const std::string&    className,
