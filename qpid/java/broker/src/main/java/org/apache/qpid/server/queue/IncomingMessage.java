@@ -28,13 +28,13 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 
 import java.nio.ByteBuffer;
@@ -47,9 +47,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     /** Used for debugging purposes. */
     private static final Logger _logger = Logger.getLogger(IncomingMessage.class);
  
-    // XXX remove reference on ServerConfiguration
-    private static final boolean SYNCHED_CLOCKS =
-            ApplicationRegistry.getInstance().getConfiguration().getSynchedClocks();
+    private static final boolean SYNCHED_CLOCKS = Boolean.getBoolean(BrokerProperties.PROPERTY_SYNCHED_CLOCKS);
 
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;

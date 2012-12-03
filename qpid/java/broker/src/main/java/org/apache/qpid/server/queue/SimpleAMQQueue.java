@@ -52,7 +52,6 @@ import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.AssignedSubscriptionMessageGroupManager;
 import org.apache.qpid.server.subscription.DefinedGroupMessageGroupManager;
@@ -185,7 +184,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private AbstractConfiguration _queueConfiguration;
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
-    private int _maximumDeliveryCount = ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount();
+    private int _maximumDeliveryCount;
     private final MessageGroupManager _messageGroupManager;
 
     private final Collection<SubscriptionRegistrationListener> _subscriptionListeners =

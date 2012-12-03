@@ -25,9 +25,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.when;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -41,6 +43,9 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
@@ -49,6 +54,7 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -56,9 +62,10 @@ import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,7 +73,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class SimpleAMQQueueTest extends InternalBrokerBaseCase
+public class SimpleAMQQueueTest extends QpidTestCase
 {
 
     protected SimpleAMQQueue _queue;
@@ -110,19 +117,25 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        //Create Application Registry for test
-        IApplicationRegistry applicationRegistry = getRegistry();
 
+        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
+
+        IApplicationRegistry registry = mock(IApplicationRegistry.class);
+        Broker broker = mock(Broker.class);
+        Configuration config = mock(Configuration.class);
+        when(config.subset("security")).thenReturn(mock(Configuration.class));
+        SecurityManager securityManager = new SecurityManager(config);
         PropertiesConfiguration env = new PropertiesConfiguration();
-        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env, mock(Broker.class));
+        VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env, broker);
+        VirtualHostRegistry virtualHostRegistry = new VirtualHostRegistry(registry);
         vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
-        _virtualHost = new VirtualHostImpl( applicationRegistry.getVirtualHostRegistry(), (StatisticsGatherer)applicationRegistry,
-                applicationRegistry.getSecurityManager(), vhostConfig);
-        applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
+        _virtualHost = new VirtualHostImpl( virtualHostRegistry, (StatisticsGatherer)registry, securityManager, vhostConfig);
+        virtualHostRegistry.registerVirtualHost(_virtualHost);
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
+                false, false, _virtualHost, FieldTable.convertToMap(_arguments));
 
-        _exchange = (DirectExchange)_virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        _exchange = (DirectExchange) _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
 
     @Override

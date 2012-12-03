@@ -23,6 +23,7 @@ public class BrokerProperties
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
 
     public static final String PROPERTY_STATUS_UPDATES = "qpid.status_updates";
+    public static final String PROPERTY_SYNCHED_CLOCKS = "qpid.synched_clocks";
 
     private BrokerProperties()
     {
