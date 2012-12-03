@@ -69,10 +69,10 @@ struct QueueSettings;
     uint64_t size;
 
   public:
-    static QPID_BROKER_EXTERN const std::string flowStopCountKey;
-    static QPID_BROKER_EXTERN const std::string flowResumeCountKey;
-    static QPID_BROKER_EXTERN const std::string flowStopSizeKey;
-    static QPID_BROKER_EXTERN const std::string flowResumeSizeKey;
+    static const std::string flowStopCountKey;
+    static const std::string flowResumeCountKey;
+    static const std::string flowStopSizeKey;
+    static const std::string flowResumeSizeKey;
 
     QPID_BROKER_EXTERN virtual ~QueueFlowLimit();
 

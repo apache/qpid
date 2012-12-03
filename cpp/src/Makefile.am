@@ -260,7 +260,7 @@ rdma_la_LIBADD = \
   -libverbs
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers -D_IN_QPID_BROKER
 dmoduleexec_LTLIBRARIES += \
   rdma.la
 
