@@ -24,12 +24,12 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -45,7 +45,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NoSuchObjectException;
@@ -157,8 +156,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         int jmxPortConnectorServer = _connectorPort.getPort();
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        final IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(appRegistry, new InetSocketAddress(jmxPortRegistryServer));
+        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(_registryPort);
         HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
@@ -239,12 +237,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
         };
 
+        Broker broker = _registryPort.getParent(Broker.class);
+
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
-        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance(_jmxConfiguration);
+        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance(broker, _jmxConfiguration);
         _cs.setMBeanServerForwarder(mbsf);
 
         // Install a ManagementLogonLogoffReporter so we can report as users logon/logoff
-        ManagementLogonLogoffReporter jmxManagementUserLogonLogoffReporter = new ManagementLogonLogoffReporter(appRegistry.getRootMessageLogger(), usernameCachingRmiServer);
+        ManagementLogonLogoffReporter jmxManagementUserLogonLogoffReporter = new ManagementLogonLogoffReporter(broker.getRootMessageLogger(), usernameCachingRmiServer);
         _cs.addNotificationListener(jmxManagementUserLogonLogoffReporter, jmxManagementUserLogonLogoffReporter, null);
 
         // Install the usernameCachingRmiServer as a listener so it may cleanup as clients disconnect

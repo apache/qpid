@@ -125,4 +125,6 @@ public interface Broker extends ConfiguredObject
      */
     LogRecorder getLogRecorder();
 
+    VirtualHost findVirtualHostByName(String name);
+
 }

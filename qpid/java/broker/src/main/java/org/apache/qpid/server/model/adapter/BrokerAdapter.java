@@ -713,4 +713,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     {
         return _applicationRegistry.getLogRecorder();
     }
+
+    @Override
+    public VirtualHost findVirtualHostByName(String name)
+    {
+        return _vhostAdapters.get(name);
+    }
 }

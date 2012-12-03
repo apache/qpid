@@ -24,8 +24,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -55,21 +55,23 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
 
-    private final IApplicationRegistry _appRegistry = ApplicationRegistry.getInstance();
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
-    private final ManagementActor _logActor = new ManagementActor(_appRegistry.getRootMessageLogger());
+    private final ManagementActor _logActor;
 
     private final boolean _managementRightsInferAllAccess;
+    private final Broker _broker;
 
-    MBeanInvocationHandlerImpl(boolean managementRightsInferAllAccess)
+    MBeanInvocationHandlerImpl(Broker broker, boolean managementRightsInferAllAccess)
     {
         _managementRightsInferAllAccess = managementRightsInferAllAccess;
+        _broker = broker;
+        _logActor = new ManagementActor(broker.getRootMessageLogger());
     }
 
-    public static MBeanServerForwarder newProxyInstance(JMXConfiguration configuration)
+    public static MBeanServerForwarder newProxyInstance(Broker broker, JMXConfiguration configuration)
     {
-        final InvocationHandler handler = new MBeanInvocationHandlerImpl(configuration.isManagementRightsInferAllAccess());
+        final InvocationHandler handler = new MBeanInvocationHandlerImpl(broker, configuration.isManagementRightsInferAllAccess());
         final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
 
         Object proxy = Proxy.newProxyInstance(MBeanServerForwarder.class.getClassLoader(), interfaces, handler);
@@ -211,11 +213,16 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         SecurityManager security;
         if (vhost == null)
         {
-            security = _appRegistry.getSecurityManager();
+            security = _broker.getSecurityManager();
         }
         else
         {
-            security = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
+            VirtualHost virtualHost = _broker.findVirtualHostByName(vhost);
+            if (virtualHost == null)
+            {
+                throw new IllegalArgumentException("Virtual host with name '" + vhost + "' is not found.");
+            }
+            security = virtualHost.getSecurityManager();
         }
 
         methodName = getMethodName(method, args);

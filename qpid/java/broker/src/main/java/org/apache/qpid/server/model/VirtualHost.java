@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.MessageStore;
 
 import java.security.AccessControlException;
 import java.util.Arrays;
@@ -157,4 +158,6 @@ public interface VirtualHost extends ConfiguredObject
      * TODO We need to add and implement an authorization provider configured object instead
      */
     SecurityManager getSecurityManager();
+
+    MessageStore getMessageStore();
 }
