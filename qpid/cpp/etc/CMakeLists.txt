@@ -23,11 +23,6 @@ install(FILES qpidc.conf
 install(FILES qpidd.conf
         DESTINATION ${QPID_INSTALL_CONFDIR}
         COMPONENT ${QPID_COMPONENT_BROKER})
-if (UNIX)
-  install(FILES qpidd.service
-          DESTINATION ${QPID_INSTALL_SYSTEMDDIR}
-          COMPONENT ${QPID_COMPONENT_BROKER})
-endif (UNIX)
 if (BUILD_SASL)
   install(FILES sasl2/qpidd.conf
           DESTINATION ${QPID_INSTALL_SASLDIR}
