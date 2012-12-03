@@ -21,6 +21,8 @@
 package org.apache.qpid.server.model;
 
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.security.SecurityManager;
+
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -149,4 +151,10 @@ public interface VirtualHost extends ConfiguredObject
     }
 
     void executeTransaction(TransactionalOperation op);
+
+    /**
+     * A temporary hack to expose host security manager.
+     * TODO We need to add and implement an authorization provider configured object instead
+     */
+    SecurityManager getSecurityManager();
 }

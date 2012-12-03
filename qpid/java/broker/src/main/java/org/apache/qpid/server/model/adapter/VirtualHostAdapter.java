@@ -951,4 +951,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         return false;
     }
 
+    @Override
+    public SecurityManager getSecurityManager()
+    {
+        return _virtualHost.getSecurityManager();
+    }
+
 }

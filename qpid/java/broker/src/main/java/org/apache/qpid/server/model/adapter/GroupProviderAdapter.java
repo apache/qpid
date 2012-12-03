@@ -38,15 +38,15 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.group.GroupManager;
+import org.apache.qpid.server.security.SecurityManager;
 
 public class GroupProviderAdapter extends AbstractAdapter implements
         GroupProvider
 {
     private final GroupManager _groupManager;
-
+    private final Broker _broker;
     public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker)
     {
         super(id);
@@ -56,6 +56,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             throw new IllegalArgumentException("GroupManager must not be null");
         }
         _groupManager = groupManager;
+        _broker = broker;
        addParent(Broker.class, broker);
     }
 
@@ -218,9 +219,9 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
     }
 
-    private org.apache.qpid.server.security.SecurityManager getSecurityManager()
+    private SecurityManager getSecurityManager()
     {
-        return ApplicationRegistry.getInstance().getSecurityManager();
+        return _broker.getSecurityManager();
     }
 
     private class GroupAdapter extends AbstractAdapter implements Group

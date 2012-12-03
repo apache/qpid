@@ -37,6 +37,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -51,6 +53,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -693,4 +696,21 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
+    @Override
+    public RootMessageLogger getRootMessageLogger()
+    {
+        return _applicationRegistry.getRootMessageLogger();
+    }
+
+    @Override
+    public SecurityManager getSecurityManager()
+    {
+        return _applicationRegistry.getSecurityManager();
+    }
+
+    @Override
+    public LogRecorder getLogRecorder()
+    {
+        return _applicationRegistry.getLogRecorder();
+    }
 }

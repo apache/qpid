@@ -30,6 +30,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.AbstractServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
@@ -207,6 +208,12 @@ public class HttpManagement extends AbstractPluginAdapter
         root.setContextPath("/");
         server.setHandler(root);
 
+        // set servlet context attributes for broker, configuration, security manager and ports
+        root.getServletContext().setAttribute(AbstractServlet.ATTR_BROKER, _broker);
+        root.getServletContext().setAttribute(AbstractServlet.ATTR_CONFIGURATION, _configuration);
+        root.getServletContext().setAttribute(AbstractServlet.ATTR_SECURITY_MANAGER, _broker.getSecurityManager());
+        root.getServletContext().setAttribute(AbstractServlet.ATTR_PORTS, ports);
+
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
         addRestServlet(root, "authenticationprovider", AuthenticationProvider.class);
@@ -221,13 +228,13 @@ public class HttpManagement extends AbstractPluginAdapter
         addRestServlet(root, "port", Port.class);
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
 
-        root.addServlet(new ServletHolder(new StructureServlet(_broker,  _configuration)), "/rest/structure");
-        root.addServlet(new ServletHolder(new MessageServlet(_broker,  _configuration)), "/rest/message/*");
-        root.addServlet(new ServletHolder(new MessageContentServlet(_broker, _configuration)), "/rest/message-content/*");
+        root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
+        root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
+        root.addServlet(new ServletHolder(new MessageContentServlet()), "/rest/message-content/*");
 
-        root.addServlet(new ServletHolder(new LogRecordsServlet(_broker, _configuration)), "/rest/logrecords");
+        root.addServlet(new ServletHolder(new LogRecordsServlet()), "/rest/logrecords");
 
-        root.addServlet(new ServletHolder(new SaslServlet(_broker, _configuration)), "/rest/sasl");
+        root.addServlet(new ServletHolder(new SaslServlet()), "/rest/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), ENTRY_POINT_PATH);
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
@@ -252,7 +259,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
-        root.addServlet(new ServletHolder(new RestServlet(_broker, _configuration, hierarchy)), "/rest/" + name + "/*");
+        root.addServlet(new ServletHolder(new RestServlet(hierarchy)), "/rest/" + name + "/*");
     }
 
     private void checkKeyStorePath(String keyStorePath)

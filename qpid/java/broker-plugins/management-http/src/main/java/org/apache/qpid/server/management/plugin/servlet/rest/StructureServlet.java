@@ -28,7 +28,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
@@ -40,11 +39,6 @@ public class StructureServlet extends AbstractServlet
     public StructureServlet()
     {
         super();
-    }
-
-    public StructureServlet(Broker broker, HttpConfiguration configuration)
-    {
-        super(broker, configuration);
     }
 
     @Override

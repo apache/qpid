@@ -26,6 +26,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.security.SecurityManager;
+
 public interface Broker extends ConfiguredObject
 {
 
@@ -103,5 +107,22 @@ public interface Broker extends ConfiguredObject
     AuthenticationProvider getDefaultAuthenticationProvider();
 
     Collection<GroupProvider> getGroupProviders();
+
+    /**
+     * A temporary hack to expose root message logger via broker instance.
+     * TODO We need a better way to do operational logging, for example, via logging listeners
+     */
+    RootMessageLogger getRootMessageLogger();
+
+    /**
+     * A temporary hack to expose security manager via broker instance.
+     * TODO We need to add and implement an authorization provider configured object instead
+     */
+    SecurityManager getSecurityManager();
+
+    /**
+     * TODO: A temporary hack to expose log recorder via broker instance.
+     */
+    LogRecorder getLogRecorder();
 
 }

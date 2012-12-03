@@ -22,6 +22,7 @@ package org.apache.qpid.server.registry;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
@@ -74,4 +75,6 @@ public interface IApplicationRegistry extends StatisticsGatherer
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
 
     void initialiseStatisticsReporting();
+
+    LogRecorder getLogRecorder();
 }

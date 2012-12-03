@@ -45,7 +45,6 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -53,12 +52,14 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.security.SecurityManager;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
 {
     private static final Logger LOGGER = Logger.getLogger(AuthenticationProviderAdapter.class);
 
     private final T _authManager;
+    protected final Broker _broker;
 
     private GroupPrincipalAccessor _groupAccessor;
 
@@ -66,6 +67,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     {
         super(id);
         _authManager = authManager;
+        _broker = broker;
         addParent(Broker.class, broker);
     }
 
@@ -287,9 +289,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
         }
 
-        private org.apache.qpid.server.security.SecurityManager getSecurityManager()
+        private SecurityManager getSecurityManager()
         {
-            return ApplicationRegistry.getInstance().getSecurityManager();
+            return _broker.getSecurityManager();
         }
 
         private PrincipalDatabase getPrincipalDatabase()

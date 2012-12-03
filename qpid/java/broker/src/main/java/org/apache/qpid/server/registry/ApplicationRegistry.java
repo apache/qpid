@@ -492,11 +492,13 @@ public class ApplicationRegistry implements IApplicationRegistry
         logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }
 
+    @Override
     public Broker getBroker()
     {
         return _broker;
     }
 
+    @Override
     public LogRecorder getLogRecorder()
     {
         return _logRecorder;
