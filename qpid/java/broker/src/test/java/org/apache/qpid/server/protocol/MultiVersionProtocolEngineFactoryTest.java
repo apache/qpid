@@ -20,37 +20,20 @@
 */
 package org.apache.qpid.server.protocol;
 
-import java.util.UUID;
-import java.util.concurrent.ScheduledFuture;
-import org.apache.commons.configuration.XMLConfiguration;
+import java.nio.ByteBuffer;
+import java.util.EnumSet;
+import java.util.Set;
 
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.binding.BindingFactory;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.*;
-import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.server.virtualhost.HouseKeepingTask;
-import org.apache.qpid.server.virtualhost.State;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.TestNetworkConnection;
-
-import java.nio.ByteBuffer;
-import java.util.EnumSet;
-import java.util.Set;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
@@ -65,7 +48,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         // AMQP 1-0 connection needs default vhost to be present
         IApplicationRegistry registry = ApplicationRegistry.getInstance();
         VirtualHostRegistry virtualHostRegistry = registry.getVirtualHostRegistry();
-        VirtualHostImpl vhostImpl = new VirtualHostImpl(virtualHostRegistry, registry, registry.getSecurityManager(),
+        VirtualHostImpl vhostImpl = new VirtualHostImpl(virtualHostRegistry, registry, registry.getBroker().getSecurityManager(),
                 new VirtualHostConfiguration("default",new XMLConfiguration(), registry.getBroker()));
         virtualHostRegistry.registerVirtualHost(vhostImpl);
         virtualHostRegistry.setDefaultVirtualHostName("default");

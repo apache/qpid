@@ -25,11 +25,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.when;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -122,9 +120,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         IApplicationRegistry registry = mock(IApplicationRegistry.class);
         Broker broker = mock(Broker.class);
-        Configuration config = mock(Configuration.class);
-        when(config.subset("security")).thenReturn(mock(Configuration.class));
-        SecurityManager securityManager = new SecurityManager(config);
+        SecurityManager securityManager = new SecurityManager(null);
         PropertiesConfiguration env = new PropertiesConfiguration();
         VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env, broker);
         VirtualHostRegistry virtualHostRegistry = new VirtualHostRegistry(registry);

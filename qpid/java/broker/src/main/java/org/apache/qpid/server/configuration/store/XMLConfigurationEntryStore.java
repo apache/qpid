@@ -128,8 +128,8 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         brokerAttributes.put(Broker.DEAD_LETTER_QUEUE_ENABLED, _serverConfiguration.isDeadLetterQueueEnabled());
         brokerAttributes.put(Broker.HOUSEKEEPING_CHECK_PERIOD, _serverConfiguration.getHousekeepingCheckPeriod());
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, _serverConfiguration.getDefaultVirtualHost());
-
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, _serverConfiguration.getDefaultAuthenticationManager());
+        brokerAttributes.put(Broker.ACL_FILE, _serverConfiguration.getConfig().getString("security.acl"));
         ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, Broker.class.getSimpleName(), brokerAttributes,
                 Collections.unmodifiableSet(_rootChildren.keySet()), this);
 

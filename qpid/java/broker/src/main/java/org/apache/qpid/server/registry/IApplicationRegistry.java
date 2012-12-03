@@ -64,8 +64,6 @@ public interface IApplicationRegistry extends StatisticsGatherer
 
     VirtualHostRegistry getVirtualHostRegistry();
 
-    SecurityManager getSecurityManager();
-
     RootMessageLogger getRootMessageLogger();
 
     public UUID getBrokerId();

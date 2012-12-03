@@ -43,10 +43,11 @@ public class VirtualHostRecovererTest extends TestCase
         VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         SecurityManager securityManager = mock(SecurityManager.class);
-        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(virtualHostRegistry, statisticsGatherer, securityManager);
-
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
+        when(parent.getSecurityManager()).thenReturn(securityManager);
+
+        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(virtualHostRegistry, statisticsGatherer);
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         when(entry.getAttributes()).thenReturn(attributes);

@@ -62,6 +62,12 @@ public interface Broker extends ConfiguredObject
     String DEAD_LETTER_QUEUE_ENABLED = "deadLetterQueueEnabled";
     String HOUSEKEEPING_CHECK_PERIOD = "housekeepingCheckPeriod";
 
+    /**
+     * A temporary attribute to pass the path to ACL file.
+     * TODO: It should be a part of AuthorizationProvider.
+     */
+    String ACL_FILE = "aclFile";
+
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -91,7 +97,9 @@ public interface Broker extends ConfiguredObject
                               FLOW_CONTROL_RESUME_SIZE_BYTES,
                               MAXIMUM_DELIVERY_ATTEMPTS,
                               DEAD_LETTER_QUEUE_ENABLED,
-                              HOUSEKEEPING_CHECK_PERIOD));
+                              HOUSEKEEPING_CHECK_PERIOD,
+                              ACL_FILE
+                              ));
 
     //children
     Collection < VirtualHost > getVirtualHosts();

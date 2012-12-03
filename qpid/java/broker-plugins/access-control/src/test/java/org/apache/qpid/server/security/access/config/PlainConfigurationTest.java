@@ -26,7 +26,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -73,7 +73,7 @@ public class PlainConfigurationTest extends TestCase
 
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.CONFIG_NOT_FOUND_MSG, "doesnotexist"), ce.getMessage());
             assertTrue(ce.getCause() instanceof FileNotFoundException);
@@ -87,7 +87,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("ACL ALLOW ALL \\ ALL");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.PREMATURE_CONTINUATION_MSG, 1), ce.getMessage());
         }
@@ -100,7 +100,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("ACL unparsed ALL ALL");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.PARSE_TOKEN_FAILED_MSG, 1), ce.getMessage());
             assertTrue(ce.getCause() instanceof IllegalArgumentException);
@@ -115,7 +115,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("ACL ALLOW");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_ACL_MSG, 1), ce.getMessage());
         }
@@ -128,7 +128,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("CONFIG");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_TOKENS_MSG, 1), ce.getMessage());
         }
@@ -141,7 +141,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("INVALID");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_TOKENS_MSG, 1), ce.getMessage());
         }
@@ -154,7 +154,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("ACL ALLOW adk CREATE QUEUE name");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.PROPERTY_KEY_ONLY_MSG, 1), ce.getMessage());
         }
@@ -167,7 +167,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("ACL ALLOW adk CREATE QUEUE name test");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.PROPERTY_NO_EQUALS_MSG, 1), ce.getMessage());
         }
@@ -180,7 +180,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("ACL ALLOW adk CREATE QUEUE name =");
             fail("fail");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException ce)
         {
             assertEquals(String.format(PlainConfiguration.PROPERTY_NO_VALUE_MSG, 1), ce.getMessage());
         }
@@ -432,7 +432,7 @@ public class PlainConfigurationTest extends TestCase
             writeACLConfig("GROUP group1 bob alice");
             fail("Expected exception not thrown");
         }
-        catch(ConfigurationException e)
+        catch(IllegalConfigurationException e)
         {
             assertTrue(e.getMessage().contains("GROUP keyword not supported"));
         }

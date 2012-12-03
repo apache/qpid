@@ -20,28 +20,18 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.security.AccessControl;
 
 public class DefaultAccessControlFactory implements AccessControlFactory
 {
-    public AccessControl createInstance(Configuration securityConfiguration)
+    public AccessControl createInstance(String aclConfiguration)
     {
-        String aclConfiguration = securityConfiguration.getString("acl");
         if(aclConfiguration == null)
         {
             return null;
         }
 
-        try
-        {
-            return new DefaultAccessControl(aclConfiguration);
-        }
-        catch (ConfigurationException e)
-        {
-            throw new RuntimeException("caught exception during instance creation", e);
-        }
+        return new DefaultAccessControl(aclConfiguration);
     }
 }

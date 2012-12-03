@@ -55,7 +55,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -131,7 +130,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig());
+        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"));
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);

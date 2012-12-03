@@ -36,7 +36,6 @@ import org.apache.qpid.server.configuration.XmlConfigurationUtilities;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -44,14 +43,12 @@ public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHo
 {
     private VirtualHostRegistry _virtualHostRegistry;
     private StatisticsGatherer _statisticsGatherer;
-    private SecurityManager _securityManager;
 
-    public VirtualHostRecoverer(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer statisticsGatherer, SecurityManager securityManager)
+    public VirtualHostRecoverer(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer statisticsGatherer)
     {
         super();
         _virtualHostRegistry = virtualHostRegistry;
         _statisticsGatherer = statisticsGatherer;
-        _securityManager = securityManager;
     }
 
     @Override
@@ -94,7 +91,7 @@ public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHo
         {
             throw new IllegalConfigurationException("Cannot create configuration for virtual host '" + name + "'");
         }
-        return new VirtualHostAdapter(entry.getId(), broker, attributes, _virtualHostRegistry, _statisticsGatherer, _securityManager,
+        return new VirtualHostAdapter(entry.getId(), broker, attributes, _virtualHostRegistry, _statisticsGatherer, broker.getSecurityManager(),
                 virtualHostConfiguration);
     }
 

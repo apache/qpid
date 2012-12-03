@@ -64,7 +64,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         }
         else if(VirtualHost.class.getSimpleName().equals(type))
         {
-            return new VirtualHostRecoverer(_registry.getVirtualHostRegistry(),(StatisticsGatherer)_registry, _registry.getSecurityManager());
+            return new VirtualHostRecoverer(_registry.getVirtualHostRegistry(),(StatisticsGatherer)_registry);
         }
         else if(AuthenticationProvider.class.getSimpleName().equals(type))
         {

@@ -75,6 +75,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private AuthenticationProvider _defaultAuthenticationProvider;
 
     private final PortFactory _portFactory;
+    private final SecurityManager _securityManager;
 
     private long _maximumMessageAge;
     private long _maximumMessageCount;
@@ -87,6 +88,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private boolean _deadLetterQueueEnabled;
     private long _housekeepingCheckPeriod;
     private String _defaultVirtualHost;
+    private String _aclFile;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, IApplicationRegistry instance,
             AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
@@ -110,6 +112,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _deadLetterQueueEnabled = getBooleanAttribute(DEAD_LETTER_QUEUE_ENABLED, attributes, false);
         _housekeepingCheckPeriod = getLongAttribute(HOUSEKEEPING_CHECK_PERIOD, attributes, Long.getLong(BrokerProperties.PROPERTY_HOUSE_KEEPING_CHECK_PERIOD, BrokerProperties.DEFAULT_HOUSEKEEPING_PERIOD));
         _defaultVirtualHost = getStringAttribute(DEFAULT_VIRTUAL_HOST, attributes, null);
+        _aclFile = getStringAttribute(ACL_FILE, attributes, null);
+        _securityManager = new SecurityManager(_aclFile);
     }
 
     public Collection<VirtualHost> getVirtualHosts()
@@ -190,7 +194,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         VirtualHostRegistry virtualHostRegistry = _applicationRegistry.getVirtualHostRegistry();
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), this,
                 attributes, virtualHostRegistry, (StatisticsGatherer)_applicationRegistry,
-                _applicationRegistry.getSecurityManager(), null);
+                _securityManager, null);
 
         synchronized (_vhostAdapters)
         {
@@ -505,6 +509,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _housekeepingCheckPeriod;
         }
+        else if (ACL_FILE.equals(name))
+        {
+            return _aclFile;
+        }
         return super.getAttribute(name);    //TODO - Implement.
     }
 
@@ -705,7 +713,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public SecurityManager getSecurityManager()
     {
-        return _applicationRegistry.getSecurityManager();
+        return _securityManager;
     }
 
     @Override

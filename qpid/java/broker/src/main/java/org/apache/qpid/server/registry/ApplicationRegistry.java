@@ -56,7 +56,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -78,8 +77,6 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
 
-    private SecurityManager _securityManager;
-
     private volatile RootMessageLogger _rootMessageLogger;
 
     private Broker _broker;
@@ -90,11 +87,6 @@ public class ApplicationRegistry implements IApplicationRegistry
     private LogRecorder _logRecorder;
 
     private ConfigurationEntryStore _store;
-
-    protected void setSecurityManager(SecurityManager securityManager)
-    {
-        _securityManager = securityManager;
-    }
 
     protected void setRootMessageLogger(RootMessageLogger rootMessageLogger)
     {
@@ -187,7 +179,6 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             // XXX hack
             ServerConfiguration configuration =  ((XMLConfigurationEntryStore)_store).getConfiguration();
-            _securityManager = new SecurityManager(configuration.getConfig());
 
             RecovererProvider provider = new DefaultRecovererProvider(this);
             ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
@@ -382,14 +373,10 @@ public class ApplicationRegistry implements IApplicationRegistry
         return ((XMLConfigurationEntryStore)_store).getConfiguration();
     }
 
+    @Override
     public VirtualHostRegistry getVirtualHostRegistry()
     {
         return _virtualHostRegistry;
-    }
-
-    public SecurityManager getSecurityManager()
-    {
-        return _securityManager;
     }
 
     @Override
@@ -421,7 +408,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
-        VirtualHostImpl virtualHost = new VirtualHostImpl(this.getVirtualHostRegistry(), this, this.getSecurityManager(), vhostConfig);
+        VirtualHostImpl virtualHost = new VirtualHostImpl(this.getVirtualHostRegistry(), this, getBroker().getSecurityManager(), vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
         return virtualHost;
     }
