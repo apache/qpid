@@ -36,8 +36,8 @@ namespace qmf {
   private:
     static void writeSchema (std::string& schema);
     static uint8_t md5Sum[MD5_LEN];
-    static std::string packageName;
-    static std::string eventName;
+    /*MGEN:Root.ExternMethod*/ static std::string packageName;
+    /*MGEN:Root.ExternMethod*/ static std::string eventName;
 
 /*MGEN:Event.ArgDeclarations*/
 
