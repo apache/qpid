@@ -24,6 +24,6 @@ xml_la_SOURCES =  \
 	qpid/xml/XmlExchangePlugin.cpp
 
 xml_la_LIBADD = -lxerces-c -lxqilla libqpidbroker.la
-
+xml_la_CXXFLAGS = $(AM_CXXFLAGS) -D_IN_QPID_BROKER
 xml_la_LDFLAGS = $(PLUGINLDFLAGS)
 
