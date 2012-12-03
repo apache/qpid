@@ -42,7 +42,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 
   set_target_properties (store PROPERTIES
                          PREFIX ""
-                         COMPILE_FLAGS -D_IN_QPID_BROKER
+                         COMPILE_DEFINITIONS _IN_QPID_BROKER
                          LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
@@ -56,7 +56,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 set_target_properties (store PROPERTIES
-                       COMPILE_FLAGS -D_IN_QPID_BROKER
+                       COMPILE_DEFINITIONS _IN_QPID_BROKER
                        VERSION ${qpidc_version})
 install (TARGETS store # RUNTIME
          DESTINATION ${QPIDD_MODULE_DIR}
@@ -84,6 +84,7 @@ if (BUILD_MSSQL)
                ms-sql/State.cpp
                ms-sql/TplRecordset.cpp
                ms-sql/VariantHelper.cpp)
+  set_target_properties (mssql_store PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
   target_link_libraries (mssql_store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
   install (TARGETS mssql_store # RUNTIME
            DESTINATION ${QPIDD_MODULE_DIR}
@@ -113,6 +114,7 @@ if (BUILD_MSCLFS)
                ms-sql/State.cpp
                ms-sql/VariantHelper.cpp)
   include_directories(ms-sql)
+  set_target_properties (msclfs_store PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
   target_link_libraries (msclfs_store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY} clfsw32.lib)
   install (TARGETS msclfs_store # RUNTIME
            DESTINATION ${QPIDD_MODULE_DIR}
