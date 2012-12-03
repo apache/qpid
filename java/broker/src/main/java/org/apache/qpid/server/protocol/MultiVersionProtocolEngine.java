@@ -573,7 +573,29 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void closed()
         {
-
+            try
+            {
+                _delegate = new ClosedDelegateProtocolEngine();
+                if(_logger.isDebugEnabled())
+                {
+                    _logger.debug("Connection from  " + getRemoteAddress() + " was closed before any protocol version was established.");
+                }
+            }
+            catch(Exception e)
+            {
+                //ignore
+            }
+            finally
+            {
+                try
+                {
+                    _network.close();
+                }
+                catch(Exception e)
+                {
+                    //ignore
+                }
+            }
         }
 
         public void writerIdle()
