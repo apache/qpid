@@ -90,7 +90,8 @@ if (BUILD_SSL)
     target_link_libraries (ssl qpidbroker sslcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (ssl PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS "${NSS_COMPILE_FLAGS} -D_IN_QPID_BROKER")
+                           COMPILE_FLAGS "${NSS_COMPILE_FLAGS}"
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties(ssl PROPERTIES
                             LINK_FLAGS "${GCC_CATCH_UNDEFINED}")

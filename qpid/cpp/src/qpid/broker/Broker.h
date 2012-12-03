@@ -284,7 +284,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
 
-    static QPID_BROKER_EXTERN const std::string TCP_TRANSPORT;
+    static const std::string TCP_TRANSPORT;
 
     void setRecovery(bool set) { recovery = set; }
     bool getRecovery() const { return recovery; }
