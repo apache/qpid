@@ -20,7 +20,7 @@ SASL_CONF = sasl2/qpidd.conf
 
 EXTRA_DIST = \
 	$(SASL_CONF) \
-	qpidd.service qpidd.in qpidd-primary.in qpidd.conf qpidc.conf CMakeLists.txt \
+	qpidd.in qpidd-primary.in qpidd.conf qpidc.conf CMakeLists.txt \
 	cluster.conf-example.xml.in
 
 confdir = $(sysconfdir)/qpid
@@ -53,5 +53,3 @@ CLEANFILES = qpidd qpidd-primary cluster.conf-example.xml
 initddir = $(sysconfdir)/init.d
 nobase_initd_SCRIPTS = qpidd qpidd-primary
 
-systemddir = /usr/lib/systemd/system
-nobase_systemd_SCRIPTS = qpidd.service
