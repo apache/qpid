@@ -175,20 +175,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(update, _serverConfig.getLocale());
     }
 
-
-    public void testGetMsgAuth() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getMsgAuth());
-
-        // Check value we set
-        _config.setProperty("security.msg-auth", true);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getMsgAuth());
-    }
-
     public void testGetManagementKeyStorePath() throws ConfigurationException
     {
         // Check default

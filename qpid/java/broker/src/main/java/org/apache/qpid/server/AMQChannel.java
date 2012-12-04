@@ -53,6 +53,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
@@ -70,7 +71,6 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -78,7 +78,6 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.InboundMessageAdapter;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
@@ -97,11 +96,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public static final int DEFAULT_PREFETCH = 4096;
 
     private static final Logger _logger = Logger.getLogger(AMQChannel.class);
- 
-    // XXX remove reference on ServerConfiguration
-    private static final boolean MSG_AUTH =
-        ApplicationRegistry.getInstance().getConfiguration().getMsgAuth();
 
+    //TODO use Broker property to configure message authorization requirements
+    private boolean _messageAuthorizationRequired = Boolean.getBoolean(BrokerProperties.PROPERTY_MSG_AUTH);
 
     private final int _channelId;
 
@@ -1134,7 +1131,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                     ? ((BasicContentHeaderProperties) header.getProperties()).getUserId()
                     : null;
 
-        return (!MSG_AUTH || _session.getAuthorizedPrincipal().getName().equals(userID == null? "" : userID.toString()));
+        return (!_messageAuthorizationRequired || _session.getAuthorizedPrincipal().getName().equals(userID == null? "" : userID.toString()));
 
     }
 

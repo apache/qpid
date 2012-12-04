@@ -452,11 +452,6 @@ public class ServerConfiguration extends AbstractConfiguration
         return getBooleanValue("advanced.synced-clocks");
     }
 
-    public boolean getMsgAuth()
-    {
-        return getBooleanValue("security.msg-auth");
-    }
-
     public String getDefaultAuthenticationManager()
     {
         return getStringValue(SECURITY_DEFAULT_AUTH_MANAGER);
