@@ -51,9 +51,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
@@ -62,7 +60,6 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
@@ -118,15 +115,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
 
-        IApplicationRegistry registry = mock(IApplicationRegistry.class);
-        Broker broker = mock(Broker.class);
-        SecurityManager securityManager = new SecurityManager(null);
-        PropertiesConfiguration env = new PropertiesConfiguration();
-        VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env, broker);
-        VirtualHostRegistry virtualHostRegistry = new VirtualHostRegistry(registry);
+        VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), new PropertiesConfiguration(), mock(Broker.class));
         vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
-        _virtualHost = new VirtualHostImpl( virtualHostRegistry, (StatisticsGatherer)registry, securityManager, vhostConfig);
-        virtualHostRegistry.registerVirtualHost(_virtualHost);
+        _virtualHost = new VirtualHostImpl(null, null, new SecurityManager(null), vhostConfig);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
                 false, false, _virtualHost, FieldTable.convertToMap(_arguments));
