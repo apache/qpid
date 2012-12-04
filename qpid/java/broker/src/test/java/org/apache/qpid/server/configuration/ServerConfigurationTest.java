@@ -228,19 +228,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("a", _serverConfig.getManagementKeyStorePassword());
     }
 
-    public void testGetQueueAutoRegister() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getQueueAutoRegister());
-
-        // Check value we set
-        _config.setProperty("queue.auto_register", false);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getQueueAutoRegister());
-    }
-
     public void testGetJMXManagementEnabled() throws ConfigurationException
     {
         // Check default

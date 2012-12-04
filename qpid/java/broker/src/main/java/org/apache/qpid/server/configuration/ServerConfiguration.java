@@ -496,11 +496,6 @@ public class ServerConfiguration extends AbstractConfiguration
         return getStringValue("management.ssl.keyStorePassword", fallback);
     }
 
-    public boolean getQueueAutoRegister()
-    {
-        return getBooleanValue("queue.auto_register", true);
-    }
-
     public boolean getJMXManagementEnabled()
     {
         return getBooleanValue("management.enabled", true);

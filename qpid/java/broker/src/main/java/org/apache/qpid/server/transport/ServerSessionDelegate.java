@@ -45,7 +45,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -1267,19 +1266,11 @@ public class ServerSessionDelegate extends SessionDelegate
                         }
                         queueRegistry.registerQueue(queue);
 
-                        // XXX remove reference on ServerConfiguration
-                        boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
+                        ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
 
-                        if (autoRegister)
-                        {
+                        Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                            ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
-
-                            Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
-
-                            virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
-
-                        }
+                        virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
 
                         if (method.hasAutoDelete()
                             && method.getAutoDelete()
