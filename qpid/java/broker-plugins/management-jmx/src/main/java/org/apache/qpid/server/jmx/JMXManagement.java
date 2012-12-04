@@ -118,7 +118,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             throw new IllegalStateException("No JMX RMI port found supporting protocol " + Protocol.RMI);
         }
 
-        _objectRegistry = new JMXManagedObjectRegistry(connectorPort, registryPort, _jmxConfiguration);
+        _objectRegistry = new JMXManagedObjectRegistry(_broker, connectorPort, registryPort, _jmxConfiguration);
 
         _broker.addChangeListener(this);
 

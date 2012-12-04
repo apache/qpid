@@ -21,18 +21,20 @@
 package org.apache.qpid.server.security.auth.rmi;
 
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.Principal;
+import java.util.regex.Pattern;
 
 import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -49,8 +51,6 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     private static final String PASSWORD = "password";
 
     private final Broker _broker = mock(Broker.class);
-    private final Port _rmiPort = mock(Port.class);
-    private final AuthenticationProvider _authenticationProvider = mock(AuthenticationProvider.class);
     private final SecurityManager _securityManager = mock(SecurityManager.class);
     private final Subject _loginSubject = new Subject();
     private final String[] _credentials = new String[] {USERNAME, PASSWORD};
@@ -62,11 +62,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
 
     protected void setUp() throws Exception
     {
-        when(_rmiPort.getBindingAddress()).thenReturn("0.0.0.0:8999");
-        when(_rmiPort.getAuthenticationProvider()).thenReturn(_authenticationProvider);
-        when(_rmiPort.getParent(Broker.class)).thenReturn(_broker);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
-        _rmipa = new RMIPasswordAuthenticator(_rmiPort);
+        _rmipa = new RMIPasswordAuthenticator(_broker, new InetSocketAddress(8999));
     }
 
     /**
@@ -74,7 +71,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testAuthenticationSuccess()
     {
-        when(_authenticationProvider.getSubjectCreator()).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySuvjectCreator);
         when(_securityManager.accessManagement()).thenReturn(true);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
@@ -86,7 +83,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testUsernameOrPasswordInvalid()
     {
-        when(_authenticationProvider.getSubjectCreator()).thenReturn(_badPasswordSubjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_badPasswordSubjectCreator);
 
         try
         {
@@ -102,7 +99,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
 
     public void testAuthorisationFailure()
     {
-        when(_authenticationProvider.getSubjectCreator()).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySuvjectCreator);
         when(_securityManager.accessManagement()).thenReturn(false);
 
         try
@@ -121,7 +118,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     {
         final Exception mockAuthException = new Exception("Mock Auth system failure");
         SubjectCreator subjectCreator = createMockSubjectCreator(false, mockAuthException);
-        when(_authenticationProvider.getSubjectCreator()).thenReturn(subjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
 
         try
         {
@@ -139,7 +136,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testNullSubjectCreator() throws Exception
     {
-        when(_authenticationProvider.getSubjectCreator()).thenReturn(null);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(null);
 
         try
         {
@@ -148,8 +145,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         }
         catch (SecurityException se)
         {
-            assertEquals("Unexpected exception message",
-                    "Can't get subject creator for 0.0.0.0:8999", se.getMessage());
+            assertTrue("Unexpected exception message", Pattern.matches("Can't get subject creator for .*:8999", se.getMessage()));
         }
     }
 

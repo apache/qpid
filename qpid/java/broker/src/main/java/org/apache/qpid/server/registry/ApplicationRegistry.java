@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Collection;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -382,18 +380,7 @@ public class ApplicationRegistry implements IApplicationRegistry
     @Override
     public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
-        AuthenticationProvider provider = _broker.getDefaultAuthenticationProvider();
-        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
-        Collection<Port> ports = _broker.getPorts();
-        for (Port p : ports)
-        {
-            if (inetSocketAddress.getPort() == p.getPort())
-            {
-                provider = p.getAuthenticationProvider();
-                break;
-            }
-        }
-        return provider.getSubjectCreator();
+        return _broker.getSubjectCreator(localAddress);
     }
 
     public RootMessageLogger getRootMessageLogger()

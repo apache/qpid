@@ -208,11 +208,9 @@ public class HttpManagement extends AbstractPluginAdapter
         root.setContextPath("/");
         server.setHandler(root);
 
-        // set servlet context attributes for broker, configuration, security manager and ports
+        // set servlet context attributes for broker and configuration
         root.getServletContext().setAttribute(AbstractServlet.ATTR_BROKER, _broker);
         root.getServletContext().setAttribute(AbstractServlet.ATTR_CONFIGURATION, _configuration);
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_SECURITY_MANAGER, _broker.getSecurityManager());
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_PORTS, ports);
 
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);

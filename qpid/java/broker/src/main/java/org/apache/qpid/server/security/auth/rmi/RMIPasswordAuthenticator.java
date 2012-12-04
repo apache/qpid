@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import java.net.SocketAddress;
+
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -41,11 +42,13 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
                         "Please ensure you are using an up to date management console to connect.";
 
-    private final Port _registryPort;
+    private final Broker _broker;
+    private final SocketAddress _address;
 
-    public RMIPasswordAuthenticator(Port registryPort)
+    public RMIPasswordAuthenticator(Broker broker, SocketAddress address)
     {
-        _registryPort = registryPort;
+        _broker = broker;
+        _address = address;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
@@ -91,10 +94,10 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        SubjectCreator subjectCreator = _registryPort.getAuthenticationProvider().getSubjectCreator();
+        SubjectCreator subjectCreator = _broker.getSubjectCreator(_address);
         if (subjectCreator == null)
         {
-            throw new SecurityException("Can't get subject creator for " + _registryPort.getBindingAddress());
+            throw new SecurityException("Can't get subject creator for " + _address);
         }
 
         final SubjectAuthenticationResult result = subjectCreator.authenticate(username, password);
@@ -116,10 +119,9 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     private void doManagementAuthorisation(Subject authenticatedSubject)
     {
         SecurityManager.setThreadSubject(authenticatedSubject);
-        Broker broker = _registryPort.getParent(Broker.class);
         try
         {
-            if (!broker.getSecurityManager().accessManagement())
+            if (!_broker.getSecurityManager().accessManagement())
             {
                 throw new SecurityException(USER_NOT_AUTHORISED_FOR_MANAGEMENT);
             }

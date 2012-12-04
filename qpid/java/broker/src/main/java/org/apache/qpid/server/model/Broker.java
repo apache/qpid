@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,6 +30,7 @@ import java.util.Map;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
 
 public interface Broker extends ConfiguredObject
 {
@@ -134,5 +136,13 @@ public interface Broker extends ConfiguredObject
     LogRecorder getLogRecorder();
 
     VirtualHost findVirtualHostByName(String name);
+
+    /**
+     * Get the SubjectCreator for the given socket address.
+     * TODO: move the authentication related functionality into host aliases and AuthenticationProviders
+     *
+     * @param address The (listening) socket address for which the AuthenticationManager is required
+     */
+    SubjectCreator getSubjectCreator(SocketAddress localAddress);
 
 }

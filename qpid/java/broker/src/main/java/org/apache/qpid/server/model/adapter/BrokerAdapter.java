@@ -25,6 +25,8 @@ import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,6 +56,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -726,5 +729,22 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public VirtualHost findVirtualHostByName(String name)
     {
         return _vhostAdapters.get(name);
+    }
+
+    @Override
+    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
+    {
+        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
+        AuthenticationProvider provider = _defaultAuthenticationProvider;
+        Collection<Port> ports = getPorts();
+        for (Port p : ports)
+        {
+            if (inetSocketAddress.getPort() == p.getPort())
+            {
+                provider = p.getAuthenticationProvider();
+                break;
+            }
+        }
+        return provider.getSubjectCreator();
     }
 }

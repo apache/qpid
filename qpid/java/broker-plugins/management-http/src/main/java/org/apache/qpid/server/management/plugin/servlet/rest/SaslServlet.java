@@ -76,7 +76,7 @@ public class SaslServlet extends AbstractServlet
         HttpSession session = request.getSession();
         getRandom(session);
 
-        SubjectCreator subjectCreator = getSubjectCreator(getSocketAddress(request));
+        SubjectCreator subjectCreator = getSubjectCreator(request);
         String[] mechanisms = subjectCreator.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
 
@@ -134,7 +134,7 @@ public class SaslServlet extends AbstractServlet
             String id = request.getParameter("id");
             String saslResponse = request.getParameter("response");
 
-            SubjectCreator subjectCreator = getSubjectCreator(getSocketAddress(request));
+            SubjectCreator subjectCreator = getSubjectCreator(request);
 
             if(mechanism != null)
             {

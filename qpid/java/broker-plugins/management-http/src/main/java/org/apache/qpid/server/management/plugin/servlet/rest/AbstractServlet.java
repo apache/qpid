@@ -26,7 +26,6 @@ import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collection;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
@@ -46,7 +45,6 @@ import org.apache.qpid.server.logging.actors.HttpManagementActor;
 import org.apache.qpid.server.management.plugin.HttpConfiguration;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -67,16 +65,6 @@ public abstract class AbstractServlet extends HttpServlet
      */
     public static final String ATTR_CONFIGURATION = "Qpid.configuration";
 
-    /**
-     * Servlet context attribute holding a reference to a security manager
-     */
-    public static final String ATTR_SECURITY_MANAGER = "Qpid.securityManager";
-
-    /**
-     * Servlet context attribute holding a reference to a collection of http ports
-     */
-    public static final String ATTR_PORTS = "Qpid.ports";
-
     private static final String ATTR_LOGIN_LOGOUT_REPORTER = "AbstractServlet.loginLogoutReporter";
     private static final String ATTR_SUBJECT = "AbstractServlet.subject";
     private static final String ATTR_LOG_ACTOR = "AbstractServlet.logActor";
@@ -84,15 +72,12 @@ public abstract class AbstractServlet extends HttpServlet
     private Broker _broker;
     private RootMessageLogger _rootLogger;
     private HttpConfiguration _configuration;
-    private Collection<Port> _ports;
-    private SecurityManager _securityManager;
 
     protected AbstractServlet()
     {
         super();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void init() throws ServletException
     {
@@ -101,8 +86,6 @@ public abstract class AbstractServlet extends HttpServlet
         _broker = (Broker)servletContext.getAttribute(ATTR_BROKER);
         _rootLogger = _broker.getRootMessageLogger();
         _configuration = (HttpConfiguration)servletContext.getAttribute(ATTR_CONFIGURATION);
-        _securityManager = (SecurityManager)servletContext.getAttribute(ATTR_SECURITY_MANAGER);
-        _ports = (Collection<Port>)servletContext.getAttribute(ATTR_PORTS);
         super.init();
     }
 
@@ -295,7 +278,7 @@ public abstract class AbstractServlet extends HttpServlet
             return subject;
         }
 
-        SubjectCreator subjectCreator = getSubjectCreator(getSocketAddress(request));
+        SubjectCreator subjectCreator = getSubjectCreator(request);
         subject = authenticate(request, subjectCreator);
         if (subject != null)
         {
@@ -308,20 +291,6 @@ public abstract class AbstractServlet extends HttpServlet
         }
 
         return subject;
-    }
-
-    protected SubjectCreator getSubjectCreator(SocketAddress localAddress)
-    {
-        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
-        Collection<Port> ports = _ports == null ? _broker.getPorts() : _ports;
-        for (Port p : ports)
-        {
-            if (inetSocketAddress.getPort() == p.getPort())
-            {
-                return p.getAuthenticationProvider().getSubjectCreator();
-            }
-        }
-        return null;
     }
 
     protected void authoriseManagement(HttpServletRequest request, Subject subject)
@@ -339,7 +308,7 @@ public abstract class AbstractServlet extends HttpServlet
                     @Override
                     public Void run() throws Exception
                     {
-                        boolean allowed = _securityManager.accessManagement();
+                        boolean allowed = getSecurityManager().accessManagement();
                         if (!allowed)
                         {
                             throw new AccessControlException("User is not authorised for management");
@@ -494,7 +463,11 @@ public abstract class AbstractServlet extends HttpServlet
 
     protected SecurityManager getSecurityManager()
     {
-        return _securityManager;
+        return _broker.getSecurityManager();
     }
 
+    protected SubjectCreator getSubjectCreator(HttpServletRequest request)
+    {
+        return _broker.getSubjectCreator(getSocketAddress(request));
+    }
 }
