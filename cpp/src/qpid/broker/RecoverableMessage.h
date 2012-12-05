@@ -28,6 +28,7 @@
 
 namespace qpid {
 namespace broker {
+class ExpiryPolicy;
 
 /**
  * The interface through which messages are reloaded on recovery.
@@ -38,6 +39,7 @@ public:
     typedef boost::shared_ptr<RecoverableMessage> shared_ptr;
     virtual void setPersistenceId(uint64_t id) = 0;
     virtual void setRedelivered() = 0;
+    virtual void computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& e) = 0;
     /**
      * Used by store to determine whether to load content on recovery
      * or let message load its own content as and when it requires it.
