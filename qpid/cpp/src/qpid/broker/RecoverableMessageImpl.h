@@ -37,6 +37,7 @@ public:
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
     void setRedelivered();
+    void computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& ep);
     bool loadContent(uint64_t available);
     void decodeContent(framing::Buffer& buffer);
     void recover(boost::shared_ptr<Queue> queue);
