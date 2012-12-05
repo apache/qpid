@@ -186,6 +186,11 @@ void RecoverableMessageImpl::setRedelivered()
     msg.deliver();//increment delivery count (but at present that isn't recorded durably)
 }
 
+void RecoverableMessageImpl::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& ep)
+{
+    msg.computeExpiration(ep);
+}
+
 void RecoverableQueueImpl::recover(RecoverableMessage::shared_ptr msg)
 {
     dynamic_pointer_cast<RecoverableMessageImpl>(msg)->recover(queue);
