@@ -50,14 +50,24 @@ public abstract class MessageImpl implements Message
     static final Set<Class> _supportedClasses =
                 new HashSet<Class>(Arrays.asList(Boolean.class, Byte.class, Short.class, Integer.class, Long.class,
                                                  Float.class, Double.class, Character.class, String.class, byte[].class));
-    private static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
+    static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
+    static final Symbol TO_TYPE = Symbol.valueOf("x-opt-to-type");
+    static final Symbol REPLY_TO_TYPE = Symbol.valueOf("x-opt-reply-type");
+
+    static final String QUEUE_ATTRIBUTE = "queue";
+    static final String TOPIC_ATTRIBUTE = "topic";
+    static final String TEMPORARY_ATTRIBUTE = "temporary";
+
+    static final Set<String> JMS_QUEUE_ATTRIBUTES = set(QUEUE_ATTRIBUTE);
+    static final Set<String> JMS_TOPIC_ATTRIBUTES = set(TOPIC_ATTRIBUTE);
+    static final Set<String> JMS_TEMP_QUEUE_ATTRIBUTES = set(QUEUE_ATTRIBUTE, TEMPORARY_ATTRIBUTE);
+    static final Set<String> JMS_TEMP_TOPIC_ATTRIBUTES = set(TOPIC_ATTRIBUTE, TEMPORARY_ATTRIBUTE);
 
     private Header _header;
     private Properties _properties;
     private ApplicationProperties _applicationProperties;
     private Footer _footer;
-    public static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
-    private SessionImpl _sessionImpl;
+    private final SessionImpl _sessionImpl;
     private boolean _readOnly;
     private MessageAnnotations _messageAnnotations;
 
@@ -171,45 +181,53 @@ public abstract class MessageImpl implements Message
 
     public DestinationImpl getJMSReplyTo() throws JMSException
     {
-        return DestinationImpl.valueOf(getReplyTo());
+        return toDestination(getReplyTo(), splitCommaSeparateSet((String) getMessageAnnotation(REPLY_TO_TYPE)));
     }
 
     public void setJMSReplyTo(Destination destination) throws NonAMQPDestinationException
     {
-        if(destination == null)
+        if( destination==null )
         {
             setReplyTo(null);
-        }
-        else if (destination instanceof org.apache.qpid.amqp_1_0.jms.Destination)
-        {
-            setReplyTo(((org.apache.qpid.amqp_1_0.jms.Destination)destination).getAddress());
+            messageAnnotationMap().remove(REPLY_TO_TYPE);
         }
         else
         {
-            throw new NonAMQPDestinationException(destination);
+            DecodedDestination dd = toDecodedDestination(destination);
+            setReplyTo(dd.getAddress());
+            messageAnnotationMap().put(REPLY_TO_TYPE, join(",", dd.getAttributes()));
         }
     }
 
     public DestinationImpl getJMSDestination() throws JMSException
     {
-        return _isFromQueue ? QueueImpl.valueOf(getTo())
-                            : _isFromTopic ? TopicImpl.valueOf(getTo())
-                                           : DestinationImpl.valueOf(getTo());
+        Set<String> type = splitCommaSeparateSet((String) getMessageAnnotation(TO_TYPE));
+        if( type==null )
+        {
+            if( _isFromQueue )
+            {
+                type = JMS_QUEUE_ATTRIBUTES;
+            }
+            else if( _isFromTopic )
+            {
+                type = JMS_TOPIC_ATTRIBUTES;
+            }
+        }
+        return toDestination(getTo(), type);
     }
 
     public void setJMSDestination(Destination destination) throws NonAMQPDestinationException
     {
-        if(destination == null)
+        if( destination==null )
         {
             setTo(null);
-        }
-        else if (destination instanceof org.apache.qpid.amqp_1_0.jms.Destination)
-        {
-            setTo(((org.apache.qpid.amqp_1_0.jms.Destination)destination).getAddress());
+            messageAnnotationMap().remove(TO_TYPE);
         }
         else
         {
-            throw new NonAMQPDestinationException(destination);
+            DecodedDestination dd = toDecodedDestination(destination);
+            setTo(dd.getAddress());
+            messageAnnotationMap().put(TO_TYPE, join(",", dd.getAttributes()));
         }
     }
 
@@ -264,22 +282,13 @@ public abstract class MessageImpl implements Message
 
     public String getJMSType() throws JMSException
     {
-        Map messageAttrs = _messageAnnotations == null ? null : _messageAnnotations.getValue();
-        final Object attrValue = messageAttrs == null ? null : messageAttrs.get(JMS_TYPE);
-
+        final Object attrValue = getMessageAnnotation(JMS_TYPE);
         return attrValue instanceof String ? attrValue.toString() : null;
     }
 
     public void setJMSType(String s) throws JMSException
     {
-        Map messageAttrs = _messageAnnotations == null ? null : _messageAnnotations.getValue();
-        if(messageAttrs == null)
-        {
-            messageAttrs = new HashMap();
-            _messageAnnotations = new MessageAnnotations(messageAttrs);
-        }
-
-        messageAttrs.put(JMS_TYPE, s);
+        messageAnnotationMap().put(JMS_TYPE, s);
     }
 
     public long getJMSExpiration() throws JMSException
@@ -1206,4 +1215,118 @@ public abstract class MessageImpl implements Message
     }
 
     abstract Collection<Section> getSections();
+
+    DecodedDestination toDecodedDestination(Destination destination) throws NonAMQPDestinationException
+    {
+        if(destination == null)
+        {
+            return null;
+        }
+        if (destination instanceof DestinationImpl)
+        {
+            return _sessionImpl.getConnection().toDecodedDestination((DestinationImpl) destination);
+        }
+        throw new NonAMQPDestinationException(destination);
+    }
+
+    DestinationImpl toDestination(String address, Set<String> kind)
+    {
+        if( address == null )
+        {
+            return null;
+        }
+
+        // If destination prefixes are in play, we have to strip the the prefix, and we might
+        // be able to infer the kind, if we don't know it yet.
+        DecodedDestination decoded = _sessionImpl.getConnection().toDecodedDestination(address, kind);
+        address = decoded.getAddress();
+        kind = decoded.getAttributes();
+
+        if( kind == null )
+        {
+            return DestinationImpl.valueOf(address);
+        }
+        if( kind.contains(QUEUE_ATTRIBUTE) )
+        {
+            if( kind.contains(TEMPORARY_ATTRIBUTE) )
+            {
+                return new TemporaryQueueImpl(address, null, _sessionImpl);
+            }
+            else
+            {
+                return QueueImpl.valueOf(address);
+            }
+        }
+        else if ( kind.contains(TOPIC_ATTRIBUTE) )
+        {
+            if( kind.contains(TEMPORARY_ATTRIBUTE) )
+            {
+                return new TemporaryTopicImpl(address, null, _sessionImpl);
+            }
+            else
+            {
+                return TopicImpl.valueOf(address);
+            }
+        }
+
+        return DestinationImpl.valueOf(address);
+    }
+
+    private Object getMessageAnnotation(Symbol key)
+    {
+        Map messageAttrs = _messageAnnotations == null ? null : _messageAnnotations.getValue();
+        return messageAttrs == null ? null : messageAttrs.get(key);
+    }
+
+    private Map messageAnnotationMap()
+    {
+        Map messageAttrs = _messageAnnotations == null ? null : _messageAnnotations.getValue();
+        if(messageAttrs == null)
+        {
+            messageAttrs = new HashMap();
+            _messageAnnotations = new MessageAnnotations(messageAttrs);
+        }
+        return messageAttrs;
+    }
+
+    Set<String> splitCommaSeparateSet(String value)
+    {
+        if( value == null )
+        {
+            return null;
+        }
+        HashSet<String> rc = new HashSet<String>();
+        for( String x: value.split("\\s*,\\s*") )
+        {
+            rc.add(x);
+        }
+        return rc;
+    }
+
+    private static Set<String> set(String ...args)
+    {
+        HashSet<String> s = new HashSet<String>();
+        for (String arg : args)
+        {
+            s.add(arg);
+        }
+        return Collections.unmodifiableSet(s);
+    }
+
+    static final String join(String sep, Iterable items)
+    {
+        StringBuilder result = new StringBuilder();
+
+        for (Object o : items)
+        {
+            if (result.length() > 0)
+            {
+                result.append(sep);
+            }
+            result.append(o.toString());
+        }
+
+        return result.toString();
+    }
+
 }

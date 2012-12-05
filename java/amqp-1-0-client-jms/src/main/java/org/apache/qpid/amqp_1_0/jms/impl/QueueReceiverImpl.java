@@ -41,7 +41,7 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
     {
         try
         {
-            return getSession().getClientSession().createMovingReceiver(getDestination().getAddress());
+            return getSession().getClientSession().createMovingReceiver(getSession().toAddress(getDestination()));
         }
         catch (AmqpErrorException e)
         {
