@@ -25,9 +25,8 @@ import org.apache.qpid.amqp_1_0.transport.Container;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import javax.jms.Queue;
+import java.util.*;
 
 public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
 {
@@ -50,6 +49,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private final String _remoteHost;
     private final boolean _ssl;
     private String _clientId;
+    private String _queuePrefix;
+    private String _topicPrefix;
 
 
     private static enum State
@@ -379,4 +380,78 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     {
         _isTopicConnection = topicConnection;
     }
+
+    public String getTopicPrefix()
+    {
+        return _topicPrefix;
+    }
+
+    public void setTopicPrefix(String topicPrefix)
+    {
+        _topicPrefix = topicPrefix;
+    }
+
+    public String getQueuePrefix()
+    {
+        return _queuePrefix;
+    }
+
+    public void setQueuePrefix(String queueprefix)
+    {
+        _queuePrefix = queueprefix;
+    }
+
+    DecodedDestination toDecodedDestination(DestinationImpl dest)
+    {
+        String address = dest.getAddress();
+        Set<String> kind = null;
+        Class clazz = dest.getClass();
+        if( clazz==QueueImpl.class )
+        {
+            kind = MessageImpl.JMS_QUEUE_ATTRIBUTES;
+            if( _queuePrefix!=null )
+            {
+                // Avoid double prefixing..
+                if( !address.startsWith(_queuePrefix) )
+                {
+                    address = _queuePrefix+address;
+                }
+            }
+        }
+        else if( clazz==TopicImpl.class )
+        {
+            kind = MessageImpl.JMS_TOPIC_ATTRIBUTES;
+            if( _topicPrefix!=null )
+            {
+                // Avoid double prefixing..
+                if( !address.startsWith(_topicPrefix) )
+                {
+                    address = _topicPrefix+address;
+                }
+            }
+        }
+        else if( clazz==TemporaryQueueImpl.class )
+        {
+            kind = MessageImpl.JMS_TEMP_QUEUE_ATTRIBUTES;
+        }
+        else if( clazz==TemporaryTopicImpl.class )
+        {
+            kind = MessageImpl.JMS_TEMP_TOPIC_ATTRIBUTES;
+        }
+        return new DecodedDestination(address, kind);
+    }
+
+    DecodedDestination toDecodedDestination(String address, Set<String> kind)
+    {
+        if( (kind == null || kind.equals(MessageImpl.JMS_QUEUE_ATTRIBUTES)) && _queuePrefix!=null && address.startsWith(_queuePrefix))
+        {
+            return new DecodedDestination(address.substring(_queuePrefix.length()), MessageImpl.JMS_QUEUE_ATTRIBUTES);
+        }
+        if( (kind == null || kind.equals(MessageImpl.JMS_TOPIC_ATTRIBUTES)) && _topicPrefix!=null && address.startsWith(_topicPrefix))
+        {
+            return new DecodedDestination(address.substring(_topicPrefix.length()), MessageImpl.JMS_TOPIC_ATTRIBUTES);
+        }
+        return new DecodedDestination(address, kind);
+    }
+
 }

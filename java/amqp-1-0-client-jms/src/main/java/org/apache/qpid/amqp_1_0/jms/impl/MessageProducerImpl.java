@@ -20,7 +20,6 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
-import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
 import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
@@ -61,7 +60,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         {
             try
             {
-                _sender = _session.getClientSession().createSender(_destination.getAddress());
+                _sender = _session.getClientSession().createSender(_session.toAddress(_destination));
             }
             catch (Sender.SenderCreationException e)
             {
@@ -297,7 +296,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             try
             {
                 _destination = (DestinationImpl) destination;
-                _sender = _session.getClientSession().createSender(_destination.getAddress());
+                _sender = _session.getClientSession().createSender(_session.toAddress(_destination));
 
                 send(message, deliveryMode, priority, ttl);
 
