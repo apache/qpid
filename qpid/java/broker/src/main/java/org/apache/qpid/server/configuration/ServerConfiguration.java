@@ -24,7 +24,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -301,52 +300,6 @@ public class ServerConfiguration extends AbstractConfiguration
             VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)), null);
             _virtualHosts.put(virtualhost.getName(), virtualhost);
         }
-    }
-
-    /**
-     * The currently defined {@see Locale} for this broker
-     *
-     * @return the configuration defined locale
-     */
-    public Locale getLocale()
-    {
-        String localeString = getStringValue(ADVANCED_LOCALE);
-        // Expecting locale of format langauge_country_variant
-
-        // If the configuration does not have a defined locale use the JVM default
-        if (localeString == null)
-        {
-            return Locale.getDefault();
-        }
-
-        String[] parts = localeString.split("_");
-
-        Locale locale;
-        switch (parts.length)
-        {
-            case 1:
-                locale = new Locale(localeString);
-                break;
-            case 2:
-                locale = new Locale(parts[0], parts[1]);
-                break;
-            default:
-                StringBuilder variant = new StringBuilder(parts[2]);
-                // If we have a variant such as the Java doc suggests for Spanish
-                // Traditional_WIN we may end up with more than 3 parts on a
-                // split with '_'. So we should recombine the variant.
-                if (parts.length > 3)
-                {
-                    for (int index = 3; index < parts.length; index++)
-                    {
-                        variant.append('_').append(parts[index]);
-                    }
-                }
-
-                locale = new Locale(parts[0], parts[1], variant.toString());
-        }
-
-        return locale;
     }
 
     public String getConfigurationURL()

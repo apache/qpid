@@ -184,11 +184,6 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             getVirtualHostRegistry().setDefaultVirtualHostName(configuration.getDefaultVirtualHost());
 
-            // We have already loaded the BrokerMessages class by this point so we
-            // need to refresh the locale setting in case we had a different value in
-            // the configuration.
-            BrokerMessages.reload();
-
             // Create the RootLogger to be used during broker operation
             boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
             _rootMessageLogger = new Log4jMessageLogger(statusUpdatesEnabled);

@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Locale;
 
 import javax.net.ssl.KeyManagerFactory;
 
@@ -140,39 +139,6 @@ public class ServerConfigurationTest extends QpidTestCase
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
         assertEquals(true, _serverConfig.getSynchedClocks());
-    }
-
-    public void testGetLocale() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-
-        // The Default is what ever the VMs default is
-        Locale defaultLocale = Locale.getDefault();
-
-        assertEquals(defaultLocale, _serverConfig.getLocale());
-
-
-        //Test Language only
-        Locale update = new Locale("es");
-        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(update, _serverConfig.getLocale());
-
-        //Test Language and Country
-        update = new Locale("es","ES");
-        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(update, _serverConfig.getLocale());
-
-        //Test Language and Country and Variant
-        update = new Locale("es","ES", "Traditional_WIN");
-        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES_Traditional_WIN");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(update, _serverConfig.getLocale());
     }
 
     public void testGetManagementKeyStorePath() throws ConfigurationException

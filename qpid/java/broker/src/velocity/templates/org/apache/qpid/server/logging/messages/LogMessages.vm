@@ -24,7 +24,6 @@ import static org.apache.qpid.server.logging.AbstractRootMessageLogger.DEFAULT_L
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -44,7 +43,7 @@ import java.util.ResourceBundle;
 public class ${type.name}Messages
 {
     private static ResourceBundle _messages;
-    private static Locale _currentLocale;
+    private static Locale _currentLocale = Locale.US;
     
     public static final String ${type.name.toUpperCase()}_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "${type.name.toLowerCase()}";
 #foreach( $message in ${type.list} )
@@ -61,20 +60,16 @@ public class ${type.name}Messages
         reload();
     }
 
-    public static void reload()
+    public static void reload(Locale locale)
     {
-        if (ApplicationRegistry.isConfigured())
-        {
-            _currentLocale = ApplicationRegistry.getInstance().getConfiguration().getLocale();
-        }
-        else
-        {
-            _currentLocale = Locale.getDefault();
-        }
-
-        _messages = ResourceBundle.getBundle("${resource}", _currentLocale);
+        _currentLocale = locale;
+        reload();
     }
 
+    public static void reload()
+    {
+        _messages = ResourceBundle.getBundle("${resource}", _currentLocale);
+    }
 
 ##
 ## The list stored under key 'list' in the 'type' HashMap contains all the
