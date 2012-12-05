@@ -18,9 +18,11 @@
  */
 package org.apache.qpid.server.plugin;
 
+import java.util.Map;
+
 import org.apache.qpid.server.security.AccessControl;
 
 public interface AccessControlFactory
 {
-    AccessControl createInstance(String aclFile);
+    AccessControl createInstance(Map<String, Object> attributes);
 }

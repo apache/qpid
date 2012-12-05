@@ -130,9 +130,11 @@ public class SecurityManager
 
     public SecurityManager(String aclFile)
     {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("aclFile", aclFile);
         for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
         {
-            AccessControl accessControl = provider.createInstance(aclFile);
+            AccessControl accessControl = provider.createInstance(attributes);
             if(accessControl != null)
             {
                 addHostPlugin(accessControl);

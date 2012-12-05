@@ -20,18 +20,40 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import java.io.File;
+import java.util.Map;
+
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.security.AccessControl;
 
 public class DefaultAccessControlFactory implements AccessControlFactory
 {
-    public AccessControl createInstance(String aclConfiguration)
-    {
-        if(aclConfiguration == null)
-        {
-            return null;
-        }
+    public static final String ATTRIBUTE_ACL_FILE = "aclFile";
 
-        return new DefaultAccessControl(aclConfiguration);
+    public AccessControl createInstance(Map<String, Object> aclConfiguration)
+    {
+        if (aclConfiguration != null)
+        {
+            Object aclFile = aclConfiguration.get(ATTRIBUTE_ACL_FILE);
+            if (aclFile != null)
+            {
+                if (aclFile instanceof String)
+                {
+                    String aclPath = (String) aclFile;
+                    if (!new File(aclPath).exists())
+                    {
+                        throw new IllegalConfigurationException("ACL file '" + aclPath + "' is not found");
+                    }
+                    return new DefaultAccessControl(aclPath);
+                }
+                else
+                {
+                    throw new IllegalConfigurationException("Expected '" + ATTRIBUTE_ACL_FILE + "' attribute value of type String but was " + aclFile.getClass()
+                            + ": " + aclFile);
+                }
+            }
+        }
+        return null;
     }
 }
