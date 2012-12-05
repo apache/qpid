@@ -1,5 +1,7 @@
 package org.apache.qpid.server.configuration;
 
+import java.util.Locale;
+
 /**
  * Declares broker system property names
  */
@@ -24,8 +26,28 @@ public class BrokerProperties
 
     public static final String PROPERTY_STATUS_UPDATES = "qpid.status_updates";
     public static final String PROPERTY_SYNCHED_CLOCKS = "qpid.synched_clocks";
+    public static final String PROPERTY_LOCALE = "qpid.locale";
 
     private BrokerProperties()
     {
+    }
+
+    public static Locale getLocale()
+    {
+        Locale locale = Locale.US;
+        String localeSetting = System.getProperty(BrokerProperties.PROPERTY_LOCALE);
+        if (localeSetting != null)
+        {
+            String[] localeParts = localeSetting.split("_");
+            String language = (localeParts.length > 0 ? localeParts[0] : "");
+            String country = (localeParts.length > 1 ? localeParts[1] : "");
+            String variant = "";
+            if (localeParts.length > 2)
+            {
+                variant = localeSetting.substring(language.length() + 1 + country.length() + 1);
+            }
+            locale = new Locale(language, country, variant);
+        }
+        return locale;
     }
 }

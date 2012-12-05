@@ -23,6 +23,7 @@ package ${package};
 import static org.apache.qpid.server.logging.AbstractRootMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
 import java.text.MessageFormat;
@@ -43,7 +44,7 @@ import java.util.ResourceBundle;
 public class ${type.name}Messages
 {
     private static ResourceBundle _messages;
-    private static Locale _currentLocale = Locale.US;
+    private static Locale _currentLocale = BrokerProperties.getLocale();
     
     public static final String ${type.name.toUpperCase()}_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "${type.name.toLowerCase()}";
 #foreach( $message in ${type.list} )
