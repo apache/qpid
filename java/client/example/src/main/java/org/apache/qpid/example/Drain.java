@@ -88,7 +88,7 @@ public class Drain extends OptionParser
                 }               
             }            
         }
-        
+        consumer.close();
         ssn.close();
         con.close();
     }
