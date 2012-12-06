@@ -44,7 +44,7 @@ perl/cqpid_perl.cpp: $(srcdir)/perl/perl.i $(srcdir)/qpid.i $(srcdir)/../swig_pe
 
 perl/Makefile: perl/cqpid_perl.cpp
 	cd perl; \
-		$(PERL) Makefile.PL PREFIX=$(prefix) LIB=$(PERL_ARCHLIB) ; \
+		$(PERL) Makefile.PL PREFIX=$(prefix) ; \
 	cd ..
 
 all-local: perl/Makefile
@@ -54,7 +54,7 @@ all-local: perl/Makefile
 
 install-exec-local:
 	cd perl ; \
-		$(MAKE) pure_install DESTDIR=$(prefix) ; \
+		$(MAKE) pure_install ; \
 	cd ..
 
 clean-local:
