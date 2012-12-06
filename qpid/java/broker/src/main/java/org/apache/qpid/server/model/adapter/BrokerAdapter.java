@@ -48,10 +48,12 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
@@ -73,6 +75,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Map<String, AuthenticationProvider> _authenticationProviders = new HashMap<String, AuthenticationProvider>();
     private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
     private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
+    private final Map<UUID, KeyStore> _keyStores = new HashMap<UUID, KeyStore>();
+    private final Map<UUID, TrustStore> _trustStores = new HashMap<UUID, TrustStore>();
 
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private AuthenticationProvider _defaultAuthenticationProvider;
@@ -293,6 +297,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return (Collection<C>) getGroupProviders();
         }
+        else if(clazz == KeyStore.class)
+        {
+            return (Collection<C>) getKeyStores();
+        }
+        else if(clazz == TrustStore.class)
+        {
+            return (Collection<C>) getTrustStores();
+        }
         else if(clazz == ConfiguredObject.class)
         {
             return (Collection<C>) getPlugins();
@@ -388,6 +400,42 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     private boolean deleteGroupProvider(GroupProvider object)
+    {
+        throw new UnsupportedOperationException("Not implemented yet!");
+    }
+
+    public void addKeyStore(KeyStore keyStore)
+    {
+        synchronized (_keyStores)
+        {
+            if(_keyStores.containsKey(keyStore.getId()))
+            {
+                throw new IllegalConfigurationException("Cannot add KeyStore because one with id " + keyStore.getId() + " already exists");
+            }
+            _keyStores.put(keyStore.getId(), keyStore);
+        }
+        keyStore.addChangeListener(this);
+    }
+
+    private boolean deleteKeyStore(KeyStore object)
+    {
+        throw new UnsupportedOperationException("Not implemented yet!");
+    }
+
+    public void addTrustStore(TrustStore trustStore)
+    {
+        synchronized (_trustStores)
+        {
+            if(_trustStores.containsKey(trustStore.getId()))
+            {
+                throw new IllegalConfigurationException("Cannot add TrustStore because one with id " + trustStore.getId() + " already exists");
+            }
+            _trustStores.put(trustStore.getId(), trustStore);
+        }
+        trustStore.addChangeListener(this);
+    }
+
+    private boolean deleteTrustStore(TrustStore object)
     {
         throw new UnsupportedOperationException("Not implemented yet!");
     }
@@ -642,6 +690,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             {
                 childDeleted = deleteGroupProvider((GroupProvider)object);
             }
+            else if(object instanceof KeyStore)
+            {
+                childDeleted = deleteKeyStore((KeyStore)object);
+            }
+            else if(object instanceof TrustStore)
+            {
+                childDeleted = deleteTrustStore((TrustStore)object);
+            }
             if(childDeleted)
             {
                 childRemoved(object);
@@ -701,6 +757,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             addGroupProvider((GroupProvider)object);
         }
+        else if(object instanceof KeyStore)
+        {
+            addKeyStore((KeyStore)object);
+        }
+        else if(object instanceof TrustStore)
+        {
+            addTrustStore((TrustStore)object);
+        }
         else
         {
             addPlugin(object);
@@ -747,4 +811,23 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
         return provider.getSubjectCreator();
     }
+
+    @Override
+    public Collection<KeyStore> getKeyStores()
+    {
+        synchronized(_trustStores)
+        {
+            return Collections.unmodifiableCollection(_keyStores.values());
+        }
+    }
+
+    @Override
+    public Collection<TrustStore> getTrustStores()
+    {
+        synchronized(_trustStores)
+        {
+            return Collections.unmodifiableCollection(_trustStores.values());
+        }
+    }
+
 }

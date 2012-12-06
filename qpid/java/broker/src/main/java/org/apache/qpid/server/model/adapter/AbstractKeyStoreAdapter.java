@@ -1,0 +1,190 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.server.model.adapter;
+
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.net.ssl.KeyManagerFactory;
+
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.util.MapValueConverter;
+
+public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
+{
+    protected final String _name;
+    protected final String _path;
+    protected final String _password;
+    protected final String _type;
+    protected final String _keyManagerFactoryAlgorithm;
+
+    protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes, String defaultName)
+    {
+        super(id);
+        addParent(Broker.class, broker);
+        _name = MapValueConverter.getStringAttribute(KeyStore.NAME, attributes, defaultName);
+        _path = MapValueConverter.getStringAttribute(KeyStore.PATH, attributes);
+        _password = MapValueConverter.getStringAttribute(KeyStore.PASSWORD, attributes);
+        _type =  MapValueConverter.getStringAttribute(KeyStore.TYPE, attributes, java.security.KeyStore.getDefaultType());
+        _keyManagerFactoryAlgorithm = MapValueConverter.getStringAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes, KeyManagerFactory.getDefaultAlgorithm());
+    }
+
+    @Override
+    public String getName()
+    {
+        return _name;
+    }
+
+    @Override
+    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public State getActualState()
+    {
+        return State.ACTIVE;
+    }
+
+    @Override
+    public boolean isDurable()
+    {
+        return true;
+    }
+
+    @Override
+    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return LifetimePolicy.PERMANENT;
+    }
+
+    @Override
+    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException, AccessControlException,
+            IllegalArgumentException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public long getTimeToLive()
+    {
+        return 0;
+    }
+
+    @Override
+    public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public Statistics getStatistics()
+    {
+        return NoStatistics.getInstance();
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(KeyStore.ID.equals(name))
+        {
+            return getId();
+        }
+        else if(KeyStore.NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(KeyStore.STATE.equals(name))
+        {
+            return getActualState();
+        }
+        else if(KeyStore.DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(KeyStore.LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+        else if(KeyStore.TIME_TO_LIVE.equals(name))
+        {
+            return getTimeToLive();
+        }
+        else if(KeyStore.CREATED.equals(name))
+        {
+
+        }
+        else if(KeyStore.UPDATED.equals(name))
+        {
+
+        }
+        else if(KeyStore.PATH.equals(name))
+        {
+            return _path;
+        }
+        else if(KeyStore.PASSWORD.equals(name))
+        {
+            return _password;
+        }
+        else if(KeyStore.TYPE.equals(name))
+        {
+            return _type;
+        }
+        else if(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM.equals(name))
+        {
+            return _keyManagerFactoryAlgorithm;
+        }
+        return super.getAttribute(name);
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        return false;
+    }
+}

@@ -25,8 +25,10 @@ import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
@@ -77,6 +79,14 @@ public class DefaultRecovererProvider implements RecovererProvider
         else if(GroupProvider.class.getSimpleName().equals(type))
         {
             return new GroupProviderRecoverer(_groupManagerServiceLoader);
+        }
+        else if(KeyStore.class.getSimpleName().equals(type))
+        {
+            return new KeyStoreRecoverer();
+        }
+        else if(TrustStore.class.getSimpleName().equals(type))
+        {
+            return new TrustStoreRecoverer();
         }
         else if(Plugin.class.getSimpleName().equals(type))
         {

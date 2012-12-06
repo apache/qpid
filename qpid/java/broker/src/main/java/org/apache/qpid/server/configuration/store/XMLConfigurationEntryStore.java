@@ -46,10 +46,12 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.PluginFactory;
@@ -96,6 +98,8 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
         updateManagementPorts(_serverConfiguration, options);
 
+        createKeyStoreConfig(config, _rootChildren);
+        createTrustStoreConfig(config, _rootChildren);
         createGroupProviderConfig(_configuration, _rootChildren);
         createAuthenticationProviderConfig(_configuration, _rootChildren);
         createAmqpPortConfig(_serverConfiguration, _rootChildren, options);
@@ -136,6 +140,38 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         _logger.warn("Returning root entry: " + rootEntry);
 
         return rootEntry;
+    }
+
+
+    private void createTrustStoreConfig(ServerConfiguration config, Map<UUID, ConfigurationEntry> rootChildren)
+    {
+        if (config.getEnableSSL() && config.getConnectorTrustStorePath() != null)
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(TrustStore.NAME, "connectorTrustStore");
+            attributes.put(TrustStore.PATH, config.getConnectorTrustStorePath());
+            attributes.put(TrustStore.PASSWORD, config.getConnectorTrustStorePassword());
+            attributes.put(TrustStore.TYPE, config.getConnectorTrustStoreType());
+            attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, config.getConnectorTrustManagerFactoryAlgorithm());
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), TrustStore.class.getSimpleName(), attributes, null, this);
+            rootChildren.put(entry.getId(), entry);
+        }
+    }
+
+    private void createKeyStoreConfig(ServerConfiguration config, Map<UUID, ConfigurationEntry> rootChildren)
+    {
+        if (config.getEnableSSL())
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(KeyStore.NAME, "connectorKeytStore");
+            attributes.put(KeyStore.PATH, config.getConnectorKeyStorePath());
+            attributes.put(KeyStore.PASSWORD, config.getConnectorKeyStorePassword());
+            attributes.put(KeyStore.TYPE, config.getConnectorKeyStoreType());
+            attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, config.getConnectorKeyManagerFactoryAlgorithm());
+            attributes.put(KeyStore.CERTIFICATE_ALIAS, config.getCertAlias());
+            ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), KeyStore.class.getSimpleName(), attributes, null, this);
+            rootChildren.put(entry.getId(), entry);
+        }
     }
 
     private static final Map<String, String> authenticationManagerMap = new HashMap<String, String>();

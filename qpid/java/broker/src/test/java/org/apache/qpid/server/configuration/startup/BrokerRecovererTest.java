@@ -43,8 +43,10 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
@@ -312,6 +314,38 @@ public class BrokerRecovererTest extends TestCase
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
         assertEquals(Collections.singleton(plugin), new HashSet<ConfiguredObject>(broker.getChildren(ConfiguredObject.class)));
+    }
+
+    public void testCreateBrokerWithKeyStores()
+    {
+        ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
+        KeyStore keyStore = mock(KeyStore.class);
+        _brokerEntryChildren.put(KeyStore.class.getSimpleName(), Arrays.asList(pluginEntry));
+
+        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{pluginEntry, _authenticationProviderEntry1},
+                                                                     new ConfiguredObject[]{keyStore, _authenticationProvider1});
+
+        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
+
+        assertNotNull(broker);
+        assertEquals(_brokerId, broker.getId());
+        assertEquals(Collections.singleton(keyStore), new HashSet<ConfiguredObject>(broker.getChildren(KeyStore.class)));
+    }
+
+    public void testCreateBrokerWithTrustStores()
+    {
+        ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
+        TrustStore trustStore = mock(TrustStore.class);
+        _brokerEntryChildren.put(TrustStore.class.getSimpleName(), Arrays.asList(pluginEntry));
+
+        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{pluginEntry, _authenticationProviderEntry1},
+                                                                     new ConfiguredObject[]{trustStore, _authenticationProvider1});
+
+        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
+
+        assertNotNull(broker);
+        assertEquals(_brokerId, broker.getId());
+        assertEquals(Collections.singleton(trustStore), new HashSet<ConfiguredObject>(broker.getChildren(TrustStore.class)));
     }
 
     private  RecovererProvider createRecoveryProvider(final ConfigurationEntry[] entries, final ConfiguredObject[] objectsToRecoverer)

@@ -145,4 +145,7 @@ public interface Broker extends ConfiguredObject
      */
     SubjectCreator getSubjectCreator(SocketAddress localAddress);
 
+    Collection<KeyStore> getKeyStores();
+
+    Collection<TrustStore> getTrustStores();
 }
