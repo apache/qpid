@@ -23,22 +23,23 @@ package org.apache.qpid.server.protocol;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
-public class MaxChannelsTest extends InternalBrokerBaseCase
+public class MaxChannelsTest extends QpidTestCase
 {
-	private AMQProtocolEngine _session;
+    private AMQProtocolEngine _session;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _session = BrokerTestHelper.createSession();
+    }
 
     public void testChannels() throws Exception
     {
-        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
-        VirtualHost vhost = registry.getVirtualHost("test");
-        _session = new InternalTestProtocolSession(vhost, registry);
-
         // check the channel count is correct
         int channelCount = _session.getChannels().size();
         assertEquals("Initial channel count wrong", 0, channelCount);
@@ -47,13 +48,15 @@ public class MaxChannelsTest extends InternalBrokerBaseCase
         _session.setMaximumNumberOfChannels(maxChannels);
         assertEquals("Number of channels not correctly set.", new Long(maxChannels), _session.getMaximumNumberOfChannels());
 
+        for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
+        {
+            _session.addChannel(new AMQChannel(_session, (int) currentChannel, null));
+        }
 
         try
         {
-            for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
-            {
-                _session.addChannel(new AMQChannel(_session, (int) currentChannel, null));
-            }
+            _session.addChannel(new AMQChannel(_session, (int) maxChannels, null));
+            fail("Cannot create more channels then maximum");
         }
         catch (AMQException e)
         {
@@ -65,12 +68,11 @@ public class MaxChannelsTest extends InternalBrokerBaseCase
     @Override
     public void tearDown() throws Exception
     {
-    	try {
-			_session.closeSession();
-		} catch (AMQException e) {
-			// Yikes
-			fail(e.getMessage());
-		}
+        try
+        {
+            _session.getVirtualHost().close();
+            _session.closeSession();
+        }
         finally
         {
             super.tearDown();

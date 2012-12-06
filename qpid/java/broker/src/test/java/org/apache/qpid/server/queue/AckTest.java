@@ -32,19 +32,16 @@ import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -52,7 +49,7 @@ import java.util.Set;
 /**
  * Tests that acknowledgements are handled correctly.
  */
-public class AckTest extends InternalBrokerBaseCase
+public class AckTest extends QpidTestCase
 {
     private Subscription _subscription;
 
@@ -71,16 +68,11 @@ public class AckTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
-        _virtualHost = registry.getVirtualHost("test");
-        _messageStore = new TestableMemoryMessageStore();
-        _protocolSession = new InternalTestProtocolSession(_virtualHost, registry);
-        _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
-
-        _protocolSession.addChannel(_channel);
-
-        _queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "myQ", false, "guest", true, false,
-                                                    _virtualHost, null);
+        _channel = BrokerTestHelper.createChannel(5);
+        _protocolSession = _channel.getProtocolSession();
+        _virtualHost = _protocolSession.getVirtualHost();
+        _queue = BrokerTestHelper.createQueue(getTestName(), _virtualHost);
+        _messageStore = (TestableMemoryMessageStore)_virtualHost.getMessageStore();
     }
 
     private void publishMessages(int count) throws AMQException

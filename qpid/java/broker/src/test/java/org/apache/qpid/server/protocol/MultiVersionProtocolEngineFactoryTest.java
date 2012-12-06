@@ -24,41 +24,36 @@ import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import java.util.Set;
 
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.TestNetworkConnection;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
-    private TestApplicationRegistry _appRegistry;
+    private VirtualHostRegistry _virtualHostRegistry;
+    private IApplicationRegistry _appRegistry;
 
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        _appRegistry = new TestApplicationRegistry(new XMLConfiguration());
-        ApplicationRegistry.initialise(_appRegistry);
+        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
+
         // AMQP 1-0 connection needs default vhost to be present
-        IApplicationRegistry registry = ApplicationRegistry.getInstance();
-        VirtualHostRegistry virtualHostRegistry = registry.getVirtualHostRegistry();
-        VirtualHostImpl vhostImpl = new VirtualHostImpl(virtualHostRegistry, registry, registry.getBroker().getSecurityManager(),
-                new VirtualHostConfiguration("default",new XMLConfiguration(), registry.getBroker()));
-        virtualHostRegistry.registerVirtualHost(vhostImpl);
-        virtualHostRegistry.setDefaultVirtualHostName("default");
+        BrokerTestHelper.createVirtualHost("default", _virtualHostRegistry);
+        _virtualHostRegistry.setDefaultVirtualHostName("default");
+
+        _appRegistry = _virtualHostRegistry.getApplicationRegistry();
 
     }
 
     protected void tearDown()
     {
         //the factory opens a registry instance
-        ApplicationRegistry.remove();
+        _virtualHostRegistry.close();
     }
     
     private static final byte[] AMQP_0_8_HEADER =

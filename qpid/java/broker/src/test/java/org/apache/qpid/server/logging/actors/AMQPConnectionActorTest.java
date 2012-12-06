@@ -21,7 +21,6 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 
@@ -39,9 +38,9 @@ import java.util.List;
 public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 {
     @Override
-    public void createBroker()
+    public void setUp()
     {
-        //Prevent auto-broker startup
+        //Prevent logger creation
     }
 
     /**
@@ -54,7 +53,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
      */
     public void testConnection() throws Exception
     {
-        super.createBroker();
+        super.setUp();
 
         final String message = sendLogMessage();
 
@@ -82,10 +81,9 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 
     public void testConnectionLoggingOff() throws Exception, AMQException
     {
-        setTestSystemProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "false");
+        _statusUpdatesEnabled = false;
 
-        // Start the broker now.
-        super.createBroker();
+        super.setUp();
 
         sendLogMessage();
 

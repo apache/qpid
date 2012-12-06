@@ -34,7 +34,8 @@ public class ChannelLogSubjectTest extends ConnectionLogSubjectTest
     {
         super.setUp();
 
-        AMQChannel channel = new AMQChannel(getSession(), _channelID, getSession().getVirtualHost().getMessageStore());
+
+        AMQChannel channel = new AMQChannel(_session, _channelID, _session.getVirtualHost().getMessageStore());
 
         _subject = new ChannelLogSubject(channel);
     }

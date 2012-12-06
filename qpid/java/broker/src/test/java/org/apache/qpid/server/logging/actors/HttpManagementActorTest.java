@@ -34,9 +34,9 @@ public class HttpManagementActorTest extends BaseActorTestCase
     private static final String SUFFIX = "(" + IP + ":" + PORT + ")] ";
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
+        super.setUp();
         _amqpActor = new HttpManagementActor(_rootLogger, IP, PORT);
     }
 

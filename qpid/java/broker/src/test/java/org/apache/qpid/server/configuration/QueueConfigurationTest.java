@@ -26,8 +26,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.mockito.Mockito;
 
 public class QueueConfigurationTest extends TestCase
@@ -59,31 +57,20 @@ public class QueueConfigurationTest extends TestCase
 
     public void testMaxDeliveryCount() throws Exception
     {
-        try
-        {
-            ApplicationRegistry registry = new TestApplicationRegistry(_env);
-            ApplicationRegistry.initialise(registry);
+        Mockito.when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(0);
 
-            Mockito.when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(0);
+        // Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
 
-            // Check default value
-            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-            assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
+        // Check explicit value
+        VirtualHostConfiguration vhostConfig = overrideConfiguration("maximumDeliveryCount", 7);
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals("Unexpected host configuration for max delivery count", 7, qConf.getMaxDeliveryCount());
 
-            // Check explicit value
-            VirtualHostConfiguration vhostConfig = overrideConfiguration("maximumDeliveryCount", 7);
-            qConf = new QueueConfiguration("test", vhostConfig);
-            assertEquals("Unexpected host configuration for max delivery count", 7, qConf.getMaxDeliveryCount());
-
-            // Check inherited value
-            qConf = new QueueConfiguration("test",  _fullHostConf);
-            assertEquals("Unexpected queue configuration for max delivery count", 5, qConf.getMaxDeliveryCount());
-
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        // Check inherited value
+        qConf = new QueueConfiguration("test",  _fullHostConf);
+        assertEquals("Unexpected queue configuration for max delivery count", 5, qConf.getMaxDeliveryCount());
     }
 
     /**
@@ -93,30 +80,20 @@ public class QueueConfigurationTest extends TestCase
      */
     public void testIsDeadLetterQueueEnabled() throws Exception
     {
-        try
-        {
-            ApplicationRegistry registry = new TestApplicationRegistry(_env);
-            ApplicationRegistry.initialise(registry);
+        Mockito.when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(false);
 
-            Mockito.when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(false);
+        // Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertFalse("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
 
-            // Check default value
-            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-            assertFalse("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+        // Check explicit value
+        VirtualHostConfiguration vhostConfig = overrideConfiguration("deadLetterQueues", true);
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
 
-            // Check explicit value
-            VirtualHostConfiguration vhostConfig = overrideConfiguration("deadLetterQueues", true);
-            qConf = new QueueConfiguration("test", vhostConfig);
-            assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
-
-            // Check inherited value
-            qConf = new QueueConfiguration("test", _fullHostConf);
-            assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        // Check inherited value
+        qConf = new QueueConfiguration("test", _fullHostConf);
+        assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
     }
 
     public void testGetMaximumMessageAge() throws ConfigurationException
@@ -186,30 +163,20 @@ public class QueueConfigurationTest extends TestCase
 
     public void testGetMinimumAlertRepeatGap() throws Exception
     {
-        try
-        {
-            ApplicationRegistry registry = new TestApplicationRegistry(_env);
-            ApplicationRegistry.initialise(registry);
+        Mockito.when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
 
-            Mockito.when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
+        // Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP, qConf.getMinimumAlertRepeatGap());
 
-            // Check default value
-            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-            assertEquals(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP, qConf.getMinimumAlertRepeatGap());
+        // Check explicit value
+        VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals(2, qConf.getMinimumAlertRepeatGap());
 
-            // Check explicit value
-            VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
-            qConf = new QueueConfiguration("test", vhostConfig);
-            assertEquals(2, qConf.getMinimumAlertRepeatGap());
-
-            // Check inherited value
-            qConf = new QueueConfiguration("test", _fullHostConf);
-            assertEquals(1, qConf.getMinimumAlertRepeatGap());
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        // Check inherited value
+        qConf = new QueueConfiguration("test", _fullHostConf);
+        assertEquals(1, qConf.getMinimumAlertRepeatGap());
     }
 
     public void testSortQueueConfiguration() throws ConfigurationException

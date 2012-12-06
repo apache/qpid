@@ -24,11 +24,14 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -39,6 +42,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
 
 import javax.net.ssl.KeyManagerFactory;
 
@@ -52,14 +56,12 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         super.setUp();
         _serverConfig = new ServerConfiguration(_config);
-        ApplicationRegistry.initialise(new TestApplicationRegistry(_config));
     }
 
     @Override
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        ApplicationRegistry.remove();
     }
 
     public void testSetJMXPortRegistryServer() throws ConfigurationException
@@ -818,15 +820,8 @@ public class ServerConfigurationTest extends QpidTestCase
         writeConfigFile(mainFile, false, true, null, "test");
 
         // Load config
-        ApplicationRegistry.remove();
-
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-        ApplicationRegistry reg = new ApplicationRegistry(store);
-        ApplicationRegistry.initialise(reg);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        String defaultVirtualHost = reg.getConfiguration().getDefaultVirtualHost();
+        VirtualHostRegistry virtualHostRegistry = loadConfigurationAndReturnVirtualHostRegistry(mainFile);
+        String defaultVirtualHost = virtualHostRegistry.getDefaultVirtualHost().getName();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         Exchange exchange = virtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
 
@@ -834,6 +829,26 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
         assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
         assertEquals("Incorrect exchange type", "topic", exchange.getType().getName().toString());
+    }
+
+    private VirtualHostRegistry loadConfigurationAndReturnVirtualHostRegistry(File mainFile) throws ConfigurationException, Exception
+    {
+        VirtualHostRegistry virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
+
+        // load configuration with recoverer
+        ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
+        RecovererProvider provider = new DefaultRecovererProvider(virtualHostRegistry.getApplicationRegistry());
+        ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
+        Broker broker = (Broker) brokerRecoverer.create(provider, store.getRootEntry());
+        virtualHostRegistry.setDefaultVirtualHostName((String)broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+
+        // start hosts - this will create VirtualHostImpl
+        Collection<org.apache.qpid.server.model.VirtualHost> hosts = broker.getVirtualHosts();
+        for (org.apache.qpid.server.model.VirtualHost virtualHost : hosts)
+        {
+            virtualHost.setDesiredState(State.INITIALISING, State.ACTIVE);
+        }
+        return virtualHostRegistry;
     }
     
     /**
@@ -852,15 +867,8 @@ public class ServerConfigurationTest extends QpidTestCase
         writeConfigFile(mainFile, false, false, vhostsFile, null);    
         writeVirtualHostsFile(vhostsFile, "test");
 
-        // Load config
-        ApplicationRegistry.remove();
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-        ApplicationRegistry reg = new ApplicationRegistry(store);
-        ApplicationRegistry.initialise(reg);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        String defaultVirtualHost = reg.getConfiguration().getDefaultVirtualHost();
+        VirtualHostRegistry virtualHostRegistry = loadConfigurationAndReturnVirtualHostRegistry(mainFile);
+        String defaultVirtualHost = virtualHostRegistry.getDefaultVirtualHost().getName();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         Exchange exchange = virtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
 
@@ -888,14 +896,7 @@ public class ServerConfigurationTest extends QpidTestCase
         mainFile.deleteOnExit();
         writeConfigFile(mainFile, false, false, vhostsFile, null);
 
-        // Load config
-        ApplicationRegistry.remove();
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-        ApplicationRegistry reg = new ApplicationRegistry(store);
-        ApplicationRegistry.initialise(reg);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+        VirtualHostRegistry virtualHostRegistry = loadConfigurationAndReturnVirtualHostRegistry(mainFile);
 
         assertEquals("Incorrect virtualhost count", 2, virtualHostRegistry.getVirtualHosts().size());
         
@@ -935,10 +936,7 @@ public class ServerConfigurationTest extends QpidTestCase
         // Load config
         try
         {
-            ApplicationRegistry.remove();
-            ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-            ApplicationRegistry reg = new ApplicationRegistry(store);
-            ApplicationRegistry.initialise(reg);
+            loadConfigurationAndReturnVirtualHostRegistry(mainFile);
             fail("Different virtualhost XML configurations not allowed");
         }
         catch (ConfigurationException ce)
@@ -971,10 +969,7 @@ public class ServerConfigurationTest extends QpidTestCase
         // Load config
         try
         {
-            ApplicationRegistry.remove();
-            ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-            ApplicationRegistry reg = new ApplicationRegistry(store);
-            ApplicationRegistry.initialise(reg);
+            loadConfigurationAndReturnVirtualHostRegistry(mainFile);
             fail("Multiple virtualhost XML configurations not allowed");
         }
         catch (ConfigurationException ce)

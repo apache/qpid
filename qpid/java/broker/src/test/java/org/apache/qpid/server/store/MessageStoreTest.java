@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
+import static org.mockito.Mockito.mock;
+
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -38,6 +40,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
@@ -48,11 +51,12 @@ import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
@@ -66,7 +70,7 @@ import java.util.Map;
  * For persistent stores, it validates that Exchanges, Queues, Bindings and 
  * Messages are persisted and recovered correctly.
  */
-public class MessageStoreTest extends InternalBrokerBaseCase
+public class MessageStoreTest extends QpidTestCase
 {
     public static final int DEFAULT_PRIORTY_LEVEL = 5;
     public static final String SELECTOR_VALUE = "Test = 'MST'";
@@ -95,10 +99,12 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     protected PropertiesConfiguration _config;
 
+    protected VirtualHostRegistry _virtualHostRegistry;
+    protected VirtualHost _virtualHost;
+    protected Broker _broker;
+
     public void setUp() throws Exception
     {
-        getConfigXml().addProperty("management.enabled", "false");
-        getConfigXml().addProperty("management.http.enabled", "false");
         super.setUp();
 
         String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
@@ -109,12 +115,34 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         cleanup(new File(storePath));
 
+        _broker = mock(Broker.class);
+        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
         reloadVirtualHost();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_virtualHostRegistry != null)
+            {
+                _virtualHostRegistry.close();
+            }
+        }
+        finally
+        {
+            super.tearDown();
+        }
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
     }
 
     protected void reloadVirtualHost()
     {
-        IApplicationRegistry registry = getRegistry();
         VirtualHost original = getVirtualHost();
 
         if (getVirtualHost() != null)
@@ -122,7 +150,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             try
             {
                 getVirtualHost().close();
-                getVirtualHost().getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
+                _virtualHostRegistry.unregisterVirtualHost(getVirtualHost());
             }
             catch (Exception e)
             {
@@ -133,7 +161,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            setVirtualHost(registry.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, registry.getBroker())));
+            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker), _virtualHostRegistry);
         }
         catch (Exception e)
         {

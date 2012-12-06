@@ -111,9 +111,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private volatile boolean _closed;
 
-    // XXX remove reference on ServerConfiguration
     // maximum number of channels this session should have
-    private long _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
+    private long _maxNoOfChannels;
 
     /* AMQP Version for this session */
     private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
@@ -157,6 +156,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkConnection network, final long connectionId)
     {
+        // XXX remove references to ServerConfiguration and ApplicationRegistry
+        _maxNoOfChannels = virtualHostRegistry.getApplicationRegistry().getConfiguration().getMaxChannelCount();
         _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
         _codecFactory = new AMQCodecFactory(true, this);

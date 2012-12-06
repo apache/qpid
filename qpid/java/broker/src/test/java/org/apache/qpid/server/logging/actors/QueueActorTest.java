@@ -22,14 +22,16 @@ package org.apache.qpid.server.logging.actors;
 
 import java.util.List;
 
+import org.apache.qpid.server.util.BrokerTestHelper;
+
 public class QueueActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
-        _amqpActor = new QueueActor(getQueue(), _rootLogger);
+        super.setUp();
+        _amqpActor = new QueueActor(BrokerTestHelper.createQueue(getName(), _session.getVirtualHost()), _rootLogger);
     }
 
     /**

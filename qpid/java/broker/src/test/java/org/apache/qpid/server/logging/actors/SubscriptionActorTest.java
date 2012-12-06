@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
 
@@ -37,13 +38,13 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
+        super.setUp();
 
         MockSubscription mockSubscription = new MockSubscription();
 
-        mockSubscription.setQueue(getQueue(), false);
+        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), _session.getVirtualHost()), false);
 
         _amqpActor = new SubscriptionActor(_rootLogger, mockSubscription);
     }

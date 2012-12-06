@@ -20,32 +20,48 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
+
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class VirtualHostImplTest extends QpidTestCase
 {
-    private ApplicationRegistry _registry;
+    private VirtualHostRegistry _virtualHostRegistry;
 
     @Override
     public void tearDown() throws Exception
     {
-        super.tearDown();
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            if (_virtualHostRegistry != null)
+            {
+                _virtualHostRegistry.close();
+            }
+        }
 
-        ApplicationRegistry.remove();
     }
 
     /**
@@ -173,10 +189,31 @@ public class VirtualHostImplTest extends QpidTestCase
 
     private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
     {
-        _registry = new TestApplicationRegistry(new XMLConfiguration(config));
-        ApplicationRegistry.initialise(_registry);
+        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
+        recoverAndStartVirtualHost(vhostName, config);
+        return _virtualHostRegistry.getVirtualHost(vhostName);
+    }
 
-        return _registry.getVirtualHostRegistry().getVirtualHost(vhostName);
+    private void recoverAndStartVirtualHost(String vhostName, File config)
+    {
+        // broker mock object with security manager
+        Broker broker = mock(Broker.class);
+        when(broker.getSecurityManager()).thenReturn(new SecurityManager(null));
+
+        // configuration entry
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, vhostName);
+        attributes.put(org.apache.qpid.server.model.VirtualHost.CONFIGURATION, config.getAbsoluteFile());
+        ConfigurationEntry entry = mock(ConfigurationEntry.class);
+        when(entry.getId()).thenReturn(UUID.randomUUID());
+        when(entry.getAttributes()).thenReturn(attributes);
+
+        // recovering
+        VirtualHostRecoverer recovever = new VirtualHostRecoverer(_virtualHostRegistry, _virtualHostRegistry.getApplicationRegistry());
+        org.apache.qpid.server.model.VirtualHost model= recovever.create(null, entry, broker);
+
+        // starting
+        model.setDesiredState(org.apache.qpid.server.model.State.INITIALISING, org.apache.qpid.server.model.State.ACTIVE);
     }
 
     /**
@@ -201,7 +238,6 @@ public class VirtualHostImplTest extends QpidTestCase
             BufferedWriter writer = new BufferedWriter(fstream);
 
             //extra outer tag to please Commons Configuration
-            writer.write("<configuration>");
 
             writer.write("<virtualhosts>");
             writer.write("  <default>" + vhostName + "</default>");
@@ -238,8 +274,6 @@ public class VirtualHostImplTest extends QpidTestCase
             writer.write("      </" + vhostName + ">");
             writer.write("  </virtualhost>");
             writer.write("</virtualhosts>");
-
-            writer.write("</configuration>");
 
             writer.flush();
             writer.close();

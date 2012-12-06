@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -27,46 +30,43 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AMQQueueFactoryTest extends QpidTestCase
 {
     private QueueRegistry _queueRegistry;
     private VirtualHost _virtualHost;
+    private VirtualHostRegistry _virtualHostRegistry;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-
         XMLConfiguration configXml = new XMLConfiguration();
-        configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
-        configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
+        configXml.addProperty("store.class", TestableMemoryMessageStore.class.getName());
 
+        Broker broker = mock(Broker.class);
         if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
         {
-            configXml.addProperty("deadLetterQueues","true");
-            configXml.addProperty("maximumDeliveryCount","5");
+            when(broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
+            when(broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
         }
 
-        ApplicationRegistry registry = new TestApplicationRegistry(configXml);
-        ApplicationRegistry.initialise(registry);
-        registry.getVirtualHostRegistry().setDefaultVirtualHostName(getName());
+        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
+        _virtualHostRegistry.setDefaultVirtualHostName(getName());
 
-        _virtualHost = registry.getVirtualHostRegistry().getVirtualHost(getName());
+        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, broker), _virtualHostRegistry);
 
         _queueRegistry = _virtualHost.getQueueRegistry();
 
@@ -81,7 +81,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         }
         finally
         {
-            ApplicationRegistry.remove();
+            _virtualHostRegistry.close();
         }
     }
 

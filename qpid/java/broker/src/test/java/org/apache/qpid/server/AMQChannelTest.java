@@ -36,12 +36,14 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AMQChannelTest extends InternalBrokerBaseCase
+public class AMQChannelTest extends QpidTestCase
 {
+    VirtualHostRegistry _registry;
     private VirtualHost _virtualHost;
     private AMQProtocolSession _protocolSession;
     private Map<Integer,String> _replies;
@@ -50,10 +52,10 @@ public class AMQChannelTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
-        _virtualHost = registry.getVirtualHosts().iterator().next();
+        _registry = BrokerTestHelper.createVirtualHostRegistry();
+        _virtualHost = BrokerTestHelper.createVirtualHost(getTestName(), _registry);
 
-        _protocolSession = new InternalTestProtocolSession(_virtualHost, registry )
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, _registry )
         {
             @Override
             public void writeReturn(MessagePublishInfo messagePublishInfo,
@@ -69,12 +71,25 @@ public class AMQChannelTest extends InternalBrokerBaseCase
         _replies = new HashMap<Integer, String>();
     }
 
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            _registry.close();
+        }
+        finally
+        {
+            super.tearDown();
+        }
+    }
+
     public void testCompareTo() throws Exception
     {
         AMQChannel channel1 = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
 
         // create a channel with the same channelId but on a different session
-        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, getRegistry().getVirtualHostRegistry()), 1, _virtualHost.getMessageStore());
+        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, _registry), 1, _virtualHost.getMessageStore());
         assertFalse("Unexpected compare result", channel1.compareTo(channel2) == 0);
         assertEquals("Unexpected compare result", 0, channel1.compareTo(channel1));
     }

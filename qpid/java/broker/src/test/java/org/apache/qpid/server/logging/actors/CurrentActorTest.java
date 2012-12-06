@@ -70,13 +70,8 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      */
     public void testLIFO() throws AMQException, ConfigurationException
     {
-        // This test only needs the local objects created, _session etc.
-        // So stopping the broker and making them useless will not affect the
-        // test, but the extra actors the test broker adds will so by stopping
-        // we remove the session actor and so all is good.
-        stopBroker();
-        
-        AMQPConnectionActor connectionActor = new AMQPConnectionActor(getSession(),
+        assertTrue("Unexpected actor: " + CurrentActor.get(), CurrentActor.get() instanceof TestLogActor);
+        AMQPConnectionActor connectionActor = new AMQPConnectionActor(_session,
                                                                       new NullRootMessageLogger());
 
         /*
@@ -103,7 +98,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
          *
          */
 
-        AMQChannel channel = new AMQChannel(getSession(), 1, getSession().getVirtualHost().getMessageStore());
+        AMQChannel channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
 
         AMQPChannelActor channelActor = new AMQPChannelActor(channel,
                                                              new NullRootMessageLogger());
@@ -219,7 +214,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             {
                 LogActor defaultActor = CurrentActor.get();
 
-                AMQPConnectionActor actor = new AMQPConnectionActor(getSession(),
+                AMQPConnectionActor actor = new AMQPConnectionActor(_session,
                                                                     new NullRootMessageLogger());
 
                 CurrentActor.set(actor);

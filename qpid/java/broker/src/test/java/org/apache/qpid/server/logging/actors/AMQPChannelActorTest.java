@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
 
@@ -35,17 +36,18 @@ import java.util.List;
  */
 public class AMQPChannelActorTest extends BaseConnectionActorTestCase
 {
-    @Override
-    public void createBroker() throws Exception
+
+    public void setUp()
     {
-        //prevent auto-broker startup
+        // do nothing
     }
 
-    private void startBrokerNow() throws Exception
+    private void setUpNow() throws Exception
     {
-        super.createBroker();
+        super.setUp();
+        AMQChannel channel = BrokerTestHelper.createChannel(1, _session);
 
-        _amqpActor = new AMQPChannelActor(getChannel(), _rootLogger);
+        _amqpActor = new AMQPChannelActor(channel, _rootLogger);
     }
 
 
@@ -58,7 +60,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannel() throws Exception
     {
-        startBrokerNow();
+        setUpNow();
 
         final String message = sendTestLogMessage(_amqpActor);
 
@@ -91,10 +93,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingOFF() throws Exception
     {
-        setTestSystemProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "false");
+        _statusUpdatesEnabled = false;
 
-        // Start the broker now.
-        startBrokerNow();
+        setUpNow();
 
         sendTestLogMessage(_amqpActor);
 

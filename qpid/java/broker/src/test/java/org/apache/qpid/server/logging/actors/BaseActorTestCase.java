@@ -25,30 +25,34 @@ import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class BaseActorTestCase extends InternalBrokerBaseCase
+public class BaseActorTestCase extends QpidTestCase
 {
+    protected boolean _statusUpdatesEnabled = true;
     protected LogActor _amqpActor;
     protected UnitTestMessageLogger _rawLogger;
     protected RootMessageLogger _rootLogger;
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
-
-        _rawLogger = new UnitTestMessageLogger(getRegistry().getRootMessageLogger().isEnabled());
+        super.setUp();
+        CurrentActor.removeAll();
+        CurrentActor.setDefault(null);
+        _rawLogger = new UnitTestMessageLogger(_statusUpdatesEnabled);
         _rootLogger = _rawLogger;
     }
 
+    @Override
     public void tearDown() throws Exception
     {
         if(_rawLogger != null)
         {
             _rawLogger.clearLogMessages();
         }
-
+        CurrentActor.removeAll();
+        CurrentActor.setDefault(null);
         super.tearDown();
     }
 

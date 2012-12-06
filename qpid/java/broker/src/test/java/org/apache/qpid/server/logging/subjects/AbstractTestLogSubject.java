@@ -27,10 +27,11 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.List;
 
@@ -45,16 +46,22 @@ import java.util.List;
  * The resulting log file is then validated.
  *
  */
-public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
+public abstract class AbstractTestLogSubject extends QpidTestCase
 {
     protected LogSubject _subject = null;
 
     @Override
-    public void setUp() throws Exception
+    public void tearDown() throws Exception
     {
-        super.setUp();
+        try
+        {
+            CurrentActor.removeAll();
+        }
+        finally
+        {
+            super.tearDown();
+        }
     }
-
 
     protected List<Object> performLog(boolean statusUpdatesEnabled)
     {

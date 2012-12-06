@@ -35,9 +35,9 @@ public class ManagementActorTest extends BaseActorTestCase
     private String _threadName;
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
+        super.setUp();
         _amqpActor = new ManagementActor(_rootLogger);
 
         // Set the thread name to be the same as a RMI JMX Connection would use

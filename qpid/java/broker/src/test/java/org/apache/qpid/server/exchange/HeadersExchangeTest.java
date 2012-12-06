@@ -23,8 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
@@ -34,10 +32,8 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        // Just use the first vhost.
-        VirtualHostRegistry registry = getRegistry().getVirtualHostRegistry();
-        VirtualHost virtualHost = registry.getVirtualHosts().iterator().next();
-        _protocolSession = new InternalTestProtocolSession(virtualHost, registry);
+
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, _virtualHostRegistry);
     }
 
     public void testSimple() throws AMQException
