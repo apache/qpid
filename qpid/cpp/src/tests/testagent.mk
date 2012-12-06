@@ -46,6 +46,6 @@ testagent-testagent.$(OBJEXT): $(TESTAGENT_GEN_SRC)
 qpidexectest_PROGRAMS+=testagent
 testagent_CXXFLAGS=$(CXXFLAGS) -Itestagent_gen
 testagent_SOURCES=testagent.cpp $(TESTAGENT_GEN_SRC)
-testagent_LDADD=$(top_builddir)/src/libqmf.la -lqpidcommon -lqpidtypes -lqpidclient
+testagent_LDADD=$(top_builddir)/src/libqmf.la $(top_builddir)/src/libqpidcommon.la $(top_builddir)/src/libqpidtypes.la $(top_builddir)/src/libqpidclient.la
 
 EXTRA_DIST+=testagent.xml

@@ -26,7 +26,7 @@ fanout_producer_SOURCES=fanout_producer.cpp
 fanout_producer_LDADD=$(CLIENT_LIB)
 
 listener_SOURCES=listener.cpp
-listener_LDADD=$(CLIENT_LIB) -lqpidcommon
+listener_LDADD=$(CLIENT_LIB) $(COMMON_LIB)
 
 examples_DATA=               \
 	fanout_producer.cpp  \
