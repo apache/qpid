@@ -24,13 +24,13 @@ include $(top_srcdir)/examples/makedist.mk
 noinst_PROGRAMS=topic_listener topic_publisher declare_queues
 
 topic_listener_SOURCES=topic_listener.cpp
-topic_listener_LDADD=$(CLIENT_LIB) -lqpidcommon
+topic_listener_LDADD=$(CLIENT_LIB) $(COMMON_LIB)
 
 topic_publisher_SOURCES=topic_publisher.cpp 
-topic_publisher_LDADD=$(CLIENT_LIB) -lqpidcommon
+topic_publisher_LDADD=$(CLIENT_LIB) $(COMMON_LIB)
 
 declare_queues_SOURCES=declare_queues.cpp
-declare_queues_LDADD=$(CLIENT_LIB) -lqpidcommon
+declare_queues_LDADD=$(CLIENT_LIB) $(COMMON_LIB)
 
 
 examples_DATA=               \
