@@ -22,6 +22,7 @@
  *
  */
 
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
