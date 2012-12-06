@@ -654,7 +654,10 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
 void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, const string& rte, const string& rtk)
 {
-    moveNewObjectsLH();
+    {
+        sys::Mutex::ScopedLock lock(agentLock);
+        moveNewObjectsLH(lock);
+    }
 
     Variant::Map inMap;
     Variant::Map::const_iterator i;
@@ -985,14 +988,37 @@ ManagementAgentImpl::PackageMap::iterator ManagementAgentImpl::findOrAddPackage(
     return result.first;
 }
 
-void ManagementAgentImpl::moveNewObjectsLH()
+// note well: caller must hold agentLock when calling this!
+void ManagementAgentImpl::moveNewObjectsLH(const sys::Mutex::ScopedLock& /*agentLock*/)
 {
     sys::Mutex::ScopedLock lock(addLock);
-    for (ObjectMap::iterator iter = newManagementObjects.begin();
-         iter != newManagementObjects.end();
-         iter++)
-        managementObjects[iter->first] = iter->second;
-    newManagementObjects.clear();
+    ObjectMap::iterator newObj = newManagementObjects.begin();
+    while (newObj != newManagementObjects.end()) {
+        // before adding a new mgmt object, check for duplicates:
+        ObjectMap::iterator oldObj = managementObjects.find(newObj->first);
+        if (oldObj == managementObjects.end()) {
+            managementObjects[newObj->first] = newObj->second;
+            newManagementObjects.erase(newObj++);  // post inc iterator safe!
+        } else {
+            // object exists with same object id.  This may be legit, for example, when a
+            // recently deleted object is re-added before the mgmt poll runs.
+            if (newObj->second->isDeleted()) {
+                // @TODO fixme: we missed an add-delete for the new object
+                QPID_LOG(warning, "Mgmt Object deleted before update sent, oid=" << newObj->first);
+                newManagementObjects.erase(newObj++);  // post inc iterator safe!
+            } else if (oldObj->second->isDeleted()) {
+                // skip adding newObj, try again later once oldObj has been cleaned up by poll
+                ++newObj;
+            } else {
+                // real bad - two objects exist with same OID.  This is a bug in the application
+                QPID_LOG(error, "Detected two Mgmt Objects using the same object id! oid=" << newObj->first
+                         << ", this is bad!");
+                // what to do here?  Can't erase an active obj - owner has a pointer to it.
+                // for now I punt.  Maybe the flood of log messages will get someone's attention :P
+                ++newObj;
+            }
+        }
+    }
 }
 
 void ManagementAgentImpl::addClassLocal(uint8_t               classKind,
@@ -1060,7 +1086,7 @@ void ManagementAgentImpl::periodicProcessing()
         if (!connected)
             return;
 
-        moveNewObjectsLH();
+        moveNewObjectsLH(lock);
 
         //
         //  Clear the been-here flag on all objects in the map.
