@@ -30,11 +30,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -81,19 +83,39 @@ public class BrokerRecovererTest extends TestCase
 
     public void testCreateBrokerAttributes()
     {
-        String[] attributesNames = { Broker.DEFAULT_VIRTUAL_HOST, Broker.DEFAULT_AUTHENTICATION_PROVIDER, Broker.ALERT_THRESHOLD_MESSAGE_AGE,
-                Broker.ALERT_THRESHOLD_MESSAGE_COUNT, Broker.ALERT_THRESHOLD_QUEUE_DEPTH, Broker.ALERT_THRESHOLD_MESSAGE_SIZE,
-                Broker.ALERT_REPEAT_GAP, Broker.FLOW_CONTROL_SIZE_BYTES, Broker.FLOW_CONTROL_RESUME_SIZE_BYTES, Broker.MAXIMUM_DELIVERY_ATTEMPTS,
-                Broker.DEAD_LETTER_QUEUE_ENABLED, Broker.HOUSEKEEPING_CHECK_PERIOD };
-        Object[] attributeValues = { "test", "authenticationProvider1", 9l, 8l, 7l, 6l, 5l, 4l, 3l, 2, true, 1l };
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
+        attributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
+        attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, 9l);
+        attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, 8l);
+        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, 7l);
+        attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, 6l);
+        attributes.put(Broker.ALERT_REPEAT_GAP, 5l);
+        attributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, 5l);
+        attributes.put(Broker.FLOW_CONTROL_RESUME_SIZE_BYTES, 3l);
+        attributes.put(Broker.MAXIMUM_DELIVERY_ATTEMPTS, 2);
+        attributes.put(Broker.DEAD_LETTER_QUEUE_ENABLED, true);
+        attributes.put(Broker.HOUSEKEEPING_CHECK_PERIOD, 1l);
+        attributes.put(Broker.ACL_FILE, "/path/to/acl");
+        attributes.put(Broker.SESSION_COUNT_LIMIT, 1000);
+        attributes.put(Broker.FRAME_SIZE, 128);
+        attributes.put(Broker.HEART_BEAT_DELAY, 2000);
+        attributes.put(Broker.HEART_BEAT_TIMEOUT_FACTOR, 5.0);
+        attributes.put(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY, "v1_0_0");
+        attributes.put(Broker.DISABLED_FEATURES, new HashSet<String>(Arrays.asList(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR)));
+        attributes.put(Broker.STATISTICS_ENABLED, true);
+        attributes.put(Broker.STATISTICS_SAMPLE_PERIOD, 3000);
+        attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
+        attributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
 
-        for (int i = 0; i < attributesNames.length; i++)
+        Map<String, Object> entryAttributes = new HashMap<String, Object>();
+        for (Map.Entry<String, Object> attribute : attributes.entrySet())
         {
-            attributes.put(attributesNames[i], String.valueOf(attributeValues[i]));
+            String value = convertToString(attribute.getValue());
+            entryAttributes.put(attribute.getKey(), value);
         }
 
-        when(_brokerEntry.getAttributes()).thenReturn(attributes);
+        when(_brokerEntry.getAttributes()).thenReturn(entryAttributes);
 
         final ConfigurationEntry virtualHostEntry = mock(ConfigurationEntry.class);
         String typeName = VirtualHost.class.getSimpleName();
@@ -108,10 +130,10 @@ public class BrokerRecovererTest extends TestCase
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
 
-        for (int i = 0; i < attributesNames.length; i++)
+        for (Map.Entry<String, Object> attribute : attributes.entrySet())
         {
-            Object attributeValue = broker.getAttribute(attributesNames[i]);
-            assertEquals("Unexpected value of attribute '" + attributesNames[i] + "'", attributeValues[i], attributeValue);
+            Object attributeValue = broker.getAttribute(attribute.getKey());
+            assertEquals("Unexpected value of attribute '" + attribute.getKey() + "'", attribute.getValue(), attributeValue);
         }
     }
 
@@ -346,6 +368,33 @@ public class BrokerRecovererTest extends TestCase
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
         assertEquals(Collections.singleton(trustStore), new HashSet<ConfiguredObject>(broker.getChildren(TrustStore.class)));
+    }
+
+    private String convertToString(Object attributeValue)
+    {
+        String value = null;
+        if (attributeValue instanceof Collection)
+        {
+            @SuppressWarnings("unchecked")
+            Collection<Object> data = (Collection<Object>)attributeValue;
+            StringBuilder sb = new StringBuilder();
+            Iterator<Object> it = data.iterator();
+            while (it.hasNext())
+            {
+                Object val = it.next();
+                sb.append(String.valueOf(val));
+                if (it.hasNext())
+                {
+                    sb.append(",");
+                }
+            }
+            value = sb.toString();
+        }
+        else
+        {
+            value = String.valueOf(attributeValue);
+        }
+        return value;
     }
 
     private  RecovererProvider createRecoveryProvider(final ConfigurationEntry[] entries, final ConfiguredObject[] objectsToRecoverer)

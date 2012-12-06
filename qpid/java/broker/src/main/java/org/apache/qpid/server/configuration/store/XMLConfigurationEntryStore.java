@@ -119,7 +119,6 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     @Override
     public ConfigurationEntry getRootEntry()
     {
-        // XXX include all broker attributes
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, _serverConfiguration.getMaximumMessageAge());
         brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, _serverConfiguration.getMaximumMessageSize());
@@ -134,6 +133,16 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, _serverConfiguration.getDefaultVirtualHost());
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, _serverConfiguration.getDefaultAuthenticationManager());
         brokerAttributes.put(Broker.ACL_FILE, _serverConfiguration.getConfig().getString("security.acl"));
+        brokerAttributes.put(Broker.SESSION_COUNT_LIMIT, _serverConfiguration.getMaxChannelCount());
+        brokerAttributes.put(Broker.FRAME_SIZE, _serverConfiguration.getFrameSize());
+        brokerAttributes.put(Broker.HEART_BEAT_DELAY, _serverConfiguration.getHeartBeatDelay());
+        brokerAttributes.put(Broker.HEART_BEAT_TIMEOUT_FACTOR, _serverConfiguration.getHeartBeatTimeout());
+        brokerAttributes.put(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY, _serverConfiguration.getDefaultSupportedProtocolReply());
+        brokerAttributes.put(Broker.DISABLED_FEATURES, new HashSet<String>(_serverConfiguration.getDisabledFeatures()));
+        brokerAttributes.put(Broker.STATISTICS_ENABLED, _serverConfiguration.isStatisticsGenerationBrokerEnabled() || _serverConfiguration.isStatisticsGenerationVirtualhostsEnabled());
+        brokerAttributes.put(Broker.STATISTICS_SAMPLE_PERIOD, _serverConfiguration.getStatisticsSamplePeriod());
+        brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, _serverConfiguration.getStatisticsReportingPeriod());
+        brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, _serverConfiguration.isStatisticsReportResetEnabled());
         ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, Broker.class.getSimpleName(), brokerAttributes,
                 Collections.unmodifiableSet(_rootChildren.keySet()), this);
 

@@ -64,6 +64,17 @@ public interface Broker extends ConfiguredObject
     String DEAD_LETTER_QUEUE_ENABLED = "deadLetterQueueEnabled";
     String HOUSEKEEPING_CHECK_PERIOD = "housekeepingCheckPeriod";
 
+    String SESSION_COUNT_LIMIT = "sessionCountLimit";
+    String FRAME_SIZE = "frameSize";
+    String HEART_BEAT_DELAY = "heartBeatDelay";
+    String HEART_BEAT_TIMEOUT_FACTOR = "heartBeatTimeoutFactor";
+    String DEFAULT_SUPPORTED_PROTOCOL_REPLY = "defaultSupportedProtocolReply";
+    String DISABLED_FEATURES = "disabledFeatures";
+    String STATISTICS_ENABLED = "statisticsEnabled";
+    String STATISTICS_SAMPLE_PERIOD = "statisticsSamplePeriod";
+    String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
+    String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
+
     /**
      * A temporary attribute to pass the path to ACL file.
      * TODO: It should be a part of AuthorizationProvider.
@@ -100,7 +111,17 @@ public interface Broker extends ConfiguredObject
                               MAXIMUM_DELIVERY_ATTEMPTS,
                               DEAD_LETTER_QUEUE_ENABLED,
                               HOUSEKEEPING_CHECK_PERIOD,
-                              ACL_FILE
+                              ACL_FILE,
+                              SESSION_COUNT_LIMIT,
+                              FRAME_SIZE,
+                              HEART_BEAT_DELAY,
+                              HEART_BEAT_TIMEOUT_FACTOR,
+                              DEFAULT_SUPPORTED_PROTOCOL_REPLY,
+                              DISABLED_FEATURES,
+                              STATISTICS_ENABLED,
+                              STATISTICS_SAMPLE_PERIOD,
+                              STATISTICS_REPORTING_PERIOD,
+                              STATISTICS_REPORTING_RESET_ENABLED
                               ));
 
     //children

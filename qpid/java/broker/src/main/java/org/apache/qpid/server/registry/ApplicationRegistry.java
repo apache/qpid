@@ -206,18 +206,18 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     public void initialiseStatisticsReporting()
     {
-        // XXX hack
-        ServerConfiguration configuration = ((XMLConfigurationEntryStore)_store).getConfiguration();
-        long report = configuration.getStatisticsReportingPeriod() * 1000; // convert to ms
-        final boolean broker = configuration.isStatisticsGenerationBrokerEnabled();
-        final boolean virtualhost = configuration.isStatisticsGenerationVirtualhostsEnabled();
-        final boolean reset = configuration.isStatisticsReportResetEnabled();
+        boolean isStatisticsEnabled = (Boolean)_broker.getAttribute(Broker.STATISTICS_ENABLED);
+        long report = ((Number)_broker.getAttribute(Broker.STATISTICS_REPORTING_PERIOD)).intValue() * 1000; // convert to ms
+        final boolean reset = (Boolean)_broker.getAttribute(Broker.STATISTICS_REPORTING_RESET_ENABLED);
 
         /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
-        if (report > 0L && (broker || virtualhost))
+        if (report > 0L && isStatisticsEnabled)
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-            StatisticsReportingTask task = new StatisticsReportingTask(broker, virtualhost, reset, _rootMessageLogger);
+
+            // TODO: use virtual host "statisticsEnabled" attribute to check whether statistics collection is required on that virtual host
+            // temporarily enabling the statistics collection for all virtual hosts
+            StatisticsReportingTask task = new StatisticsReportingTask(true, true, reset, _rootMessageLogger);
             _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
         }
     }
