@@ -283,7 +283,7 @@ public class AddressHelper
             {
                 MapAccessor xDeclareMapAccessor = new MapAccessor(xDeclareMap);
                 queue.setAutoDelete(getBooleanProperty(xDeclareMapAccessor,AUTO_DELETE,true));
-                queue.setAutoDelete(getBooleanProperty(xDeclareMapAccessor,EXCLUSIVE,true));
+                queue.setExclusive(getBooleanProperty(xDeclareMapAccessor,EXCLUSIVE,true));
                 queue.setAlternateExchange(xDeclareMapAccessor.getString(ALT_EXCHANGE));
                 queue.setDeclareArgs((Map<String,Object>)xDeclareMap.get(ARGUMENTS));
             }
