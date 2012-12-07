@@ -124,7 +124,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
             
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
         
         
         cons = jmsSession.createConsumer(dest); 
@@ -159,7 +159,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
             
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
         
         // create sender ------------------------------------------
         addr1 = "ADDR:testQueue3; { create: sender }";
@@ -175,7 +175,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                     "doesn't resolve to an exchange or a queue"));
         }
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
         
         prod = jmsSession.createProducer(dest);
         assertTrue("Queue not created as expected",(
@@ -1049,7 +1049,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         
         assertFalse("Queue not deleted as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
 
         
         String addr3 = "ADDR:testQueue3;{create: always, delete: sender}";
@@ -1066,7 +1066,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         
         assertFalse("Queue not deleted as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
     }
     
     /**
