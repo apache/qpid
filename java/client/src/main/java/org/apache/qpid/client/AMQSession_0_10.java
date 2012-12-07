@@ -1095,7 +1095,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return AMQMessageDelegateFactory.FACTORY_0_10;
     }
     
-    public boolean isExchangeExist(AMQDestination dest,boolean assertNode)
+    public boolean isExchangeExist(AMQDestination dest,boolean assertNode) throws AMQException
     {
         boolean match = true;
         ExchangeQueryResult result = getQpidSession().exchangeQuery(dest.getAddressName(), Option.NONE).get();
@@ -1118,6 +1118,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 dest.setExchangeClass(new AMQShortString(result.getType()));
             }
         }
+
+        if (assertNode)
+        {
+            if (!match) throw new AMQException("Aessert failed for address : " + dest  +", Result was : " + result);
+        }
+
         return match;
     }
     
@@ -1137,9 +1143,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                          (result.getExclusive() == node.isExclusive()) &&
                          (matchProps(result.getArguments(),node.getDeclareArgs()));
             }
-            else if (match)
+
+            if (assertNode)
             {
-                // should I use the queried details to update the local data structure.
+                if (!match) throw new AMQException("Aessert failed for address : " + dest  +", Result was : " + result);
             }
         }
         catch(SessionException e)
@@ -1218,32 +1225,32 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             {
                 case AMQDestination.QUEUE_TYPE: 
                 {
-                    if (isQueueExist(dest,assertNode))
-                    {
-                        setLegacyFieldsForQueueType(dest);
-                        break;
-                    }
-                    else if(createNode)
+                    if(createNode)
                     {
                         setLegacyFieldsForQueueType(dest);
                         handleQueueNodeCreation(dest,noLocal);
                         break;
-                    }                
+                    }
+                    else if (isQueueExist(dest,assertNode))
+                    {
+                        setLegacyFieldsForQueueType(dest);
+                        break;
+                    }
                 }
                 
                 case AMQDestination.TOPIC_TYPE: 
                 {
-                    if (isExchangeExist(dest,assertNode))
-                    {                    
-                        setLegacyFiledsForTopicType(dest);
-                        verifySubject(dest);
-                        break;
-                    }
-                    else if(createNode)
+                    if(createNode)
                     {                    
                         setLegacyFiledsForTopicType(dest);
                         verifySubject(dest);
                         handleExchangeNodeCreation(dest);
+                        break;
+                    }
+                    else if (isExchangeExist(dest,assertNode))
+                    {                    
+                        setLegacyFiledsForTopicType(dest);
+                        verifySubject(dest);
                         break;
                     }
                 }
