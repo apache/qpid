@@ -203,7 +203,9 @@ class Popen(subprocess.Popen):
         self.wait()
 
     def kill(self):
-        self.expect = EXPECT_EXIT_FAIL
+        # Set to EXPECT_UNKNOWN, EXPECT_EXIT_FAIL creates a race condition
+        # if the process exits normally concurrent with the call to kill.
+        self.expect = EXPECT_UNKNOWN
         try: subprocess.Popen.kill(self)
         except AttributeError:          # No terminate method
             try:
