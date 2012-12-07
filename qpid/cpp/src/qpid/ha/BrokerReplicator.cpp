@@ -837,6 +837,13 @@ void BrokerReplicator::autoDeleteCheck(boost::shared_ptr<Exchange> ex) {
     }
 }
 
+// Callback function for accumulating exchange candidates
+namespace {
+	void exchangeAccumulatorCallback(vector<boost::shared_ptr<Exchange> >& c, const Exchange::shared_ptr& i) {
+		c.push_back(i);
+	}
+}
+
 void BrokerReplicator::disconnected() {
     QPID_LOG(info, logPrefix << "Disconnected");
     connection = 0;
@@ -844,7 +851,7 @@ void BrokerReplicator::disconnected() {
     vector<boost::shared_ptr<Exchange> > collect;
     // Make a copy so we can work outside the ExchangeRegistry lock
     exchanges.eachExchange(
-        boost::bind(&vector<boost::shared_ptr<Exchange> >::push_back, ref(collect), _1));
+        boost::bind(&exchangeAccumulatorCallback, boost::ref(collect), _1));
     for_each(collect.begin(), collect.end(),
              boost::bind(&BrokerReplicator::autoDeleteCheck, this, _1));
 }
