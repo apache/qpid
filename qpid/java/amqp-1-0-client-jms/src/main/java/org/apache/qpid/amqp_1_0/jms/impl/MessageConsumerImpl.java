@@ -127,7 +127,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         try
         {
-            return _session.getClientSession(). createReceiver(_destination.getAddress(), AcknowledgeMode.ALO,
+            return _session.getClientSession(). createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
                                                                _linkName, _durable, getFilters(), null);
         }
         catch (AmqpErrorException e)

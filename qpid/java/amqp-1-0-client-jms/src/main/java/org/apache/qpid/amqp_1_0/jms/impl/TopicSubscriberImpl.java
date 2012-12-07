@@ -66,7 +66,7 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
     {
         try
         {
-            String address = getDestination().getAddress();
+            String address = getSession().toAddress(getDestination());
             Receiver receiver = getSession().getClientSession().createReceiver(address,
                                                                                StdDistMode.COPY, AcknowledgeMode.ALO,
                                                                                getLinkName(), isDurable(), getFilters(),
