@@ -1329,6 +1329,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             arguments.put(AddressHelper.NO_LOCAL, noLocal);
         }
 
+        if (link.isDurable() && queueName.startsWith("TempQueue"))
+        {
+            throw new AMQException("You cannot mark a subscription queue as durable without providing a name for the link.");
+        }
+
         getQpidSession().queueDeclare(queueName,
                 queueProps.getAlternateExchange(), arguments,
                 queueProps.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
