@@ -96,7 +96,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
             
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest,true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,false));
         
         
         // create always -------------------------------------------
@@ -1033,7 +1033,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         
         assertFalse("Queue not deleted as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
         
         
         String addr2 = "ADDR:testQueue2;{create: always, delete: receiver}";
