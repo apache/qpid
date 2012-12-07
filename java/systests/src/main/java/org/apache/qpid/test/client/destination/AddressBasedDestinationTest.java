@@ -776,7 +776,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void testSubscriptionForSameDestination() throws Exception
     {
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);        
-        Destination dest = ssn.createTopic("ADDR:amq.topic/foo; {link:{durable:true}}");
+        Destination dest = ssn.createTopic("ADDR:amq.topic/foo");
         MessageConsumer consumer1 = ssn.createConsumer(dest);
         MessageConsumer consumer2 = ssn.createConsumer(dest);
         MessageProducer prod = ssn.createProducer(dest);
