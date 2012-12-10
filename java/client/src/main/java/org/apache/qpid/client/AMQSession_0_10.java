@@ -1121,7 +1121,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
         if (assertNode)
         {
-            if (!match) throw new AMQException("Aessert failed for address : " + dest  +", Result was : " + result);
+            if (!match)
+            {
+                throw new AMQException("Assert failed for address : " + dest  +", Result was : " + result);
+            }
         }
 
         return match;
@@ -1146,7 +1149,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
             if (assertNode)
             {
-                if (!match) throw new AMQException("Aessert failed for address : " + dest  +", Result was : " + result);
+                if (!match)
+                {
+                    throw new AMQException("Assert failed for address : " + dest  +", Result was : " + result);
+                }
             }
         }
         catch(SessionException e)
