@@ -35,11 +35,13 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : cluster(false), replicateDefault(NONE), backupTimeout(5),
+    Settings() : cluster(false), queueReplication(false),
+                 replicateDefault(NONE), backupTimeout(5),
                  flowMessages(100), flowBytes(0)
     {}
 
     bool cluster;               // True if we are a cluster member.
+    bool queueReplication;      // True if enabled.
     std::string clientUrl;
     std::string brokerUrl;
     Enum<ReplicateLevel> replicateDefault;
