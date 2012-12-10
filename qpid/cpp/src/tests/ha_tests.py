@@ -279,11 +279,13 @@ class ReplicationTests(HaBrokerTest):
         """Test replication of individual queues outside of cluster mode"""
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
-            primary = HaBroker(self, name="primary", ha_cluster=False)
+            primary = HaBroker(self, name="primary", ha_cluster=False,
+                               args=["--ha-queue-replication=yes"]);
             pc = primary.connect()
             ps = pc.session().sender("q;{create:always}")
             pr = pc.session().receiver("q;{create:always}")
-            backup = HaBroker(self, name="backup", ha_cluster=False)
+            backup = HaBroker(self, name="backup", ha_cluster=False,
+                              args=["--ha-queue-replication=yes"])
             br = backup.connect().session().receiver("q;{create:always}")
 
             # Set up replication with qpid-ha
@@ -304,7 +306,8 @@ class ReplicationTests(HaBrokerTest):
         finally: l.restore()
 
     def test_queue_replica_failover(self):
-        """Test individual queue replication from a cluster to a standalone backup broker, verify it fails over."""
+        """Test individual queue replication from a cluster to a standalone
+        backup broker, verify it fails over."""
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
             cluster = HaCluster(self, 2)
@@ -312,7 +315,8 @@ class ReplicationTests(HaBrokerTest):
             pc = cluster.connect(0)
             ps = pc.session().sender("q;{create:always}")
             pr = pc.session().receiver("q;{create:always}")
-            backup = HaBroker(self, name="backup", ha_cluster=False)
+            backup = HaBroker(self, name="backup", ha_cluster=False,
+                              args=["--ha-queue-replication=yes"])
             br = backup.connect().session().receiver("q;{create:always}")
             backup.replicate(cluster.url, "q")
             ps.send("a")

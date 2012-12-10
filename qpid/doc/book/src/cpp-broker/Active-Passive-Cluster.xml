@@ -173,6 +173,13 @@ under the License.
 	  </listitem>
 	</itemizedlist>
       </para>
+      <para>
+	You should not enable the old and new cluster modules at the same time
+	in a broker, as they may interfere with each other. In other words you
+	should not set <literal>cluster-name</literal> at the same time as
+	either <literal>ha-cluster</literal> or
+	<literal>ha-queue-replication</literal>
+      </para>
     </section>
     <section>
       <title>Limitations</title>
@@ -250,6 +257,14 @@ under the License.
 	    </entry>
 	    <entry>
 	      Set to "yes" to have the broker join a cluster.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>
+	      <literal>ha-queue-replication <replaceable>yes|no</replaceable></literal>
+	    </entry>
+	    <entry>
+	      Enable replication of specific queues without joining a cluster, see <xref linkend="ha-queue-replication"/>.
 	    </entry>
 	  </row>
 	  <row>
@@ -548,7 +563,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   </section>
 
   <section id="ha-creating-replicated">
-    <title>Creating replicated queues and exchanges</title>
+    <title>Controlling replication of queues and exchanges</title>
     <para>
       By default, queues and exchanges are not replicated automatically. You can change
       the default behavior by setting the <literal>ha-replicate</literal> configuration
@@ -847,6 +862,30 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       You can also use <command>qpid-ha</command> to manually examine and promote brokers. This
       can be useful for testing failover scenarios without having to set up a full resource manager,
       or to simulate a cluster on a single node. For deployment, a resource manager is required.
+    </para>
+  </section>
+  <section id="ha-queue-replication">
+    <title>Replicating specific queues</title>
+    <para>
+      In addition to the automatic replication performed in a cluster, you can
+      set up replication for specific queues between arbitrary brokers, even if
+      the brokers are not members of a cluster. The command:
+    </para>
+    <programlisting>
+      qpid-ha replicate <replaceable>QUEUE</replaceable> <replaceable>REMOTE-BROKER</replaceable>
+    </programlisting>
+    <para>
+    sets up replication of <replaceable>QUEUE</replaceable> on <replaceable>REMOTE-BROKER</replaceable> to <replaceable>QUEUE</replaceable> on the current broker.
+    </para>
+    <para>
+      Set the configuration option
+      <literal>ha-queue-replication=yes</literal> on both brokers to enable this
+      feature on non-cluster brokers. It is automatically enabled for brokers
+      that are part of a cluster.
+    </para>
+    <para>
+      Note that this feature does not provide automatic fail-over, for that you
+      need to run a cluster.
     </para>
   </section>
 </section>

@@ -33,6 +33,8 @@ struct Options : public qpid::Options {
         addOptions()
             ("ha-cluster", optValue(settings.cluster, "yes|no"),
              "Join a HA active/passive cluster.")
+            ("ha-queue-replication", optValue(settings.queueReplication, "yes|no"),
+             "Enable replication of specific queues without joining a cluster")
             ("ha-brokers-url", optValue(settings.brokerUrl,"URL"),
              "URL with address of each broker in the cluster.")
             ("ha-public-url", optValue(settings.clientUrl,"URL"),
@@ -68,7 +70,7 @@ struct HaPlugin : public Plugin {
 
     void earlyInitialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (broker) {
+        if (broker && (settings.cluster || settings.queueReplication)) {
             if (!broker->getManagementAgent()) {
                 QPID_LOG(info, "HA plugin disabled because management is disabled");
                 if (settings.cluster)
