@@ -28,6 +28,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -36,7 +37,6 @@ import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.TestNetworkConnection;
 
 import javax.security.auth.Subject;
@@ -58,9 +58,9 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
-    public InternalTestProtocolSession(VirtualHost virtualHost, VirtualHostRegistry registry) throws AMQException
+    public InternalTestProtocolSession(VirtualHost virtualHost, Broker broker) throws AMQException
     {
-        super(registry, new TestNetworkConnection(), ID_GENERATOR.getAndIncrement());
+        super(broker, new TestNetworkConnection(), ID_GENERATOR.getAndIncrement());
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 

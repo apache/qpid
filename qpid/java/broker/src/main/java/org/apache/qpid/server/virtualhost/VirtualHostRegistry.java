@@ -21,7 +21,6 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,15 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VirtualHostRegistry implements Closeable
 {
     private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String, VirtualHost>();
-
-
     private String _defaultVirtualHostName;
-    private IApplicationRegistry _applicationRegistry;
 
 
-    public VirtualHostRegistry(IApplicationRegistry applicationRegistry)
+    public VirtualHostRegistry()
     {
-        _applicationRegistry = applicationRegistry;
+        super();
     }
 
     public synchronized void registerVirtualHost(VirtualHost host)
@@ -86,11 +82,6 @@ public class VirtualHostRegistry implements Closeable
     public Collection<VirtualHost> getVirtualHosts()
     {
         return new ArrayList<VirtualHost>(_registry.values());
-    }
-
-    public IApplicationRegistry getApplicationRegistry()
-    {
-        return _applicationRegistry;
     }
 
     public void close()

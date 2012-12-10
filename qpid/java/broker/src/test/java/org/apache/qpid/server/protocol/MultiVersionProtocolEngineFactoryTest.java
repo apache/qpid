@@ -20,42 +20,45 @@
 */
 package org.apache.qpid.server.protocol;
 
+import static org.mockito.Mockito.when;
+
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import java.util.Set;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.TestNetworkConnection;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
-    private VirtualHostRegistry _virtualHostRegistry;
-    private IApplicationRegistry _appRegistry;
+    private VirtualHost _virtualHost;
+    private Broker _broker;
 
+    @Override
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
+        _broker = BrokerTestHelper.createBrokerMock();
+        VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
+        when(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)).thenReturn("default");
 
         // AMQP 1-0 connection needs default vhost to be present
-        BrokerTestHelper.createVirtualHost("default", _virtualHostRegistry);
-        _virtualHostRegistry.setDefaultVirtualHostName("default");
-
-        _appRegistry = _virtualHostRegistry.getApplicationRegistry();
-
+        _virtualHost = BrokerTestHelper.createVirtualHost("default", virtualHostRegistry);
     }
 
-    protected void tearDown()
+    @Override
+    protected void tearDown() throws Exception
     {
-        //the factory opens a registry instance
-        _virtualHostRegistry.close();
+        _virtualHost.close();
+        super.tearDown();
     }
-    
+
     private static final byte[] AMQP_0_8_HEADER =
         new byte[] { (byte) 'A',
                      (byte) 'M',
@@ -144,7 +147,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(_appRegistry, versions, null);
+            new MultiVersionProtocolEngineFactory(_broker, versions, null);
 
         //create a dummy to retrieve the 'current' ID number
         long previousId = factory.newProtocolEngine().getConnectionId();
@@ -182,7 +185,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         try
         {
-            new MultiVersionProtocolEngineFactory(_appRegistry, versions, AmqpProtocolVersion.v0_9);
+            new MultiVersionProtocolEngineFactory(_broker, versions, AmqpProtocolVersion.v0_9);
             fail("should not have been allowed to create the factory");
         }
         catch(IllegalArgumentException iae)

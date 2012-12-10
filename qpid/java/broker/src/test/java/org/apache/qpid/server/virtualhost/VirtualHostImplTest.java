@@ -30,7 +30,7 @@ import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -189,7 +189,6 @@ public class VirtualHostImplTest extends QpidTestCase
 
     private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
     {
-        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
         recoverAndStartVirtualHost(vhostName, config);
         return _virtualHostRegistry.getVirtualHost(vhostName);
     }
@@ -197,8 +196,8 @@ public class VirtualHostImplTest extends QpidTestCase
     private void recoverAndStartVirtualHost(String vhostName, File config)
     {
         // broker mock object with security manager
-        Broker broker = mock(Broker.class);
-        when(broker.getSecurityManager()).thenReturn(new SecurityManager(null));
+        Broker broker = BrokerTestHelper.createBrokerMock();
+        _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         // configuration entry
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -209,7 +208,7 @@ public class VirtualHostImplTest extends QpidTestCase
         when(entry.getAttributes()).thenReturn(attributes);
 
         // recovering
-        VirtualHostRecoverer recovever = new VirtualHostRecoverer(_virtualHostRegistry, _virtualHostRegistry.getApplicationRegistry());
+        VirtualHostRecoverer recovever = new VirtualHostRecoverer(mock(StatisticsGatherer.class));
         org.apache.qpid.server.model.VirtualHost model= recovever.create(null, entry, broker);
 
         // starting

@@ -389,7 +389,6 @@ private static final Option OPTION_INCLUDE_0_8 =
 
     protected void shutdown(final int status)
     {
-        ApplicationRegistry.remove();
         System.exit(status);
     }
 

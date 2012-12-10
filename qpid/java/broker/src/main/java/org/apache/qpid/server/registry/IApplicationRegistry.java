@@ -20,19 +20,7 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import java.net.SocketAddress;
-import java.util.UUID;
 
 public interface IApplicationRegistry extends StatisticsGatherer
 {
@@ -48,31 +36,4 @@ public interface IApplicationRegistry extends StatisticsGatherer
      */
     void close();
 
-    /**
-     * Get the low level configuration. For use cases where the configured object approach is not required
-     * you can get the complete configuration information.
-     * @return a Commons Configuration instance
-     */
-    ServerConfiguration getConfiguration();
-
-    /**
-     * Get the SubjectCreator for the given socket address.
-     *
-     * @param address The (listening) socket address for which the AuthenticationManager is required
-     */
-    SubjectCreator getSubjectCreator(SocketAddress localAddress);
-
-    VirtualHostRegistry getVirtualHostRegistry();
-
-    RootMessageLogger getRootMessageLogger();
-
-    public UUID getBrokerId();
-
-    Broker getBroker();
-
-    VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
-
-    void initialiseStatisticsReporting();
-
-    LogRecorder getLogRecorder();
 }

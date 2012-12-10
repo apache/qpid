@@ -30,18 +30,15 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.AmqpPortAdapter;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public class PortFactory
 {
-    private final IApplicationRegistry _applicationRegistry;
     private final PortAttributeDestringifier _portAttributeDestringifier = new PortAttributeDestringifier();
 
-    public PortFactory(IApplicationRegistry applicationRegistry)
+    public PortFactory()
     {
-        _applicationRegistry = applicationRegistry;
     }
 
     /**
@@ -53,7 +50,7 @@ public class PortFactory
         final Port port;
         if (isAmqpProtocol(attributes))
         {
-            port = new AmqpPortAdapter(id, broker, attributes, _applicationRegistry);
+            port = new AmqpPortAdapter(id, broker, attributes);
         }
         else
         {

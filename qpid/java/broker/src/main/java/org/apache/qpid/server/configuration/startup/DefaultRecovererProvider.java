@@ -22,6 +22,8 @@ package org.apache.qpid.server.configuration.startup;
 
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
@@ -36,23 +38,30 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class DefaultRecovererProvider implements RecovererProvider
 {
 
+    private final StatisticsGatherer _brokerStatisticsGatherer;
+    private final VirtualHostRegistry _virtualHostRegistry;
+    private final LogRecorder _logRecorder;
+    private final RootMessageLogger _rootMessageLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final PortFactory _portFactory;
-    private final IApplicationRegistry _registry;
     private final QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader;
     private final QpidServiceLoader<PluginFactory> _pluginFactoryServiceLoader;
 
-    public DefaultRecovererProvider(IApplicationRegistry registry)
+    public DefaultRecovererProvider(StatisticsGatherer brokerStatisticsGatherer, VirtualHostRegistry virtualHostRegistry,
+            LogRecorder logRecorder, RootMessageLogger rootMessageLogger)
     {
         _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
-        _portFactory = new PortFactory(registry);
-        _registry = registry;
+        _portFactory = new PortFactory();
+        _brokerStatisticsGatherer = brokerStatisticsGatherer;
+        _virtualHostRegistry = virtualHostRegistry;
+        _logRecorder = logRecorder;
+        _rootMessageLogger = rootMessageLogger;
         _groupManagerServiceLoader = new QpidServiceLoader<GroupManagerFactory>();
         _pluginFactoryServiceLoader = new QpidServiceLoader<PluginFactory>();
     }
@@ -60,13 +69,14 @@ public class DefaultRecovererProvider implements RecovererProvider
     @Override
     public ConfiguredObjectRecoverer<?> getRecoverer(String type)
     {
-        if(Broker.class.getSimpleName().equals(type))
+        if (Broker.class.getSimpleName().equals(type))
         {
-            return new BrokerRecoverer(_authenticationProviderFactory, _portFactory, _registry);
+            return new BrokerRecoverer(_authenticationProviderFactory, _portFactory, _brokerStatisticsGatherer, _virtualHostRegistry,
+                    _logRecorder, _rootMessageLogger);
         }
         else if(VirtualHost.class.getSimpleName().equals(type))
         {
-            return new VirtualHostRecoverer(_registry.getVirtualHostRegistry(),(StatisticsGatherer)_registry);
+            return new VirtualHostRecoverer(_brokerStatisticsGatherer);
         }
         else if(AuthenticationProvider.class.getSimpleName().equals(type))
         {

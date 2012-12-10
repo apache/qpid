@@ -30,29 +30,30 @@ import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.adapter.PortAdapter;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 
 public class AmqpPortAdapter extends PortAdapter
 {
-    private final IApplicationRegistry _appRegistry;
+    private final Broker _broker;
     private IncomingNetworkTransport _transport;
 
-    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes, IApplicationRegistry appRegistry)
+    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
         super(id, broker, attributes);
-        _appRegistry = appRegistry;
+        _broker = broker;
     }
 
     @Override
@@ -77,7 +78,7 @@ public class AmqpPortAdapter extends PortAdapter
 
         _transport = org.apache.qpid.transport.network.Transport.getIncomingTransportInstance();
         final MultiVersionProtocolEngineFactory protocolEngineFactory = new MultiVersionProtocolEngineFactory(
-                _appRegistry, supported, defaultSupportedProtocolReply);
+                _broker, supported, defaultSupportedProtocolReply);
 
         _transport.accept(settings, protocolEngineFactory, sslContext);
         CurrentActor.get().message(BrokerMessages.LISTENING(getTransports().toString(), getPort()));
@@ -103,28 +104,42 @@ public class AmqpPortAdapter extends PortAdapter
         return amqpProtocols;
     }
 
-
-    /** This will be delegated to the KeyStore and TrustStore model objects */
     private SSLContext createSslContext()
     {
-        // XXX: remove reference to ServerConfiguration
-        ServerConfiguration configuration = _appRegistry.getConfiguration();
-        final String keystorePath = configuration.getConnectorKeyStorePath();
-        final String keystorePassword = configuration.getConnectorKeyStorePassword();
-        final String keystoreType = configuration.getConnectorKeyStoreType();
-        final String keyManagerFactoryAlgorithm = configuration.getConnectorKeyManagerFactoryAlgorithm();
+        Collection<KeyStore> brokerKeyStores = _broker.getKeyStores();
+        if (brokerKeyStores.isEmpty())
+        {
+            throw new IllegalConfigurationException("Kesy store is not configured for AMQP SSL port");
+        }
+        Collection<TrustStore> brokerTrustStores = _broker.getTrustStores();
+
+        // TODO: use correct key store and trust store for a port
+        // XXX: temporarily using first keystore and trustore
+        KeyStore keyStore = brokerKeyStores.iterator().next();
+        TrustStore trustTore = brokerTrustStores.isEmpty() ? null : brokerTrustStores.iterator().next();
+        String keystorePath = (String)keyStore.getAttribute(KeyStore.PATH);
+        String keystorePassword = (String)keyStore.getAttribute(KeyStore.PASSWORD);
+        String keystoreType = (String)keyStore.getAttribute(KeyStore.TYPE);
+        String keyManagerFactoryAlgorithm = (String)keyStore.getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
+        String certAlias = (String)keyStore.getAttribute(KeyStore.CERTIFICATE_ALIAS);
+
         final SSLContext sslContext;
         try
         {
-            if(configuration.getConnectorTrustStorePath() != null)
+            if(trustTore != null)
             {
-                sslContext = SSLContextFactory.buildClientContext(configuration.getConnectorTrustStorePath(),
-                        configuration.getConnectorTrustStorePassword(),
-                        configuration.getConnectorTrustStoreType(),
-                        configuration.getConnectorTrustManagerFactoryAlgorithm(),
+                String trustStorePassword = (String)trustTore.getAttribute(TrustStore.PASSWORD);
+                String trustStoreType = (String)trustTore.getAttribute(TrustStore.TYPE);
+                String trustManagerFactoryAlgorithm = (String)trustTore.getAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM);
+                String trustStorePath = (String)trustTore.getAttribute(TrustStore.PATH);
+
+                sslContext = SSLContextFactory.buildClientContext(trustStorePath,
+                        trustStorePassword,
+                        trustStoreType,
+                        trustManagerFactoryAlgorithm,
                         keystorePath,
                         keystorePassword, keystoreType, keyManagerFactoryAlgorithm,
-                        configuration.getCertAlias());
+                        certAlias);
             }
             else
             {
@@ -145,9 +160,7 @@ public class AmqpPortAdapter extends PortAdapter
     /** This will be refactored later into AmqpPort model */
     private AmqpProtocolVersion getDefaultAmqpSupportedReply()
     {
-        // XXX: remove reference to server configuration. Add attribute on a Broker interface or Port? 
-        ServerConfiguration configuration = _appRegistry.getConfiguration();
-        return configuration.getDefaultSupportedProtocolReply();
+        return (AmqpProtocolVersion)_broker.getAttribute(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY);
     }
 
 

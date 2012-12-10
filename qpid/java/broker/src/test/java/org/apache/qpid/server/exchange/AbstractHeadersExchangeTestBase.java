@@ -57,7 +57,6 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AbstractHeadersExchangeTestBase extends QpidTestCase
@@ -67,7 +66,6 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
     protected VirtualHost _virtualHost;
-    protected VirtualHostRegistry _virtualHostRegistry;
     private int count;
 
     @Override
@@ -75,8 +73,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
     {
         super.setUp();
 
-        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
-        _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName(), _virtualHostRegistry);
+        _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
     }
 
     @Override
@@ -84,9 +81,9 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
     {
         try
         {
-            if (_virtualHostRegistry != null)
+            if (_virtualHost != null)
             {
-                _virtualHostRegistry.close();
+                _virtualHost.close();
             }
         }
         finally

@@ -81,7 +81,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final VirtualHostRegistry _virtualHostRegistry;
 
-    private final StatisticsGatherer _statisticsGatherer;
+    private final StatisticsGatherer _brokerStatisticsGatherer;
 
     private final SecurityManager _securityManager;
 
@@ -108,7 +108,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
     private boolean _blocked;
 
-    public VirtualHostImpl(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer statisticsGatherer, SecurityManager parentSecurityManager, VirtualHostConfiguration hostConfig) throws Exception
+    public VirtualHostImpl(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer brokerStatisticsGatherer, SecurityManager parentSecurityManager, VirtualHostConfiguration hostConfig) throws Exception
     {
         if (hostConfig == null)
         {
@@ -121,7 +121,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
 
         _virtualHostRegistry = virtualHostRegistry;
-        _statisticsGatherer = statisticsGatherer;
+        _brokerStatisticsGatherer = brokerStatisticsGatherer;
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
@@ -478,14 +478,14 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     {
         _messagesDelivered.registerEvent(1L);
         _dataDelivered.registerEvent(messageSize);
-        _statisticsGatherer.registerMessageDelivered(messageSize);
+        _brokerStatisticsGatherer.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
         _messagesReceived.registerEvent(1L, timestamp);
         _dataReceived.registerEvent(messageSize, timestamp);
-        _statisticsGatherer.registerMessageReceived(messageSize, timestamp);
+        _brokerStatisticsGatherer.registerMessageReceived(messageSize, timestamp);
     }
 
     public StatisticsCounter getMessageReceiptStatistics()

@@ -39,14 +39,12 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AMQQueueFactoryTest extends QpidTestCase
 {
     private QueueRegistry _queueRegistry;
     private VirtualHost _virtualHost;
-    private VirtualHostRegistry _virtualHostRegistry;
 
     @Override
     public void setUp() throws Exception
@@ -56,6 +54,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         XMLConfiguration configXml = new XMLConfiguration();
         configXml.addProperty("store.class", TestableMemoryMessageStore.class.getName());
 
+
         Broker broker = mock(Broker.class);
         if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
         {
@@ -63,10 +62,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
             when(broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
         }
 
-        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
-        _virtualHostRegistry.setDefaultVirtualHostName(getName());
-
-        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, broker), _virtualHostRegistry);
+        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, broker));
 
         _queueRegistry = _virtualHost.getQueueRegistry();
 
@@ -81,7 +77,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         }
         finally
         {
-            _virtualHostRegistry.close();
+            _virtualHost.close();
         }
     }
 

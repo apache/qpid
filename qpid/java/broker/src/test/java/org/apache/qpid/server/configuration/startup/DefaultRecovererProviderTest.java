@@ -24,13 +24,16 @@ import static org.mockito.Mockito.mock;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class DefaultRecovererProviderTest extends TestCase
 {
@@ -40,7 +43,13 @@ public class DefaultRecovererProviderTest extends TestCase
         		VirtualHost.class.getSimpleName(), AuthenticationProvider.class.getSimpleName(),
                 GroupProvider.class.getSimpleName(), Plugin.class.getSimpleName(), Port.class.getSimpleName()};
 
-        DefaultRecovererProvider provider = new DefaultRecovererProvider(mock(IApplicationRegistry.class));
+        // mocking the required object
+        StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
+        VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
+        LogRecorder logRecorder = mock(LogRecorder.class);
+        RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
+
+        DefaultRecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger);
         for (String configuredObjectType : supportedTypes)
         {
             ConfiguredObjectRecoverer<?> recovever = provider.getRecoverer(configuredObjectType);

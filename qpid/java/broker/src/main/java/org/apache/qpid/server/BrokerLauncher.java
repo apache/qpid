@@ -38,12 +38,14 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 
 public class BrokerLauncher
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerLauncher.class);
 
     private volatile Thread _shutdownHookThread;
+    private volatile IApplicationRegistry _applicationRegistry;
 
     protected static class InitException extends RuntimeException
     {
@@ -65,7 +67,10 @@ public class BrokerLauncher
         {
             try
             {
-                ApplicationRegistry.remove();
+                if (_applicationRegistry != null)
+                {
+                    _applicationRegistry.close();
+                }
             }
             finally
             {
@@ -115,9 +120,23 @@ public class BrokerLauncher
 
         ConfigurationEntryStore store = new XMLConfigurationEntryStore(configFile, options);
 
-        ApplicationRegistry applicationRegistry = new ApplicationRegistry(store);
-
-        ApplicationRegistry.initialise(applicationRegistry);
+        _applicationRegistry = new ApplicationRegistry(store);
+        try
+        {
+            _applicationRegistry.initialise();
+        }
+        catch(Exception e)
+        {
+            try
+            {
+                _applicationRegistry.close();
+            }
+            catch(Exception ce)
+            {
+                LOGGER.debug("An error occured when closing the registry following initialization failure", ce);
+            }
+            throw e;
+        }
 
     }
 

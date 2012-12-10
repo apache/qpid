@@ -41,6 +41,8 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -52,8 +54,10 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerRecovererTest extends TestCase
 {
@@ -70,7 +74,8 @@ public class BrokerRecovererTest extends TestCase
     {
         super.setUp();
 
-        _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(PortFactory.class), mock(IApplicationRegistry.class));
+        _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(PortFactory.class), mock(StatisticsGatherer.class),
+                mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
 
@@ -101,7 +106,7 @@ public class BrokerRecovererTest extends TestCase
         attributes.put(Broker.FRAME_SIZE, 128);
         attributes.put(Broker.HEART_BEAT_DELAY, 2000);
         attributes.put(Broker.HEART_BEAT_TIMEOUT_FACTOR, 5.0);
-        attributes.put(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY, "v1_0_0");
+        attributes.put(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY, AmqpProtocolVersion.v1_0_0);
         attributes.put(Broker.DISABLED_FEATURES, new HashSet<String>(Arrays.asList(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR)));
         attributes.put(Broker.STATISTICS_ENABLED, true);
         attributes.put(Broker.STATISTICS_SAMPLE_PERIOD, 3000);

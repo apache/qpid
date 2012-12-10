@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import static org.apache.qpid.server.util.MapValueConverter.getDoubleAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getEnumAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getLongAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
@@ -58,7 +59,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -69,7 +70,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
-    private IApplicationRegistry _applicationRegistry;
+    private final StatisticsGatherer _statisticsGatherer;
+    private final VirtualHostRegistry _virtualHostRegistry;
+    private final LogRecorder _logRecorder;
+    private final RootMessageLogger _rootMessageLogger;
     private String _name;
     private StatisticsAdapter _statistics;
 
@@ -103,21 +107,25 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private int _frameSize;
     private int _heartBeatDelay;
     private double _heartBeatTimeoutFactor;
-    private String _defaultSupportedProtocolReply;
+    private AmqpProtocolVersion _defaultSupportedProtocolReply;
     private Set<String> _disabledFeatures;
     private boolean _statisticsEnabled;
     private int _statisticsSamplePeriod;
     private int _statisticsReportingPeriod;
     private boolean _statisticsReportingResetEnabled;
 
-    public BrokerAdapter(UUID id, Map<String, Object> attributes, IApplicationRegistry instance,
-            AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory)
+    public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
+            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
+            PortFactory portFactory)
     {
         super(id);
         _name = "Broker";
-        _applicationRegistry = instance;
+        _statisticsGatherer = statisticsGatherer;
+        _virtualHostRegistry = virtualHostRegistry;
+        _logRecorder = logRecorder;
+        _rootMessageLogger = rootMessageLogger;
         _name = "Broker";
-        _statistics = new StatisticsAdapter(instance);
+        _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
         _portFactory = portFactory;
 
@@ -139,7 +147,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _frameSize = getIntegerAttribute(FRAME_SIZE, attributes, Integer.getInteger(BrokerProperties.PROPERTY_FRAME_SIZE, BrokerProperties.DEFAULT_FRAME_SIZE));
         _heartBeatDelay = getIntegerAttribute(HEART_BEAT_DELAY, attributes, BrokerProperties.DEFAULT_HEART_BEAT_DELAY);
         _heartBeatTimeoutFactor = getDoubleAttribute(HEART_BEAT_TIMEOUT_FACTOR, attributes, BrokerProperties.DEFAULT_HEART_BEAT_TIMEOUT_FACTOR);
-        _defaultSupportedProtocolReply = getStringAttribute(DEFAULT_SUPPORTED_PROTOCOL_REPLY, attributes, null);
+        _defaultSupportedProtocolReply = getEnumAttribute(AmqpProtocolVersion.class, DEFAULT_SUPPORTED_PROTOCOL_REPLY, attributes, null);
         _disabledFeatures = getSetOfStringAttribute(DISABLED_FEATURES, attributes, Collections.<String>emptySet());
         _statisticsEnabled = getBooleanAttribute(STATISTICS_ENABLED, attributes, false);
         _statisticsSamplePeriod =  getIntegerAttribute(STATISTICS_SAMPLE_PERIOD, attributes, BrokerProperties.DEFAULT_STATISTICS_SAMPLE_PERIOD);
@@ -222,10 +230,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        VirtualHostRegistry virtualHostRegistry = _applicationRegistry.getVirtualHostRegistry();
-        final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), this,
-                attributes, virtualHostRegistry, (StatisticsGatherer)_applicationRegistry,
-                _securityManager, null);
+        final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), this, attributes,
+                _statisticsGatherer, _securityManager, null);
 
         synchronized (_vhostAdapters)
         {
@@ -680,7 +686,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             changeState(_groupProviders, currentState, State.ACTIVE, false);
             changeState(_authenticationProviders, currentState, State.ACTIVE, false);
 
-            CurrentActor.set(new BrokerActor(_applicationRegistry.getRootMessageLogger()));
+            CurrentActor.set(new BrokerActor(getRootMessageLogger()));
             try
             {
                 changeState(_vhostAdapters, currentState, State.ACTIVE, false);
@@ -838,7 +844,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public RootMessageLogger getRootMessageLogger()
     {
-        return _applicationRegistry.getRootMessageLogger();
+        return _rootMessageLogger;
     }
 
     @Override
@@ -850,7 +856,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public LogRecorder getLogRecorder()
     {
-        return _applicationRegistry.getLogRecorder();
+        return _logRecorder;
     }
 
     @Override
@@ -892,6 +898,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return Collections.unmodifiableCollection(_trustStores.values());
         }
+    }
+
+    @Override
+    public VirtualHostRegistry getVirtualHostRegistry()
+    {
+        return _virtualHostRegistry;
     }
 
 }

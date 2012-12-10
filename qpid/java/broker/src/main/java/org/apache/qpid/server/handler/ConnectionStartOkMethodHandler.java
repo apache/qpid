@@ -29,9 +29,8 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
@@ -59,6 +58,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
     public void methodReceived(AMQStateManager stateManager, ConnectionStartOkBody body, int channelId) throws AMQException
     {
+        Broker broker = stateManager.getBroker();
         AMQProtocolSession session = stateManager.getProtocolSession();
 
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
@@ -111,10 +111,9 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
-                 // XXX remove reference on ServerConfiguration
-                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount(),
-                                                                                          getConfiguredFrameSize(),
-                                                                                          ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
+                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT),
+                                                                                          (Integer)broker.getAttribute(Broker.FRAME_SIZE),
+                                                                                          (Integer)broker.getAttribute(Broker.HEART_BEAT_DELAY));
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:
@@ -148,14 +147,6 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         }
     }
 
-    static int getConfiguredFrameSize()
-    {
-        // XXX remove reference to ServerConfiguration and introduce FRAME_SIZE attribute in Broker interface
-        final ServerConfiguration config = ApplicationRegistry.getInstance().getConfiguration();
-        final int framesize = config.getFrameSize();
-        _logger.info("Framesize set to " + framesize);
-        return framesize;
-    }
 }
 
 

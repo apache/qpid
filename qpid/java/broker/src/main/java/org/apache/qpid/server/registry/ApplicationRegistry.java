@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.SocketAddress;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
@@ -33,10 +30,7 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
-import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.LogActor;
@@ -49,15 +43,12 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
-import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 
@@ -71,9 +62,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 {
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
-
-    private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry(this);
+    private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry();
 
     private volatile RootMessageLogger _rootMessageLogger;
 
@@ -91,67 +80,6 @@ public class ApplicationRegistry implements IApplicationRegistry
         _rootMessageLogger = rootMessageLogger;
     }
 
-    public static void initialise(IApplicationRegistry instance) throws Exception
-    {
-        if(instance == null)
-        {
-            throw new IllegalArgumentException("ApplicationRegistry instance must not be null");
-        }
-
-        if(!_instance.compareAndSet(null, instance))
-        {
-            throw new IllegalStateException("An ApplicationRegistry is already initialised");
-        }
-
-        _logger.info("Initialising Application Registry(" + instance + ")");
-
-
-        try
-        {
-            instance.initialise();
-        }
-        catch (Exception e)
-        {
-            try
-            {
-                instance.close();
-            }
-            catch(Exception e1)
-            {
-                _logger.error("Failed to close uninitialized registry", e1);
-            }
-
-            //remove the Broker instance, then re-throw
-            _instance.set(null);
-            throw e;
-        }
-    }
-
-    public static boolean isConfigured()
-    {
-        return _instance.get() != null;
-    }
-
-    public static void remove()
-    {
-        IApplicationRegistry instance = _instance.getAndSet(null);
-        try
-        {
-            if (instance != null)
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Shutting down ApplicationRegistry(" + instance + ")");
-                }
-                instance.close();
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.error("Error shutting down Application Registry(" + instance + "): " + e, e);
-        }
-    }
-
     public ApplicationRegistry(ConfigurationEntryStore store)
     {
         _store = store;
@@ -160,37 +88,30 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     public void initialise() throws Exception
     {
+        // Create the RootLogger to be used during broker operation
+        boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
+        _rootMessageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
+
         _logRecorder = new LogRecorder();
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
-        RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), new Log4jMessageLogger(true)};
+        RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
         CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
 
         BrokerActor actor = new BrokerActor(startupMessageLogger);
-        CurrentActor.setDefault(actor);
         CurrentActor.set(actor);
-
+        CurrentActor.setDefault(actor);
         try
         {
-
             logStartupMessages(CurrentActor.get());
 
-            // XXX hack
-            ServerConfiguration configuration =  ((XMLConfigurationEntryStore)_store).getConfiguration();
-
-            RecovererProvider provider = new DefaultRecovererProvider(this);
+            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger);
             ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
-            getVirtualHostRegistry().setDefaultVirtualHostName(configuration.getDefaultVirtualHost());
+            _virtualHostRegistry.setDefaultVirtualHostName((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
 
-            // Create the RootLogger to be used during broker operation
-            boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
-            _rootMessageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
             initialiseStatisticsReporting();
-
-            CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
-            GenericActor.setDefaultMessageLogger(_rootMessageLogger);
 
             // starting the broker
             _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
@@ -202,21 +123,19 @@ public class ApplicationRegistry implements IApplicationRegistry
             CurrentActor.remove();
         }
 
+        CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
+        GenericActor.setDefaultMessageLogger(_rootMessageLogger);
     }
 
-    public void initialiseStatisticsReporting()
+    private void initialiseStatisticsReporting()
     {
-        boolean isStatisticsEnabled = (Boolean)_broker.getAttribute(Broker.STATISTICS_ENABLED);
         long report = ((Number)_broker.getAttribute(Broker.STATISTICS_REPORTING_PERIOD)).intValue() * 1000; // convert to ms
         final boolean reset = (Boolean)_broker.getAttribute(Broker.STATISTICS_REPORTING_RESET_ENABLED);
 
         /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
-        if (report > 0L && isStatisticsEnabled)
+        if (report > 0L)
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-
-            // TODO: use virtual host "statisticsEnabled" attribute to check whether statistics collection is required on that virtual host
-            // temporarily enabling the statistics collection for all virtual hosts
             StatisticsReportingTask task = new StatisticsReportingTask(true, true, reset, _rootMessageLogger);
             _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
         }
@@ -260,7 +179,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             if (_virtualhost)
             {
-                for (VirtualHost vhost : getVirtualHostRegistry().getVirtualHosts())
+                for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
                 {
                     String name = vhost.getName();
                     StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
@@ -281,25 +200,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             }
 
             CurrentActor.remove();
-        }
-    }
-
-    /**
-     * Get the ApplicationRegistry
-     * @return the IApplicationRegistry instance
-     * @throws IllegalStateException if no registry instance has been initialised.
-     */
-    @Deprecated
-    public static IApplicationRegistry getInstance() throws IllegalStateException
-    {
-        IApplicationRegistry iApplicationRegistry = _instance.get();
-        if (iApplicationRegistry == null)
-        {
-            throw new IllegalStateException("No ApplicationRegistry has been initialised");
-        }
-        else
-        {
-            return iApplicationRegistry;
         }
     }
 
@@ -330,7 +230,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
 
         //Set the Actor for Broker Shutdown
-        CurrentActor.set(new BrokerActor(getRootMessageLogger()));
+        CurrentActor.set(new BrokerActor(_rootMessageLogger));
         try
         {
             //Stop Statistics Reporting
@@ -358,41 +258,6 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
         _store = null;
         _broker = null;
-    }
-
-    public ServerConfiguration getConfiguration()
-    {
-        // XXX hack
-        return ((XMLConfigurationEntryStore)_store).getConfiguration();
-    }
-
-    @Override
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return _virtualHostRegistry;
-    }
-
-    @Override
-    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
-    {
-        return _broker.getSubjectCreator(localAddress);
-    }
-
-    public RootMessageLogger getRootMessageLogger()
-    {
-        return _rootMessageLogger;
-    }
-
-    public UUID getBrokerId()
-    {
-        return getBroker().getId();
-    }
-
-    public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
-    {
-        VirtualHostImpl virtualHost = new VirtualHostImpl(this.getVirtualHostRegistry(), this, getBroker().getSecurityManager(), vhostConfig);
-        _virtualHostRegistry.registerVirtualHost(virtualHost);
-        return virtualHost;
     }
 
     public void registerMessageDelivered(long messageSize)
@@ -461,15 +326,4 @@ public class ApplicationRegistry implements IApplicationRegistry
         logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }
 
-    @Override
-    public Broker getBroker()
-    {
-        return _broker;
-    }
-
-    @Override
-    public LogRecorder getLogRecorder()
-    {
-        return _logRecorder;
-    }
 }

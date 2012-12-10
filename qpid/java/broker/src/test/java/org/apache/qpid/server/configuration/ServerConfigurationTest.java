@@ -27,16 +27,19 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -833,11 +836,16 @@ public class ServerConfigurationTest extends QpidTestCase
 
     private VirtualHostRegistry loadConfigurationAndReturnVirtualHostRegistry(File mainFile) throws ConfigurationException, Exception
     {
-        VirtualHostRegistry virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
+        VirtualHostRegistry virtualHostRegistry = new VirtualHostRegistry();
 
         // load configuration with recoverer
         ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-        RecovererProvider provider = new DefaultRecovererProvider(virtualHostRegistry.getApplicationRegistry());
+
+        StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
+        LogRecorder logRecorder = mock(LogRecorder.class);
+        RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
+
+        RecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger);
         ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
         Broker broker = (Broker) brokerRecoverer.create(provider, store.getRootEntry());
         virtualHostRegistry.setDefaultVirtualHostName((String)broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));

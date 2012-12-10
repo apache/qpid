@@ -93,23 +93,20 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     private final String _name;
 
-    private VirtualHostRegistry _virtualHostRegistry;
-
     private VirtualHostConfiguration _configuration;
 
-    private StatisticsGatherer _statisticsGatherer;
+    private StatisticsGatherer _brokerStatisticsGatherer;
 
     private SecurityManager _securityManager;
 
-    public VirtualHostAdapter(UUID id, Broker broker, Map<String, Object> attributes, VirtualHostRegistry virtualHostRegistry,
-            StatisticsGatherer statisticsGatherer, SecurityManager securityManager, VirtualHostConfiguration configuration)
+    public VirtualHostAdapter(UUID id, Broker broker, Map<String, Object> attributes,
+            StatisticsGatherer brokerStatisticsGatherer, SecurityManager securityManager, VirtualHostConfiguration configuration)
     {
         super(id);
         _broker = broker;
         _name = (String)attributes.get(NAME);
-        _virtualHostRegistry = virtualHostRegistry;
         _configuration = configuration;
-        _statisticsGatherer = statisticsGatherer;
+        _brokerStatisticsGatherer = brokerStatisticsGatherer;
         _securityManager = securityManager;
         addParent(Broker.class, broker);
     }
@@ -902,16 +899,17 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         if (desiredState == State.ACTIVE)
         {
+            VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
             try
             {
-                _virtualHost = new VirtualHostImpl(_virtualHostRegistry, _statisticsGatherer, _securityManager, _configuration);
+                _virtualHost = new VirtualHostImpl(virtualHostRegistry, _brokerStatisticsGatherer, _securityManager, _configuration);
             }
             catch (Exception e)
             {
                throw new RuntimeException("Failed to create virtual host", e);
             }
 
-            _virtualHostRegistry.registerVirtualHost(_virtualHost);
+            virtualHostRegistry.registerVirtualHost(_virtualHost);
 
             _statistics = new VirtualHostStatisticsAdapter(_virtualHost);
             _virtualHost.getQueueRegistry().addRegistryChangeListener(this);
@@ -943,7 +941,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 }
                 finally
                 {
-                    _virtualHostRegistry.unregisterVirtualHost(_virtualHost);
+                    _broker.getVirtualHostRegistry().unregisterVirtualHost(_virtualHost);
                 }
             }
             return true;

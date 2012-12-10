@@ -22,7 +22,7 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.model.Broker;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,11 +31,12 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
-    private final IApplicationRegistry _appRegistry;
+    private final Broker _broker;
     private final Set<AmqpProtocolVersion> _supported;
     private final AmqpProtocolVersion _defaultSupportedReply;
 
-    public MultiVersionProtocolEngineFactory(IApplicationRegistry appRegistry, final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
+    public MultiVersionProtocolEngineFactory(Broker broker,
+            final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
     {
         if(defaultSupportedReply != null && !supportedVersions.contains(defaultSupportedReply))
         {
@@ -43,14 +44,14 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
                                              + ") to an unsupported protocol version initiation is itself not supported!");
         }
 
-        _appRegistry = appRegistry;
+        _broker = broker;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
     }
 
     public ServerProtocolEngine newProtocolEngine()
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_broker, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement());
     }
 
 }

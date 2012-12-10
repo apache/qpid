@@ -55,7 +55,6 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -99,7 +98,6 @@ public class MessageStoreTest extends QpidTestCase
 
     protected PropertiesConfiguration _config;
 
-    protected VirtualHostRegistry _virtualHostRegistry;
     protected VirtualHost _virtualHost;
     protected Broker _broker;
 
@@ -116,7 +114,6 @@ public class MessageStoreTest extends QpidTestCase
         cleanup(new File(storePath));
 
         _broker = mock(Broker.class);
-        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
         reloadVirtualHost();
     }
 
@@ -125,9 +122,9 @@ public class MessageStoreTest extends QpidTestCase
     {
         try
         {
-            if (_virtualHostRegistry != null)
+            if (_virtualHost != null)
             {
-                _virtualHostRegistry.close();
+                _virtualHost.close();
             }
         }
         finally
@@ -150,7 +147,6 @@ public class MessageStoreTest extends QpidTestCase
             try
             {
                 getVirtualHost().close();
-                _virtualHostRegistry.unregisterVirtualHost(getVirtualHost());
             }
             catch (Exception e)
             {
@@ -161,7 +157,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker), _virtualHostRegistry);
+            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker));
         }
         catch (Exception e)
         {

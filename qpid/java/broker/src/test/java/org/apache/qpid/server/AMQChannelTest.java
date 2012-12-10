@@ -34,6 +34,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -47,15 +48,15 @@ public class AMQChannelTest extends QpidTestCase
     private VirtualHost _virtualHost;
     private AMQProtocolSession _protocolSession;
     private Map<Integer,String> _replies;
+    private Broker _broker;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        _registry = BrokerTestHelper.createVirtualHostRegistry();
-        _virtualHost = BrokerTestHelper.createVirtualHost(getTestName(), _registry);
-
-        _protocolSession = new InternalTestProtocolSession(_virtualHost, _registry )
+        _virtualHost = BrokerTestHelper.createVirtualHost(getTestName());
+        _broker = BrokerTestHelper.createBrokerMock();
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, _broker)
         {
             @Override
             public void writeReturn(MessagePublishInfo messagePublishInfo,
@@ -76,7 +77,7 @@ public class AMQChannelTest extends QpidTestCase
     {
         try
         {
-            _registry.close();
+            _virtualHost.close();
         }
         finally
         {
@@ -89,7 +90,7 @@ public class AMQChannelTest extends QpidTestCase
         AMQChannel channel1 = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
 
         // create a channel with the same channelId but on a different session
-        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, _registry), 1, _virtualHost.getMessageStore());
+        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, _broker), 1, _virtualHost.getMessageStore());
         assertFalse("Unexpected compare result", channel1.compareTo(channel2) == 0);
         assertEquals("Unexpected compare result", 0, channel1.compareTo(channel1));
     }

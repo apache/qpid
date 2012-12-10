@@ -31,6 +31,7 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public interface Broker extends ConfiguredObject
 {
@@ -169,4 +170,9 @@ public interface Broker extends ConfiguredObject
     Collection<KeyStore> getKeyStores();
 
     Collection<TrustStore> getTrustStores();
+
+    /*
+     * TODO: Remove this method. Eventually the broker will become a registry.
+     */
+    public VirtualHostRegistry getVirtualHostRegistry();
 }

@@ -37,7 +37,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.AmqpPortAdapter;
 
 public class PortFactoryTest extends TestCase
@@ -49,9 +48,8 @@ public class PortFactoryTest extends TestCase
 
     private Map<String, Object> _attributes = new HashMap<String, Object>();
 
-    private IApplicationRegistry _applicationRegistry = mock(IApplicationRegistry.class);
     private Broker _broker = mock(Broker.class);
-    private PortFactory _portFactory = new PortFactory(_applicationRegistry);
+    private PortFactory _portFactory = new PortFactory();
 
     @Override
     protected void setUp() throws Exception

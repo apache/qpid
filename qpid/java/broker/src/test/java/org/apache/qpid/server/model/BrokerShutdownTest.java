@@ -20,19 +20,23 @@
  */
 package org.apache.qpid.server.model;
 
+import static org.mockito.Mockito.mock;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.TestAuthenticationManagerFactory;
-import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.security.Provider;
@@ -105,11 +109,14 @@ public class BrokerShutdownTest extends QpidTestCase
 
         };
 
-        // mocking the registry, we still need it
-        IApplicationRegistry registry = BrokerTestHelper.createMockApplicationRegistry();
+        // mocking the required object
+        StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
+        VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
+        LogRecorder logRecorder = mock(LogRecorder.class);
+        RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
 
         // recover the broker from the store
-        RecovererProvider provider = new DefaultRecovererProvider(registry);
+        RecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger);
         ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer = provider.getRecoverer(Broker.class.getSimpleName());
         Broker broker = (Broker) brokerRecoverer.create(provider, store.getRootEntry());
 

@@ -39,14 +39,12 @@ import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class TopicExchangeTest extends QpidTestCase
 {
 
     private TopicExchange _exchange;
-
     private VirtualHost _vhost;
     private MessageStore _store;
 
@@ -56,8 +54,7 @@ public class TopicExchangeTest extends QpidTestCase
     {
         super.setUp();
         _exchange = new TopicExchange();
-        VirtualHostRegistry registry = BrokerTestHelper.createVirtualHostRegistry();
-        _vhost = BrokerTestHelper.createVirtualHost(getName(), registry);
+        _vhost = BrokerTestHelper.createVirtualHost(getName());
         _store = new MemoryMessageStore();
     }
 

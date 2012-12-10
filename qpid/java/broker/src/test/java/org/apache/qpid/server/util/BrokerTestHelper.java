@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.util;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +36,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
@@ -51,7 +50,6 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -63,6 +61,24 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 public class BrokerTestHelper
 {
 
+    public static Broker createBrokerMock()
+    {
+        setCurrentActorIfNecessary();
+
+        SubjectCreator subjectCreator = mock(SubjectCreator.class);
+        when(subjectCreator.getMechanisms()).thenReturn("");
+        Broker broker = mock(Broker.class);
+        when(broker.getAttribute(Broker.SESSION_COUNT_LIMIT)).thenReturn(1);
+        when(broker.getId()).thenReturn(UUID.randomUUID());
+        when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
+        RootMessageLogger rootMessageLogger = CurrentActor.get().getRootMessageLogger();
+        when(broker.getRootMessageLogger()).thenReturn(rootMessageLogger);
+        when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry());
+        when(broker.getSecurityManager()).thenReturn(new SecurityManager(null));
+        GenericActor.setDefaultMessageLogger(rootMessageLogger);
+        return broker;
+    }
+
     public static void setCurrentActorIfNecessary()
     {
         if (CurrentActor.get() == null)
@@ -71,38 +87,21 @@ public class BrokerTestHelper
         }
     }
 
-    public static VirtualHostRegistry createVirtualHostRegistry()
-    {
-        IApplicationRegistry applicationRegistry = createMockApplicationRegistry();
-        VirtualHostRegistry registry = new VirtualHostRegistry(applicationRegistry);
-        when(applicationRegistry.getVirtualHostRegistry()).thenReturn(registry);
-        return registry;
-    }
-
-    public static IApplicationRegistry createMockApplicationRegistry()
-    {
-        setCurrentActorIfNecessary();
-        RootMessageLogger rootMessageLogger = CurrentActor.get().getRootMessageLogger();
-        GenericActor.setDefaultMessageLogger(rootMessageLogger);
-        ServerConfiguration configuration = mock(ServerConfiguration.class);
-        when(configuration.getMaxChannelCount()).thenReturn(1);
-        SubjectCreator subjectCreator = mock(SubjectCreator.class);
-        when(subjectCreator.getMechanisms()).thenReturn("");
-        IApplicationRegistry applicationRegistry = mock(IApplicationRegistry.class);
-        when(applicationRegistry.getConfiguration()).thenReturn(configuration);
-        when(applicationRegistry.getRootMessageLogger()).thenReturn(rootMessageLogger);
-        when(applicationRegistry.getBrokerId()).thenReturn(UUID.randomUUID());
-        when(applicationRegistry.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
-        return applicationRegistry;
-    }
-
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration, VirtualHostRegistry virtualHostRegistry)
             throws Exception
     {
+        setCurrentActorIfNecessary();
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         VirtualHost host = new VirtualHostImpl(virtualHostRegistry, statisticsGatherer, new SecurityManager(null), virtualHostConfiguration);
         virtualHostRegistry.registerVirtualHost(host);
         return host;
+    }
+
+    public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration) throws Exception
+    {
+        setCurrentActorIfNecessary();
+
+        return new VirtualHostImpl(null, mock(StatisticsGatherer.class), new SecurityManager(null), virtualHostConfiguration);
     }
 
     public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
@@ -113,10 +112,8 @@ public class BrokerTestHelper
 
     public static VirtualHost createVirtualHost(String name) throws Exception
     {
-        setCurrentActorIfNecessary();
-
-        VirtualHostConfiguration vhostConfig = createVirtualHostConfiguration(name);
-        return new VirtualHostImpl(null, null, new SecurityManager(null), vhostConfig);
+        VirtualHostConfiguration configuration = createVirtualHostConfiguration(name);
+        return createVirtualHost(configuration);
     }
 
     private static VirtualHostConfiguration createVirtualHostConfiguration(String name) throws ConfigurationException
@@ -151,9 +148,8 @@ public class BrokerTestHelper
 
     public static InternalTestProtocolSession createSession(String hostName) throws Exception
     {
-        VirtualHostRegistry registry = createVirtualHostRegistry();
-        VirtualHost virtualHost = createVirtualHost(hostName, registry);
-        return new InternalTestProtocolSession(virtualHost, registry);
+        VirtualHost virtualHost = createVirtualHost(hostName);
+        return new InternalTestProtocolSession(virtualHost, createBrokerMock());
     }
 
     public static Exchange createExchange(String hostName) throws Exception

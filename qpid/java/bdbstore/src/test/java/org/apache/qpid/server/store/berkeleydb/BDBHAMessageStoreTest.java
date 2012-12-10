@@ -30,7 +30,6 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -51,7 +50,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
     private int _masterPort;
     private String _host;
     private XMLConfiguration _configXml;
-    private VirtualHostRegistry _virtualHostRegistry;
+    private VirtualHost _virtualHost;
 
     public void setUp() throws Exception
     {
@@ -64,16 +63,14 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         FileUtils.delete(new File(_workDir), true);
         _configXml = new XMLConfiguration();
-        _configXml.addProperty("management.enabled", "false");
-        _configXml.addProperty("management.http.enabled", "false");
-    }
+     }
 
     public void tearDown() throws Exception
     {
         FileUtils.delete(new File(_workDir), true);
-        if (_virtualHostRegistry != null)
+        if (_virtualHost != null)
         {
-            _virtualHostRegistry.close();
+            _virtualHost.close();
         }
         super.tearDown();
     }
@@ -82,9 +79,10 @@ public class BDBHAMessageStoreTest extends QpidTestCase
     {
         // create virtual host configuration, registry and host instance
         addVirtualHostConfiguration();
-        _virtualHostRegistry = BrokerTestHelper.createVirtualHostRegistry();
-        VirtualHost virtualhost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration("test" + _masterPort, _configXml, mock(Broker.class)), _virtualHostRegistry);
-        BDBHAMessageStore store = (BDBHAMessageStore) virtualhost.getMessageStore();
+        String vhostName = "test" + _masterPort;
+        VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), mock(Broker.class));
+        _virtualHost = BrokerTestHelper.createVirtualHost(configuration);
+        BDBHAMessageStore store = (BDBHAMessageStore) _virtualHost.getMessageStore();
 
         // test whether JVM system settings were applied
         Environment env = store.getEnvironment();
@@ -107,8 +105,10 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         }
         String nodeName = getNodeNameForNodeAt(port);
 
-        String vhostPrefix = "";
+        String vhostName = "test" + port;
+        String vhostPrefix = "virtualhosts.virtualhost." + vhostName;
 
+        _configXml.addProperty("virtualhosts.virtualhost.name", vhostName);
         _configXml.addProperty(vhostPrefix + ".store.class", BDBHAMessageStore.class.getName());
         _configXml.addProperty(vhostPrefix + ".store.environment-path", _workDir + File.separator
                 + port);

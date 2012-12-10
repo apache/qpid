@@ -7,6 +7,8 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -14,27 +16,36 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 {
-
-    private final IApplicationRegistry _registry;
-    private final PortFactory _portFactory;
+    private final StatisticsGatherer _statisticsGatherer;
+    private final VirtualHostRegistry _virtualHostRegistry;
+    private final LogRecorder _logRecorder;
+    private final RootMessageLogger _rootMessageLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
+    private final PortFactory _portFactory;
 
-    public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory, IApplicationRegistry registry)
+    public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
+            StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder,
+            RootMessageLogger rootMessageLogger)
     {
-        _registry = registry;
         _portFactory = portFactory;
         _authenticationProviderFactory = authenticationProviderFactory;
+        _statisticsGatherer = statisticsGatherer;
+        _virtualHostRegistry = virtualHostRegistry;
+        _logRecorder = logRecorder;
+        _rootMessageLogger = rootMessageLogger;
     }
 
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
-        BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _registry, _authenticationProviderFactory, _portFactory);
+        BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer,
+                _virtualHostRegistry, _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory);
         Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
         for (String type : childEntries.keySet())
         {
