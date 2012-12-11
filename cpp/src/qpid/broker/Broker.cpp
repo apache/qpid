@@ -1250,6 +1250,7 @@ void Broker::bind(const std::string& queueName,
             QPID_LOG_CAT(debug, model, "Create binding. exchange:" << exchangeName
                 << " queue:" << queueName
                 << " key:" << key
+                << " arguments:" << arguments
                 << " user:" << userId
                 << " rhost:" << connectionId);
         }
