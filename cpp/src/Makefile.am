@@ -952,6 +952,7 @@ libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES
 # list for one of the libraries or executables that includes it.
+# Also included are the swig descriptor files.
 
 nobase_include_HEADERS +=			\
   ../include/qpid/Address.h			\
@@ -1038,7 +1039,10 @@ nobase_include_HEADERS +=			\
   ../include/qpid/types/Exception.h	 	\
   ../include/qpid/types/Uuid.h	 		\
   ../include/qpid/types/Variant.h		\
-  ../include/qpid/types/ImportExport.h
+  ../include/qpid/types/ImportExport.h          \
+  ../include/qpid/qpid.i                        \
+  ../include/qmf/qmfengine.i                    \
+  ../include/qmf/qmf2.i
 
 # Create the default data directory
 install-data-local:
