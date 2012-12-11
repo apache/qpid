@@ -49,6 +49,11 @@ using qpid::management::ManagementAgent;
 using std::string;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
+namespace {
+const std::string QPID_REPLICATE("qpid.replicate");
+const std::string NONE("none");
+}
+
 namespace qpid {
 namespace broker {
 
@@ -333,6 +338,7 @@ void Bridge::propagateBinding(const string& key, const string& tagList,
          }
          string newTagList(tagList + string(tagList.empty() ? "" : ",") + localTag);
 
+         bindArgs.setString(QPID_REPLICATE, NONE);
          bindArgs.setString(qpidFedOp, op);
          bindArgs.setString(qpidFedTags, newTagList);
          if (origin.empty())

@@ -534,17 +534,19 @@ void BrokerReplicator::doEventBind(Variant::Map& values) {
         exchanges.find(values[EXNAME].asString());
     boost::shared_ptr<Queue> queue =
         queues.find(values[QNAME].asString());
+    framing::FieldTable args;
+    qpid::amqp_0_10::translate(asMapVoid(values[ARGS]), args);
     // We only replicate binds for a replicated queue to replicated
     // exchange that both exist locally.
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
-        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
+        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings) &&
+        replicationTest.replicateLevel(args))
     {
-        framing::FieldTable args;
-        qpid::amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, logPrefix << "Bind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
-                 << " key=" << key);
+                 << " key=" << key
+                 << " args=" << args);
         queue->bind(exchange, key, args);
     }
 }
@@ -559,13 +561,11 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
         queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
     {
-        framing::FieldTable args;
-        qpid::amqp_0_10::translate(asMapVoid(values[ARGS]), args);
         string key = values[KEY].asString();
         QPID_LOG(debug, logPrefix << "Unbind event: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
-        exchange->unbind(queue, key, &args);
+        exchange->unbind(queue, key, 0);
     }
 }
 
@@ -692,16 +692,19 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
     boost::shared_ptr<Exchange> exchange = exchanges.find(exName);
     boost::shared_ptr<Queue> queue = queues.find(qName);
 
+    framing::FieldTable args;
+    qpid::amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
+
     // Automatically replicate binding if queue and exchange exist and are replicated
     if (exchange && replicationTest.replicateLevel(exchange->getArgs()) &&
-        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings))
+        queue && replicationTest.replicateLevel(queue->getSettings().storeSettings) &&
+        replicationTest.replicateLevel(args))
     {
         string key = values[BINDING_KEY].asString();
         QPID_LOG(debug, logPrefix << "Bind response: exchange:" << exName
                  << " queue:" << qName
-                 << " key:" << key);
-        framing::FieldTable args;
-        qpid::amqp_0_10::translate(asMapVoid(values[ARGUMENTS]), args);
+                 << " key:" << key
+                 << " args:" << args);
         queue->bind(exchange, key, args);
     }
 }

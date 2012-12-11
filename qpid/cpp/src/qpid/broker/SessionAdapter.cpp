@@ -154,12 +154,14 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
 {
     getBroker().bind(queueName, exchangeName, routingKey, arguments,
                      getConnection().getUserId(), getConnection().getUrl());
+    state.addBinding(queueName, exchangeName, routingKey, arguments);
 }
 
 void SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
                                                  const string& exchangeName,
                                                  const string& routingKey)
 {
+    state.removeBinding(queueName, exchangeName, routingKey);
     getBroker().unbind(queueName, exchangeName, routingKey,
                        getConnection().getUserId(), getConnection().getUrl());
 }
