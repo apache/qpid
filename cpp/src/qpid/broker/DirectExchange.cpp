@@ -70,7 +70,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
 
     if (args == 0 || fedOp.empty() || fedOp == fedOpBind) {
         Mutex::ScopedLock l(lock);
-        Binding::shared_ptr b(new Binding(routingKey, queue, this, FieldTable(), fedOrigin));
+        Binding::shared_ptr b(new Binding(routingKey, queue, this, args ? *args : FieldTable(), fedOrigin));
         BoundKey& bk = bindings[routingKey];
         if (exclusiveBinding) bk.queues.clear();
 

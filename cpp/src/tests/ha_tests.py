@@ -478,6 +478,23 @@ class ReplicationTests(HaBrokerTest):
             self.fail("Excpected no-such-queue exception")
         except NotFound: pass
 
+    def test_replicate_binding(self):
+        """Verify that binding replication can be disabled"""
+        primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
+        primary.promote()
+        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
+        ps = primary.connect().session()
+        ps.sender("ex;{create:always,node:{type:topic,x-declare:{arguments:{'qpid.replicate':all}, type:'fanout'}}}")
+        ps.sender("q;{create:always,node:{type:queue,x-declare:{arguments:{'qpid.replicate':all}},x-bindings:[{exchange:'ex',queue:'q',key:'',arguments:{'qpid.replicate':none}}]}}")
+        backup.wait_backup("q")
+
+        primary.kill()
+        assert retry(lambda: not is_running(primary.pid)) # Wait for primary to die
+        backup.promote()
+        bs = backup.connect_admin().session()
+        bs.sender("ex").send(Message("msg"))
+        self.assert_browse_retry(bs, "q", [])
+
     def test_invalid_replication(self):
         """Verify that we reject an attempt to declare a queue with invalid replication value."""
         cluster = HaCluster(self, 1, ha_replicate="all")
