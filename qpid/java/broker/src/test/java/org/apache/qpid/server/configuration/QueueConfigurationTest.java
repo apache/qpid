@@ -20,17 +20,18 @@
  */
 package org.apache.qpid.server.configuration;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.server.model.Broker;
-import org.mockito.Mockito;
 
 public class QueueConfigurationTest extends TestCase
 {
-
     private VirtualHostConfiguration _emptyConf;
     private PropertiesConfiguration _env;
     private VirtualHostConfiguration _fullHostConf;
@@ -38,7 +39,7 @@ public class QueueConfigurationTest extends TestCase
 
     public void setUp() throws Exception
     {
-        _broker = Mockito.mock(Broker.class);
+        _broker = mock(Broker.class);
         _env = new PropertiesConfiguration();
         _emptyConf = new VirtualHostConfiguration("test", _env, _broker);
 
@@ -57,11 +58,19 @@ public class QueueConfigurationTest extends TestCase
 
     public void testMaxDeliveryCount() throws Exception
     {
-        Mockito.when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(0);
+        // broker MAXIMUM_DELIVERY_ATTEMPTS attribute is not set
+        when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(null);
 
         // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
         assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
+
+        // set broker MAXIMUM_DELIVERY_ATTEMPTS attribute to 2
+        when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(2);
+
+        // Check that queue inherits the MAXIMUM_DELIVERY_ATTEMPTS value from broker
+        qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals("Unexpected default server configuration for max delivery count ", 2, qConf.getMaxDeliveryCount());
 
         // Check explicit value
         VirtualHostConfiguration vhostConfig = overrideConfiguration("maximumDeliveryCount", 7);
@@ -80,10 +89,18 @@ public class QueueConfigurationTest extends TestCase
      */
     public void testIsDeadLetterQueueEnabled() throws Exception
     {
-        Mockito.when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(false);
+        // enable dead letter queues broker wide
+        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
 
-        // Check default value
+        // Check that queue inherits the broker setting
         QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+
+        // broker DEAD_LETTER_QUEUE_ENABLED is not set
+        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(null);
+
+        // Check that queue dead letter queue is not enabled
+        qConf = new QueueConfiguration("test", _emptyConf);
         assertFalse("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
 
         // Check explicit value
@@ -163,11 +180,19 @@ public class QueueConfigurationTest extends TestCase
 
     public void testGetMinimumAlertRepeatGap() throws Exception
     {
-        Mockito.when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP);
+        // set broker attribute ALERT_REPEAT_GAP to 10
+        when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(10);
+
+        // check that broker level setting is available on queue configuration
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals(10, qConf.getMinimumAlertRepeatGap());
+
+        // remove configuration for ALERT_REPEAT_GAP on broker level
+        when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(null);
 
         // Check default value
-        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-        assertEquals(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP, qConf.getMinimumAlertRepeatGap());
+        qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals(0, qConf.getMinimumAlertRepeatGap());
 
         // Check explicit value
         VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
