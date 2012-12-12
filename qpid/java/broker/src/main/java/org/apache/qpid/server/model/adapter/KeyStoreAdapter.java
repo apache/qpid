@@ -26,26 +26,14 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
 {
-    private final String _certificateAlias;
 
     public KeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, broker, attributes, KeyStore.class.getSimpleName());
-        _certificateAlias = MapValueConverter.getStringAttribute(CERTIFICATE_ALIAS, attributes, null);
-    }
-
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(CERTIFICATE_ALIAS.equals(name))
-        {
-            return _certificateAlias;
-        }
-        return super.getAttribute(name);
+        super(id, broker, attributes);
+        setOptionalAttribute(CERTIFICATE_ALIAS, attributes, null);
     }
 
     @Override

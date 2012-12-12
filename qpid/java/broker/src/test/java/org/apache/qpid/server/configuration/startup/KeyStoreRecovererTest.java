@@ -38,13 +38,7 @@ public class KeyStoreRecovererTest extends TestCase
 
     public void testCreateWithAllAttributesProvided()
     {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(KeyStore.NAME, getName());
-        attributes.put(KeyStore.PATH, "/path/to/KeyStore");
-        attributes.put(KeyStore.PASSWORD, "my-secret-password");
-        attributes.put(KeyStore.TYPE, "NON-JKS");
-        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, "my-cert-alias");
+        Map<String, Object> attributes = getKeyStoreAttributes();
 
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
@@ -57,7 +51,10 @@ public class KeyStoreRecovererTest extends TestCase
         KeyStore KeyStore = recovever.create(null, entry, broker);
         assertNotNull("Key store configured object is not created", KeyStore);
         assertEquals(id, KeyStore.getId());
+        assertEquals("my-secret-password", KeyStore.getPassword());
 
+        // password attribute  should not be provided
+        attributes.put(KeyStore.PASSWORD, null);
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
         {
             Object attributeValue = KeyStore.getAttribute(attribute.getKey());
@@ -65,27 +62,45 @@ public class KeyStoreRecovererTest extends TestCase
         }
     }
 
-    public void testCreateWithMissedRequiredAttributes()
+    private Map<String, Object> getKeyStoreAttributes()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(KeyStore.NAME, getName());
         attributes.put(KeyStore.PATH, "/path/to/KeyStore");
+        attributes.put(KeyStore.PASSWORD, "my-secret-password");
+        attributes.put(KeyStore.TYPE, "NON-JKS");
+        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(KeyStore.CERTIFICATE_ALIAS, "my-cert-alias");
+        attributes.put(KeyStore.DESCRIPTION, "description");
+        return attributes;
+    }
+
+    public void testCreateWithMissedRequiredAttributes()
+    {
+        Map<String, Object> attributes = getKeyStoreAttributes();
 
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
-        when(entry.getAttributes()).thenReturn(attributes);
         when(entry.getId()).thenReturn(id);
 
         KeyStoreRecoverer recovever = new KeyStoreRecoverer();
 
-        try
+        String[] mandatoryProperties = {KeyStore.NAME, KeyStore.PATH, KeyStore.PASSWORD};
+        for (int i = 0; i < mandatoryProperties.length; i++)
         {
-            recovever.create(null, entry, broker);
-            fail("Cannot create key store without a path");
-        }
-        catch(IllegalArgumentException e)
-        {
-            // pass
+            Map<String, Object> properties =  new HashMap<String, Object>(attributes);
+            properties.remove(mandatoryProperties[i]);
+            when(entry.getAttributes()).thenReturn(properties);
+            try
+            {
+                recovever.create(null, entry, broker);
+                fail("Cannot create key store without a " + mandatoryProperties[i]);
+            }
+            catch(IllegalArgumentException e)
+            {
+                // pass
+            }
         }
     }
 

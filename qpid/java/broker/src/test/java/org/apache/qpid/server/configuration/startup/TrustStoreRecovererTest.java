@@ -36,12 +36,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
 {
     public void testCreateWithAllAttributesProvided()
     {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(TrustStore.NAME, getName());
-        attributes.put(TrustStore.PATH, "/path/to/truststore");
-        attributes.put(TrustStore.PASSWORD, "my-secret-password");
-        attributes.put(TrustStore.TYPE, "NON-JKS");
-        attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        Map<String, Object> attributes = getTrustStoreAttributes();
 
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
@@ -54,7 +49,10 @@ public class TrustStoreRecovererTest extends QpidTestCase
         TrustStore trustStore = recovever.create(null, entry, broker);
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
+        assertEquals("my-secret-password", trustStore.getPassword());
 
+        // password attribute  should not be provided
+        attributes.put(TrustStore.PASSWORD, null);
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
         {
             Object attributeValue = trustStore.getAttribute(attribute.getKey());
@@ -62,10 +60,21 @@ public class TrustStoreRecovererTest extends QpidTestCase
         }
     }
 
-    public void testCreateWithMissedRequiredAttributes()
+    private Map<String, Object> getTrustStoreAttributes()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(TrustStore.NAME, getName());
         attributes.put(TrustStore.PATH, "/path/to/truststore");
+        attributes.put(TrustStore.PASSWORD, "my-secret-password");
+        attributes.put(TrustStore.TYPE, "NON-JKS");
+        attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(TrustStore.DESCRIPTION, "Description");
+        return attributes;
+    }
+
+    public void testCreateWithMissedRequiredAttributes()
+    {
+        Map<String, Object> attributes = getTrustStoreAttributes();
 
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
@@ -75,14 +84,21 @@ public class TrustStoreRecovererTest extends QpidTestCase
 
         TrustStoreRecoverer recovever = new TrustStoreRecoverer();
 
-        try
+        String[] mandatoryProperties = {TrustStore.NAME, TrustStore.PATH, TrustStore.PASSWORD};
+        for (int i = 0; i < mandatoryProperties.length; i++)
         {
-            recovever.create(null, entry, broker);
-            fail("Cannot create trustore without a path");
-        }
-        catch(IllegalArgumentException e)
-        {
-            // pass
+            Map<String, Object> properties =  new HashMap<String, Object>(attributes);
+            properties.remove(mandatoryProperties[i]);
+            when(entry.getAttributes()).thenReturn(properties);
+            try
+            {
+                recovever.create(null, entry, broker);
+                fail("Cannot create key store without a " + mandatoryProperties[i]);
+            }
+            catch(IllegalArgumentException e)
+            {
+                // pass
+            }
         }
     }
 

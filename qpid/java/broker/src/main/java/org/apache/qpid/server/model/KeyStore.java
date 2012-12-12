@@ -40,6 +40,7 @@ public interface KeyStore extends TrustStore
                               TIME_TO_LIVE,
                               CREATED,
                               UPDATED,
+                              DESCRIPTION,
                               PATH,
                               PASSWORD,
                               TYPE,

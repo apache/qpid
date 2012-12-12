@@ -34,25 +34,24 @@ import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
 {
-    protected final String _name;
-    protected final String _path;
-    protected final String _password;
-    protected final String _type;
-    protected final String _keyManagerFactoryAlgorithm;
+    private String _name;
+    private String _password;
 
-    protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes, String defaultName)
+    protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
         super(id);
         addParent(Broker.class, broker);
-        _name = MapValueConverter.getStringAttribute(KeyStore.NAME, attributes, defaultName);
-        _path = MapValueConverter.getStringAttribute(KeyStore.PATH, attributes);
-        _password = MapValueConverter.getStringAttribute(KeyStore.PASSWORD, attributes);
-        _type =  MapValueConverter.getStringAttribute(KeyStore.TYPE, attributes, java.security.KeyStore.getDefaultType());
-        _keyManagerFactoryAlgorithm = MapValueConverter.getStringAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes, KeyManagerFactory.getDefaultAlgorithm());
+        _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
+        _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);
+        setMandatoryAttribute(TrustStore.PATH, attributes);
+        setOptionalAttribute(TrustStore.TYPE, attributes, java.security.KeyStore.getDefaultType());
+        setOptionalAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes, KeyManagerFactory.getDefaultAlgorithm());
+        setOptionalAttribute(TrustStore.DESCRIPTION, attributes, null);
     }
 
     @Override
@@ -135,7 +134,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         {
             return getId();
         }
-        else if(KeyStore.NAME.equals(name))
+        if(KeyStore.NAME.equals(name))
         {
             return getName();
         }
@@ -163,21 +162,9 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         {
 
         }
-        else if(KeyStore.PATH.equals(name))
-        {
-            return _path;
-        }
         else if(KeyStore.PASSWORD.equals(name))
         {
-            return _password;
-        }
-        else if(KeyStore.TYPE.equals(name))
-        {
-            return _type;
-        }
-        else if(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM.equals(name))
-        {
-            return _keyManagerFactoryAlgorithm;
+            return null; // for security reasons we don't expose the password
         }
         return super.getAttribute(name);
     }
@@ -186,5 +173,25 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
     protected boolean setState(State currentState, State desiredState)
     {
         return false;
+    }
+
+    public String getPassword()
+    {
+        return _password;
+    }
+
+    public void setPassword(String password)
+    {
+        _password = password;
+    }
+
+    protected void setMandatoryAttribute(String name, Map<String, Object> attributes)
+    {
+        setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes));
+    }
+
+    protected void setOptionalAttribute(String name, Map<String, Object> attributes, String defaultValue)
+    {
+        setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes, defaultValue));
     }
 }

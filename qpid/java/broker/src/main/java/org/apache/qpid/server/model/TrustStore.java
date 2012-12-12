@@ -34,6 +34,7 @@ public interface TrustStore extends ConfiguredObject
     String TIME_TO_LIVE = "timeToLive";
     String CREATED = "created";
     String UPDATED = "updated";
+    String DESCRIPTION = "description";
 
     String PATH = "path";
     String PASSWORD = "password";
@@ -51,9 +52,14 @@ public interface TrustStore extends ConfiguredObject
                               TIME_TO_LIVE,
                               CREATED,
                               UPDATED,
+                              DESCRIPTION,
                               PATH,
                               PASSWORD,
                               TYPE,
                               KEY_MANAGER_FACTORY_ALGORITHM
                               ));
+
+    public String getPassword();
+
+    public void setPassword(String password);
 }

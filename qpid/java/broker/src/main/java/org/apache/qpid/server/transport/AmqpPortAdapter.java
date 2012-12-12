@@ -117,9 +117,9 @@ public class AmqpPortAdapter extends PortAdapter
         // TODO: use correct key store and trust store for a port
         // XXX: temporarily using first keystore and trustore
         KeyStore keyStore = brokerKeyStores.iterator().next();
-        TrustStore trustTore = brokerTrustStores.isEmpty() ? null : brokerTrustStores.iterator().next();
+        TrustStore trustStore = brokerTrustStores.isEmpty() ? null : brokerTrustStores.iterator().next();
         String keystorePath = (String)keyStore.getAttribute(KeyStore.PATH);
-        String keystorePassword = (String)keyStore.getAttribute(KeyStore.PASSWORD);
+        String keystorePassword = keyStore.getPassword();
         String keystoreType = (String)keyStore.getAttribute(KeyStore.TYPE);
         String keyManagerFactoryAlgorithm = (String)keyStore.getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
         String certAlias = (String)keyStore.getAttribute(KeyStore.CERTIFICATE_ALIAS);
@@ -127,12 +127,12 @@ public class AmqpPortAdapter extends PortAdapter
         final SSLContext sslContext;
         try
         {
-            if(trustTore != null)
+            if(trustStore != null)
             {
-                String trustStorePassword = (String)trustTore.getAttribute(TrustStore.PASSWORD);
-                String trustStoreType = (String)trustTore.getAttribute(TrustStore.TYPE);
-                String trustManagerFactoryAlgorithm = (String)trustTore.getAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM);
-                String trustStorePath = (String)trustTore.getAttribute(TrustStore.PATH);
+                String trustStorePassword = trustStore.getPassword();
+                String trustStoreType = (String)trustStore.getAttribute(TrustStore.TYPE);
+                String trustManagerFactoryAlgorithm = (String)trustStore.getAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM);
+                String trustStorePath = (String)trustStore.getAttribute(TrustStore.PATH);
 
                 sslContext = SSLContextFactory.buildClientContext(trustStorePath,
                         trustStorePassword,

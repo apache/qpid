@@ -31,7 +31,7 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
 {
     public TrustStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, broker, attributes, TrustStore.class.getSimpleName());
+        super(id, broker, attributes);
     }
 
     @Override
