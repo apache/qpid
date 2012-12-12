@@ -23,16 +23,18 @@ package org.apache.qpid.server.configuration.startup;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.adapter.GroupProviderAdapter;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.group.GroupManager;
 
-public class GroupProviderRecoverer extends AbstractBrokerChildRecoverer<GroupProvider>
+public class GroupProviderRecoverer implements ConfiguredObjectRecoverer<GroupProvider>
 {
     private QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader;
 
@@ -43,8 +45,9 @@ public class GroupProviderRecoverer extends AbstractBrokerChildRecoverer<GroupPr
     }
 
     @Override
-    GroupProvider createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, Broker broker)
+    public GroupProvider create(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, ConfiguredObject... parents)
     {
+        Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         Map<String, Object> attributes = configurationEntry.getAttributes();
         GroupManager groupManager = createGroupManager(attributes);
         if (groupManager == null)

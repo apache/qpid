@@ -21,16 +21,19 @@
 package org.apache.qpid.server.configuration.startup;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.adapter.KeyStoreAdapter;
 
-public class KeyStoreRecoverer extends AbstractBrokerChildRecoverer<KeyStore>
+public class KeyStoreRecoverer implements ConfiguredObjectRecoverer<KeyStore>
 {
     @Override
-    KeyStore createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry entry, Broker broker)
+    public KeyStore create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
+        Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         return new KeyStoreAdapter(entry.getId(), broker, entry.getAttributes());
     }
 

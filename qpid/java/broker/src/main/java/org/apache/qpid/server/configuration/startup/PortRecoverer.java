@@ -21,13 +21,15 @@
 package org.apache.qpid.server.configuration.startup;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
 
-public class PortRecoverer extends AbstractBrokerChildRecoverer<Port>
+public class PortRecoverer implements ConfiguredObjectRecoverer<Port>
 {
     /**
      * delegates to a {@link PortFactory} so that the logic can be shared by
@@ -41,8 +43,9 @@ public class PortRecoverer extends AbstractBrokerChildRecoverer<Port>
     }
 
     @Override
-    Port createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, Broker broker)
+    public Port create(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, ConfiguredObject... parents)
     {
+        Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         return _portFactory.createPort(configurationEntry.getId(), broker, configurationEntry.getAttributes());
     }
 

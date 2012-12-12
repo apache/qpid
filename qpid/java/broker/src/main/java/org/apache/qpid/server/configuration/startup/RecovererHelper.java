@@ -20,21 +20,25 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.adapter.TrustStoreAdapter;
 
-public class TrustStoreRecoverer implements ConfiguredObjectRecoverer<TrustStore>
+public class RecovererHelper
 {
-    @Override
-    public TrustStore create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
+    public static Broker verifyOnlyBrokerIsParent(ConfiguredObject... parents)
     {
-        Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
-        return new TrustStoreAdapter(entry.getId(), broker, entry.getAttributes());
+        if (parents == null || parents.length == 0)
+        {
+            throw new IllegalArgumentException("Broker parent is not passed!");
+        }
+        if (parents.length != 1)
+        {
+            throw new IllegalArgumentException("Only one parent is expected!");
+        }
+        if (!(parents[0] instanceof Broker))
+        {
+            throw new IllegalArgumentException("Parent is not a broker");
+        }
+        return (Broker)parents[0];
     }
-
 }

@@ -29,16 +29,18 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
-public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHost>
+public class VirtualHostRecoverer implements ConfiguredObjectRecoverer<VirtualHost>
 {
     private StatisticsGatherer _brokerStatisticsGatherer;
 
@@ -49,8 +51,9 @@ public class VirtualHostRecoverer extends AbstractBrokerChildRecoverer<VirtualHo
     }
 
     @Override
-    VirtualHost createBrokerChild(RecovererProvider recovererProvider, ConfigurationEntry entry, Broker broker)
+    public VirtualHost create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
+        Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         Map<String, Object> attributes = entry.getAttributes();
         String name = getStringAttribute(VirtualHost.NAME, attributes);
         String configuration = getStringAttribute(VirtualHost.CONFIGURATION, attributes, null);
