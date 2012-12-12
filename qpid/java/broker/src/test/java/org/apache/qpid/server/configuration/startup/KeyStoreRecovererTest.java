@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.TrustStore;
 
 import junit.framework.TestCase;
 
@@ -53,7 +54,10 @@ public class KeyStoreRecovererTest extends TestCase
         assertEquals(id, KeyStore.getId());
         assertEquals("my-secret-password", KeyStore.getPassword());
 
-        // password attribute  should not be provided
+        assertNull("Password was unexpectedly returned from configured object", KeyStore.getAttribute(TrustStore.PASSWORD));
+
+        // password attribute should not be exposed by a key store configured object
+        // so, we should set password value to null in the map being used to create the key store configured object
         attributes.put(KeyStore.PASSWORD, null);
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
         {

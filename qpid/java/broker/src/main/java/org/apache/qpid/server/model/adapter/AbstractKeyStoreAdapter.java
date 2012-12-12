@@ -49,9 +49,9 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
         _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);
         setMandatoryAttribute(TrustStore.PATH, attributes);
-        setOptionalAttribute(TrustStore.TYPE, attributes, java.security.KeyStore.getDefaultType());
-        setOptionalAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes, KeyManagerFactory.getDefaultAlgorithm());
-        setOptionalAttribute(TrustStore.DESCRIPTION, attributes, null);
+        setOptionalAttribute(TrustStore.TYPE, attributes);
+        setOptionalAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes);
+        setOptionalAttribute(TrustStore.DESCRIPTION, attributes);
     }
 
     @Override
@@ -190,8 +190,11 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes));
     }
 
-    protected void setOptionalAttribute(String name, Map<String, Object> attributes, String defaultValue)
+    protected void setOptionalAttribute(String name, Map<String, Object> attributes)
     {
-        setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes, defaultValue));
+        if (attributes.containsKey(name))
+        {
+            setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes));
+        }
     }
 }

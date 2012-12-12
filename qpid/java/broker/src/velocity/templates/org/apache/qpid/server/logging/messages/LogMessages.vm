@@ -58,11 +58,6 @@ public class ${type.name}Messages
         Logger.getLogger(${message.methodName.toUpperCase()}_LOG_HIERARCHY);
 #end
 
-        reload();
-    }
-
-    public static void reload()
-    {
         _messages = ResourceBundle.getBundle("${resource}", _currentLocale);
     }
 

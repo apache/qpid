@@ -62,18 +62,17 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         {
             Configuration virtualHostConfig = XmlConfigurationUtilities.parseConfig(configurationFile, null);
 
+            // check if it is old virtual host configuration file
             Configuration config = virtualHostConfig.subset("virtualhost." + XmlConfigurationUtilities.escapeTagName(name));
             if (config.isEmpty())
             {
                 // try to load virtual host configuration from 'name' element
-                config = virtualHostConfig.subset(XmlConfigurationUtilities.escapeTagName(name));
-                if (config.isEmpty())
-                {
-                    // fallback to the original configuration
-                    config = virtualHostConfig;
-                }
+                configuration = virtualHostConfig;
             }
-            configuration = config;
+            else
+            {
+                configuration = config;
+            }
         }
         setConfiguration(configuration);
     }

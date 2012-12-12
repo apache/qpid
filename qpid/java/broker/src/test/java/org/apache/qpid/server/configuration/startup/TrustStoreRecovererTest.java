@@ -51,7 +51,10 @@ public class TrustStoreRecovererTest extends QpidTestCase
         assertEquals(id, trustStore.getId());
         assertEquals("my-secret-password", trustStore.getPassword());
 
-        // password attribute  should not be provided
+        assertNull("Password was unexpectedly returned from configured object", trustStore.getAttribute(TrustStore.PASSWORD));
+
+        // password attribute should not be exposed by a trust store configured object
+        // so, we should set password value to null in the map being used to create the trust store configured object
         attributes.put(TrustStore.PASSWORD, null);
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
         {
