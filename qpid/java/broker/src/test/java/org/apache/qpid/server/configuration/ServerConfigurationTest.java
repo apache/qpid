@@ -32,7 +32,6 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -40,6 +39,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -118,32 +118,6 @@ public class ServerConfigurationTest extends QpidTestCase
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
         assertEquals(false, _serverConfig.getPlatformMbeanserver());
-    }
-
-    public void testGetFrameSize() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(65536, _serverConfig.getFrameSize());
-
-        // Check value we set
-        _config.setProperty("advanced.framesize", "23");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(23, _serverConfig.getFrameSize());
-    }
-
-    public void testGetSynchedClocks() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getSynchedClocks());
-
-        // Check value we set
-        _config.setProperty("advanced.synced-clocks", true);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getSynchedClocks());
     }
 
     public void testGetManagementKeyStorePath() throws ConfigurationException
@@ -275,19 +249,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(23, _serverConfig.getHeartBeatDelay());
     }
 
-    public void testGetHeartBeatTimeout() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(2.0, _serverConfig.getHeartBeatTimeout());
-
-        // Check value we set
-        _config.setProperty("heartbeat.timeoutFactor", 2.3);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(2.3, _serverConfig.getHeartBeatTimeout());
-    }
-
     public void testGetMaximumMessageAge() throws ConfigurationException
     {
         // Check default
@@ -352,19 +313,6 @@ public class ServerConfigurationTest extends QpidTestCase
         _serverConfig.initialise();
         assertEquals(10, _serverConfig.getMinimumAlertRepeatGap());
     }
-
-    public void testGetProcessors() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(4, _serverConfig.getConnectorProcessors());
-
-        // Check value we set
-        _config.setProperty("connector.processors", 10);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(10, _serverConfig.getConnectorProcessors());
-        }
 
     public void testGetPorts() throws ConfigurationException
     {
@@ -1269,26 +1217,6 @@ public class ServerConfigurationTest extends QpidTestCase
             fail("Should throw a ConfigurationException");
         }
     }
-    
-    /**
-     * Tests that element disabledFeatures allows features that would
-     * otherwise be advertised by the broker to be turned off.
-     */
-    public void testDisabledFeatures() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        _serverConfig = new ServerConfiguration(_config);
-        assertEquals("Unexpected size", 0, _serverConfig.getDisabledFeatures().size());
-
-        // Check value we set
-        _config.addProperty("disabledFeatures", "qpid.feature1");
-        _config.addProperty("disabledFeatures", "qpid.feature2");
-        _serverConfig = new ServerConfiguration(_config);
-
-        assertEquals("Unexpected size",2, _serverConfig.getDisabledFeatures().size());
-        assertTrue("Unexpected contents", _serverConfig.getDisabledFeatures().contains("qpid.feature1"));
-    }
 
     /**
      * Tests that the old element security.jmx.access (that used to be used
@@ -1408,7 +1336,6 @@ public class ServerConfigurationTest extends QpidTestCase
     /**
      * Test XML configuration file correctly enables dead letter queues
      */
-    /*
     public void testDeadLetterQueueConfigurationFile() throws Exception
     {
         // Write config
@@ -1459,15 +1386,14 @@ public class ServerConfigurationTest extends QpidTestCase
         config.close();
 
         // Load config
-        ApplicationRegistry.remove();
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(xml);
-        ApplicationRegistry registry = new ApplicationRegistry(store);
-        ApplicationRegistry.initialise(registry);
-        ServerConfiguration serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
+        ServerConfiguration serverConfiguration = new ServerConfiguration(xml);
+        serverConfiguration.initialise();
 
-        VirtualHostConfiguration test = serverConfiguration.getVirtualHostConfig("test");
+        Broker broker = mock(Broker.class);
+        when(broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
+        VirtualHostConfiguration test = new VirtualHostConfiguration("test", serverConfiguration.getVirtualHostConfig("test").getConfig(), broker );
         assertNotNull("Host 'test' is not found", test);
-        VirtualHostConfiguration extra = serverConfiguration.getVirtualHostConfig("extra");
+        VirtualHostConfiguration extra = new VirtualHostConfiguration("extra", serverConfiguration.getVirtualHostConfig("extra").getConfig(), broker);
         assertNotNull("Host 'extra' is not found", test);
 
         QueueConfiguration biggles = test.getQueueConfiguration("biggles");
@@ -1485,7 +1411,7 @@ public class ServerConfigurationTest extends QpidTestCase
         assertFalse("R2D2 queue DLQ should be configured as disabled", r2d2.isDeadLetterQueueEnabled());
         assertTrue("C3P0 queue DLQ should be enabled, using broker default", c3p0.isDeadLetterQueueEnabled());
     }
-*/
+
     public void testIsAmqp010enabled() throws ConfigurationException
     {
         // Check default
@@ -1616,19 +1542,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(2, _serverConfig.getPortInclude10().size());
         assertTrue(_serverConfig.getPortInclude10().contains("9"));
         assertTrue(_serverConfig.getPortInclude10().contains("10"));
-    }
-
-    public void testGetDefaultSupportedProtocolReply() throws Exception
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertNull("unexpected default value", _serverConfig.getDefaultSupportedProtocolReply());
-
-        // Check values we set
-        _config.addProperty(ServerConfiguration.CONNECTOR_AMQP_SUPPORTED_REPLY, "v0_10");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(AmqpProtocolVersion.v0_10, _serverConfig.getDefaultSupportedProtocolReply());
     }
 
     public void testDefaultAuthenticationManager() throws Exception

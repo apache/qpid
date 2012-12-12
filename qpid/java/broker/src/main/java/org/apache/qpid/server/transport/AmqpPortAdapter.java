@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -157,10 +158,14 @@ public class AmqpPortAdapter extends PortAdapter
         return sslContext;
     }
 
-    /** This will be refactored later into AmqpPort model */
     private AmqpProtocolVersion getDefaultAmqpSupportedReply()
     {
-        return (AmqpProtocolVersion)_broker.getAttribute(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY);
+        String defaultAmqpSupportedReply = System.getProperty(BrokerProperties.PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY);
+        if (defaultAmqpSupportedReply != null)
+        {
+            return AmqpProtocolVersion.valueOf(defaultAmqpSupportedReply);
+        }
+        return null;
     }
 
 

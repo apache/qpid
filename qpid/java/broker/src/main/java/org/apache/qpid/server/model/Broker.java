@@ -66,13 +66,7 @@ public interface Broker extends ConfiguredObject
     String HOUSEKEEPING_CHECK_PERIOD = "housekeepingCheckPeriod";
 
     String SESSION_COUNT_LIMIT = "sessionCountLimit";
-    String FRAME_SIZE = "frameSize";
     String HEART_BEAT_DELAY = "heartBeatDelay";
-    String HEART_BEAT_TIMEOUT_FACTOR = "heartBeatTimeoutFactor";
-    String DEFAULT_SUPPORTED_PROTOCOL_REPLY = "defaultSupportedProtocolReply";
-    String DISABLED_FEATURES = "disabledFeatures";
-    String STATISTICS_ENABLED = "statisticsEnabled";
-    String STATISTICS_SAMPLE_PERIOD = "statisticsSamplePeriod";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
 
@@ -114,13 +108,7 @@ public interface Broker extends ConfiguredObject
                               HOUSEKEEPING_CHECK_PERIOD,
                               ACL_FILE,
                               SESSION_COUNT_LIMIT,
-                              FRAME_SIZE,
                               HEART_BEAT_DELAY,
-                              HEART_BEAT_TIMEOUT_FACTOR,
-                              DEFAULT_SUPPORTED_PROTOCOL_REPLY,
-                              DISABLED_FEATURES,
-                              STATISTICS_ENABLED,
-                              STATISTICS_SAMPLE_PERIOD,
                               STATISTICS_REPORTING_PERIOD,
                               STATISTICS_REPORTING_RESET_ENABLED
                               ));

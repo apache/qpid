@@ -30,6 +30,7 @@ import org.apache.qpid.framing.ConnectionSecureOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -98,7 +99,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
 
                 ConnectionTuneBody tuneBody =
                         methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT),
-                                                                (Integer)broker.getAttribute(Broker.FRAME_SIZE),
+                                                                BrokerProperties.DEFAULT_FRAME_SIZE,
                                                                 (Integer)broker.getAttribute(Broker.HEART_BEAT_DELAY));
                 session.writeFrame(tuneBody.generateFrame(0));
                 session.setAuthorizedSubject(authResult.getSubject());

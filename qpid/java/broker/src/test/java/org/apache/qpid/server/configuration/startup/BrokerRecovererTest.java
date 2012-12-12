@@ -30,13 +30,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -54,7 +52,6 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -103,13 +100,7 @@ public class BrokerRecovererTest extends TestCase
         attributes.put(Broker.HOUSEKEEPING_CHECK_PERIOD, 1l);
         attributes.put(Broker.ACL_FILE, "/path/to/acl");
         attributes.put(Broker.SESSION_COUNT_LIMIT, 1000);
-        attributes.put(Broker.FRAME_SIZE, 128);
         attributes.put(Broker.HEART_BEAT_DELAY, 2000);
-        attributes.put(Broker.HEART_BEAT_TIMEOUT_FACTOR, 5.0);
-        attributes.put(Broker.DEFAULT_SUPPORTED_PROTOCOL_REPLY, AmqpProtocolVersion.v1_0_0);
-        attributes.put(Broker.DISABLED_FEATURES, new HashSet<String>(Arrays.asList(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR)));
-        attributes.put(Broker.STATISTICS_ENABLED, true);
-        attributes.put(Broker.STATISTICS_SAMPLE_PERIOD, 3000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
         attributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
 
@@ -377,29 +368,7 @@ public class BrokerRecovererTest extends TestCase
 
     private String convertToString(Object attributeValue)
     {
-        String value = null;
-        if (attributeValue instanceof Collection)
-        {
-            @SuppressWarnings("unchecked")
-            Collection<Object> data = (Collection<Object>)attributeValue;
-            StringBuilder sb = new StringBuilder();
-            Iterator<Object> it = data.iterator();
-            while (it.hasNext())
-            {
-                Object val = it.next();
-                sb.append(String.valueOf(val));
-                if (it.hasNext())
-                {
-                    sb.append(",");
-                }
-            }
-            value = sb.toString();
-        }
-        else
-        {
-            value = String.valueOf(attributeValue);
-        }
-        return value;
+        return String.valueOf(attributeValue);
     }
 
     private  RecovererProvider createRecoveryProvider(final ConfigurationEntry[] entries, final ConfiguredObject[] objectsToRecoverer)

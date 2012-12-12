@@ -20,12 +20,9 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import static org.apache.qpid.server.util.MapValueConverter.getDoubleAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getEnumAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getLongAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getSetOfStringAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
 
 import java.net.InetSocketAddress;
@@ -36,7 +33,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -59,7 +55,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -104,13 +99,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private String _defaultVirtualHost;
     private String _aclFile;
     private int _sessionCountLimit;
-    private int _frameSize;
     private int _heartBeatDelay;
-    private double _heartBeatTimeoutFactor;
-    private AmqpProtocolVersion _defaultSupportedProtocolReply;
-    private Set<String> _disabledFeatures;
-    private boolean _statisticsEnabled;
-    private int _statisticsSamplePeriod;
     private int _statisticsReportingPeriod;
     private boolean _statisticsReportingResetEnabled;
 
@@ -144,13 +133,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _securityManager = new SecurityManager(_aclFile);
 
         _sessionCountLimit = getIntegerAttribute(SESSION_COUNT_LIMIT, attributes, 256);
-        _frameSize = getIntegerAttribute(FRAME_SIZE, attributes, Integer.getInteger(BrokerProperties.PROPERTY_FRAME_SIZE, BrokerProperties.DEFAULT_FRAME_SIZE));
         _heartBeatDelay = getIntegerAttribute(HEART_BEAT_DELAY, attributes, BrokerProperties.DEFAULT_HEART_BEAT_DELAY);
-        _heartBeatTimeoutFactor = getDoubleAttribute(HEART_BEAT_TIMEOUT_FACTOR, attributes, BrokerProperties.DEFAULT_HEART_BEAT_TIMEOUT_FACTOR);
-        _defaultSupportedProtocolReply = getEnumAttribute(AmqpProtocolVersion.class, DEFAULT_SUPPORTED_PROTOCOL_REPLY, attributes, null);
-        _disabledFeatures = getSetOfStringAttribute(DISABLED_FEATURES, attributes, Collections.<String>emptySet());
-        _statisticsEnabled = getBooleanAttribute(STATISTICS_ENABLED, attributes, false);
-        _statisticsSamplePeriod =  getIntegerAttribute(STATISTICS_SAMPLE_PERIOD, attributes, BrokerProperties.DEFAULT_STATISTICS_SAMPLE_PERIOD);
         _statisticsReportingPeriod =  getIntegerAttribute(STATISTICS_REPORTING_PERIOD, attributes, BrokerProperties.DEFAULT_STATISTICS_REPORTING_PERIOD);
         _statisticsReportingResetEnabled = getBooleanAttribute(STATISTICS_REPORTING_RESET_ENABLED, attributes, false);
     }
@@ -598,33 +581,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _sessionCountLimit;
         }
-        else if (FRAME_SIZE.equals(name))
-        {
-            return _frameSize;
-        }
         else if (HEART_BEAT_DELAY.equals(name))
         {
             return _heartBeatDelay;
-        }
-        else if (HEART_BEAT_TIMEOUT_FACTOR.equals(name))
-        {
-            return _heartBeatTimeoutFactor;
-        }
-        else if (DEFAULT_SUPPORTED_PROTOCOL_REPLY.equals(name))
-        {
-            return _defaultSupportedProtocolReply;
-        }
-        else if (DISABLED_FEATURES.equals(name))
-        {
-            return _disabledFeatures;
-        }
-        else if (STATISTICS_ENABLED.equals(name))
-        {
-            return _statisticsEnabled;
-        }
-        else if (STATISTICS_SAMPLE_PERIOD.equals(name))
-        {
-            return _statisticsSamplePeriod;
         }
         else if (STATISTICS_REPORTING_PERIOD.equals(name))
         {

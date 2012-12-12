@@ -29,6 +29,7 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -112,7 +113,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
                     ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT),
-                                                                                          (Integer)broker.getAttribute(Broker.FRAME_SIZE),
+                                                                                          BrokerProperties.DEFAULT_FRAME_SIZE,
                                                                                           (Integer)broker.getAttribute(Broker.HEART_BEAT_DELAY));
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;

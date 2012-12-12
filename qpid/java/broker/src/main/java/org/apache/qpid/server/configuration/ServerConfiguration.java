@@ -33,7 +33,6 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -45,10 +44,8 @@ public class ServerConfiguration extends AbstractConfiguration
 
     // Default Configuration values
     public static final int DEFAULT_BUFFER_SIZE = 262144;
-    public static final String DEFAULT_STATUS_UPDATES = "on";
     public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
 
-    public static final int DEFAULT_FRAME_SIZE = 65536;
     public static final int DEFAULT_PORT = 5672;
     public static final int DEFAULT_SSL_PORT = 5671;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
@@ -79,13 +76,11 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final String SECURITY_DEFAULT_AUTH_MANAGER = "security.default-auth-manager";
     public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_AUTH_MANAGER = "security.port-mappings.port-mapping.auth-manager";
     public static final String SECURITY_PORT_MAPPINGS_PORT_MAPPING_PORT = "security.port-mappings.port-mapping.port";
-    public static final String ADVANCED_LOCALE = "advanced.locale";
     public static final String CONNECTOR_AMQP10ENABLED = "connector.amqp10enabled";
     public static final String CONNECTOR_AMQP010ENABLED = "connector.amqp010enabled";
     public static final String CONNECTOR_AMQP091ENABLED = "connector.amqp091enabled";
     public static final String CONNECTOR_AMQP09ENABLED = "connector.amqp09enabled";
     public static final String CONNECTOR_AMQP08ENABLED = "connector.amqp08enabled";
-    public static final String CONNECTOR_AMQP_SUPPORTED_REPLY = "connector.amqpDefaultSupportedProtocolReply";
     public static final String CONNECTOR_INCLUDE_10 = "connector.include10";
     public static final String CONNECTOR_INCLUDE_010 = "connector.include010";
     public static final String CONNECTOR_INCLUDE_091 = "connector.include091";
@@ -93,7 +88,6 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final String CONNECTOR_INCLUDE_08 = "connector.include08";
 
     {
-        envVarMap.put(BrokerProperties.PROPERTY_FRAME_SIZE, "advanced.framesize");
         envVarMap.put(BrokerProperties.PROPERTY_MSG_AUTH, "security.msg-auth");
         envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_AGE, "maximumMessageAge");
         envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_COUNT, "maximumMessageCount");
@@ -395,16 +389,6 @@ public class ServerConfiguration extends AbstractConfiguration
         _virtualHosts.put(config.getName(), config);
     }
 
-    public int getFrameSize()
-    {
-        return getIntValue("advanced.framesize", DEFAULT_FRAME_SIZE);
-    }
-
-    public boolean getSynchedClocks()
-    {
-        return getBooleanValue("advanced.synced-clocks");
-    }
-
     public String getDefaultAuthenticationManager()
     {
         return getStringValue(SECURITY_DEFAULT_AUTH_MANAGER);
@@ -454,11 +438,6 @@ public class ServerConfiguration extends AbstractConfiguration
         return getIntValue("heartbeat.delay", 5);
     }
 
-    public double getHeartBeatTimeout()
-    {
-        return getDoubleValue("heartbeat.timeoutFactor", 2.0);
-    }
-
     @Deprecated
     public long getMaximumMessageAge()
     {
@@ -499,11 +478,6 @@ public class ServerConfiguration extends AbstractConfiguration
     public long getFlowResumeCapacity()
     {
         return getLongValue("flowResumeCapacity", getCapacity());
-    }
-
-    public int getConnectorProcessors()
-    {
-        return getIntValue("connector.processors", 4);
     }
 
     public List getPorts()
@@ -677,26 +651,6 @@ public class ServerConfiguration extends AbstractConfiguration
         return getLongValue("housekeeping.checkPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
     }
 
-    public long getStatisticsSamplePeriod()
-    {
-        return getConfig().getLong("statistics.sample.period", 5000L);
-    }
-
-    public boolean isStatisticsGenerationBrokerEnabled()
-    {
-        return getConfig().getBoolean("statistics.generation.broker", false);
-    }
-
-    public boolean isStatisticsGenerationVirtualhostsEnabled()
-    {
-        return getConfig().getBoolean("statistics.generation.virtualhosts", false);
-    }
-
-    public boolean isStatisticsGenerationConnectionsEnabled()
-    {
-        return getConfig().getBoolean("statistics.generation.connections", false);
-    }
-
     public long getStatisticsReportingPeriod()
     {
         return getConfig().getLong("statistics.reporting.period", 0L);
@@ -710,18 +664,6 @@ public class ServerConfiguration extends AbstractConfiguration
     public int getMaxChannelCount()
     {
         return getIntValue("maximumChannelCount", 256);
-    }
-
-    /**
-     * List of Broker features that have been disabled within configuration.  Disabled
-     * features won't be advertised to the clients on connection.
-     *
-     * @return list of disabled features, or empty list if no features are disabled.
-     */
-    public List<String> getDisabledFeatures()
-    {
-        final List<String> disabledFeatures = getListValue("disabledFeatures", Collections.emptyList());
-        return disabledFeatures;
     }
 
     public boolean getManagementRightsInferAllAccess()
@@ -785,16 +727,6 @@ public class ServerConfiguration extends AbstractConfiguration
     public boolean isAmqp08enabled()
     {
         return getConfig().getBoolean(CONNECTOR_AMQP08ENABLED, true);
-    }
-
-    /**
-     * Returns the configured default reply to an unsupported AMQP protocol initiation, or null if there is none
-     */
-    public AmqpProtocolVersion getDefaultSupportedProtocolReply()
-    {
-        String reply = getConfig().getString(CONNECTOR_AMQP_SUPPORTED_REPLY, null);
-
-        return reply == null ? null : AmqpProtocolVersion.valueOf(reply);
     }
 
     public File getVirtualHostsFile()

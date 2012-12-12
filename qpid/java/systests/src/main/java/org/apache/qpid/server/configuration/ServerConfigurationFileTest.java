@@ -42,6 +42,7 @@ public class ServerConfigurationFileTest extends QpidBrokerTestCase
             fail("Unable to test without config file:" + _configFile);
         }
 
+        getTestConfiguration().setProperty("connector.port", "9999");
         saveTestConfiguration();
         saveTestVirtualhosts();
         
@@ -62,9 +63,10 @@ public class ServerConfigurationFileTest extends QpidBrokerTestCase
                       _serverConfig.getConfig().getProperty(property));
     }
 
-    public void testLocale() throws ConfigurationException
+    public void testChangedProperty() throws ConfigurationException
     {
-        validatePropertyDefinedInFile(ServerConfiguration.ADVANCED_LOCALE);
+        validatePropertyDefinedInFile("connector.port");
+        assertEquals("Unexpected port", "9999", _serverConfig.getConfig().getProperty("connector.port"));
     }
 
 }

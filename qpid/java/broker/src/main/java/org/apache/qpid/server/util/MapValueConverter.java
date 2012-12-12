@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -173,27 +171,6 @@ public class MapValueConverter
         }
     }
 
-    public static Double getDoubleAttribute(String name, Map<String,Object> attributes, Double defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Number)
-        {
-            return ((Number) obj).doubleValue();
-        }
-        else if(obj instanceof String)
-        {
-            return Double.valueOf((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Double");
-        }
-    }
-
     public static <T> Set<T> getSetAttribute(String name, Map<String,Object> attributes)
     {
         assertMandatoryAttribute(name, attributes);
@@ -211,32 +188,6 @@ public class MapValueConverter
         else if(obj instanceof Set)
         {
             return (Set<T>) obj;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Set");
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static Set<String> getSetOfStringAttribute(String name, Map<String,Object> attributes, Set<String> defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Set)
-        {
-            return (Set<String>) obj;
-        }
-        else if(obj instanceof String)
-        {
-            return new HashSet<String>(Arrays.asList(((String)obj).split(",")));
-        }
-        else if(obj instanceof String[])
-        {
-            return new HashSet<String>(Arrays.asList((String[])obj));
         }
         else
         {

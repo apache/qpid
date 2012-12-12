@@ -27,12 +27,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.StringTokenizer;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.SecurityManager;
@@ -81,8 +81,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     private static List<String> getFeatures(Broker broker)
     {
-        @SuppressWarnings("unchecked")
-        Set<String> brokerDisabledFeatures = (Set<String>)broker.getAttribute(Broker.DISABLED_FEATURES);
+        String brokerDisabledFeatures = System.getProperty(BrokerProperties.PROPERTY_DISABLED_FEATURES);
         final List<String> features = new ArrayList<String>();
         if (brokerDisabledFeatures == null || !brokerDisabledFeatures.contains(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR))
         {

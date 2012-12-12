@@ -52,6 +52,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -748,7 +749,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         if (delay > 0)
         {
             _network.setMaxWriteIdle(delay);
-            _network.setMaxReadIdle(((Number)_broker.getAttribute(Broker.HEART_BEAT_TIMEOUT_FACTOR)).intValue() * delay);
+            _network.setMaxReadIdle(BrokerProperties.DEFAULT_HEART_BEAT_TIMEOUT_FACTOR * delay);
         }
     }
 

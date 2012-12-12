@@ -9,11 +9,9 @@ public class BrokerProperties
 {
     public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    public static final int  DEFAULT_FRAME_SIZE = 65536;
-    public static final int  DEFAULT_HEART_BEAT_DELAY = 5;
-    public static final double DEFAULT_HEART_BEAT_TIMEOUT_FACTOR = 2.0;
-    public static final int DEFAULT_STATISTICS_SAMPLE_PERIOD = 5000;
-    public static final int DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
+    public static final int  DEFAULT_HEART_BEAT_DELAY = 0;
+    public static final int  DEFAULT_HEART_BEAT_TIMEOUT_FACTOR = 2;
+    public static final int  DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
 
     public static final String PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX = "qpid.dead_letter_exchange_suffix";
     public static final String PROPERTY_DEAD_LETTER_QUEUE_SUFFIX = "qpid.dead_letter_queue_suffix";
@@ -29,8 +27,11 @@ public class BrokerProperties
     public static final String PROPERTY_FRAME_SIZE = "qpid.frame_size";
     public static final String PROPERTY_MSG_AUTH = "qpid.msg_auth";
     public static final String PROPERTY_STATUS_UPDATES = "qpid.status_updates";
-    public static final String PROPERTY_SYNCHED_CLOCKS = "qpid.synched_clocks";
     public static final String PROPERTY_LOCALE = "qpid.locale";
+    public static final String PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY = "qpid.default_supported_protocol_version_reply";
+    public static final String PROPERTY_DISABLED_FEATURES = "qpid.broker_disabled_features";
+
+    public static final int  DEFAULT_FRAME_SIZE = Integer.getInteger(PROPERTY_FRAME_SIZE, 65535);
 
     private BrokerProperties()
     {

@@ -28,7 +28,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.EnqueableMessage;
@@ -47,8 +46,6 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     /** Used for debugging purposes. */
     private static final Logger _logger = Logger.getLogger(IncomingMessage.class);
  
-    private static final boolean SYNCHED_CLOCKS = Boolean.getBoolean(BrokerProperties.PROPERTY_SYNCHED_CLOCKS);
-
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
 
@@ -100,33 +97,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     public void setExpiration()
     {
-            long expiration =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getExpiration();
-            long timestamp =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getTimestamp();
-
-            if (SYNCHED_CLOCKS)
-            {
-                _expiration = expiration;
-            }
-            else
-            {
-                // Update TTL to be in broker time.
-                if (expiration != 0L)
-                {
-                    if (timestamp != 0L)
-                    {
-                        // todo perhaps use arrival time
-                        long diff = (System.currentTimeMillis() - timestamp);
-
-                        if ((diff > 1000L) || (diff < 1000L))
-                        {
-                            _expiration = expiration + diff;
-                        }
-                    }
-                }
-            }
-
+        _expiration = ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getExpiration();
     }
 
     public MessageMetaData headersReceived(long currentTime)

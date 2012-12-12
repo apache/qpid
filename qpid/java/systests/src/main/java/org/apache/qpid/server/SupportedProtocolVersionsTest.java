@@ -23,6 +23,7 @@ package org.apache.qpid.server;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -145,7 +146,7 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
 
         //disable 0-10 support, and set the default unsupported protocol initiation reply to 0-9
         setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP_SUPPORTED_REPLY, "v0_9");
+        setTestSystemProperty(BrokerProperties.PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY, "v0_9");
 
         super.setUp();
 
