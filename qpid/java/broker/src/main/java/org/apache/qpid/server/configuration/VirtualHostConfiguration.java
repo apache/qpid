@@ -23,11 +23,13 @@ package org.apache.qpid.server.configuration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -45,6 +47,35 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         _name = name;
         _broker = broker;
         setConfiguration(config);
+    }
+
+    public VirtualHostConfiguration(String name, File configurationFile, Broker broker) throws ConfigurationException
+    {
+        _name = name;
+        _broker = broker;
+        Configuration configuration = null;
+        if (configurationFile == null)
+        {
+            configuration = new XMLConfiguration();
+        }
+        else
+        {
+            Configuration virtualHostConfig = XmlConfigurationUtilities.parseConfig(configurationFile, null);
+
+            Configuration config = virtualHostConfig.subset("virtualhost." + XmlConfigurationUtilities.escapeTagName(name));
+            if (config.isEmpty())
+            {
+                // try to load virtual host configuration from 'name' element
+                config = virtualHostConfig.subset(XmlConfigurationUtilities.escapeTagName(name));
+                if (config.isEmpty())
+                {
+                    // fallback to the original configuration
+                    config = virtualHostConfig;
+                }
+            }
+            configuration = config;
+        }
+        setConfiguration(configuration);
     }
 
     /**

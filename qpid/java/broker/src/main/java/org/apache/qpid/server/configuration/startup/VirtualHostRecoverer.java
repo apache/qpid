@@ -20,20 +20,9 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
-
-import java.io.File;
-import java.util.Map;
-
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.configuration.XmlConfigurationUtilities;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
@@ -54,45 +43,7 @@ public class VirtualHostRecoverer implements ConfiguredObjectRecoverer<VirtualHo
     public VirtualHost create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
         Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
-        Map<String, Object> attributes = entry.getAttributes();
-        String name = getStringAttribute(VirtualHost.NAME, attributes);
-        String configuration = getStringAttribute(VirtualHost.CONFIGURATION, attributes, null);
-        Configuration conf = null;
-        if (configuration == null)
-        {
-            // TODO throw an exception
-            conf = new XMLConfiguration();
-        }
-        else
-        {
-            File configurationFile = new File(configuration);
-            if (!configurationFile.exists())
-            {
-                throw new IllegalConfigurationException("Configuration file '" + configurationFile + "' for virtual host '" + name + "' does not exist.");
-            }
-
-            try
-            {
-                Configuration virtualHostConfig = XmlConfigurationUtilities.parseConfig(configurationFile, null);
-                conf = virtualHostConfig.subset("virtualhost." + XmlConfigurationUtilities.escapeTagName(name));
-            }
-            catch (ConfigurationException e)
-            {
-                throw new IllegalConfigurationException("Cannot load configuration for virtual host '" + name + "' from file " + configurationFile);
-            }
-        }
-        // TODO: remove virtual host configuration
-        VirtualHostConfiguration virtualHostConfiguration = null;
-        try
-        {
-            virtualHostConfiguration = new VirtualHostConfiguration(name, conf, broker);
-        }
-        catch (ConfigurationException e)
-        {
-            throw new IllegalConfigurationException("Cannot create configuration for virtual host '" + name + "'");
-        }
-        return new VirtualHostAdapter(entry.getId(), broker, attributes, _brokerStatisticsGatherer, broker.getSecurityManager(),
-                virtualHostConfiguration);
+        return new VirtualHostAdapter(entry.getId(), entry.getAttributes(),broker, _brokerStatisticsGatherer);
     }
 
 }

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.io.File;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -84,30 +85,20 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     private final Map<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter> _exchangeAdapters =
             new HashMap<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter>();
-
     private StatisticsAdapter _statistics;
-
     private final Broker _broker;
-
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
-
     private final String _name;
-
-    private VirtualHostConfiguration _configuration;
-
+    private final String _configurationFile;
     private StatisticsGatherer _brokerStatisticsGatherer;
 
-    private SecurityManager _securityManager;
-
-    public VirtualHostAdapter(UUID id, Broker broker, Map<String, Object> attributes,
-            StatisticsGatherer brokerStatisticsGatherer, SecurityManager securityManager, VirtualHostConfiguration configuration)
+    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer)
     {
         super(id);
         _broker = broker;
         _name = (String)attributes.get(NAME);
-        _configuration = configuration;
+        _configurationFile = (String)attributes.get(CONFIGURATION);
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
-        _securityManager = securityManager;
         addParent(Broker.class, broker);
     }
 
@@ -902,11 +893,12 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
             try
             {
-                _virtualHost = new VirtualHostImpl(virtualHostRegistry, _brokerStatisticsGatherer, _securityManager, _configuration);
+                VirtualHostConfiguration configuration = new VirtualHostConfiguration(_name, new File(_configurationFile) , _broker);
+                _virtualHost = new VirtualHostImpl(_broker.getVirtualHostRegistry(), _brokerStatisticsGatherer, _broker.getSecurityManager(), configuration);
             }
             catch (Exception e)
             {
-               throw new RuntimeException("Failed to create virtual host", e);
+               throw new RuntimeException("Failed to create virtual host " + _name, e);
             }
 
             virtualHostRegistry.registerVirtualHost(_virtualHost);

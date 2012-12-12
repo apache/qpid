@@ -213,8 +213,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), this, attributes,
-                _statisticsGatherer, _securityManager, null);
+        final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
+                _statisticsGatherer);
 
         synchronized (_vhostAdapters)
         {

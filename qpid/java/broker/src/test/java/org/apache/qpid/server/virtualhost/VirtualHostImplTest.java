@@ -21,15 +21,15 @@
 package org.apache.qpid.server.virtualhost;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import org.apache.commons.configuration.ConfigurationException;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -39,9 +39,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class VirtualHostImplTest extends QpidTestCase
 {
@@ -100,15 +97,11 @@ public class VirtualHostImplTest extends QpidTestCase
         }
         catch (RuntimeException e)
         {
-            // PASS
-            assertEquals("Failed to create virtual host", e.getMessage());
-
             assertNotNull(e.getCause());
-            assertNotNull(e.getCause().getCause());
 
-            assertEquals(ConfigurationException.class, e.getCause().getCause().getClass());
+            assertEquals(ConfigurationException.class, e.getCause().getClass());
 
-            Throwable configException = e.getCause().getCause();
+            Throwable configException = e.getCause();
             assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, configException.getMessage());
         }
     }
@@ -148,15 +141,11 @@ public class VirtualHostImplTest extends QpidTestCase
         }
         catch (RuntimeException e)
         {
-            // PASS
-            assertEquals("Failed to create virtual host", e.getMessage());
-
             assertNotNull(e.getCause());
-            assertNotNull(e.getCause().getCause());
 
-            assertEquals(ConfigurationException.class, e.getCause().getCause().getClass());
+            assertEquals(ConfigurationException.class, e.getCause().getClass());
 
-            Throwable configException = e.getCause().getCause();
+            Throwable configException = e.getCause();
             assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, configException.getMessage());
         }
     }
@@ -189,30 +178,14 @@ public class VirtualHostImplTest extends QpidTestCase
 
     private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
     {
-        recoverAndStartVirtualHost(vhostName, config);
-        return _virtualHostRegistry.getVirtualHost(vhostName);
-    }
-
-    private void recoverAndStartVirtualHost(String vhostName, File config)
-    {
-        // broker mock object with security manager
         Broker broker = BrokerTestHelper.createBrokerMock();
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
-        // configuration entry
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, vhostName);
-        attributes.put(org.apache.qpid.server.model.VirtualHost.CONFIGURATION, config.getAbsoluteFile());
-        ConfigurationEntry entry = mock(ConfigurationEntry.class);
-        when(entry.getId()).thenReturn(UUID.randomUUID());
-        when(entry.getAttributes()).thenReturn(attributes);
+        VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
+        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(null), configuration);
+        _virtualHostRegistry.registerVirtualHost(host);
 
-        // recovering
-        VirtualHostRecoverer recovever = new VirtualHostRecoverer(mock(StatisticsGatherer.class));
-        org.apache.qpid.server.model.VirtualHost model= recovever.create(null, entry, broker);
-
-        // starting
-        model.setDesiredState(org.apache.qpid.server.model.State.INITIALISING, org.apache.qpid.server.model.State.ACTIVE);
+        return host;
     }
 
     /**

@@ -79,7 +79,7 @@ public class VirtualHostConfigurationTest extends QpidTestCase
 
     private VirtualHost createVirtualHost(String hostName) throws Exception
     {
-        Configuration config = getConfigXml().subset("virtualhosts.virtualhost." + VirtualHostConfiguration.escapeTagName(hostName));
+        Configuration config = getConfigXml().subset("virtualhosts.virtualhost." + XmlConfigurationUtilities.escapeTagName(hostName));
         VirtualHostConfiguration virtualHostConfiguration = new VirtualHostConfiguration(hostName, config, _broker);
         return BrokerTestHelper.createVirtualHost(virtualHostConfiguration, _virtualHostRegistry);
     }
