@@ -61,12 +61,6 @@ public class ${type.name}Messages
         reload();
     }
 
-    public static void reload(Locale locale)
-    {
-        _currentLocale = locale;
-        reload();
-    }
-
     public static void reload()
     {
         _messages = ResourceBundle.getBundle("${resource}", _currentLocale);
