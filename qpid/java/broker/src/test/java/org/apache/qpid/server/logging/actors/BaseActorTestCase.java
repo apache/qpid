@@ -29,10 +29,10 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BaseActorTestCase extends QpidTestCase
 {
-    protected boolean _statusUpdatesEnabled = true;
-    protected LogActor _amqpActor;
-    protected UnitTestMessageLogger _rawLogger;
-    protected RootMessageLogger _rootLogger;
+    private boolean _statusUpdatesEnabled = true;
+    private LogActor _amqpActor;
+    private UnitTestMessageLogger _rawLogger;
+    private RootMessageLogger _rootLogger;
 
     @Override
     public void setUp() throws Exception
@@ -85,6 +85,36 @@ public class BaseActorTestCase extends QpidTestCase
                 return "test.hierarchy";
             }
         });
+    }
+
+    public boolean isStatusUpdatesEnabled()
+    {
+        return _statusUpdatesEnabled;
+    }
+
+    public void setStatusUpdatesEnabled(boolean statusUpdatesEnabled)
+    {
+        _statusUpdatesEnabled = statusUpdatesEnabled;
+    }
+
+    public LogActor getAmqpActor()
+    {
+        return _amqpActor;
+    }
+
+    public void setAmqpActor(LogActor amqpActor)
+    {
+        _amqpActor = amqpActor;
+    }
+
+    public UnitTestMessageLogger getRawLogger()
+    {
+        return _rawLogger;
+    }
+
+    public RootMessageLogger getRootLogger()
+    {
+        return _rootLogger;
     }
 
 }

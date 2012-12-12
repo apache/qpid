@@ -45,9 +45,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     private void setUpNow() throws Exception
     {
         super.setUp();
-        AMQChannel channel = BrokerTestHelper.createChannel(1, _session);
+        AMQChannel channel = BrokerTestHelper.createChannel(1, getSession());
 
-        _amqpActor = new AMQPChannelActor(channel, _rootLogger);
+        setAmqpActor(new AMQPChannelActor(channel, getRootLogger()));
     }
 
 
@@ -62,9 +62,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         setUpNow();
 
-        final String message = sendTestLogMessage(_amqpActor);
+        final String message = sendTestLogMessage(getAmqpActor());
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 
@@ -93,13 +93,13 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingOFF() throws Exception
     {
-        _statusUpdatesEnabled = false;
+        setStatusUpdatesEnabled(false);
 
         setUpNow();
 
-        sendTestLogMessage(_amqpActor);
+        sendTestLogMessage(getAmqpActor());
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 0, logs.size());
     }

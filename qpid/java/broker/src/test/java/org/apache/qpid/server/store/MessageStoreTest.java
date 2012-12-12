@@ -96,10 +96,10 @@ public class MessageStoreTest extends QpidTestCase
 
     private AMQShortString queueOwner = new AMQShortString("MST");
 
-    protected PropertiesConfiguration _config;
+    private PropertiesConfiguration _config;
 
-    protected VirtualHost _virtualHost;
-    protected Broker _broker;
+    private VirtualHost _virtualHost;
+    private Broker _broker;
 
     public void setUp() throws Exception
     {
@@ -136,6 +136,11 @@ public class MessageStoreTest extends QpidTestCase
     public VirtualHost getVirtualHost()
     {
         return _virtualHost;
+    }
+
+    public PropertiesConfiguration getConfig()
+    {
+        return _config;
     }
 
     protected void reloadVirtualHost()

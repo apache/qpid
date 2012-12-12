@@ -44,9 +44,9 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 
         MockSubscription mockSubscription = new MockSubscription();
 
-        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), _session.getVirtualHost()), false);
+        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), getSession().getVirtualHost()), false);
 
-        _amqpActor = new SubscriptionActor(_rootLogger, mockSubscription);
+        setAmqpActor(new SubscriptionActor(getRootLogger(), mockSubscription));
     }
 
     /**
@@ -59,9 +59,9 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
      */
     public void testSubscription()
     {
-        final String message = sendTestLogMessage(_amqpActor);
+        final String message = sendTestLogMessage(getAmqpActor());
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 

@@ -64,8 +64,8 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
     private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTestBase.class);
 
     private final HeadersExchange exchange = new HeadersExchange();
-    protected final Set<TestQueue> queues = new HashSet<TestQueue>();
-    protected VirtualHost _virtualHost;
+    private final Set<TestQueue> queues = new HashSet<TestQueue>();
+    private VirtualHost _virtualHost;
     private int count;
 
     @Override
@@ -95,6 +95,11 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
     public void testDoNothing()
     {
         // this is here only to make junit under Eclipse happy
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
     }
 
     protected TestQueue bindDefault(String... bindings) throws AMQException

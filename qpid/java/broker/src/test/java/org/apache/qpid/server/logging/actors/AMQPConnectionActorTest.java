@@ -57,7 +57,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 
         final String message = sendLogMessage();
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 
@@ -81,13 +81,13 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 
     public void testConnectionLoggingOff() throws Exception, AMQException
     {
-        _statusUpdatesEnabled = false;
+        setStatusUpdatesEnabled(false);
 
         super.setUp();
 
         sendLogMessage();
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 0, logs.size());
 
@@ -97,7 +97,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
     {
         final String message = "test logging";
 
-        _amqpActor.message(new LogSubject()
+        getAmqpActor().message(new LogSubject()
         {
             public String toLogString()
             {

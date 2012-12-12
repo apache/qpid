@@ -29,7 +29,7 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 public class ConnectionLogSubjectTest extends AbstractTestLogSubject
 {
 
-    protected InternalTestProtocolSession _session;
+    private InternalTestProtocolSession _session;
 
     @Override
     public void setUp() throws Exception
@@ -58,6 +58,11 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
     protected void validateLogStatement(String message)
     {
         verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
+    }
+
+    public InternalTestProtocolSession getSession()
+    {
+        return _session;
     }
 
 }

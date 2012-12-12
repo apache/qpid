@@ -25,7 +25,7 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class BaseConnectionActorTestCase extends BaseActorTestCase
 {
-    protected AMQProtocolSession _session;
+    private AMQProtocolSession _session;
 
     @Override
     public void setUp() throws Exception
@@ -33,7 +33,7 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
         super.setUp();
 
         _session = BrokerTestHelper.createSession();
-        _amqpActor = new AMQPConnectionActor(_session, _rootLogger);
+        setAmqpActor(new AMQPConnectionActor(_session, getRootLogger()));
     }
 
     @Override
@@ -51,4 +51,10 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
             super.tearDown();
         }
     }
+
+    public AMQProtocolSession getSession()
+    {
+        return _session;
+    }
+
 }

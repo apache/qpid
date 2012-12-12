@@ -63,14 +63,14 @@ import java.util.concurrent.TimeUnit;
 public class SimpleAMQQueueTest extends QpidTestCase
 {
 
-    protected SimpleAMQQueue _queue;
-    protected VirtualHost _virtualHost;
-    protected AMQShortString _qname = new AMQShortString("qname");
-    protected AMQShortString _owner = new AMQShortString("owner");
-    protected AMQShortString _routingKey = new AMQShortString("routing key");
-    protected DirectExchange _exchange;
-    protected MockSubscription _subscription = new MockSubscription();
-    protected FieldTable _arguments = null;
+    private SimpleAMQQueue _queue;
+    private VirtualHost _virtualHost;
+    private AMQShortString _qname = new AMQShortString("qname");
+    private AMQShortString _owner = new AMQShortString("owner");
+    private AMQShortString _routingKey = new AMQShortString("routing key");
+    private DirectExchange _exchange;
+    private MockSubscription _subscription = new MockSubscription();
+    private FieldTable _arguments = null;
 
     private MessagePublishInfo info = new MessagePublishInfo()
     {
@@ -1259,6 +1259,26 @@ public class SimpleAMQQueueTest extends QpidTestCase
             assertTrue("Consumer did not recieve msg: "
                     + msg.getMessage().getMessageNumber(), delivered.contains(msg));
         }
+    }
+
+    public SimpleAMQQueue getQueue()
+    {
+        return _queue;
+    }
+
+    public MockSubscription getSubscription()
+    {
+        return _subscription;
+    }
+
+    public FieldTable getArguments()
+    {
+        return _arguments;
+    }
+
+    public void setArguments(FieldTable arguments)
+    {
+        _arguments = arguments;
     }
 
     public class TestMessage extends AMQMessage
