@@ -50,7 +50,7 @@ public class LocalTransaction implements ServerTransaction
 
     private volatile Transaction _transaction;
     private MessageStore _transactionLog;
-    private long _txnStartTime = 0L;
+    private volatile long _txnStartTime = 0L;
     private StoreFuture _asyncTran;
 
     public LocalTransaction(MessageStore transactionLog)
