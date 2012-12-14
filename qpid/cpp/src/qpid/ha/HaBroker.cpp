@@ -79,6 +79,11 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     }
 }
 
+namespace {
+const std::string NONE("none");
+bool isNone(const std::string& x) { return x.empty() || x == NONE; }
+}
+
 // Called in Plugin::initialize
 void HaBroker::initialize() {
 
@@ -110,10 +115,9 @@ void HaBroker::initialize() {
         backup.reset(new Backup(*this, settings));
         broker.getKnownBrokers = boost::bind(&HaBroker::getKnownBrokers, this);
         statusCheck.reset(new StatusCheck(logPrefix, broker.getLinkHearbeatInterval(), brokerInfo));
+        if (!isNone(settings.publicUrl)) setPublicUrl(Url(settings.publicUrl));
+        if (!isNone(settings.brokerUrl)) setBrokerUrl(Url(settings.brokerUrl));
     }
-
-    if (!settings.clientUrl.empty()) setClientUrl(Url(settings.clientUrl));
-    if (!settings.brokerUrl.empty()) setBrokerUrl(Url(settings.brokerUrl));
 
 
     // NOTE: lock is not needed in a constructor, but create one
@@ -182,7 +186,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           break;
       }
       case _qmf::HaBroker::METHOD_SETPUBLICURL: {
-          setClientUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicUrl&>(args).i_url));
+          setPublicUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetPublicUrl&>(args).i_url));
           break;
       }
       case _qmf::HaBroker::METHOD_REPLICATE: {
@@ -217,19 +221,13 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
     return Manageable::STATUS_OK;
 }
 
-void HaBroker::setClientUrl(const Url& url) {
+void HaBroker::setPublicUrl(const Url& url) {
     Mutex::ScopedLock l(lock);
-    if (url.empty()) throw Exception("Invalid empty URL for HA client failover");
-    clientUrl = url;
-    updateClientUrl(l);
-}
-
-void HaBroker::updateClientUrl(Mutex::ScopedLock&) {
-    Url url = clientUrl.empty() ? brokerUrl : clientUrl;
+    publicUrl = url;
     mgmtObject->set_publicUrl(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
-    QPID_LOG(debug, logPrefix << "Setting client URL to: " << url);
+    QPID_LOG(debug, logPrefix << "Setting public URL to: " << url);
 }
 
 void HaBroker::setBrokerUrl(const Url& url) {
@@ -238,10 +236,8 @@ void HaBroker::setBrokerUrl(const Url& url) {
         Mutex::ScopedLock l(lock);
         brokerUrl = url;
         mgmtObject->set_brokersUrl(brokerUrl.str());
-        QPID_LOG(info, logPrefix << "Broker URL set to: " << url);
+        QPID_LOG(info, logPrefix << "Brokers URL set to: " << url);
         if (status == JOINING && statusCheck.get()) statusCheck->setUrl(url);
-        // Updating broker URL also updates defaulted client URL:
-        if (clientUrl.empty()) updateClientUrl(l);
         b = backup;
     }
     if (b) b->setBrokerUrl(url); // Oustside lock, avoid deadlock

@@ -37,7 +37,7 @@ struct Options : public qpid::Options {
              "Enable replication of specific queues without joining a cluster")
             ("ha-brokers-url", optValue(settings.brokerUrl,"URL"),
              "URL with address of each broker in the cluster.")
-            ("ha-public-url", optValue(settings.clientUrl,"URL"),
+            ("ha-public-url", optValue(settings.publicUrl,"URL"),
              "URL advertized to clients to connect to the cluster.")
             ("ha-replicate",
              optValue(settings.replicateDefault, "LEVEL"),
