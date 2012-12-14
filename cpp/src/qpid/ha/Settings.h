@@ -42,7 +42,7 @@ class Settings
 
     bool cluster;               // True if we are a cluster member.
     bool queueReplication;      // True if enabled.
-    std::string clientUrl;
+    std::string publicUrl;
     std::string brokerUrl;
     Enum<ReplicateLevel> replicateDefault;
     std::string username, password, mechanism;

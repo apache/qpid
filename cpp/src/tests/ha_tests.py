@@ -782,9 +782,9 @@ acl deny all all
         cluster[1].wait_queue("q0")
         cluster[1].wait_queue("q1")
         cluster[0].kill()
-        cluster[1].wait_queue("q1")                       # Not timed out yet
-        cluster[1].wait_no_queue("q1", timeout=2)         # Wait for timeout
-        cluster[1].wait_no_queue("q0", timeout=2)
+        cluster[1].wait_queue("q1")    # Not timed out yet
+        cluster[1].wait_no_queue("q1") # Wait for timeout
+        cluster[1].wait_no_queue("q0")
 
     def test_alt_exchange_dup(self):
         """QPID-4349: if a queue has an alterante exchange and is deleted the
@@ -1134,6 +1134,38 @@ class RecoveryTests(HaBrokerTest):
         os.kill(cluster[1].pid, signal.SIGSTOP) # Test for timeout if unresponsive.
         cluster.bounce(0, promote_next=False)
         cluster[0].promote()
+
+
+class ConfigurationTests(HaBrokerTest):
+    """Tests for configuration settings."""
+
+    def test_client_broker_url(self):
+        """Check that setting of broker and public URLs obeys correct defaulting
+        and precedence"""
+
+        def check(broker, brokers, public):
+            qmf = broker.qmf()
+            self.assertEqual(brokers, qmf.brokersUrl)
+            self.assertEqual(public, qmf.publicUrl)
+
+        def start(brokers, public, known=None):
+            args=[]
+            if brokers: args.append("--ha-brokers-url="+brokers)
+            if public: args.append("--ha-public-url="+public)
+            if known: args.append("--known-hosts-url="+known)
+            return HaBroker(self, args=args)
+
+        # Both set explictily, no defaulting
+        b = start("foo:123", "bar:456")
+        check(b, "amqp:tcp:foo:123", "amqp:tcp:bar:456")
+        b.set_brokers_url("foo:999")
+        check(b, "amqp:tcp:foo:999", "amqp:tcp:bar:456")
+        b.set_public_url("bar:999")
+        check(b, "amqp:tcp:foo:999", "amqp:tcp:bar:999")
+
+        # Allow "none" to mean "not set"
+        b = start("none", "none")
+        check(b, "", "")
 
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
