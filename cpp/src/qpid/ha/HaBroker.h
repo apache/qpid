@@ -100,7 +100,7 @@ class HaBroker : public management::Manageable
     types::Uuid getSystemId() const { return systemId; }
 
   private:
-    void setClientUrl(const Url&);
+    void setPublicUrl(const Url&);
     void setBrokerUrl(const Url&);
     void updateClientUrl(sys::Mutex::ScopedLock&);
 
@@ -125,7 +125,7 @@ class HaBroker : public management::Manageable
     boost::shared_ptr<Backup> backup;
     boost::shared_ptr<Primary> primary;
     qmf::org::apache::qpid::ha::HaBroker::shared_ptr mgmtObject;
-    Url clientUrl, brokerUrl;
+    Url publicUrl, brokerUrl;
     std::vector<Url> knownBrokers;
     BrokerStatus status;
     BrokerInfo brokerInfo;

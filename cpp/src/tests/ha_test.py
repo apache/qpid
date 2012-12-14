@@ -100,7 +100,7 @@ class HaBroker(Broker):
         self.qpid_ha_script.main_except(["", "-b", url]+args)
 
     def promote(self): self.ready(); self.qpid_ha(["promote"])
-    def set_client_url(self, url): self.qpid_ha(["set", "--public-url", url])
+    def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
     def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url])
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
 
@@ -113,10 +113,12 @@ class HaBroker(Broker):
                 self._agent = QmfAgent(self.host_port())
         return self._agent
 
-    def ha_status(self):
+    def qmf(self):
         hb = self.agent().getHaBroker()
         hb.update()
-        return hb.status
+        return hb
+
+    def ha_status(self): return self.qmf().status
 
     def wait_status(self, status):
         def try_get_status():
@@ -234,7 +236,9 @@ class HaCluster(object):
     def update_urls(self):
         self.url = ",".join([b.host_port() for b in self])
         if len(self) > 1:          # No failover addresses on a 1 cluster.
-            for b in self: b.set_brokers_url(self.url)
+            for b in self:
+                b.set_brokers_url(self.url)
+                b.set_public_url(self.url)
 
     def connect(self, i):
         """Connect with reconnect_urls"""
