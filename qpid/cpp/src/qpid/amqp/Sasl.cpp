@@ -58,29 +58,35 @@ void Sasl::endFrame(void* frame)
 
 std::size_t Sasl::read(const char* data, size_t available)
 {
-    Decoder decoder(data, available);
-    //read frame-header
-    uint32_t frameSize = decoder.readUInt();
-    QPID_LOG(trace, "Reading SASL frame of size " << frameSize);
-    decoder.resetSize(frameSize);
-    uint8_t dataOffset = decoder.readUByte();
-    uint8_t frameType = decoder.readUByte();
-    if (frameType != 0x01) {
-        QPID_LOG(error, "Expected SASL frame; got type " << frameType);
-    }
-    uint16_t ignored = decoder.readUShort();
-    if (ignored) {
-        QPID_LOG(info, "Got non null bytes at end of SASL frame header");
-    }
+    size_t consumed = 0;
+    while (available - consumed > 4/*framesize*/) {
+        Decoder decoder(data+consumed, available-consumed);
+        //read frame-header
+        uint32_t frameSize = decoder.readUInt();
+        if (frameSize > decoder.getSize()) break;//don't have all the data for this frame yet
 
-    //body is at offset 4*dataOffset from the start
-    size_t skip = dataOffset*4 - 8;
-    if (skip) {
-        QPID_LOG(info, "Offset for sasl frame was not as expected");
-        decoder.advance(skip);
+        QPID_LOG(trace, "Reading SASL frame of size " << frameSize);
+        decoder.resetSize(frameSize);
+        uint8_t dataOffset = decoder.readUByte();
+        uint8_t frameType = decoder.readUByte();
+        if (frameType != 0x01) {
+            QPID_LOG(error, "Expected SASL frame; got type " << frameType);
+        }
+        uint16_t ignored = decoder.readUShort();
+        if (ignored) {
+            QPID_LOG(info, "Got non null bytes at end of SASL frame header");
+        }
+
+        //body is at offset 4*dataOffset from the start
+        size_t skip = dataOffset*4 - 8;
+        if (skip) {
+            QPID_LOG(info, "Offset for sasl frame was not as expected");
+            decoder.advance(skip);
+        }
+        decoder.read(*this);
+        consumed += decoder.getPosition();
     }
-    decoder.read(*this);
-    return decoder.getPosition();
+    return consumed;
 }
 
 std::size_t Sasl::write(char* data, size_t size)

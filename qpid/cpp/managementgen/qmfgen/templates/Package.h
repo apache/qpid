@@ -24,7 +24,9 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
+/*MGEN:IF(Root.InBroker)*/
 #include "qmf/BrokerImportExport.h"
+/*MGEN:ENDIF*/
 
 namespace qmf {
 /*MGEN:Class.OpenNamespaces*/
@@ -32,8 +34,8 @@ namespace qmf {
 class Package
 {
   public:
-    QPID_BROKER_EXTERN Package (::qpid::management::ManagementAgent* agent);
-    QPID_BROKER_EXTERN ~Package () {}
+    /*MGEN:Root.ExternMethod*/ Package (::qpid::management::ManagementAgent* agent);
+    /*MGEN:Root.ExternMethod*/ ~Package () {}
 };
 
 }/*MGEN:Class.CloseNamespaces*/

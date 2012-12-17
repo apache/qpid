@@ -29,7 +29,7 @@ rubylibdir = $(RUBY_LIB)
 
 dist_rubylib_DATA = qmf.rb
 
-qmfengine.cpp: $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
+qmfengine.cpp: $(srcdir)/ruby.i
 	$(SWIG) -ruby -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o qmfengine.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)

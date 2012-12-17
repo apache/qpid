@@ -22,7 +22,9 @@
 ##------------------------------------------------------
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES CPLUSPLUS ON)
 
-include_directories(${RUBY_INCLUDE_DIRS} ${qpid-cpp_SOURCE_DIR}/include)
+include_directories(${RUBY_INCLUDE_DIRS}
+                    ${qpid-cpp_SOURCE_DIR}/include
+                    ${qpid-cpp_SOURCE_DIR}/bindings)
 
 swig_add_module(cqmf2_ruby ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
 swig_link_libraries(cqmf2_ruby qmf2 ${RUBY_LIBRARY})

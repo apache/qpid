@@ -53,6 +53,7 @@ class SenderContext
         void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
         void send(pn_link_t*);
         bool accepted();
+        void settle();
       private:
         int32_t id;
         pn_delivery_t* token;
@@ -69,6 +70,7 @@ class SenderContext
     const std::string& getTarget() const;
     Delivery* send(const qpid::messaging::Message& message);
     void configure() const;
+    bool settled();
   private:
     friend class ConnectionContext;
     typedef std::deque<Delivery> Deliveries;

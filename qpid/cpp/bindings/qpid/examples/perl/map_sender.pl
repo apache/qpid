@@ -1,4 +1,4 @@
-#! /usr/bin/perl5
+#! /usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,27 +21,27 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use cqpid_perl;
+use qpid;
 
 my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
 my $address           = ( @ARGV > 1 ) ? $ARGV[1] : "message_queue; {create: always}";
 my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[2] : "";
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+my $connection = new qpid::messaging::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
 
-    my $session = $connection->createSession();
-    my $sender  = $session->createSender($address);
+    my $session = $connection->create_session();
+    my $sender  = $session->create_sender($address);
 
-    my $message = new cqpid_perl::Message();
-    my $content = { id   => 987654321, 
-                    name => "Widget", 
-                    percent => sprintf("%.2f", 0.99), 
-                    colours => [ qw (red green white) ], 
+    my $message = new qpid::messaging::Message();
+    my $content = { id   => 987654321,
+                    name => "Widget",
+                    percent => sprintf("%.2f", 0.99),
+                    colours => [ qw (red green white) ],
                    };
-    cqpid_perl::encode($content, $message);
+    qpid::messaging::encode($content, $message);
     $sender->send($message, 1);
 
     $connection->close();

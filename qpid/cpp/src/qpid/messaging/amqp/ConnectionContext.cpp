@@ -53,7 +53,8 @@ ConnectionContext::ConnectionContext(const std::string& u, const qpid::types::Va
       writeHeader(false),
       readHeader(false),
       haveOutput(false),
-      state(DISCONNECTED)
+      state(DISCONNECTED),
+      codecSwitch(*this)
 {
     if (pn_transport_bind(engine, connection)) {
         //error
@@ -149,7 +150,14 @@ void ConnectionContext::close()
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (state != CONNECTED) return;
     if (!(pn_connection_state(connection) & PN_LOCAL_CLOSED)) {
-        for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i){
+        for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
+            //wait for outstanding sends to settle
+            while (!i->second->settled()) {
+                QPID_LOG(debug, "Waiting for sends to settle before closing");
+                wait();//wait until message has been confirmed
+            }
+
+
             if (!(pn_session_state(i->second->session) & PN_LOCAL_CLOSED)) {
                 pn_session_close(i->second->session);
             }
@@ -181,6 +189,7 @@ bool ConnectionContext::fetch(boost::shared_ptr<SessionContext> ssn, boost::shar
         qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
         if (lnk->capacity) {
             pn_link_flow(lnk->receiver, 1);//TODO: is this the right approach?
+            wakeupDriver();
         }
         return true;
     } else {
@@ -188,12 +197,24 @@ bool ConnectionContext::fetch(boost::shared_ptr<SessionContext> ssn, boost::shar
             qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
             pn_link_drain(lnk->receiver, 0);
             wakeupDriver();
-            while (pn_link_credit((pn_link_t*) lnk->receiver) - pn_link_queued((pn_link_t*) lnk->receiver)) {
-                QPID_LOG(notice, "Waiting for credit to be drained: " << (pn_link_credit((pn_link_t*) lnk->receiver) - pn_link_queued((pn_link_t*) lnk->receiver)));
+            while (pn_link_credit(lnk->receiver) && !pn_link_queued(lnk->receiver)) {
+                QPID_LOG(debug, "Waiting for message or for credit to be drained: credit=" << pn_link_credit(lnk->receiver) << ", queued=" << pn_link_queued(lnk->receiver));
                 wait();
             }
+            if (lnk->capacity && pn_link_queued(lnk->receiver) == 0) {
+                pn_link_flow(lnk->receiver, lnk->capacity);
+            }
         }
-        return get(ssn, lnk, message, qpid::messaging::Duration::IMMEDIATE);
+        if (get(ssn, lnk, message, qpid::messaging::Duration::IMMEDIATE)) {
+            qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+            if (lnk->capacity) {
+                pn_link_flow(lnk->receiver, 1);
+                wakeupDriver();
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -322,6 +343,7 @@ void ConnectionContext::setCapacity(boost::shared_ptr<ReceiverContext> receiver,
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     receiver->setCapacity(capacity);
     pn_link_flow((pn_link_t*) receiver->receiver, receiver->getCapacity());
+    wakeupDriver();
 }
 uint32_t ConnectionContext::getCapacity(boost::shared_ptr<ReceiverContext> receiver)
 {
@@ -543,13 +565,48 @@ bool ConnectionContext::useSasl()
 
 qpid::sys::Codec& ConnectionContext::getCodec()
 {
-    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    if (sasl.get()) {
-        qpid::sys::Codec* c = sasl->getCodec();
-        if (c) return *c;
-        lock.notifyAll();
-    }
-    return *this;
+    return codecSwitch;
 }
+
+ConnectionContext::CodecSwitch::CodecSwitch(ConnectionContext& p) : parent(p) {}
+std::size_t ConnectionContext::CodecSwitch::decode(const char* buffer, std::size_t size)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(parent.lock);
+    size_t decoded = 0;
+    if (parent.sasl.get() && !parent.sasl->authenticated()) {
+        decoded = parent.sasl->decode(buffer, size);
+        if (!parent.sasl->authenticated()) return decoded;
+    }
+    if (decoded < size) {
+        if (parent.sasl.get() && parent.sasl->getSecurityLayer()) decoded += parent.sasl->getSecurityLayer()->decode(buffer+decoded, size-decoded);
+        else decoded += parent.decode(buffer+decoded, size-decoded);
+    }
+    return decoded;
+}
+std::size_t ConnectionContext::CodecSwitch::encode(char* buffer, std::size_t size)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(parent.lock);
+    size_t encoded = 0;
+    if (parent.sasl.get() && parent.sasl->canEncode()) {
+        encoded += parent.sasl->encode(buffer, size);
+        if (!parent.sasl->authenticated()) return encoded;
+    }
+    if (encoded < size) {
+        if (parent.sasl.get() && parent.sasl->getSecurityLayer()) encoded += parent.sasl->getSecurityLayer()->encode(buffer+encoded, size-encoded);
+        else encoded += parent.encode(buffer+encoded, size-encoded);
+    }
+    return encoded;
+}
+bool ConnectionContext::CodecSwitch::canEncode()
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(parent.lock);
+    if (parent.sasl.get()) {
+        if (parent.sasl->canEncode()) return true;
+        else if (!parent.sasl->authenticated()) return false;
+        else if (parent.sasl->getSecurityLayer()) return parent.sasl->getSecurityLayer()->canEncode();
+    }
+    return parent.canEncode();
+}
+
 
 }}} // namespace qpid::messaging::amqp

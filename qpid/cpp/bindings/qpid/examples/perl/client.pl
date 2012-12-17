@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,23 +20,23 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 
 my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : ""; 
+my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : "";
 
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+my $connection = new qpid::messaging::Connection($url, $connectionOptions);
 
 eval {
 $connection->open();
-my $session = $connection->createSession();
+my $session = $connection->create_session();
 
-my $sender = $session->createSender("service_queue");
+my $sender = $session->create_sender("service_queue");
 
 #create temp queue & receiver...
-my $responseQueue = new cqpid_perl::Address("#response-queue; {create:always, delete:always}");
-my $receiver = $session->createReceiver($responseQueue);
+my $responseQueue = new qpid::messaging::Address("#response-queue; {create:always, delete:always}");
+my $receiver = $session->create_receiver($responseQueue);
 
 #Now send some messages...
 
@@ -47,13 +47,13 @@ my @s = (
       "And the mome raths outgrabe."
      );
 
-my $request = new cqpid_perl::Message();
-$request->setReplyTo($responseQueue);
+my $request = new qpid::messaging::Message();
+$request->set_reply_to($responseQueue);
 for (my $i=0; $i<4; $i++) {
-    $request->setContent($s[$i]);
+    $request->set_content($s[$i]);
     $sender->send($request);
     my $response = $receiver->fetch();
-    print $request->getContent() . " -> " . $response->getContent() . "\n";
+    print $request->get_content() . " -> " . $response->get_content() . "\n";
 }
 
 $connection->close();

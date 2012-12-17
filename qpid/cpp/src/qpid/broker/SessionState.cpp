@@ -65,7 +65,7 @@ SessionState::SessionState(
 }
 
 void SessionState::addManagementObject() {
-    if (GetManagementObject()) return; // Already added.
+    if (GetManagementObjectShared()) return; // Already added.
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
         ManagementAgent* agent = getBroker().getManagementAgent();
@@ -127,7 +127,7 @@ void SessionState::attach(SessionHandler& h) {
     if (mgmtObject != 0)
     {
         mgmtObject->set_attached (1);
-        mgmtObject->set_connectionRef (h.getConnection().GetManagementObject()->getObjectId());
+        mgmtObject->set_connectionRef (h.getConnection().GetManagementObjectShared()->getObjectId());
         mgmtObject->set_channelId (h.getChannel());
     }
     asyncCommandCompleter->attached();
@@ -148,7 +148,7 @@ void SessionState::giveReadCredit(int32_t credit) {
         getConnection().outputTasks.giveReadCredit(credit);
 }
 
-ManagementObject::shared_ptr SessionState::GetManagementObject (void) const
+ManagementObject::shared_ptr SessionState::GetManagementObjectShared (void) const
 {
     return mgmtObject;
 }

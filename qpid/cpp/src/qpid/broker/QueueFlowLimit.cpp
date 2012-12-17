@@ -78,7 +78,7 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
         if (queue->getSettings().maxDepth.hasCount()) maxCount = queue->getSettings().maxDepth.getCount();
         if (queue->getSettings().maxDepth.hasCount()) maxSize = queue->getSettings().maxDepth.getSize();
         broker = queue->getBroker();
-        queueMgmtObj = boost::dynamic_pointer_cast<_qmfBroker::Queue> (queue->GetManagementObject());
+        queueMgmtObj = boost::dynamic_pointer_cast<_qmfBroker::Queue> (queue->GetManagementObjectShared());
         if (queueMgmtObj) {
             queueMgmtObj->set_flowStopped(isFlowControlActive());
         }

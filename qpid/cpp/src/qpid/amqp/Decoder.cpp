@@ -540,5 +540,6 @@ CharSequence Decoder::readRawUuid()
 }
 
 size_t Decoder::getPosition() const { return position; }
+size_t Decoder::getSize() const { return size; }
 void Decoder::resetSize(size_t s) { size = s; }
 }} // namespace qpid::amqp

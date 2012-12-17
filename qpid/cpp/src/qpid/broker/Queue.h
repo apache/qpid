@@ -340,7 +340,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void countLoadedFromDisk(uint64_t size) const;
 
     // Manageable entry points
-    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObjectShared (void) const;
     management::Manageable::status_t
     QPID_BROKER_EXTERN ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     QPID_BROKER_EXTERN void query(::qpid::types::Variant::Map&) const;

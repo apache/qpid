@@ -198,7 +198,7 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
                 new _qmf::Queue(agent, this, parent, _name, _store != 0, settings.autodelete));
             mgmtObject->set_arguments(settings.asMap());
             agent->addObject(mgmtObject, 0, store != 0);
-            brokerMgmtObject = boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObject());
+            brokerMgmtObject = boost::dynamic_pointer_cast<_qmf::Broker>(broker->GetManagementObjectShared());
             if (brokerMgmtObject)
                 brokerMgmtObject->inc_queueCount();
         }
@@ -1108,7 +1108,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
 {
     if (mgmtObject != 0 && persistenceId == 0 && externalQueueStore)
     {
-        ManagementObject::shared_ptr childObj = externalQueueStore->GetManagementObject();
+        ManagementObject::shared_ptr childObj = externalQueueStore->GetManagementObjectShared();
         if (childObj != 0)
             childObj->setReference(mgmtObject->getObjectId());
     }
@@ -1154,7 +1154,7 @@ void Queue::setAlternateExchange(boost::shared_ptr<Exchange> exchange)
     alternateExchange = exchange;
     if (mgmtObject) {
         if (exchange.get() != 0)
-            mgmtObject->set_altExchange(exchange->GetManagementObject()->getObjectId());
+            mgmtObject->set_altExchange(exchange->GetManagementObjectShared()->getObjectId());
         else
             mgmtObject->clr_altExchange();
     }
@@ -1258,7 +1258,7 @@ void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
     externalQueueStore = inst;
 
     if (inst) {
-        ManagementObject::shared_ptr childObj = inst->GetManagementObject();
+        ManagementObject::shared_ptr childObj = inst->GetManagementObjectShared();
         if (childObj != 0 && mgmtObject != 0)
             childObj->setReference(mgmtObject->getObjectId());
     }
@@ -1306,7 +1306,7 @@ void Queue::countLoadedFromDisk(uint64_t size) const
 }
 
 
-ManagementObject::shared_ptr Queue::GetManagementObject (void) const
+ManagementObject::shared_ptr Queue::GetManagementObjectShared (void) const
 {
     return mgmtObject;
 }

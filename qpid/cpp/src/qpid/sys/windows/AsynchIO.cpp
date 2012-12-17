@@ -198,6 +198,7 @@ public:
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
     void start(Poller::shared_ptr poller);
+    void requestCallback(RequestCallback rCb);
 };
 
 AsynchConnector::AsynchConnector(const Socket& sock,
@@ -221,6 +222,13 @@ void AsynchConnector::start(Poller::shared_ptr)
             failCallback(socket, -1, std::string(e.what()));
         socket.close();
     }
+}
+
+// This can never be called in the current windows code as connect
+// is blocking and requestCallback only makes sense if connect is
+// non-blocking with the results returned via a poller callback.
+void AsynchConnector::requestCallback(RequestCallback rCb)
+{
 }
 
 } // namespace windows

@@ -94,6 +94,7 @@ Message::Message(size_t size) : data(size)
 
     applicationProperties.init();
     body.init();
+    footer.init();
 }
 char* Message::getData() { return &data[0]; }
 const char* Message::getData() const { return &data[0]; }
@@ -139,6 +140,10 @@ qpid::amqp::CharSequence Message::getBareMessage() const
 qpid::amqp::CharSequence Message::getBody() const
 {
     return body;
+}
+qpid::amqp::CharSequence Message::getFooter() const
+{
+    return footer;
 }
 
 void Message::scan()

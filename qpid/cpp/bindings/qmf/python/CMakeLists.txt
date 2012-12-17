@@ -21,7 +21,7 @@
 ## Use Swig to generate a literal binding to the C++ API
 ##------------------------------------------------------
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLUSPLUS ON)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
 swig_add_module(qmfengine_python python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
 swig_link_libraries(qmfengine_python qmf qmfconsole ${PYTHON_LIBRARIES})

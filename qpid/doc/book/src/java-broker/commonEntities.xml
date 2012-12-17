@@ -23,7 +23,7 @@
 <!ENTITY qpidProgrammingBook "../../Programming-In-Apache-Qpid/html/">
 <!ENTITY qpidCppBook "../../AMQP-Messaging-Broker-CPP-Book/html/">
 
-<!ENTITY qpidCurrentRelease "0.18">
+<!ENTITY qpidCurrentRelease "0.21">
 
 <!-- Oracle javadoc -->
 <!ENTITY oracleJdkDocUrl "http://oracle.com/javase/6/docs/api/">

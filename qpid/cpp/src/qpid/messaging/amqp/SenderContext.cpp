@@ -80,7 +80,7 @@ const std::string& SenderContext::getTarget() const
 
 SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& message)
 {
-    if (processUnsettled() < capacity) {
+    if (processUnsettled() < capacity && pn_link_credit(sender)) {
         deliveries.push_back(Delivery(nextId++));
         Delivery& delivery = deliveries.back();
         delivery.encode(MessageImplAccess::get(message), address);
@@ -95,6 +95,7 @@ uint32_t SenderContext::processUnsettled()
 {
     //remove accepted messages from front of deque
     while (!deliveries.empty() && deliveries.front().accepted()) {
+        deliveries.front().settle();
         deliveries.pop_front();
     }
     return deliveries.size();
@@ -336,7 +337,10 @@ bool SenderContext::Delivery::accepted()
 {
     return pn_delivery_remote_state(token) == PN_ACCEPTED;
 }
-
+void SenderContext::Delivery::settle()
+{
+    pn_delivery_settle(token);
+}
 void SenderContext::configure() const
 {
     configure(pn_link_target(sender));
@@ -350,4 +354,10 @@ void SenderContext::configure(pn_terminus_t* target) const
         helper.setNodeProperties(target);
     }
 }
+
+bool SenderContext::settled()
+{
+    return processUnsettled() == 0;
+}
+
 }}} // namespace qpid::messaging::amqp
