@@ -59,3 +59,4 @@ ha_la_SOURCES =					\
 
 ha_la_LIBADD = libqpidbroker.la libqpidmessaging.la
 ha_la_LDFLAGS = $(PLUGINLDFLAGS)
+ha_la_CXXFLAGS = $(AM_CXXFLAGS) -D_IN_QPID_BROKER

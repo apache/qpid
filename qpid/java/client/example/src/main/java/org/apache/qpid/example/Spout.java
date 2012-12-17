@@ -100,6 +100,7 @@ public class Spout extends OptionParser
             System.out.println(msg);
             System.out.println("-------------------------------\n");
         }
+        producer.close();
         ssn.close();
         con.close();
     }

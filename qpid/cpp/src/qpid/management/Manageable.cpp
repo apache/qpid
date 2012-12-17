@@ -41,16 +41,6 @@ string Manageable::StatusText (status_t status, string text)
     return "??";
 }
 
-ManagementObject* Manageable::GetManagementObject(void) const
-{
-    return 0;
-}
-
-ManagementObject::shared_ptr Manageable::GetManagementObjectShared() const
-{
-    return ManagementObject::shared_ptr();
-}
-
 Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&, std::string&)
 {
     return STATUS_UNKNOWN_METHOD;

@@ -277,7 +277,15 @@ if (CMAKE_COMPILER_IS_GNUCXX)
       set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
    set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
-   set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
+   # gcc 4.1.2 on RHEL 5 needs -Wno-attributes to avoid an error that's fixed
+   # in later gcc versions.
+   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                   OUTPUT_VARIABLE GCC_VERSION)
+   if (GCC_VERSION VERSION_EQUAL 4.1.2)
+     set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden -Wno-attributes")
+   else (GCC_VERSION VERSION_EQUAL 4.1.2)
+     set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
+   endif (GCC_VERSION VERSION_EQUAL 4.1.2)
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
@@ -578,6 +586,7 @@ if (BUILD_XML)
   target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
   set_target_properties (xml PROPERTIES
                          PREFIX ""
+                         COMPILE_DEFINITIONS _IN_QPID_BROKER
                          LINK_FLAGS "${CATCH_UNDEFINED}")
   install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
@@ -614,6 +623,7 @@ if (BUILD_ACL)
     target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (acl PROPERTIES
                            PREFIX ""
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER
                            LINK_FLAGS "${CATCH_UNDEFINED}")
     install (TARGETS acl
              DESTINATION ${QPIDD_MODULE_DIR}
@@ -661,7 +671,7 @@ if (BUILD_HA)
     )
 
     add_library (ha MODULE ${ha_SOURCES})
-    set_target_properties (ha PROPERTIES PREFIX "")
+    set_target_properties (ha PROPERTIES PREFIX "" COMPILE_DEFINITIONS _IN_QPID_BROKER)
     target_link_libraries (ha qpidtypes qpidcommon qpidbroker qpidmessaging)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
@@ -1225,7 +1235,7 @@ set (qpidbroker_SOURCES
 add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
-set_target_properties (qpidbroker PROPERTIES VERSION ${qpidbroker_version})
+set_target_properties (qpidbroker PROPERTIES VERSION ${qpidbroker_version} COMPILE_DEFINITIONS _IN_QPID_BROKER)
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
@@ -1244,6 +1254,7 @@ add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
                           ${Boost_FILESYSTEM_LIBRARY})
+set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 install (TARGETS qpidd RUNTIME
          DESTINATION ${QPID_INSTALL_SBINDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})

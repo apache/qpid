@@ -43,6 +43,8 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _remoteHost;
     private boolean _ssl;
 
+    private String _queuePrefix;
+    private String _topicPrefix;
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
@@ -90,12 +92,15 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     public ConnectionImpl createConnection() throws JMSException
     {
-        return new ConnectionImpl(_host, _port, _username, _password, _clientId, _remoteHost, _ssl);
+        return createConnection(_username, _password);
     }
 
     public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
-        return new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
+        ConnectionImpl connection = new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
+        connection.setQueuePrefix(_queuePrefix);
+        connection.setTopicPrefix(_topicPrefix);
+        return connection;
     }
 
     public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
@@ -211,4 +216,23 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         return connection;
     }
 
+    public String getTopicPrefix()
+    {
+        return _topicPrefix;
+    }
+
+    public void setTopicPrefix(String topicPrefix)
+    {
+        _topicPrefix = topicPrefix;
+    }
+
+    public String getQueuePrefix()
+    {
+        return _queuePrefix;
+    }
+
+    public void setQueuePrefix(String queuePrefix)
+    {
+        _queuePrefix = queuePrefix;
+    }
 }

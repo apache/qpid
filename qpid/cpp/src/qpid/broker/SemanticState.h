@@ -46,10 +46,12 @@
 
 #include <list>
 #include <map>
+#include <set>
 #include <vector>
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/cast.hpp>
+#include <boost/tuple/tuple.hpp>
 
 namespace qpid {
 namespace broker {
@@ -163,7 +165,7 @@ class SemanticState : private boost::noncopyable {
 
         // manageable entry points
         QPID_BROKER_EXTERN management::ManagementObject::shared_ptr
-        GetManagementObjectShared(void) const;
+        GetManagementObject(void) const;
 
         QPID_BROKER_EXTERN management::Manageable::status_t
         ManagementMethod(uint32_t methodId, management::Args& args, std::string& text);
@@ -173,6 +175,8 @@ class SemanticState : private boost::noncopyable {
 
   private:
     typedef std::map<std::string, ConsumerImpl::shared_ptr> ConsumerImplMap;
+    typedef boost::tuple<std::string, std::string, std::string, std::string> Binding;
+    typedef std::set<Binding> Bindings;
 
     SessionState& session;
     ConsumerImplMap consumers;
@@ -190,6 +194,8 @@ class SemanticState : private boost::noncopyable {
     //needed for queue delete events in auto-delete:
     const std::string connectionId;
 
+    Bindings bindings;
+
     void checkDtxTimeout();
 
     bool complete(DeliveryRecord&);
@@ -197,6 +203,7 @@ class SemanticState : private boost::noncopyable {
     void requestDispatch();
     void cancel(ConsumerImpl::shared_ptr);
     void disable(ConsumerImpl::shared_ptr);
+    void unbindSessionBindings();
 
   public:
 
@@ -271,6 +278,11 @@ class SemanticState : private boost::noncopyable {
     void setAccumulatedAck(const framing::SequenceSet& s) { accumulatedAck = s; }
     void record(const DeliveryRecord& delivery);
     DtxBufferMap& getSuspendedXids() { return suspendedXids; }
+
+    void addBinding(const std::string& queueName, const std::string& exchangeName,
+                   const std::string& routingKey, const framing::FieldTable& arguments);
+    void removeBinding(const std::string& queueName, const std::string& exchangeName,
+                      const std::string& routingKey);
 };
 
 }} // namespace qpid::broker

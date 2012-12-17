@@ -899,4 +899,10 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     {
         _isTopicSession = topicSession;
     }
+
+    String toAddress(DestinationImpl dest)
+    {
+        return _connection.toDecodedDestination(dest).getAddress();
+    }
+
 }

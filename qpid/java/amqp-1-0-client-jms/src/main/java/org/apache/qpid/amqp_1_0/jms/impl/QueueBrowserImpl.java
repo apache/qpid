@@ -100,7 +100,7 @@ public class QueueBrowserImpl implements QueueBrowser
         {
             try
             {
-                _receiver = _session.getClientSession().createReceiver(_queue.getAddress(),
+                _receiver = _session.getClientSession().createReceiver(_session.toAddress(_queue),
                         StdDistMode.COPY,
                         AcknowledgeMode.AMO, null,
                         false,

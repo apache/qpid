@@ -39,7 +39,7 @@ ssl_la_SOURCES = \
 
 ssl_la_LIBADD= libqpidbroker.la libsslcommon.la
 
-ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
+ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS) -D_IN_QPID_BROKER
 
 ssl_la_LDFLAGS = $(PLUGINLDFLAGS)
 

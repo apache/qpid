@@ -79,6 +79,7 @@ if (BUILD_RDMA)
   add_library (rdma MODULE qpid/sys/RdmaIOPlugin.cpp)
   target_link_libraries (rdma qpidbroker rdmawrap)
   set_target_properties (rdma PROPERTIES
+                         COMPILE_DEFINITIONS _IN_QPID_BROKER
                          LINK_FLAGS "${CATCH_UNDEFINED}"
                          PREFIX "")
 

@@ -211,7 +211,7 @@ private:
         ObjectId          connectionRef;
         qmf::org::apache::qpid::broker::Agent::shared_ptr mgmtObject;
         RemoteAgent(ManagementAgent& _agent) : agent(_agent) {}
-        ManagementObject::shared_ptr GetManagementObjectShared (void) const { return mgmtObject; }
+        ManagementObject::shared_ptr GetManagementObject (void) const { return mgmtObject; }
 
         virtual ~RemoteAgent ();
         void mapEncode(qpid::types::Variant::Map& _map) const;

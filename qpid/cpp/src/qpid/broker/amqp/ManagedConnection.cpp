@@ -73,7 +73,7 @@ void ManagedConnection::setSaslSsf(int ssf)
     connection->set_saslSsf(ssf);
 }
 
-qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementObjectShared() const
+qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementObject() const
 {
     return connection;
 }

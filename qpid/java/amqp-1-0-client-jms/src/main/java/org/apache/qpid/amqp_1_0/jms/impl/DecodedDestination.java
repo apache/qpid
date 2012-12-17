@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,28 +15,33 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-jsonObject = {
-  "_countries":
-    QPID.iterations( { "__ITERATING_VALUE": [ 0, 1 ] },
-      {
-          // this is a comment - it wouldn't be allowed if this were pure JSON
 
-          "_name": "Country",
-          "_regions": QPID.times(2,
-            {
-              "_name": "repeatingRegion__REGION_INDEX",
-              "_towns": [
-                {
-                  "_name": "town1",
-                  "_iteratingAttribute": "__ITERATING_VALUE",
-                  "_consumers": []
-                }
-              ]
-            },
-            "__REGION_INDEX"
-        )
-    })
+package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.util.Set;
+
+/**
+* @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+*/
+class DecodedDestination
+{
+    private final String _address;
+    private final Set<String> _attributes;
+
+    DecodedDestination(String address, Set<String> kind)
+    {
+        _address = address;
+        _attributes = kind;
+    }
+
+    public String getAddress()
+    {
+        return _address;
+    }
+
+    public Set<String> getAttributes()
+    {
+        return _attributes;
+    }
 }

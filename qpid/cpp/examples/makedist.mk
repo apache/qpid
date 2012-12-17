@@ -20,6 +20,7 @@
 AM_CXXFLAGS = $(WARNING_CFLAGS)
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 CLIENT_LIB=$(top_builddir)/src/libqpidclient.la
+COMMON_LIB=$(top_builddir)/src/libqpidcommon.la
 CONSOLE_LIB=$(top_builddir)/src/libqmfconsole.la
 CLIENTFLAGS=-lqpidclient
 CONSOLEFLAGS=-lqmfconsole

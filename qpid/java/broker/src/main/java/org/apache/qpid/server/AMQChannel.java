@@ -111,7 +111,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      */
     private long _deliveryTag = 0;
 
-    /** A channel has a default queue (the last declared) that is used when no queue name is explictily set */
+    /** A channel has a default queue (the last declared) that is used when no queue name is explicitly set */
     private AMQQueue _defaultQueue;
 
     /** This tag is unique per subscription to a queue. The server returns this in response to a basic.consume request. */
@@ -207,10 +207,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     }
 
 
-    public boolean inTransaction()
-    {
-        return isTransactional() && _txnUpdateTime.get() > 0 && _transaction.getTransactionStartTime() > 0;
-    }
 
     private void incrementOutstandingTxnsIfNecessary()
     {
@@ -1485,11 +1481,13 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
-        if (inTransaction())
+        final long transactionStartTime = _transaction.getTransactionStartTime();
+        final long transactionUpdateTime = _txnUpdateTime.get();
+        if (isTransactional() && transactionUpdateTime > 0 && transactionStartTime > 0)
         {
             long currentTime = System.currentTimeMillis();
-            long openTime = currentTime - _transaction.getTransactionStartTime();
-            long idleTime = currentTime - _txnUpdateTime.get();
+            long openTime = currentTime - transactionStartTime;
+            long idleTime = currentTime - transactionUpdateTime;
 
             _transactionTimeoutHelper.logIfNecessary(idleTime, idleWarn, ChannelMessages.IDLE_TXN(idleTime),
                                                      TransactionTimeoutHelper.IDLE_TRANSACTION_ALERT);

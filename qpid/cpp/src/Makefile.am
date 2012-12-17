@@ -139,9 +139,10 @@ tmoduleexecdir = $(libdir)/qpid/tests
 tmoduleexec_LTLIBRARIES=
 
 AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
+BROKER_CXXFLAGS = -D_IN_QPID_BROKER
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) $(BROKER_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
@@ -259,7 +260,7 @@ rdma_la_LIBADD = \
   -libverbs
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers -D_IN_QPID_BROKER
 dmoduleexec_LTLIBRARIES += \
   rdma.la
 
@@ -759,6 +760,7 @@ libqpidbroker_la_SOURCES = \
 
 QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
+libqpidbroker_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS)
 
 if HAVE_PROTON
 
@@ -793,7 +795,7 @@ amqp_la_SOURCES = \
   qpid/broker/amqp/Translation.h \
   qpid/broker/amqp/Translation.cpp
 
-amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(PROTON_CFLAGS)
+amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS) $(PROTON_CFLAGS)
 amqp_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
 
 cmoduleexec_LTLIBRARIES += amqpc.la
@@ -950,6 +952,7 @@ libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES
 # list for one of the libraries or executables that includes it.
+# Also included are the swig descriptor files.
 
 nobase_include_HEADERS +=			\
   ../include/qpid/Address.h			\
@@ -1036,7 +1039,10 @@ nobase_include_HEADERS +=			\
   ../include/qpid/types/Exception.h	 	\
   ../include/qpid/types/Uuid.h	 		\
   ../include/qpid/types/Variant.h		\
-  ../include/qpid/types/ImportExport.h
+  ../include/qpid/types/ImportExport.h          \
+  ../include/qpid/qpid.i                        \
+  ../include/qmf/qmfengine.i                    \
+  ../include/qmf/qmf2.i
 
 # Create the default data directory
 install-data-local:

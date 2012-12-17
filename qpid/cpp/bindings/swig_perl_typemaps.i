@@ -47,7 +47,9 @@
                 return qpid::types::Variant((float)SvNV(value));
             }
             else if (SvPOK(value)) {
-                return qpid::types::Variant(std::string(SvPV_nolen(value)));
+                STRLEN len;
+                char *ptr = SvPV(value, len);
+                return qpid::types::Variant(std::string(ptr, len));
             }
         }
         return qpid::types::Variant();
@@ -173,7 +175,7 @@
     argvi++;
 }
 
-%typemap (in) uint16_t, uint32_t, uint64_t {
+%typemap (in) uint8_t, uint16_t, uint32_t, uint64_t {
     if (SvIOK($input)) {
         $1 = ($1_ltype)SvUV($input);
     }
@@ -182,12 +184,12 @@
     }
 }
 
-%typemap (out) uint16_t, uint32_t, uint64_t {
+%typemap (out) uint8_t, uint16_t, uint32_t, uint64_t {
     sv_setuv($result, (UV)$1);
     argvi++;
 }
 
-%typemap (in) int32_t, int64_t {
+%typemap (in) int8_t, int16_t, int32_t, int64_t {
     if (SvIOK($input)) {
         $1 = ($1_ltype)SvIV($input);
     }
@@ -196,7 +198,7 @@
     }
 }
 
-%typemap (out) int32_t, int64_t {
+%typemap (out) int8_t, int16_t, int32_t, int64_t {
     sv_setiv($result, (IV)$1);
     argvi++;
 }

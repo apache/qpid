@@ -402,7 +402,7 @@ SessionHandler& Connection::getChannel(ChannelId id) {
     return *ptr_map_ptr(i);
 }
 
-ManagementObject::shared_ptr Connection::GetManagementObjectShared(void) const
+ManagementObject::shared_ptr Connection::GetManagementObject(void) const
 {
     return mgmtObject;
 }
