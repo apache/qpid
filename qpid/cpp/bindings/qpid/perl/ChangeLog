@@ -1,0 +1,3 @@
+Version 0.22 (TBA):
+	* QPID-4466: qpid::messaging::Duration now supports multiplication
+	* QPID-4416: Messages with embedded nulls won't break on getContentPtr
