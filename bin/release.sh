@@ -198,6 +198,7 @@ if [ "PERL" == "$PERL" ]; then
      qpid-${VER}/cpp/bindings/qpid/perl/*pm \
      qpid-${VER}/cpp/bindings/qpid/perl/LICENSE \
      qpid-${VER}/cpp/bindings/qpid/perl/Makefile.PL \
+     qpid-${VER}/cpp/bindings/qpid/perl/t/*.t \
      qpid-${VER}/perl-qpid-${VER}
   mkdir qpid-${VER}/perl-qpid-${VER}/examples
   cp qpid-${VER}/cpp/bindings/qpid/examples/perl/* \
