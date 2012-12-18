@@ -796,7 +796,8 @@ qpid.name=${project.name}
 
    -->
 
-    <property name="gentools.home" location="${project.root}/../gentools" />
+    <property name="gentools.home" location="${project.root}/common/gentools" />
+    <property name="gentools.build" location="${build.scratch}/common/gentools" />
     <property name="generated.dir" location="${module.precompiled}" />
     <property name="velocity.compile.dir" value="${build.scratch}/broker/velocity"/>
     <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
@@ -809,7 +810,7 @@ qpid.name=${project.name}
                deprecation="${javac.deprecation}"
                srcdir="${project.root}/broker/src/velocity/java" >
           <classpath>
-            <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+            <pathelement path="${project.root}/${velocity.jar}" />
           </classpath>
           <compilerarg line="${javac.compiler.args}"/>
         </javac>
@@ -839,7 +840,7 @@ qpid.name=${project.name}
 
       <echo message="logmessages is ${logmessages}"/>
 
-      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
+      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.build}/classes" failonerror="true">
         <arg line="'${logmessages}'"/>
           <arg value="-j"/>
           <arg value="-o"/>
@@ -856,7 +857,7 @@ qpid.name=${project.name}
           <fileset dir="${project.root}/lib/required">
             <include name="**/*.jar"/>
           </fileset>
-          <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+          <pathelement path="${project.root}/${velocity.jar}" />
         </classpath>
       </java>
       <touch file="${velocity.timestamp}" />
