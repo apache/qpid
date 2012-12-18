@@ -68,3 +68,9 @@ qpid::types::Variant::List& decodeList(const qpid::messaging::Message&);
 
 %};
 
+%extend qpid::messaging::Duration {
+    qpid::messaging::Duration __mul__(uint64_t multiplier) {
+         return qpid::messaging::Duration(self->getMilliseconds() * multiplier);
+    }
+};
+
