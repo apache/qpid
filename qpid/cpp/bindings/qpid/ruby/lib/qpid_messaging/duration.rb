@@ -71,6 +71,22 @@ module Qpid
         @duration_impl.getMilliseconds
       end
 
+      # Returns a new Duration with a period of time that is a multiple
+      # of the original Duration.
+      #
+      # Raises exceptions on a negative factor. Returns
+      # Qpid::Messaging::Duration::IMMEDIATE when the factor is 0.
+      #
+      # ==== Examples
+      #
+      #   twominutes = Qpid::Messaging::Duration::MINUTE * 2
+      #
+      def *(factor)
+        raise TypeError.new "Factors must be non-zero positive values" if factor < 0
+        return Qpid::Messaging::Duration::IMMEDIATE if factor.zero?
+        Qpid::Messaging::Duration.new((self.milliseconds * factor).floor)
+      end
+
       def self.add_item(key, value) # :nodoc:
         @hash ||= {}
         @hash[key] = Duration.new value
