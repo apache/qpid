@@ -33,7 +33,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
     public KeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
         super(id, broker, attributes);
-        if (attributes.containsKey(CERTIFICATE_ALIAS))
+        if (attributes.get(CERTIFICATE_ALIAS) != null)
         {
             setAttribute(CERTIFICATE_ALIAS, null, attributes.get(CERTIFICATE_ALIAS));
         }

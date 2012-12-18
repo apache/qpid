@@ -86,6 +86,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
 
+    //TODO: delete these fields, instead, add the attributes into attribute map
     private long _maximumMessageAge;
     private long _maximumMessageCount;
     private long _maximumQueueDepth;

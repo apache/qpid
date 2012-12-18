@@ -26,14 +26,13 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-
-
-import junit.framework.TestCase;
 
 public class VirtualHostRecovererTest extends TestCase
 {
@@ -48,6 +47,7 @@ public class VirtualHostRecovererTest extends TestCase
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.CONFIGURATION, "/path/to/virtualhost.xml");
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = recoverer.create(null, entry, parent);
@@ -56,4 +56,36 @@ public class VirtualHostRecovererTest extends TestCase
         assertEquals("Unexpected name", getName(), host.getName());
     }
 
+    public void testCreateWithoutMandatoryAttributesResultsInException()
+    {
+        StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
+        SecurityManager securityManager = mock(SecurityManager.class);
+        ConfigurationEntry entry = mock(ConfigurationEntry.class);
+        Broker parent = mock(Broker.class);
+        when(parent.getSecurityManager()).thenReturn(securityManager);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.CONFIGURATION, "/path/to/virtualhost.xml");
+
+        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
+
+        //TODO: configuration is made mandatory temporarily, it will became optional later.
+        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.CONFIGURATION};
+        for (String name : mandatoryAttributes)
+        {
+            Map<String, Object> copy = new HashMap<String, Object>(attributes);
+            copy.remove(name);
+            when(entry.getAttributes()).thenReturn(copy);
+            try
+            {
+                recoverer.create(null, entry, parent);
+                fail("Cannot create a virtual host without a manadatory attribute " + name);
+            }
+            catch(IllegalArgumentException e)
+            {
+                // pass
+            }
+        }
+    }
 }

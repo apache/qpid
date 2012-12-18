@@ -96,8 +96,8 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         super(id);
         _broker = broker;
-        _name = (String)attributes.get(NAME);
-        _configurationFile = (String)attributes.get(CONFIGURATION);
+        _name = MapValueConverter.getStringAttribute(NAME, attributes);
+        _configurationFile = MapValueConverter.getStringAttribute(CONFIGURATION, attributes);
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         addParent(Broker.class, broker);
     }

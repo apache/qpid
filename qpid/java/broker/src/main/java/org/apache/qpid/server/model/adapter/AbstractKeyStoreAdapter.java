@@ -26,8 +26,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.net.ssl.KeyManagerFactory;
-
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
@@ -134,7 +132,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         {
             return getId();
         }
-        if(KeyStore.NAME.equals(name))
+        else if(KeyStore.NAME.equals(name))
         {
             return getName();
         }
@@ -185,16 +183,16 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         _password = password;
     }
 
-    protected void setMandatoryAttribute(String name, Map<String, Object> attributes)
+    private void setMandatoryAttribute(String name, Map<String, Object> attributeValues)
     {
-        setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes));
+        setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
     }
 
-    protected void setOptionalAttribute(String name, Map<String, Object> attributes)
+    private void setOptionalAttribute(String name, Map<String, Object> attributeValues)
     {
-        if (attributes.containsKey(name))
+        if (attributeValues.get(name) != null)
         {
-            setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributes));
+            setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
         }
     }
 }

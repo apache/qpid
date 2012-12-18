@@ -23,7 +23,6 @@ package org.apache.qpid.server.configuration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.model.Broker;
@@ -56,17 +55,17 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         Configuration configuration = null;
         if (configurationFile == null)
         {
-            configuration = new XMLConfiguration();
+            throw new IllegalConfigurationException("Virtualhost configuration file must be supplied!");
         }
         else
         {
             Configuration virtualHostConfig = XmlConfigurationUtilities.parseConfig(configurationFile, null);
 
-            // check if it is old virtual host configuration file
+            // check if it is an old virtual host configuration file which has an element of the same name as virtual host
             Configuration config = virtualHostConfig.subset("virtualhost." + XmlConfigurationUtilities.escapeTagName(name));
             if (config.isEmpty())
             {
-                // try to load virtual host configuration from 'name' element
+                // assume it is a new configuration which does not have an element of the same name as the virtual host
                 configuration = virtualHostConfig;
             }
             else
