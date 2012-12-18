@@ -17,7 +17,32 @@
  * under the License.
  */
 
+/*
+ * Need some magic to wrap getContentPtr, otherwise it could return char *
+ * containing NULL, which would be incorrectly interpreted as end of string
+ */
+%extend qpid::messaging::Message
+{
+  mystr getContentPtr()
+  {
+    mystr s;
+    s.ptr = self->getContentPtr();
+    s.len = self->getContentSize();
+    return s;
+  }
+}
+%ignore qpid::messaging::Message::getContentPtr;
+%typemap(out,fragment="SWIG_FromCharPtrAndSize") (mystr) {
+        %append_output(SWIG_FromCharPtrAndSize($1.ptr, $1.len));
+}
+
 %{
+
+struct mystr
+{
+  size_t len;
+  const char *ptr;
+};
 
 #include <qpid/messaging/exceptions.h>
 #include <qpid/messaging/Address.h>
