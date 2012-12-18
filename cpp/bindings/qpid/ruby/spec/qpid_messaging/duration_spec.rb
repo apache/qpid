@@ -49,6 +49,33 @@ module Qpid
         milliseconds.should == 1000
       end
 
+      it "raises an error when multiplied by a negative" do
+        expect {
+          twomin = Qpid::Messaging::Duration::MINUTE * -2
+        }.to raise_error
+      end
+
+      it "returns IMMEDIATE if the factor is zero" do
+        result = Qpid::Messaging::Duration::MINUTE * 0
+        result.should be(Qpid::Messaging::Duration::IMMEDIATE)
+      end
+
+      it "fractional factors return a reduced duration" do
+        factor = rand(1)
+        first = Qpid::Messaging::Duration::MINUTE
+        second = first * factor
+
+        second.milliseconds.should == ((first.milliseconds * factor).floor)
+      end
+
+      it "can return a multiple of its duration" do
+        factor = rand(10).floor
+        first = Qpid::Messaging::Duration.new(rand(10).floor * 10000)
+        second = first * factor
+
+        second.milliseconds.should == first.milliseconds * factor
+      end
+
     end
 
   end
