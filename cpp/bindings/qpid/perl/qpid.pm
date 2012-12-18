@@ -41,7 +41,8 @@ sub decode_map {
 package qpid::messaging::Address;
 
 use overload (
-    'bool' =>  \&boolify,
+    'bool' => \& boolify,
+    '""'   => \& stringify,
     );
 
 sub boolify {
@@ -49,6 +50,19 @@ sub boolify {
     my $impl = $self->{_impl};
 
     return length($impl->getName());
+}
+
+sub stringify {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+
+    return $self->str();
+}
+
+sub str {
+    my ($self) = @_;
+
+    return $self->get_implementation()->str();
 }
 
 sub new {
@@ -115,6 +129,9 @@ sub get_subject {
 sub set_options {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $options = $_[1];
+
+    die "Options cannot be null" if !defined($options);
 
     $impl->setOptions($_[1]);
 }
@@ -129,8 +146,11 @@ sub get_options {
 sub set_type {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $type = $_[1];
 
-    $impl->setType($_[1]);
+    die "Type must be defined" if !defined($type);
+
+    $impl->setType($type);
 }
 
 sub get_type {
@@ -144,10 +164,54 @@ sub get_type {
 
 package qpid::messaging::Duration;
 
+use overload (
+    "*" =>  \&multiply,
+    "==" => \&equalify,
+    "!=" => \&unequalify,
+    );
+
+sub multiply {
+    my ($self) = @_;
+    my $factor = $_[1];
+
+    die "Factor must be non-negative values" if !defined($factor) || ($factor < 0);
+
+    my $duration = $self->{_impl} * $factor;
+
+    return new qpid::messaging::Duration($duration);
+}
+
+sub equalify {
+    my ($self) = @_;
+    my $that = $_[1];
+
+    return 0 if !defined($that) || !UNIVERSAL::isa($that, 'qpid::messaging::Duration');;
+
+    return ($self->get_milliseconds() == $that->get_milliseconds()) ? 1 : 0;
+}
+
+sub unequalify {
+    my ($self) = @_;
+    my $that = $_[1];
+
+    return 1 if !defined($that) || !UNIVERSAL::isa($that, 'qpid::messaging::Duration');;
+
+    return ($self->get_milliseconds() != $that->get_milliseconds()) ? 1 : 0;
+}
+
 sub new {
     my ($class) = @_;
+    my $duration = $_[1];
+
+    die "Duration time period must be defined" if !defined($duration);
+
+    if (!UNIVERSAL::isa($duration, 'cqpid_perl::Duration')) {
+        die "Duration must be non-negative" if $duration < 0;
+        $duration = new cqpid_perl::Duration($duration);
+    }
+
     my ($self) = {
-        _impl => new cqpid_perl::Duration($_[1]),
+        _impl => $duration,
     };
 
     bless $self, $class;
@@ -169,7 +233,7 @@ sub get_implementation {
 
 # TODO: Need a better way to define FOREVER
 use constant {
-    FOREVER => new qpid::messaging::Duration(10000),
+    FOREVER => new qpid::messaging::Duration(1000000),
     IMMEDIATE => new qpid::messaging::Duration(0),
     SECOND => new qpid::messaging::Duration(1000),
     MINUTE => new qpid::messaging::Duration(60000),
@@ -207,8 +271,15 @@ sub get_implementation {
 sub set_reply_to {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $address = $_[1];
 
-    $impl->setReplyTo($_[1]->get_implementation());
+    # if the address was a string, then wrap it
+    # in a qpid::messaging::Address instance
+    if (!UNIVERSAL::isa($address, 'qpid::messaging::Address')) {
+        $address = new qpid::messaging::Address($_[1]);
+    }
+
+    $impl->setReplyTo($address->get_implementation());
 }
 
 sub get_reply_to {
@@ -250,8 +321,11 @@ sub get_content_type {
 sub set_message_id {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $id = $_[1];
 
-    $impl->setMessageId($_[1]);
+    die "message id must be defined" if !defined($id);
+
+    $impl->setMessageId($id);
 }
 
 sub get_message_id {
@@ -292,8 +366,14 @@ sub get_correlation_id {
 sub set_priority {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $priority = $_[1];
 
-    $impl->setPriority($_[1]);
+    die "Priority must be provided" if !defined($priority);
+
+    $priority = int($priority);
+    die "Priority must be non-negative" if $priority < 0;
+
+    $impl->setPriority($priority);
 }
 
 sub get_priority {
@@ -306,22 +386,39 @@ sub get_priority {
 sub set_ttl {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $duration = $_[1];
 
-    $impl->setTtl($_[1]);
+    die "Duration must be provided" if !defined($duration);
+    if (!UNIVERSAL::isa($duration, 'qpid::messaging::Duration')) {
+        $duration = int($duration);
+
+        if ($duration < 0) {
+            $duration = qpid::messaging::Duration::FOREVER;
+        } elsif ($duration == 0) {
+            $duration = qpid::messaging::Duration::IMMEDIATE;
+        } else {
+            $duration = new qpid::messaging::Duration(int($duration));
+        }
+    }
+
+    $impl->setTtl($duration->get_implementation());
 }
 
 sub get_ttl {
     my ($self) = @_;
     my $impl = $self->{_impl};
 
-    return $impl->getTtl;
+    return new qpid::messaging::Duration($impl->getTtl);
 }
 
 sub set_durable {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $durable = $_[1];
 
-    $impl->setDurable($_[1]);
+    die "Durable must be specified" if !defined($durable);
+
+    $impl->setDurable($durable);
 }
 
 sub get_durable {
@@ -334,8 +431,11 @@ sub get_durable {
 sub set_redelivered {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    my $redelivered = $_[1];
 
-    $impl->setRedelivered($_[1]);
+    die "Redelivered must be specified" if !defined($redelivered);
+
+    $impl->setRedelivered($redelivered);
 }
 
 sub get_redelivered {
@@ -345,13 +445,13 @@ sub get_redelivered {
     return $impl->getRedelivered;
 }
 
-sub get_property {
+sub set_property {
     my ($self) = @_;
-    my $key = $_[1];
-
     my $impl = $self->{_impl};
+    my $key = $_[1];
+    my $value = $_[2];
 
-    return $impl->getPropert($key);
+    $impl->setProperty($key, $value);
 }
 
 sub get_properties {
@@ -363,8 +463,10 @@ sub get_properties {
 
 sub set_content {
     my ($self) = @_;
-    my $content = $_[1] || "";
+    my $content = $_[1];
     my $impl = $self->{_impl};
+
+    die "Content must be provided" if !defined($content);
 
     $impl->setContent($content);
 }
