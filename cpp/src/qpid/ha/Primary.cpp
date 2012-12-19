@@ -96,7 +96,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         QPID_LOG(notice, logPrefix << "Promoted to primary. Expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(*i, haBroker.getReplicationTest(), false));
+                new RemoteBackup(*i, haBroker.getReplicationTest(), 0));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
             backup->setCatchupQueues(hb.getBroker().getQueues(), true); // Create guards
@@ -161,9 +161,6 @@ void Primary::timeoutExpectedBackups() {
                 expectedBackups.erase(i++);
                 backups.erase(info.getSystemId());
                 rb->cancel();
-                // Downgrade the broker to CATCHUP
-                info.setStatus(CATCHUP);
-                haBroker.addBroker(info);
             }
             else ++i;
         }
@@ -228,7 +225,7 @@ void Primary::opened(broker::Connection& connection) {
         if (i == backups.end()) {
             QPID_LOG(info, logPrefix << "New backup connected: " << info);
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(info, haBroker.getReplicationTest(), true));
+                new RemoteBackup(info, haBroker.getReplicationTest(), &connection));
             {
                 // Avoid deadlock with queue registry lock.
                 Mutex::ScopedUnlock u(lock);
@@ -238,7 +235,7 @@ void Primary::opened(broker::Connection& connection) {
         }
         else {
             QPID_LOG(info, logPrefix << "Known backup connected: " << info);
-            i->second->setConnected(true);
+            i->second->setConnection(&connection);
             checkReady(i, l);
         }
         if (info.getStatus() == JOINING) info.setStatus(CATCHUP);

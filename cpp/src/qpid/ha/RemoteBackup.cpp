@@ -21,6 +21,7 @@
 #include "RemoteBackup.h"
 #include "QueueGuard.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/log/Statement.h"
@@ -32,9 +33,10 @@ namespace ha {
 using sys::Mutex;
 using boost::bind;
 
-RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con) :
-    logPrefix("Primary: Remote backup "+info.getLogId()+": "),
-    brokerInfo(info), replicationTest(rt), connected(con), reportedReady(false)
+RemoteBackup::RemoteBackup(
+    const BrokerInfo& info, ReplicationTest rt, broker::Connection* c
+) : logPrefix("Primary: Remote backup "+info.getLogId()+": "),
+    brokerInfo(info), replicationTest(rt), connection(c), reportedReady(false)
 {}
 
 void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGuards)
@@ -49,10 +51,14 @@ void RemoteBackup::cancel() {
     for (GuardMap::iterator i = guards.begin(); i != guards.end(); ++i)
         i->second->cancel();
     guards.clear();
+    if (connection) {
+        connection->abort();
+        connection = 0;
+    }
 }
 
 bool RemoteBackup::isReady() {
-    return connected && catchupQueues.empty();
+    return connection && catchupQueues.empty();
 }
 
 void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
