@@ -46,7 +46,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         framemax(65535),
         heartbeat(0),
         heartbeatmax(120),
-        userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links & clustering)
+        userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links)
         federationLink(true),
         isDefaultRealm(false)
     {}

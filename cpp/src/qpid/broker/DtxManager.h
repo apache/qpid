@@ -68,11 +68,6 @@ public:
     void setStore(TransactionalStore* store);
     void setTimer(sys::Timer& t) { timer = &t; }
 
-    // Used by cluster for replication.
-    template<class F> void each(F f) const {
-        for (WorkMap::const_iterator i = work.begin(); i != work.end(); ++i)
-            f(*ptr_map_ptr(i));
-    }
     DtxWorkRecord* getWork(const std::string& xid);
     bool exists(const std::string& xid);
     static std::string convert(const framing::Xid& xid);

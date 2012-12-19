@@ -158,7 +158,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
                                             const ConnectionState* context);
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
-    std::auto_ptr<sys::Timer> clusterTimer;
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
@@ -283,15 +282,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     bool inRecovery() const { return recoveryInProgress; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
-
-    /**
-     * Never true in a stand-alone broker. In a cluster, return true
-     * to defer delivery of messages deliveredg in a cluster-unsafe
-     * context.
-     *@return true if delivery of a message should be deferred.
-     */
-    boost::function<bool (const std::string& queue,
-                          const Message& msg)> deferDelivery;
 
     bool isAuthenticating ( ) { return config.auth; }
     bool isTimestamping() { return config.timestampRcvMsgs; }

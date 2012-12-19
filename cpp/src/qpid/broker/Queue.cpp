@@ -237,9 +237,6 @@ void Queue::deliver(Message msg, TxBuffer* txn){
     //'link' for whatever protocol is used; that would let protocol
     //specific stuff be kept out the queue
 
-    // Check for deferred delivery in a cluster.
-    if (broker && broker->deferDelivery(name, msg))
-        return;
     if (broker::amqp_0_10::MessageTransfer::isImmediateDeliveryRequired(msg) && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg, 0);
