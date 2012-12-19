@@ -44,7 +44,6 @@ class QPID_BROKER_CLASS_EXTERN NullMessageStore : public MessageStore
     QPID_BROKER_EXTERN NullMessageStore();
 
     QPID_BROKER_EXTERN virtual bool init(const Options* options);
-    QPID_BROKER_EXTERN virtual void truncateInit(const bool pushDownStoreFiles = false);
     QPID_BROKER_EXTERN virtual std::auto_ptr<TransactionContext> begin();
     QPID_BROKER_EXTERN virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     QPID_BROKER_EXTERN virtual void prepare(TPCTransactionContext& txn);
