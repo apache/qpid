@@ -108,9 +108,6 @@ void SessionHandler::attachAs(const std::string& name)
 {
     SessionId id(connection.getUserId(), name);
     SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
-    // Delay creating management object till attached(). In a cluster,
-    // only the active link broker calls attachAs but all brokers
-    // receive the subsequent attached() call.
     session.reset(new SessionState(connection.getBroker(), *this, id, config));
     sendAttach(false);
 }
