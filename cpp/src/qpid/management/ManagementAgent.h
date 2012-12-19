@@ -107,8 +107,6 @@ public:
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
 
-    QPID_BROKER_EXTERN void clusterUpdate();
-
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args,
@@ -117,9 +115,6 @@ public:
 
     /** Disallow a method. Attempts to call it will receive an exception with message. */
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
-
-    /** Disallow all QMFv1 methods (used in clustered brokers). */
-    void disallowV1Methods() { disallowAllV1Methods = true; }
 
     /** Serialize my schemas as a binary blob into schemaOut */
     void exportSchemas(std::string& schemaOut);
