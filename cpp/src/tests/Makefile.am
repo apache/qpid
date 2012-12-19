@@ -376,7 +376,6 @@ EXTRA_DIST+=						\
 	multiq_perftest					\
 	topic_perftest					\
 	run_failover_soak				\
-	federated_cluster_test_with_node_failure        \
 	sasl_test_setup.sh                              \
 	run_msg_group_tests_soak			\
 	qpidd-empty.conf
