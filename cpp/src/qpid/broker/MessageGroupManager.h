@@ -25,11 +25,12 @@
 /* for managing message grouping on Queues */
 
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/StatefulQueueObserver.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/MessageDistributor.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/unordered_map.h"
 
+#include "boost/shared_ptr.hpp"
 #include <deque>
 
 namespace qpid {
@@ -39,8 +40,9 @@ class QueueObserver;
 struct QueueSettings;
 class MessageDistributor;
 class Messages;
+class Consumer;
 
-class MessageGroupManager : public StatefulQueueObserver, public MessageDistributor
+class MessageGroupManager : public QueueObserver, public MessageDistributor
 {
     static std::string defaultGroupId;  // assigned if no group id header present
 
@@ -101,10 +103,10 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
 
     MessageGroupManager(const std::string& header, const std::string& _qName,
                         Messages& container, unsigned int _timestamp=0 )
-      : StatefulQueueObserver(std::string("MessageGroupManager:") + header),
-      groupIdHeader( header ), timestamp(_timestamp), messages(container), qName(_qName),
-      hits(0), misses(0),
-      lastMsg(0), cachedGroup(0) {}
+      : groupIdHeader( header ), timestamp(_timestamp), messages(container),
+        qName(_qName),
+        hits(0), misses(0),
+        lastMsg(0), cachedGroup(0) {}
     virtual ~MessageGroupManager();
 
     // QueueObserver iface
@@ -114,8 +116,6 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     void dequeued( const Message& qm );
     void consumerAdded( const Consumer& ) {};
     void consumerRemoved( const Consumer& ) {};
-    void getState(qpid::framing::FieldTable& state ) const;
-    void setState(const qpid::framing::FieldTable&);
 
     // MessageDistributor iface
     bool acquire(const std::string& c, Message& );

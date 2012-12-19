@@ -26,7 +26,7 @@
 #include <iostream>
 #include <memory>
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/StatefulQueueObserver.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/AtomicValue.h"
@@ -40,6 +40,7 @@ namespace broker {
 
 class Broker;
 class Queue;
+class Message;
 struct QueueSettings;
 
 /**
@@ -49,7 +50,7 @@ struct QueueSettings;
  * passing _either_ level may turn flow control ON, but _both_ must be
  * below level before flow control will be turned OFF.
  */
- class QueueFlowLimit : public StatefulQueueObserver
+ class QueueFlowLimit : public QueueObserver
 {
     static uint64_t defaultMaxSize;
     static uint defaultFlowStopRatio;
