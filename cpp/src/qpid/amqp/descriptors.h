@@ -79,8 +79,8 @@ namespace filters {
 const std::string LEGACY_DIRECT_FILTER_SYMBOL("apache.org:legacy-amqp-direct-binding:string");
 const std::string LEGACY_TOPIC_FILTER_SYMBOL("apache.org:legacy-amqp-direct-binding:string");
 
-const uint64_t LEGACY_DIRECT_FILTER_CODE(0x0000468C00000000);
-const uint64_t LEGACY_TOPIC_FILTER_CODE(0x0000468C00000001);
+const uint64_t LEGACY_DIRECT_FILTER_CODE(0x0000468C00000000ULL);
+const uint64_t LEGACY_TOPIC_FILTER_CODE(0x0000468C00000001ULL);
 }
 
 }} // namespace qpid::amqp
