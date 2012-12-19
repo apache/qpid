@@ -136,12 +136,6 @@ MessageStorePlugin::providerAvailable(const std::string name,
         QPID_LOG(warning, "Storage provider " << name << " duplicate; ignored.");
 }
 
-void
-MessageStorePlugin::truncateInit(const bool /*saveStoreContent*/)
-{
-    QPID_LOG(info, "Store: truncateInit");
-}
-
 
 /**
  * Record the existence of a durable queue

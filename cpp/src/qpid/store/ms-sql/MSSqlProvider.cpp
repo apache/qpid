@@ -92,20 +92,6 @@ public:
     /**
      * @name Methods inherited from qpid::broker::MessageStore
      */
-    //@{
-    /**
-     * If called after init() but before recovery, will discard the database
-     * and reinitialize using an empty store dir. If @a pushDownStoreFiles
-     * is true, the content of the store dir will be moved to a backup dir
-     * inside the store dir. This is used when cluster nodes recover and must
-     * get thier content from a cluster sync rather than directly fromt the
-     * store.
-     *
-     * @param pushDownStoreFiles If true, will move content of the store dir
-     *                           into a subdir, leaving the store dir
-     *                           otherwise empty.
-     */
-    virtual void truncateInit(const bool pushDownStoreFiles = false);
 
     /**
      * Record the existence of a durable queue
@@ -389,11 +375,6 @@ void
 MSSqlProvider::activate(MessageStorePlugin &store)
 {
   QPID_LOG(info, "MS SQL Provider is up");
-}
-
-void
-MSSqlProvider::truncateInit(const bool pushDownStoreFiles)
-{
 }
 
 void
