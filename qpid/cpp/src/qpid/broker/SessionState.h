@@ -116,11 +116,6 @@ class SessionState : public qpid::SessionState,
 
     void readyToSend();
 
-    // Used by cluster to create replica sessions.
-    SemanticState& getSemanticState() { return semanticState; }
-    boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> getMessageInProgress() { return msgBuilder.getMessage(); }
-    SessionAdapter& getSessionAdapter() { return adapter; }
-
     const SessionId& getSessionId() const { return getId(); }
 
     // Used by ExecutionHandler sync command processing.  Notifies

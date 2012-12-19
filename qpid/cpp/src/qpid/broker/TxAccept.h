@@ -71,9 +71,6 @@ namespace qpid {
             virtual void commit() throw();
             virtual void rollback() throw();
             virtual ~TxAccept(){}
-
-            // Used by cluster replication.
-            const framing::SequenceSet& getAcked() const { return acked; }
         };
     }
 }

@@ -1428,15 +1428,6 @@ void Queue::observeEnqueue(const Message& m, const Mutex::ScopedLock&)
     mgntEnqStats(m, mgmtObject, brokerMgmtObject);
 }
 
-// Note: accessing listeners outside of lock is dangerous.  Caller must ensure the queue's
-// state is not changed while listeners is referenced.
-QueueListeners& Queue::getListeners() { return listeners; }
-
-// Note: accessing messages outside of lock is dangerous.  Caller must ensure the queue's
-// state is not changed while messages is referenced.
-Messages& Queue::getMessages() { return *messages; }
-const Messages& Queue::getMessages() const { return *messages; }
-
 bool Queue::checkNotDeleted(const Consumer::shared_ptr& c)
 {
     if (deleted && !c->hideDeletedError())
