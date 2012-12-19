@@ -21,8 +21,6 @@ SUBDIRS = dotnet
 
 if HAVE_SWIG
 
-EXTRA_DIST = CMakeLists.txt qpid.i
-
 if HAVE_RUBY_DEVEL
 SUBDIRS += ruby
 endif
@@ -35,7 +33,7 @@ if HAVE_PERL_DEVEL
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/bindings -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
 
-EXTRA_DIST += perl/perl.i perl/CMakeLists.txt
+EXTRA_DIST = perl/perl.i perl/CMakeLists.txt
 BUILT_SOURCES = perl/cqpid_perl.cpp
 SWIG_FLAGS = -w362,401
 
