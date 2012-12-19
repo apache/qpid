@@ -242,11 +242,6 @@ header_test_INCLUDES=$(PUBLIC_INCLUDES)
 header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 header_test_LDADD=$(lib_client) 
 
-check_PROGRAMS+=failover_soak
-failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
-failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
-failover_soak_LDADD=$(lib_client) $(lib_broker)
-
 check_PROGRAMS+=declare_queues
 declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
 declare_queues_SOURCES=declare_queues.cpp  
