@@ -41,7 +41,6 @@ class MessageStoreModule : public MessageStore
     MessageStoreModule(boost::shared_ptr<MessageStore>& store);
 
     bool init(const Options* options);
-    void truncateInit(const bool pushDownStoreFiles = false);
     std::auto_ptr<TransactionContext> begin();
     std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     void prepare(TPCTransactionContext& txn);

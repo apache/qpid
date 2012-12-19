@@ -46,20 +46,6 @@ class MessageStore : public TransactionalStore, public Recoverable {
   public:
 
     /**
-     * If called after initialization but before recovery, will discard the database
-     * content and reinitialize as though it were a new installation. If the parameter
-     * saveStoreContent is true, the content of the store will be saved in such a way
-     * that the truncate can be reversed. This is used when cluster nodes recover and
-     *  must get their content from a cluster sync rather than directly from the store.
-     *
-     * @param saveStoreContent If true, will move content of the store to a backup
-     *                         location where they may be restored later if needed. It is
-     *                         not necessary to save more than one prior version of the
-     *                         store.
-     */
-    virtual void truncateInit(const bool saveStoreContent = false) = 0;
-
-    /**
      * Record the existence of a durable queue
      */
     virtual void create(PersistableQueue& queue,
