@@ -291,79 +291,8 @@ QueueFlowLimit *QueueFlowLimit::createLimit(Queue *queue, const QueueSettings& s
     return 0;
 }
 
-/* Cluster replication */
-
-namespace {
-    /** pack a set of sequence number ranges into a framing::Array */
-    void buildSeqRangeArray(qpid::framing::Array *seqs,
-                            const qpid::framing::SequenceNumber& first,
-                            const qpid::framing::SequenceNumber& last)
-    {
-        seqs->push_back(qpid::framing::Array::ValuePtr(new Unsigned32Value(first)));
-        seqs->push_back(qpid::framing::Array::ValuePtr(new Unsigned32Value(last)));
-    }
-}
-
-/** Runs on UPDATER to snapshot current state */
-void QueueFlowLimit::getState(qpid::framing::FieldTable& state ) const
-{
-    sys::Mutex::ScopedLock l(indexLock);
-    state.clear();
-
-    framing::SequenceSet ss;
-    if (!index.empty()) {
-        /* replicate the set of messages pending flow control */
-        for (std::map<framing::SequenceNumber, Message >::const_iterator itr = index.begin();
-             itr != index.end(); ++itr) {
-            ss.add(itr->first);
-        }
-        framing::Array seqs(TYPE_CODE_UINT32);
-        typedef boost::function<void(framing::SequenceNumber, framing::SequenceNumber)> arrayBuilder;
-        ss.for_each((arrayBuilder)boost::bind(&buildSeqRangeArray, &seqs, _1, _2));
-        state.setArray("pendingMsgSeqs", seqs);
-    }
-    QPID_LOG(debug, "Queue \"" << queueName << "\": flow limit replicating pending msgs, range=" << ss);
-}
-
-
-/** called on UPDATEE to set state from snapshot */
-void QueueFlowLimit::setState(const qpid::framing::FieldTable& state)
-{
-    sys::Mutex::ScopedLock l(indexLock);
-    index.clear();
-
-    framing::SequenceSet fcmsg;
-    framing::Array seqArray(TYPE_CODE_UINT32);
-    if (state.getArray("pendingMsgSeqs", seqArray)) {
-        assert((seqArray.count() & 0x01) == 0); // must be even since they are sequence ranges
-        framing::Array::const_iterator i = seqArray.begin();
-        while (i != seqArray.end()) {
-            framing::SequenceNumber first((*i)->getIntegerValue<uint32_t, 4>());
-            ++i;
-            framing::SequenceNumber last((*i)->getIntegerValue<uint32_t, 4>());
-            ++i;
-            fcmsg.add(first, last);
-            for (SequenceNumber seq = first; seq <= last; ++seq) {
-                Message msg;
-                queue->find(seq, msg);   // fyi: may not be found if msg is acquired & unacked
-                bool unique;
-                unique = index.insert(std::pair<framing::SequenceNumber, Message >(seq, msg)).second;
-                // Like this to avoid tripping up unused variable warning when NDEBUG set
-                if (!unique) assert(unique);
-            }
-        }
-    }
-
-    flowStopped = index.size() != 0;
-    if (queueMgmtObj) {
-        queueMgmtObj->set_flowStopped(isFlowControlActive());
-    }
-    QPID_LOG(debug, "Queue \"" << queueName << "\": flow limit replicated the pending msgs, range=" << fcmsg)
-}
-
-
 namespace qpid {
-    namespace broker {
+namespace broker {
 
 std::ostream& operator<<(std::ostream& out, const QueueFlowLimit& f)
 {
@@ -372,6 +301,6 @@ std::ostream& operator<<(std::ostream& out, const QueueFlowLimit& f)
     return out;
 }
 
-    }
+}
 }
 
