@@ -472,17 +472,6 @@ void ManagementAgent::clientAdded (const string& routingKey)
     }
 }
 
-void ManagementAgent::clusterUpdate() {
-    // Called on all cluster memebers when a new member joins a cluster.
-    // Set clientWasAdded so that on the next periodicProcessing we will do 
-    // a full update on all cluster members.
-    sys::Mutex::ScopedLock l(userLock);
-    moveNewObjects();         // keep lists consistent with updater/updatee.
-    moveDeletedObjects();
-    clientWasAdded = true;
-    debugSnapshot("Cluster member joined");
-}
-
 void ManagementAgent::encodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet ('A');
@@ -2880,25 +2869,6 @@ ManagementAgent::DeletedObject::DeletedObject(const std::string& encoded)
     encodedV2 = map_["_v2_data"].asMap();
 }
 
-
-// encode a DeletedObject to a string buffer. Used by
-// clustering to move deleted objects between clustered brokers.  See
-// DeletedObject(const std::string&) for the reverse.
-void ManagementAgent::DeletedObject::encode(std::string& toBuffer)
-{
-    qpid::types::Variant::Map map_;
-
-
-    map_["_package_name"] = packageName;
-    map_["_class_name"] = className;
-    map_["_object_id"] = objectId;
-
-    map_["_v1_config"] = encodedV1Config;
-    map_["_v1_inst"] = encodedV1Inst;
-    map_["_v2_data"] = encodedV2;
-
-    MapCodec::encode(map_, toBuffer);
-}
 
 // Remove Deleted objects, and save for later publishing...
 bool ManagementAgent::moveDeletedObjects() {
