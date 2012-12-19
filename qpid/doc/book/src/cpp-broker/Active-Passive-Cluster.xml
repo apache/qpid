@@ -149,39 +149,6 @@ under the License.
       </variablelist>
     </section>
     <section>
-      <title>Replacing the old cluster module</title>
-      <para>
-	The High Availability (HA) module replaces the previous
-	<firstterm>active-active</firstterm> cluster module.  The new active-passive
-	approach has several advantages compared to the existing active-active cluster
-	module.
-	<itemizedlist>
-	  <listitem>
-	    It does not depend directly on openais or corosync. It does not use multicast
-	    which simplifies deployment.
-	  </listitem>
-	  <listitem>
-	    It is more portable: in environments that don't support corosync, it can be
-	    integrated with a resource manager available in that environment.
-	  </listitem>
-	  <listitem>
-	    It can take advantage of features provided by the resource manager, for example
-	    virtual IP addresses.
-	  </listitem>
-	  <listitem>
-	    Improved performance and scalability due to better use of multiple CPUs
-	  </listitem>
-	</itemizedlist>
-      </para>
-      <para>
-	You should not enable the old and new cluster modules at the same time
-	in a broker, as they may interfere with each other. In other words you
-	should not set <literal>cluster-name</literal> at the same time as
-	either <literal>ha-cluster</literal> or
-	<literal>ha-queue-replication</literal>
-      </para>
-    </section>
-    <section>
       <title>Limitations</title>
       <para>
 	There are a number of known limitations in the current preview implementation. These

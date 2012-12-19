@@ -67,10 +67,6 @@ class TimerTask : public RefCounted {
 
     std::string getName() const { return name; }
 
-    // Move the nextFireTime so readyToFire is true.
-    // Used by the cluster, where tasks are fired on cluster events, not on local time.
-    QPID_COMMON_EXTERN void setFired();
-
   protected:
     // Must be overridden with callback
     virtual void fire() = 0;

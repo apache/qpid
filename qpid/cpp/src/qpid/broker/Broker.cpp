@@ -356,8 +356,6 @@ Broker::Broker(const Broker::Options& conf) :
         }
     }
 
-    if (managementAgent.get()) managementAgent->pluginsInitialized();
-
     if (conf.queueCleanInterval) {
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
     }
