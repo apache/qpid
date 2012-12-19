@@ -153,11 +153,6 @@ namespace broker {
          */
         QPID_BROKER_EXTERN void setPassive(bool);
         QPID_BROKER_EXTERN bool isPassive() { return passive; }
-
-        /** Iterate over each link in the registry. Used for cluster updates. */
-        QPID_BROKER_EXTERN void eachLink(boost::function<void(boost::shared_ptr<Link>)> f);
-        /** Iterate over each bridge in the registry. Used for cluster updates. */
-        QPID_BROKER_EXTERN void eachBridge(boost::function<void(boost::shared_ptr< Bridge>)> f);
     };
 }
 }
