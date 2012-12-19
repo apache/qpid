@@ -240,7 +240,7 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
-    <mkdir dir="${build.lib.broker.plugins}"/>
+    <mkdir dir="${build.scratch.broker.plugins.lib}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
@@ -508,8 +508,8 @@
     </jar>
   </target>
 
-  <target name="copy-broker-plugin-jars" if="${broker.plugin}" description="copy broker plugins for use in release packaging">
-    <copy file="${module.jar}" todir="${build.lib.broker.plugins}" failonerror="true"/>
+  <target name="copy-broker-plugin-jars" if="broker.plugin" description="copy broker plugins for use in release packaging">
+    <copy file="${module.jar}" todir="${build.scratch.broker.plugins.lib}" failonerror="true"/>
   </target>
 
   <target name="copy-module-metainf" depends="copy-metainf-resources" if="module.src.resources.metainf.exists">
