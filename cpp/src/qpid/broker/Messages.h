@@ -91,13 +91,6 @@ class Messages
     virtual Message* find(const QueueCursor&) = 0;
 
     /**
-     * Add an already acquired message to the queue.
-     * Used by a cluster updatee to replicate acquired messages from the updater.
-     * Only need be implemented by subclasses that keep track of
-     * acquired messages.
-     */
-    //virtual void updateAcquired(const QueuedMessage&) { }
-    /**
      * Apply, the functor to each message held
      */
     virtual void foreach(Functor) = 0;

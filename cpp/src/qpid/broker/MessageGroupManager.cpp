@@ -302,19 +302,6 @@ void MessageGroupManager::setDefaults(const std::string& groupId)   // static
     defaultGroupId = groupId;
 }
 
-/** Cluster replication:
-
-   state map format:
-
-   { "group-state": [ {"name": <group-name>,
-                       "owner": <consumer-name>-or-empty,
-                       "acquired-ct": <acquired count>,
-                       "positions": [Seqnumbers, ... ]},
-                      {...}
-                    ]
-   }
-*/
-
 namespace {
     const std::string GROUP_NAME("name");
     const std::string GROUP_OWNER("owner");
@@ -368,7 +355,7 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
     bool ok = state.getArray(GROUP_STATE, groupState);
     if (!ok) {
         QPID_LOG(error, "Unable to find message group state information for queue \"" <<
-                 qName << "\": cluster inconsistency error!");
+                 qName << "\"");
         return;
     }
 
