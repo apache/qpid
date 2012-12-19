@@ -53,14 +53,14 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
     Broker& b, SessionHandler& h, const SessionId& id,
-    const SessionState::Configuration& config, bool delayManagement)
+    const SessionState::Configuration& config)
     : qpid::SessionState(id, config),
       broker(b), handler(&h),
       semanticState(*this),
       adapter(semanticState),
       asyncCommandCompleter(new AsyncCommandCompleter(this))
 {
-    if (!delayManagement) addManagementObject();
+    addManagementObject();
     attach(h);
 }
 

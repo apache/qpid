@@ -85,13 +85,10 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        const qpid::sys::SecuritySettings& external,
                        bool link_,
                        uint64_t objectId_,
-                       bool shadow_,
-                       bool delayManagement,
                        bool authenticated_
 ) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    shadow(shadow_),
     authenticated(authenticated_),
     adapter(*this, link_),
     link(link_),
@@ -106,11 +103,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
 {
     outboundTracker.wrap(out);
     broker.getConnectionObservers().connection(*this);
-    // In a cluster, allow adding the management object to be delayed.
-    if (!delayManagement) addManagementObject();
-}
-
-void Connection::addManagementObject() {
     assert(agent == 0);
     assert(mgmtObject == 0);
     Manageable* parent = broker.GetVhostObject();
@@ -119,7 +111,6 @@ void Connection::addManagementObject() {
         if (agent != 0) {
             // TODO set last bool true if system connection
             mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false, "AMQP 0-10"));
-            mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId);
         }
         ConnectionState::setUrl(mgmtId);
@@ -277,20 +268,6 @@ void Connection::notifyConnectionForced(const string& text)
 void Connection::setUserId(const string& userId)
 {
     ConnectionState::setUserId(userId);
-    // In a cluster, the cluster code will raise the connect event
-    // when the connection is replicated to the cluster.
-    if (!broker.isInCluster()) raiseConnectEvent();
-}
-
-void Connection::raiseConnectEvent() {
-    if (mgmtObject != 0) {
-        mgmtObject->set_authIdentity(userId);
-        agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId, mgmtObject->get_remoteProperties()));
-    }
-
-    QPID_LOG_CAT(debug, model, "Create connection. user:" << userId
-        << " rhost:" << mgmtId );
-
 }
 
 void Connection::setUserProxyAuth(bool b)
@@ -488,7 +465,7 @@ void Connection::abort()
 void Connection::setHeartbeatInterval(uint16_t heartbeat)
 {
     setHeartbeat(heartbeat);
-    if (heartbeat > 0 && !isShadow()) {
+    if (heartbeat > 0) {
         if (!heartbeatTimer) {
             heartbeatTimer = new ConnectionHeartbeatTask(heartbeat, timer, *this);
             timer.add(heartbeatTimer);

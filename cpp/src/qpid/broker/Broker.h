@@ -184,8 +184,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
                            const Message& msg);
     std::string federationTag;
     bool recoveryInProgress;
-    bool recovery;
-    bool inCluster, clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConsumerFactories consumerFactories;
     ProtocolRegistry protocolRegistry;
@@ -282,21 +280,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     static QPID_BROKER_EXTERN const std::string TCP_TRANSPORT;
 
-    void setRecovery(bool set) { recovery = set; }
-    bool getRecovery() const { return recovery; }
     bool inRecovery() const { return recoveryInProgress; }
-
-    /** True of this broker is part of a cluster.
-     * Only valid after early initialization of plugins is complete.
-     */
-    bool isInCluster() const { return inCluster; }
-    void setInCluster(bool set) { inCluster = set; }
-
-    /** True if this broker is joining a cluster and in the process of
-     * receiving a state update.
-     */
-    bool isClusterUpdatee() const { return clusterUpdatee; }
-    void setClusterUpdatee(bool set) { clusterUpdatee = set; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
 

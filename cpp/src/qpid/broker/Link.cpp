@@ -209,9 +209,6 @@ void Link::setStateLH (int newState)
 
     state = newState;
 
-    if (hideManagement())
-        return;
-
     switch (state)
     {
     case STATE_WAITING     : mgmtObject->set_state("Waiting");     break;
@@ -237,8 +234,7 @@ void Link::startConnectionLH ()
         QPID_LOG(error, "Link connection to " << host << ":" << port << " failed: "
                  << e.what());
         setStateLH(STATE_WAITING);
-        if (!hideManagement())
-            mgmtObject->set_lastError (e.what());
+        mgmtObject->set_lastError (e.what());
     }
 }
 
@@ -249,7 +245,7 @@ void Link::established(Connection* c)
     addr << host << ":" << port;
     QPID_LOG (info, "Inter-broker link established to " << addr.str());
 
-    if (!hideManagement() && agent)
+    if (agent)
         agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
     bool isClosing = false;
     {
@@ -292,7 +288,7 @@ void Link::opened() {
     Mutex::ScopedLock mutex(lock);
     if (!connection) return;
 
-    if (!hideManagement() && connection->GetManagementObject()) {
+    if (connection->GetManagementObject()) {
         mgmtObject->set_connectionRef(connection->GetManagementObject()->getObjectId());
     }
 
@@ -354,13 +350,11 @@ void Link::closed(int, std::string text)
 
     connection = 0;
 
-    if (!hideManagement()) {
-        mgmtObject->set_connectionRef(qpid::management::ObjectId());
-        if (state == STATE_OPERATIONAL && agent) {
-            stringstream addr;
-            addr << host << ":" << port;
+    mgmtObject->set_connectionRef(qpid::management::ObjectId());
+    if (state == STATE_OPERATIONAL && agent) {
+        stringstream addr;
+        addr << host << ":" << port;
             agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
-        }
     }
 
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
@@ -372,8 +366,7 @@ void Link::closed(int, std::string text)
     if (state != STATE_FAILED && state != STATE_PASSIVE)
     {
         setStateLH(STATE_WAITING);
-        if (!hideManagement())
-            mgmtObject->set_lastError (text);
+        mgmtObject->set_lastError (text);
     }
 }
 
@@ -514,14 +507,13 @@ void Link::reconnectLH(const Address& a)
     port = a.port;
     transport = a.protocol;
 
-    if (!hideManagement()) {
-        stringstream errorString;
-        errorString << "Failing over to " << a;
-        mgmtObject->set_lastError(errorString.str());
-        mgmtObject->set_host(host);
-        mgmtObject->set_port(port);
-        mgmtObject->set_transport(transport);
-    }
+    stringstream errorString;
+    errorString << "Failing over to " << a;
+    mgmtObject->set_lastError(errorString.str());
+    mgmtObject->set_host(host);
+    mgmtObject->set_port(port);
+    mgmtObject->set_transport(transport);
+
     startConnectionLH();
 }
 
@@ -536,12 +528,6 @@ bool Link::tryFailoverLH() {
         return true;
     }
     return false;
-}
-
-// Management updates for a link are inconsistent in a cluster, so they are
-// suppressed.
-bool Link::hideManagement() const {
-    return !mgmtObject || ( broker && broker->isInCluster());
 }
 
 // Allocate channel from link free pool
@@ -585,8 +571,7 @@ void Link::notifyConnectionForced(const string text)
 {
     Mutex::ScopedLock mutex(lock);
     setStateLH(STATE_FAILED);
-    if (!hideManagement())
-        mgmtObject->set_lastError(text);
+    mgmtObject->set_lastError(text);
 }
 
 void Link::setPersistenceId(uint64_t id) const
