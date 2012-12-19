@@ -264,11 +264,6 @@ class SemanticState : private boost::noncopyable {
     void detached();
     void closed();
 
-    // Used by cluster to re-create sessions
-    template <class F> void eachConsumer(F f) {
-        for(ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); ++i)
-            f(i->second);
-    }
     DeliveryRecords& getUnacked() { return unacked; }
     framing::SequenceSet getAccumulatedAck() const { return accumulatedAck; }
     TxBuffer::shared_ptr getTxBuffer() const { return txBuffer; }

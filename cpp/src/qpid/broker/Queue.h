@@ -402,11 +402,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      */
     QPID_BROKER_EXTERN void recoveryComplete(ExchangeRegistry& exchanges);
 
-    // For cluster update
-    QPID_BROKER_EXTERN QueueListeners& getListeners();
-    QPID_BROKER_EXTERN Messages& getMessages();
-    QPID_BROKER_EXTERN const Messages& getMessages() const;
-
     /**
      * Reserve space in policy for an enqueued message that
      * has been recovered in the prepared state (dtx only)
