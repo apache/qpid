@@ -370,7 +370,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      *
      * The _caller_ must ensure that any messages after pos have been dequeued.
      *
-     * Used by HA/cluster code for queue replication.
+     * Used by HA code for queue replication.
      */
     QPID_BROKER_EXTERN void setPosition(framing::SequenceNumber pos);
 

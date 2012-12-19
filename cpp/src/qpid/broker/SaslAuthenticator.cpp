@@ -169,14 +169,8 @@ void SaslAuthenticator::fini(void)
 std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c )
 {
     if (c.getBroker().getOptions().auth) {
-        // The cluster creates non-authenticated connections for internal shadow connections
-        // that are never connected to an external client.
-        if ( !c.isAuthenticated() )
-            return std::auto_ptr<SaslAuthenticator>(
-                new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
-        else
-            return std::auto_ptr<SaslAuthenticator>(
-                new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        return std::auto_ptr<SaslAuthenticator>(
+            new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     } else {
         QPID_LOG(debug, "SASL: No Authentication Performed");
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));

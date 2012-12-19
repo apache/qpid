@@ -83,8 +83,7 @@ class Connection : public sys::ConnectionInputHandler,
                const std::string& mgmtId,
                const qpid::sys::SecuritySettings&,
                bool isLink = false,
-               uint64_t objectId = 0,
-               bool authenticated=true);
+               uint64_t objectId = 0);
 
     ~Connection ();
 
@@ -141,16 +140,13 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
     void restartTimeout();
-    
+
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
             f(*ptr_map_ptr(i));
     }
 
     void setSecureConnection(SecureConnection* secured);
-
-    /** True if this connection is authenticated */
-    bool isAuthenticated() const { return authenticated; }
 
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
     {
@@ -172,7 +168,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
-    bool authenticated;
     ConnectionHandler adapter;
     const bool link;
     bool mgmtClosing;
