@@ -84,12 +84,10 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        std::string& mgmtId_,
                        const qpid::sys::SecuritySettings& external,
                        bool link_,
-                       uint64_t objectId_,
-                       bool authenticated_
+                       uint64_t objectId_
 ) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    authenticated(authenticated_),
     adapter(*this, link_),
     link(link_),
     mgmtClosing(false),
