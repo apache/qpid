@@ -176,17 +176,3 @@ void DtxWorkRecord::timedout()
     }
     abort();
 }
-
-size_t DtxWorkRecord::indexOf(const DtxBuffer::shared_ptr& buf) {
-    Work::iterator i = std::find(work.begin(), work.end(), buf);
-    if (i == work.end()) throw NotFoundException(
-        QPID_MSG("Can't find DTX buffer for xid: " << buf->getXid()));
-    return i - work.begin();
-}
-
-DtxBuffer::shared_ptr DtxWorkRecord::operator[](size_t i) const {
-    if (i > work.size())
-        throw NotFoundException(
-            QPID_MSG("Can't find DTX buffer " << i << " for xid: " << xid));
-    return work[i];
-}

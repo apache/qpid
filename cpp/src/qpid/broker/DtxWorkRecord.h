@@ -78,12 +78,6 @@ public:
     bool isRolledback() const { return rolledback; }
     bool isPrepared() const { return prepared; }
     bool isExpired() const { return expired; }
-
-    // Used by cluster update;
-    size_t size() const { return work.size(); }
-    DtxBuffer::shared_ptr operator[](size_t i) const;
-    uint32_t getTimeout() const { return timeout? timeout->timeout : 0; }
-    size_t indexOf(const DtxBuffer::shared_ptr&);
 };
 
 }} // qpid::broker
