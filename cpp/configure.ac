@@ -539,7 +539,6 @@ AC_CONFIG_FILES([
   managementgen/Makefile
   etc/Makefile
   src/Makefile
-  src/tests/cpg_check.sh
   src/tests/Makefile
   src/tests/test_env.sh
   src/tests/install_env.sh
