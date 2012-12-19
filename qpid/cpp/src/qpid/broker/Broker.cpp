@@ -215,9 +215,6 @@ Broker::Broker(const Broker::Options& conf) :
         *this),
     queueCleaner(queues, &timer),
     recoveryInProgress(false),
-    recovery(true),
-    inCluster(false),
-    clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
     deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
@@ -289,18 +286,11 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges.declare(empty, DirectExchange::typeName, false, noReplicateArgs());
 
     if (store.get() != 0) {
-        // The cluster plug-in will setRecovery(false) on all but the first
-        // broker to join a cluster.
-        if (getRecovery()) {
-            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, protocolRegistry);
-            recoveryInProgress = true;
-            store->recover(recoverer);
-            recoveryInProgress = false;
-        }
-        else {
-            QPID_LOG(notice, "Cluster recovery: recovered journal data discarded and journal files pushed down");
-            store->truncateInit(true); // save old files in subdir
-        }
+        RecoveryManagerImpl recoverer(
+            queues, exchanges, links, dtxManager, protocolRegistry);
+        recoveryInProgress = true;
+        store->recover(recoverer);
+        recoveryInProgress = false;
     }
 
     //ensure standard exchanges exist (done after recovery from store)

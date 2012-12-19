@@ -73,7 +73,7 @@ class SessionState : public qpid::SessionState,
 {
   public:
     SessionState(Broker&, SessionHandler&, const SessionId&,
-                 const SessionState::Configuration&, bool delayManagement=false);
+                 const SessionState::Configuration&);
     ~SessionState();
     bool isAttached() const { return handler; }
 

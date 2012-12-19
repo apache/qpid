@@ -129,11 +129,6 @@ void QueueFlowLimit::enqueued(const Message& msg)
     }
 
     if (flowStopped || !index.empty()) {
-        // ignore flow control if we are populating the queue due to cluster replication:
-        if (broker && broker->isClusterUpdatee()) {
-            QPID_LOG(trace, "Queue \"" << queueName << "\": ignoring flow control for msg pos=" << msg.getSequence());
-            return;
-        }
         QPID_LOG(trace, "Queue \"" << queueName << "\": setting flow control for msg pos=" << msg.getSequence());
         msg.getPersistentContext()->getIngressCompletion().startCompleter();    // don't complete until flow resumes
         bool unique;
