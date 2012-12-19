@@ -39,21 +39,6 @@
    fun:_sasl_load_plugins
    fun:sasl_client_init
 }
-{
-   Benign leak in CPG - patched version.
-   Memcheck:Leak
-   fun:*
-   fun:openais_service_connect
-   fun:cpg_initialize
-}
-
-{
-   Benign error in libcpg.
-   Memcheck:Param
-   socketcall.sendmsg(msg.msg_iov[i])
-   obj:*/libpthread-2.5.so
-   obj:*/libcpg.so.2.0.0
-}
 
 {
    Uninitialised value problem in _dl_relocate (F7, F8)
@@ -158,14 +143,6 @@
    fun:malloc
    fun:strdup
    fun:_ZN4qpid7Options5parseEiPPcRKSsb
-}
-
-{
-  CPG error - seems benign.
-   Memcheck:Param
-   socketcall.sendmsg(msg.msg_iov[i])
-   obj:*
-   obj:*/libcpg.so.2.0.0
 }
 
 {
