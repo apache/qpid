@@ -84,10 +84,6 @@ struct QueueSettings;
     QPID_BROKER_EXTERN void acquired(const Message&) {};
     QPID_BROKER_EXTERN void requeued(const Message&) {};
 
-    /** for clustering: */
-    QPID_BROKER_EXTERN void getState(qpid::framing::FieldTable&) const;
-    QPID_BROKER_EXTERN void setState(const qpid::framing::FieldTable&);
-
     uint32_t getFlowStopCount() const { return flowStopCount; }
     uint32_t getFlowResumeCount() const { return flowResumeCount; }
     uint64_t getFlowStopSize() const { return flowStopSize; }
