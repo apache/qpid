@@ -48,7 +48,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         heartbeatmax(120),
         userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links & clustering)
         federationLink(true),
-        clusterOrderOut(0),
         isDefaultRealm(false)
     {}
 
@@ -102,15 +101,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     framing::ProtocolVersion getVersion() const { return version; }
     void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out.set(o); }
 
-    /**
-     * If the broker is part of a cluster, this is a handler provided
-     * by cluster code. It ensures consistent ordering of commands
-     * that are sent based on criteria that are not predictably
-     * ordered cluster-wide, e.g. a timer firing.
-     */
-    framing::FrameHandler* getClusterOrderOutput() { return clusterOrderOut; }
-    void setClusterOrderOutput(framing::FrameHandler& fh) { clusterOrderOut = &fh; }
-
     virtual void requestIOProcessing (boost::function0<void>) = 0;
 
   protected:
@@ -124,7 +114,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     bool federationLink;
     std::string federationPeerTag;
     std::vector<Url> knownHosts;
-    framing::FrameHandler* clusterOrderOut;
     std::string userName;
     bool isDefaultRealm;
 };
