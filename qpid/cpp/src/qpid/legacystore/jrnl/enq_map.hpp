@@ -28,9 +28,6 @@
  * See class documentation for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008, 2009, 2010 Red Hat Inc.
- *
  */
 
 #ifndef mrg_journal_enq_map_hpp

@@ -27,9 +27,6 @@
  * File containing code for class mrg::journal::fcntl (non-logging file
  * handle), used for controlling journal log files. See comments in file
  * fcntl.hpp for details.
- *
- * Copyright (c) 2007, 2008, 2009 Red Hat, Inc.
- *
  */
 
 #include "jrnl/fcntl.hpp"

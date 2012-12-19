@@ -27,9 +27,6 @@
  * This file contains a posix condition variable class.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_cvar_hpp

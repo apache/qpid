@@ -29,9 +29,6 @@
  * position in the journal file indicates that the record write was completed.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_rec_tail_hpp

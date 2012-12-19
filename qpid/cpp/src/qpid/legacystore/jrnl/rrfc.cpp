@@ -28,11 +28,6 @@
  * file controller). See comments in file rrfc.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008, 2009 Red Hat, Inc.
- *
- * This file is part of the Qpid async store library msgstore.so.
- *
  */
 
 

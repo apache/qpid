@@ -30,9 +30,6 @@
  * See file jerrno.hpp for class details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008, 2009 Red Hat, Inc.
- *
  */
 
 #include "jrnl/jerrno.hpp"

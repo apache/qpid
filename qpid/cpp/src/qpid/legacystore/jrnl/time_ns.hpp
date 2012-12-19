@@ -28,9 +28,6 @@
  * the timespec struct and provided with helper functions.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_jtt_time_ns_hpp

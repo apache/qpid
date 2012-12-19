@@ -19,11 +19,7 @@
  *
  */
 
-/*
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- */
-
-#include "BufferValue.h"
+/#include "BufferValue.h"
 
 namespace mrg {
 namespace msgstore {

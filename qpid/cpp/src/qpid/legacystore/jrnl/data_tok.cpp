@@ -28,9 +28,6 @@
  * See comments in file data_tok.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #include "jrnl/data_tok.hpp"

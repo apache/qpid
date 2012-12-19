@@ -29,9 +29,6 @@
  * direcories and files. See comments in file jdir.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #include "jrnl/jdir.hpp"
