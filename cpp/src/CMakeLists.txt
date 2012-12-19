@@ -208,6 +208,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
+		 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
@@ -1505,3 +1506,8 @@ configure_file(qmf2.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc @ONLY)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
          DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
          COMPONENT ${QPID_COMPONENT_COMMON})
+
+#
+# Legacy store
+#
+include (legacystore.cmake)
