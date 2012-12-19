@@ -93,7 +93,6 @@ class HaBroker : public management::Manageable
     const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
 
     void setMembership(const types::Variant::List&); // Set membership from list.
-    void resetMembership(const BrokerInfo& b); // Reset to contain just one member.
     void addBroker(const BrokerInfo& b);       // Add a broker to the membership.
     void removeBroker(const types::Uuid& id);  // Remove a broker from membership.
 

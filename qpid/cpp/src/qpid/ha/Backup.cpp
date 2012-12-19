@@ -75,7 +75,7 @@ void Backup::initialize(const Url& brokers) {
 }
 
 Backup::~Backup() {
-    QPID_LOG(debug, logPrefix << "Backup shutting down.");
+    QPID_LOG(debug, logPrefix << "No longer a backup.");
     if (link) link->close();
     if (replicator.get()) {
         broker.getExchanges().destroy(replicator->getName());
@@ -106,7 +106,9 @@ void Backup::setStatus(BrokerStatus status) {
         break;
       case CATCHUP:
         QPID_LOG(notice, logPrefix << "Catching up on primary, cannot be promoted.");
+        break;
       default:
+        // FIXME aconway 2012-12-07: fail
         assert(0);
     }
 }
