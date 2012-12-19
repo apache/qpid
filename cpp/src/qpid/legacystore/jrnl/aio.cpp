@@ -28,9 +28,6 @@
  * encapsulation). See comments in file aio.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008, 2009 Red Hat Inc.
- *
  */
 
 #include "aio.hpp"

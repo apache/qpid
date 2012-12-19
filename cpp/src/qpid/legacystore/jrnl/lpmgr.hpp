@@ -27,9 +27,6 @@
  * Class mrg::journal::lpmgr. See class documentation for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2008, 2009 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_lpmgr_hpp

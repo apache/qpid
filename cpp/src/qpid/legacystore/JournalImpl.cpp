@@ -19,10 +19,6 @@
  *
  */
 
-/*
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- */
-
 #include "JournalImpl.h"
 
 #include "jrnl/jerrno.hpp"

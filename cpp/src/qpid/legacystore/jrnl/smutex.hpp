@@ -27,9 +27,6 @@
  * Messaging journal scoped mutex class mrg::journal::smutex.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2010 Red Hat, Inc.
- *
  */
 
 

@@ -27,9 +27,6 @@
  * This file contains the code for the mrg::journal::jinf class.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008, 2009 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_jinf_hpp

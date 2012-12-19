@@ -28,9 +28,6 @@
  * record header), used to start a transaction (commit or abort) record.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_txn_hdr_hpp

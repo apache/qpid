@@ -28,9 +28,6 @@
  * comments in file smutex.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2010 Red Hat Inc.
- *
  */
 
 #include "jrnl/smutex.hpp"

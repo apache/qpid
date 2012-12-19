@@ -27,9 +27,6 @@
  * Contains structure for recovery status and offset data.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_rcvdat_hpp
