@@ -82,18 +82,6 @@ class MessageStorePlugin :
     /**
      * @name Methods inherited from qpid::broker::MessageStore
      */
-    //@{
-    /**
-     * If called before recovery, will discard the database and reinitialize
-     * using an empty store. This is used when cluster nodes recover and
-     * must get their content from a cluster sync rather than directly from
-     * the store.
-     *
-     * @param saveStoreContent    If true, the store's contents should be
-     *                            saved to a backup location before
-     *                            reinitializing the store content.
-     */
-    virtual void truncateInit(const bool saveStoreContent = false);
 
     /**
      * Record the existence of a durable queue
