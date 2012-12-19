@@ -71,17 +71,6 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
-    /**
-     * If commands are sent based on the local time (e.g. in timers), they don't have
-     * a well-defined ordering across cluster nodes.
-     * This proxy is for sending such commands. In a clustered broker it will take steps
-     * to synchronize command order across the cluster. In a stand-alone broker
-     * it is just a synonym for getProxy()
-     */
-    framing::AMQP_ClientProxy& getClusterOrderProxy() {
-        return clusterOrderProxy.get() ? *clusterOrderProxy : proxy;
-    }
-
     virtual void handleDetach();
     void attached(const std::string& name);//used by 'pushing' inter-broker bridges
     void attachAs(const std::string& name);//used by 'pulling' inter-broker bridges
@@ -108,7 +97,6 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
     Connection& connection;
     framing::AMQP_ClientProxy proxy;
     std::auto_ptr<SessionState> session;
-    std::auto_ptr<SetChannelProxy> clusterOrderProxy;
     boost::shared_ptr<ErrorListener> errorListener;
 };
 

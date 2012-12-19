@@ -337,11 +337,6 @@ Broker& SessionState::getBroker() { return broker; }
 // dead sessions are kept and interfere with failover.
 void SessionState::setTimeout(uint32_t) { }
 
-framing::AMQP_ClientProxy& SessionState::getClusterOrderProxy() {
-    return handler->getClusterOrderProxy();
-}
-
-
 // Current received command is an execution.sync command.
 // Complete this command only when all preceding commands have completed.
 // (called via the invoker() in handleCommand() above)
