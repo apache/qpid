@@ -56,7 +56,7 @@
 
     <target name="release-bin-copy-broker-plugins" description="copy broker-plugins into module release">
         <copy todir="${module.release}/lib/plugins" failonerror="true">
-            <fileset dir="${build.lib.broker.plugins}"/>
+            <fileset dir="${build.scratch.broker.plugins.lib}"/>
         </copy>
     </target>
 
