@@ -107,7 +107,6 @@ class Link : public PersistableConfig, public management::Manageable {
     void destroy();                  // Cleanup connection before link goes away
     void ioThreadProcessing();       // Called on connection's IO thread by request
     bool tryFailoverLH();            // Called during maintenance visit
-    bool hideManagement() const;
     void reconnectLH(const Address&); //called by LinkRegistry
 
     // connection management (called by LinkRegistry)
