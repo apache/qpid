@@ -727,7 +727,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionState.h \
   qpid/broker/SignalHandler.cpp \
   qpid/broker/SignalHandler.h \
-  qpid/broker/StatefulQueueObserver.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
   qpid/broker/ThresholdAlerts.cpp \
