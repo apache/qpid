@@ -43,7 +43,6 @@ export PYTHON_COMMANDS=$QPID_TOOLS/src/py
 export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$QMF_LIB:$PYTHONPATH
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
-export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster
 export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
 
 # Executables
@@ -63,7 +62,6 @@ export TEST_STORE_LIB=$testmoduledir/test_store.so
 
 exportmodule() { test -f $moduledir/$2 && eval "export $1=$moduledir/$2"; }
 exportmodule ACL_LIB acl.so
-exportmodule CLUSTER_LIB cluster.so
 exportmodule HA_LIB ha.so
 exportmodule SSLCONNECTOR_LIB sslconnector.so
 exportmodule SSL_LIB ssl.so

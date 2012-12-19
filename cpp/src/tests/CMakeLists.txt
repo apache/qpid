@@ -340,7 +340,7 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 #
 ## Longer running stability tests, not run by default check: target.
 ## Not run under valgrind, too slow
-#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak
+#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest
 #EXTRA_DIST+=$(LONG_TESTS) run_perftest
 #check-long:
 #	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
