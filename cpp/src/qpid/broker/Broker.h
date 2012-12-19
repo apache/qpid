@@ -278,10 +278,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Timer for local tasks affecting only this broker */
     sys::Timer& getTimer() { return timer; }
 
-    /** Timer for tasks that must be synchronized if we are in a cluster */
-    sys::Timer& getClusterTimer() { return clusterTimer.get() ? *clusterTimer : timer; }
-    QPID_BROKER_EXTERN void setClusterTimer(std::auto_ptr<sys::Timer>);
-
     boost::function<std::vector<Url> ()> getKnownBrokers;
 
     static QPID_BROKER_EXTERN const std::string TCP_TRANSPORT;

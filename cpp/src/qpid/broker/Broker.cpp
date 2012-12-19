@@ -1067,12 +1067,6 @@ Broker::getKnownBrokersImpl()
 bool Broker::deferDeliveryImpl(const std::string&, const Message&)
 { return false; }
 
-void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
-    clusterTimer = t;
-    queueCleaner.setTimer(clusterTimer.get());
-    dtxManager.setTimer(*clusterTimer.get());
-}
-
 const std::string Broker::TCP_TRANSPORT("tcp");
 
 
