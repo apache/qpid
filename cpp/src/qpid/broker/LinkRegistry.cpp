@@ -460,14 +460,4 @@ void LinkRegistry::setPassive(bool p)
     }
 }
 
-void LinkRegistry::eachLink(boost::function<void(boost::shared_ptr<Link>)> f) {
-    Mutex::ScopedLock locker(lock);
-    for (LinkMap::iterator i = links.begin(); i != links.end(); ++i) f(i->second);
-}
-
-void LinkRegistry::eachBridge(boost::function<void(boost::shared_ptr<Bridge>)> f) {
-    Mutex::ScopedLock locker(lock);
-    for (BridgeMap::iterator i = bridges.begin(); i != bridges.end(); ++i) f(i->second);
-}
-
 }} // namespace qpid::broker
