@@ -108,8 +108,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	TopicExchangeTest.cpp \
 	TxBufferTest.cpp \
 	ConnectionOptions.h \
-	ForkedBroker.h \
-	ForkedBroker.cpp \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
@@ -314,7 +312,6 @@ EXTRA_DIST +=								\
   ssl_test								\
   ping_broker								\
   config.null								\
-  cpg_check.sh.in							\
   run_federation_tests							\
   run_federation_sys_tests                  \
   run_long_federation_sys_tests             \
@@ -370,7 +367,6 @@ EXTRA_DIST+=						\
 	shared_perftest					\
 	multiq_perftest					\
 	topic_perftest					\
-	run_failover_soak				\
 	sasl_test_setup.sh                              \
 	run_msg_group_tests_soak			\
 	qpidd-empty.conf

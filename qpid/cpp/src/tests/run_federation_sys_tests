@@ -25,10 +25,6 @@ source ./test_env.sh
 
 MODULENAME=federation_sys
 
-# Test for clustering
-source cpg_check.sh
-if cpg_enabled; then CLUSTERING_ENABLED=1; fi
-
 # Test for long test
 if [[ "$1" == "LONG_TEST" ]]; then
     USE_LONG_TEST=1
@@ -42,11 +38,7 @@ if [ -z ${USE_LONG_TEST} ]; then
     SKIPTESTS="-i federation_sys.A_Long* -i federation_sys.B_Long* ${SKIPTESTS}"
 fi
 echo "WARNING: Tests using persistence will be ignored."
-if [ -z ${CLUSTERING_ENABLED} ]; then
-    SKIPTESTS="${SKIPTESTS} -i federation_sys.C_* -i federation_sys.D_*"
-elif [ -z ${USE_LONG_TEST} ]; then
-    SKIPTESTS="${SKIPTESTS} -i federation_sys.C_Long* -i federation_sys.D_Long*"
-fi
+SKIPTESTS="${SKIPTESTS} -i federation_sys.C_* -i federation_sys.D_*"
 
 start_brokers() {
     start_broker() {
@@ -56,35 +48,21 @@ start_brokers() {
     }
     start_broker "" LOCAL_PORT
     start_broker "" REMOTE_PORT
-    if [ -n "${CLUSTERING_ENABLED}" ]; then
-        start_broker "--load-module ${CLUSTER_LIB} --cluster-name test-cluster-1" CLUSTER_C1_1
-        start_broker "--load-module ${CLUSTER_LIB} --cluster-name test-cluster-1" CLUSTER_C1_2
-        start_broker "--load-module ${CLUSTER_LIB} --cluster-name test-cluster-2" CLUSTER_C2_1
-        start_broker "--load-module ${CLUSTER_LIB} --cluster-name test-cluster-2" CLUSTER_C2_2
-    fi
     rm qpidd.port
 }
 
 stop_brokers() {
     ${QPIDD_EXEC} -q --port ${LOCAL_PORT}
     ${QPIDD_EXEC} -q --port ${REMOTE_PORT}
-    if [ -n "${CLUSTERING_ENABLED}" ]; then
-        ${QPID_CLUSTER_EXEC} --all-stop --force localhost:${CLUSTER_C1_1}
-        ${QPID_CLUSTER_EXEC} --all-stop --force localhost:${CLUSTER_C2_1}
-    fi
 }
 
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
-    if [ -z ${CLUSTERING_ENABLED} ]; then
-        echo "Running federation tests using brokers on local port ${LOCAL_PORT}, remote port ${REMOTE_PORT} (NOTE: clustering is DISABLED)"
-    else
-        echo "Running federation tests using brokers on local port ${LOCAL_PORT}, remote port ${REMOTE_PORT}, local cluster nodes ${CLUSTER_C1_1} ${CLUSTER_C1_2}, remote cluster nodes ${CLUSTER_C2_1} ${CLUSTER_C2_2}"
-    fi
+    echo "Running federation tests using brokers on local port ${LOCAL_PORT}, remote port ${REMOTE_PORT} (NOTE: clustering is DISABLED)"
     if [ -z ${USE_LONG_TEST} ]; then
         echo "NOTE: To run a full set of federation system tests, use \"make check-long\". To test with persistence, run the store version of this script."
     fi
-    ${QPID_PYTHON_TEST} -m ${MODULENAME} ${SKIPTESTS} -b localhost:${REMOTE_PORT} -Dlocal-port=${LOCAL_PORT} -Dremote-port=${REMOTE_PORT} -Dlocal-cluster-ports="${CLUSTER_C1_1} ${CLUSTER_C1_2}" -Dremote-cluster-ports="${CLUSTER_C2_1} ${CLUSTER_C2_2}" $@
+    ${QPID_PYTHON_TEST} -m ${MODULENAME} ${SKIPTESTS} -b localhost:${REMOTE_PORT} -Dlocal-port=${LOCAL_PORT} -Dremote-port=${REMOTE_PORT} $@
     RETCODE=$?
     stop_brokers
     if test x${RETCODE} != x0; then
