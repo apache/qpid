@@ -53,7 +53,6 @@
     <xi:include href="Security.xml"/>
     <xi:include href="LVQ.xml"/>
     <xi:include href="queue-state-replication.xml"/>
-    <xi:include href="Active-Active-Cluster.xml"/>
     <xi:include href="producer-flow-control.xml"/>
     <xi:include href="AMQP-Compatibility.xml"/>
     <xi:include href="Qpid-Interoperability-Documentation.xml"/>
