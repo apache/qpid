@@ -134,8 +134,12 @@ HaBroker::~HaBroker() {
 // Called from ManagementMethod on promote.
 void HaBroker::recover() {
     boost::shared_ptr<Backup> b;
-    {
+    BrokerInfo::Set backups;
+   {
         Mutex::ScopedLock l(lock);
+        // Reset membership before allowing backups to connect.
+        backups = membership.otherBackups();
+        membership.reset(brokerInfo);
         // No longer replicating, close link. Note: link must be closed before we
         // setStatus(RECOVERING) as that will remove our broker info from the
         // outgoing link properties so we won't recognize self-connects.
@@ -143,12 +147,9 @@ void HaBroker::recover() {
         backup.reset();         // Reset in lock.
     }
     b.reset();                  // Call destructor outside of lock.
-    BrokerInfo::Set backups;
-    {
+     {
         Mutex::ScopedLock l(lock);
         setStatus(RECOVERING, l);
-        backups = membership.otherBackups();
-        membership.reset(brokerInfo);
         // Drop the lock, new Primary may call back on activate.
     }
     // Outside of lock, may call back on activate()
@@ -287,12 +288,12 @@ void HaBroker::setStatus(BrokerStatus newStatus, Mutex::ScopedLock& l) {
     QPID_LOG(info, logPrefix << "Status change: "
              << printable(status) << " -> " << printable(newStatus));
     bool legal = checkTransition(status, newStatus);
-    assert(legal);
     if (!legal) {
         QPID_LOG(critical, logPrefix << "Illegal state transition: "
                  << printable(status) << " -> " << printable(newStatus));
         shutdown();
     }
+    assert(legal);              // FIXME aconway 2012-12-07: fail
     status = newStatus;
     statusChanged(l);
 }
@@ -326,13 +327,6 @@ void HaBroker::setMembership(const Variant::List& brokers) {
         membershipUpdated(l);
     }
     if (b) b->setStatus(status); // Oustside lock, avoid deadlock
-}
-
-void HaBroker::resetMembership(const BrokerInfo& b) {
-    Mutex::ScopedLock l(lock);
-    membership.reset(b);
-    QPID_LOG(debug, logPrefix << "Membership reset to: " <<  membership);
-    membershipUpdated(l);
 }
 
 void HaBroker::addBroker(const BrokerInfo& b) {

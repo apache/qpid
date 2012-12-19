@@ -848,7 +848,7 @@ namespace {
 }
 
 void BrokerReplicator::disconnected() {
-    QPID_LOG(info, logPrefix << "Disconnected");
+    QPID_LOG(info, logPrefix << "Disconnected from " << primary);
     connection = 0;
     // Clean up auto-delete queues
     vector<boost::shared_ptr<Exchange> > collect;

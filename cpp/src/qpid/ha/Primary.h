@@ -98,8 +98,8 @@ class Primary
     bool active;
     /**
      * Set of expected backups that must be ready before we declare ourselves
-     * active. These are backups that were known before the primary crashed. As
-     * new primary we expect them to re-connect.
+     * active. These are backups that were known and ready before the primary
+     * crashed. As new primary we expect them to re-connect.
      */
     BackupSet expectedBackups;
     /**
