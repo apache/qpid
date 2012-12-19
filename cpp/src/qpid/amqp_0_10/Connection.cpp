@@ -146,10 +146,6 @@ framing::ProtocolVersion Connection::getVersion() const {
     return version;
 }
 
-void Connection::setVersion(const framing::ProtocolVersion& v)  {
-    version = v;
-}
-
 size_t Connection::getBuffered() const {
     Mutex::ScopedLock l(frameQueueLock);
     return buffered;

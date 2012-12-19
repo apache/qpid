@@ -170,6 +170,8 @@ void ManagementAgent::configure(const string& _dataDir, bool _publish, uint16_t 
     sendQueue.reset(
         new EventQueue(boost::bind(&ManagementAgent::sendEvents, this, _1), broker->getPoller()));
     sendQueue->start();
+    timer          = &broker->getTimer();
+    timer->add(new Periodic(*this, interval));
 
     // Get from file or generate and save to file.
     if (dataDir.empty())
@@ -211,13 +213,6 @@ void ManagementAgent::configure(const string& _dataDir, bool _publish, uint16_t 
         QPID_LOG (debug, "ManagementAgent boot sequence: " << bootSequence);
     }
 }
-
-void ManagementAgent::pluginsInitialized() {
-    // Do this here so cluster plugin has the chance to set up the timer.
-    timer          = &broker->getClusterTimer();
-    timer->add(new Periodic(*this, interval));
-}
-
 
 void ManagementAgent::setName(const string& vendor, const string& product, const string& instance)
 {

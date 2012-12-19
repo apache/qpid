@@ -75,11 +75,6 @@ public:
     /** Called before plugins are initialized */
     void configure       (const std::string& dataDir, bool publish, uint16_t interval,
                           qpid::broker::Broker* broker, int threadPoolSize);
-    /** Called after plugins are initialized. */
-    void pluginsInitialized();
-
-    /** Called by cluster to suppress management output during update. */
-    void suppress(bool s) { suppressed = s; }
 
     void setName(const std::string& vendor,
                  const std::string& product,
@@ -137,10 +132,6 @@ public:
 
     /** Decode a serialized agent map */
     void importAgents(framing::Buffer& inBuf);
-
-    // these are in support of the managementSetup-state stuff, for synch'ing clustered brokers
-    uint64_t getNextObjectId(void) { return nextObjectId; }
-    void setNextObjectId(uint64_t o) { nextObjectId = o; }
 
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; writeData(); }

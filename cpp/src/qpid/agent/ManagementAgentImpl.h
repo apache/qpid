@@ -92,10 +92,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     uint16_t getInterval() { return interval; }
     void periodicProcessing();
 
-    // these next are here to support the hot-wiring of state between clustered brokers
-    uint64_t getNextObjectId(void) { return nextObjectId; }
-    void setNextObjectId(uint64_t o) { nextObjectId = o; }
-
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; }
 
