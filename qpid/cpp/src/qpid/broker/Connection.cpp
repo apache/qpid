@@ -127,8 +127,6 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 Connection::~Connection()
 {
     if (mgmtObject != 0) {
-        // In a cluster, Connections destroyed during shutdown are in
-        // a cluster-unsafe context. Don't raise an event in that case.
         if (!link)
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId(), mgmtObject->get_remoteProperties()));
         QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
@@ -176,7 +174,6 @@ bool isMessage(const AMQMethodBody* method)
 
 void Connection::recordFromServer(const framing::AMQFrame& frame)
 {
-    // Don't record management stats in cluster-unsafe contexts
     if (mgmtObject != 0)
     {
         qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
@@ -191,7 +188,6 @@ void Connection::recordFromServer(const framing::AMQFrame& frame)
 
 void Connection::recordFromClient(const framing::AMQFrame& frame)
 {
-    // Don't record management stats in cluster-unsafe contexts
     if (mgmtObject != 0)
     {
         qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
@@ -294,19 +290,6 @@ void Connection::close(connection::CloseCode code, const string& text)
     getOutput().close();
 }
 
-// Send a close to the client but keep the channels. Used by cluster.
-void Connection::sendClose() {
-    if (heartbeatTimer)
-        heartbeatTimer->cancel();
-    if (timeoutTimer)
-        timeoutTimer->cancel();
-    if (linkHeartbeatTimer) {
-        linkHeartbeatTimer->cancel();
-    }
-    adapter.close(connection::CLOSE_CODE_NORMAL, "OK");
-    getOutput().close();
-}
-
 void Connection::idleOut(){}
 
 void Connection::idleIn(){}
@@ -331,8 +314,6 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
 void Connection::doIoCallbacks() {
     if (!isOpen()) return; // Don't process IO callbacks until we are open.
     ScopedLock<Mutex> l(ioCallbackLock);
-    // Although IO callbacks execute in the connection thread context, they are
-    // not cluster safe because they are queued for execution in non-IO threads.
     while (!ioCallbacks.empty()) {
         boost::function0<void> cb = ioCallbacks.front();
         ioCallbacks.pop();

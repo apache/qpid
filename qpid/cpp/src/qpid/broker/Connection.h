@@ -147,7 +147,6 @@ class Connection : public sys::ConnectionInputHandler,
             f(*ptr_map_ptr(i));
     }
 
-    void sendClose();
     void setSecureConnection(SecureConnection* secured);
 
     /** True if this connection is authenticated */

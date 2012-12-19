@@ -216,8 +216,7 @@ Broker::Broker(const Broker::Options& conf) :
     queueCleaner(queues, &timer),
     recoveryInProgress(false),
     expiryPolicy(new ExpiryPolicy),
-    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
-    deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
+    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     try {
     if (conf.enableMgmt) {
