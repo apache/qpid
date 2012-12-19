@@ -763,28 +763,6 @@ namespace {
     const std::string FAILOVER_INDEX("failover-index");
 }
 
-void Link::getState(framing::FieldTable& state) const
-{
-    state.clear();
-    Mutex::ScopedLock mutex(lock);
-    if (!url.empty()) {
-        state.setString(FAILOVER_ADDRESSES, url.str());
-        state.setInt(FAILOVER_INDEX, reconnectNext);
-    }
-}
-
-void Link::setState(const framing::FieldTable& state)
-{
-    Mutex::ScopedLock mutex(lock);
-    if (state.isSet(FAILOVER_ADDRESSES)) {
-        Url failovers(state.getAsString(FAILOVER_ADDRESSES));
-        setUrl(failovers);
-    }
-    if (state.isSet(FAILOVER_INDEX)) {
-        reconnectNext = state.getAsInt(FAILOVER_INDEX);
-    }
-}
-
 std::string Link::createName(const std::string& transport,
                              const std::string& host,
                              uint16_t  port)
