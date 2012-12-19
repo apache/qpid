@@ -1510,4 +1510,4 @@ install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/q
 #
 # Legacy store
 #
-include (legacystore.cmake)
+#include (legacystore.cmake)
