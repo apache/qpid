@@ -28,9 +28,6 @@
  * file controller). See comments in file rfc.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2008, 2009 Red Hat, Inc.
- *
  */
 
 #include "jrnl/rfc.hpp"

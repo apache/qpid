@@ -27,9 +27,6 @@
  * File containing definitions for namespace mrg::journal enums.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_enums_hpp

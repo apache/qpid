@@ -29,9 +29,6 @@
  * See jinf.hpp comments for details of this class.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008, 2009 Red Hat, Inc.
- *
  */
 
 #include "jrnl/jinf.hpp"

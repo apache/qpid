@@ -26,9 +26,6 @@
  *
  * This file contains the code for the mrg::journal::enq_rec (journal enqueue
  * record) class. See class documentation for details.
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_enq_rec_hpp

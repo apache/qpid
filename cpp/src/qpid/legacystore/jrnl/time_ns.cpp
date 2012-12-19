@@ -28,9 +28,6 @@
  * the timespec struct and provided with helper functions.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2008 Red Hat, Inc.
- *
  */
 
 #include "time_ns.hpp"

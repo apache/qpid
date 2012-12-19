@@ -28,9 +28,6 @@
  * comments in file cvar.hpp for details.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat Inc.
- *
  */
 
 #include "jrnl/cvar.hpp"

@@ -28,9 +28,6 @@
  * used to dequeue a previously enqueued record.
  *
  * \author Kim van der Riet
- *
- * Copyright (c) 2007, 2008 Red Hat, Inc.
- *
  */
 
 #ifndef mrg_journal_deq_hdr_hpp
