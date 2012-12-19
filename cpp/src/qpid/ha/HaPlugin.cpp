@@ -86,7 +86,7 @@ struct HaPlugin : public Plugin {
 
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (broker) haBroker->initialize();
+        if (broker && haBroker.get()) haBroker->initialize();
     }
 
     void finalize() {
