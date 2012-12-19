@@ -19,7 +19,7 @@
  *
  */
 
-/#include "BufferValue.h"
+#include "BufferValue.h"
 
 namespace mrg {
 namespace msgstore {
