@@ -1010,22 +1010,11 @@ void Broker::accept() {
 
 void Broker::connect(
     const std::string& host, const std::string& port, const std::string& transport,
-    boost::function2<void, int, std::string> failed,
-    sys::ConnectionCodec::Factory* f)
+    boost::function2<void, int, std::string> failed)
 {
     boost::shared_ptr<ProtocolFactory> pf = getProtocolFactory(transport);
-    if (pf) pf->connect(poller, host, port, f ? f : factory.get(), failed);
+    if (pf) pf->connect(poller, host, port, factory.get(), failed);
     else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
-}
-
-void Broker::connect(
-    const Url& url,
-    boost::function2<void, int, std::string> failed,
-    sys::ConnectionCodec::Factory* f)
-{
-    url.throwIfEmpty();
-    const Address& addr=url[0];
-    connect(addr.host, boost::lexical_cast<std::string>(addr.port), addr.protocol, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages(
