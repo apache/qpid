@@ -378,7 +378,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug(debugIdentity() + "Content body received on channel " + _channelId);
+            _logger.debug(debugIdentity() + " content body received on channel " + _channelId);
         }
 
         try
@@ -1583,6 +1583,11 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     public void sync()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("sync() called on channel " + debugIdentity());
+        }
+
         AsyncCommand cmd;
         while((cmd = _unfinishedCommandsQueue.poll()) != null)
         {
