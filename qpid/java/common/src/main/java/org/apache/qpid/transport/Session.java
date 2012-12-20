@@ -25,7 +25,6 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.transport.network.Frame;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
-
 import static org.apache.qpid.transport.Option.COMPLETED;
 import static org.apache.qpid.transport.Option.SYNC;
 import static org.apache.qpid.transport.Option.TIMELY_REPLY;
@@ -414,7 +413,7 @@ public class Session extends SessionInvoker
 
         if(log.isDebugEnabled())
         {
-            log.debug("ID: [%s] %s", this.channel, id);
+            log.debug("identify: ch=%s, commandId=%s", this.channel, id);
         }
 
         if ((id & 0xff) == 0)
@@ -443,7 +442,7 @@ public class Session extends SessionInvoker
     {
         if(log.isDebugEnabled())
         {
-            log.debug("%s processed([%d,%d]) %s %s", this, lower, upper, syncPoint, maxProcessed);
+            log.debug("%s ch=%s processed([%d,%d]) %s %s", this, channel, lower, upper, syncPoint, maxProcessed);
         }
 
         boolean flush;
@@ -451,7 +450,7 @@ public class Session extends SessionInvoker
         {
             if(log.isDebugEnabled())
             {
-                log.debug("%s", processed);
+                log.debug("%s processed: %s", this, processed);
             }
 
             if (ge(upper, commandsIn))
