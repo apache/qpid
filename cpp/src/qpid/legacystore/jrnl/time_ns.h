@@ -20,7 +20,7 @@
  */
 
 /**
- * \file time_ns.hpp
+ * \file time_ns.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_jtt_time_ns_hpp
-#define mrg_jtt_time_ns_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_TIME_NS_H
+#define QPID_LEGACYSTORE_JRNL_TIME_NS_H
 
 #include <cerrno>
 #include <ctime>
@@ -102,4 +102,4 @@ struct time_ns : public timespec
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_jtt_time_ns_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_TIME_NS_H

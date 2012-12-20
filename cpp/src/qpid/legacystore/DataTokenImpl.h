@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef _DataTokenImpl_
-#define _DataTokenImpl_
+#ifndef QPID_LEGACYSTORE_DATATOKENIMPL_H
+#define QPID_LEGACYSTORE_DATATOKENIMPL_H
 
-#include "jrnl/data_tok.hpp"
-#include <qpid/broker/PersistableMessage.h>
+#include "jrnl/data_tok.h"
+#include "qpid/broker/PersistableMessage.h"
 #include <boost/intrusive_ptr.hpp>
 
 namespace mrg {
@@ -44,4 +44,4 @@ class DataTokenImpl : public journal::data_tok, public qpid::RefCounted
 } // namespace msgstore
 } // namespace mrg
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_DATATOKENIMPL_H

@@ -20,7 +20,7 @@
  */
 
 /**
- * \file lpmgr.hpp
+ * \file lpmgr.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -29,8 +29,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_lpmgr_hpp
-#define mrg_journal_lpmgr_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_LPMGR_H
+#define QPID_LEGACYSTORE_JRNL_LPMGR_H
 
 namespace mrg
 {
@@ -41,7 +41,7 @@ namespace journal
 }
 }
 
-#include "jrnl/fcntl.hpp"
+#include "jrnl/fcntl.h"
 #include <vector>
 
 namespace mrg
@@ -300,4 +300,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_lpmgr_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_LPMGR_H

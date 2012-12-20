@@ -20,7 +20,7 @@
  */
 
 /**
- * \file cvar.hpp
+ * \file cvar.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -29,14 +29,14 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_cvar_hpp
-#define mrg_journal_cvar_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_CVAR_H
+#define QPID_LEGACYSTORE_JRNL_CVAR_H
 
 #include <cstring>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
-#include "jrnl/smutex.hpp"
-#include "jrnl/time_ns.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
+#include "jrnl/smutex.h"
+#include "jrnl/time_ns.h"
 #include <pthread.h>
 #include <sstream>
 
@@ -84,4 +84,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_cvar_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_CVAR_H

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _TxnCtxt_
-#define _TxnCtxt_
+#ifndef QPID_LEGACYSTORE_TXNCTXT_H
+#define QPID_LEGACYSTORE_TXNCTXT_H
 
 #include <db-inc.h>
 #include <memory>
@@ -112,4 +112,6 @@ class TPCTxnCtxt : public TxnCtxt, public qpid::broker::TPCTransactionContext
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_TXNCTXT_H
+
+

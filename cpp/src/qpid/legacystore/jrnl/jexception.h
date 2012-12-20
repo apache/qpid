@@ -20,7 +20,7 @@
  */
 
 /**
- * \file jexception.hpp
+ * \file jexception.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -32,8 +32,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_jrnl_exception_hpp
-#define mrg_journal_jrnl_exception_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
+#define QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
 
 namespace mrg
 {
@@ -48,7 +48,7 @@ class jexception;
 #include <cstdlib>
 #include <cstring>
 #include <exception>
-#include "jrnl/jerrno.hpp"
+#include "jrnl/jerrno.h"
 #include <sstream>
 #include <string>
 #include <sys/types.h>
@@ -139,4 +139,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_jrnl_exception_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H

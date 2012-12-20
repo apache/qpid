@@ -20,7 +20,7 @@
  */
 
 /**
- * \file smutex.hpp
+ * \file smutex.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,10 +30,10 @@
  */
 
 
-#ifndef mrg_journal_smutex_hpp
-#define mrg_journal_smutex_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_SMUTEX_H
+#define QPID_LEGACYSTORE_JRNL_SMUTEX_H
 
-#include "jrnl/jexception.hpp"
+#include "jrnl/jexception.h"
 #include <pthread.h>
 
 namespace mrg
@@ -61,4 +61,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_smutex_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_SMUTEX_H

@@ -20,7 +20,7 @@
  */
 
 /**
- * \file lp_map.hpp
+ * \file lp_map.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_lp_map_hpp
-#define mrg_journal_lp_map_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_LP_MAP_H
+#define QPID_LEGACYSTORE_JRNL_LP_MAP_H
 
 #include <map>
 #include <string>
@@ -80,4 +80,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_lp_map_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_LP_MAP_H

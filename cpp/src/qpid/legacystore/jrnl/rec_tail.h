@@ -20,7 +20,7 @@
  */
 
 /**
- * \file rec_tail.hpp
+ * \file rec_tail.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -31,11 +31,11 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_rec_tail_hpp
-#define mrg_journal_rec_tail_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_REC_TAIL_H
+#define QPID_LEGACYSTORE_JRNL_REC_TAIL_H
 
 #include <cstddef>
-#include "jrnl/jcfg.hpp"
+#include "jrnl/jcfg.h"
 
 namespace mrg
 {
@@ -95,4 +95,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_rec_tail_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_REC_TAIL_H

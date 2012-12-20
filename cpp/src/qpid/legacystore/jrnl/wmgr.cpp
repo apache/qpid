@@ -25,20 +25,20 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::wmgr (read manager). See
- * comments in file wmgr.hpp for details.
+ * comments in file wmgr.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/wmgr.hpp"
+#include "jrnl/wmgr.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include "jrnl/file_hdr.hpp"
-#include "jrnl/jcntl.hpp"
-#include "jrnl/jerrno.hpp"
+#include "jrnl/file_hdr.h"
+#include "jrnl/jcntl.h"
+#include "jrnl/jerrno.h"
 #include <sstream>
 
 namespace mrg

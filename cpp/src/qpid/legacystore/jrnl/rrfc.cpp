@@ -25,19 +25,19 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::rrfc (rotating
- * file controller). See comments in file rrfc.hpp for details.
+ * file controller). See comments in file rrfc.h for details.
  *
  * \author Kim van der Riet
  */
 
 
-#include "jrnl/rrfc.hpp"
+#include "jrnl/rrfc.h"
 
 #include <cerrno>
 #include <fcntl.h>
 #include <unistd.h>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 
 namespace mrg
 {

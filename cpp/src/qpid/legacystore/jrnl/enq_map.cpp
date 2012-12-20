@@ -25,16 +25,16 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::enq_map (enqueue map). See
- * comments in file enq_map.hpp for details.
+ * comments in file enq_map.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/enq_map.hpp"
+#include "jrnl/enq_map.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/slock.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/slock.h"
 #include <sstream>
 
 

@@ -20,7 +20,7 @@
  */
 
 /**
- * \file data_tok.hpp
+ * \file data_tok.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_data_tok_hpp
-#define mrg_journal_data_tok_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H
+#define QPID_LEGACYSTORE_JRNL_DATA_TOK_H
 
 namespace mrg
 {
@@ -43,7 +43,7 @@ class data_tok;
 
 #include <cassert>
 #include <cstddef>
-#include "jrnl/smutex.hpp"
+#include "jrnl/smutex.h"
 #include <pthread.h>
 #include <string>
 #include <sys/types.h>
@@ -169,4 +169,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_data_tok_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H

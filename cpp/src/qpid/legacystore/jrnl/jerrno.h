@@ -20,7 +20,7 @@
  */
 
 /**
- * \file jerrno.hpp
+ * \file jerrno.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_jerrno_hpp
-#define mrg_journal_jerrno_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_JERRNO_H
+#define QPID_LEGACYSTORE_JRNL_JERRNO_H
 
 namespace mrg
 {
@@ -170,4 +170,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_jerrno_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_JERRNO_H

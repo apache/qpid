@@ -20,7 +20,7 @@
  */
 
 /**
- * \file rcvdat.hpp
+ * \file rcvdat.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -29,13 +29,13 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_rcvdat_hpp
-#define mrg_journal_rcvdat_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_RCVDAT_H
+#define QPID_LEGACYSTORE_JRNL_RCVDAT_H
 
 #include <cstddef>
 #include <iomanip>
 #include <map>
-#include "jrnl/jcfg.hpp"
+#include "jrnl/jcfg.h"
 #include <sstream>
 #include <sys/types.h>
 #include <vector>
@@ -178,4 +178,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_rcvdat_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_RCVDAT_H

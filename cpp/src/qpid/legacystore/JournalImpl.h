@@ -19,17 +19,17 @@
  *
  */
 
-#ifndef _JournalImpl_
-#define _JournalImpl_
+#ifndef QPID_LEGACYSTORE_JOURNALIMPL_H
+#define QPID_LEGACYSTORE_JOURNALIMPL_H
 
 #include <set>
-#include "jrnl/enums.hpp"
-#include "jrnl/jcntl.hpp"
+#include "jrnl/enums.h"
+#include "jrnl/jcntl.h"
 #include "DataTokenImpl.h"
 #include "PreparedTransaction.h"
-#include <qpid/broker/PersistableQueue.h>
-#include <qpid/sys/Timer.h>
-#include <qpid/sys/Time.h>
+#include "qpid/broker/PersistableQueue.h"
+#include "qpid/sys/Timer.h"
+#include "qpid/sys/Time.h"
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include "qpid/management/Manageable.h"
@@ -262,4 +262,4 @@ class TplJournalImpl : public JournalImpl
 } // namespace msgstore
 } // namespace mrg
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_JOURNALIMPL_H

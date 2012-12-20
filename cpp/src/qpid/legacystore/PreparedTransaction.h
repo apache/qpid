@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _PreparedTransaction_
-#define _PreparedTransaction_
+#ifndef QPID_LEGACYSTORE_PREPAREDTRANSACTION_H
+#define QPID_LEGACYSTORE_PREPAREDTRANSACTION_H
 
 #include <list>
 #include <map>
@@ -71,4 +71,4 @@ struct PreparedTransaction
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_PREPAREDTRANSACTION_H

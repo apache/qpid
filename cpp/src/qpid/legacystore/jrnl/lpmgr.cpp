@@ -26,16 +26,16 @@
  *
  * File containing code for class mrg::journal::lpmgr (non-logging file
  * handle), used for controlling journal log files. See comments in file
- * lpmgr.hpp for details.
+ * lpmgr.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/lpmgr.hpp"
+#include "jrnl/lpmgr.h"
 
 #include <cassert>
-#include <jrnl/jerrno.hpp>
-#include <jrnl/jexception.hpp>
+#include <jrnl/jerrno.h>
+#include <jrnl/jexception.h>
 
 namespace mrg
 {

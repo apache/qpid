@@ -20,7 +20,7 @@
  */
 
 /**
- * \file aio_callback.hpp
+ * \file aio_callback.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_aio_callback_hpp
-#define mrg_journal_aio_callback_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
+#define QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
 
 #include <vector>
 #include <sys/types.h>
@@ -54,4 +54,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_aio_callback_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H

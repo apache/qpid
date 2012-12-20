@@ -20,7 +20,7 @@
  */
 
 /**
- * \file rec_hdr.hpp
+ * \file rec_hdr.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -31,11 +31,11 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_rec_hdr_hpp
-#define mrg_journal_rec_hdr_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_REC_HDR_H
+#define QPID_LEGACYSTORE_JRNL_REC_HDR_H
 
 #include <cstddef>
-#include "jrnl/jcfg.hpp"
+#include "jrnl/jcfg.h"
 #include <sys/types.h>
 
 namespace mrg
@@ -140,4 +140,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_rec_hdr_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_REC_HDR_H

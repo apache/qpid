@@ -20,7 +20,7 @@
  */
 
 /**
- * \file rrfc.hpp
+ * \file rrfc.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_rrfc_hpp
-#define mrg_journal_rrfc_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_RRFC_H
+#define QPID_LEGACYSTORE_JRNL_RRFC_H
 
 namespace mrg
 {
@@ -41,8 +41,8 @@ class rrfc;
 }
 }
 
-#include "jrnl/fcntl.hpp"
-#include "jrnl/rfc.hpp"
+#include "jrnl/fcntl.h"
+#include "jrnl/rfc.h"
 
 namespace mrg
 {
@@ -176,4 +176,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_rrfc_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_RRFC_H

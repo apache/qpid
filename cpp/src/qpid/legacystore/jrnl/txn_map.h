@@ -20,7 +20,7 @@
  */
 
 /**
- * \file txn_map.hpp
+ * \file txn_map.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_txn_map_hpp
-#define mrg_journal_txn_map_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_TXN_MAP_H
+#define QPID_LEGACYSTORE_JRNL_TXN_MAP_H
 
 namespace mrg
 {
@@ -41,7 +41,7 @@ namespace journal
 }
 }
 
-#include "jrnl/smutex.hpp"
+#include "jrnl/smutex.h"
 #include <map>
 #include <pthread.h>
 #include <string>
@@ -156,4 +156,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_txn_map_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_TXN_MAP_H

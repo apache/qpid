@@ -20,7 +20,7 @@
  */
 
 /**
- * \file file_hdr.hpp
+ * \file file_hdr.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -31,14 +31,14 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_file_hdr_hpp
-#define mrg_journal_file_hdr_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_FILE_HDR_H
+#define QPID_LEGACYSTORE_JRNL_FILE_HDR_H
 
 #include <cerrno>
 #include <ctime>
-#include "jrnl/rec_hdr.hpp"
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/rec_hdr.h"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg
@@ -208,4 +208,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_file_hdr_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_FILE_HDR_H

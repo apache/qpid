@@ -24,7 +24,7 @@
 #include "BindingDbt.h"
 #include "BufferValue.h"
 #include "IdDbt.h"
-#include "jrnl/txn_map.hpp"
+#include "jrnl/txn_map.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qmf/org/apache/qpid/legacystore/Package.h"

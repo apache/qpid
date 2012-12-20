@@ -25,17 +25,17 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::txn_map (transaction map). See
- * comments in file txn_map.hpp for details.
+ * comments in file txn_map.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/txn_map.hpp"
+#include "jrnl/txn_map.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
-#include "jrnl/slock.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
+#include "jrnl/slock.h"
 #include <sstream>
 
 namespace mrg

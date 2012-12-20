@@ -20,7 +20,7 @@
  */
 
 /**
- * \file aio.hpp
+ * \file aio.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_aio_hpp
-#define mrg_journal_aio_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_AIO_H
+#define QPID_LEGACYSTORE_JRNL_AIO_H
 
 #include <libaio.h>
 #include <cstring>
@@ -150,4 +150,4 @@ public:
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_aio_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_AIO_H
