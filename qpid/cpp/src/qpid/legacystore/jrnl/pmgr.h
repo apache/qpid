@@ -20,7 +20,7 @@
  */
 
 /**
- * \file pmgr.hpp
+ * \file pmgr.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_pmgr_hpp
-#define mrg_journal_pmgr_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_PMGR_H
+#define QPID_LEGACYSTORE_JRNL_PMGR_H
 
 namespace mrg
 {
@@ -43,15 +43,15 @@ namespace journal
 }
 
 #include <deque>
-#include "jrnl/aio.hpp"
-#include "jrnl/aio_callback.hpp"
-#include "jrnl/data_tok.hpp"
-#include "jrnl/deq_rec.hpp"
-#include "jrnl/enq_map.hpp"
-#include "jrnl/enq_rec.hpp"
-#include "jrnl/fcntl.hpp"
-#include "jrnl/txn_map.hpp"
-#include "jrnl/txn_rec.hpp"
+#include "jrnl/aio.h"
+#include "jrnl/aio_callback.h"
+#include "jrnl/data_tok.h"
+#include "jrnl/deq_rec.h"
+#include "jrnl/enq_map.h"
+#include "jrnl/enq_rec.h"
+#include "jrnl/fcntl.h"
+#include "jrnl/txn_map.h"
+#include "jrnl/txn_rec.h"
 
 namespace mrg
 {
@@ -139,4 +139,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_pmgr_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_PMGR_H

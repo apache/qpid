@@ -20,7 +20,7 @@
  */
 
 /**
- * \file txn_rec.hpp
+ * \file txn_rec.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_txn_rec_hpp
-#define mrg_journal_txn_rec_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_TXN_REC_H
+#define QPID_LEGACYSTORE_JRNL_TXN_REC_H
 
 namespace mrg
 {
@@ -42,8 +42,8 @@ class txn_rec;
 }
 
 #include <cstddef>
-#include "jrnl/jrec.hpp"
-#include "jrnl/txn_hdr.hpp"
+#include "jrnl/jrec.h"
+#include "jrnl/txn_hdr.h"
 
 namespace mrg
 {
@@ -98,4 +98,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_txn_rec_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_TXN_REC_H

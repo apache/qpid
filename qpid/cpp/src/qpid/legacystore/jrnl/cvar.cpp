@@ -25,9 +25,9 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::cvar (condition variable). See
- * comments in file cvar.hpp for details.
+ * comments in file cvar.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/cvar.hpp"
+#include "jrnl/cvar.h"

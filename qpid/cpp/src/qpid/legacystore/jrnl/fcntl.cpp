@@ -26,18 +26,18 @@
  *
  * File containing code for class mrg::journal::fcntl (non-logging file
  * handle), used for controlling journal log files. See comments in file
- * fcntl.hpp for details.
+ * fcntl.h for details.
  */
 
-#include "jrnl/fcntl.hpp"
+#include "jrnl/fcntl.h"
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <iomanip>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include <sstream>
 #include <unistd.h>
 

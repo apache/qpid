@@ -25,13 +25,13 @@
  * Qpid asynchronous store plugin library
  *
  * Messaging journal top-level control and interface class
- * mrg::journal::jcntl.  See comments in file jcntl.hpp for details.
+ * mrg::journal::jcntl.  See comments in file jcntl.h for details.
  *
  * \author Kim van der Riet
  */
 
 
-#include "jrnl/jcntl.hpp"
+#include "jrnl/jcntl.h"
 
 #include <algorithm>
 #include <cassert>
@@ -41,9 +41,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include "jrnl/file_hdr.hpp"
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jinf.hpp"
+#include "jrnl/file_hdr.h"
+#include "jrnl/jerrno.h"
+#include "jrnl/jinf.h"
 #include <limits>
 #include <sstream>
 #include <unistd.h>

@@ -25,16 +25,16 @@
  * Qpid asynchronous store plugin library
  *
  * Generic journal exception class mrg::journal::jexception. See comments
- * in file jexception.hpp for details.
+ * in file jexception.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/jexception.hpp"
+#include "jrnl/jexception.h"
 
 #include <iomanip>
 #include <sstream>
-#include "jrnl/jerrno.hpp"
+#include "jrnl/jerrno.h"
 
 #define CATLEN(p) MAX_MSG_SIZE - std::strlen(p) - 1
 

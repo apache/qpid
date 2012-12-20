@@ -19,14 +19,14 @@
  *
  */
 
-#ifndef _BindingDbt_
-#define _BindingDbt_
+#ifndef QPID_LEGACYSTORE_BINDINGDBT_H
+#define QPID_LEGACYSTORE_BINDINGDBT_H
 
 #include "db-inc.h"
-#include <qpid/broker/PersistableExchange.h>
-#include <qpid/broker/PersistableQueue.h>
-#include <qpid/framing/Buffer.h>
-#include <qpid/framing/FieldTable.h>
+#include "qpid/broker/PersistableExchange.h"
+#include "qpid/broker/PersistableQueue.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldTable.h"
 
 namespace mrg{
 namespace msgstore{
@@ -53,4 +53,4 @@ public:
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_BINDINGDBT_H

@@ -21,8 +21,8 @@
 
 #include "JournalImpl.h"
 
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/legacystore/ArgsJournalExpand.h"

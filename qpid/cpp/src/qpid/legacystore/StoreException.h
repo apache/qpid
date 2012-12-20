@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _StoreException_
-#define _StoreException_
+#ifndef QPID_LEGACYSTORE_STOREEXCEPTION_H
+#define QPID_LEGACYSTORE_STOREEXCEPTION_H
 
 #include "IdDbt.h"
 #include <boost/format.hpp>
@@ -53,4 +53,4 @@ public:
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_STOREEXCEPTION_H

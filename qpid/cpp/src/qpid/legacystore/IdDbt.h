@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _IdDbt_
-#define _IdDbt_
+#ifndef QPID_LEGACYSTORE_IDDBT_H
+#define QPID_LEGACYSTORE_IDDBT_H
 
 #include "db-inc.h"
 
@@ -39,4 +39,4 @@ public:
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_IDDBT_H

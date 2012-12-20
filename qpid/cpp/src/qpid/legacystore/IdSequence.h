@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef _IdSequence_
-#define _IdSequence_
+#ifndef QPID_LEGACYSTORE_IDSEQUENCE_H
+#define QPID_LEGACYSTORE_IDSEQUENCE_H
 
-#include <qpid/framing/amqp_types.h>
-#include <qpid/sys/Mutex.h>
+#include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Mutex.h"
 #include <sys/types.h>
 
 namespace mrg{
@@ -41,4 +41,4 @@ public:
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_IDSEQUENCE_H

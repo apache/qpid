@@ -20,7 +20,7 @@
  */
 
 /**
- * \file jcfg.hpp
+ * \file jcfg.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_jcfg_hpp
-#define mrg_journal_jcfg_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_JCFG_H
+#define QPID_LEGACYSTORE_JRNL_JCFG_H
 
 #if defined(__i386__) /* little endian, 32 bits */
 #define JRNL_LITTLE_ENDIAN
@@ -88,4 +88,4 @@
 #define RHM_LENDIAN_FLAG 0      ///< Value of little endian flag on disk
 #define RHM_BENDIAN_FLAG 1      ///< Value of big endian flag on disk
 
-#endif // ifndef mrg_journal_jcfg_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_JCFG_H

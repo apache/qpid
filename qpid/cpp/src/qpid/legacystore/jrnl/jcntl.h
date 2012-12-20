@@ -20,7 +20,7 @@
  */
 
 /**
- * \file jcntl.hpp
+ * \file jcntl.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_jcntl_hpp
-#define mrg_journal_jcntl_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H
+#define QPID_LEGACYSTORE_JRNL_JCNTL_H
 
 namespace mrg
 {
@@ -43,15 +43,15 @@ namespace journal
 
 #include <cstddef>
 #include <deque>
-#include "jrnl/jdir.hpp"
-#include "jrnl/fcntl.hpp"
-#include "jrnl/lpmgr.hpp"
-#include "jrnl/rcvdat.hpp"
-#include "jrnl/slock.hpp"
-#include "jrnl/smutex.hpp"
-#include "jrnl/rmgr.hpp"
-#include "jrnl/wmgr.hpp"
-#include "jrnl/wrfc.hpp"
+#include "jrnl/jdir.h"
+#include "jrnl/fcntl.h"
+#include "jrnl/lpmgr.h"
+#include "jrnl/rcvdat.h"
+#include "jrnl/slock.h"
+#include "jrnl/smutex.h"
+#include "jrnl/rmgr.h"
+#include "jrnl/wmgr.h"
+#include "jrnl/wrfc.h"
 
 namespace mrg
 {
@@ -719,4 +719,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_jcntl_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H

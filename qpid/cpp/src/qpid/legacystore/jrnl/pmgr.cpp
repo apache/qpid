@@ -25,19 +25,19 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::pmgr (page manager). See
- * comments in file pmgr.hpp for details.
+ * comments in file pmgr.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/pmgr.hpp"
+#include "jrnl/pmgr.h"
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include "jrnl/jcfg.hpp"
-#include "jrnl/jcntl.hpp"
-#include "jrnl/jerrno.hpp"
+#include "jrnl/jcfg.h"
+#include "jrnl/jcntl.h"
+#include "jrnl/jerrno.h"
 #include <sstream>
 
 

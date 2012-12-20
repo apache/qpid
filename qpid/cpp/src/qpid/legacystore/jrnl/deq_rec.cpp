@@ -25,20 +25,20 @@
  * Qpid asynchronous store plugin library
  *
  * This file contains the code for the mrg::journal::deq_rec (journal dequeue
- * record) class. See comments in file deq_rec.hpp for details.
+ * record) class. See comments in file deq_rec.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/deq_rec.hpp"
+#include "jrnl/deq_rec.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg

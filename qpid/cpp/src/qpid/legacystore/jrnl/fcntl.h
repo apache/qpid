@@ -20,7 +20,7 @@
  */
 
 /**
- * \file fcntl.hpp
+ * \file fcntl.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -31,8 +31,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_fcntl_hpp
-#define mrg_journal_fcntl_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_FCNTL_H
+#define QPID_LEGACYSTORE_JRNL_FCNTL_H
 
 namespace mrg
 {
@@ -44,7 +44,7 @@ class fcntl;
 
 #include <cstddef>
 #include <string>
-#include "jrnl/rcvdat.hpp"
+#include "jrnl/rcvdat.h"
 #include <sys/types.h>
 
 namespace mrg
@@ -153,4 +153,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_fcntl_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_FCNTL_H

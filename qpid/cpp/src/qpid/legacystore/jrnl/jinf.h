@@ -20,7 +20,7 @@
  */
 
 /**
- * \file jinf.hpp
+ * \file jinf.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -29,8 +29,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_jinf_hpp
-#define mrg_journal_jinf_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_JINF_H
+#define QPID_LEGACYSTORE_JRNL_JINF_H
 
 #include <ctime>
 #include <string>
@@ -130,4 +130,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_jinf_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_JINF_H

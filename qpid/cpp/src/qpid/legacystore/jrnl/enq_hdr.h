@@ -20,7 +20,7 @@
  */
 
 /**
- * \file enq_hdr.hpp
+ * \file enq_hdr.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,11 +30,11 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_enq_hdr_hpp
-#define mrg_journal_enq_hdr_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_ENQ_HDR_H
+#define QPID_LEGACYSTORE_JRNL_ENQ_HDR_H
 
 #include <cstddef>
-#include "jrnl/rec_hdr.hpp"
+#include "jrnl/rec_hdr.h"
 
 namespace mrg
 {
@@ -162,4 +162,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_enq_hdr_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_ENQ_HDR_H

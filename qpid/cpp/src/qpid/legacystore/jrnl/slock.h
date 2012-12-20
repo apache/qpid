@@ -20,7 +20,7 @@
  */
 
 /**
- * \file slock.hpp
+ * \file slock.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,11 +30,11 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_slock_hpp
-#define mrg_journal_slock_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H
+#define QPID_LEGACYSTORE_JRNL_SLOCK_H
 
-#include "jrnl/jexception.hpp"
-#include "jrnl/smutex.hpp"
+#include "jrnl/jexception.h"
+#include "jrnl/smutex.h"
 #include <pthread.h>
 
 namespace mrg
@@ -82,4 +82,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_slock_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H
