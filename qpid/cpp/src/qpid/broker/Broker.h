@@ -247,12 +247,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Create a connection to another broker. */
     void connect(const std::string& host, const std::string& port,
                  const std::string& transport,
-                 boost::function2<void, int, std::string> failed,
-                 sys::ConnectionCodec::Factory* =0);
-    /** Create a connection to another broker. */
-    void connect(const Url& url,
-                 boost::function2<void, int, std::string> failed,
-                 sys::ConnectionCodec::Factory* =0);
+                 boost::function2<void, int, std::string> failed);
 
     /** Move messages from one queue to another.
         A zero quantity means to move all messages
@@ -268,9 +263,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     /** Expose poller so plugins can register their descriptors. */
     QPID_BROKER_EXTERN boost::shared_ptr<sys::Poller> getPoller();
-
-    boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
-    void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
 
     /** Timer for local tasks affecting only this broker */
     sys::Timer& getTimer() { return timer; }
