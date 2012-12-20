@@ -549,6 +549,7 @@ public class ServerSession extends Session
 
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
+        _txnUpdateTime.set(0);
         decrementOutstandingTxnsIfNecessary();
     }
 
@@ -558,6 +559,7 @@ public class ServerSession extends Session
 
         _txnRejects.incrementAndGet();
         _txnStarts.incrementAndGet();
+        _txnUpdateTime.set(0);
         decrementOutstandingTxnsIfNecessary();
     }
 
