@@ -24,18 +24,22 @@
 
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include "qpid/broker/Broker.h"
 #include "qpid/broker/MessageStore.h"
-#include "qpid/broker/PersistableExchange.h"
-#include "qpid/broker/PersistableMessage.h"
-#include "qpid/broker/PersistableQueue.h"
-#include "qpid/management/Manageable.h"
+//#include "qpid/management/Manageable.h"
 
 #include <string>
 
 using namespace qpid;
 
 namespace qpid {
+
+namespace broker {
+class Broker;
+class PersistableExchange;
+class PersistableMessage;
+class PersistableQueue;
+}
+
 namespace store {
 
 class StorageProvider;
