@@ -79,7 +79,7 @@ public class ChartWriter
         }
     }
 
-    public void writeHtmlSummaryToFileSystem()
+    public void writeHtmlSummaryToFileSystem(String summaryPageTitle)
     {
         if(_chartFilesToChartDef.size() < 2)
         {
@@ -87,13 +87,13 @@ public class ChartWriter
             return;
         }
 
-        String htmlHeader =
+        String htmlHeader = String.format(
             "<html>\n" +
             "    <head>\n" +
-            "        <title>Performance Charts</title>\n" +
+            "        <title>%s</title>\n" +
             "        <style type='text/css'>figure { float: left; display: table; width: 87px;}</style>\n" +
             "    </head>\n" +
-            "    <body>\n";
+            "    <body>\n", summaryPageTitle);
 
         String htmlFooter =
             "    </body>\n" +
