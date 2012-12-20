@@ -48,7 +48,7 @@ struct LoadtimeInitialise {
         for (vector<string>::iterator iter = moduleOptions.load.begin();
              iter != moduleOptions.load.end();
              iter++)
-            qpid::tryShlib (iter->data(), false);
+            qpid::tryShlib (*iter);
     
         if (!moduleOptions.noLoad) {
             bool isDefault = defaultPath == moduleOptions.loadDir;

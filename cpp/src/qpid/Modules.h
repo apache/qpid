@@ -36,7 +36,7 @@ struct ModuleOptions : public qpid::Options {
     QPID_COMMON_EXTERN ModuleOptions(const std::string& defaultModuleDir);
 };
 
-QPID_COMMON_EXTERN void tryShlib(const char* libname, bool noThrow);
+QPID_COMMON_EXTERN void tryShlib(const std::string& libname);
 QPID_COMMON_EXTERN void loadModuleDir (std::string dirname, bool isDefault);
 
 } // namespace qpid
