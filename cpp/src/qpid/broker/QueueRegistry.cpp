@@ -60,10 +60,8 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
         if (i == queues.end()) {
             Queue::shared_ptr queue = create(name, settings);
             //Move this to factory also?
-            if (alternate) {
+            if (alternate)
                 queue->setAlternateExchange(alternate);//need to do this *before* create
-                alternate->incAlternateUsers();
-            }
             if (!recovering) {
                 //create persistent record if required
                 queue->create();

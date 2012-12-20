@@ -1112,6 +1112,10 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
 void Broker::deleteQueue(const std::string& name, const std::string& userId,
                          const std::string& connectionId, QueueFunctor check)
 {
+    QPID_LOG_CAT(debug, model, "Deleting queue. name:" << name
+                 << " user:" << userId
+                 << " rhost:" << connectionId
+    );
     if (acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,NULL)) {
         throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
     }
@@ -1126,11 +1130,6 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
     } else {
         throw framing::NotFoundException(QPID_MSG("Delete failed. No such queue: " << name));
     }
-    QPID_LOG_CAT(debug, model, "Delete queue. name:" << name
-                 << " user:" << userId
-                 << " rhost:" << connectionId
-    );
-
 }
 
 std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
@@ -1177,6 +1176,9 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
 void Broker::deleteExchange(const std::string& name, const std::string& userId,
                            const std::string& connectionId)
 {
+    QPID_LOG_CAT(debug, model, "Deleting exchange. name:" << name
+        << " user:" << userId
+        << " rhost:" << connectionId);
     if (acl) {
         if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
@@ -1187,13 +1189,10 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
     }
     Exchange::shared_ptr exchange(exchanges.get(name));
     if (!exchange) throw framing::NotFoundException(QPID_MSG("Delete failed. No such exchange: " << name));
-    if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
+    if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Cannot delete " << name <<", in use as alternate-exchange."));
     if (exchange->isDurable()) store->destroy(*exchange);
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
     exchanges.destroy(name, connectionId,  userId);
-    QPID_LOG_CAT(debug, model, "Delete exchange. name:" << name
-        << " user:" << userId
-        << " rhost:" << connectionId);
 }
 
 void Broker::bind(const std::string& queueName,
