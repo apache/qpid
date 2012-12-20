@@ -1482,8 +1482,6 @@ install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 # file whereas older builds only have config.h on autoconf-generated builds.
 add_definitions(-DHAVE_CONFIG_H)
 
-add_definitions(-DBOOST_FILESYSTEM_VERSION=2)
-
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)

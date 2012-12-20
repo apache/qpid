@@ -75,7 +75,7 @@ int run_broker(int argc, char *argv[], bool hidden)
         for (vector<string>::iterator iter = bootOptions.module.load.begin();
              iter != bootOptions.module.load.end();
              iter++)
-            qpid::tryShlib (iter->data(), false);
+            qpid::tryShlib (*iter);
 
         if (!bootOptions.module.noLoad) {
             bool isDefault = defaultPath == bootOptions.module.loadDir;
