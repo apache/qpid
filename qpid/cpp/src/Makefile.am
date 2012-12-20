@@ -337,7 +337,6 @@ EXTRA_DIST +=\
 libqpidcommon_la_LIBADD = \
   libqpidtypes.la \
   -lboost_program_options \
-  -lboost_filesystem \
   -luuid \
   -lpthread \
   $(LIB_DLOPEN) \
