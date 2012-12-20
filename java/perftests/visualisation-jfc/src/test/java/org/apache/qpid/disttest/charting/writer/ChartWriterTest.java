@@ -91,7 +91,7 @@ public class ChartWriterTest extends TestCase
         _writer.writeChartToFileSystem(_chart2, chartDef2);
         _writer.writeChartToFileSystem(_chart1, chartDef1);
 
-        _writer.writeHtmlSummaryToFileSystem();
+        _writer.writeHtmlSummaryToFileSystem("Performance Charts");
 
         InputStream expectedSummaryFileInputStream = getClass().getResourceAsStream("expected-chart-summary.html");
         String expectedSummaryContent = new Scanner(expectedSummaryFileInputStream).useDelimiter("\\A").next();
@@ -110,7 +110,7 @@ public class ChartWriterTest extends TestCase
 
         _writer.writeChartToFileSystem(_chart1, chartDef1);
 
-        _writer.writeHtmlSummaryToFileSystem();
+        _writer.writeHtmlSummaryToFileSystem("Performance Charts");
 
         assertFalse("Only one chart generated so no summary file should have been written",
                 summaryFile.exists());

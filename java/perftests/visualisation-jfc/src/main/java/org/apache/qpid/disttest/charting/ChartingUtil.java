@@ -58,10 +58,14 @@ public class ChartingUtil
     public static final String CHART_DEFINITIONS_PROP = "chart-defs";
     public static final String CHART_DEFINITIONS_DEFAULT = ".";
 
+    public static final String SUMMARY_TITLE_PROP = "summary-title";
+    public static final String SUMMARY_TITLE_DEFAULT = "Performance Charts";
+
     private Map<String,String> _cliOptions = new HashMap<String, String>();
     {
         _cliOptions.put(OUTPUT_DIR_PROP, OUTPUT_DIR_DEFAULT);
         _cliOptions.put(CHART_DEFINITIONS_PROP, CHART_DEFINITIONS_DEFAULT);
+        _cliOptions.put(SUMMARY_TITLE_PROP, SUMMARY_TITLE_DEFAULT);
     }
 
     public static void main(String[] args) throws Exception
@@ -101,7 +105,8 @@ public class ChartingUtil
             writer.writeChartToFileSystem(chart, chartingDefinition);
         }
 
-        writer.writeHtmlSummaryToFileSystem();
+        final String summaryChartTitle = _cliOptions.get(SUMMARY_TITLE_PROP);
+        writer.writeHtmlSummaryToFileSystem(summaryChartTitle);
     }
 
     private List<ChartingDefinition> loadChartDefinitions(String chartingDefsDir)
