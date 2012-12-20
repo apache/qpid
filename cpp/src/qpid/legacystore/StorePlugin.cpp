@@ -64,13 +64,8 @@ struct StorePlugin : public Plugin {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
         if (!store) return;
-        // Not done in earlyInitialize as the Broker::isInCluster test won't work there.
-        if (broker->isInCluster()) {
-            QPID_LOG(info, "Disabling management instrumentation for the store in a cluster.");
-        } else {
-            QPID_LOG(info, "Enabling management instrumentation for the store.");
-            store->initManagement(broker);
-        }
+        QPID_LOG(info, "Enabling management instrumentation for the store.");
+        store->initManagement(broker);
     }
 
     void finalize()
