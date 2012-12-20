@@ -303,9 +303,13 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
         try
         {
+            long startTime = 0;
+            String frameToString = null;
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Frame Received: " + frame);
+                startTime = System.currentTimeMillis();
+                frameToString = frame.toString();
+                _logger.debug("RECV: " + frame);
             }
 
             // Check that this channel is not closing
@@ -339,6 +343,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             {
                 closeChannel(channelId);
                 throw e;
+            }
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Frame handled in " + (System.currentTimeMillis() - startTime) + " ms. Frame: " + frameToString);
             }
         }
         finally
@@ -543,6 +552,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
         final ByteBuffer buf = asByteBuffer(frame);
         _writtenBytes += buf.remaining();
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("SEND: " + frame);
+        }
+
         _sender.send(buf);
         final long time = System.currentTimeMillis();
         _lastIoTime = time;

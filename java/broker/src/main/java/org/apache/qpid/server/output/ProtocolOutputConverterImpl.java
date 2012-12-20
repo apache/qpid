@@ -218,55 +218,71 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         final boolean isRedelivered = entry.isRedelivered();
 
-        final AMQBody returnBlock = new AMQBody()
-        {
-
-            private AMQBody _underlyingBody;
-
-            public AMQBody createAMQBody()
-            {
-                return _methodRegistry.createBasicDeliverBody(consumerTag,
-                                                              deliveryTag,
-                                                              isRedelivered,
-                                                              exchangeName,
-                                                              routingKey);
-
-
-
-
-
-            }
-
-            public byte getFrameType()
-            {
-                return AMQMethodBody.TYPE;
-            }
-
-            public int getSize()
-            {
-                if(_underlyingBody == null)
-                {
-                    _underlyingBody = createAMQBody();
-                }
-                return _underlyingBody.getSize();
-            }
-
-            public void writePayload(DataOutput buffer) throws IOException
-            {
-                if(_underlyingBody == null)
-                {
-                    _underlyingBody = createAMQBody();
-                }
-                _underlyingBody.writePayload(buffer);
-            }
-
-            public void handle(final int channelId, final AMQVersionAwareProtocolSession amqMinaProtocolSession)
-                throws AMQException
-            {
-                throw new AMQException("This block should never be dispatched!");
-            }
-        };
+        final AMQBody returnBlock = new EncodedDeliveryBody(deliveryTag, routingKey, exchangeName, consumerTag, isRedelivered);
         return returnBlock;
+    }
+
+    private class EncodedDeliveryBody implements AMQBody
+    {
+        private final long _deliveryTag;
+        private final AMQShortString _routingKey;
+        private final AMQShortString _exchangeName;
+        private final AMQShortString _consumerTag;
+        private final boolean _isRedelivered;
+        private AMQBody _underlyingBody;
+
+        private EncodedDeliveryBody(long deliveryTag, AMQShortString routingKey, AMQShortString exchangeName, AMQShortString consumerTag, boolean isRedelivered)
+        {
+            _deliveryTag = deliveryTag;
+            _routingKey = routingKey;
+            _exchangeName = exchangeName;
+            _consumerTag = consumerTag;
+            _isRedelivered = isRedelivered;
+        }
+
+        public AMQBody createAMQBody()
+        {
+            return _methodRegistry.createBasicDeliverBody(_consumerTag,
+                                                          _deliveryTag,
+                                                          _isRedelivered,
+                                                          _exchangeName,
+                                                          _routingKey);
+        }
+
+        public byte getFrameType()
+        {
+            return AMQMethodBody.TYPE;
+        }
+
+        public int getSize()
+        {
+            if(_underlyingBody == null)
+            {
+                _underlyingBody = createAMQBody();
+            }
+            return _underlyingBody.getSize();
+        }
+
+        public void writePayload(DataOutput buffer) throws IOException
+        {
+            if(_underlyingBody == null)
+            {
+                _underlyingBody = createAMQBody();
+            }
+            _underlyingBody.writePayload(buffer);
+        }
+
+        public void handle(final int channelId, final AMQVersionAwareProtocolSession amqMinaProtocolSession)
+            throws AMQException
+        {
+            throw new AMQException("This block should never be dispatched!");
+        }
+
+        @Override
+        public String toString()
+        {
+            return "[" + getClass().getSimpleName() + " underlyingBody: " + String.valueOf(_underlyingBody) + "]";
+        }
     }
 
     private AMQBody createEncodedGetOkBody(QueueEntry entry, long deliveryTag, int queueSize)
@@ -368,7 +384,6 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             _methodBody = methodBody;
             _headerBody = headerBody;
             _contentBody = contentBody;
-
         }
 
         public long getSize()
@@ -380,6 +395,19 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         {
             AMQFrame.writeFrames(buffer, _channel, _methodBody, _headerBody, _contentBody);
         }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.append("[").append(getClass().getSimpleName())
+                .append(" methodBody=").append(_methodBody)
+                .append(", headerBody=").append(_headerBody)
+                .append(", contentBody=").append(_contentBody)
+                .append(", channel=").append(_channel).append("]");
+            return builder.toString();
+        }
+
     }
 
     public static final class SmallCompositeAMQBodyBlock extends AMQDataBlock
@@ -407,6 +435,17 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         public void writePayload(DataOutput buffer) throws IOException
         {
             AMQFrame.writeFrames(buffer, _channel, _methodBody, _headerBody);
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.append(getClass().getSimpleName())
+                .append("methodBody=").append(_methodBody)
+                .append(", headerBody=").append(_headerBody)
+                .append(", channel=").append(_channel).append("]");
+            return builder.toString();
         }
     }
 

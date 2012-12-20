@@ -384,9 +384,19 @@ public class LocalTransaction implements ServerTransaction
 
     private void doPostTransactionActions()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Beginning " + _postTransactionActions.size() + " post transaction actions");
+        }
+
         for(int i = 0; i < _postTransactionActions.size(); i++)
         {
             _postTransactionActions.get(i).postCommit();
+        }
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Completed post transaction actions");
         }
     }
 
