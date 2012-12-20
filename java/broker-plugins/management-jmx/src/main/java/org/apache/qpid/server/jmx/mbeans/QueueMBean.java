@@ -513,7 +513,6 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
             {
                 _queue.visit(new QueueEntryVisitor()
                 {
-
                     public boolean visit(final QueueEntry entry)
                     {
                         final ServerMessage message = entry.getMessage();
@@ -525,11 +524,9 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
                                 && (messageId <= toMessageId))
                             {
                                 txn.dequeue(entry);
-                                return true;
                             }
-                            return false;
                         }
-                        return true;
+                        return false;
                     }
                 });
             }
