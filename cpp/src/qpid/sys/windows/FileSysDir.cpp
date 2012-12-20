@@ -25,6 +25,11 @@
 #include <direct.h>
 #include <errno.h>
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
+namespace fs=boost::filesystem;
+
 namespace qpid {
 namespace sys {
 
@@ -48,6 +53,15 @@ void FileSysDir::mkdir(void)
 {
     if (::_mkdir(dirPath.c_str()) == -1)
         throw Exception ("Can't create directory: " + dirPath);
+}
+
+void FileSysDir::forEachFile(Callback cb) const {
+    fs::directory_iterator dirP(dirPath);
+    fs::directory_iterator endItr;
+    for (fs::directory_iterator itr (dirP); itr != endItr; ++itr)
+    {
+        cb(itr->path().string());
+    }
 }
 
 }} // namespace qpid::sys
