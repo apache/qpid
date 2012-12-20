@@ -1149,6 +1149,7 @@ Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
 void Queue::setAlternateExchange(boost::shared_ptr<Exchange> exchange)
 {
     alternateExchange = exchange;
+    alternateExchange->incAlternateUsers();
     if (mgmtObject) {
         if (exchange.get() != 0)
             mgmtObject->set_altExchange(exchange->GetManagementObject()->getObjectId());

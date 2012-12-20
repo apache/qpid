@@ -79,10 +79,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(
             }
             exchanges[name] = exchange;
             result = std::pair<Exchange::shared_ptr, bool>(exchange, true);
-            if (alternate) {
-                exchange->setAlternate(alternate);
-                alternate->incAlternateUsers();
-            }
+            if (alternate) exchange->setAlternate(alternate);
             // Call exchangeCreate inside the lock to ensure correct ordering.
             if (broker) broker->getConfigurationObservers().exchangeCreate(exchange);
         } else {
