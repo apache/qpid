@@ -26,21 +26,21 @@
  *
  * This file contains the code for the mrg::journal::jinf class.
  *
- * See jinf.hpp comments for details of this class.
+ * See jinf.h comments for details of this class.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/jinf.hpp"
+#include "jrnl/jinf.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <fstream>
-#include "jrnl/file_hdr.hpp"
-#include "jrnl/jcntl.hpp"
-#include "jrnl/jerrno.hpp"
-#include "jrnl/lp_map.hpp"
+#include "jrnl/file_hdr.h"
+#include "jrnl/jcntl.h"
+#include "jrnl/jerrno.h"
+#include "jrnl/lp_map.h"
 #include <sstream>
 #include <sys/stat.h>
 

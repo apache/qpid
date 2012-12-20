@@ -26,20 +26,20 @@
  *
  * File containing code for class mrg::journal::jdir (journal data
  * directory), used for controlling and manipulating journal data
- * direcories and files. See comments in file jdir.hpp for details.
+ * direcories and files. See comments in file jdir.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/jdir.hpp"
+#include "jrnl/jdir.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
 #include <iomanip>
-#include "jrnl/jcfg.hpp"
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jcfg.h"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>

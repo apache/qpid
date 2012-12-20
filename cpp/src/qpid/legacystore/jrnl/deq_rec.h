@@ -20,7 +20,7 @@
  */
 
 /**
- * \file deq_rec.hpp
+ * \file deq_rec.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_deq_rec_hpp
-#define mrg_journal_deq_rec_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
+#define QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
 
 namespace mrg
 {
@@ -42,8 +42,8 @@ class deq_rec;
 }
 
 #include <cstddef>
-#include "jrnl/deq_hdr.hpp"
-#include "jrnl/jrec.hpp"
+#include "jrnl/deq_hdr.h"
+#include "jrnl/jrec.h"
 
 namespace mrg
 {
@@ -100,4 +100,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_deq_rec_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_DEQ_REQ_H

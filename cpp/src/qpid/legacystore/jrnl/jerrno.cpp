@@ -25,14 +25,14 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::jerrno (journal error
- * codes). See comments in file jerrno.hpp for details.
+ * codes). See comments in file jerrno.h for details.
  *
- * See file jerrno.hpp for class details.
+ * See file jerrno.h for class details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/jerrno.hpp"
+#include "jrnl/jerrno.h"
 
 namespace mrg
 {

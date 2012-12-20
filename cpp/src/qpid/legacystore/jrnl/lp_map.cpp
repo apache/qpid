@@ -25,15 +25,15 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::lp_map (logical file map). See
- * comments in file lp_map.hpp for details.
+ * comments in file lp_map.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/lp_map.hpp"
+#include "jrnl/lp_map.h"
 
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg

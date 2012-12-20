@@ -25,16 +25,16 @@
  * Qpid asynchronous store plugin library
  *
  * File containing source code for class mrg::journal::jrec (abstract journal
- * jrecord). See comments in file jrec.hpp for details.
+ * jrecord). See comments in file jrec.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/jrec.hpp"
+#include "jrnl/jrec.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg

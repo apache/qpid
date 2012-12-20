@@ -30,7 +30,7 @@
  * \author Kim van der Riet
  */
 
-#include "time_ns.hpp"
+#include "time_ns.h"
 
 #include <sstream>
 

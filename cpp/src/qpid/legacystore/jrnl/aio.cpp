@@ -25,12 +25,12 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::aio (libaio interface
- * encapsulation). See comments in file aio.hpp for details.
+ * encapsulation). See comments in file aio.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "aio.hpp"
+#include "aio.h"
 
 namespace mrg
 {

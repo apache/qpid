@@ -25,9 +25,9 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::smutex (scoped mutex). See
- * comments in file smutex.hpp for details.
+ * comments in file smutex.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/smutex.hpp"
+#include "jrnl/smutex.h"

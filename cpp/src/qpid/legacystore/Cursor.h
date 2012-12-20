@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _Cursor_
-#define _Cursor_
+#ifndef QPID_LEGACYSTORE_CURSOR_H
+#define QPID_LEGACYSTORE_CURSOR_H
 
 #include <boost/shared_ptr.hpp>
 #include "db-inc.h"
@@ -47,4 +47,4 @@ public:
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_CURSOR_H

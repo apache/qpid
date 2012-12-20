@@ -19,12 +19,12 @@
  *
  */
 
-#ifndef _BufferValue_
-#define _BufferValue_
+#ifndef QPID_LEGACYSTORE_BUFFERVALUE_H
+#define QPID_LEGACYSTORE_BUFFERVALUE_H
 
 #include "db-inc.h"
-#include <qpid/broker/Persistable.h>
-#include <qpid/framing/Buffer.h>
+#include "qpid/broker/Persistable.h"
+#include "qpid/framing/Buffer.h"
 
 namespace mrg{
 namespace msgstore{
@@ -43,4 +43,4 @@ public:
 
 }}
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_BUFFERVALUE_H

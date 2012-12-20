@@ -25,17 +25,17 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::data_tok (data block token).
- * See comments in file data_tok.hpp for details.
+ * See comments in file data_tok.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/data_tok.hpp"
+#include "jrnl/data_tok.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.hpp"
-#include "jrnl/jexception.hpp"
-#include "jrnl/slock.hpp"
+#include "jrnl/jerrno.h"
+#include "jrnl/jexception.h"
+#include "jrnl/slock.h"
 #include <sstream>
 
 namespace mrg

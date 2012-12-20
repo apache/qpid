@@ -20,7 +20,7 @@
  */
 
 /**
- * \file rmgr.hpp
+ * \file rmgr.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -30,8 +30,8 @@
  * \author Kim van der Riet
  */
 
-#ifndef mrg_journal_rmgr_hpp
-#define mrg_journal_rmgr_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_RMGR_H
+#define QPID_LEGACYSTORE_JRNL_RMGR_H
 
 namespace mrg
 {
@@ -42,11 +42,11 @@ class rmgr;
 }
 
 #include <cstring>
-#include "jrnl/enums.hpp"
-#include "jrnl/file_hdr.hpp"
-#include "jrnl/pmgr.hpp"
-#include "jrnl/rec_hdr.hpp"
-#include "jrnl/rrfc.hpp"
+#include "jrnl/enums.h"
+#include "jrnl/file_hdr.h"
+#include "jrnl/pmgr.h"
+#include "jrnl/rec_hdr.h"
+#include "jrnl/rrfc.h"
 
 namespace mrg
 {
@@ -111,4 +111,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_rmgr_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_RMGR_H

@@ -25,9 +25,9 @@
  * Qpid asynchronous store plugin library
  *
  * File containing code for class mrg::journal::slock (scoped lock). See
- * comments in file slock.hpp for details.
+ * comments in file slock.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/slock.hpp"
+#include "jrnl/slock.h"

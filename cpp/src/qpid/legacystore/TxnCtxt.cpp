@@ -23,7 +23,7 @@
 
 #include <sstream>
 
-#include "jrnl/jexception.hpp"
+#include "jrnl/jexception.h"
 #include "StoreException.h"
 
 namespace mrg {

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _MessageStoreImpl_
-#define _MessageStoreImpl_
+#ifndef QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
+#define QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
 
 #include <string>
 
@@ -29,7 +29,7 @@
 #include "IdDbt.h"
 #include "IdSequence.h"
 #include "JournalImpl.h"
-#include "jrnl/jcfg.hpp"
+#include "jrnl/jcfg.h"
 #include "PreparedTransaction.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/MessageStore.h"
@@ -379,4 +379,4 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 } // namespace msgstore
 } // namespace mrg
 
-#endif
+#endif // ifndef QPID_LEGACYSTORE_MESSAGESTOREIMPL_H

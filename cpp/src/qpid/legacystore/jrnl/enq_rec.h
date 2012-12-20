@@ -20,7 +20,7 @@
  */
 
 /**
- * \file enq_rec.hpp
+ * \file enq_rec.h
  *
  * Qpid asynchronous store plugin library
  *
@@ -28,8 +28,8 @@
  * record) class. See class documentation for details.
  */
 
-#ifndef mrg_journal_enq_rec_hpp
-#define mrg_journal_enq_rec_hpp
+#ifndef QPID_LEGACYSTORE_JRNL_ENQ_REC_H
+#define QPID_LEGACYSTORE_JRNL_ENQ_REC_H
 
 namespace mrg
 {
@@ -40,8 +40,8 @@ class enq_rec;
 }
 
 #include <cstddef>
-#include "jrnl/enq_hdr.hpp"
-#include "jrnl/jrec.hpp"
+#include "jrnl/enq_hdr.h"
+#include "jrnl/jrec.h"
 
 namespace mrg
 {
@@ -113,4 +113,4 @@ namespace journal
 } // namespace journal
 } // namespace mrg
 
-#endif // ifndef mrg_journal_enq_rec_hpp
+#endif // ifndef QPID_LEGACYSTORE_JRNL_ENQ_REC_H
