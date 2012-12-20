@@ -31,8 +31,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 
 namespace qpid {
 namespace sys {
@@ -82,15 +80,14 @@ SslOptions SslOptions::global;
 char* readPasswordFromFile(PK11SlotInfo*, PRBool retry, void*)
 {
     const std::string& passwordFile = SslOptions::global.certPasswordFile;
-    if (retry || passwordFile.empty() || !boost::filesystem::exists(passwordFile)) {
-        return 0;
-    } else {
-        std::ifstream file(passwordFile.c_str());
-        std::string password;
-        file >> password;
-        return PL_strdup(password.c_str());
-    }
-}    
+    if (retry || passwordFile.empty()) return 0;
+    std::ifstream file(passwordFile.c_str());
+    if (!file) return 0;
+
+    std::string password;
+    file >> password;
+    return PL_strdup(password.c_str());
+}
 
 void initNSS(const SslOptions& options, bool server)
 {
