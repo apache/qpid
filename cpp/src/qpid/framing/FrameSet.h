@@ -1,3 +1,5 @@
+#ifndef QPID_FRAMING_FRAMESET_H
+#define QPID_FRAMING_FRAMESET_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,15 +20,13 @@
  * under the License.
  *
  */
+
 #include <string>
 #include "qpid/InlineVector.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/CommonImportExport.h"
-
-#ifndef _FrameSet_
-#define _FrameSet_
 
 namespace qpid {
 namespace framing {
@@ -117,4 +117,4 @@ public:
 }
 
 
-#endif
+#endif /*!QPID_FRAMING_FRAMESET_H*/
