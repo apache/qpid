@@ -229,10 +229,9 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         return getObjectNameForSingleInstanceMBean();
     }
 
-    public synchronized boolean isStatisticsEnabled()
+    public boolean isStatisticsEnabled()
     {
-        updateStats();
-        return false;  //TODO - implement isStatisticsEnabled
+        return true;
     }
 
 }
