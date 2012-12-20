@@ -39,6 +39,11 @@ import java.util.Map;
  */
 public class JCAProvider extends Provider
 {
+    static final String QPID_CLIENT_SASL_PROVIDER_NAME = "AMQSASLProvider-Client";
+    static final String QPID_CLIENT_SASL_PROVIDER_INFO = "A JCA provider that registers all "
+                                                       + "AMQ SASL providers that want to be registered";
+    static final double QPID_CLIENT_SASL_PROVIDER_VERSION = 1.0;
+
     private static final Logger log = LoggerFactory.getLogger(JCAProvider.class);
 
     /**
@@ -48,8 +53,7 @@ public class JCAProvider extends Provider
      */
     public JCAProvider(Map<String, Class<? extends SaslClientFactory>> providerMap)
     {
-        super("AMQSASLProvider-Client", 1.0, "A JCA provider that registers all "
-            + "AMQ SASL providers that want to be registered");
+        super(QPID_CLIENT_SASL_PROVIDER_NAME, QPID_CLIENT_SASL_PROVIDER_VERSION, QPID_CLIENT_SASL_PROVIDER_INFO);
         register(providerMap);
     }
 
@@ -63,7 +67,7 @@ public class JCAProvider extends Provider
         for (Map.Entry<String, Class<? extends SaslClientFactory>> me : providerMap.entrySet())
         {
             put( "SaslClientFactory."+me.getKey(), me.getValue().getName());
-            log.debug("Registered SASL Client factory for " + me.getKey() + " as " + me.getValue().getName());
+            log.debug("Recording SASL Client factory for " + me.getKey() + " as " + me.getValue().getName());
         }
     }
 }
