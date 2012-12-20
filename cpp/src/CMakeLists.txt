@@ -308,7 +308,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (Boost_components filesystem program_options date_time thread unit_test_framework regex)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components filesystem program_options unit_test_framework)
+  set (Boost_components program_options unit_test_framework)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # Visual Studio 2010 requires boost 1.45 or better.
@@ -872,7 +872,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
   set (qpidcommon_platform_LIBS
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_FILESYSTEM_LIBRARY}
     ${CMAKE_DL_LIBS}
   )
 
@@ -1253,8 +1252,7 @@ set (qpidd_SOURCES
 )
 add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
-target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                          ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
 set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 install (TARGETS qpidd RUNTIME
          DESTINATION ${QPID_INSTALL_SBINDIR}
