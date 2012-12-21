@@ -22,14 +22,14 @@
 #ifndef QPID_LEGACYSTORE_TXNCTXT_H
 #define QPID_LEGACYSTORE_TXNCTXT_H
 
-#include <db-inc.h>
+#include "db-inc.h"
 #include <memory>
 #include <set>
 #include <string>
 
-#include "DataTokenImpl.h"
-#include "IdSequence.h"
-#include "JournalImpl.h"
+#include "qpid/legacystore/DataTokenImpl.h"
+#include "qpid/legacystore/IdSequence.h"
+#include "qpid/legacystore/JournalImpl.h"
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/sys/Mutex.h"

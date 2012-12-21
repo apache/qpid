@@ -35,7 +35,7 @@
 #define QPID_LEGACYSTORE_JRNL_REC_HDR_H
 
 #include <cstddef>
-#include "jrnl/jcfg.h"
+#include "qpid/legacystore/jrnl/jcfg.h"
 #include <sys/types.h>
 
 namespace mrg

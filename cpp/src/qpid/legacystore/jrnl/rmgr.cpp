@@ -30,13 +30,13 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/rmgr.h"
+#include "qpid/legacystore/jrnl/rmgr.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
-#include "jrnl/jcntl.h"
-#include "jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jcntl.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
 #include <sstream>
 
 namespace mrg

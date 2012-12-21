@@ -31,7 +31,7 @@
  */
 
 
-#include "jrnl/jcntl.h"
+#include "qpid/legacystore/jrnl/jcntl.h"
 
 #include <algorithm>
 #include <cassert>
@@ -41,9 +41,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include "jrnl/file_hdr.h"
-#include "jrnl/jerrno.h"
-#include "jrnl/jinf.h"
+#include "qpid/legacystore/jrnl/file_hdr.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jinf.h"
 #include <limits>
 #include <sstream>
 #include <unistd.h>

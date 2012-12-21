@@ -41,7 +41,7 @@ namespace journal
 }
 }
 
-#include "jrnl/fcntl.h"
+#include "qpid/legacystore/jrnl/fcntl.h"
 #include <vector>
 
 namespace mrg

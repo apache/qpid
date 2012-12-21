@@ -30,7 +30,7 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/rfc.h"
+#include "qpid/legacystore/jrnl/rfc.h"
 
 #include <cassert>
 

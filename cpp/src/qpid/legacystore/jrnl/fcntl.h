@@ -44,7 +44,7 @@ class fcntl;
 
 #include <cstddef>
 #include <string>
-#include "jrnl/rcvdat.h"
+#include "qpid/legacystore/jrnl/rcvdat.h"
 #include <sys/types.h>
 
 namespace mrg

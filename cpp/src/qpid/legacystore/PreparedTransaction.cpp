@@ -19,7 +19,7 @@
  *
  */
 
-#include "PreparedTransaction.h"
+#include "qpid/legacystore/PreparedTransaction.h"
 #include <algorithm>
 
 using namespace mrg::msgstore;

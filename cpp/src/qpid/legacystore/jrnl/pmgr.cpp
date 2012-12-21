@@ -30,14 +30,14 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/pmgr.h"
+#include "qpid/legacystore/jrnl/pmgr.h"
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include "jrnl/jcfg.h"
-#include "jrnl/jcntl.h"
-#include "jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jcfg.h"
+#include "qpid/legacystore/jrnl/jcntl.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
 #include <sstream>
 
 

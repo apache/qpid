@@ -43,15 +43,15 @@ namespace journal
 
 #include <cstddef>
 #include <deque>
-#include "jrnl/jdir.h"
-#include "jrnl/fcntl.h"
-#include "jrnl/lpmgr.h"
-#include "jrnl/rcvdat.h"
-#include "jrnl/slock.h"
-#include "jrnl/smutex.h"
-#include "jrnl/rmgr.h"
-#include "jrnl/wmgr.h"
-#include "jrnl/wrfc.h"
+#include "qpid/legacystore/jrnl/jdir.h"
+#include "qpid/legacystore/jrnl/fcntl.h"
+#include "qpid/legacystore/jrnl/lpmgr.h"
+#include "qpid/legacystore/jrnl/rcvdat.h"
+#include "qpid/legacystore/jrnl/slock.h"
+#include "qpid/legacystore/jrnl/smutex.h"
+#include "qpid/legacystore/jrnl/rmgr.h"
+#include "qpid/legacystore/jrnl/wmgr.h"
+#include "qpid/legacystore/jrnl/wrfc.h"
 
 namespace mrg
 {

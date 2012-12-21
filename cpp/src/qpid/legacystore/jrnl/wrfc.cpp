@@ -24,17 +24,17 @@
  *
  * Qpid asynchronous store plugin library
  *
- * File containing code for class mrg::journal::rrfc (rotating
- * file controller). See comments in file rrfc.h for details.
+ * File containing code for class mrg::journal::wrfc (rotating
+ * file controller). See comments in file wrfc.h for details.
  *
  * \author Kim van der Riet
  */
 
-#include "jrnl/wrfc.h"
+#include "qpid/legacystore/jrnl/wrfc.h"
 
 #include <cmath>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 
 namespace mrg
 {

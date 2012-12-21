@@ -30,4 +30,4 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/smutex.h"
+#include "qpid/legacystore/jrnl/smutex.h"

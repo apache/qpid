@@ -30,7 +30,7 @@
  * \author Kim van der Riet
  */
 
-#include "aio.h"
+#include "qpid/legacystore/jrnl/aio.h"
 
 namespace mrg
 {

@@ -31,15 +31,15 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/jdir.h"
+#include "qpid/legacystore/jrnl/jdir.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
 #include <iomanip>
-#include "jrnl/jcfg.h"
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jcfg.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>

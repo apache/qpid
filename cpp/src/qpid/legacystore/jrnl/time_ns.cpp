@@ -30,7 +30,7 @@
  * \author Kim van der Riet
  */
 
-#include "time_ns.h"
+#include "qpid/legacystore/jrnl/time_ns.h"
 
 #include <sstream>
 

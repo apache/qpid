@@ -32,7 +32,7 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
 
 namespace mrg
 {

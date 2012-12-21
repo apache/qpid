@@ -41,8 +41,8 @@ class enq_map;
 }
 }
 
-#include "jrnl/jexception.h"
-#include "jrnl/smutex.h"
+#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/smutex.h"
 #include <map>
 #include <pthread.h>
 #include <vector>

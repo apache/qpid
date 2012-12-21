@@ -33,7 +33,7 @@
 #ifndef QPID_LEGACYSTORE_JRNL_SMUTEX_H
 #define QPID_LEGACYSTORE_JRNL_SMUTEX_H
 
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include <pthread.h>
 
 namespace mrg
