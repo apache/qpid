@@ -31,19 +31,14 @@
 #include "qpid/ptr_map.h"
 
 namespace qpid {
+namespace sys {
+class Timer;
+}
+
 namespace broker {
 
 class DtxManager{
     typedef boost::ptr_map<std::string, DtxWorkRecord> WorkMap;
-
-    struct DtxCleanup : public sys::TimerTask
-    {
-        DtxManager& mgr;
-        const std::string& xid;
-
-        DtxCleanup(uint32_t timeout, DtxManager& mgr, const std::string& xid);
-        void fire();
-    };
 
     WorkMap work;
     TransactionalStore* store;

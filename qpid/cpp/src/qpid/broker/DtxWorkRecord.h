@@ -23,7 +23,6 @@
 
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/DtxBuffer.h"
-#include "qpid/broker/DtxTimeout.h"
 #include "qpid/broker/TransactionalStore.h"
 
 #include "qpid/framing/amqp_types.h"
@@ -37,6 +36,8 @@
 
 namespace qpid {
 namespace broker {
+
+class DtxTimeout;
 
 /**
  * Represents the work done under a particular distributed transaction
@@ -71,8 +72,8 @@ public:
     QPID_BROKER_EXTERN void add(DtxBuffer::shared_ptr ops);
     void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
     void timedout();
-    void setTimeout(boost::intrusive_ptr<DtxTimeout> t) { timeout = t; }
-    boost::intrusive_ptr<DtxTimeout> getTimeout() { return timeout; }
+    void setTimeout(boost::intrusive_ptr<DtxTimeout> t);
+    boost::intrusive_ptr<DtxTimeout> getTimeout();
     std::string getXid() const { return xid; }
     bool isCompleted() const { return completed; }
     bool isRolledback() const { return rolledback; }

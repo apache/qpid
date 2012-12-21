@@ -20,7 +20,10 @@
  */
 #include "qpid/broker/DtxWorkRecord.h"
 #include "qpid/broker/DtxManager.h"
+#include "qpid/broker/DtxTimeout.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/sys/Timer.h"
+
 #include <boost/format.hpp>
 #include <boost/mem_fn.hpp>
 using boost::mem_fn;
@@ -38,6 +41,12 @@ DtxWorkRecord::~DtxWorkRecord()
         timeout->cancel();
     }
 }
+
+void DtxWorkRecord::setTimeout(boost::intrusive_ptr<DtxTimeout> t)
+{ timeout = t; }
+
+boost::intrusive_ptr<DtxTimeout> DtxWorkRecord::getTimeout()
+{ return timeout; }
 
 bool DtxWorkRecord::prepare()
 {
