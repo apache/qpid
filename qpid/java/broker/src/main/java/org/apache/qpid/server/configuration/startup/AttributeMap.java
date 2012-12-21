@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.util.MapValueConverter;
-
+//TODO: delete me
 public class AttributeMap
 {
     private Map<String, Object> _source;

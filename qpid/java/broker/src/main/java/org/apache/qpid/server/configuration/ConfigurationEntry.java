@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.startup.AttributeMap;
-
 public class ConfigurationEntry
 {
     private final UUID _id;
@@ -101,6 +99,11 @@ public class ConfigurationEntry
             }
         }
         return Collections.unmodifiableMap(children);
+    }
+
+    public boolean hasChild(UUID id)
+    {
+        return _childrenIds.contains(id);
     }
 
     @Override

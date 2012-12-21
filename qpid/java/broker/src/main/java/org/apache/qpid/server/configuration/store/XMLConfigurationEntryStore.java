@@ -460,15 +460,13 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     @Override
     public void save(ConfigurationEntry... entries)
     {
-        // TODO Auto-generated method stub
-
+        throw new RuntimeException("Unsupported operation");
     }
 
     @Override
-    public void remove(UUID... entryIds)
+    public UUID[] remove(UUID... entryIds)
     {
-        // TODO Auto-generated method stub
-
+        throw new RuntimeException("Unsupported operation");
     }
 
     public ServerConfiguration getConfiguration()

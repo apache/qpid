@@ -103,8 +103,9 @@ public class BrokerShutdownTest extends QpidTestCase
             }
 
             @Override
-            public void remove(UUID... entryIds)
+            public UUID[] remove(UUID... entryIds)
             {
+                return null;
             }
 
         };

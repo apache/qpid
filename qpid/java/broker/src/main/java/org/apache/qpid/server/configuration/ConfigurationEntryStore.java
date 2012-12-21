@@ -30,6 +30,6 @@ public interface ConfigurationEntryStore
 
     void save(ConfigurationEntry... entries);
 
-    void remove(UUID... entryIds);
+    UUID[] remove(UUID... entryIds);
 
 }
