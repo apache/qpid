@@ -23,6 +23,7 @@
 // accessing authentication mechanisms, analogous to Cyrus SASL.
 
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldValue.h"
