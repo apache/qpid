@@ -41,8 +41,8 @@ class rfc;
 }
 }
 
-#include "jrnl/lpmgr.h"
-#include "jrnl/enums.h"
+#include "qpid/legacystore/jrnl/lpmgr.h"
+#include "qpid/legacystore/jrnl/enums.h"
 
 namespace mrg
 {

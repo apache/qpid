@@ -30,11 +30,11 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 
 #include <iomanip>
 #include <sstream>
-#include "jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
 
 #define CATLEN(p) MAX_MSG_SIZE - std::strlen(p) - 1
 

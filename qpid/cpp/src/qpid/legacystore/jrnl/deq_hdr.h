@@ -34,7 +34,7 @@
 #define QPID_LEGACYSTORE_JRNL_DEQ_HDR_H
 
 #include <cstddef>
-#include "jrnl/rec_hdr.h"
+#include "qpid/legacystore/jrnl/rec_hdr.h"
 
 namespace mrg
 {

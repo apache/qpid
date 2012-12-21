@@ -23,10 +23,10 @@
 #define QPID_LEGACYSTORE_JOURNALIMPL_H
 
 #include <set>
-#include "jrnl/enums.h"
-#include "jrnl/jcntl.h"
-#include "DataTokenImpl.h"
-#include "PreparedTransaction.h"
+#include "qpid/legacystore/jrnl/enums.h"
+#include "qpid/legacystore/jrnl/jcntl.h"
+#include "qpid/legacystore/DataTokenImpl.h"
+#include "qpid/legacystore/PreparedTransaction.h"
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/Time.h"

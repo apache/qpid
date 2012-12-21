@@ -29,15 +29,15 @@
  * fcntl.h for details.
  */
 
-#include "jrnl/fcntl.h"
+#include "qpid/legacystore/jrnl/fcntl.h"
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <iomanip>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include <sstream>
 #include <unistd.h>
 

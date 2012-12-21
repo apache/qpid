@@ -31,11 +31,11 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/lpmgr.h"
+#include "qpid/legacystore/jrnl/lpmgr.h"
 
 #include <cassert>
-#include <jrnl/jerrno.h>
-#include <jrnl/jexception.h>
+#include <qpid/legacystore/jrnl/jerrno.h>
+#include <qpid/legacystore/jrnl/jexception.h>
 
 namespace mrg
 {

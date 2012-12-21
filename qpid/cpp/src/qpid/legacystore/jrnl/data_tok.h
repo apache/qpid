@@ -43,7 +43,7 @@ class data_tok;
 
 #include <cassert>
 #include <cstddef>
-#include "jrnl/smutex.h"
+#include "qpid/legacystore/jrnl/smutex.h"
 #include <pthread.h>
 #include <string>
 #include <sys/types.h>

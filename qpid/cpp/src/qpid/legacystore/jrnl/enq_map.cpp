@@ -30,11 +30,11 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/enq_map.h"
+#include "qpid/legacystore/jrnl/enq_map.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.h"
-#include "jrnl/slock.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/slock.h"
 #include <sstream>
 
 

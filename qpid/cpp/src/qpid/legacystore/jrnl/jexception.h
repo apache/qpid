@@ -48,7 +48,7 @@ class jexception;
 #include <cstdlib>
 #include <cstring>
 #include <exception>
-#include "jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
 #include <sstream>
 #include <string>
 #include <sys/types.h>

@@ -37,10 +37,10 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
-#include "jrnl/file_hdr.h"
-#include "jrnl/jcntl.h"
-#include "jrnl/jerrno.h"
-#include "jrnl/lp_map.h"
+#include "qpid/legacystore/jrnl/file_hdr.h"
+#include "qpid/legacystore/jrnl/jcntl.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/lp_map.h"
 #include <sstream>
 #include <sys/stat.h>
 

@@ -30,12 +30,12 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/data_tok.h"
+#include "qpid/legacystore/jrnl/data_tok.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
-#include "jrnl/slock.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/slock.h"
 #include <sstream>
 
 namespace mrg

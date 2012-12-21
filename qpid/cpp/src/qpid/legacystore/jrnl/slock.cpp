@@ -30,4 +30,4 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/slock.h"
+#include "qpid/legacystore/jrnl/slock.h"

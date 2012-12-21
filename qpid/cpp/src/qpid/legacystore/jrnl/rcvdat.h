@@ -35,7 +35,7 @@
 #include <cstddef>
 #include <iomanip>
 #include <map>
-#include "jrnl/jcfg.h"
+#include "qpid/legacystore/jrnl/jcfg.h"
 #include <sstream>
 #include <sys/types.h>
 #include <vector>

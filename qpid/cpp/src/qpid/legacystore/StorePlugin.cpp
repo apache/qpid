@@ -24,7 +24,7 @@
 #include "qpid/Options.h"
 #include "qpid/DataDir.h"
 #include "qpid/log/Statement.h"
-#include "MessageStoreImpl.h"
+#include "qpid/legacystore/MessageStoreImpl.h"
 
 using mrg::msgstore::MessageStoreImpl;
 

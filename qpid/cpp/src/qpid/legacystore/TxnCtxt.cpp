@@ -19,12 +19,12 @@
  *
  */
 
-#include "TxnCtxt.h"
+#include "qpid/legacystore/TxnCtxt.h"
 
 #include <sstream>
 
-#include "jrnl/jexception.h"
-#include "StoreException.h"
+#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/legacystore/StoreException.h"
 
 namespace mrg {
 namespace msgstore {

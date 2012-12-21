@@ -37,8 +37,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg

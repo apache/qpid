@@ -33,8 +33,8 @@
 #ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H
 #define QPID_LEGACYSTORE_JRNL_SLOCK_H
 
-#include "jrnl/jexception.h"
-#include "jrnl/smutex.h"
+#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/smutex.h"
 #include <pthread.h>
 
 namespace mrg

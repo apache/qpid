@@ -42,8 +42,8 @@ class deq_rec;
 }
 
 #include <cstddef>
-#include "jrnl/deq_hdr.h"
-#include "jrnl/jrec.h"
+#include "qpid/legacystore/jrnl/deq_hdr.h"
+#include "qpid/legacystore/jrnl/jrec.h"
 
 namespace mrg
 {

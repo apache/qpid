@@ -33,10 +33,10 @@
 #define QPID_LEGACYSTORE_JRNL_CVAR_H
 
 #include <cstring>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
-#include "jrnl/smutex.h"
-#include "jrnl/time_ns.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/smutex.h"
+#include "qpid/legacystore/jrnl/time_ns.h"
 #include <pthread.h>
 #include <sstream>
 

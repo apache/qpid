@@ -24,7 +24,7 @@
  *
  * Qpid asynchronous store plugin library
  *
- * File containing code for class mrg::journal::wmgr (read manager). See
+ * File containing code for class mrg::journal::wmgr (write manager). See
  * class documentation for details.
  *
  * \author Kim van der Riet
@@ -42,9 +42,9 @@ class wmgr;
 }
 
 #include <cstring>
-#include "jrnl/enums.h"
-#include "jrnl/pmgr.h"
-#include "jrnl/wrfc.h"
+#include "qpid/legacystore/jrnl/enums.h"
+#include "qpid/legacystore/jrnl/pmgr.h"
+#include "qpid/legacystore/jrnl/wrfc.h"
 #include <set>
 
 namespace mrg

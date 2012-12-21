@@ -40,8 +40,8 @@ class enq_rec;
 }
 
 #include <cstddef>
-#include "jrnl/enq_hdr.h"
-#include "jrnl/jrec.h"
+#include "qpid/legacystore/jrnl/enq_hdr.h"
+#include "qpid/legacystore/jrnl/jrec.h"
 
 namespace mrg
 {

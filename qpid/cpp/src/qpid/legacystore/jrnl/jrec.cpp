@@ -30,11 +30,11 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/jrec.h"
+#include "qpid/legacystore/jrnl/jrec.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg

@@ -36,9 +36,9 @@
 
 #include <cerrno>
 #include <ctime>
-#include "jrnl/rec_hdr.h"
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/rec_hdr.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg

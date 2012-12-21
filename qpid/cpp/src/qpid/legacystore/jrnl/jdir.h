@@ -42,7 +42,7 @@ class jdir;
 }
 }
 
-#include "jrnl/jinf.h"
+#include "qpid/legacystore/jrnl/jinf.h"
 #include <dirent.h>
 
 namespace mrg
