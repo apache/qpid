@@ -40,6 +40,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/QueueSettings.h"
+#include "qpid/sys/Timer.h"
 
 #include <iostream>
 #include <vector>

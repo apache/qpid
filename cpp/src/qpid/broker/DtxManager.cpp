@@ -27,6 +27,9 @@
 #include "qpid/ptr_map.h"
 
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+
 #include <iostream>
 
 using boost::intrusive_ptr;
@@ -34,6 +37,30 @@ using qpid::sys::Mutex;
 using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
+
+namespace {
+    typedef boost::function0<void> FireFunction;
+    struct DtxCleanup : public qpid::sys::TimerTask
+    {
+        FireFunction fireFunction;
+
+        DtxCleanup(uint32_t timeout, FireFunction f);
+        void fire();
+    };
+
+    DtxCleanup::DtxCleanup(uint32_t _timeout, FireFunction f)
+    : TimerTask(qpid::sys::Duration(_timeout * qpid::sys::TIME_SEC),"DtxCleanup"), fireFunction(f){}
+
+    void DtxCleanup::fire()
+    {
+        try {
+            fireFunction();
+        } catch (qpid::ConnectionException& /*e*/) {
+            //assume it was explicitly cleaned up after a call to prepare, commit or rollback
+        }
+    }
+
+}
 
 DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(&t) {}
 
@@ -156,19 +183,7 @@ void DtxManager::timedout(const std::string& xid)
     } else {
         ptr_map_ptr(i)->timedout();
         //TODO: do we want to have a timed task to cleanup, or can we rely on an explicit completion?
-        //timer.add(intrusive_ptr<TimerTask>(new DtxCleanup(60*30/*30 mins*/, *this, xid)));
-    }
-}
-
-DtxManager::DtxCleanup::DtxCleanup(uint32_t _timeout, DtxManager& _mgr, const std::string& _xid)
-    : TimerTask(qpid::sys::Duration(_timeout * qpid::sys::TIME_SEC),"DtxCleanup"), mgr(_mgr), xid(_xid) {}
-
-void DtxManager::DtxCleanup::fire()
-{
-    try {
-        mgr.remove(xid);
-    } catch (ConnectionException& /*e*/) {
-        //assume it was explicitly cleaned up after a call to prepare, commit or rollback
+        //timer->add(new DtxCleanup(60*30/*30 mins*/, boost::bind(&DtxManager::remove, this, xid)));
     }
 }
 

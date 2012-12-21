@@ -67,6 +67,7 @@
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
@@ -196,6 +197,7 @@ framing::FieldTable noReplicateArgs() {
 
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
+    timer(new qpid::sys::Timer),
     config(conf),
     managementAgent(conf.enableMgmt ? new ManagementAgent(conf.qmf1Support,
                                                           conf.qmf2Support)
@@ -207,13 +209,13 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges(this),
     links(this),
     factory(new SecureConnectionFactory(*this)),
-    dtxManager(timer),
+    dtxManager(*timer.get()),
     sessionManager(
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    queueCleaner(queues, &timer),
+    queueCleaner(queues, timer.get()),
     recoveryInProgress(false),
     expiryPolicy(new ExpiryPolicy),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
@@ -437,7 +439,7 @@ Broker::~Broker() {
     finalize();                 // Finalize any plugins.
     if (config.auth)
         SaslAuthenticator::fini();
-    timer.stop();
+    timer->stop();
     QPID_LOG(notice, "Shut down");
 }
 

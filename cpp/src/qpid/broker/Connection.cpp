@@ -26,6 +26,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/sys/SecuritySettings.h"
+#include "qpid/sys/Timer.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"

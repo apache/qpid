@@ -18,15 +18,36 @@
  * under the License.
  *
  */
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueCleaner.h"
 
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/sys/Timer.h"
+
+#include <boost/function.hpp>
 #include <boost/bind.hpp>
 
 namespace qpid {
 namespace broker {
 
+namespace {
+    typedef boost::function0<void> FireFunction;
+    class Task : public sys::TimerTask
+    {
+    public:
+        Task(FireFunction f, sys::Duration duration);
+        void fire();
+    private:
+        FireFunction fireFunction;
+    };
+
+    Task::Task(FireFunction f, qpid::sys::Duration d) : sys::TimerTask(d,"QueueCleaner"), fireFunction(f) {}
+
+    void Task::fire()
+    {
+        fireFunction();
+    }
+}
 QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer* t) : queues(q), timer(t) {}
 
 QueueCleaner::~QueueCleaner()
@@ -37,20 +58,12 @@ QueueCleaner::~QueueCleaner()
 void QueueCleaner::start(qpid::sys::Duration p)
 {
     period = p;
-    task = new Task(*this, p);
+    task = new Task(boost::bind(&QueueCleaner::fired, this), p);
     timer->add(task);
 }
 
 void QueueCleaner::setTimer(qpid::sys::Timer* timer) {
     this->timer = timer;
-}
-
-
-QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d,"QueueCleaner"), parent(p) {}
-
-void QueueCleaner::Task::fire()
-{
-    parent.fired();
 }
 
 namespace {
