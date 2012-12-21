@@ -20,6 +20,8 @@
  */
 
 #include "qpid/broker/SessionState.h"
+
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/DtxAck.h"
