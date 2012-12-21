@@ -19,6 +19,8 @@
  *
  */
 #include "qpid/broker/Bridge.h"
+
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/FedOps.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/Connection.h"

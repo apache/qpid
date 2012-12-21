@@ -19,12 +19,14 @@
  *
  */
 #include "qpid/broker/SecureConnectionFactory.h"
-#include "qpid/framing/ProtocolVersion.h"
+
 #include "qpid/amqp_0_10/Connection.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SecureConnection.h"
-#include "qpid/sys/SecuritySettings.h"
+#include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/SecuritySettings.h"
 
 namespace qpid {
 namespace broker {

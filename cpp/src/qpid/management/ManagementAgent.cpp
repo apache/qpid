@@ -28,7 +28,8 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
-#include <qpid/broker/Message.h>
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"

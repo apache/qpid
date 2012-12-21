@@ -1175,6 +1175,7 @@ set (qpidbroker_SOURCES
      qpid/broker/Bridge.cpp
      qpid/broker/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
+     qpid/broker/ConnectionState.cpp
      qpid/broker/DeliverableMessage.cpp
      qpid/broker/DeliveryRecord.cpp
      qpid/broker/DirectExchange.cpp

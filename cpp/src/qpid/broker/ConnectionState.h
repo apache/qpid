@@ -21,17 +21,21 @@
 #ifndef _ConnectionState_
 #define _ConnectionState_
 
-#include <vector>
-
+#include "qpid/broker/ConnectionToken.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionOutputHandlerPtr.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/Url.h"
-#include "qpid/broker/Broker.h"
+
+#include <boost/function.hpp>
+#include <vector>
+
 
 namespace qpid {
 namespace broker {
+
+class Broker;
 
 class ConnectionState : public ConnectionToken, public management::Manageable
 {
@@ -61,14 +65,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
 
-    virtual void setUserId(const std::string& uid) {
-        userId = uid;
-        size_t at = userId.find('@');
-        userName = userId.substr(0, at);
-        isDefaultRealm = (
-            at!= std::string::npos &&
-            getBroker().getOptions().realm == userId.substr(at+1,userId.size()));
-    }
+    virtual void setUserId(const std::string& uid);
 
     const std::string& getUserId() const { return userId; }
 
