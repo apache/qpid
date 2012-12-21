@@ -26,6 +26,7 @@
 #include <string>
 #include <windows.h>
 #include <clfsw32.h>
+#include <qpid/broker/Broker.h>
 #include <qpid/broker/RecoverableQueue.h>
 #include <qpid/log/Statement.h>
 #include <qpid/store/MessageStorePlugin.h>
