@@ -41,6 +41,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 
+#include <queue>
 #include <set>
 #include <vector>
 #include <ostream>

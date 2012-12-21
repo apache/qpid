@@ -38,7 +38,6 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -56,6 +55,9 @@
 #include <algorithm>
 
 namespace qpid {
+namespace sys {
+class TimerTask;
+}
 namespace broker {
 class Broker;
 class Exchange;

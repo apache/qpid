@@ -52,7 +52,6 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Runnable.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/types/Variant.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
@@ -67,6 +66,7 @@ namespace qpid {
 namespace sys {
 class ProtocolFactory;
 class Poller;
+class Timer;
 }
 
 struct Url;
@@ -157,7 +157,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Manageable::status_t setTimestampConfig(const bool receive,
                                             const ConnectionState* context);
     boost::shared_ptr<sys::Poller> poller;
-    sys::Timer timer;
+    std::auto_ptr<sys::Timer> timer;
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
@@ -265,7 +265,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QPID_BROKER_EXTERN boost::shared_ptr<sys::Poller> getPoller();
 
     /** Timer for local tasks affecting only this broker */
-    sys::Timer& getTimer() { return timer; }
+    sys::Timer& getTimer() { return *timer; }
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
 

@@ -33,6 +33,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/broker/ConnectionState.h"
@@ -46,6 +47,9 @@
 #include <fstream>
 #include <sstream>
 #include <typeinfo>
+
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace management {
@@ -92,6 +96,32 @@ struct ScopedManagementContext
         setManagementExecutionContext(0);
     }
 };
+
+typedef boost::function0<void> FireFunction;
+struct Periodic : public qpid::sys::TimerTask
+{
+    FireFunction fireFunction;
+    qpid::sys::Timer* timer;
+
+    Periodic (FireFunction f, qpid::sys::Timer* t, uint32_t seconds);
+    virtual ~Periodic ();
+    void fire ();
+};
+
+Periodic::Periodic (FireFunction f, qpid::sys::Timer* t, uint32_t _seconds)
+    : TimerTask(sys::Duration((_seconds ? _seconds : 1) * sys::TIME_SEC),
+                "ManagementAgent::periodicProcessing"),
+      fireFunction(f), timer(t) {}
+
+Periodic::~Periodic() {}
+
+void Periodic::fire()
+{
+    setupNextFire();
+    timer->add(this);
+    fireFunction();
+}
+
 }
 
 
@@ -171,7 +201,7 @@ void ManagementAgent::configure(const string& _dataDir, bool _publish, uint16_t 
         new EventQueue(boost::bind(&ManagementAgent::sendEvents, this, _1), broker->getPoller()));
     sendQueue->start();
     timer          = &broker->getTimer();
-    timer->add(new Periodic(*this, interval));
+    timer->add(new Periodic(boost::bind(&ManagementAgent::periodicProcessing, this), timer, interval));
 
     // Get from file or generate and save to file.
     if (dataDir.empty())
@@ -413,20 +443,6 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
         sendBuffer(content, "", headers, "amqp/list", v2Topic, key.str());
         QPID_LOG(debug, "SEND raiseEvent (v2) class=" << event.getPackageName() << "." << event.getEventName());
     }
-}
-
-ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
-    : TimerTask(sys::Duration((_seconds ? _seconds : 1) * sys::TIME_SEC),
-                "ManagementAgent::periodicProcessing"),
-      agent(_agent) {}
-
-ManagementAgent::Periodic::~Periodic() {}
-
-void ManagementAgent::Periodic::fire()
-{
-    setupNextFire();
-    agent.timer->add(this);
-    agent.periodicProcessing();
 }
 
 void ManagementAgent::clientAdded (const string& routingKey)
