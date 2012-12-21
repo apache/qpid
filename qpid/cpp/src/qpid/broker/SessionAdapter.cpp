@@ -16,6 +16,8 @@
  *
  */
 #include "qpid/broker/SessionAdapter.h"
+
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/broker/Queue.h"
