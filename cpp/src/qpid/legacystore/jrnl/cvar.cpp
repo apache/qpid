@@ -30,4 +30,4 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/cvar.h"
+#include "qpid/legacystore/jrnl/cvar.h"

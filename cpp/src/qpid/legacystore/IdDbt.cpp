@@ -19,7 +19,7 @@
  *
  */
 
-#include "IdDbt.h"
+#include "qpid/legacystore/IdDbt.h"
 
 using namespace mrg::msgstore;
 

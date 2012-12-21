@@ -19,16 +19,16 @@
  *
  */
 
-#include "MessageStoreImpl.h"
+#include "qpid/legacystore/MessageStoreImpl.h"
 
-#include "BindingDbt.h"
-#include "BufferValue.h"
-#include "IdDbt.h"
-#include "jrnl/txn_map.h"
+#include "qpid/legacystore/BindingDbt.h"
+#include "qpid/legacystore/BufferValue.h"
+#include "qpid/legacystore/IdDbt.h"
+#include "qpid/legacystore/jrnl/txn_map.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qmf/org/apache/qpid/legacystore/Package.h"
-#include "StoreException.h"
+#include "qpid/legacystore/StoreException.h"
 #include <dirent.h>
 #include <db.h>
 

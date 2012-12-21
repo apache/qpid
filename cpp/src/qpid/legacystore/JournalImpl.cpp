@@ -19,10 +19,10 @@
  *
  */
 
-#include "JournalImpl.h"
+#include "qpid/legacystore/JournalImpl.h"
 
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/legacystore/ArgsJournalExpand.h"
@@ -32,7 +32,7 @@
 #include "qmf/org/apache/qpid/legacystore/EventRecovered.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Timer.h"
-#include "StoreException.h"
+#include "qpid/legacystore/StoreException.h"
 
 using namespace mrg::msgstore;
 using namespace mrg::journal;

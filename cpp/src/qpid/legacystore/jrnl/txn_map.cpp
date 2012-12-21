@@ -30,12 +30,12 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/txn_map.h"
+#include "qpid/legacystore/jrnl/txn_map.h"
 
 #include <iomanip>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
-#include "jrnl/slock.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/slock.h"
 #include <sstream>
 
 namespace mrg

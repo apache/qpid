@@ -22,7 +22,7 @@
 #ifndef QPID_LEGACYSTORE_DATATOKENIMPL_H
 #define QPID_LEGACYSTORE_DATATOKENIMPL_H
 
-#include "jrnl/data_tok.h"
+#include "qpid/legacystore/jrnl/data_tok.h"
 #include "qpid/broker/PersistableMessage.h"
 #include <boost/intrusive_ptr.hpp>
 

@@ -31,13 +31,13 @@
  */
 
 
-#include "jrnl/rrfc.h"
+#include "qpid/legacystore/jrnl/rrfc.h"
 
 #include <cerrno>
 #include <fcntl.h>
 #include <unistd.h>
-#include "jrnl/jerrno.h"
-#include "jrnl/jexception.h"
+#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/legacystore/jrnl/jexception.h"
 
 namespace mrg
 {

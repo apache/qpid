@@ -25,17 +25,17 @@
 #include <string>
 
 #include "db-inc.h"
-#include "Cursor.h"
-#include "IdDbt.h"
-#include "IdSequence.h"
-#include "JournalImpl.h"
-#include "jrnl/jcfg.h"
-#include "PreparedTransaction.h"
+#include "qpid/legacystore/Cursor.h"
+#include "qpid/legacystore/IdDbt.h"
+#include "qpid/legacystore/IdSequence.h"
+#include "qpid/legacystore/JournalImpl.h"
+#include "qpid/legacystore/jrnl/jcfg.h"
+#include "qpid/legacystore/PreparedTransaction.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/legacystore/Store.h"
-#include "TxnCtxt.h"
+#include "qpid/legacystore/TxnCtxt.h"
 
 // Assume DB_VERSION_MAJOR == 4
 #if (DB_VERSION_MINOR == 2)

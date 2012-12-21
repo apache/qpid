@@ -19,7 +19,7 @@
  *
  */
 
-#include "BindingDbt.h"
+#include "qpid/legacystore/BindingDbt.h"
 
 namespace mrg {
 namespace msgstore {

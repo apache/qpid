@@ -43,15 +43,15 @@ namespace journal
 }
 
 #include <deque>
-#include "jrnl/aio.h"
-#include "jrnl/aio_callback.h"
-#include "jrnl/data_tok.h"
-#include "jrnl/deq_rec.h"
-#include "jrnl/enq_map.h"
-#include "jrnl/enq_rec.h"
-#include "jrnl/fcntl.h"
-#include "jrnl/txn_map.h"
-#include "jrnl/txn_rec.h"
+#include "qpid/legacystore/jrnl/aio.h"
+#include "qpid/legacystore/jrnl/aio_callback.h"
+#include "qpid/legacystore/jrnl/data_tok.h"
+#include "qpid/legacystore/jrnl/deq_rec.h"
+#include "qpid/legacystore/jrnl/enq_map.h"
+#include "qpid/legacystore/jrnl/enq_rec.h"
+#include "qpid/legacystore/jrnl/fcntl.h"
+#include "qpid/legacystore/jrnl/txn_map.h"
+#include "qpid/legacystore/jrnl/txn_rec.h"
 
 namespace mrg
 {

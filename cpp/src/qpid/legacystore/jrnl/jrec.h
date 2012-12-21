@@ -43,8 +43,8 @@ class jrec;
 
 #include <cstddef>
 #include <fstream>
-#include "jrnl/rec_hdr.h"
-#include "jrnl/rec_tail.h"
+#include "qpid/legacystore/jrnl/rec_hdr.h"
+#include "qpid/legacystore/jrnl/rec_tail.h"
 #include <string>
 #include <sys/types.h>
 

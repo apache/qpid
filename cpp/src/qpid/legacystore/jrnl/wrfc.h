@@ -42,8 +42,8 @@ class wrfc;
 }
 
 #include <cstddef>
-#include "jrnl/enums.h"
-#include "jrnl/rrfc.h"
+#include "qpid/legacystore/jrnl/enums.h"
+#include "qpid/legacystore/jrnl/rrfc.h"
 
 namespace mrg
 {

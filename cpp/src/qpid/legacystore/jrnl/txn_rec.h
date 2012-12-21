@@ -42,8 +42,8 @@ class txn_rec;
 }
 
 #include <cstddef>
-#include "jrnl/jrec.h"
-#include "jrnl/txn_hdr.h"
+#include "qpid/legacystore/jrnl/jrec.h"
+#include "qpid/legacystore/jrnl/txn_hdr.h"
 
 namespace mrg
 {
