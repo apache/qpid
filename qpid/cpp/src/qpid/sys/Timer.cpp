@@ -96,6 +96,7 @@ void TimerTask::cancel() {
     state = CANCELLED;
 }
 
+// TODO AStitcher 21/08/09 The threshholds for emitting warnings are a little arbitrary
 Timer::Timer() :
     active(false),
     late(50 * TIME_MSEC),
@@ -127,7 +128,6 @@ public:
     }
 };
 
-// TODO AStitcher 21/08/09 The threshholds for emitting warnings are a little arbitrary
 void Timer::run()
 {
     Monitor::ScopedLock l(monitor);
@@ -145,10 +145,6 @@ void Timer::run()
             {
             TimerTaskCallbackScope s(*t);
             if (s) {
-                {
-                    Monitor::ScopedUnlock u(monitor);
-                    drop(t);
-                }
                 if (delay > lateCancel) {
                     QPID_LOG(debug, t->name << " cancelled timer woken up " <<
                              delay / TIME_MSEC << "ms late");
@@ -228,9 +224,6 @@ void Timer::fire(boost::intrusive_ptr<TimerTask> t) {
         QPID_LOG(error, "Exception thrown by timer task " << t->getName() << ": " << e.what());
     }
 }
-
-// Provided for subclasses: called when a task is droped.
-void Timer::drop(boost::intrusive_ptr<TimerTask>) {}
 
 bool operator<(const intrusive_ptr<TimerTask>& a,
                        const intrusive_ptr<TimerTask>& b)
