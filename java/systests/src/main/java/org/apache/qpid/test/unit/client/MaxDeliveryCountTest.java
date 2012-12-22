@@ -85,8 +85,10 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
 
         // Set client-side flag to allow the server to determine if messages
         // dead-lettered or requeued.
-        setTestClientSystemProperty(ClientProperties.REJECT_BEHAVIOUR_PROP_NAME, "server");
-
+        if (!isBroker010())
+        {
+            setTestClientSystemProperty(ClientProperties.REJECT_BEHAVIOUR_PROP_NAME, "server");
+        }
         super.setUp();
 
         boolean durableSub = isDurSubTest();

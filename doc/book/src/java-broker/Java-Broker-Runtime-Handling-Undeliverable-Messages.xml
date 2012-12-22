@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Runtime-Handling-Undeliverable-Messages">
+ <title>Handing Undeliverable Messages</title>
+
+ <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Introduction">
+  <title>Introduction</title>
+  <para> Messages that cannot be delivered successfully to a consumer (for instance, because a
+   consumer using a transcation sessions rolls-back the transaction) will automatically be returned
+   to the queue and be subsequently redelivered. This is desirable behaviour that contributes to the
+   ability of a system to withstand unexpected errors. However, this leaves open the possibility for
+   a message to be repeatedily delivered (potentially indefinitely), consuming system resources and
+   preventing the delivery of other messages. Such undeliverable messages are sometimes known as
+   poison messages.</para>
+  <para>For an example, consider a stock ticker application that has been designed to consume prices
+   contained within JMS TextMessages. What if inadvertently a BytesMessage is placed onto the queue?
+   As the ticker application does not expect the BytesMessage, it processing with fail and
+   rolls-back the transaction, however the default behavior of the Broker would mean that the
+   BytesMessage would be delivered over and over again, preventing the delivery of other legitimate
+   messages, until an operator intervenes and removes the erroneous message. </para>
+  <para>Qpid has a maximum delivery count and dead-letter queue (DLQ) features which can be used in
+   concert to construct a system that automatically handle such a condition. These features are
+   described in the following sections.</para>
+ </section>
+ <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Maximum-Delivery-Count">
+  <title>Maximum Delivery Count</title>
+  <para> Maximum delivery count is a property of a queue. If a consumer application is unable to
+   process a message more than the specified number of times, then the broker will either route the
+   message to a dead-letter queue (if one has been defined), or will discard the message. </para>
+  <para> In order for a maximum delivery count to be enforced, the consuming client
+    <emphasis>must</emphasis> call <ulink url="&oracleJeeDocUrl;javax/jms/Session.html#rollback()"
+    >Session#rollback()</ulink> (or <ulink url="&oracleJeeDocUrl;javax/jms/Session.html#recover()"
+    >Session#recover()</ulink> depending on the session's transaction mode). It is during the
+   Broker's processing of Session#rollback() (or Session#recover()) that if a message has been seen
+   at least the maximum number of times then it will move the message to the DLQ or discard the
+   message.</para>
+  <para>If the consuming client fails in another manner, for instance, closes the connection, the
+   message will not be re-routed and consumer application will see the same poison message again
+   once it reconnects.</para>
+  <para> If the consuming application is using AMQP 0-9-1, 0-9, or 0-8 protocols, it is necessary to
+   set the client system property <varname>qpid.reject.behaviour</varname> or connection or binding
+   URL option <varname>rejectbehaviour</varname> to the value <literal>system</literal>.</para>
+  <para>It is possible to determine the number of times a message has been sent to a consumer via
+   the Management interfaces, but is not possible to determine this information from JMS.
+   Specifically, the optional JMS message header <property>JMSXDeliveryCount</property> is not
+   supported.</para>
+  <para>Maximum Delivery Count can be enabled via management (see <xref
+    linkend="Java-Broker-Configuring-And-Managing"/>) using the the queue declare property
+    <property>x-qpid-maximum-delivery-count</property> or via <link
+    linkend="Java-Broker-Queues-Handling-Undeliverable-Messages-Configuration">configuration</link>
+   as illustrated below.</para>
+ </section>
+ <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Dead-Letter-Queues">
+  <title>Dead Letter Queues (DLQ)</title>
+  <para>A Dead Letter Queue (DLQ) acts as an destination for messages that have somehow exceeded the
+   normal bounds of processing and is utilised to prevent disruption to flow of other messages. When
+   a DLQ is enabled for a given queue if a consuming client indicates it no longer wishes the
+   receive the message (typically by exceeding a Maximum Delivery Count) then the message is moved
+   onto the DLQ and removed from the original queue. </para>
+  <para>The DLQ feature causes generation of a Dead Letter Exchange and a Dead Letter Queue. These
+   are named convention queue_name_DLE and queue_name_DLQ.</para>
+  <para>DLQs can be enabled via management (see <xref linkend="Java-Broker-Configuring-And-Managing"
+   />) using the queue declare property <property>x-qpid-dlq-enabled</property> or via <link
+    linkend="Java-Broker-Queues-Handling-Undeliverable-Messages-Configuration">configuration</link>
+   as illustrated below.</para>
+  <caution>
+   <title>Avoid excessive queue depth</title>
+   <para>Applications making use of DLQs <emphasis>should</emphasis> make provision for the frequent
+    examination of messages arriving on DLQs so that both corrective actions can be taken to resolve
+    the underlying cause and organise for their timely removal from the DLQ. Messages on DLQs
+    consume system resources in the same manner as messages on normal queues so excessive queue
+    depths should not be permitted to develop.</para>
+  </caution>
+ </section>
+ <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">
+  <title>Configuration</title>
+  <para>In the below configuration it can be seen that DLQs/Maximum Delivery Count are enabled at
+   the broker level with maximum delivery count set to 5, disabled at the virtualhost level for the
+   'dev-only' virtualhost, and enabled specifically for the 'dev-only-main-queue' with maximum
+   delivery count overridden to 5. </para>
+  <para>As 'dev-only-main-queue' has its own configuration specified, this value overrides all
+   others and causes the features to be enabled for this queue. In contrast to this,
+   'dev-only-other-queue' does not specify its own value and picks up the false value specified for
+   its parent virtualhost, causing the DLQ/Maximum Delivery Count features to be disabled for this
+   queue. Any such queue in the 'dev-only' virtualhost which does not specify its own configuration
+   value will have the DLQ/Maximum Delivery Count feature disabled.</para>
+  <para>The queue 'localhost-queue' has the DLQ/Maximum Delivery Count features enabled, as neither
+   the queue itself or the 'localhost' virtualhost specifies a configuration value and so the broker
+   level value of true is used. Any such queue in the 'localhost' virtualhost which does not specify
+   its own configuration value will have the features enabled.</para>
+  <example>
+   <title>Enabling DLQs and maximum delivery count at broker level within config.xml</title>
+   <programlisting><![CDATA[<broker>
+ ...
+ <deadLetterQueues>true</deadLetterQueues>
+ <maximumDeliveryCount>5</maximumDeliveryCount>
+ ...
+</broker>]]></programlisting>
+  </example>
+  <example>
+   <title>Enabling DLQs and maximum delivery count at virtualhost and queue level within
+    virtualhosts.xml</title>
+   <programlisting><![CDATA[<virtualhosts>
+ ...
+ <virtualhost>
+  <name>dev-only</name>
+  <dev-only>
+   <queues>
+    <deadLetterQueues>false</deadLetterQueues>
+    <maximumDeliveryCount>0</maximumDeliveryCount>
+    <queue>
+     <name>dev-only-main-queue</name>
+     <dev-only-main-queue>
+      <deadLetterQueues>true</deadLetterQueues>
+      <maximumDeliveryCount>3</maximumDeliveryCount>
+     </dev-only-main-queue>
+    </queue>
+    <queue>
+     <name>dev-only-other-queue</name>
+    </queue>
+   </queues>
+  </dev-only>
+ </virtualhost>
+ <virtualhost>
+  <name>localhost</name>
+  <localhost>
+   <queues>
+    <queue>
+     <name>localhost-queue</name>
+    </queue>
+   </queues>
+  </localhost>
+ </virtualhost>
+ ...
+</virtualhosts>]]>
+   </programlisting>
+  </example>
+ </section>
+
+
+</section>
