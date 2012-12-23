@@ -47,7 +47,7 @@ public class InboundMessageAdapter implements InboundMessage
 
     public AMQShortString getRoutingKeyShortString()
     {
-        return AMQShortString.valueOf(_entry.getMessage());
+        return AMQShortString.valueOf(_entry.getMessage().getRoutingKey());
     }
 
     public String getRoutingKey()
