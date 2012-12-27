@@ -78,19 +78,4 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
 
     <target name="build" depends="check-request-props, bdb-jar-required, module.build" />
 
-    <target name="postbuild" depends="copy-store-to-upgrade" />
-
-    <target name="copy-store-to-upgrade" description="copy the upgrade tool resource folder contents into the build tree">
-      <copy todir="${qpid.home}" failonerror="true">
-        <fileset dir="src/test/resources/upgrade"/>
-      </copy>
-    </target>
-
-    <target name="precompile-tests">
-        <mkdir dir="${module.test.resources}"/>
-        <copy todir="${module.test.resources}">
-            <fileset dir="src/test/resources"/>
-        </copy>
-    </target>
-
 </project>
