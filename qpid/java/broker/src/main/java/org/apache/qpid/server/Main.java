@@ -31,8 +31,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.BrokerLauncher.InitException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-
 
 /**
  * Main entry point for AMQPD.
@@ -45,6 +43,16 @@ public class Main
 
     private static final Option OPTION_VERSION = new Option("v", "version", false, "print the version information and exit");
 
+    private static final Option OPTION_CONFIGURATION_STORE = OptionBuilder.withArgName("location").hasArg()
+            .withDescription("use given configuration store location").withLongOpt("config-store").create("cs");
+
+    private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
+            .withDescription("use given store type (json|derby), json by default").withLongOpt("config-store-type").create("cst");
+
+    private static final Option OPTION_CONFIGURATION_STORE_NO_DEFAULTS = OptionBuilder.withType(Boolean.class)
+            .withDescription("disables default configuration if set to true").withLongOpt("no-defaults").create("nd");
+
+    @Deprecated
     private static final Option OPTION_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
                     .create("c");
@@ -143,6 +151,9 @@ private static final Option OPTION_INCLUDE_0_8 =
     {
         OPTIONS.addOption(OPTION_HELP);
         OPTIONS.addOption(OPTION_VERSION);
+        OPTIONS.addOption(OPTION_CONFIGURATION_STORE);
+        OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
+        OPTIONS.addOption(OPTION_CONFIGURATION_STORE_NO_DEFAULTS);
         OPTIONS.addOption(OPTION_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_WATCH);
@@ -243,6 +254,17 @@ private static final Option OPTION_INCLUDE_0_8 =
         else
         {
             BrokerOptions options = new BrokerOptions();
+            String configurationStore = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE.getOpt());
+            if (configurationStore != null)
+            {
+                options.setConfigurationStore(configurationStore);
+            }
+            String configurationStoreType = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE_TYPE.getOpt());
+            if (configurationStoreType != null)
+            {
+                options.setConfigurationStoreType(configurationStoreType);
+            }
+
             String configFile = _commandLine.getOptionValue(OPTION_CONFIG_FILE.getOpt());
             if(configFile != null)
             {

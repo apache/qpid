@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
+import org.apache.qpid.server.configuration.ConfigurationEntryStoreFactory;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -108,17 +108,26 @@ public class BrokerLauncher
     private void startupImpl(final BrokerOptions options) throws Exception
     {
         final String qpidHome = options.getQpidHome();
-        final File configFile = getConfigFile(options.getConfigFile(),
-                                    BrokerOptions.DEFAULT_CONFIG_FILE, qpidHome, true);
+        String storeLocation = options.getConfigurationStore();
+        String storeType = options.getConfigurationStoreType();
 
-        CurrentActor.get().message(BrokerMessages.CONFIG(configFile.getAbsolutePath()));
+        // Temporarily support for old configuration file option
+        if (storeLocation == null && storeType == null && options.getConfigFile() != null)
+        {
+            storeLocation = options.getConfigFile();
+        }
+        if (storeLocation == null)
+        {
+            storeLocation = new File(qpidHome, BrokerOptions.DEFAULT_CONFIG_FILE).getAbsolutePath();
+        }
 
-        File logConfigFile = getConfigFile(options.getLogConfigFile(),
-                                    BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
+        CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
 
+        File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(configFile, options);
+        ConfigurationEntryStoreFactory storeFactory = new ConfigurationEntryStoreFactory();
+        ConfigurationEntryStore store =  storeFactory.createStore(storeLocation, storeType, options);
 
         _applicationRegistry = new ApplicationRegistry(store);
         try

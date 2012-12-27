@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class BrokerOptions
 {
-    public static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
+    public static final String DEFAULT_CONFIG_FILE = "etc/config.json";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -47,6 +47,10 @@ public class BrokerOptions
     private Integer _logWatchFrequency = 0;
     private String _qpidWorkFolder;
     private String _qpidHomeFolder;
+
+    private String _configurationStore;
+    private String _configurationStoreType;
+    private boolean _noDefault;
 
     public void addPort(final int port)
     {
@@ -68,11 +72,13 @@ public class BrokerOptions
         return Collections.unmodifiableSet(_sslPorts);
     }
 
+    @Deprecated
     public String getConfigFile()
     {
         return _configFile;
     }
 
+    @Deprecated
     public void setConfigFile(final String configFile)
     {
         _configFile = configFile;
@@ -184,4 +190,35 @@ public class BrokerOptions
     {
         _qpidHomeFolder = qpidHomeFolder;
     }
+
+    public String getConfigurationStore()
+    {
+        return _configurationStore;
+    }
+
+    public void setConfigurationStore(String cofigurationStore)
+    {
+        _configurationStore = cofigurationStore;
+    }
+
+    public String getConfigurationStoreType()
+    {
+        return _configurationStoreType;
+    }
+
+    public void setConfigurationStoreType(String cofigurationStoreType)
+    {
+        _configurationStoreType = cofigurationStoreType;
+    }
+
+    public boolean isNoDefault()
+    {
+        return _noDefault;
+    }
+
+    public void setNoDefault(boolean noDefault)
+    {
+        _noDefault = noDefault;
+    }
+
 }
