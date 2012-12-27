@@ -30,6 +30,8 @@ import java.util.UUID;
 
 public class ConfigurationEntry
 {
+    public static final String ATTRIBUTE_NAME = "name";
+
     private final UUID _id;
     private final String _type;
     private final Map<String, Object> _attributes;
@@ -136,6 +138,50 @@ public class ConfigurationEntry
             }
         }
         else if (!_id.equals(other._id))
+        {
+            return false;
+        }
+        if (_type == null)
+        {
+            if (other._type != null)
+            {
+                return false;
+            }
+        }
+        else if (!_type.equals(other._type))
+        {
+            return false;
+        }
+        if (_store == null)
+        {
+            if (other._store != null)
+            {
+                return false;
+            }
+        }
+        else if (!_store.equals(other._store))
+        {
+            return false;
+        }
+        if (_childrenIds == null)
+        {
+            if (other._childrenIds != null)
+            {
+                return false;
+            }
+        }
+        else if (!_childrenIds.equals(other._childrenIds))
+        {
+            return false;
+        }
+        if (_attributes == null)
+        {
+            if (other._attributes != null)
+            {
+                return false;
+            }
+        }
+        else if (!_attributes.equals(other._attributes))
         {
             return false;
         }

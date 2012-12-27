@@ -24,6 +24,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
+import java.lang.reflect.Constructor;
 import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.UUID;
@@ -36,6 +38,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
@@ -60,6 +63,10 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerTestHelper
 {
+
+    protected static final String BROKER_STORE_CLASS_NAME_KEY = "brokerstore.class.name";
+    protected static final String JSON_BROKER_STORE_CLASS_NAME = "org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore";
+
 
     public static Broker createBrokerMock()
     {
@@ -203,6 +210,41 @@ public class BrokerTestHelper
                 false, false, virtualHost, Collections.<String, Object>emptyMap());
         virtualHost.getQueueRegistry().registerQueue(queue);
         return queue;
+    }
+
+    public static String getTestProfileBrokerConfigurationStoreClassName()
+    {
+        final String storeClass = System.getProperty(BROKER_STORE_CLASS_NAME_KEY);
+        return storeClass != null ? storeClass : JSON_BROKER_STORE_CLASS_NAME;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static ConfigurationEntryStore createTestProfileBrokerConfigurationStore(String storeLocation) throws Exception
+    {
+        String className = getTestProfileBrokerConfigurationStoreClassName();
+        Class classObject = Class.forName(className);
+        Constructor[] constructors = classObject.getConstructors();
+        for (int i = 0; i < constructors.length; i++)
+        {
+            Constructor constructor = constructors[i];
+            Class[] parameterTypes = constructor.getParameterTypes();
+            if (parameterTypes == null || parameterTypes.length == 0)
+            {
+                return (ConfigurationEntryStore) classObject.newInstance();
+            }
+            else if (parameterTypes.length == 1)
+            {
+                if (parameterTypes[0] == String.class)
+                {
+                    return (ConfigurationEntryStore) constructor.newInstance(storeLocation);
+                }
+                else if (parameterTypes[0] == File.class)
+                {
+                    return (ConfigurationEntryStore) constructor.newInstance(new File(storeLocation));
+                }
+            }
+        }
+        throw new RuntimeException("Cannot instantiate broker configuration store. Try to override getTestProfileBrokerConfigurationStore");
     }
 
 }

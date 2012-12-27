@@ -1,8 +1,13 @@
 package org.apache.qpid.server.configuration.store;
 
+import static org.apache.qpid.server.configuration.ConfigurationEntry.ATTRIBUTE_NAME;
+
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,8 +23,10 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.util.Strings;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -28,55 +35,55 @@ import org.codehaus.jackson.node.ArrayNode;
 
 public class JsonConfigurationEntryStore implements ConfigurationEntryStore
 {
+    private static final String DEFAULT_BROKER_TYPE = Broker.class.getSimpleName();
+    private static final String DEFAULT_BROKER_NAME = "Broker";
     static final String ATTRIBUTES = "attributes";
     private static final String ID = "id";
     private static final String TYPE = "type";
-    private static final String NAME = "name";
 
     private ObjectMapper _objectMapper;
     private Map<UUID, ConfigurationEntry> _entries;
     private File _storeFile;
     private UUID _rootId;
 
-    public JsonConfigurationEntryStore(String filePath)
+    private JsonConfigurationEntryStore()
     {
-        _storeFile = new File(filePath);
         _objectMapper = new ObjectMapper();
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        _entries = new HashMap<UUID, ConfigurationEntry>();
+    }
 
-        if (_storeFile.exists())
+    public JsonConfigurationEntryStore(URL storeURL)
+    {
+        this();
+        JsonNode node = load(storeURL, _objectMapper);
+        ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
+        _rootId = brokerEntry.getId();
+    }
+
+    public JsonConfigurationEntryStore(File storeFile)
+    {
+       this();
+       _storeFile = storeFile;
+        if (storeFile.exists())
         {
-            JsonNode node = load(_storeFile, _objectMapper);
-
-            Map<UUID, ConfigurationEntry> entries = new HashMap<UUID, ConfigurationEntry>();
-            ConfigurationEntry brokerEntry = toEntry(node, true, entries);
-            _rootId = brokerEntry.getId();
-            _entries = entries;
+            if (storeFile.length() > 0)
+            {
+                URL storeURL = fileToURL(storeFile);
+                JsonNode node = load(storeURL, _objectMapper);
+                ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
+                _rootId = brokerEntry.getId();
+            }
         }
         else
         {
-            _entries = new HashMap<UUID, ConfigurationEntry>();
-            File parent = _storeFile.getParentFile();
-            if (!parent.exists())
-            {
-                if (!parent.mkdirs())
-                {
-                    throw new IllegalConfigurationException("Cannot create folder(s) for the store at " + _storeFile);
-                }
-            }
-            try
-            {
-                if (!_storeFile.createNewFile())
-                {
-                    throw new IllegalConfigurationException("Cannot create store file at " + _storeFile);
-                }
-            }
-            catch (IOException e)
-            {
-                throw new IllegalConfigurationException("Cannot write into file at " + _storeFile, e);
-            }
-            ConfigurationEntry brokerEntry = new ConfigurationEntry(UUID.randomUUID(), Broker.class.getSimpleName(), null, null, null);
-            _rootId = brokerEntry.getId();
+            createStoreFile(storeFile);
+        }
+        if (_rootId == null)
+        {
+            _rootId = createUUID(DEFAULT_BROKER_TYPE, DEFAULT_BROKER_NAME);
+            ConfigurationEntry brokerEntry = new ConfigurationEntry(_rootId, DEFAULT_BROKER_TYPE, null, null, null);
             save(brokerEntry);
         }
     }
@@ -99,7 +106,8 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
                     {
                         Set<UUID> children = new HashSet<UUID>(entry.getChildrenIds());
                         children.remove(uuid);
-                        ConfigurationEntry referal = new ConfigurationEntry(entry.getId(), entry.getType(), entry.getAttributes(), children, this);
+                        ConfigurationEntry referal = new ConfigurationEntry(entry.getId(), entry.getType(),
+                                entry.getAttributes(), children, this);
                         _entries.put(entry.getId(), referal);
                     }
                 }
@@ -143,6 +151,43 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return _entries.get(id);
     }
 
+    private void createStoreFile(File storeFile)
+    {
+        File parent = storeFile.getParentFile();
+        if (!parent.exists())
+        {
+            if (!parent.mkdirs())
+            {
+                throw new IllegalConfigurationException("Cannot create folder(s) for the store at " + _storeFile);
+            }
+        }
+        try
+        {
+            if (!storeFile.createNewFile())
+            {
+                throw new IllegalConfigurationException("Cannot create store file at " + _storeFile);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot write into file at " + _storeFile, e);
+        }
+    }
+
+    private URL fileToURL(File storeFile)
+    {
+        URL storeURL = null;
+        try
+        {
+            storeURL = storeFile.toURI().toURL();
+        }
+        catch (MalformedURLException e)
+        {
+            throw new IllegalConfigurationException("Cannot create URL for file " + storeFile, e);
+        }
+        return storeURL;
+    }
+
     private boolean removeInternal(UUID entryId)
     {
         ConfigurationEntry oldEntry = _entries.remove(entryId);
@@ -163,7 +208,10 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
 
     private void saveAsTree()
     {
-        saveAsTree(_rootId, _entries, _objectMapper, _storeFile);
+        if (_storeFile != null)
+        {
+            saveAsTree(_rootId, _entries, _objectMapper, _storeFile);
+        }
     }
 
     private void saveAsTree(UUID rootId, Map<UUID, ConfigurationEntry> entries, ObjectMapper mapper, File file)
@@ -211,11 +259,12 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
                 if (child != null)
                 {
                     String relationshipName = child.getType().toLowerCase() + "s";
+
                     @SuppressWarnings("unchecked")
-                    Set<Map<String, Object>> children = (Set<Map<String, Object>>) tree.get(relationshipName);
+                    Collection<Map<String, Object>> children = (Collection<Map<String, Object>>) tree.get(relationshipName);
                     if (children == null)
                     {
-                        children = new TreeSet<Map<String, Object>>();
+                        children = new ArrayList<Map<String, Object>>();
                         tree.put(relationshipName, children);
                     }
                     Map<String, Object> childAsMap = toTree(relationship, entries);
@@ -226,27 +275,27 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return tree;
     }
 
-    private JsonNode load(File file, ObjectMapper mapper)
+    private JsonNode load(URL url, ObjectMapper mapper)
     {
         JsonNode root = null;
         try
         {
-            root = mapper.readTree(file);
+            root = mapper.readTree(url);
         }
         catch (JsonProcessingException e)
         {
-            throw new IllegalConfigurationException("Cannot parse file '" + file + "'!", e);
+            throw new IllegalConfigurationException("Cannot parse json from '" + url + "'", e);
         }
         catch (IOException e)
         {
-            throw new IllegalConfigurationException("Cannot read file '" + file + "'!", e);
+            throw new IllegalConfigurationException("Cannot read from '" + url + "'", e);
         }
         return root;
     }
 
     private ConfigurationEntry toEntry(JsonNode parent, boolean isRoot, Map<UUID, ConfigurationEntry> entries)
     {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = null;
         Set<UUID> childrenIds = new TreeSet<UUID>();
         Iterator<String> fieldNames = parent.getFieldNames();
         String type = null;
@@ -263,13 +312,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
                     {
                         throw new IllegalConfigurationException("Object attributes are set incorrectly for " + parent);
                     }
-                    Iterator<String> attributeNamesNames = fieldNode.getFieldNames();
-                    while (attributeNamesNames.hasNext())
-                    {
-                        String name = attributeNamesNames.next();
-                        JsonNode node = fieldNode.get(name);
-                        attributes.put(name, toObject(node));
-                    }
+                    attributes = toMap(fieldNode);
                 }
             }
             else if (fieldName.equals(ID))
@@ -300,19 +343,19 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         {
             if (isRoot)
             {
-                type = Broker.class.getName();
+                type = DEFAULT_BROKER_TYPE;
             }
             else
             {
                 throw new IllegalConfigurationException("Type attribute is not provided for configuration entry " + parent);
             }
         }
-        String name = (String) attributes.get(NAME);
+        String name = (String) attributes.get(ATTRIBUTE_NAME);
         if ((name == null || "".equals(name)))
         {
             if (isRoot)
             {
-                name = "Broker";
+                name = DEFAULT_BROKER_NAME;
             }
             else
             {
@@ -320,10 +363,9 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
             }
         }
         UUID id = null;
-
         if (idAsString == null)
         {
-            id = UUIDGenerator.generateBrokerChildUUID(type, name);
+            id = createUUID(type, name);
         }
         else
         {
@@ -333,17 +375,23 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
             }
             catch (Exception e)
             {
-                throw new IllegalConfigurationException("ID attribute value does not conform to UUID format for configuration entry " + parent);
+                throw new IllegalConfigurationException(
+                        "ID attribute value does not conform to UUID format for configuration entry " + parent);
             }
         }
         ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, childrenIds, this);
         if (entries.containsKey(id))
         {
-            throw new IllegalConfigurationException("Duplicate id is found: " + id + "! The following configuration entries have the same id: "
-                    + entries.get(id) + ", " + entry);
+            throw new IllegalConfigurationException("Duplicate id is found: " + id
+                    + "! The following configuration entries have the same id: " + entries.get(id) + ", " + entry);
         }
         entries.put(id, entry);
         return entry;
+    }
+
+    private UUID createUUID(String type, String name)
+    {
+        return UUIDGenerator.generateBrokerChildUUID(type, name);
     }
 
     private Object toObject(JsonNode node)
@@ -372,7 +420,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
             }
             else
             {
-                return node.asText();
+                return Strings.expand(node.asText());
             }
         }
         else if (node.isArray())
@@ -381,20 +429,25 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         }
         else if (node.isObject())
         {
-            Map<String, Object> object = new HashMap<String, Object>();
-            Iterator<String> fieldNames = node.getFieldNames();
-            while (fieldNames.hasNext())
-            {
-                String name = fieldNames.next();
-                Object value = toObject(node.get(name));
-                object.put(name, value);
-            }
-            return object;
+            return toMap(node);
         }
         else
         {
             throw new IllegalConfigurationException("Unexpected node: " + node);
         }
+    }
+
+    private Map<String, Object> toMap(JsonNode node)
+    {
+        Map<String, Object> object = new TreeMap<String, Object>();
+        Iterator<String> fieldNames = node.getFieldNames();
+        while (fieldNames.hasNext())
+        {
+            String name = fieldNames.next();
+            Object value = toObject(node.get(name));
+            object.put(name, value);
+        }
+        return object;
     }
 
     private Object toArray(JsonNode node)

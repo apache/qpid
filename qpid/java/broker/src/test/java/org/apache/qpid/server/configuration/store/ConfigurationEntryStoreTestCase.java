@@ -28,7 +28,6 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
@@ -89,8 +88,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _authenticationProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, AnonymousAuthenticationManager.class.getSimpleName());
 
         _store = createStore(_brokerId, _brokerAttributes);
-        addConfiguration(_virtualHostId, VirtualHost.class.getName(), _virtualHostAttributes);
-        addConfiguration(_authenticationProviderId, AuthenticationProvider.class.getName(), _authenticationProviderAttributes);
+        addConfiguration(_virtualHostId, VirtualHost.class.getSimpleName(), _virtualHostAttributes);
+        addConfiguration(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(), _authenticationProviderAttributes);
     }
 
     // ??? perhaps it should not be abstract
@@ -108,7 +107,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         ConfigurationEntry brokerConfigEntry = _store.getRootEntry();
         assertNotNull("Root entry does not exist", brokerConfigEntry);
         assertEquals("Unexpected id", _brokerId, brokerConfigEntry.getId());
-        assertEquals("Unexpected type ", Broker.class.getName(), brokerConfigEntry.getType());
+        assertEquals("Unexpected type ", Broker.class.getSimpleName(), brokerConfigEntry.getType());
         Map<String, Object> attributes = brokerConfigEntry.getAttributes();
         assertNotNull("Attributes cannot be null", attributes);
         assertEquals("Unexpected attributes", _brokerAttributes, attributes);
@@ -119,7 +118,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         ConfigurationEntry authenticationProviderConfigEntry = _store.getEntry(_authenticationProviderId);
         assertNotNull("Provider with id " + _authenticationProviderId + " should exist", authenticationProviderConfigEntry);
         assertEquals("Unexpected id", _authenticationProviderId, authenticationProviderConfigEntry.getId());
-        assertEquals("Unexpected type ", AuthenticationProvider.class.getName(), authenticationProviderConfigEntry.getType());
+        assertEquals("Unexpected type ", AuthenticationProvider.class.getSimpleName(), authenticationProviderConfigEntry.getType());
         Map<String, Object> attributes = authenticationProviderConfigEntry.getAttributes();
         assertNotNull("Attributes cannot be null", attributes);
         assertEquals("Unexpected attributes", _authenticationProviderAttributes, attributes);
@@ -131,7 +130,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         virtualHostAttributes.put(VirtualHost.NAME, getName());
         virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config");
         UUID virtualHostId = UUID.randomUUID();
-        addConfiguration(virtualHostId, VirtualHost.class.getName(), virtualHostAttributes);
+        addConfiguration(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes);
 
         assertNotNull("Virtual host with id " + virtualHostId + " should exist", _store.getEntry(virtualHostId));
 
@@ -145,13 +144,13 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         virtualHost1Attributes.put(VirtualHost.NAME, "test1");
         virtualHost1Attributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config1");
         UUID virtualHost1Id = UUID.randomUUID();
-        addConfiguration(virtualHost1Id, VirtualHost.class.getName(), virtualHost1Attributes);
+        addConfiguration(virtualHost1Id, VirtualHost.class.getSimpleName(), virtualHost1Attributes);
 
         Map<String, Object> virtualHost2Attributes = new HashMap<String, Object>();
         virtualHost2Attributes.put(VirtualHost.NAME, "test1");
         virtualHost2Attributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config2");
         UUID virtualHost2Id = UUID.randomUUID();
-        addConfiguration(virtualHost2Id, VirtualHost.class.getName(), virtualHost2Attributes);
+        addConfiguration(virtualHost2Id, VirtualHost.class.getSimpleName(), virtualHost2Attributes);
 
         assertNotNull("Virtual host with id " + virtualHost1Id + " should exist", _store.getEntry(virtualHost1Id));
         assertNotNull("Virtual host with id " + virtualHost2Id + " should exist", _store.getEntry(virtualHost2Id));
@@ -185,7 +184,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Broker.HEART_BEAT_DELAY, 12000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 14000);
         attributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, false);
-        ConfigurationEntry updatedBrokerEntry = new ConfigurationEntry(_brokerId, Broker.class.getName(), attributes,
+        ConfigurationEntry updatedBrokerEntry = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), attributes,
                 brokerConfigEntry.getChildrenIds(), _store);
 
         _store.save(updatedBrokerEntry);
@@ -193,7 +192,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         ConfigurationEntry newBrokerConfigEntry = _store.getRootEntry();
         assertNotNull("Root entry does not exist", newBrokerConfigEntry);
         assertEquals("Unexpected id", _brokerId, newBrokerConfigEntry.getId());
-        assertEquals("Unexpected type ", Broker.class.getName(), newBrokerConfigEntry.getType());
+        assertEquals("Unexpected type ", Broker.class.getSimpleName(), newBrokerConfigEntry.getType());
         Map<String, Object> newBrokerattributes = newBrokerConfigEntry.getAttributes();
         assertNotNull("Attributes cannot be null", newBrokerattributes);
         assertEquals("Unexpected attributes", attributes, newBrokerattributes);
@@ -205,14 +204,14 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         virtualHostAttributes.put(VirtualHost.NAME, "test1");
         virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config1");
         UUID virtualHostId = UUID.randomUUID();
-        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getName(), virtualHostAttributes,
+        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 Collections.<UUID> emptySet(), _store);
 
         _store.save(hostEntry);
 
         ConfigurationEntry configurationEntry = _store.getEntry(virtualHostId);
         assertEquals("Unexpected virtual host configuration", hostEntry, configurationEntry);
-        assertEquals("Unexpected type", VirtualHost.class.getName(), configurationEntry.getType());
+        assertEquals("Unexpected type", VirtualHost.class.getSimpleName(), configurationEntry.getType());
         assertEquals("Unexpected virtual host attributes", hostEntry.getAttributes(), configurationEntry.getAttributes());
         assertTrue("Unexpected virtual host children found", hostEntry.getChildrenIds().isEmpty());
     }
@@ -226,13 +225,13 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         virtualHostAttributes.put(VirtualHost.NAME, "test");
         virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/new/phantom/test/configuration");
 
-        ConfigurationEntry updatedEntry = new ConfigurationEntry(_virtualHostId, VirtualHost.class.getName(), virtualHostAttributes,
+        ConfigurationEntry updatedEntry = new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 hostEntry.getChildrenIds(), _store);
         _store.save(updatedEntry);
 
         ConfigurationEntry newHostEntry = _store.getEntry(_virtualHostId);
         assertEquals("Unexpected virtual host configuration", updatedEntry, newHostEntry);
-        assertEquals("Unexpected type", VirtualHost.class.getName(), newHostEntry.getType());
+        assertEquals("Unexpected type", VirtualHost.class.getSimpleName(), newHostEntry.getType());
         assertEquals("Unexpected virtual host attributes", updatedEntry.getAttributes(), newHostEntry.getAttributes());
         assertEquals("Unexpected virtual host children found", updatedEntry.getChildrenIds(), newHostEntry.getChildrenIds());
     }
@@ -243,14 +242,14 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> authenticationProviderAttributes = new HashMap<String, Object>();
         authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
         authenticationProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManager.class.getSimpleName());
-        ConfigurationEntry providerEntry = new ConfigurationEntry(authenticationProviderId, AuthenticationProvider.class.getName(),
+        ConfigurationEntry providerEntry = new ConfigurationEntry(authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
                 authenticationProviderAttributes, Collections.<UUID> emptySet(), _store);
 
         _store.save(providerEntry);
 
         ConfigurationEntry storeEntry = _store.getEntry(authenticationProviderId);
         assertEquals("Unexpected provider configuration", providerEntry, storeEntry);
-        assertEquals("Unexpected type", AuthenticationProvider.class.getName(), storeEntry.getType());
+        assertEquals("Unexpected type", AuthenticationProvider.class.getSimpleName(), storeEntry.getType());
         assertEquals("Unexpected provider attributes", providerEntry.getAttributes(), storeEntry.getAttributes());
         assertTrue("Unexpected provider children found", storeEntry.getChildrenIds().isEmpty());
     }
@@ -263,13 +262,13 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> authenticationProviderAttributes = new HashMap<String, Object>();
         authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
         authenticationProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManager.class.getSimpleName());
-        ConfigurationEntry updatedEntry = new ConfigurationEntry(_authenticationProviderId, AuthenticationProvider.class.getName(),
+        ConfigurationEntry updatedEntry = new ConfigurationEntry(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
                 authenticationProviderAttributes, Collections.<UUID> emptySet(), _store);
         _store.save(updatedEntry);
 
         ConfigurationEntry storeEntry = _store.getEntry(_authenticationProviderId);
         assertEquals("Unexpected provider configuration", updatedEntry, storeEntry);
-        assertEquals("Unexpected type", AuthenticationProvider.class.getName(), storeEntry.getType());
+        assertEquals("Unexpected type", AuthenticationProvider.class.getSimpleName(), storeEntry.getType());
         assertEquals("Unexpected provider attributes", updatedEntry.getAttributes(), storeEntry.getAttributes());
         assertTrue("Unexpected provider children found", storeEntry.getChildrenIds().isEmpty());
     }
@@ -285,14 +284,14 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(TrustStore.DESCRIPTION, "Description");
 
-        ConfigurationEntry trustStoreEntry = new ConfigurationEntry(trustStoreId, TrustStore.class.getName(), attributes,
+        ConfigurationEntry trustStoreEntry = new ConfigurationEntry(trustStoreId, TrustStore.class.getSimpleName(), attributes,
                 Collections.<UUID> emptySet(), _store);
 
         _store.save(trustStoreEntry);
 
         ConfigurationEntry storeEntry = _store.getEntry(trustStoreId);
         assertEquals("Unexpected trust store configuration", trustStoreEntry, storeEntry);
-        assertEquals("Unexpected type", TrustStore.class.getName(), storeEntry.getType());
+        assertEquals("Unexpected type", TrustStore.class.getSimpleName(), storeEntry.getType());
         assertEquals("Unexpected provider attributes", trustStoreEntry.getAttributes(), storeEntry.getAttributes());
         assertTrue("Unexpected provider children found", storeEntry.getChildrenIds().isEmpty());
     }
@@ -309,14 +308,14 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(KeyStore.DESCRIPTION, "Description");
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
 
-        ConfigurationEntry keyStoreEntry = new ConfigurationEntry(keyStoreId, KeyStore.class.getName(), attributes, Collections.<UUID> emptySet(),
+        ConfigurationEntry keyStoreEntry = new ConfigurationEntry(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
                 _store);
 
         _store.save(keyStoreEntry);
 
         ConfigurationEntry storeEntry = _store.getEntry(keyStoreId);
         assertEquals("Unexpected key store configuration", keyStoreEntry, storeEntry);
-        assertEquals("Unexpected type", KeyStore.class.getName(), storeEntry.getType());
+        assertEquals("Unexpected type", KeyStore.class.getSimpleName(), storeEntry.getType());
         assertEquals("Unexpected provider attributes", keyStoreEntry.getAttributes(), storeEntry.getAttributes());
         assertTrue("Unexpected provider children found", storeEntry.getChildrenIds().isEmpty());
     }
@@ -327,14 +326,14 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, getName());
 
-        ConfigurationEntry groupProviderEntry = new ConfigurationEntry(groupProviderId, GroupProvider.class.getName(), attributes,
+        ConfigurationEntry groupProviderEntry = new ConfigurationEntry(groupProviderId, GroupProvider.class.getSimpleName(), attributes,
                 Collections.<UUID> emptySet(), _store);
 
         _store.save(groupProviderEntry);
 
         ConfigurationEntry storeEntry = _store.getEntry(groupProviderId);
         assertEquals("Unexpected group provider configuration", groupProviderEntry, storeEntry);
-        assertEquals("Unexpected type", GroupProvider.class.getName(), storeEntry.getType());
+        assertEquals("Unexpected type", GroupProvider.class.getSimpleName(), storeEntry.getType());
         assertEquals("Unexpected group provider attributes", groupProviderEntry.getAttributes(), storeEntry.getAttributes());
         assertTrue("Unexpected provider children found", storeEntry.getChildrenIds().isEmpty());
     }
@@ -352,13 +351,13 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Port.NEED_CLIENT_AUTH, true);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
 
-        ConfigurationEntry portEntry = new ConfigurationEntry(portId, Port.class.getName(), attributes, Collections.<UUID> emptySet(), _store);
+        ConfigurationEntry portEntry = new ConfigurationEntry(portId, Port.class.getSimpleName(), attributes, Collections.<UUID> emptySet(), _store);
 
         _store.save(portEntry);
 
         ConfigurationEntry storeEntry = _store.getEntry(portId);
         assertEquals("Unexpected port configuration", portEntry, storeEntry);
-        assertEquals("Unexpected type", Port.class.getName(), storeEntry.getType());
+        assertEquals("Unexpected type", Port.class.getSimpleName(), storeEntry.getType());
         assertEquals("Unexpected port attributes", portEntry.getAttributes(), storeEntry.getAttributes());
         assertTrue("Unexpected port children found", storeEntry.getChildrenIds().isEmpty());
     }
@@ -369,7 +368,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test1");
         virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config1");
-        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getName(), virtualHostAttributes,
+        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 Collections.<UUID> emptySet(), _store);
 
         UUID keyStoreId = UUID.randomUUID();
@@ -382,7 +381,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(KeyStore.DESCRIPTION, "Description");
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
 
-        ConfigurationEntry keyStoreEntry = new ConfigurationEntry(keyStoreId, KeyStore.class.getName(), attributes, Collections.<UUID> emptySet(),
+        ConfigurationEntry keyStoreEntry = new ConfigurationEntry(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
                 _store);
 
         _store.save(hostEntry, keyStoreEntry);

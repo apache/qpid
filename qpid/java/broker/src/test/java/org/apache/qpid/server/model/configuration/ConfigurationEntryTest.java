@@ -86,7 +86,7 @@ public class ConfigurationEntryTest extends TestCase
         ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
         ConfigurationEntry entryWithDifferentId = new ConfigurationEntry(UUID.randomUUID(),
-        		VirtualHost.class.getSimpleName(), Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
+                VirtualHost.class.getSimpleName(), Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
 
         assertTrue(entry1.hashCode() == entry2.hashCode());
         assertFalse(entry1.hashCode() == entryWithDifferentId.hashCode());
@@ -99,18 +99,31 @@ public class ConfigurationEntryTest extends TestCase
         UUID id = UUID.randomUUID();
         Map<String, Object> attributes1 = new HashMap<String, Object>();
         attributes1.put(VirtualHost.NAME, "name1");
+        Set<UUID> childrenIds = Collections.singleton(UUID.randomUUID());
         ConfigurationEntry entry1 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes1,
-                Collections.singleton(UUID.randomUUID()), store);
+                childrenIds, store);
 
         Map<String, Object> attributes2 = new HashMap<String, Object>();
         attributes2.put(VirtualHost.NAME, "name2");
 
-        ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes2,
-                Collections.singleton(UUID.randomUUID()), store);
+        ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes1,
+                childrenIds, store);
         ConfigurationEntry entryWithDifferentId = new ConfigurationEntry(UUID.randomUUID(),
-        		VirtualHost.class.getSimpleName(), attributes1, Collections.singleton(UUID.randomUUID()), store);
+                VirtualHost.class.getSimpleName(), attributes1, childrenIds, store);
 
         assertTrue(entry1.equals(entry2));
-        assertFalse(entry1.equals(entryWithDifferentId));
+        assertFalse("Entries should be dirrent because of diferrent IDs", entry1.equals(entryWithDifferentId));
+
+        ConfigurationEntry entryWithDifferentChildId = new ConfigurationEntry(id,
+                VirtualHost.class.getSimpleName(), attributes1, Collections.singleton(UUID.randomUUID()), store);
+        assertFalse("Entries should be dirrent because of diferrent children", entry1.equals(entryWithDifferentChildId));
+
+        ConfigurationEntry entryWithDifferentName = new ConfigurationEntry(id,
+                VirtualHost.class.getSimpleName(), attributes2, childrenIds, store);
+        assertFalse("Entries should be dirrent because of diferrent attributes", entry1.equals(entryWithDifferentName));
+
+        ConfigurationEntry entryWithDifferentType = new ConfigurationEntry(id,
+                Broker.class.getSimpleName(), attributes1, childrenIds, store);
+        assertFalse("Entries should be dirrent because of diferrent types", entry1.equals(entryWithDifferentType));
     }
 }

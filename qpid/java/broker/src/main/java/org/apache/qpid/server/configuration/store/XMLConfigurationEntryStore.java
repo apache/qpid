@@ -81,6 +81,11 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         this(new ServerConfiguration(configFile), new BrokerOptions());
     }
 
+    public XMLConfigurationEntryStore(String configFile, BrokerOptions options) throws ConfigurationException
+    {
+        this(new ServerConfiguration(new File(configFile)), options);
+    }
+
     public XMLConfigurationEntryStore(File configFile, BrokerOptions options) throws ConfigurationException
     {
         this(new ServerConfiguration(configFile), options);

@@ -33,7 +33,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
 
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();
         brokerObjectMap.put(Broker.ID, brokerId);
-        brokerObjectMap.put("type", Broker.class.getName());
+        brokerObjectMap.put("type", Broker.class.getSimpleName());
         brokerObjectMap.put(JsonConfigurationEntryStore.ATTRIBUTES, brokerAttributes);
 
         StringWriter sw = new StringWriter();
@@ -43,7 +43,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
 
         _storeFile = TestFileUtils.createTempFile(this, ".json", brokerJson);
 
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath());
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile);
         return store;
     }
 
@@ -51,7 +51,25 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     protected void addConfiguration(UUID id, String type, Map<String, Object> attributes)
     {
         ConfigurationEntryStore store = getStore();
-        store.save(new ConfigurationEntry(id, type, attributes, Collections.<UUID>emptySet(), store));
+        store.save(new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), store));
+    }
+
+    public void testAttributeIsResolvedFromSystemProperties()
+    {
+        String aclLocation = "path/to/acl/" + getTestName();
+        setTestSystemProperty("my.test.property", aclLocation);
+
+        ConfigurationEntryStore store = getStore();
+        ConfigurationEntry brokerConfigEntry = store.getRootEntry();
+        Map<String, Object> attributes = new HashMap<String, Object>(brokerConfigEntry.getAttributes());
+        attributes.put(Broker.ACL_FILE, "${my.test.property}");
+        ConfigurationEntry updatedBrokerEntry = new ConfigurationEntry(brokerConfigEntry.getId(), Broker.class.getSimpleName(),
+                attributes, brokerConfigEntry.getChildrenIds(), store);
+        store.save(updatedBrokerEntry);
+
+        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile);
+
+        assertEquals("Unresolved ACL value", aclLocation, store2.getRootEntry().getAttributes().get(Broker.ACL_FILE));
     }
 
 }

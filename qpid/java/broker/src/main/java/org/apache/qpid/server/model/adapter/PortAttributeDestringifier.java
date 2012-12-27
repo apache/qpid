@@ -21,7 +21,6 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,22 +41,10 @@ public class PortAttributeDestringifier
     {
         Map<String, Object> destringifiedAttributes = new HashMap<String, Object>(attributes);
 
-        final Set<Object> protocolObjectSet = MapValueConverter.getSetAttribute(Port.PROTOCOLS, attributes);
-        final Set<Protocol> protocolSet = new HashSet<Protocol>();
-        for (Object object : protocolObjectSet)
-        {
-            Protocol protocol = Protocol.valueOfObject(object);
-            protocolSet.add(protocol);
-        }
+        final Set<Protocol> protocolSet = MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, attributes, Protocol.class);
         destringifiedAttributes.put(Port.PROTOCOLS, protocolSet);
 
-        final Set<Object> transportObjectSet = MapValueConverter.getSetAttribute(Port.TRANSPORTS, attributes);
-        final Set<Transport> transportSet = new HashSet<Transport>();
-        for (Object transportObject : transportObjectSet)
-        {
-            Transport transport = Transport.valueOfObject(transportObject);
-            transportSet.add(transport);
-        }
+        final Set<Transport> transportSet = MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, attributes, Transport.class);
         destringifiedAttributes.put(Port.TRANSPORTS, transportSet);
 
         Integer port = MapValueConverter.getIntegerAttribute(Port.PORT, attributes);
