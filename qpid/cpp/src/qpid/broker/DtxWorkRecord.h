@@ -37,7 +37,7 @@
 namespace qpid {
 namespace broker {
 
-class DtxTimeout;
+struct DtxTimeout;
 
 /**
  * Represents the work done under a particular distributed transaction
