@@ -25,26 +25,23 @@
   <!-- Hack to make the renamed module jars available on the module test classpath -->
   <property name="module.test.depends" value="ra ra/tests"/>
 
+  <!-- Import common.xml to make the properties it defines available before importing module.xml -->
+  <import file="../common.xml"/>
+
+  <!-- Override the standard output jar names before importing module.xml, to produce
+       artifacts that use ra in the name instead of jca like the module should -->
+  <property name="module.test.jar" value="${build.lib}/${project.name}-ra-tests-${project.version}.jar"/>
+  <property name="module.jar" value="${build.lib}/${project.name}-ra-${project.version}.jar"/>
+  <property name="module.source.jar" value="${build.lib}/${project.name}-ra-${project.version}-sources.jar"/>
+
   <import file="../module.xml"/>
 
   <property name="module.rar" value="${build.lib}/${project.name}-ra-${project.version}.rar"/>
+  <property name="rar.resources" value="rar/src/main/resources"/>
 
-  <property name="module.resources" value="src/main/resources"/>
-
-  <target name="rar" depends="jar.nomanifest">
-
-      <!--Note we need to do this as we need to keep the ra in the name of the artificats but we can't override the module.jar property which is based on the directory name. Also, we re-jar to avoid duplicate *.xml files in the jar and the rar which is causing EAP deployment issues in later versions.-->
-    <delete file="${build.lib}/${project.name}-${module.name}-${project.version}.jar"/>
-
-    <jar destfile="${module.jar}" basedir="${module.classes}">
-       <metainf dir="${module.metainf}" >
-	  <exclude name="**/*.xml"/>
-       </metainf>
-    </jar>
-    <move file="${build.lib}/${project.name}-${module.name}-${project.version}.jar" tofile="${build.lib}/${project.name}-ra-${project.version}.jar"/>
-
+  <target name="rar" depends="jar" description="creates a rar file containing the module jar, client jars, etc">
     <jar destfile="${module.rar}">
-      <fileset dir="${module.resources}">
+      <fileset dir="${rar.resources}">
         <include name="**/*.xml"/>
       </fileset>
       <fileset dir="${build.lib}">
@@ -78,11 +75,9 @@
 
   <target name="examples" depends="example-properties-file, example-jars"/>
 
-  <target name="build" depends="rar, examples, jar-tests, jar-sources, postbuild"/>
+  <target name="postbuild" depends="rar, examples"/>
 
-  <target name="postbuild">
-     <!-- Hack to make the tests/sources jar names match the renamed main module jar/rar -->
-     <move file="${module.test.jar}" tofile="${build.lib}/${project.name}-ra-tests-${project.version}.jar"/>
-     <move file="${module.source.jar}" tofile="${build.lib}/${project.name}-ra-${project.version}-sources.jar"/>
-  </target>
+  <!-- Override module.xml 'libs' target to avoid copying the jar files dependencies
+       into the 'build/lib' dir, since they will be supplied by the app server -->
+  <target name="libs"/>
 </project>
