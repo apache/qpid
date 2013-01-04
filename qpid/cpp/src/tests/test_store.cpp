@@ -37,6 +37,7 @@
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Thread.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include <boost/cast.hpp>
