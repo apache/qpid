@@ -22,6 +22,7 @@
 #include "unit_test.h"
 #include "MessagingFixture.h"
 #include "qpid/management/Buffer.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/log/Logger.h"

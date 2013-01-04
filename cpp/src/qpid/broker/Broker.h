@@ -23,11 +23,11 @@
  */
 
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/ConnectionToken.h"
-#include "qpid/broker/DirectExchange.h"
+
+#include "qpid/DataDir.h"
+#include "qpid/Plugin.h"
 #include "qpid/broker/DtxManager.h"
 #include "qpid/broker/ExchangeRegistry.h"
-#include "qpid/broker/MessageStore.h"
 #include "qpid/broker/Protocol.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/LinkRegistry.h"
@@ -35,29 +35,16 @@
 #include "qpid/broker/QueueCleaner.h"
 #include "qpid/broker/Vhost.h"
 #include "qpid/broker/System.h"
-#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
 #include "qpid/broker/ConfigurationObservers.h"
-#include "qpid/sys/ConnectionCodec.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/ManagementAgent.h"
-#include "qmf/org/apache/qpid/broker/Broker.h"
-#include "qmf/org/apache/qpid/broker/ArgsBrokerConnect.h"
-#include "qpid/Options.h"
-#include "qpid/Plugin.h"
-#include "qpid/DataDir.h"
-#include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/OutputHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/ConnectionCodec.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/types/Variant.h"
-#include "qpid/RefCounted.h"
-#include "qpid/broker/AclModule.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Runnable.h"
 
 #include <boost/intrusive_ptr.hpp>
+
 #include <string>
 #include <vector>
 
@@ -73,6 +60,7 @@ struct Url;
 
 namespace broker {
 
+class AclModule;
 class ConnectionState;
 class ExpiryPolicy;
 class Message;
