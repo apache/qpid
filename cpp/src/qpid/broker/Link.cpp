@@ -33,6 +33,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/NameGenerator.h"
 #include "qpid/UrlArray.h"
 
 namespace qpid {

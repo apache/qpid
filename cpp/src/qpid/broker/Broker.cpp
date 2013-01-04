@@ -20,11 +20,14 @@
  */
 
 #include "qpid/broker/Broker.h"
+
+#include "qpid/broker/AclModule.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/NameGenerator.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
 #include "qpid/broker/SaslAuthenticator.h"
@@ -37,6 +40,7 @@
 #include "qpid/broker/MessageGroupManager.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerConnect.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerCreate.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerDelete.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQuery.h"
