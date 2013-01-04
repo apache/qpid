@@ -37,9 +37,6 @@ org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
 //QPID-1864: rollback with subscriptions does not work in 0-10 yet
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
 
-// This test uses 0-8 channel frames
-org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
-
 //QPID-3422: test fails because ring queue is not implemented on java broker
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
 
