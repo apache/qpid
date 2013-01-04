@@ -27,6 +27,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/windows/check.h"
+#include "qpid/sys/Thread.h"
 #include "qpid/broker/Broker.h"
 
 #include <iostream>
