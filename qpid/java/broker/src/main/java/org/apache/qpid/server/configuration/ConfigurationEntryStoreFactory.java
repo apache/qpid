@@ -25,6 +25,7 @@ import java.net.URL;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.store.CommandLineOptionsHandler;
 import org.apache.qpid.server.configuration.store.MergingStore;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
@@ -69,7 +70,8 @@ public class ConfigurationEntryStoreFactory
             URL defaultStoreLocation = ConfigurationEntryStoreFactory.class.getClassLoader().getResource(DEFAULT_STORE);
             store = new MergingStore(store, new JsonConfigurationEntryStore(defaultStoreLocation));
         }
-        return store;
+
+        return new CommandLineOptionsHandler(options, store);
     }
 
     public static enum ConfigurationEntryStoreType

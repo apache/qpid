@@ -96,6 +96,13 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         boolean anyRemoved = false;
         for (UUID uuid : entryIds)
         {
+            if (_rootId.equals(uuid))
+            {
+                throw new IllegalConfigurationException("Cannot remove root entry");
+            }
+        }
+        for (UUID uuid : entryIds)
+        {
             if (removeInternal(uuid))
             {
                 anyRemoved = true;
@@ -356,7 +363,11 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
                 throw new IllegalConfigurationException("Type attribute is not provided for configuration entry " + parent);
             }
         }
-        String name = (String) attributes.get(ATTRIBUTE_NAME);
+        String name = null;
+        if (attributes != null)
+        {
+            name = (String) attributes.get(ATTRIBUTE_NAME);
+        }
         if ((name == null || "".equals(name)))
         {
             if (isRoot)

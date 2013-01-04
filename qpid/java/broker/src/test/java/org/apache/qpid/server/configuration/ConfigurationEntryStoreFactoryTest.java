@@ -25,7 +25,6 @@ import java.io.File;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.MergingStore;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -64,7 +63,10 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
         _options.setNoDefault(false);
         ConfigurationEntryStore store = _factory.createStore(_userStoreFile.getAbsolutePath(), "json", _options);
         assertNotNull("Store was not created", store);
-        assertTrue("Unexpected store type", store instanceof MergingStore);
+        assertTrue("File should exist", _userStoreFile.exists());
+        assertTrue("File should exist", _userStoreFile.length() > 0);
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreFile);
+        assertFalse("Unexpected children", jsonStore.getRootEntry().getChildrenIds().isEmpty());
     }
 
     public void testCreateJsonStoreWithNoDefaults()
@@ -72,7 +74,10 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
         _options.setNoDefault(true);
         ConfigurationEntryStore store = _factory.createStore(_userStoreFile.getAbsolutePath(), "json", _options);
         assertNotNull("Store was not created", store);
-        assertTrue("Unexpected store type", store instanceof JsonConfigurationEntryStore);
+        assertTrue("File should exist", _userStoreFile.exists());
+        assertTrue("File should exist", _userStoreFile.length() > 0);
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreFile);
+        assertTrue("Unexpected children", jsonStore.getRootEntry().getChildrenIds().isEmpty());
     }
 
     public void testCreateDerbyStoreWithNoDefaults()

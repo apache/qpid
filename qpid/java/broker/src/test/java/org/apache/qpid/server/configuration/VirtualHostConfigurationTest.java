@@ -53,7 +53,7 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
         _virtualHostRegistry = new VirtualHostRegistry();
         _broker = mock(Broker.class);
-        when(_broker.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).thenReturn(1);
+        when(_broker.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).thenReturn(BrokerProperties.DEFAULT_HOUSEKEEPING_PERIOD);
     }
 
     @Override
