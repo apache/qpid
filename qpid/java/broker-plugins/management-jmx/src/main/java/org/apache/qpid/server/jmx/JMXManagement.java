@@ -23,7 +23,9 @@ package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,6 +43,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -51,6 +54,14 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
 public class JMXManagement extends AbstractPluginAdapter implements ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
+
+    private static final Collection<String> AVAILABLE_ATTRIBUTES = new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES);
+    static
+    {
+        AVAILABLE_ATTRIBUTES.add(JMXManagementFactory.MANAGEMENT_RIGHTS_INFER_ALL_ACCESS);
+        AVAILABLE_ATTRIBUTES.add(JMXManagementFactory.PLUGIN_TYPE);
+        AVAILABLE_ATTRIBUTES.add(JMXManagementFactory.USE_PLATFORM_MBEAN_SERVER);
+    }
 
     private final Broker _broker;
     private JMXManagedObjectRegistry _objectRegistry;
@@ -284,5 +295,29 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     public String getName()
     {
         return "JMXManagement";
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(JMXManagementFactory.MANAGEMENT_RIGHTS_INFER_ALL_ACCESS.equals(name))
+        {
+            return _jmxConfiguration.isManagementRightsInferAllAccess();
+        }
+        else if(JMXManagementFactory.USE_PLATFORM_MBEAN_SERVER.equals(name))
+        {
+            return _jmxConfiguration.isPlatformMBeanServer();
+        }
+        else if(JMXManagementFactory.PLUGIN_TYPE.equals(name))
+        {
+            return JMXManagementFactory.PLUGIN_NAME;
+        }
+        return super.getAttribute(name);
     }
 }

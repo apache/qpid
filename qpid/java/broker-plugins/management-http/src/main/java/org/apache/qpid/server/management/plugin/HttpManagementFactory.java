@@ -19,14 +19,14 @@
 package org.apache.qpid.server.management.plugin;
 
 import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
+import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
 
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.plugin.PluginFactory;
 
 public class HttpManagementFactory implements PluginFactory
@@ -45,7 +45,7 @@ public class HttpManagementFactory implements PluginFactory
     public static final String PLUGIN_NAME = "MANAGEMENT-HTTP";
 
     @Override
-    public ConfiguredObject createInstance(UUID id, Map<String, Object> attributes, Broker broker)
+    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
         if (!PLUGIN_NAME.equals(attributes.get(PLUGIN_TYPE)))
         {

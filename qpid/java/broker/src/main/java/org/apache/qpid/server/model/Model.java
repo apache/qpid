@@ -50,6 +50,7 @@ public class Model
         addRelationship(Broker.class, GroupProvider.class);
         addRelationship(Broker.class, TrustStore.class);
         addRelationship(Broker.class, KeyStore.class);
+        addRelationship(Broker.class, Plugin.class);
 
         addRelationship(VirtualHost.class, Exchange.class);
         addRelationship(VirtualHost.class, Queue.class);

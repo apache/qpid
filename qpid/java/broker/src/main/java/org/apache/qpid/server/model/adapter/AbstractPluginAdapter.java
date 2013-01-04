@@ -71,7 +71,8 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
     }
 
     @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException,
+            AccessControlException, IllegalArgumentException
     {
         throw new UnsupportedOperationException();
     }
@@ -83,7 +84,8 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
     }
 
     @Override
-    public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException,
+            IllegalArgumentException
     {
         throw new UnsupportedOperationException();
     }
@@ -101,9 +103,53 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes,
+            ConfiguredObject... otherParents)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return AVAILABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if (ID.equals(name))
+        {
+            return getId();
+        }
+        else if (NAME.equals(name))
+        {
+            return getName();
+        }
+        else if (STATE.equals(name))
+        {
+            return getActualState();
+        }
+        else if (DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if (LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+        else if (TIME_TO_LIVE.equals(name))
+        {
+            return getTimeToLive();
+        }
+        else if (CREATED.equals(name))
+        {
+
+        }
+        else if (UPDATED.equals(name))
+        {
+
+        }
+        return super.getAttribute(name);
+    }
 }

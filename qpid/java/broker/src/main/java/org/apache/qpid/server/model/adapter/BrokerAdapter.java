@@ -50,6 +50,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
@@ -319,7 +320,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return (Collection<C>) getTrustStores();
         }
-        else if(clazz == ConfiguredObject.class)
+        else if(clazz == Plugin.class)
         {
             return (Collection<C>) getPlugins();
         }
@@ -795,9 +796,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             addTrustStore((TrustStore)object);
         }
-        else
+        else if(object instanceof Plugin)
         {
             addPlugin(object);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Attempted to recover unexpected type of configured object: " + object.getClass().getName());
         }
     }
 

@@ -34,6 +34,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
@@ -68,7 +69,7 @@ public class PluginRecovererTest extends TestCase
 
     public void testCreate()
     {
-        ConfiguredObject pluginFromFactory = mock(ConfiguredObject.class);
+        Plugin pluginFromFactory = mock(Plugin.class);
         when(pluginFromFactory.getId()).thenReturn(_id);
         when(_factory.createInstance(_id, _attributes, _broker)).thenReturn(pluginFromFactory);
 
@@ -81,7 +82,7 @@ public class PluginRecovererTest extends TestCase
 
     public void testCreateThrowsExceptionForUnexpectedId()
     {
-        ConfiguredObject pluginFromFactory = mock(ConfiguredObject.class);
+        Plugin pluginFromFactory = mock(Plugin.class);
         when(pluginFromFactory.getId()).thenReturn(UUID.randomUUID());
         when(_factory.createInstance(_id, _attributes, _broker)).thenReturn(pluginFromFactory);
 

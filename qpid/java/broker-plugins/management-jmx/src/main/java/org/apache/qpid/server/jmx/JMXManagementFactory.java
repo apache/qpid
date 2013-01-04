@@ -26,7 +26,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.plugin.PluginFactory;
 
 public class JMXManagementFactory implements PluginFactory
@@ -41,7 +41,7 @@ public class JMXManagementFactory implements PluginFactory
     public static final String PLUGIN_NAME = "MANAGEMENT-JMX";
 
     @Override
-    public ConfiguredObject createInstance(UUID id, Map<String, Object> attributes, Broker broker)
+    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
         if (PLUGIN_NAME.equals(attributes.get(PLUGIN_TYPE)))
         {

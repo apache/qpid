@@ -66,11 +66,11 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
     {
        this();
        _storeFile = storeFile;
-        if (storeFile.exists())
+        if (_storeFile.exists())
         {
-            if (storeFile.length() > 0)
+            if (_storeFile.length() > 0)
             {
-                URL storeURL = fileToURL(storeFile);
+                URL storeURL = fileToURL(_storeFile);
                 JsonNode node = load(storeURL, _objectMapper);
                 ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
                 _rootId = brokerEntry.getId();
@@ -78,8 +78,9 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         }
         else
         {
-            createStoreFile(storeFile);
+            createStoreFile(_storeFile);
         }
+
         if (_rootId == null)
         {
             _rootId = createUUID(DEFAULT_BROKER_TYPE, DEFAULT_BROKER_NAME);
@@ -149,6 +150,11 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
     public synchronized ConfigurationEntry getEntry(UUID id)
     {
         return _entries.get(id);
+    }
+
+    public void saveTo(File file)
+    {
+        saveAsTree(_rootId, _entries, _objectMapper, file);
     }
 
     private void createStoreFile(File storeFile)

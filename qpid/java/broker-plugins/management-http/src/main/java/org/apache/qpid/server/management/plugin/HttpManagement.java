@@ -22,6 +22,7 @@ package org.apache.qpid.server.management.plugin;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -47,6 +48,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupMember;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
@@ -67,6 +69,18 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 public class HttpManagement extends AbstractPluginAdapter
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
+
+    private static final Collection<String> AVAILABLE_ATTRIBUTES = new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES);
+    static
+    {
+        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTP_BASIC_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTPS_BASIC_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTP_SASL_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTPS_SASL_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.TIME_OUT);
+        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.PLUGIN_TYPE);
+    }
+
 
     public static final String ENTRY_POINT_PATH = "/management";
 
@@ -329,5 +343,41 @@ public class HttpManagement extends AbstractPluginAdapter
     public String getName()
     {
         return "HttpManagement";
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(HttpManagementFactory.HTTP_BASIC_AUTHENTICATION_ENABLED.equals(name))
+        {
+            return _configuration.isHttpBasicAuthenticationEnabled();
+        }
+        else if(HttpManagementFactory.HTTPS_BASIC_AUTHENTICATION_ENABLED.equals(name))
+        {
+            return _configuration.isHttpsBasicAuthenticationEnabled();
+        }
+        else if(HttpManagementFactory.HTTP_SASL_AUTHENTICATION_ENABLED.equals(name))
+        {
+            return _configuration.isHttpSaslAuthenticationEnabled();
+        }
+        else if(HttpManagementFactory.HTTPS_SASL_AUTHENTICATION_ENABLED.equals(name))
+        {
+            return _configuration.isHttpSaslAuthenticationEnabled();
+        }
+        else if(HttpManagementFactory.TIME_OUT.equals(name))
+        {
+            return _configuration.getSessionTimeout();
+        }
+        else if(HttpManagementFactory.PLUGIN_TYPE.equals(name))
+        {
+            return HttpManagementFactory.PLUGIN_NAME;
+        }
+        return super.getAttribute(name);
     }
 }

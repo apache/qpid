@@ -22,11 +22,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Plugin;
 
 public interface PluginFactory
 {
     static final String PLUGIN_TYPE = "pluginType";
 
-    ConfiguredObject createInstance(UUID id, Map<String, Object> attributes, Broker broker);
+    Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker);
 }

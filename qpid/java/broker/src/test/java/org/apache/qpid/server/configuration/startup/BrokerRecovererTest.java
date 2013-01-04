@@ -321,7 +321,7 @@ public class BrokerRecovererTest extends TestCase
     public void testCreateBrokerWithPlugins()
     {
         ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
-        ConfiguredObject plugin = mock(ConfiguredObject.class);
+        Plugin plugin = mock(Plugin.class);
         _brokerEntryChildren.put(Plugin.class.getSimpleName(), Arrays.asList(pluginEntry));
 
         RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{pluginEntry, _authenticationProviderEntry1},
@@ -331,7 +331,7 @@ public class BrokerRecovererTest extends TestCase
 
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singleton(plugin), new HashSet<ConfiguredObject>(broker.getChildren(ConfiguredObject.class)));
+        assertEquals(Collections.singleton(plugin), new HashSet<ConfiguredObject>(broker.getChildren(Plugin.class)));
     }
 
     public void testCreateBrokerWithKeyStores()
