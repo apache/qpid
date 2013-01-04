@@ -61,7 +61,7 @@ XA ConnectionFactory
     <xa-transaction/>
     <rar-name>qpid-ra-<ra-version>.rar</rar-name>
     <connection-definition>org.apache.qpid.ra.QpidRAConnectionFactory</connection-definition>
-    <config-property name="connectionURL">amqp://guest:guest@/test?brokerlist='tcp://localhost:5672?sasl_mechs='ANONYMOUS''</config-property>
+    <config-property name="ConnectionURL">amqp://guest:guest@/test?brokerlist='tcp://localhost:5672?sasl_mechs='PLAIN''</config-property>
     <max-pool-size>20</max-pool-size>
   </tx-connection-factory>
 
@@ -79,11 +79,11 @@ Local ConnectionFactory
 =======================
   <tx-connection-factory>
     <jndi-name>QpidJMS</jndi-name>
-    <rar-name>qpid-ra-0.10.rar</rar-name>
+    <rar-name>qpid-ra-<ra-version>.rar</rar-name>
     <local-transaction/>
-    <config-property name="useLocalTx" type="java.lang.Boolean">true</config-property>
-    <config-property name="connectionURL">amqp://anonymous:@client/test?brokerlist='tcp://localhost:5672?sasl_mechs='ANONYMOUS''</config-property>
-    <connection-definition>org.apache.qpid.ra.QpidRAConnectionFactory</connection-definition>
+    <config-property name="UseLocalTx" type="java.lang.Boolean">true</config-property>
+    <config-property name="ConnectionURL">amqp://anonymous:@client/test?brokerlist='tcp://localhost:5672?sasl_mechs='PLAIN''
+    </config-property> <connection-definition>org.apache.qpid.ra.QpidRAConnectionFactory</connection-definition>
     <max-pool-size>20</max-pool-size>
   </tx-connection-factory>
 
@@ -100,11 +100,10 @@ provides two such objects
   <mbean code="org.jboss.resource.deployment.AdminObject"
          name="qpid.jca:name=HelloQueue">
      <attribute name="JNDIName">Hello</attribute>
-     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-0.10.rar'</depends>
+     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-<ra-version>.rar'</depends>
      <attribute name="Type">javax.jms.Destination</attribute>
      <attribute name="Properties">
-        destinationType=QUEUE
-        destinationAddress=amq.direct
+        DestinationAddress=amq.direct
      </attribute>
   </mbean>
 
@@ -113,16 +112,15 @@ The above XML defines a JMS Queue which is bound into JNDI as
 queue/HelloQueue
 
 This destination can be retrieved from JNDI and be used for the consumption or production of messages. The desinationAddress property
-can be customized for your environment. Please see the Qpid Java Client documentation for specific configuration options. 
+can be customized for your environment. Please see the Qpid Java Client documentation for specific configuration options.
 
   <mbean code="org.jboss.resource.deployment.AdminObject"
          name="qpid.jca:name=HelloTopic">
      <attribute name="JNDIName">HelloTopic</attribute>
-     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-0.10.rar'</depends>
+     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-<ra-version>.rar'</depends>
      <attribute name="Type">javax.jms.Destination</attribute>
      <attribute name="Properties">
-        destinationType=TOPIC
-        destinationAddress=amq.topic
+        DestinationAddress=amq.topic
      </attribute>
   </mbean>
 
@@ -138,10 +136,10 @@ can be customized for your environment. Please see the Qpid Java Client document
   <mbean code="org.jboss.resource.deployment.AdminObject"
          name="qpid.jca:name=QpidConnectionFactory">
      <attribute name="JNDIName">QpidConnectionFactory</attribute>
-     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-0.10.rar'</depends>
+     <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-<ra-version>.rar'</depends>
      <attribute name="Type">javax.jms.ConnectionFactory</attribute>
      <attribute name="Properties">
-        connectionURL=amqp://anonymous:@client/test?brokerlist='tcp://localhost:5672?sasl_mechs='ANONYMOUS''
+        ConnectionURL=amqp://anonymous:@client/test?brokerlist='tcp://localhost:5672?sasl_mechs='PLAIN''
      </attribute>
   </mbean>
 
