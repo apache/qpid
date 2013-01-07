@@ -1476,6 +1476,11 @@ install (FILES ${qmfconsole_HEADERS}
 install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 
 
+#
+# Legacy store
+#
+include (legacystore.cmake)
+
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h
 # file whereas older builds only have config.h on autoconf-generated builds.
@@ -1503,8 +1508,3 @@ configure_file(qmf2.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc @ONLY)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
          DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
          COMPONENT ${QPID_COMPONENT_COMMON})
-
-#
-# Legacy store
-#
-#include (legacystore.cmake)
