@@ -34,7 +34,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();
         brokerObjectMap.put(Broker.ID, brokerId);
         brokerObjectMap.put("type", Broker.class.getSimpleName());
-        brokerObjectMap.put(JsonConfigurationEntryStore.ATTRIBUTES, brokerAttributes);
+        brokerObjectMap.putAll(brokerAttributes);
 
         StringWriter sw = new StringWriter();
         _objectMapper.writeValue(sw, brokerObjectMap);

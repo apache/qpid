@@ -37,7 +37,6 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
 {
     private static final String DEFAULT_BROKER_TYPE = Broker.class.getSimpleName();
     private static final String DEFAULT_BROKER_NAME = "Broker";
-    static final String ATTRIBUTES = "attributes";
     private static final String ID = "id";
     private static final String TYPE = "type";
 
@@ -259,7 +258,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         Map<String, Object> attributes = entry.getAttributes();
         if (attributes != null)
         {
-            tree.put(ATTRIBUTES, attributes);
+            tree.putAll( attributes);
         }
         tree.put(ID, entry.getId());
         tree.put(TYPE, entry.getType());
@@ -317,18 +316,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         {
             String fieldName = fieldNames.next();
             JsonNode fieldNode = parent.get(fieldName);
-            if (fieldName.equals(ATTRIBUTES))
-            {
-                if (fieldNode != null)
-                {
-                    if (!fieldNode.isObject())
-                    {
-                        throw new IllegalConfigurationException("Object attributes are set incorrectly for " + parent);
-                    }
-                    attributes = toMap(fieldNode);
-                }
-            }
-            else if (fieldName.equals(ID))
+            if (fieldName.equals(ID))
             {
                 idAsString = fieldNode.asText();
             }
@@ -338,17 +326,45 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
             }
             else if (fieldNode.isArray())
             {
+                // array containing either broker children or attribute values
                 Iterator<JsonNode> elements = fieldNode.getElements();
+                List<Object> fieldValues = null;
                 while (elements.hasNext())
                 {
                     JsonNode element = elements.next();
-                    ConfigurationEntry entry = toEntry(element, false, entries);
-                    childrenIds.add(entry.getId());
+                    if (element.isObject())
+                    {
+                        // assuming it is a child node
+                        ConfigurationEntry entry = toEntry(element, false, entries);
+                        childrenIds.add(entry.getId());
+                    }
+                    else
+                    {
+                        if (fieldValues == null)
+                        {
+                            fieldValues = new ArrayList<Object>();
+                        }
+                        fieldValues.add(toObject(element));
+                    }
                 }
+                if (fieldValues != null)
+                {
+                    attributes.put(fieldName, fieldValues);
+                }
+            }
+            else if (fieldNode.isObject())
+            {
+                // ignore, in-line objects are not supported yet
             }
             else
             {
-                throw new IllegalConfigurationException("Cannot parse configuration for node " + fieldName + "=" + fieldNode);
+                // primitive attribute
+                Object value = toObject(fieldNode);
+                if (attributes == null)
+                {
+                    attributes = new HashMap<String, Object>();
+                }
+                attributes.put(fieldName, value);
             }
         }
 

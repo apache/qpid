@@ -20,96 +20,78 @@
  */
 {
   "type" : "Broker",
-  "attributes" : {
-    "name": "Broker",
-    "defaultAuthenticationProvider" : "defaultAuthenticationProvider",
-    "defaultVirtualHost" : "default",
-    "aclFile" : null,
-    "alertThresholdQueueDepth" : 0,
-    "alertThresholdMessageCount" : 0,
-    "alertThresholdMessageSize" : 0,
-    "alertThresholdMessageAge" : 0,
-    "alertRepeatGap" : 30000,
-    "heartBeatDelay" : 0,
-    "sessionCountLimit" : 256,
-    "deadLetterQueueEnabled" : false,
-    "maximumDeliveryAttempts" : 0,
-    "housekeepingCheckPeriod" : 30000,
-    "queueFlowControlSizeBytes" : 0,
-    "queueFlowResumeSizeBytes" : 0,
-    "statisticsReportingPeriod" : 0,
-    "statisticsReportingResetEnabled" : false
-  },
+  "name": "Broker",
+  "defaultAuthenticationProvider" : "defaultAuthenticationProvider",
+  "defaultVirtualHost" : "default",
+  "aclFile" : null,
+  "alertThresholdQueueDepth" : 0,
+  "alertThresholdMessageCount" : 0,
+  "alertThresholdMessageSize" : 0,
+  "alertThresholdMessageAge" : 0,
+  "alertRepeatGap" : 30000,
+  "heartBeatDelay" : 0,
+  "sessionCountLimit" : 256,
+  "deadLetterQueueEnabled" : false,
+  "maximumDeliveryAttempts" : 0,
+  "housekeepingCheckPeriod" : 30000,
+  "queueFlowControlSizeBytes" : 0,
+  "queueFlowResumeSizeBytes" : 0,
+  "statisticsReportingPeriod" : 0,
+  "statisticsReportingResetEnabled" : false,
   "authenticationproviders" : [ {
     "type" : "AuthenticationProvider",
-    "attributes" : {
-      "name" : "defaultAuthenticationProvider",
-      "authenticationProviderType" : "PlainPasswordFileAuthenticationProvider",
-      "path" : "${QPID_HOME}/etc/passwd"
-    }
+    "name" : "defaultAuthenticationProvider",
+    "authenticationProviderType" : "PlainPasswordFileAuthenticationProvider",
+    "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [ {
     "type" : "Port",
-    "attributes" : {
-      "name" : "defaultHttpPort",
-      "port" : 8080,
-      "transports" : [ "TCP" ],
-      "protocols" : [ "HTTP" ]
-    }
+    "name" : "defaultHttpPort",
+    "port" : 8080,
+    "transports" : [ "TCP" ],
+    "protocols" : [ "HTTP" ]
   }, {
     "type" : "Port",
-    "attributes" : {
-      "name" : "defaultAmqpPort",
-      "port" : 5672,
-      "tcpNoDelay" : true,
-      "transports" : [ "TCP" ],
-      "protocols" : [ "AMQP_0_8", "AMQP_0_9", "AMQP_0_9_1", "AMQP_0_10", "AMQP_1_0" ],
-      "wantClientAuth" : false,
-      "needClientAuth" : false,
-      "receiveBufferSize" : 262144,
-      "sendBufferSize" : 262144
-    }
+    "name" : "defaultAmqpPort",
+    "port" : 5672,
+    "tcpNoDelay" : true,
+    "transports" : [ "TCP" ],
+    "protocols" : [ "AMQP_0_8", "AMQP_0_9", "AMQP_0_9_1", "AMQP_0_10", "AMQP_1_0" ],
+    "wantClientAuth" : false,
+    "needClientAuth" : false,
+    "receiveBufferSize" : 262144,
+    "sendBufferSize" : 262144
   }, {
     "type" : "Port",
-    "attributes" : {
-      "name" : "defaultJmxRmiPort",
-      "port" : 9099,
-      "transports" : [ "TCP" ],
-      "protocols" : [ "JMX_RMI" ]
-    }
+    "name" : "defaultJmxRmiPort",
+    "port" : 9099,
+    "transports" : [ "TCP" ],
+    "protocols" : [ "JMX_RMI" ]
   }, {
     "type" : "Port",
-    "attributes" : {
-      "name" : "defaultRmiPort",
-      "port" : 8999,
-      "transports" : [ "TCP" ],
-      "protocols" : [ "RMI" ]
-    }
+    "name" : "defaultRmiPort",
+    "port" : 8999,
+    "transports" : [ "TCP" ],
+    "protocols" : [ "RMI" ]
   } ],
   "virtualhosts" : [ {
     "type" : "VirtualHost",
-    "attributes" : {
-      "name" : "default",
-      "configuration" : "${QPID_HOME}/etc/virtualhosts.xml"
-    }
+    "name" : "default",
+    "configuration" : "${QPID_HOME}/etc/virtualhosts.xml"
   } ],
   "plugins" : [ {
-      "type" : "Plugin",
-      "attributes" : {
-        "pluginType" : "MANAGEMENT-HTTP",
-        "name" : "httpManagement",
-        "httpSaslAuthenticationEnabled" : true,
-        "httpsSaslAuthenticationEnabled" : false,
-        "httpBasicAuthenticationEnabled" : false,
-        "httpsBasicAuthenticationEnabled" : false
-      }
+    "type" : "Plugin",
+    "pluginType" : "MANAGEMENT-HTTP",
+    "name" : "httpManagement",
+    "httpSaslAuthenticationEnabled" : true,
+    "httpsSaslAuthenticationEnabled" : false,
+    "httpBasicAuthenticationEnabled" : false,
+    "httpsBasicAuthenticationEnabled" : false
   }, {
-        "type" : "Plugin",
-        "attributes" : {
-          "pluginType" : "MANAGEMENT-JMX",
-          "name" : "jmxManagement",
-          "usePlatformMBeanServer" : true,
-          "managementRightsInferAllAccess" : true
-        }
+    "type" : "Plugin",
+    "pluginType" : "MANAGEMENT-JMX",
+    "name" : "jmxManagement",
+    "usePlatformMBeanServer" : true,
+    "managementRightsInferAllAccess" : true
   } ]
 }
