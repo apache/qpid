@@ -57,7 +57,7 @@ MessageStoreImpl::TplRecoverStruct::TplRecoverStruct(const u_int64_t _rid,
                                                      tpc_flag(_tpc_flag)
 {}
 
-MessageStoreImpl::MessageStoreImpl(qpid::sys::Timer& timer_, const char* envpath) :
+MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* envpath) :
                                    numJrnlFiles(0),
                                    autoJrnlExpand(false),
                                    autoJrnlExpandMaxFiles(0),
@@ -72,7 +72,7 @@ MessageStoreImpl::MessageStoreImpl(qpid::sys::Timer& timer_, const char* envpath
                                    highestRid(0),
                                    isInit(false),
                                    envPath(envpath),
-                                   timer(timer_),
+                                   broker(broker_),
                                    mgmtObject(),
                                    agent(0)
 {}
@@ -218,7 +218,7 @@ void MessageStoreImpl::chkJrnlAutoExpandOptions(const StoreOptions* opts,
     autoJrnlExpandMaxFiles = p;
 }
 
-void MessageStoreImpl::initManagement (qpid::broker::Broker* broker)
+void MessageStoreImpl::initManagement ()
 {
     if (broker != 0) {
         agent = broker->getManagementAgent();
@@ -364,7 +364,7 @@ void MessageStoreImpl::init()
             // NOTE: during normal initialization, agent == 0 because the store is initialized before the management infrastructure.
             // However during a truncated initialization in a cluster, agent != 0. We always pass 0 as the agent for the
             // TplStore to keep things consistent in a cluster. See https://bugzilla.redhat.com/show_bug.cgi?id=681026
-            tplStorePtr.reset(new TplJournalImpl(timer, "TplStore", getTplBaseDir(), "tpl", defJournalGetEventsTimeout, defJournalFlushTimeout, 0));
+            tplStorePtr.reset(new TplJournalImpl(broker->getTimer(), "TplStore", getTplBaseDir(), "tpl", defJournalGetEventsTimeout, defJournalFlushTimeout, 0));
             isInit = true;
         } catch (const DbException& e) {
             if (e.get_errno() == DB_VERSION_MISMATCH)
@@ -402,8 +402,9 @@ void MessageStoreImpl::finalize()
         }
     }
 
-    if (mgmtObject != 0) {
+    if (mgmtObject.get() != 0) {
         mgmtObject->resourceDestroy();
+	mgmtObject.reset();
     }
 }
 
@@ -443,7 +444,7 @@ void MessageStoreImpl::chkTplStoreInit()
     if (!tplStorePtr->is_ready()) {
         journal::jdir::create_dir(getTplBaseDir());
         tplStorePtr->initialize(tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks, tplWCacheNumPages, tplWCachePgSizeSblks);
-        if (mgmtObject != 0) mgmtObject->set_tplIsInitialized(true);
+        if (mgmtObject.get() != 0) mgmtObject->set_tplIsInitialized(true);
     }
 }
 
@@ -479,8 +480,9 @@ MessageStoreImpl::~MessageStoreImpl()
         QPID_LOG(error, "Unknown error in MessageStoreImpl::~MessageStoreImpl()");
     }
 
-    if (mgmtObject != 0) {
+    if (mgmtObject.get() != 0) {
         mgmtObject->resourceDestroy();
+	mgmtObject.reset();
     }
 }
 
@@ -513,7 +515,7 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
         return;
     }
 
-    jQueue = new JournalImpl(timer, queue.getName(), getJrnlDir(queue),  std::string("JournalData"),
+    jQueue = new JournalImpl(broker->getTimer(), queue.getName(), getJrnlDir(queue),  std::string("JournalData"),
                              defJournalGetEventsTimeout, defJournalFlushTimeout, agent,
                              boost::bind(&MessageStoreImpl::journalDeleted, this, _1));
     {
@@ -705,7 +707,7 @@ void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry)
     //recover transactions:
     for (txn_list::iterator i = prepared.begin(); i != prepared.end(); i++) {
         const PreparedTransaction pt = *i;
-        if (mgmtObject != 0) {
+        if (mgmtObject.get() != 0) {
             mgmtObject->inc_tplTransactionDepth();
             mgmtObject->inc_tplTxnPrepares();
         }
@@ -799,7 +801,7 @@ void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
             QPID_LOG(error, "Cannot recover empty (null) queue name - ignoring and attempting to continue.");
             break;
         }
-        jQueue = new JournalImpl(timer, queueName, getJrnlHashDir(queueName), std::string("JournalData"),
+        jQueue = new JournalImpl(broker->getTimer(), queueName, getJrnlHashDir(queueName), std::string("JournalData"),
                                  defJournalGetEventsTimeout, defJournalFlushTimeout, agent,
                                  boost::bind(&MessageStoreImpl::journalDeleted, this, _1));
         {
@@ -979,6 +981,8 @@ void MessageStoreImpl::recoverMessages(TxnCtxt& /*txn*/,
                 // At some future point if delivery attempts are stored, then this call would
                 // become optional depending on that information.
                 msg->setRedelivered();
+		// Reset the TTL for the recovered message
+		msg->computeExpiration(broker->getExpiryPolicy());
 
                 u_int32_t contentOffset = headerSize + preambleLength;
                 u_int64_t contentSize = readSize - contentOffset;
@@ -1436,7 +1440,7 @@ void MessageStoreImpl::completed(TxnCtxt& txn,
             tplStorePtr->dequeue_txn_data_record(txn.getDtok(), txn.getXid(), commit);
         }
         txn.complete(commit);
-        if (mgmtObject != 0) {
+        if (mgmtObject.get() != 0) {
             mgmtObject->dec_tplTransactionDepth();
             if (commit)
                 mgmtObject->inc_tplTxnCommits();
@@ -1490,7 +1494,7 @@ void MessageStoreImpl::localPrepare(TxnCtxt* ctxt)
         ctxt->prepare(tplStorePtr.get());
         // make sure all the data is written to disk before returning
         ctxt->sync();
-        if (mgmtObject != 0) {
+        if (mgmtObject.get() != 0) {
             mgmtObject->inc_tplTransactionDepth();
             mgmtObject->inc_tplTxnPrepares();
         }

@@ -44,7 +44,7 @@ struct StorePlugin : public Plugin {
     {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
-        store.reset(new MessageStoreImpl(broker->getTimer()));
+        store.reset(new MessageStoreImpl(broker));
         DataDir& dataDir = broker->getDataDir ();
         if (options.storeDir.empty ())
         {
@@ -65,7 +65,7 @@ struct StorePlugin : public Plugin {
         if (!broker) return;
         if (!store) return;
         QPID_LOG(info, "Enabling management instrumentation for the store.");
-        store->initManagement(broker);
+        store->initManagement();
     }
 
     void finalize()
