@@ -80,7 +80,7 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
             {
                 // NO-OP
             }
-        }, System.currentTimeMillis());
+        });
 
         return ACCEPTED;
     }

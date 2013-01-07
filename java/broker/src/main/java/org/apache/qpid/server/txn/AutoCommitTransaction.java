@@ -52,7 +52,14 @@ public class AutoCommitTransaction implements ServerTransaction
         _messageStore = transactionLog;
     }
 
+    @Override
     public long getTransactionStartTime()
+    {
+        return 0L;
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
     {
         return 0L;
     }
@@ -178,7 +185,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
     {
         Transaction txn = null;
         try
@@ -269,5 +276,7 @@ public class AutoCommitTransaction implements ServerTransaction
             postTransactionAction.onRollback();
         }
     }
+
+
 
 }

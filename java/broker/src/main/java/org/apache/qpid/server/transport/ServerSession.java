@@ -43,6 +43,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
+import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -132,7 +133,6 @@ public class ServerSession extends Session
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
-    private final AtomicLong _txnUpdateTime = new AtomicLong(0);
 
     private Map<String, Subscription_0_10> _subscriptions = new ConcurrentHashMap<String, Subscription_0_10>();
 
@@ -147,7 +147,14 @@ public class ServerSession extends Session
         _transaction = new AsyncAutoCommitTransaction(this.getMessageStore(),this);
         _logSubject = new ChannelLogSubject(this);
 
-        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject);
+        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, new CloseAction()
+        {
+            @Override
+            public void doTimeoutAction(String reason) throws AMQException
+            {
+                getConnectionModel().closeSession(ServerSession.this, AMQConstant.RESOURCE_ERROR, reason);
+            }
+        });
     }
 
     protected void setState(State state)
@@ -186,9 +193,8 @@ public class ServerSession extends Session
         }
         getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
         PostEnqueueAction postTransactionAction = new PostEnqueueAction(queues, message, isTransactional()) ;
-        _transaction.enqueue(queues,message, postTransactionAction, 0L);
+        _transaction.enqueue(queues,message, postTransactionAction);
         incrementOutstandingTxnsIfNecessary();
-        updateTransactionalActivity();
     }
 
 
@@ -402,7 +408,6 @@ public class ServerSession extends Session
                                      entry.release();
                                  }
                              });
-	    updateTransactionalActivity();
     }
 
     public Collection<Subscription_0_10> getSubscriptions()
@@ -549,7 +554,6 @@ public class ServerSession extends Session
 
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
-        _txnUpdateTime.set(0);
         decrementOutstandingTxnsIfNecessary();
     }
 
@@ -559,7 +563,6 @@ public class ServerSession extends Session
 
         _txnRejects.incrementAndGet();
         _txnStarts.incrementAndGet();
-        _txnUpdateTime.set(0);
         decrementOutstandingTxnsIfNecessary();
     }
 
@@ -582,22 +585,6 @@ public class ServerSession extends Session
             //due to only having LocalTransaction support. Set value to 0 if 1.
             _txnCount.compareAndSet(1,0);
         }
-    }
-
-    /**
-     * Update last transaction activity timestamp
-     */
-    private void updateTransactionalActivity()
-    {
-        if (isTransactional())
-        {
-            _txnUpdateTime.set(System.currentTimeMillis());
-        }
-    }
-
-    public Long getTxnStarts()
-    {
-        return _txnStarts.get();
     }
 
     public Long getTxnCommits()
@@ -705,30 +692,7 @@ public class ServerSession extends Session
 
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
-        final long transactionStartTime = _transaction.getTransactionStartTime();
-        final long transactionUpdateTime = _txnUpdateTime.get();
-        if (isTransactional() && transactionUpdateTime > 0 && transactionStartTime > 0)
-        {
-            long currentTime = System.currentTimeMillis();
-            long openTime = currentTime - transactionStartTime;
-            long idleTime = currentTime - transactionUpdateTime;
-
-            _transactionTimeoutHelper.logIfNecessary(idleTime, idleWarn, ChannelMessages.IDLE_TXN(idleTime),
-                                                     TransactionTimeoutHelper.IDLE_TRANSACTION_ALERT);
-            if (_transactionTimeoutHelper.isTimedOut(idleTime, idleClose))
-            {
-                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Idle transaction timed out");
-                return;
-            }
-
-            _transactionTimeoutHelper.logIfNecessary(openTime, openWarn, ChannelMessages.OPEN_TXN(openTime),
-                                                     TransactionTimeoutHelper.OPEN_TRANSACTION_ALERT);
-            if (_transactionTimeoutHelper.isTimedOut(openTime, openClose))
-            {
-                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Open transaction timed out");
-                return;
-            }
-        }
+        _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, openWarn, openClose, idleWarn, idleClose);
     }
 
     public void block(AMQQueue queue)

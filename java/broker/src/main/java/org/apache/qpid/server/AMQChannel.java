@@ -51,6 +51,7 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.exchange.Exchange;
@@ -87,6 +88,7 @@ import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TransportException;
@@ -145,7 +147,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
-    private final AtomicLong _txnUpdateTime = new AtomicLong(0);
 
     private final AMQProtocolSession _session;
     private AtomicBoolean _closing = new AtomicBoolean(false);
@@ -185,15 +186,29 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         // by default the session is non-transactional
         _transaction = new AsyncAutoCommitTransaction(_messageStore, this);
 
-         _clientDeliveryMethod = session.createDeliveryMethod(_channelId);
+        _clientDeliveryMethod = session.createDeliveryMethod(_channelId);
 
-         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject);
+        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, new CloseAction()
+        {
+            @Override
+            public void doTimeoutAction(String reason) throws AMQException
+            {
+                closeConnection(reason);
+            }
+        });
     }
 
     /** Sets this channel to be part of a local transaction */
     public void setLocalTransactional()
     {
-        _transaction = new LocalTransaction(_messageStore);
+        _transaction = new LocalTransaction(_messageStore, new ActivityTimeAccessor()
+        {
+            @Override
+            public long getActivityTime()
+            {
+                return _session.getLastReceivedTime();
+            }
+        });
         _txnStarts.incrementAndGet();
     }
 
@@ -206,8 +221,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     {
         sync();
     }
-
-
 
     private void incrementOutstandingTxnsIfNecessary()
     {
@@ -227,11 +240,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             //due to only having LocalTransaction support. Set value to 0 if 1.
             _txnCount.compareAndSet(1,0);
         }
-    }
-
-    public Long getTxnStarts()
-    {
-        return _txnStarts.get();
     }
 
     public Long getTxnCommits()
@@ -351,9 +359,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                             }
                         });
 
-                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues), getProtocolSession().getLastReceivedTime());
+                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues));
                         incrementOutstandingTxnsIfNecessary();
-                        updateTransactionalActivity();
                         _currentMessage.getStoredMessage().flushToStore();
                     }
                 }
@@ -839,7 +846,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     {
         Collection<QueueEntry> ackedMessages = getAckedMessages(deliveryTag, multiple);
         _transaction.dequeue(ackedMessages, new MessageAcknowledgeAction(ackedMessages));
-	    updateTransactionalActivity();
     }
 
     private Collection<QueueEntry> getAckedMessages(long deliveryTag, boolean multiple)
@@ -959,7 +965,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                     _txnCommits.incrementAndGet();
                     _txnStarts.incrementAndGet();
                     decrementOutstandingTxnsIfNecessary();
-                    _txnUpdateTime.set(0);
                 }
             });
         }
@@ -969,7 +974,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             _txnCommits.incrementAndGet();
             _txnStarts.incrementAndGet();
-            _txnUpdateTime.set(0);
             decrementOutstandingTxnsIfNecessary();
         }
     }
@@ -1007,7 +1011,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             _txnRejects.incrementAndGet();
             _txnStarts.incrementAndGet();
-            _txnUpdateTime.set(0);
             decrementOutstandingTxnsIfNecessary();
         }
 
@@ -1035,19 +1038,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 sub.getQueue().deliverAsync(sub);
             }
 
-        }
-
-
-    }
-
-    /**
-     * Update last transaction activity timestamp
-     */
-    private void updateTransactionalActivity()
-    {
-        if (isTransactional())
-        {
-            _txnUpdateTime.set(getProtocolSession().getLastReceivedTime());
         }
     }
 
@@ -1215,11 +1205,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 // TODO
                 throw new RuntimeException(e);
             }
-
-
-
-
-
         }
 
         public void onRollback()
@@ -1369,7 +1354,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         public void onRollback()
         {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 
@@ -1478,37 +1462,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         return _createTime;
     }
 
-    public void mgmtClose() throws AMQException
-    {
-        _session.mgmtCloseChannel(_channelId);
-    }
-
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
-        final long transactionStartTime = _transaction.getTransactionStartTime();
-        final long transactionUpdateTime = _txnUpdateTime.get();
-        if (isTransactional() && transactionUpdateTime > 0 && transactionStartTime > 0)
-        {
-            long currentTime = System.currentTimeMillis();
-            long openTime = currentTime - transactionStartTime;
-            long idleTime = currentTime - transactionUpdateTime;
-
-            _transactionTimeoutHelper.logIfNecessary(idleTime, idleWarn, ChannelMessages.IDLE_TXN(idleTime),
-                                                     TransactionTimeoutHelper.IDLE_TRANSACTION_ALERT);
-            if (_transactionTimeoutHelper.isTimedOut(idleTime, idleClose))
-            {
-                closeConnection("Idle transaction timed out");
-                return;
-            }
-
-            _transactionTimeoutHelper.logIfNecessary(openTime, openWarn, ChannelMessages.OPEN_TXN(openTime),
-                                                     TransactionTimeoutHelper.OPEN_TRANSACTION_ALERT);
-            if (_transactionTimeoutHelper.isTimedOut(openTime, openClose))
-            {
-                closeConnection("Open transaction timed out");
-                return;
-            }
-        }
+        _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, openWarn, openClose, idleWarn, idleClose);
     }
 
     /**
@@ -1628,13 +1584,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             _action.postCommit();
             _action = null;
         }
-
-        boolean isReadyForCompletion()
-        {
-            return _future.isComplete();
-        }
     }
-
 
     @Override
     public int getConsumerCount()
