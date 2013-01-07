@@ -150,7 +150,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     u_int64_t highestRid;
     bool isInit;
     const char* envPath;
-    qpid::sys::Timer& timer;
+    qpid::broker::Broker* broker;
 
     qmf::org::apache::qpid::legacystore::Store::shared_ptr mgmtObject;
     qpid::management::ManagementAgent* agent;
@@ -273,7 +273,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
   public:
     typedef boost::shared_ptr<MessageStoreImpl> shared_ptr;
 
-    MessageStoreImpl(qpid::sys::Timer& timer, const char* envpath = 0);
+    MessageStoreImpl(qpid::broker::Broker* broker, const char* envpath = 0);
 
     virtual ~MessageStoreImpl();
 
@@ -292,7 +292,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     void truncateInit(const bool saveStoreContent = false);
 
-    void initManagement (qpid::broker::Broker* broker);
+    void initManagement ();
 
     void finalize();
 
@@ -364,9 +364,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     qpid::management::ManagementObject::shared_ptr GetManagementObject (void) const
         { return mgmtObject; }
 
-    using qpid::management::Manageable::ManagementMethod;
-
-    inline qpid::management::Manageable::status_t ManagementMethod (u_int32_t, qpid::management::Args&)
+    inline qpid::management::Manageable::status_t ManagementMethod (u_int32_t, qpid::management::Args&, std::string&)
         { return qpid::management::Manageable::STATUS_OK; }
 
     std::string getStoreDir() const;

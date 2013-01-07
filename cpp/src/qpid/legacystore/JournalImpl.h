@@ -166,7 +166,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
     bool loadMsgContent(u_int64_t rid, std::string& data, size_t length, size_t offset = 0);
 
     // Overrides for write inactivity timer
-    void enqueue_data_record(const void* const data_buffGetManagementObject, const size_t tot_data_len,
+    void enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
                              const size_t this_data_len, mrg::journal::data_tok* dtokp,
                              const bool transient = false);
 
@@ -227,10 +227,10 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
 
     // Management instrumentation callbacks overridden from jcntl
     inline void instr_incr_outstanding_aio_cnt() {
-        if (_mgmtObject != 0) _mgmtObject->inc_outstandingAIOs();
+      if (_mgmtObject.get() != 0) _mgmtObject->inc_outstandingAIOs();
     }
     inline void instr_decr_outstanding_aio_cnt() {
-        if (_mgmtObject != 0) _mgmtObject->dec_outstandingAIOs();
+      if (_mgmtObject.get() != 0) _mgmtObject->dec_outstandingAIOs();
     }
 
 }; // class JournalImpl
