@@ -18,46 +18,85 @@
  */
 package org.apache.qpid.server;
 
-import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
+import org.apache.qpid.server.txn.ServerTransaction;
 
 public class TransactionTimeoutHelper
 {
-    private static final Logger LOGGER = Logger.getLogger(TransactionTimeoutHelper.class);
-
-    public static final String IDLE_TRANSACTION_ALERT = "IDLE TRANSACTION ALERT";
-    public static final String OPEN_TRANSACTION_ALERT = "OPEN TRANSACTION ALERT";
+    private static final String OPEN_TRANSACTION_TIMEOUT_ERROR = "Open transaction timed out";
+    private static final String IDLE_TRANSACTION_TIMEOUT_ERROR = "Idle transaction timed out";
 
     private final LogSubject _logSubject;
 
-    public TransactionTimeoutHelper(final LogSubject logSubject)
+    private final CloseAction _closeAction;
+
+    public TransactionTimeoutHelper(final LogSubject logSubject, final CloseAction closeAction)
     {
         _logSubject = logSubject;
+        _closeAction = closeAction;
     }
 
-    public void logIfNecessary(final long timeSoFar, final long warnTimeout,
-                               final LogMessage message, final String alternateLogPrefix)
+    public void checkIdleOrOpenTimes(ServerTransaction transaction, long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
-        if (isTimedOut(timeSoFar, warnTimeout))
+        if (transaction.isTransactional())
         {
-            LogActor logActor = CurrentActor.get();
-            if(logActor.getRootMessageLogger().isMessageEnabled(logActor, _logSubject, message.getLogHierarchy()))
+            final long transactionUpdateTime = transaction.getTransactionUpdateTime();
+            if(transactionUpdateTime > 0)
             {
-                logActor.message(_logSubject, message);
+                long idleTime = System.currentTimeMillis() - transactionUpdateTime;
+                boolean closed = logAndCloseIfNecessary(idleTime, idleWarn, idleClose, ChannelMessages.IDLE_TXN(idleTime), IDLE_TRANSACTION_TIMEOUT_ERROR);
+                if (closed)
+                {
+                    return; // no point proceeding to check the open time
+                }
             }
-            else
+
+            final long transactionStartTime = transaction.getTransactionStartTime();
+            if(transactionStartTime > 0)
             {
-                LOGGER.warn(alternateLogPrefix + " " + _logSubject.toLogString() + " " + timeSoFar + " ms");
+                long openTime = System.currentTimeMillis() - transactionStartTime;
+                logAndCloseIfNecessary(openTime, openWarn, openClose, ChannelMessages.OPEN_TXN(openTime), OPEN_TRANSACTION_TIMEOUT_ERROR);
             }
         }
     }
 
-    public boolean isTimedOut(long timeSoFar, long timeout)
+    /**
+     * @return true iff closeTimeout was exceeded
+     */
+    private boolean logAndCloseIfNecessary(final long timeSoFar,
+            final long warnTimeout, final long closeTimeout,
+            final LogMessage warnMessage, final String closeMessage) throws AMQException
+    {
+        if (isTimedOut(timeSoFar, warnTimeout))
+        {
+            LogActor logActor = CurrentActor.get();
+            logActor.message(_logSubject, warnMessage);
+        }
+
+        if(isTimedOut(timeSoFar, closeTimeout))
+        {
+            _closeAction.doTimeoutAction(closeMessage);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private boolean isTimedOut(long timeSoFar, long timeout)
     {
         return timeout > 0L && timeSoFar > timeout;
     }
+
+    public interface CloseAction
+    {
+        void doTimeoutAction(String reason) throws AMQException;
+    }
+
 }

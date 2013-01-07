@@ -454,7 +454,7 @@ public abstract class QueueEntryImpl implements QueueEntry
                     {
 
                     }
-                }, 0L);
+                });
 
                 txn.dequeue(currentQueue, message, new ServerTransaction.Action()
                 {

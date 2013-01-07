@@ -39,7 +39,7 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 
     protected void configure() throws Exception
     {
-        // Setup housekeeping every second
+        // Setup housekeeping every 100ms
         setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
 
         if (getName().contains("ProducerIdle"))

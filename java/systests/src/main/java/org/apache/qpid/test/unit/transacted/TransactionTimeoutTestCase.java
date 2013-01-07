@@ -23,17 +23,13 @@ package org.apache.qpid.test.unit.transacted;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.jms.Session;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
+import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -41,6 +37,7 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
+import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -61,7 +58,7 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
     public static final String OPEN = "Open";
     
     protected LogMonitor _monitor;
-    protected AMQConnection _con;
+    protected Connection _con;
     protected Session _psession, _csession;
     protected Queue _queue;
     protected MessageConsumer _consumer;
@@ -89,16 +86,14 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
         super.setUp();
         
         // Connect to broker
-        String broker = ("tcp://localhost:" + DEFAULT_PORT);
-        ConnectionURL url = new AMQConnectionURL("amqp://guest:guest@clientid/test?brokerlist='" + broker + "'&maxprefetch='1'");
-        _con = (AMQConnection) getConnection(url);
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, String.valueOf(1));
+        _con = getConnection();
         _con.setExceptionListener(this);
         _con.start();
         
         // Create queue
         Session qsession = _con.createSession(true, Session.SESSION_TRANSACTED);
-        AMQShortString queueName = new AMQShortString("test");
-        _queue = new AMQQueue(qsession.getDefaultQueueExchangeName(), queueName, queueName, false, true);
+        _queue = qsession.createQueue(getTestQueueName());
         qsession.close();
         
         // Create producer and consumer
