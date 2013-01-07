@@ -68,7 +68,6 @@ JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
                          _dlen(0),
                          _dtok(),
                          _external(false),
-                         _mgmtObject(),
                          deleteCallback(onDelete)
 {
     getEventsFireEventsPtr = new GetEventsFireEvent(this, getEventsTimeout);
@@ -97,8 +96,9 @@ JournalImpl::~JournalImpl()
     inactivityFireEventPtr->cancel();
     free_read_buffers();
 
-    if (_mgmtObject != 0) {
+    if (_mgmtObject.get() != 0) {
         _mgmtObject->resourceDestroy();
+	_mgmtObject.reset();
     }
 
     log(LOG_NOTICE, "Destroyed");
@@ -148,7 +148,7 @@ JournalImpl::initialize(const u_int16_t num_jfiles,
     jcntl::initialize(num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks, wcache_num_pages, wcache_pgsize_sblks, cbp);
     log(LOG_DEBUG, "Initialization complete");
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->set_initialFileCount(_lpmgr.num_jfiles());
         _mgmtObject->set_autoExpand(_lpmgr.is_ae());
@@ -182,7 +182,7 @@ JournalImpl::recover(const u_int16_t num_jfiles,
     oss1 << " wcache_num_pages=" << wcache_num_pages;
     log(LOG_DEBUG, oss1.str());
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->set_initialFileCount(_lpmgr.num_jfiles());
         _mgmtObject->set_autoExpand(_lpmgr.is_ae());
@@ -227,7 +227,7 @@ JournalImpl::recover(const u_int16_t num_jfiles,
     oss2 << "; journal now read-only.";
     log(LOG_DEBUG, oss2.str());
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->inc_recordDepth(_emap.size());
         _mgmtObject->inc_enqueues(_emap.size());
@@ -348,7 +348,7 @@ JournalImpl::enqueue_data_record(const void* const data_buff, const size_t tot_d
 {
     handleIoResult(jcntl::enqueue_data_record(data_buff, tot_data_len, this_data_len, dtokp, transient));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->inc_enqueues();
         _mgmtObject->inc_recordDepth();
@@ -361,7 +361,7 @@ JournalImpl::enqueue_extern_data_record(const size_t tot_data_len, data_tok* dto
 {
     handleIoResult(jcntl::enqueue_extern_data_record(tot_data_len, dtokp, transient));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->inc_enqueues();
         _mgmtObject->inc_recordDepth();
@@ -372,11 +372,11 @@ void
 JournalImpl::enqueue_txn_data_record(const void* const data_buff, const size_t tot_data_len,
         const size_t this_data_len, data_tok* dtokp, const std::string& xid, const bool transient)
 {
-    bool txn_incr = _mgmtObject != 0 ? _tmap.in_map(xid) : false;
+    bool txn_incr = _mgmtObject.get() != 0 ? _tmap.in_map(xid) : false;
 
     handleIoResult(jcntl::enqueue_txn_data_record(data_buff, tot_data_len, this_data_len, dtokp, xid, transient));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         if (!txn_incr) // If this xid was not in _tmap, it will be now...
             _mgmtObject->inc_txn();
@@ -390,11 +390,11 @@ void
 JournalImpl::enqueue_extern_txn_data_record(const size_t tot_data_len, data_tok* dtokp,
         const std::string& xid, const bool transient)
 {
-    bool txn_incr = _mgmtObject != 0 ? _tmap.in_map(xid) : false;
+    bool txn_incr = _mgmtObject.get() != 0 ? _tmap.in_map(xid) : false;
 
     handleIoResult(jcntl::enqueue_extern_txn_data_record(tot_data_len, dtokp, xid, transient));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         if (!txn_incr) // If this xid was not in _tmap, it will be now...
             _mgmtObject->inc_txn();
@@ -409,7 +409,7 @@ JournalImpl::dequeue_data_record(data_tok* const dtokp, const bool txn_coml_comm
 {
     handleIoResult(jcntl::dequeue_data_record(dtokp, txn_coml_commit));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->inc_dequeues();
         _mgmtObject->inc_txnDequeues();
@@ -420,11 +420,11 @@ JournalImpl::dequeue_data_record(data_tok* const dtokp, const bool txn_coml_comm
 void
 JournalImpl::dequeue_txn_data_record(data_tok* const dtokp, const std::string& xid, const bool txn_coml_commit)
 {
-    bool txn_incr = _mgmtObject != 0 ? _tmap.in_map(xid) : false;
+    bool txn_incr = _mgmtObject.get() != 0 ? _tmap.in_map(xid) : false;
 
     handleIoResult(jcntl::dequeue_txn_data_record(dtokp, xid, txn_coml_commit));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         if (!txn_incr) // If this xid was not in _tmap, it will be now...
             _mgmtObject->inc_txn();
@@ -439,7 +439,7 @@ JournalImpl::txn_abort(data_tok* const dtokp, const std::string& xid)
 {
     handleIoResult(jcntl::txn_abort(dtokp, xid));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->dec_txn();
         _mgmtObject->inc_txnAborts();
@@ -451,7 +451,7 @@ JournalImpl::txn_commit(data_tok* const dtokp, const std::string& xid)
 {
     handleIoResult(jcntl::txn_commit(dtokp, xid));
 
-    if (_mgmtObject != 0)
+    if (_mgmtObject.get() != 0)
     {
         _mgmtObject->dec_txn();
         _mgmtObject->inc_txnCommits();
@@ -466,8 +466,9 @@ JournalImpl::stop(bool block_till_aio_cmpl)
     ifep->cancel();
     jcntl::stop(block_till_aio_cmpl);
 
-    if (_mgmtObject != 0) {
+    if (_mgmtObject.get() != 0) {
         _mgmtObject->resourceDestroy();
+        _mgmtObject.reset();
     }
 }
 
