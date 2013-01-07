@@ -54,8 +54,9 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             Protocol.AMQP_0_10, Protocol.AMQP_1_0);
 
     private final ConfigurationEntryStore _store;
-    private final Map<UUID, MutableConfigurationEntry> _cliEntries;
+    private final Map<UUID, ConfigurationEntry> _cliEntries;
     private final ConfigurationEntry _root;
+    private final Set<UUID> _originalStorePortIds;
 
     public CommandLineOptionsHandler(BrokerOptions options, ConfigurationEntryStore store)
     {
@@ -67,24 +68,23 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             ConfigurationEntry root = store.getRootEntry();
             Set<UUID> rootChildren = new HashSet<UUID>(root.getChildrenIds());
             Collection<ConfigurationEntry> storePorts = root.getChildren().get(PORT_TYPE_NAME);
-            Collection<MutableConfigurationEntry> mutableConfigurationEntries = new ArrayList<MutableConfigurationEntry>();
+            Collection<ConfigurationEntry> mutableConfigurationEntries = new ArrayList<ConfigurationEntry>();
+            _originalStorePortIds = new HashSet<UUID>();
             for (ConfigurationEntry configurationEntry : storePorts)
             {
-                mutableConfigurationEntries.add(new PortMutableConfigurationEntry(configurationEntry));
+                mutableConfigurationEntries.add(configurationEntry.clone());
                 rootChildren.remove(configurationEntry.getId());
+                _originalStorePortIds.add(configurationEntry.getId());
             }
             for (ConfigurationAction configurationAction : configActions)
             {
                 mutableConfigurationEntries = configurationAction.apply(mutableConfigurationEntries);
             }
-            _cliEntries = new HashMap<UUID, MutableConfigurationEntry>();
-            for (MutableConfigurationEntry mutableConfigurationEntry : mutableConfigurationEntries)
+            _cliEntries = new HashMap<UUID, ConfigurationEntry>();
+            for (ConfigurationEntry mutableConfigurationEntry : mutableConfigurationEntries)
             {
                 _cliEntries.put(mutableConfigurationEntry.getId(), mutableConfigurationEntry);
-                if (!mutableConfigurationEntry.isDisabled())
-                {
-                    rootChildren.add(mutableConfigurationEntry.getId());
-                }
+                rootChildren.add(mutableConfigurationEntry.getId());
             }
             _root = new ConfigurationEntry(root.getId(), root.getType(), root.getAttributes(), rootChildren, this);
         }
@@ -92,6 +92,7 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         {
             _root = null;
             _cliEntries = null;
+            _originalStorePortIds = null;
         }
     }
 
@@ -198,10 +199,10 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             {
                 return _root;
             }
-            MutableConfigurationEntry entry = _cliEntries.get(id);
-            if (entry != null && !entry.isDisabled())
+            ConfigurationEntry entry = _cliEntries.get(id);
+            if (entry != null)
             {
-                return entry.toConfigurationEntry();
+                return entry;
             }
         }
         return _store.getEntry(id);
@@ -224,29 +225,26 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
                 {
                     // remove command line ports from broker children
                     Set<UUID> childrenIds = new HashSet<UUID>(entry.getChildrenIds());
-                    for (MutableConfigurationEntry substitutedEntry : _cliEntries.values())
+                    for (ConfigurationEntry substitutedEntry : _cliEntries.values())
                     {
-                        ConfigurationEntry original = substitutedEntry.getOriginal();
-                        if (original == null)
+                        ConfigurationEntryStore entryStore = substitutedEntry.getStore();
+                        if (entryStore == this)
                         {
                             childrenIds.remove(substitutedEntry.getId());
                         }
-                        else
-                        {
-                            childrenIds.add(substitutedEntry.getId());
-                        }
                     }
+                    childrenIds.addAll(_originalStorePortIds);
                     entry = new ConfigurationEntry(_root.getId(), _root.getType(), _root.getAttributes(), childrenIds, _store);
                     storeEntries.add(entry);
                 }
-                MutableConfigurationEntry override = _cliEntries.get(entry.getId());
+                ConfigurationEntry override = _cliEntries.get(entry.getId());
                 if (override == null)
                 {
                     storeEntries.add(entry);
                 }
-                if (override != null)
+                if  (override != null)
                 {
-                    if (override.isDisabled())
+                    if (override.getStore() == _store)
                     {
                         throw new IllegalConfigurationException("Cannot store entry which was overridden by command line options: "  + entry);
                     }
@@ -256,8 +254,12 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             _store.save(storeEntries.toArray(new ConfigurationEntry[storeEntries.size()]));
             for (ConfigurationEntry entry : nonStoreEntries)
             {
-                MutableConfigurationEntry override = _cliEntries.get(entry.getId());
-                override.setAttributes(entry.getAttributes());
+                ConfigurationEntry override = _cliEntries.get(entry.getId());
+                Map<String, Object> attributes = entry.getAttributes();
+                for (Map.Entry<String, Object> entryAttribute : attributes.entrySet())
+                {
+                    override.setAttribute(entryAttribute.getKey(), entryAttribute.getValue());
+                }
             }
         }
     }
@@ -280,8 +282,8 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
                 {
                     throw new IllegalConfigurationException("Cannot remove root entry");
                 }
-                MutableConfigurationEntry override = _cliEntries.get(entryId);
-                if (override == null || override.isDisabled())
+                ConfigurationEntry override = _cliEntries.get(entryId);
+                if (override == null || override.getStore() == _store)
                 {
                     storeEntries.add(entryId);
                 }
@@ -297,139 +299,24 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             }
             for (UUID entryId : nonStoreEntries)
             {
-                MutableConfigurationEntry entry = _cliEntries.remove(entryId);
+                ConfigurationEntry entry = _cliEntries.remove(entryId);
                 if (entry != null)
                 {
                     deleted.add(entryId);
                 }
             }
+            for (UUID entryId : storeEntries)
+            {
+                _originalStorePortIds.remove(entryId);
+            }
             return deleted.toArray(new UUID[deleted.size()]);
         }
     }
 
-    public static class MutableConfigurationEntry
+    public static class ConfigurationEntryHelper
     {
-        private final UUID _id;
-        private final String _type;
-        private final Map<String, Object> _attributes;
-        private final ConfigurationEntryStore _store;
-        private final ConfigurationEntry _original;
-        private boolean _disabled;
-
-        private MutableConfigurationEntry(ConfigurationEntry original, UUID id, String type, ConfigurationEntryStore store)
+        public static int getPortAttribute(Map<String, Object> attributes)
         {
-            super();
-            _original = original;
-            _attributes = new HashMap<String, Object>();
-            _id = id;
-            _type = type;
-            _store = store;
-            if (original != null)
-            {
-                Map<String, Object> originalAttributes = original.getAttributes();
-                if (originalAttributes != null)
-                {
-                    _attributes.putAll(originalAttributes);
-                }
-            }
-        }
-
-        public MutableConfigurationEntry(ConfigurationEntry original)
-        {
-            this(original, original.getId(), original.getType(), original.getStore());
-        }
-
-        public MutableConfigurationEntry(UUID id, String type, ConfigurationEntryStore store)
-        {
-            this(null, id, type, store);
-        }
-
-        public ConfigurationEntry getOriginal()
-        {
-            return _original;
-        }
-
-        public void setAttribute(String name, Object value)
-        {
-            _attributes.put(name, value);
-        }
-
-        public void setAttributes(Map<String, Object> attributes)
-        {
-            for (Map.Entry<String, Object> attribute : attributes.entrySet())
-            {
-                _attributes.put(attribute.getKey(), attribute.getValue());
-            }
-        }
-
-        public Map<String, Object> getAttributes()
-        {
-            return _attributes;
-        }
-
-        public ConfigurationEntry toConfigurationEntry()
-        {
-            if (_original == null)
-            {
-                return new ConfigurationEntry(_id, _type, _attributes, Collections.<UUID> emptySet(), _store);
-            }
-            return new ConfigurationEntry(_original.getId(), _original.getType(), _attributes, _original.getChildrenIds(),
-                    _original.getStore());
-        }
-
-        public String getType()
-        {
-            return _type;
-        }
-
-        public void disable()
-        {
-            _disabled = true;
-        }
-
-        public boolean isDisabled()
-        {
-            return _disabled;
-        }
-
-        public UUID getId()
-        {
-            return _id;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "MutableConfigurationEntry [_id=" + _id + ", _type=" + _type + ", _attributes=" + _attributes + ", _disabled="
-                    + _disabled + ", _store=" + _store + ", _original=" + _original + "]";
-        }
-
-
-    }
-
-    public static class PortMutableConfigurationEntry extends MutableConfigurationEntry
-    {
-        public PortMutableConfigurationEntry(ConfigurationEntry original)
-        {
-            super(original);
-            if (!PORT_TYPE_NAME.equals(original.getType()))
-            {
-                throw new IllegalConfigurationException("Not a valid port entry");
-            }
-        }
-
-        public PortMutableConfigurationEntry(UUID id, String type, ConfigurationEntryStore store)
-        {
-            super(id, type, store);
-            if (!PORT_TYPE_NAME.equals(type))
-            {
-                throw new IllegalConfigurationException("Not a valid port entry");
-            }
-        }
-
-        public int getPortAttribute()
-        {
-            Map<String, Object> attributes = getAttributes();
             Object portAttribute = attributes.get(Port.PORT);
             if (portAttribute == null || "".equals(portAttribute))
             {
@@ -454,9 +341,8 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             return port;
         }
 
-        public Set<Protocol> getProtocolsAttribute()
+        public static Set<Protocol> getProtocolsAttribute(Map<String, Object> attributes)
         {
-            Map<String, Object> attributes = getAttributes();
             Set<Protocol> protocols = MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, attributes, Protocol.class);
             if (protocols == null || protocols.isEmpty())
             {
@@ -465,9 +351,8 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             return protocols;
         }
 
-        public Set<Transport> getTransportsAttribute()
+        public static Set<Transport> getTransportsAttribute(Map<String, Object> attributes)
         {
-            Map<String, Object> attributes = getAttributes();
             Set<Transport> transports = MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, attributes, Transport.class);
             if (transports == null || transports.isEmpty())
             {
@@ -476,33 +361,29 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             return transports;
         }
 
-        public void setProtocolsAttribute(Set<Protocol> protocols)
-        {
-            setAttribute(Port.PROTOCOLS, protocols);
-        }
     }
 
     public interface ConfigurationAction
     {
-        Collection<MutableConfigurationEntry> apply(Collection<MutableConfigurationEntry> entries);
+        Collection<ConfigurationEntry> apply(Collection<ConfigurationEntry> entries);
     }
 
     public static abstract class PortConfigurationAction implements ConfigurationAction
     {
         @Override
-        public Collection<MutableConfigurationEntry> apply(Collection<MutableConfigurationEntry> entries)
+        public Collection<ConfigurationEntry> apply(Collection<ConfigurationEntry> entries)
         {
-            for (MutableConfigurationEntry configurationEntry : entries)
+            for (ConfigurationEntry configurationEntry : entries)
             {
-                if (!configurationEntry.isDisabled() && configurationEntry instanceof PortMutableConfigurationEntry)
+                if (PORT_TYPE_NAME.equals(configurationEntry.getType()))
                 {
-                    onPortConfigurationEntry((PortMutableConfigurationEntry)configurationEntry);
+                    onConfigurationEntry((ConfigurationEntry) configurationEntry);
                 }
             }
             return entries;
         }
 
-        public abstract void onPortConfigurationEntry(PortMutableConfigurationEntry configurationEntry);
+        public abstract void onConfigurationEntry(ConfigurationEntry configurationEntry);
 
     }
 
@@ -525,9 +406,10 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         }
 
         @Override
-        public void onPortConfigurationEntry(PortMutableConfigurationEntry configurationEntry)
+        public void onConfigurationEntry(ConfigurationEntry configurationEntry)
         {
-            Set<Protocol> protocols = configurationEntry.getProtocolsAttribute();
+            Map<String, Object> attributes = configurationEntry.getAttributes();
+            Set<Protocol> protocols = ConfigurationEntryHelper.getProtocolsAttribute(attributes);
             if (protocols.size() > 0)
             {
                 Protocol protocol = protocols.iterator().next();
@@ -552,16 +434,18 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         }
 
         @Override
-        public void onPortConfigurationEntry(PortMutableConfigurationEntry configurationEntry)
+        public void onConfigurationEntry(ConfigurationEntry configurationEntry)
         {
-            int port = configurationEntry.getPortAttribute();
+            Map<String, Object> attributes = configurationEntry.getAttributes();
+            int port = ConfigurationEntryHelper.getPortAttribute(attributes);
             if (_excludedPorts.contains(port))
             {
-                Set<Protocol> protocols = configurationEntry.getProtocolsAttribute();
+                Set<Protocol> protocols = ConfigurationEntryHelper.getProtocolsAttribute(attributes);
                 if (protocols.contains(_protocol))
                 {
-                    protocols.remove(_protocol);
-                    configurationEntry.setProtocolsAttribute(protocols);
+                    Set<Protocol> newProtocols = new HashSet<Protocol>(protocols);
+                    newProtocols.remove(_protocol);
+                    configurationEntry.setAttribute(Port.PROTOCOLS, newProtocols);
                 }
             }
         }
@@ -580,33 +464,31 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         }
 
         @Override
-        public void onPortConfigurationEntry(PortMutableConfigurationEntry configurationEntry)
+        public void onConfigurationEntry(ConfigurationEntry configurationEntry)
         {
-            if (!configurationEntry.isDisabled())
+            Map<String, Object> attributes = configurationEntry.getAttributes();
+            int port = ConfigurationEntryHelper.getPortAttribute(attributes);
+            if (_includedPorts.contains(port))
             {
-                int port = configurationEntry.getPortAttribute();
-                if (_includedPorts.contains(port))
+                Set<Protocol> protocols = ConfigurationEntryHelper.getProtocolsAttribute(attributes);
+                if (!protocols.contains(_protocol))
                 {
-                    Set<Protocol> protocols = configurationEntry.getProtocolsAttribute();
-                    if (!protocols.contains(_protocol))
-                    {
-                        protocols.add(_protocol);
-                        configurationEntry.setProtocolsAttribute(protocols);
-                    }
+                    Set<Protocol> newProtocols = new HashSet<Protocol>(protocols);
+                    newProtocols.add(_protocol);
+                    configurationEntry.setAttribute(Port.PROTOCOLS, newProtocols);
                 }
             }
         }
     }
 
-    public static class AddAmqpPortAction extends PortConfigurationAction
+    public static class AddAmqpPortAction implements ConfigurationAction
     {
         private int _port;
         private Transport _transport;
         private Set<Protocol> _protocols;
         private ConfigurationEntryStore _store;
 
-        public AddAmqpPortAction(int port, Transport transport, Set<Protocol> protocols,
-                ConfigurationEntryStore store)
+        public AddAmqpPortAction(int port, Transport transport, Set<Protocol> protocols, ConfigurationEntryStore store)
         {
             super();
             _port = port;
@@ -616,43 +498,61 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         }
 
         @Override
-        public Collection<MutableConfigurationEntry> apply(Collection<MutableConfigurationEntry> entries)
+        public Collection<ConfigurationEntry> apply(Collection<ConfigurationEntry> entries)
         {
-            MutableConfigurationEntry entry = findPortEntryWithTheSamePort(entries, _port);
-            if (entry == null)
-            {
-                // disable all store port entries with the same protocol type
-                // and transport
-                super.apply(entries);
-            }
-            else
-            {
-                entry.disable();
-            }
+            ConfigurationEntry entry = findPortEntryWithTheSamePort(entries, _port);
             String portName = getPortName(_port);
             UUID id = UUIDGenerator.generateBrokerChildUUID(PORT_TYPE_NAME, portName);
-            PortMutableConfigurationEntry newEntry = new PortMutableConfigurationEntry(id, PORT_TYPE_NAME, _store);
+            Map<String, Object> attributes = new HashMap<String, Object>();
             if (entry != null)
             {
-                newEntry.setAttributes(entry.getAttributes());
+                attributes.putAll(entry.getAttributes());
             }
-            newEntry.setAttribute(Port.NAME, portName);
-            newEntry.setAttribute(Port.TRANSPORTS, Collections.singleton(_transport));
-            newEntry.setAttribute(Port.PROTOCOLS, _protocols);
-            newEntry.setAttribute(Port.PORT, _port);
-            List<MutableConfigurationEntry> newEntries = new ArrayList<MutableConfigurationEntry>(entries);
+            attributes.put(Port.NAME, portName);
+            attributes.put(Port.TRANSPORTS, Collections.singleton(_transport));
+            attributes.put(Port.PROTOCOLS, _protocols);
+            attributes.put(Port.PORT, _port);
+            ConfigurationEntry newEntry = new ConfigurationEntry(id, PORT_TYPE_NAME, attributes, Collections.<UUID> emptySet(), _store);
+            List<ConfigurationEntry> newEntries = new ArrayList<ConfigurationEntry>();
             newEntries.add(newEntry);
+
+            for (ConfigurationEntry configurationEntry : entries)
+            {
+                boolean isEntryFromOriginalStoreAndHasTheSameTransportAndProtocolType = false;
+                if (PORT_TYPE_NAME.equals(configurationEntry.getType()) && configurationEntry.getStore() != _store)
+                {
+                    Map<String, Object> entryAttributes = configurationEntry.getAttributes();
+                    Set<Transport> transports = ConfigurationEntryHelper.getTransportsAttribute(entryAttributes);
+                    if (transports.contains(_transport))
+                    {
+                        Set<Protocol> protocols = ConfigurationEntryHelper.getProtocolsAttribute(entryAttributes);
+                        for (Protocol protocol : protocols)
+                        {
+                            if (protocol.getProtocolType() == ProtocolType.AMQP)
+                            {
+                                isEntryFromOriginalStoreAndHasTheSameTransportAndProtocolType = true;
+                                break;
+                            }
+                        }
+                    }
+
+                }
+                if (!isEntryFromOriginalStoreAndHasTheSameTransportAndProtocolType)
+                {
+                    newEntries.add(configurationEntry);
+                }
+            }
             return newEntries;
         }
 
-        private MutableConfigurationEntry findPortEntryWithTheSamePort(Collection<MutableConfigurationEntry> entries, int port)
+        private ConfigurationEntry findPortEntryWithTheSamePort(Collection<ConfigurationEntry> entries, int port)
         {
-            MutableConfigurationEntry entry = null;
-            for (MutableConfigurationEntry configurationEntry : entries)
+            ConfigurationEntry entry = null;
+            for (ConfigurationEntry configurationEntry : entries)
             {
-                if (configurationEntry instanceof PortMutableConfigurationEntry)
+                if (PORT_TYPE_NAME.equals(configurationEntry.getType()))
                 {
-                    int entryPort = ((PortMutableConfigurationEntry)configurationEntry).getPortAttribute();
+                    int entryPort = ConfigurationEntryHelper.getPortAttribute(configurationEntry.getAttributes());
                     if (port == entryPort)
                     {
                         entry = configurationEntry;
@@ -668,33 +568,9 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             return "cliAmqpPort" + amqpPort;
         }
 
-        @Override
-        public void onPortConfigurationEntry(PortMutableConfigurationEntry configurationEntry)
-        {
-            // disable only configuration entry if it has original attached
-            if (!configurationEntry.isDisabled() && configurationEntry.getOriginal() != null)
-            {
-                Set<Transport> transports = configurationEntry.getTransportsAttribute();
-
-                // disable only configuration entry with the same transports
-                if (transports.contains(_transport))
-                {
-                    Set<Protocol> protocols = configurationEntry.getProtocolsAttribute();
-                    for (Protocol protocol : protocols)
-                    {
-                        if (protocol.getProtocolType() == ProtocolType.AMQP)
-                        {
-                            // disable only configuration entry with the same protocol type
-                            configurationEntry.disable();
-                            break;
-                        }
-                    }
-                }
-            }
-        }
     }
 
-    public static class AddJmxPortAction extends PortConfigurationAction
+    public static class AddJmxPortAction implements ConfigurationAction
     {
         private int _port;
         private ConfigurationEntryStore _store;
@@ -709,37 +585,36 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         }
 
         @Override
-        public Collection<MutableConfigurationEntry> apply(Collection<MutableConfigurationEntry> entries)
+        public Collection<ConfigurationEntry> apply(Collection<ConfigurationEntry> entries)
         {
-            Collection<MutableConfigurationEntry> sameProtocolEntries = findPortEntriesWithTheSameProtocol(entries, _protocol);
-            super.apply(sameProtocolEntries);
             String portName = getPortName(_port);
             UUID id = UUIDGenerator.generateBrokerChildUUID(PORT_TYPE_NAME, portName);
-            PortMutableConfigurationEntry newEntry = new PortMutableConfigurationEntry(id, PORT_TYPE_NAME, _store);
-            newEntry.setAttribute(Port.NAME, portName);
-            newEntry.setAttribute(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
-            newEntry.setAttribute(Port.PROTOCOLS, Collections.singleton(_protocol));
-            newEntry.setAttribute(Port.PORT, _port);
-            List<MutableConfigurationEntry> newEntries = new ArrayList<MutableConfigurationEntry>(entries);
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(Port.NAME, portName);
+            attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
+            attributes.put(Port.PROTOCOLS, Collections.singleton(_protocol));
+            attributes.put(Port.PORT, _port);
+            ConfigurationEntry newEntry = new ConfigurationEntry(id, PORT_TYPE_NAME, attributes,
+                    Collections.<UUID> emptySet(), _store);
+            List<ConfigurationEntry> newEntries = new ArrayList<ConfigurationEntry>();
             newEntries.add(newEntry);
-            return newEntries;
-        }
-
-        private Collection<MutableConfigurationEntry> findPortEntriesWithTheSameProtocol(Collection<MutableConfigurationEntry> entries, Protocol protocol)
-        {
-            List<MutableConfigurationEntry> foundEntries = new ArrayList<MutableConfigurationEntry>();
-            for (MutableConfigurationEntry configurationEntry : entries)
+            for (ConfigurationEntry configurationEntry : entries)
             {
-                if (configurationEntry instanceof PortMutableConfigurationEntry)
+                boolean isEntryFromOriginalStoreAndHasTheSameProtocol = false;
+                if (PORT_TYPE_NAME.equals(configurationEntry.getType()) && configurationEntry.getStore() != _store)
                 {
-                    Set<Protocol> protocols = ((PortMutableConfigurationEntry)configurationEntry).getProtocolsAttribute();
-                    if (protocols.contains(protocol))
+                    Set<Protocol> protocols = ConfigurationEntryHelper.getProtocolsAttribute(configurationEntry.getAttributes());
+                    if (protocols.contains(_protocol))
                     {
-                        foundEntries.add(configurationEntry);
+                        isEntryFromOriginalStoreAndHasTheSameProtocol = true;
                     }
                 }
+                if (!isEntryFromOriginalStoreAndHasTheSameProtocol)
+                {
+                    newEntries.add(configurationEntry);
+                }
             }
-            return foundEntries;
+            return newEntries;
         }
 
         private String getPortName(Integer amqpPort)
@@ -747,13 +622,5 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
             return "cliJmxPort" + amqpPort;
         }
 
-        @Override
-        public void onPortConfigurationEntry(PortMutableConfigurationEntry configurationEntry)
-        {
-            if (!configurationEntry.isDisabled())
-            {
-                configurationEntry.disable();
-            }
-        }
     }
 }
