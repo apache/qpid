@@ -21,9 +21,27 @@
 # 
 
 #
-# Find BDB
+# Find required BerkelyDB
 #
 include (finddb.cmake)
+
+#
+# Conditionally build legacystore
+#
+set (legacystore_default ${legacystore_force})
+if (UNIX AND DB_FOUND)
+  set (legacystore_default ON)
+endif (UNIX AND DB_FOUND)
+option(BUILD_LEGACYSTORE "Build legacystore persistent store" ${legacystore_default})
+
+if (BUILD_LEGACYSTORE)
+  if (NOT UNIX)
+    message(FATAL_ERROR "Legacystore produced only on Unix platforms")
+  endif (NOT UNIX)
+  if (NOT DB_FOUND)
+    message(STATUS "Legacystore requires BerkeleyDB which is absent.")
+  endif (NOT DB_FOUND)
+endif (BUILD_LEGACYSTORE)
 
 # Journal source files
 set (legacy_jrnl_SOURCES
@@ -76,39 +94,31 @@ set (legacy_include_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore
 )
 
-if (DB_FOUND)
-    if (UNIX)
-        if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h)
-            message(STATUS "Including BDB from ${DB_INCLUDE_DIR}/db_cxx.h")
-            file(WRITE 
-                ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h
-                "#include <${DB_INCLUDE_DIR}/db_cxx.h>")
-        endif()
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h)
+  message(STATUS "Including BDB from ${DB_INCLUDE_DIR}/db_cxx.h")
+    file(WRITE 
+         ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h
+         "#include <${DB_INCLUDE_DIR}/db_cxx.h>")
+endif()
 
-        add_library (legacystore SHARED
-            ${legacy_jrnl_SOURCES}
-            ${legacy_store_SOURCES}
-            ${legacy_qmf_SOURCES}
-        )
+add_library (legacystore SHARED
+    ${legacy_jrnl_SOURCES}
+    ${legacy_store_SOURCES}
+    ${legacy_qmf_SOURCES}
+)
     
-        set_target_properties (legacystore PROPERTIES
-            PREFIX ""
-            COMPILE_DEFINITIONS _IN_QPID_BROKER
-            OUTPUT_NAME legacystore
-            SOVERSION ${legacystore_version}
-            INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
-        )
+set_target_properties (legacystore PROPERTIES
+    PREFIX ""
+    COMPILE_DEFINITIONS _IN_QPID_BROKER
+    OUTPUT_NAME legacystore
+    SOVERSION ${legacystore_version}
+    INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
+)
 
-        target_link_libraries (legacystore
-            aio
-            rt
-            uuid
-            qpidcommon qpidtypes qpidbroker
-            ${DB_LIBRARY}
-        )
-    else (UNIX)
-        message(STATUS "Legacystore produced only on Unix platforms")
-    endif (UNIX)
-else (DB_FOUND)
-    message(STATUS "BerkeleyDB not found. Legacystore is not produced")
-endif (DB_FOUND)
+target_link_libraries (legacystore
+    aio
+    rt
+    uuid
+    qpidcommon qpidtypes qpidbroker
+    ${DB_LIBRARY}
+)
