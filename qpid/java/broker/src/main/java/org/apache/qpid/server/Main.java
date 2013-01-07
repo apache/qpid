@@ -43,11 +43,11 @@ public class Main
 
     private static final Option OPTION_VERSION = new Option("v", "version", false, "print the version information and exit");
 
-    private static final Option OPTION_CONFIGURATION_STORE = OptionBuilder.withArgName("location").hasArg()
-            .withDescription("use given configuration store location").withLongOpt("config-store").create("cs");
+    private static final Option OPTION_CONFIGURATION_STORE_PATH = OptionBuilder.withArgName("path").hasArg()
+            .withDescription("use given configuration store location").withLongOpt("store-path").create("sp");
 
     private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
-            .withDescription("use given store type (json|derby), json by default").withLongOpt("config-store-type").create("cst");
+            .withDescription("use given store type").withLongOpt("store-type").create("st");
 
     private static final Option OPTION_CONFIGURATION_STORE_NO_DEFAULTS = OptionBuilder.withType(Boolean.class)
             .withDescription("disables default configuration if set to true").withLongOpt("no-defaults").create("nd");
@@ -151,7 +151,7 @@ private static final Option OPTION_INCLUDE_0_8 =
     {
         OPTIONS.addOption(OPTION_HELP);
         OPTIONS.addOption(OPTION_VERSION);
-        OPTIONS.addOption(OPTION_CONFIGURATION_STORE);
+        OPTIONS.addOption(OPTION_CONFIGURATION_STORE_PATH);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_NO_DEFAULTS);
         OPTIONS.addOption(OPTION_CONFIG_FILE);
@@ -254,10 +254,10 @@ private static final Option OPTION_INCLUDE_0_8 =
         else
         {
             BrokerOptions options = new BrokerOptions();
-            String configurationStore = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE.getOpt());
+            String configurationStore = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE_PATH.getOpt());
             if (configurationStore != null)
             {
-                options.setConfigurationStore(configurationStore);
+                options.setConfigurationStoreLocation(configurationStore);
             }
             String configurationStoreType = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE_TYPE.getOpt());
             if (configurationStoreType != null)

@@ -40,6 +40,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -65,7 +66,7 @@ public class BrokerTestHelper
 {
 
     protected static final String BROKER_STORE_CLASS_NAME_KEY = "brokerstore.class.name";
-    protected static final String JSON_BROKER_STORE_CLASS_NAME = "org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore";
+    protected static final String JSON_BROKER_STORE_CLASS_NAME = JsonConfigurationEntryStore.class.getName();
 
 
     public static Broker createBrokerMock()

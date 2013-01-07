@@ -130,6 +130,7 @@ public class ConfigurationEntry
         {
             return false;
         }
+
         ConfigurationEntry other = (ConfigurationEntry) obj;
         if (_id == null)
         {
@@ -142,6 +143,7 @@ public class ConfigurationEntry
         {
             return false;
         }
+
         if (_type == null)
         {
             if (other._type != null)
@@ -153,6 +155,7 @@ public class ConfigurationEntry
         {
             return false;
         }
+
         if (_store == null)
         {
             if (other._store != null)
@@ -164,6 +167,7 @@ public class ConfigurationEntry
         {
             return false;
         }
+
         if (_childrenIds == null)
         {
             if (other._childrenIds != null)
@@ -175,6 +179,7 @@ public class ConfigurationEntry
         {
             return false;
         }
+
         if (_attributes == null)
         {
             if (other._attributes != null)

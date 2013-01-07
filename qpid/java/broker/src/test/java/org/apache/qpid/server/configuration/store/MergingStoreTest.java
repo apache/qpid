@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import static org.apache.qpid.server.configuration.ConfigurationEntryStoreFactory.DEFAULT_STORE;
+import static org.apache.qpid.server.configuration.ConfigurationEntryStoreFactory.DEFAULTS;
 
 import java.io.File;
 import java.util.Collection;
@@ -48,7 +48,7 @@ public class MergingStoreTest extends QpidTestCase
     {
         super.setUp();
         setTestSystemProperty("QPID_HOME", TMP_FOLDER);
-        _masterStore = new JsonConfigurationEntryStore(getClass().getClassLoader().getResource(DEFAULT_STORE));
+        _masterStore = new JsonConfigurationEntryStore(getClass().getClassLoader().getResource(DEFAULTS));
         _userStoreFile = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
         _userStore = createStore(_userStoreFile);
     }

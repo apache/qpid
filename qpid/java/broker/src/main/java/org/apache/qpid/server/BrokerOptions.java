@@ -32,6 +32,7 @@ public class BrokerOptions
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
+    public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
 
     private final Set<Integer> _ports = new HashSet<Integer>();
     private final Set<Integer> _sslPorts = new HashSet<Integer>();
@@ -48,9 +49,9 @@ public class BrokerOptions
     private String _qpidWorkFolder;
     private String _qpidHomeFolder;
 
-    private String _configurationStore;
+    private String _configurationStoreLocation;
     private String _configurationStoreType;
-    private boolean _noDefault;
+    private boolean _noDefaultConfiguration;
 
     public void addPort(final int port)
     {
@@ -191,14 +192,14 @@ public class BrokerOptions
         _qpidHomeFolder = qpidHomeFolder;
     }
 
-    public String getConfigurationStore()
+    public String getConfigurationStoreLocation()
     {
-        return _configurationStore;
+        return _configurationStoreLocation;
     }
 
-    public void setConfigurationStore(String cofigurationStore)
+    public void setConfigurationStoreLocation(String cofigurationStore)
     {
-        _configurationStore = cofigurationStore;
+        _configurationStoreLocation = cofigurationStore;
     }
 
     public String getConfigurationStoreType()
@@ -211,14 +212,14 @@ public class BrokerOptions
         _configurationStoreType = cofigurationStoreType;
     }
 
-    public boolean isNoDefault()
+    public boolean isNoDefaultConfiguration()
     {
-        return _noDefault;
+        return _noDefaultConfiguration;
     }
 
-    public void setNoDefault(boolean noDefault)
+    public void setNoDefaultConfiguration(boolean noDefault)
     {
-        _noDefault = noDefault;
+        _noDefaultConfiguration = noDefault;
     }
 
 }

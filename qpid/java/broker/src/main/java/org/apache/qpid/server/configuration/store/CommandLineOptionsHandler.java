@@ -119,6 +119,10 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         if (jmxRegistryPort != null)
         {
             actions.add(new AddJmxPortAction(jmxRegistryPort, Protocol.RMI, this));
+            if (jmxConnectorPort == null)
+            {
+                actions.add(new AddJmxPortAction(jmxRegistryPort + BrokerOptions.JMXPORT_CONNECTORSERVER_OFFSET, Protocol.JMX_RMI, this));
+            }
         }
 
         Set<Integer> exclude_1_0 = options.getExcludedPorts(ProtocolExclusion.v1_0);
@@ -242,9 +246,10 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
                 {
                     storeEntries.add(entry);
                 }
-                if  (override != null)
+                else
                 {
-                    if (override.getStore() == _store)
+                    //TODO: wrong for cases when entry is not modified by command line actions
+                    if (override.getStore() != this)
                     {
                         throw new IllegalConfigurationException("Cannot store entry which was overridden by command line options: "  + entry);
                     }
@@ -283,11 +288,11 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
                     throw new IllegalConfigurationException("Cannot remove root entry");
                 }
                 ConfigurationEntry override = _cliEntries.get(entryId);
-                if (override == null || override.getStore() == _store)
+                if (override == null || override.getStore() != this)
                 {
                     storeEntries.add(entryId);
                 }
-                if (override != null)
+                else
                 {
                     nonStoreEntries.add(entryId);
                 }
@@ -318,27 +323,15 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         public static int getPortAttribute(Map<String, Object> attributes)
         {
             Object portAttribute = attributes.get(Port.PORT);
-            if (portAttribute == null || "".equals(portAttribute))
+            if (portAttribute == null)
             {
                 throw new IllegalConfigurationException("Port attribute is not set for port entry " + attributes);
             }
-            int port = 0;
-            if (portAttribute instanceof String)
+            if (!(portAttribute instanceof Number))
             {
-                try
-                {
-                    port = Integer.parseInt((String) portAttribute);
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalConfigurationException("Port attribute is not an integer: " + portAttribute);
-                }
+                throw new IllegalConfigurationException("Not numeric port value " + portAttribute);
             }
-            else if (portAttribute instanceof Number)
-            {
-                port = ((Number) portAttribute).intValue();
-            }
-            return port;
+            return((Number) portAttribute).intValue();
         }
 
         public static Set<Protocol> getProtocolsAttribute(Map<String, Object> attributes)
@@ -500,14 +493,9 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         @Override
         public Collection<ConfigurationEntry> apply(Collection<ConfigurationEntry> entries)
         {
-            ConfigurationEntry entry = findPortEntryWithTheSamePort(entries, _port);
             String portName = getPortName(_port);
             UUID id = UUIDGenerator.generateBrokerChildUUID(PORT_TYPE_NAME, portName);
             Map<String, Object> attributes = new HashMap<String, Object>();
-            if (entry != null)
-            {
-                attributes.putAll(entry.getAttributes());
-            }
             attributes.put(Port.NAME, portName);
             attributes.put(Port.TRANSPORTS, Collections.singleton(_transport));
             attributes.put(Port.PROTOCOLS, _protocols);
@@ -543,24 +531,6 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
                 }
             }
             return newEntries;
-        }
-
-        private ConfigurationEntry findPortEntryWithTheSamePort(Collection<ConfigurationEntry> entries, int port)
-        {
-            ConfigurationEntry entry = null;
-            for (ConfigurationEntry configurationEntry : entries)
-            {
-                if (PORT_TYPE_NAME.equals(configurationEntry.getType()))
-                {
-                    int entryPort = ConfigurationEntryHelper.getPortAttribute(configurationEntry.getAttributes());
-                    if (port == entryPort)
-                    {
-                        entry = configurationEntry;
-                        break;
-                    }
-                }
-            }
-            return entry;
         }
 
         private String getPortName(Integer amqpPort)

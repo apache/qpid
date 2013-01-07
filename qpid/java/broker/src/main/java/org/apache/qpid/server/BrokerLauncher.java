@@ -108,10 +108,10 @@ public class BrokerLauncher
     private void startupImpl(final BrokerOptions options) throws Exception
     {
         final String qpidHome = options.getQpidHome();
-        String storeLocation = options.getConfigurationStore();
+        String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        // Temporarily support for old configuration file option
+        //TODO: remove code below. A temporarily support for old configuration file option
         if (storeLocation == null && storeType == null && options.getConfigFile() != null)
         {
             storeLocation = options.getConfigFile();

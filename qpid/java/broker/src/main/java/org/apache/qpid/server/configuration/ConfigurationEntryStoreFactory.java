@@ -35,7 +35,7 @@ public class ConfigurationEntryStoreFactory
     /**
      * Path to resource containing broker default configuration
      */
-    public static final String DEFAULT_STORE = "default.json";
+    public static final String DEFAULTS = "default.json";
 
     /**
      * Create broker configuration store for given store location, store type
@@ -60,14 +60,13 @@ public class ConfigurationEntryStoreFactory
                 throw new IllegalConfigurationException("Unexpected error", e);
             }
         case DERBY:
-        case BDB:
         default:
             throw new IllegalConfigurationException("Unsupported store type " + type);
         }
 
-        if (!options.isNoDefault())
+        if (!options.isNoDefaultConfiguration())
         {
-            URL defaultStoreLocation = ConfigurationEntryStoreFactory.class.getClassLoader().getResource(DEFAULT_STORE);
+            URL defaultStoreLocation = ConfigurationEntryStoreFactory.class.getClassLoader().getResource(DEFAULTS);
             store = new MergingStore(store, new JsonConfigurationEntryStore(defaultStoreLocation));
         }
 
@@ -76,7 +75,7 @@ public class ConfigurationEntryStoreFactory
 
     public static enum ConfigurationEntryStoreType
     {
-        JSON, XML, DERBY, BDB;
+        JSON, XML, DERBY;
 
         public static ConfigurationEntryStoreType getType(String storeType, String storeLocation)
         {

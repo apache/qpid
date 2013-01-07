@@ -68,7 +68,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
 
         HashMap<String, Object> amqpPortAttributes = new HashMap<String, Object>();
         amqpPortAttributes.put(Port.NAME, "myAmqpPort");
-        amqpPortAttributes.put(Port.PORT, "1");
+        amqpPortAttributes.put(Port.PORT, 1);
         amqpPortAttributes.put(Port.TRANSPORTS, new HashSet<String>(Arrays.asList(Transport.TCP.name())));
         _amqpPortProtocols = new HashSet<String>(Arrays.asList(Protocol.AMQP_1_0.name(), Protocol.AMQP_0_10.name(),
                 Protocol.AMQP_0_9_1.name()));
@@ -80,7 +80,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
 
         HashMap<String, Object> amqpSslPortAttributes = new HashMap<String, Object>();
         amqpSslPortAttributes.put(Port.NAME, "myAmqpSslPort");
-        amqpSslPortAttributes.put(Port.PORT, "2");
+        amqpSslPortAttributes.put(Port.PORT, 2);
         amqpSslPortAttributes.put(Port.TRANSPORTS, new HashSet<String>(Arrays.asList(Transport.SSL.name())));
         HashSet<String> amqpSsslPortProtocols = new HashSet<String>(Arrays.asList(Protocol.AMQP_0_8.name(),
                 Protocol.AMQP_0_9.name(), Protocol.AMQP_0_9_1.name()));
@@ -93,7 +93,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
 
         HashMap<String, Object> registryPortAttributes = new HashMap<String, Object>();
         registryPortAttributes.put(Port.NAME, "myRegistryPort");
-        registryPortAttributes.put(Port.PORT, "3");
+        registryPortAttributes.put(Port.PORT, 3);
         registryPortAttributes.put(Port.TRANSPORTS, new HashSet<String>(Arrays.asList(Transport.TCP.name())));
         registryPortAttributes.put(Port.PROTOCOLS, new HashSet<String>(Arrays.asList(Protocol.RMI.name())));
         ConfigurationEntry registryPort = new ConfigurationEntry(_registryPortId, Port.class.getSimpleName(),
@@ -102,7 +102,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
 
         HashMap<String, Object> connectorPortAttributes = new HashMap<String, Object>();
         connectorPortAttributes.put(Port.NAME, "myConnectorPort");
-        connectorPortAttributes.put(Port.PORT, "4");
+        connectorPortAttributes.put(Port.PORT, 4);
         connectorPortAttributes.put(Port.TRANSPORTS, new HashSet<String>(Arrays.asList(Transport.TCP.name())));
         connectorPortAttributes.put(Port.PROTOCOLS, new HashSet<String>(Arrays.asList(Protocol.JMX_RMI.name())));
         connectorPortAttributes.put("KEY_STORE", "myKeyStore");
@@ -138,7 +138,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
         ConfigurationEntry originalPortEntry = _originalStoreEntries.get(_amqpPortId);
         Map<String, Object> amqpPortAttributes = amqpPort.getAttributes();
         Map<String, Object> originalAmqpPortAttributes = originalPortEntry.getAttributes();
-        assertEquals("Unexpected amqp port", "1", amqpPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected amqp port", 1, amqpPortAttributes.get(Port.PORT));
         assertEquals("Unexpected amqp port binding address", "127.0.0.1", amqpPortAttributes.get(Port.BINDING_ADDRESS));
         assertEquals("Unexpected amqp port transports", originalAmqpPortAttributes.get(Port.NAME),
                 amqpPortAttributes.get(Port.NAME));
@@ -155,7 +155,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
         ConfigurationEntry originalSslPortEntry = _originalStoreEntries.get(_amqpSslPortId);
         Map<String, Object> amqpSslPortAttributes = amqpSslPort.getAttributes();
         Map<String, Object> originalSslPortAttributes = originalSslPortEntry.getAttributes();
-        assertEquals("Unexpected amqp port", "2", amqpSslPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected amqp port", 2, amqpSslPortAttributes.get(Port.PORT));
         assertEquals("Unexpected amqp port binding address", "127.0.0.1", amqpSslPortAttributes.get(Port.BINDING_ADDRESS));
         assertEquals("Unexpected amqp port name", originalSslPortAttributes.get(Port.NAME), amqpSslPortAttributes.get(Port.NAME));
         assertEquals("Unexpected amqp port transports", originalSslPortAttributes.get(Port.TRANSPORTS),
@@ -202,7 +202,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
             ConfigurationEntry originalPortEntry = _originalStoreEntries.get(_amqpPortId);
             Map<String, Object> amqpPortAttributes = amqpPort.getAttributes();
             Map<String, Object> originalAmqpPortAttributes = originalPortEntry.getAttributes();
-            assertEquals("Unexpected amqp port", "1", amqpPortAttributes.get(Port.PORT));
+            assertEquals("Unexpected amqp port", 1, amqpPortAttributes.get(Port.PORT));
             assertEquals("Unexpected amqp port binding address", null, amqpPortAttributes.get(Port.BINDING_ADDRESS));
             assertEquals("Unexpected amqp port transports", originalAmqpPortAttributes.get(Port.NAME),
                     amqpPortAttributes.get(Port.NAME));
@@ -247,7 +247,7 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
             ConfigurationEntry originalPortEntry = _originalStoreEntries.get(_amqpPortId);
             Map<String, Object> amqpPortAttributes = amqpPort.getAttributes();
             Map<String, Object> originalAmqpPortAttributes = originalPortEntry.getAttributes();
-            assertEquals("Unexpected amqp port", "1", amqpPortAttributes.get(Port.PORT));
+            assertEquals("Unexpected amqp port", 1, amqpPortAttributes.get(Port.PORT));
             assertEquals("Unexpected amqp port binding address", null, amqpPortAttributes.get(Port.BINDING_ADDRESS));
             assertEquals("Unexpected amqp port transports", originalAmqpPortAttributes.get(Port.NAME),
                     amqpPortAttributes.get(Port.NAME));
@@ -314,14 +314,76 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
         ConfigurationEntry registryPort = registryPorts.iterator().next();
         assertNotNull("CLI connector port is not found", registryPort);
         Map<String, Object> registryPortAttributes = registryPort.getAttributes();
-        assertEquals("Unexpected connector port value", 30, registryPortAttributes.get(Port.PORT));
-        assertEquals("Unexpected connector port name", "cliJmxPort30", registryPortAttributes.get(Port.NAME));
-        assertEquals("Unexpected connector port transports", Collections.singleton(Transport.TCP),
+        assertEquals("Unexpected registry port value", 30, registryPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected registry port name", "cliJmxPort30", registryPortAttributes.get(Port.NAME));
+        assertEquals("Unexpected registry port transports", Collections.singleton(Transport.TCP),
                 MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, registryPortAttributes, Transport.class));
-        assertEquals("Unexpected connector port protocols", Collections.singleton(Protocol.RMI),
+        assertEquals("Unexpected registry port protocols", Collections.singleton(Protocol.RMI),
                 MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, registryPortAttributes, Protocol.class));
 
-        assertPortsUnchanged(ports, _amqpPortId, _amqpSslPortId, _connectorPortId);
+        // overriding the registry port automatically overrides the connector port to <registry port> + 100
+        ConfigurationEntry oldConnectorPort = findById(_connectorPortId, ports);
+        assertNull("Store connector port is found", oldConnectorPort);
+
+        Collection<ConfigurationEntry> connectorPorts = findByProtocol(Protocol.JMX_RMI, ports);
+        assertEquals("Unexpected number of connector ports", 1, connectorPorts.size());
+        ConfigurationEntry connectorPort = connectorPorts.iterator().next();
+        assertNotNull("CLI connector port is not found", connectorPort);
+        Map<String, Object> connectorPortAttributes = connectorPort.getAttributes();
+        assertEquals("Unexpected connector port value", 30 + BrokerOptions.JMXPORT_CONNECTORSERVER_OFFSET,
+                connectorPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected connector port name", "cliJmxPort" + (30 + BrokerOptions.JMXPORT_CONNECTORSERVER_OFFSET),
+                connectorPortAttributes.get(Port.NAME));
+        assertEquals("Unexpected connector port transports", Collections.singleton(Transport.TCP),
+                MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, connectorPortAttributes, Transport.class));
+        assertEquals("Unexpected connector port protocols", Collections.singleton(Protocol.JMX_RMI),
+                MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, connectorPortAttributes, Protocol.class));
+
+        assertPortsUnchanged(ports, _amqpPortId, _amqpSslPortId);
+    }
+
+    public void testJMXRegistryAndConnectorPortOverride()
+    {
+        BrokerOptions options = new BrokerOptions();
+        options.setJmxPortRegistryServer(30);
+        options.setJmxPortConnectorServer(40);
+
+        Collection<ConfigurationEntry> ports = createStoreAndGetPorts(options);
+        assertEquals("Unexpected port number", 4, ports.size());
+
+        ConfigurationEntry oldRegistryPort = findById(_registryPortId, ports);
+        assertNull("Store registry port is found", oldRegistryPort);
+
+        Collection<ConfigurationEntry> registryPorts = findByProtocol(Protocol.RMI, ports);
+        assertEquals("Unexpected number of registry ports", 1, registryPorts.size());
+        ConfigurationEntry registryPort = registryPorts.iterator().next();
+        assertNotNull("CLI connector port is not found", registryPort);
+        Map<String, Object> registryPortAttributes = registryPort.getAttributes();
+        assertEquals("Unexpected registry port value", 30, registryPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected registry port name", "cliJmxPort30", registryPortAttributes.get(Port.NAME));
+        assertEquals("Unexpected registry port transports", Collections.singleton(Transport.TCP),
+                MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, registryPortAttributes, Transport.class));
+        assertEquals("Unexpected registry port protocols", Collections.singleton(Protocol.RMI),
+                MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, registryPortAttributes, Protocol.class));
+
+        ConfigurationEntry oldConnectorPort = findById(_connectorPortId, ports);
+        assertNull("Store connector port is found", oldConnectorPort);
+
+        Collection<ConfigurationEntry> connectorPorts = findByProtocol(Protocol.JMX_RMI, ports);
+        assertEquals("Unexpected number of connector ports", 1, connectorPorts.size());
+        ConfigurationEntry connectorPort = connectorPorts.iterator().next();
+        assertNotNull("CLI connector port is not found", connectorPort);
+        Map<String, Object> connectorPortAttributes = connectorPort.getAttributes();
+        assertEquals("Unexpected connector port value", 40,
+                connectorPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected connector port name", "cliJmxPort" + 40,
+                connectorPortAttributes.get(Port.NAME));
+        assertEquals("Unexpected connector port transports", Collections.singleton(Transport.TCP),
+                MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, connectorPortAttributes, Transport.class));
+        assertEquals("Unexpected connector port protocols", Collections.singleton(Protocol.JMX_RMI),
+                MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, connectorPortAttributes, Protocol.class));
+
+        assertPortsUnchanged(ports, _amqpPortId, _amqpSslPortId);
     }
 
     public void testAmqpPortOverride()
@@ -346,6 +408,45 @@ public class CommandLineOptionsHandlerTest extends QpidTestCase
                 EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10, Protocol.AMQP_1_0),
                 amqpPortAttributes.get(Port.PROTOCOLS));
         assertEquals("Unexpected amqp port transports", EnumSet.of(Transport.TCP), amqpPortAttributes.get(Port.TRANSPORTS));
+
+        assertPortsUnchanged(ports, _amqpSslPortId, _registryPortId, _connectorPortId);
+    }
+
+    public void testSeveralAmqpPortOverride()
+    {
+        BrokerOptions options = new BrokerOptions();
+        options.addPort(10);
+        options.addPort(100);
+
+        Collection<ConfigurationEntry> ports = createStoreAndGetPorts(options);
+        assertEquals("Unexpected port number", 5, ports.size());
+
+        ConfigurationEntry storeAmqpPort = findById(_amqpPortId, ports);
+        assertNull("Store amqp port is found", storeAmqpPort);
+
+        UUID cliPortId = UUIDGenerator.generateBrokerChildUUID(Port.class.getSimpleName(), "cliAmqpPort10");
+        ConfigurationEntry amqpPort = findById(cliPortId, ports);
+        assertNotNull("CLI amqp port is not found", amqpPort);
+        Map<String, Object> amqpPortAttributes = amqpPort.getAttributes();
+        assertEquals("Unexpected amqp port", 10, amqpPortAttributes.get(Port.PORT));
+        assertEquals("Unexpected amqp port binding address", null, amqpPortAttributes.get(Port.BINDING_ADDRESS));
+        assertEquals("Unexpected amqp port name", "cliAmqpPort10", amqpPortAttributes.get(Port.NAME));
+        assertEquals("Unexpected amqp port protocols",
+                EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10, Protocol.AMQP_1_0),
+                amqpPortAttributes.get(Port.PROTOCOLS));
+        assertEquals("Unexpected amqp port transports", EnumSet.of(Transport.TCP), amqpPortAttributes.get(Port.TRANSPORTS));
+
+        UUID cliPort2Id = UUIDGenerator.generateBrokerChildUUID(Port.class.getSimpleName(), "cliAmqpPort100");
+        ConfigurationEntry amqpPort2 = findById(cliPort2Id, ports);
+        assertNotNull("CLI amqp port is not found", amqpPort2);
+        Map<String, Object> amqpPort2Attributes = amqpPort2.getAttributes();
+        assertEquals("Unexpected amqp port", 100, amqpPort2Attributes.get(Port.PORT));
+        assertEquals("Unexpected amqp port binding address", null, amqpPort2Attributes.get(Port.BINDING_ADDRESS));
+        assertEquals("Unexpected amqp port name", "cliAmqpPort100", amqpPort2Attributes.get(Port.NAME));
+        assertEquals("Unexpected amqp port protocols",
+                EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10, Protocol.AMQP_1_0),
+                amqpPort2Attributes.get(Port.PROTOCOLS));
+        assertEquals("Unexpected amqp port transports", EnumSet.of(Transport.TCP), amqpPort2Attributes.get(Port.TRANSPORTS));
 
         assertPortsUnchanged(ports, _amqpSslPortId, _registryPortId, _connectorPortId);
     }

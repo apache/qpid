@@ -34,8 +34,12 @@ public class JMXManagementFactory implements PluginFactory
     private static final Logger LOGGER = Logger.getLogger(JMXManagementFactory.class);
 
     public static final String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
+
+    //TODO: re-factor key store settings
     public static final String KEY_STORE_PATH = "keyStorePath";
     public static final String KEY_STORE_PASSWORD = "keyStorePassword";
+
+    //TODO: make it set via system property
     public static final String MANAGEMENT_RIGHTS_INFER_ALL_ACCESS = "managementRightsInferAllAccess";
 
     public static final String PLUGIN_NAME = "MANAGEMENT-JMX";

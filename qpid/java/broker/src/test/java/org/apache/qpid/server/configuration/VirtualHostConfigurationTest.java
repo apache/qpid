@@ -251,22 +251,6 @@ public class VirtualHostConfigurationTest extends QpidTestCase
     }
 
     /**
-     * Test default house keeping tasks
-     *
-     * @throws Exception
-     */
-    public void testDefaultHouseKeepingTasks() throws Exception
-    {
-        VirtualHost vhost = createVirtualHost(getName());
-
-        assertEquals("Default houseKeeping task count incorrect.", 1,
-                     vhost.getHouseKeepingTaskCount());
-
-        // Currently the task is:
-        // ExpiredMessageTask from VirtualHostC
-    }
-
-    /**
       * Test that we can dynamically change the thread pool size
       *
       * @throws Exception

@@ -31,16 +31,22 @@ import org.apache.qpid.util.FileUtils;
 
 public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
 {
-    private File _userStoreFile;
+    private File _userStoreLocation;
     private ConfigurationEntryStoreFactory _factory;
     private BrokerOptions _options;
 
     public void setUp() throws Exception
     {
         super.setUp();
-        setTestSystemProperty("QPID_HOME", TMP_FOLDER);
+
+        // check whether QPID_HOME JVM system property is set
+        if (QPID_HOME == null)
+        {
+            // set the properties in order to resolve the defaults store settings
+            setTestSystemProperty("QPID_HOME", TMP_FOLDER);
+        }
         _factory = new ConfigurationEntryStoreFactory();
-        _userStoreFile = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
+        _userStoreLocation = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
         _options = new BrokerOptions();
     }
 
@@ -52,54 +58,41 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
         }
         finally
         {
-            if (_userStoreFile != null)
+            if (_userStoreLocation != null)
             {
-                FileUtils.delete(_userStoreFile, true);
+                FileUtils.delete(_userStoreLocation, true);
             }
         }
     }
+
     public void testCreateJsonStoreWithDefaults()
     {
-        _options.setNoDefault(false);
-        ConfigurationEntryStore store = _factory.createStore(_userStoreFile.getAbsolutePath(), "json", _options);
+        ConfigurationEntryStore store = _factory.createStore(_userStoreLocation.getAbsolutePath(), "json", _options);
         assertNotNull("Store was not created", store);
-        assertTrue("File should exist", _userStoreFile.exists());
-        assertTrue("File should exist", _userStoreFile.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreFile);
+        assertTrue("File should exists", _userStoreLocation.exists());
+        assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation);
         assertFalse("Unexpected children", jsonStore.getRootEntry().getChildrenIds().isEmpty());
     }
 
     public void testCreateJsonStoreWithNoDefaults()
     {
-        _options.setNoDefault(true);
-        ConfigurationEntryStore store = _factory.createStore(_userStoreFile.getAbsolutePath(), "json", _options);
+        _options.setNoDefaultConfiguration(true);
+        ConfigurationEntryStore store = _factory.createStore(_userStoreLocation.getAbsolutePath(), "json", _options);
         assertNotNull("Store was not created", store);
-        assertTrue("File should exist", _userStoreFile.exists());
-        assertTrue("File should exist", _userStoreFile.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreFile);
+        assertTrue("File should exists", _userStoreLocation.exists());
+        assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation);
         assertTrue("Unexpected children", jsonStore.getRootEntry().getChildrenIds().isEmpty());
     }
 
     public void testCreateDerbyStoreWithNoDefaults()
     {
-        _options.setNoDefault(true);
+        //TODO: Implement DERBY store
+        _options.setNoDefaultConfiguration(true);
         try
         {
-            _factory.createStore(_userStoreFile.getAbsolutePath(), "derby", _options);
-            fail("Store is not yet supported");
-        }
-        catch(IllegalConfigurationException e)
-        {
-            // pass
-        }
-    }
-
-    public void testCreateBDBDerbyStoreWithNoDefaults()
-    {
-        _options.setNoDefault(true);
-        try
-        {
-            _factory.createStore(_userStoreFile.getAbsolutePath(), "bdb", _options);
+            _factory.createStore(_userStoreLocation.getAbsolutePath(), "derby", _options);
             fail("Store is not yet supported");
         }
         catch(IllegalConfigurationException e)
@@ -110,10 +103,11 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
 
     public void testCreateXmlStoreWithNoDefaults() throws Exception
     {
-        _options.setNoDefault(true);
+        //TODO: Remove XML store
+        _options.setNoDefaultConfiguration(true);
         XMLConfiguration config = new XMLConfiguration();
-        config.save(_userStoreFile);
-        ConfigurationEntryStore store = _factory.createStore(_userStoreFile.getAbsolutePath(), "xml", _options);
+        config.save(_userStoreLocation);
+        ConfigurationEntryStore store = _factory.createStore(_userStoreLocation.getAbsolutePath(), "xml", _options);
         assertNotNull("Store was not created", store);
         assertTrue("Unexpected store type", store instanceof XMLConfigurationEntryStore);
     }
