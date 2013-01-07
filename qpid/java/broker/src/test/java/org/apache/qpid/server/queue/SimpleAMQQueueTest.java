@@ -659,7 +659,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
                                         public void onRollback()
                                         {
                                         }
-                                    }, 0L);
+                                    });
 
         // Check that it is enqueued
         AMQQueue data = store.getMessages().get(1L);

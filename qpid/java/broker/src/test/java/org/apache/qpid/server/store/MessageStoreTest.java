@@ -630,7 +630,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
-            }, 0L);
+            });
         }
     }
 

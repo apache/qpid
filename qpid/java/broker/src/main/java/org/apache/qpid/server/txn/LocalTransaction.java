@@ -49,23 +49,40 @@ public class LocalTransaction implements ServerTransaction
     private final List<Action> _postTransactionActions = new ArrayList<Action>();
 
     private volatile Transaction _transaction;
-    private MessageStore _transactionLog;
+    private final ActivityTimeAccessor _activityTime;
+    private final MessageStore _transactionLog;
     private volatile long _txnStartTime = 0L;
+    private volatile long _txnUpdateTime = 0l;
     private StoreFuture _asyncTran;
 
     public LocalTransaction(MessageStore transactionLog)
     {
-        _transactionLog = transactionLog;
-    }
-    
-    public boolean inTransaction()
-    {
-        return _transaction != null;
+        this(transactionLog, new ActivityTimeAccessor()
+        {
+            @Override
+            public long getActivityTime()
+            {
+                return System.currentTimeMillis();
+            }
+        });
     }
 
+    public LocalTransaction(MessageStore transactionLog, ActivityTimeAccessor activityTime)
+    {
+        _transactionLog = transactionLog;
+        _activityTime = activityTime;
+    }
+
+    @Override
     public long getTransactionStartTime()
     {
         return _txnStartTime;
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
+    {
+        return _txnUpdateTime;
     }
 
     public void addPostTransactionAction(Action postTransactionAction)
@@ -78,6 +95,7 @@ public class LocalTransaction implements ServerTransaction
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
+        initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
         if(message.isPersistent() && queue.isDurable())
         {
@@ -104,6 +122,7 @@ public class LocalTransaction implements ServerTransaction
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
+        initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
         try
         {
@@ -180,6 +199,7 @@ public class LocalTransaction implements ServerTransaction
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
+        initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
         if(message.isPersistent() && queue.isDurable())
         {
@@ -189,7 +209,7 @@ public class LocalTransaction implements ServerTransaction
                 {
                     _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getNameShortString());
                 }
-                
+
                 beginTranIfNecessary();
                 _transaction.enqueueMessage(queue, message);
             }
@@ -202,15 +222,11 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
-
-        if (_txnStartTime == 0L)
-        {
-            _txnStartTime = currentTime == 0L ? System.currentTimeMillis() : currentTime;
-        }
+        initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
         if(message.isPersistent())
         {
@@ -224,8 +240,7 @@ public class LocalTransaction implements ServerTransaction
                         {
                             _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getNameShortString() );
                         }
-                        
-                        
+
                         beginTranIfNecessary();
                         _transaction.enqueueMessage(queue, message);
                     }
@@ -378,8 +393,6 @@ public class LocalTransaction implements ServerTransaction
             }
             throw new RuntimeException("Failed to commit transaction", e);
         }
-
-
     }
 
     private void doPostTransactionActions()
@@ -437,16 +450,34 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
+    private void initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime()
+    {
+        long currentTime = _activityTime.getActivityTime();
+
+        if (_txnStartTime == 0)
+        {
+            _txnStartTime = currentTime;
+        }
+        _txnUpdateTime = currentTime;
+    }
+
     private void resetDetails()
     {
         _asyncTran = null;
         _transaction = null;
-	    _postTransactionActions.clear();
+        _postTransactionActions.clear();
         _txnStartTime = 0L;
+        _txnUpdateTime = 0;
     }
 
     public boolean isTransactional()
     {
         return true;
     }
+
+    public interface ActivityTimeAccessor
+    {
+        long getActivityTime();
+    }
+
 }
