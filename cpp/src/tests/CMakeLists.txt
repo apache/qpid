@@ -344,3 +344,8 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 #EXTRA_DIST+=$(LONG_TESTS) run_perftest
 #check-long:
 #	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
+
+#
+# legacystore
+#
+add_subdirectory(legacystore)
