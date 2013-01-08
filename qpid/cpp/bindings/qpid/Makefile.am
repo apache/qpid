@@ -70,7 +70,6 @@ maintainer-clean-local:
 		$(PERL) maintainer-clean ; \
 	cd ..
 
-DISTCLEANFILES = perl/Makefile.PL
 CLEANFILES = perl/cqpid_perl.cpp perl/Makefile.old perl/cqpid_perl.pm
 
 endif
