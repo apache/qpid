@@ -272,38 +272,6 @@ MessageStore* LinkRegistry::getStore() const {
     return store;
 }
 
-namespace {
-    void extractHostPort(const std::string& connId, std::string *host, uint16_t *port)
-    {
-        // Extract host and port of remote broker from connection id string.
-        //
-        // TODO aconway 2011-02-01: centralize code that constructs/parses connection
-        // management IDs. Currently sys:: protocol factories and IO plugins construct the
-        // IDs and LinkRegistry parses them.
-        // KAG: current connection id format assumed:
-        // "localhost:port-remotehost:port".  In the case of IpV6, the host addresses are
-        // contained within brackets "[...]", example:
-        // connId="[::1]:36859-[::1]:48603". Liberal use of "asserts" provided to alert us
-        // if this assumption changes!
-        size_t separator = connId.find('-');
-        assert(separator != std::string::npos);
-        std::string remote = connId.substr(separator+1, std::string::npos);
-        separator = remote.rfind(":");
-        assert(separator != std::string::npos);
-        *host = remote.substr(0, separator);
-        // IPv6 - host is bracketed by "[]", strip them
-        if ((*host)[0] == '[' && (*host)[host->length() - 1] == ']') {
-            *host = host->substr(1, host->length() - 2);
-        }
-        try {
-            *port = boost::lexical_cast<uint16_t>(remote.substr(separator+1, std::string::npos));
-        } catch (const boost::bad_lexical_cast&) {
-            QPID_LOG(error, "Invalid format for connection identifier! '" << connId << "'");
-            assert(false);
-        }
-    }
-}
-
 /** find the Link that corresponds to the given connection */
 Link::shared_ptr LinkRegistry::findLink(const std::string& connId)
 {
@@ -323,19 +291,15 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
     // create a mapping from connection id to link
     QPID_LOG(debug, "LinkRegistry::notifyConnection(); key=" << key );
     std::string host;
-    uint16_t port = 0;
-    extractHostPort( key, &host, &port );
     Link::shared_ptr link;
     {
         Mutex::ScopedLock locker(lock);
-        for (LinkMap::iterator l = pendingLinks.begin(); l != pendingLinks.end(); ++l) {
-            if (l->second->pendingConnection(host, port)) {
-                link = l->second;
-                pendingLinks.erase(l);
-                connections[key] = link->getName();
-                QPID_LOG(debug, "LinkRegistry:: found pending =" << link->getName());
-                break;
-            }
+        LinkMap::iterator l = pendingLinks.find(key);
+        if (l != pendingLinks.end()) {
+            link = l->second;
+            pendingLinks.erase(l);
+            connections[key] = link->getName();
+            QPID_LOG(debug, "LinkRegistry:: found pending =" << link->getName());
         }
     }
 

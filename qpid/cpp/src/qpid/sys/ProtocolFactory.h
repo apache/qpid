@@ -42,6 +42,7 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
     virtual void accept(boost::shared_ptr<Poller>, ConnectionCodec::Factory*) = 0;
     virtual void connect(
         boost::shared_ptr<Poller>,
+        const std::string& name,
         const std::string& host, const std::string& port,
         ConnectionCodec::Factory* codec,
         ConnectFailedCallback failed) = 0;
