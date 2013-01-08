@@ -23,6 +23,7 @@
 
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/NameGenerator.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/AsynchIOHandler.h"
 #include "qpid/sys/AsynchIO.h"
@@ -76,15 +77,16 @@ class SslProtocolFactory : public ProtocolFactory {
     SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options,
                        Timer& timer);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
+    void connect(Poller::shared_ptr, const std::string& name, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
                  ConnectFailedCallback);
 
     uint16_t getPort() const;
 
   private:
-    void established(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*,
-                     bool isClient);
+    void establishedIncoming(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*);
+    void establishedOutgoing(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*, const std::string&);
+    void establishedCommon(AsynchIOHandler*, Poller::shared_ptr , const Socket&);
     void connectFailed(const Socket&, int, const std::string&, ConnectFailedCallback);
 };
 
@@ -220,19 +222,22 @@ SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts
     }
 }
 
+void SslProtocolFactory::establishedIncoming(Poller::shared_ptr poller, const Socket& s,
+                                          ConnectionCodec::Factory* f) {
+    AsynchIOHandler* async = new AsynchIOHandler(broker::QPID_NAME_PREFIX+s.getFullAddress(), f, false, false);
+    establishedCommon(async, poller, s);
+}
 
-void SslProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
-                                     ConnectionCodec::Factory* f, bool isClient) {
+void SslProtocolFactory::establishedOutgoing(Poller::shared_ptr poller, const Socket& s,
+                                             ConnectionCodec::Factory* f, const std::string& name) {
+    AsynchIOHandler* async = new AsynchIOHandler(name, f, true, false);
+    establishedCommon(async, poller, s);
+}
 
-    AsynchIOHandler* async = new AsynchIOHandler(s.getFullAddress(), f, nodict);
-
+void SslProtocolFactory::establishedCommon(AsynchIOHandler* async, Poller::shared_ptr poller, const Socket& s) {
     if (tcpNoDelay) {
         s.setTcpNoDelay();
         QPID_LOG(info, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
-    }
-
-    if (isClient) {
-        async->setClient();
     }
 
     AsynchIO* aio = AsynchIO::create(
@@ -257,7 +262,7 @@ void SslProtocolFactory::accept(Poller::shared_ptr poller,
     for (unsigned i = 0; i<listeners.size(); ++i) {
         acceptors.push_back(
             AsynchAcceptor::create(listeners[i],
-                            boost::bind(&SslProtocolFactory::established, this, poller, _1, fact, false)));
+                            boost::bind(&SslProtocolFactory::establishedIncoming, this, poller, _1, fact)));
         acceptors[i].start(poller);
     }
 }
@@ -273,6 +278,7 @@ void SslProtocolFactory::connectFailed(
 
 void SslProtocolFactory::connect(
     Poller::shared_ptr poller,
+    const std::string& name,
     const std::string& host, const std::string& port,
     ConnectionCodec::Factory* fact,
     ConnectFailedCallback failed)
@@ -289,8 +295,8 @@ void SslProtocolFactory::connect(
         *socket,
         host,
         port,
-        boost::bind(&SslProtocolFactory::established,
-                    this, poller, _1, fact, true),
+        boost::bind(&SslProtocolFactory::establishedOutgoing,
+                    this, poller, _1, fact, name),
         boost::bind(&SslProtocolFactory::connectFailed,
                     this, _1, _2, _3, failed));
     c->start(poller);

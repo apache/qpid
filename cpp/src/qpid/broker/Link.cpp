@@ -228,7 +228,7 @@ void Link::startConnectionLH ()
         // Set the state before calling connect.  It is possible that connect
         // will fail synchronously and call Link::closed before returning.
         setStateLH(STATE_CONNECTING);
-        broker->connect (host, boost::lexical_cast<std::string>(port), transport,
+        broker->connect (name, host, boost::lexical_cast<std::string>(port), transport,
                          boost::bind (&Link::closed, this, _1, _2));
         QPID_LOG (info, "Inter-broker link connecting to " << host << ":" << port);
     } catch(const std::exception& e) {
@@ -773,14 +773,6 @@ std::string Link::createName(const std::string& transport,
              << host << std::string(":") << port;
     return linkName.str();
 }
-
-
-bool Link::pendingConnection(const std::string& _host, uint16_t _port) const
-{
-    Mutex::ScopedLock mutex(lock);
-    return (isConnecting() && _port == port && _host == host);
-}
-
 
 const std::string Link::exchangeTypeName("qpid.LinkExchange");
 

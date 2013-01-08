@@ -233,7 +233,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QPID_BROKER_EXTERN void accept();
 
     /** Create a connection to another broker. */
-    void connect(const std::string& host, const std::string& port,
+    void connect(const std::string& name,
+                 const std::string& host, const std::string& port,
                  const std::string& transport,
                  boost::function2<void, int, std::string> failed);
 

@@ -1015,11 +1015,12 @@ void Broker::accept() {
 }
 
 void Broker::connect(
+    const std::string& name,
     const std::string& host, const std::string& port, const std::string& transport,
     boost::function2<void, int, std::string> failed)
 {
     boost::shared_ptr<ProtocolFactory> pf = getProtocolFactory(transport);
-    if (pf) pf->connect(poller, host, port, factory.get(), failed);
+    if (pf) pf->connect(poller, name, host, port, factory.get(), failed);
     else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
 }
 

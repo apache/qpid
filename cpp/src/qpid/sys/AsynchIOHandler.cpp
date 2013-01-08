@@ -51,14 +51,14 @@ struct ProtocolTimeoutTask : public sys::TimerTask {
     }
 };
 
-AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory* f, bool nodict0) :
+AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory* f, bool isClient0, bool nodict0) :
     identifier(id),
     aio(0),
     factory(f),
     codec(0),
     reads(0),
     readError(false),
-    isClient(false),
+    isClient(isClient0),
     nodict(nodict0),
     readCredit(InfiniteCredit)
 {}

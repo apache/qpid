@@ -60,11 +60,9 @@ class AsynchIOHandler : public OutputControl {
     void write(const framing::ProtocolInitiation&);
 
   public:
-    QPID_COMMON_EXTERN AsynchIOHandler(const std::string& id, qpid::sys::ConnectionCodec::Factory* f, bool nodict);
+    QPID_COMMON_EXTERN AsynchIOHandler(const std::string& id, qpid::sys::ConnectionCodec::Factory* f, bool isClient, bool nodict);
     QPID_COMMON_EXTERN ~AsynchIOHandler();
     QPID_COMMON_EXTERN void init(AsynchIO* a, Timer& timer, uint32_t maxTime);
-
-    QPID_COMMON_INLINE_EXTERN void setClient() { isClient = true; }
 
     // Output side
     QPID_COMMON_EXTERN void abort();

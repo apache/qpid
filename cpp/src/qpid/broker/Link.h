@@ -115,7 +115,6 @@ class Link : public PersistableConfig, public management::Manageable {
     void closed(int, std::string);   // Called when connection goes away
     void notifyConnectionForced(const std::string text);
     void closeConnection(const std::string& reason);
-    bool pendingConnection(const std::string& host, uint16_t port) const;  // is Link trying to connect to this remote?
 
     friend class LinkRegistry; // to call established, opened, closed
 
