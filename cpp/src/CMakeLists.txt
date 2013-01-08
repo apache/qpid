@@ -1479,7 +1479,7 @@ install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 #
 # Legacy store
 #
-include (legacystore.cmake)
+#include (legacystore.cmake)
 
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h
