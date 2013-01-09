@@ -82,10 +82,12 @@ int run_broker(int argc, char *argv[], bool hidden)
             qpid::loadModuleDir (bootOptions.module.loadDir, isDefault);
         }
 
-        // Parse options
+        // Parse options.  In the second pass, do not allow unknown options.
+        // All the modules have been added now, so any unknown options
+        // should be flagged as errors.
         try {
             options.reset(new QpiddOptions(argv[0]));
-            options->parse(argc, argv, options->common.config);
+            options->parse(argc, argv, options->common.config, false);
         } catch (const std::exception& /*e*/) {
             if (helpArgSeen) {
                  // provide help even when parsing fails
