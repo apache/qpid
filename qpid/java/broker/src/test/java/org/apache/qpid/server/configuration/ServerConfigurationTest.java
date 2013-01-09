@@ -787,8 +787,8 @@ public class ServerConfigurationTest extends QpidTestCase
         VirtualHostRegistry virtualHostRegistry = new VirtualHostRegistry();
 
         // load configuration with recoverer
-        ConfigurationEntryStore store = new XMLConfigurationEntryStore(mainFile);
-
+        ConfigurationEntryStore store = new XMLConfigurationEntryStore();
+        store.open(mainFile.getAbsolutePath());
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         LogRecorder logRecorder = mock(LogRecorder.class);
         RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
@@ -895,8 +895,9 @@ public class ServerConfigurationTest extends QpidTestCase
             loadConfigurationAndReturnVirtualHostRegistry(mainFile);
             fail("Different virtualhost XML configurations not allowed");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException e)
         {
+            ConfigurationException ce = (ConfigurationException)e.getCause();
             assertEquals("Incorrect error message", "Only one of external or embedded virtualhosts configuration allowed.", ce.getMessage());
         }
     }
@@ -928,8 +929,9 @@ public class ServerConfigurationTest extends QpidTestCase
             loadConfigurationAndReturnVirtualHostRegistry(mainFile);
             fail("Multiple virtualhost XML configurations not allowed");
         }
-        catch (ConfigurationException ce)
+        catch (IllegalConfigurationException e)
         {
+            ConfigurationException ce = (ConfigurationException)e.getCause();
             assertEquals("Incorrect error message",
                     "Only one external virtualhosts configuration file allowed, multiple filenames found.",
                     ce.getMessage());

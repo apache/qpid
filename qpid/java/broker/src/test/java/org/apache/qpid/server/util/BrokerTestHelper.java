@@ -24,8 +24,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
-import java.lang.reflect.Constructor;
 import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.UUID;
@@ -224,28 +222,9 @@ public class BrokerTestHelper
     {
         String className = getTestProfileBrokerConfigurationStoreClassName();
         Class classObject = Class.forName(className);
-        Constructor[] constructors = classObject.getConstructors();
-        for (int i = 0; i < constructors.length; i++)
-        {
-            Constructor constructor = constructors[i];
-            Class[] parameterTypes = constructor.getParameterTypes();
-            if (parameterTypes == null || parameterTypes.length == 0)
-            {
-                return (ConfigurationEntryStore) classObject.newInstance();
-            }
-            else if (parameterTypes.length == 1)
-            {
-                if (parameterTypes[0] == String.class)
-                {
-                    return (ConfigurationEntryStore) constructor.newInstance(storeLocation);
-                }
-                else if (parameterTypes[0] == File.class)
-                {
-                    return (ConfigurationEntryStore) constructor.newInstance(new File(storeLocation));
-                }
-            }
-        }
-        throw new RuntimeException("Cannot instantiate broker configuration store. Try to override getTestProfileBrokerConfigurationStore");
+        ConfigurationEntryStore store = (ConfigurationEntryStore)classObject.newInstance();
+        store.open(storeLocation);
+        return store;
     }
 
 }

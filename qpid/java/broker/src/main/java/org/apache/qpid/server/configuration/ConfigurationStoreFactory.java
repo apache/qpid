@@ -20,18 +20,16 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.util.UUID;
 
-public interface ConfigurationEntryStore
+public interface ConfigurationStoreFactory
 {
-    void open(String storeLocation);
+    /**
+     * Returns the type of the store this factory can create
+     */
+    public String getStoreType();
 
-    ConfigurationEntry getRootEntry();
-
-    ConfigurationEntry getEntry(UUID id);
-
-    void save(ConfigurationEntry... entries);
-
-    UUID[] remove(UUID... entryIds);
-
+    /**
+     * Creates the store instance.
+     */
+    public ConfigurationEntryStore createStore();
 }

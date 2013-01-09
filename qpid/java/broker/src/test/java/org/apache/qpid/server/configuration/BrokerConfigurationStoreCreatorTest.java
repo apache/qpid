@@ -21,6 +21,8 @@
 package org.apache.qpid.server.configuration;
 
 import java.io.File;
+import java.util.Set;
+import java.util.UUID;
 
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.BrokerOptions;
@@ -29,10 +31,10 @@ import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
-public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
+public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 {
     private File _userStoreLocation;
-    private ConfigurationEntryStoreFactory _factory;
+    private BrokerConfigurationStoreCreator _storeCreator;
     private BrokerOptions _options;
 
     public void setUp() throws Exception
@@ -45,7 +47,7 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
             // set the properties in order to resolve the defaults store settings
             setTestSystemProperty("QPID_HOME", TMP_FOLDER);
         }
-        _factory = new ConfigurationEntryStoreFactory();
+        _storeCreator = new BrokerConfigurationStoreCreator();
         _userStoreLocation = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
         _options = new BrokerOptions();
     }
@@ -65,34 +67,24 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
         }
     }
 
-    public void testCreateJsonStoreWithDefaults()
+    public void testCreateJsonStore()
     {
-        ConfigurationEntryStore store = _factory.createStore(_userStoreLocation.getAbsolutePath(), "json", _options);
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _options);
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation);
-        assertFalse("Unexpected children", jsonStore.getRootEntry().getChildrenIds().isEmpty());
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore();
+        jsonStore.open(_userStoreLocation.getAbsolutePath());
+        Set<UUID> childrenIds = jsonStore.getRootEntry().getChildrenIds();
+        assertFalse("Unexpected children: " + childrenIds, childrenIds.isEmpty());
     }
 
-    public void testCreateJsonStoreWithNoDefaults()
-    {
-        _options.setNoDefaultConfiguration(true);
-        ConfigurationEntryStore store = _factory.createStore(_userStoreLocation.getAbsolutePath(), "json", _options);
-        assertNotNull("Store was not created", store);
-        assertTrue("File should exists", _userStoreLocation.exists());
-        assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation);
-        assertTrue("Unexpected children", jsonStore.getRootEntry().getChildrenIds().isEmpty());
-    }
-
-    public void testCreateDerbyStoreWithNoDefaults()
+    public void testCreateDerbyStore()
     {
         //TODO: Implement DERBY store
-        _options.setNoDefaultConfiguration(true);
         try
         {
-            _factory.createStore(_userStoreLocation.getAbsolutePath(), "derby", _options);
+            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", _options);
             fail("Store is not yet supported");
         }
         catch(IllegalConfigurationException e)
@@ -101,13 +93,12 @@ public class ConfigurationEntryStoreFactoryTest extends QpidTestCase
         }
     }
 
-    public void testCreateXmlStoreWithNoDefaults() throws Exception
+    public void testCreateXmlStore() throws Exception
     {
         //TODO: Remove XML store
-        _options.setNoDefaultConfiguration(true);
         XMLConfiguration config = new XMLConfiguration();
         config.save(_userStoreLocation);
-        ConfigurationEntryStore store = _factory.createStore(_userStoreLocation.getAbsolutePath(), "xml", _options);
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "xml", _options);
         assertNotNull("Store was not created", store);
         assertTrue("Unexpected store type", store instanceof XMLConfigurationEntryStore);
     }

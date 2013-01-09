@@ -108,6 +108,11 @@ public class BrokerShutdownTest extends QpidTestCase
                 return null;
             }
 
+            @Override
+            public void open(String storeLocation)
+            {
+            }
+
         };
 
         // mocking the required object

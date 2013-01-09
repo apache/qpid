@@ -4,6 +4,7 @@ import static org.apache.qpid.server.configuration.ConfigurationEntry.ATTRIBUTE_
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -20,9 +21,11 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.Strings;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
@@ -45,7 +48,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
     private File _storeFile;
     private UUID _rootId;
 
-    private JsonConfigurationEntryStore()
+    public JsonConfigurationEntryStore()
     {
         _objectMapper = new ObjectMapper();
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
@@ -61,30 +64,47 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         _rootId = brokerEntry.getId();
     }
 
-    public JsonConfigurationEntryStore(File storeFile)
+    @Override
+    public void open(String storeLocation)
     {
-       this();
-       _storeFile = storeFile;
-        if (_storeFile.exists())
+        _storeFile = new File(storeLocation);
+        if (!_storeFile.exists() || _storeFile.length() == 0)
         {
-            if (_storeFile.length() > 0)
-            {
-                URL storeURL = fileToURL(_storeFile);
-                JsonNode node = load(storeURL, _objectMapper);
-                ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
-                _rootId = brokerEntry.getId();
-            }
-        }
-        else
-        {
-            createStoreFile(_storeFile);
+            copyInitialStore();
         }
 
-        if (_rootId == null)
+        URL storeURL = fileToURL(_storeFile);
+        JsonNode node = load(storeURL, _objectMapper);
+        ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
+        _rootId = brokerEntry.getId();
+
+    }
+
+    private void copyInitialStore()
+    {
+        InputStream in = null;
+        try
         {
-            _rootId = createUUID(DEFAULT_BROKER_TYPE, DEFAULT_BROKER_NAME);
-            ConfigurationEntry brokerEntry = new ConfigurationEntry(_rootId, DEFAULT_BROKER_TYPE, null, null, null);
-            save(brokerEntry);
+            in = JsonConfigurationEntryStore.class.getClassLoader().getResourceAsStream(BrokerConfigurationStoreCreator.INITIAL_STORE_LOCATION);
+            FileUtils.copy(in, _storeFile);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot create store file by copying initial store", e);
+        }
+        finally
+        {
+            if (in != null)
+            {
+                try
+                {
+                    in.close();
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot close initial store input stream", e);
+                }
+            }
         }
     }
 
@@ -161,29 +181,6 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
     public void saveTo(File file)
     {
         saveAsTree(_rootId, _entries, _objectMapper, file);
-    }
-
-    private void createStoreFile(File storeFile)
-    {
-        File parent = storeFile.getParentFile();
-        if (!parent.exists())
-        {
-            if (!parent.mkdirs())
-            {
-                throw new IllegalConfigurationException("Cannot create folder(s) for the store at " + _storeFile);
-            }
-        }
-        try
-        {
-            if (!storeFile.createNewFile())
-            {
-                throw new IllegalConfigurationException("Cannot create store file at " + _storeFile);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException("Cannot write into file at " + _storeFile, e);
-        }
     }
 
     private URL fileToURL(File storeFile)
@@ -349,7 +346,8 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
                 }
                 if (fieldValues != null)
                 {
-                    attributes.put(fieldName, fieldValues);
+                    Object[] array = fieldValues.toArray(new Object[fieldValues.size()]);
+                    attributes.put(fieldName, array);
                 }
             }
             else if (fieldNode.isObject())

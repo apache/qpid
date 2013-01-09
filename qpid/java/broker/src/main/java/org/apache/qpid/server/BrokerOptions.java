@@ -28,7 +28,8 @@ import java.util.Set;
 
 public class BrokerOptions
 {
-    public static final String DEFAULT_CONFIG_FILE = "etc/config.json";
+    public static final String DEFAULT_STORE_TYPE = "xml";
+    public static final String DEFAULT_CONFIG_FILE = "etc/config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -50,8 +51,7 @@ public class BrokerOptions
     private String _qpidHomeFolder;
 
     private String _configurationStoreLocation;
-    private String _configurationStoreType;
-    private boolean _noDefaultConfiguration;
+    private String _configurationStoreType = DEFAULT_STORE_TYPE;
 
     public void addPort(final int port)
     {
@@ -210,16 +210,6 @@ public class BrokerOptions
     public void setConfigurationStoreType(String cofigurationStoreType)
     {
         _configurationStoreType = cofigurationStoreType;
-    }
-
-    public boolean isNoDefaultConfiguration()
-    {
-        return _noDefaultConfiguration;
-    }
-
-    public void setNoDefaultConfiguration(boolean noDefault)
-    {
-        _noDefaultConfiguration = noDefault;
     }
 
 }

@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.ConfigurationEntryStoreFactory;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -112,13 +112,14 @@ public class BrokerLauncher
         String storeType = options.getConfigurationStoreType();
 
         //TODO: remove code below. A temporarily support for old configuration file option
-        if (storeLocation == null && storeType == null && options.getConfigFile() != null)
+        if (storeLocation == null)
         {
             storeLocation = options.getConfigFile();
         }
+
         if (storeLocation == null)
         {
-            storeLocation = new File(qpidHome, BrokerOptions.DEFAULT_CONFIG_FILE).getAbsolutePath();
+            storeLocation = new File(qpidHome, BrokerOptions.DEFAULT_CONFIG_FILE + "." + storeType).getAbsolutePath();
         }
 
         CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
@@ -126,8 +127,8 @@ public class BrokerLauncher
         File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
-        ConfigurationEntryStoreFactory storeFactory = new ConfigurationEntryStoreFactory();
-        ConfigurationEntryStore store =  storeFactory.createStore(storeLocation, storeType, options);
+        BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
+        ConfigurationEntryStore store =  storeCreator.createStore(storeLocation, storeType, options);
 
         _applicationRegistry = new ApplicationRegistry(store);
         try

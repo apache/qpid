@@ -22,6 +22,7 @@ import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.ProtocolInclusion;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -30,8 +31,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.ConnectionSettings;
-
-import com.sun.corba.se.pept.broker.Broker;
 
 public class CommandLineOptionsHandlerTest extends QpidTestCase
 {

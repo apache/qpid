@@ -43,7 +43,8 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
 
         _storeFile = TestFileUtils.createTempFile(this, ".json", brokerJson);
 
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile);
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
+        store.open(_storeFile.getAbsolutePath());
         return store;
     }
 
@@ -67,7 +68,8 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
                 attributes, brokerConfigEntry.getChildrenIds(), store);
         store.save(updatedBrokerEntry);
 
-        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile);
+        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore();
+        store2.open(_storeFile.getAbsolutePath());
 
         assertEquals("Unresolved ACL value", aclLocation, store2.getRootEntry().getAttributes().get(Broker.ACL_FILE));
     }

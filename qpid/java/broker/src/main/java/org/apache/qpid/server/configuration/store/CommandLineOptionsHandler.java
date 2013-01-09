@@ -593,4 +593,10 @@ public class CommandLineOptionsHandler implements ConfigurationEntryStore
         }
 
     }
+
+    @Override
+    public void open(String storeLocation)
+    {
+
+    }
 }

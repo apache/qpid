@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.util;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -197,58 +198,50 @@ public class MapValueConverter
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Enum<T>> Set<T> getEnumSetAttribute(String name, Map<String,Object> attributes, Class<T> clazz)
+    public static <T extends Enum<T>> Set<T> getEnumSetAttribute(String name, Map<String, Object> attributes, Class<T> clazz)
     {
         Object obj = attributes.get(name);
-        String[] items= null;
-        if(obj == null)
+        Object[] items = null;
+        if (obj == null)
         {
             return null;
         }
-        else if(obj instanceof Set)
+        else if (obj instanceof Collection)
         {
-            Set<?> data= (Set<?>) obj;
-            items = new String[data.size()];
-            int i = 0;
-            boolean sameType = true;
-            for (Object object : data)
-            {
-                items[i++] = String.valueOf(object);
-                if (clazz != object.getClass())
-                {
-                    sameType = false;
-                }
-            }
-            if (sameType)
-            {
-                return (Set<T>)data;
-            }
-        }
-        else if (obj instanceof String)
-        {
-            items = ((String)obj).split(",");
+            Collection<?> data = (Collection<?>) obj;
+            items = data.toArray(new Object[data.size()]);
         }
         else if (obj instanceof String[])
         {
-            items = (String[])obj;
+            items = (String[]) obj;
         }
         else if (obj instanceof Object[])
         {
-            Object[] objects = (Object[])obj;
-            items = new String[objects.length];
-            for (int i = 0; i < objects.length; i++)
-            {
-                items[i] = String.valueOf(objects[i]);
-            }
+            items = (Object[]) obj;
         }
         else
         {
-            throw new IllegalArgumentException("Value for attribute " + name + "["+ obj + "] cannot be converted into set of enum of " + clazz);
+            throw new IllegalArgumentException("Value for attribute " + name + "[" + obj
+                    + "] cannot be converted into set of enum of " + clazz);
         }
         Set<T> set = new HashSet<T>();
         for (int i = 0; i < items.length; i++)
         {
-            T item = (T)Enum.valueOf(clazz, items[i]);
+            T item = null;
+            Object value = items[i];
+            if (value instanceof String)
+            {
+                item = (T) Enum.valueOf(clazz, (String) value);
+            }
+            else if (clazz.isInstance(value))
+            {
+                item = (T) value;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Cannot convert " + value + " from [" + obj + "] into enum of " + clazz
+                        + " for attribute " + name);
+            }
             set.add(item);
         }
         return set;

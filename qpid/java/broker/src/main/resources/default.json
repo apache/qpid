@@ -46,13 +46,13 @@
   } ],
   "ports" : [ {
     "type" : "Port",
-    "name" : "defaultHttpPort",
+    "name" : "8080",
     "port" : 8080,
     "transports" : [ "TCP" ],
     "protocols" : [ "HTTP" ]
   }, {
     "type" : "Port",
-    "name" : "defaultAmqpPort",
+    "name" : "5672",
     "port" : 5672,
     "tcpNoDelay" : true,
     "transports" : [ "TCP" ],
@@ -63,13 +63,13 @@
     "sendBufferSize" : 262144
   }, {
     "type" : "Port",
-    "name" : "defaultJmxRmiPort",
+    "name" : "9099",
     "port" : 9099,
     "transports" : [ "TCP" ],
     "protocols" : [ "JMX_RMI" ]
   }, {
     "type" : "Port",
-    "name" : "defaultRmiPort",
+    "name" : "8999",
     "port" : 8999,
     "transports" : [ "TCP" ],
     "protocols" : [ "RMI" ]

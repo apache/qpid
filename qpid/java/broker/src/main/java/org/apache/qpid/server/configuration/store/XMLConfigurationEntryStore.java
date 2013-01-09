@@ -73,52 +73,38 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     private HierarchicalConfiguration _configuration;
     private Map<UUID, ConfigurationEntry> _rootChildren;
     private ServerConfiguration _serverConfiguration;
-
+    private BrokerOptions _options;
     private PortConfigurationHelper _portConfigurationHelper;
 
-    public XMLConfigurationEntryStore(File configFile) throws ConfigurationException
+    public XMLConfigurationEntryStore()
     {
-        this(new ServerConfiguration(configFile), new BrokerOptions());
+        this(new BrokerOptions());
     }
 
-    public XMLConfigurationEntryStore(String configFile, BrokerOptions options) throws ConfigurationException
+    public XMLConfigurationEntryStore(BrokerOptions options)
     {
-        this(new ServerConfiguration(new File(configFile)), options);
+        _options = options;
     }
 
-    public XMLConfigurationEntryStore(File configFile, BrokerOptions options) throws ConfigurationException
+    @Override
+    public void open(String storeLocation)
     {
-        this(new ServerConfiguration(configFile), options);
-    }
-
-    public XMLConfigurationEntryStore(ServerConfiguration config, BrokerOptions options)  throws ConfigurationException
-    {
-        _serverConfiguration = config;
-        _serverConfiguration.initialise();
-
-        _configuration = ConfigurationUtils.convertToHierarchical(config.getConfig());
-        _rootId = UUID.randomUUID();
-        _rootChildren = new HashMap<UUID, ConfigurationEntry>();
-        _portConfigurationHelper = new PortConfigurationHelper(this);
-
-        updateManagementPorts(_serverConfiguration, options);
-
-        createKeyStoreConfig(config, _rootChildren);
-        createTrustStoreConfig(config, _rootChildren);
-        createGroupProviderConfig(_configuration, _rootChildren);
-        createAuthenticationProviderConfig(_configuration, _rootChildren);
-        createAmqpPortConfig(_serverConfiguration, _rootChildren, options);
-        createManagementPortConfig(_serverConfiguration, _rootChildren, options);
-        createVirtualHostConfig(_serverConfiguration, _rootChildren);
-
-        // In order to avoid plugin recoverer failures for broker tests we are checking whether plugins classes are present in classpath
-        Iterable<PluginFactory> factories= new QpidServiceLoader().instancesOf(PluginFactory.class);
-        if (factories.iterator().hasNext())
+        try
         {
-            createHttpManagementConfig(_serverConfiguration, _rootChildren);
-            createJmxManagementConfig(_serverConfiguration, _rootChildren);
+            _serverConfiguration = new ServerConfiguration(new File(storeLocation));
         }
-        _logger.warn("Root children are: " + _rootChildren);
+        catch (ConfigurationException e)
+        {
+            throw new IllegalConfigurationException("Cannot create store from " + storeLocation, e);
+        }
+        try
+        {
+            openStore(_serverConfiguration, _options);
+        }
+        catch (ConfigurationException e)
+        {
+            throw new IllegalConfigurationException("Cannot open store from " + storeLocation, e);
+        }
     }
 
     @Override
@@ -477,6 +463,36 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
     public ServerConfiguration getConfiguration()
     {
         return _serverConfiguration;
+    }
+
+    private void openStore(ServerConfiguration config, BrokerOptions options) throws ConfigurationException
+    {
+        _serverConfiguration = config;
+        _serverConfiguration.initialise();
+
+        _configuration = ConfigurationUtils.convertToHierarchical(config.getConfig());
+        _rootId = UUID.randomUUID();
+        _rootChildren = new HashMap<UUID, ConfigurationEntry>();
+        _portConfigurationHelper = new PortConfigurationHelper(this);
+
+        updateManagementPorts(_serverConfiguration, options);
+
+        createKeyStoreConfig(config, _rootChildren);
+        createTrustStoreConfig(config, _rootChildren);
+        createGroupProviderConfig(_configuration, _rootChildren);
+        createAuthenticationProviderConfig(_configuration, _rootChildren);
+        createAmqpPortConfig(_serverConfiguration, _rootChildren, options);
+        createManagementPortConfig(_serverConfiguration, _rootChildren, options);
+        createVirtualHostConfig(_serverConfiguration, _rootChildren);
+
+        // In order to avoid plugin recoverer failures for broker tests we are checking whether plugins classes are present in classpath
+        Iterable<PluginFactory> factories= new QpidServiceLoader().instancesOf(PluginFactory.class);
+        if (factories.iterator().hasNext())
+        {
+            createHttpManagementConfig(_serverConfiguration, _rootChildren);
+            createJmxManagementConfig(_serverConfiguration, _rootChildren);
+        }
+        _logger.warn("Root children are: " + _rootChildren);
     }
 
 }

@@ -49,9 +49,6 @@ public class Main
     private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
             .withDescription("use given store type").withLongOpt("store-type").create("st");
 
-    private static final Option OPTION_CONFIGURATION_STORE_NO_DEFAULTS = OptionBuilder.withType(Boolean.class)
-            .withDescription("disables default configuration if set to true").withLongOpt("no-defaults").create("nd");
-
     @Deprecated
     private static final Option OPTION_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
@@ -153,7 +150,6 @@ private static final Option OPTION_INCLUDE_0_8 =
         OPTIONS.addOption(OPTION_VERSION);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_PATH);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
-        OPTIONS.addOption(OPTION_CONFIGURATION_STORE_NO_DEFAULTS);
         OPTIONS.addOption(OPTION_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_WATCH);

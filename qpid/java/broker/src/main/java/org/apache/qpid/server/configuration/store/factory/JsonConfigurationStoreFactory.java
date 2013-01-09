@@ -18,20 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
+package org.apache.qpid.server.configuration.store.factory;
 
-import java.util.UUID;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.ConfigurationStoreFactory;
+import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 
-public interface ConfigurationEntryStore
+public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
 {
-    void open(String storeLocation);
+    private static final String STORE_TYPE = "json";
 
-    ConfigurationEntry getRootEntry();
+    @Override
+    public ConfigurationEntryStore createStore()
+    {
+        return new JsonConfigurationEntryStore();
+    }
 
-    ConfigurationEntry getEntry(UUID id);
-
-    void save(ConfigurationEntry... entries);
-
-    UUID[] remove(UUID... entryIds);
+    @Override
+    public String getStoreType()
+    {
+        return STORE_TYPE;
+    }
 
 }
