@@ -959,6 +959,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                     _txnCommits.incrementAndGet();
                     _txnStarts.incrementAndGet();
                     decrementOutstandingTxnsIfNecessary();
+                    _txnUpdateTime.set(0);
                 }
             });
         }
@@ -968,6 +969,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             _txnCommits.incrementAndGet();
             _txnStarts.incrementAndGet();
+            _txnUpdateTime.set(0);
             decrementOutstandingTxnsIfNecessary();
         }
     }
@@ -1005,6 +1007,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             _txnRejects.incrementAndGet();
             _txnStarts.incrementAndGet();
+            _txnUpdateTime.set(0);
             decrementOutstandingTxnsIfNecessary();
         }
 
