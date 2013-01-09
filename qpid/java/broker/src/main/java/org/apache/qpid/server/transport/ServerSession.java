@@ -42,7 +42,6 @@ import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -449,11 +448,6 @@ public class ServerSession extends Session
         return _transaction.isTransactional();
     }
 
-    public boolean inTransaction()
-    {
-        return isTransactional() && _txnUpdateTime.get() > 0 && _transaction.getTransactionStartTime() > 0;
-    }
-
     public void selectTx()
     {
         _transaction = new LocalTransaction(this.getMessageStore());
@@ -591,7 +585,7 @@ public class ServerSession extends Session
     /**
      * Update last transaction activity timestamp
      */
-    public void updateTransactionalActivity()
+    private void updateTransactionalActivity()
     {
         if (isTransactional())
         {
@@ -709,11 +703,13 @@ public class ServerSession extends Session
 
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
-        if (inTransaction())
+        final long transactionStartTime = _transaction.getTransactionStartTime();
+        final long transactionUpdateTime = _txnUpdateTime.get();
+        if (isTransactional() && transactionUpdateTime > 0 && transactionStartTime > 0)
         {
             long currentTime = System.currentTimeMillis();
-            long openTime = currentTime - _transaction.getTransactionStartTime();
-            long idleTime = currentTime - _txnUpdateTime.get();
+            long openTime = currentTime - transactionStartTime;
+            long idleTime = currentTime - transactionUpdateTime;
 
             _transactionTimeoutHelper.logIfNecessary(idleTime, idleWarn, ChannelMessages.IDLE_TXN(idleTime),
                                                      TransactionTimeoutHelper.IDLE_TRANSACTION_ALERT);
