@@ -18,6 +18,7 @@
 #
 #
 
+if(UNIX)
 # - Find BerkeleyDB
 # Find the BerkeleyDB includes and library
 # This module defines
@@ -44,7 +45,7 @@ IF (DB_LIBRARY AND DB_INCLUDE_DIR)
     SET(DB_LIBRARIES ${DB_LIBRARY})
     SET(DB_FOUND "YES")
 ELSE (DB_LIBRARY AND DB_INCLUDE_DIR)
-    SET(DB_FOUND "NO")
+    UNSET( DB_FOUND )
 ENDIF (DB_LIBRARY AND DB_INCLUDE_DIR)
 
 
@@ -66,3 +67,8 @@ MARK_AS_ADVANCED(
     DB_LIBRARY
     DB_INCLUDE_DIR
 )
+
+else(UNIX)
+    MESSAGE(STATUS "BerkeleyDB is ignored on non-Unix platforms")
+    UNSET( DB_FOUND )
+endif(UNIX)
