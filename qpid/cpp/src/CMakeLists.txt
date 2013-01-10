@@ -208,7 +208,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
-		 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
+                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
@@ -1479,7 +1479,7 @@ install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 #
 # Legacy store
 #
-#include (legacystore.cmake)
+include (legacystore.cmake)
 
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h

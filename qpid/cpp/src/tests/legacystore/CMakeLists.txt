@@ -17,6 +17,10 @@
 # under the License.
 #
 
+if(BUILD_LEGACYSTORE)
+
+message(STATUS "Building legacystore tests")
+
 # Enable dashboard reporting.
 include (CTest)
 
@@ -109,3 +113,5 @@ if (PYTHON_EXECUTABLE)
   execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${pythoon_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../python)
 endif (PYTHON_EXECUTABLE)
+
+endif (BUILD_LEGACYSTORE)
