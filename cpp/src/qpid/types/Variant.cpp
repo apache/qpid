@@ -114,15 +114,6 @@ class VariantImpl
     {
         const std::string& s = *value.string;
 
-        // The lexical cast below is throwing when the type
-        // is signed and the value is negative-zero.  Bug, I guess.
-        // So short-circuit it here.  Negative zero is zero.
-        double dbl_val = atof ( s.c_str() );
-        if ( ( dbl_val == 0 ) && ( 0 == s.find('-') ) ) {
-            T r = 0;
-            return r;
-        }
-
         try {
             T r = boost::lexical_cast<T>(s);
             //lexical_cast won't fail if string is a negative number and T is unsigned
