@@ -66,7 +66,7 @@ QueueGuard::~QueueGuard() { cancel(); }
 // NOTE: Called with message lock held.
 void QueueGuard::enqueued(const Message& m) {
     // Delay completion
-    QPID_LOG(trace, logPrefix << "Delayed completion of " << m);
+    QPID_LOG(trace, logPrefix << "Delayed completion of " << m.getSequence());
     m.getIngressCompletion()->startCompleter();
     {
         Mutex::ScopedLock l(lock);
