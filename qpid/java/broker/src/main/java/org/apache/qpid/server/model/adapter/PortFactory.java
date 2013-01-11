@@ -50,11 +50,15 @@ public class PortFactory
         final Port port;
         if (isAmqpProtocol(attributes))
         {
-            port = new AmqpPortAdapter(id, broker, attributes);
+            //TODO: create defaults
+            Map<String, Object> defaults = null;
+            port = new AmqpPortAdapter(id, broker, attributes, defaults);
         }
         else
         {
-            port = new PortAdapter(id, broker, attributes);
+            //TODO: create defaults
+            Map<String, Object> defaults = null;
+            port = new PortAdapter(id, broker, attributes, defaults);
         }
         return port;
     }

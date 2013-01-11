@@ -46,7 +46,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
     public SessionAdapter(final AMQSessionModel session)
     {
-        super(UUIDGenerator.generateRandomUUID());
+        super(UUIDGenerator.generateRandomUUID(), null);
         _session = session;
         _statistics = new SessionStatistics();
     }

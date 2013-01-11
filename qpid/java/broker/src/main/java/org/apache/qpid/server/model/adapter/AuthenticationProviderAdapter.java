@@ -63,9 +63,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     private GroupPrincipalAccessor _groupAccessor;
 
-    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager)
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
         _authManager = authManager;
         _broker = broker;
         addParent(Broker.class, broker);
@@ -246,20 +246,21 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
         public SimpleAuthenticationProviderAdapter(
-                UUID id, Broker broker, AuthenticationManager authManager)
+                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> defaults)
         {
-            super(id, broker,authManager);
+            super(id, broker,authManager, defaults);
         }
     }
 
+    //TODO: add file path attribute into actual attributes
     public static class PrincipalDatabaseAuthenticationManagerAdapter
             extends AuthenticationProviderAdapter<PrincipalDatabaseAuthenticationManager>
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> defaults)
         {
-            super(id, broker, authManager);
+            super(id, broker, authManager, defaults);
         }
 
         @Override
@@ -384,7 +385,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
             public PrincipalAdapter(Principal user)
             {
-                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()));
+                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()), null);
                 _user = user;
 
             }

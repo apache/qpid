@@ -41,10 +41,15 @@ abstract class AbstractAdapter implements ConfiguredObject
             new ArrayList<ConfigurationChangeListener>();
 
     private final UUID _id;
+    private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
 
-    protected AbstractAdapter(UUID id)
+    protected AbstractAdapter(UUID id, Map<String, Object> defaults)
     {
         _id = id;
+        if (defaults != null)
+        {
+            _defaultAttributes.putAll(defaults);
+        }
     }
 
     public final UUID getId()
@@ -135,7 +140,33 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
-    public Object getAttribute(final String name)
+
+    private final Object getDefaultAttribute(String name)
+    {
+        return _defaultAttributes.get(name);
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        Object value = getActualAttribute(name);
+        if (value == null)
+        {
+            value = getDefaultAttribute(name);
+        }
+        return value;
+    }
+
+    @Override
+    public final Map<String, Object> getActualAttributes()
+    {
+        synchronized (this)
+        {
+            return new HashMap<String, Object>(_attributes);
+        }
+    }
+
+    private Object getActualAttribute(final String name)
     {
         synchronized (this)
         {
@@ -148,7 +179,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         synchronized (this)
         {
-            Object currentValue = _attributes.get(name);
+            Object currentValue = getAttribute(name);
             if((currentValue == null && expected == null)
                || (currentValue != null && currentValue.equals(expected)))
             {

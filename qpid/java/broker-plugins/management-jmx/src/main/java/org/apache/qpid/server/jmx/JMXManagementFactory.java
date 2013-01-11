@@ -55,7 +55,9 @@ public class JMXManagementFactory implements PluginFactory
                     getStringAttribute(KEY_STORE_PASSWORD, attributes, null),
                     getBooleanAttribute(MANAGEMENT_RIGHTS_INFER_ALL_ACCESS, attributes, true));
 
-            return new JMXManagement(id, broker, jmxConfiguration);
+            //TODO: create defaults
+            Map<String, Object> defaults = null;
+            return new JMXManagement(id, broker, jmxConfiguration, defaults);
         }
         else
         {

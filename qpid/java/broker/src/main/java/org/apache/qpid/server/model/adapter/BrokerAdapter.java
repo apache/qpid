@@ -105,11 +105,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private int _statisticsReportingPeriod;
     private boolean _statisticsReportingResetEnabled;
 
-    public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
+    public BrokerAdapter(UUID id, Map<String, Object> attributes, Map<String, Object> defaults, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
             PortFactory portFactory)
     {
-        super(id);
+        super(id, defaults);
         _name = "Broker";
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
@@ -215,8 +215,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
+        //TODO create defaults
+        Map<String, Object> defaults = null;
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
-                _statisticsGatherer);
+                _statisticsGatherer, defaults);
 
         synchronized (_vhostAdapters)
         {
@@ -328,6 +330,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return Collections.emptySet();
     }
 
+    //TODO: ACL
     @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)

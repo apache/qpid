@@ -201,12 +201,25 @@ public interface ConfiguredObject
 
 
     /**
-     * Return the value for the given attribute
+     * Return the value for the given attribute name. The actual attribute value
+     * is returned if the configured object has such attribute set. If not, the
+     * value is looked in parent hierarchy from bottom to top. If no parent has
+     * an attribute set than the value is looked in the object default attributes.
      *
-     * @param name the name of the attribute
-     * @return the value of the attribute at the object (or null if the attribute is not set
+     * @param name
+     *            the name of the attribute
+     * @return the value of the attribute at the object (or null if the
+     *         attribute value is set neither on object itself, no object
+     *         parents, no in defaults)
      */
     Object getAttribute(String name);
+
+    /**
+     * Return the map containing only explicitly set attributes
+     *
+     * @return the map with the attributes
+     */
+    Map<String, Object> getActualAttributes();
 
     /**
      * Set the value of an attribute

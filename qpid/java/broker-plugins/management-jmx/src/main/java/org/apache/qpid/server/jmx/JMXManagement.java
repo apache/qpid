@@ -70,9 +70,9 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 
     private final JMXConfiguration _jmxConfiguration;
 
-    public JMXManagement(UUID id, Broker broker, JMXConfiguration jmxConfiguration)
+    public JMXManagement(UUID id, Broker broker, JMXConfiguration jmxConfiguration, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
         _broker = broker;
         _jmxConfiguration = jmxConfiguration;
     }

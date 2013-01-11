@@ -47,9 +47,9 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 {
     private final GroupManager _groupManager;
     private final Broker _broker;
-    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker)
+    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
 
         if (groupManager == null)
         {
@@ -231,7 +231,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         public GroupAdapter(String group)
         {
             super(UUIDGenerator.generateGroupUUID(
-                    GroupProviderAdapter.this.getName(), group));
+                    GroupProviderAdapter.this.getName(), group), null);
             _group = group;
 
         }
@@ -409,7 +409,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                 super(UUIDGenerator
                         .generateGroupMemberUUID(
                                 GroupProviderAdapter.this.getName(), _group,
-                                memberName));
+                                memberName), null);
                 _memberName = memberName;
             }
 

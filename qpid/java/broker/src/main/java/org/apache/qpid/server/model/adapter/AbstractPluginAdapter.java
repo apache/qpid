@@ -35,9 +35,9 @@ import org.apache.qpid.server.model.Statistics;
 public abstract class AbstractPluginAdapter extends AbstractAdapter implements Plugin
 {
 
-    protected AbstractPluginAdapter(UUID id)
+    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
     }
 
     @Override

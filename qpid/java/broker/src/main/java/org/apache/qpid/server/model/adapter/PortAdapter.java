@@ -67,9 +67,9 @@ public class PortAdapter extends AbstractAdapter implements Port
      * protocols on the same port we need to introduce a special entity like
      * PortAceptor which will be responsible for port binding/unbinding
      */
-    public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes)
+    public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
         _broker = broker;
 
         addParent(Broker.class, broker);

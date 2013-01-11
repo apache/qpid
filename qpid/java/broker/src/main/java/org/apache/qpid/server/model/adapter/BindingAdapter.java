@@ -48,7 +48,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
                           ExchangeAdapter exchangeAdapter,
                           QueueAdapter queueAdapter)
     {
-        super(binding.getId());
+        super(binding.getId(), null);
         _binding = binding;
         _exchange = exchangeAdapter;
         _queue = queueAdapter;

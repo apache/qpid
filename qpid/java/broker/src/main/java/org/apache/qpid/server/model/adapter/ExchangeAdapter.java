@@ -56,7 +56,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
-        super(exchange.getId());
+        super(exchange.getId(), null);
         _statistics = new ExchangeStatistics();
         _vhost = virtualHostAdapter;
         _exchange = exchange;

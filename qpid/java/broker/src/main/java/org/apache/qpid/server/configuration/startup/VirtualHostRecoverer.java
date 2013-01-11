@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
@@ -43,7 +45,10 @@ public class VirtualHostRecoverer implements ConfiguredObjectRecoverer<VirtualHo
     public VirtualHost create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
         Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
-        return new VirtualHostAdapter(entry.getId(), entry.getAttributes(),broker, _brokerStatisticsGatherer);
+
+        //TODO add defaults
+        Map<String, Object> defaults = null;
+        return new VirtualHostAdapter(entry.getId(), entry.getAttributes(),broker, _brokerStatisticsGatherer, defaults);
     }
 
 }

@@ -28,6 +28,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final RootMessageLogger _rootMessageLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final PortFactory _portFactory;
+    private Map<String, Object> _defaults;
 
     public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
             StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder,
@@ -44,7 +45,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
-        BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer,
+        BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _defaults, _statisticsGatherer,
                 _virtualHostRegistry, _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory);
         Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
         for (String type : childEntries.keySet())

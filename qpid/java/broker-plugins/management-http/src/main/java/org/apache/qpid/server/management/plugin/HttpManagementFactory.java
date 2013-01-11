@@ -61,6 +61,8 @@ public class HttpManagementFactory implements PluginFactory
                 getStringAttribute(KEY_STORE_PATH, attributes, null),
                 getStringAttribute(KEY_STORE_PASSWORD, attributes, null)
                 );
-        return new HttpManagement( id, broker, configuration);
+        //TODO: create defaults
+        Map<String, Object> defaults = null;
+        return new HttpManagement( id, broker, configuration, defaults);
     }
 }

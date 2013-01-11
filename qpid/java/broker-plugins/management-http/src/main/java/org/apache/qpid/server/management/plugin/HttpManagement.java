@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -92,9 +93,9 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private final HttpConfiguration _configuration;
 
-    public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration)
+    public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
         _broker = broker;
         _configuration = configuration;
         addParent(Broker.class, broker);

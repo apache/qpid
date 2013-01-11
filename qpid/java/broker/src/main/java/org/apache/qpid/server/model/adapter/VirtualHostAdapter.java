@@ -92,9 +92,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private final String _configurationFile;
     private StatisticsGatherer _brokerStatisticsGatherer;
 
-    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer)
+    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, Map<String, Object> defaults)
     {
-        super(id);
+        super(id, defaults);
         _broker = broker;
         _name = MapValueConverter.getStringAttribute(NAME, attributes);
         _configurationFile = MapValueConverter.getStringAttribute(CONFIGURATION, attributes);
@@ -131,7 +131,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 {
                     if(!_queueAdapters.containsKey(queue))
                     {
-                        _queueAdapters.put(queue, new QueueAdapter(this,queue));
+                        //TODO: create queue defaults map
+                        Map<String, Object> queueDefaults = null;
+                        _queueAdapters.put(queue, new QueueAdapter(this,queue, queueDefaults));
                     }
                 }
             }
@@ -149,7 +151,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 if(!_connectionAdapters.containsKey(conn))
                 {
-                    _connectionAdapters.put(conn, new ConnectionAdapter(conn));
+                    //TODO: create connection defaults
+                    Map<String, Object> connectionDefaults = null;
+                    _connectionAdapters.put(conn, new ConnectionAdapter(conn, connectionDefaults));
                 }
             }
         }
@@ -511,7 +515,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             if(!_queueAdapters.containsKey(queue))
             {
-                adapter = new QueueAdapter(this, queue);
+                //TODO: create queue defaults
+                Map<String, Object> queueDefaults = null;
+                adapter = new QueueAdapter(this, queue, queueDefaults);
                 _queueAdapters.put(queue, adapter);
 
             }
@@ -547,7 +553,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             if(!_connectionAdapters.containsKey(connection))
             {
-                adapter = new ConnectionAdapter(connection);
+                //TODO: create defaults
+                Map<String, Object> defaults = null;
+                adapter = new ConnectionAdapter(connection, defaults);
                 _connectionAdapters.put(connection, adapter);
 
             }

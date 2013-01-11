@@ -51,9 +51,9 @@ public class AmqpPortAdapter extends PortAdapter
     private final Broker _broker;
     private IncomingNetworkTransport _transport;
 
-    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes)
+    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaultAttributes)
     {
-        super(id, broker, attributes);
+        super(id, broker, attributes, defaultAttributes);
         _broker = broker;
     }
 
