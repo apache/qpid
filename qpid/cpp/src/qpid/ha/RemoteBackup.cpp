@@ -48,6 +48,8 @@ void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGu
 RemoteBackup::~RemoteBackup() { cancel(); }
 
 void RemoteBackup::cancel() {
+    QPID_LOG(debug, logPrefix << "Cancelled " << (connection? "connected":"disconnected")
+             << " backup: " << brokerInfo);
     for (GuardMap::iterator i = guards.begin(); i != guards.end(); ++i)
         i->second->cancel();
     guards.clear();

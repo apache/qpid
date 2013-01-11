@@ -32,6 +32,11 @@
 namespace qpid {
 namespace ha {
 
+// FIXME aconway 2012-12-21: This solution is incomplete. It will only protect
+// against bad promotion if there are READY brokers when this broker starts.
+// It will not help the situation where brokers became READY after this one starts.
+//
+
 /**
  * Check whether a JOINING broker can be promoted .
  *
@@ -49,8 +54,10 @@ class StatusCheck
     ~StatusCheck();
     void setUrl(const Url&);
     bool canPromote();
-    void setPromote(bool p);
+
   private:
+    void setPromote(bool p);
+
     std::string logPrefix;
     sys::Mutex lock;
     std::vector<sys::Thread> threads;
