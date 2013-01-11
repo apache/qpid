@@ -32,6 +32,7 @@
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/types/Variant.h"
+#include "qpid/sys/AtomicValue.h"
 #include <set>
 #include <boost/shared_ptr.hpp>
 
@@ -103,18 +104,16 @@ class HaBroker : public management::Manageable
     void setBrokerUrl(const Url&);
     void updateClientUrl(sys::Mutex::ScopedLock&);
 
-    bool isPrimary(sys::Mutex::ScopedLock&) { return !backup.get(); }
-
     void setStatus(BrokerStatus, sys::Mutex::ScopedLock&);
     void recover();
     void statusChanged(sys::Mutex::ScopedLock&);
     void setLinkProperties(sys::Mutex::ScopedLock&);
+    std::string logPrefix() const;
 
     std::vector<Url> getKnownBrokers() const;
 
     void membershipUpdated(sys::Mutex::ScopedLock&);
 
-    std::string logPrefix;
     broker::Broker& broker;
     types::Uuid systemId;
     const Settings settings;
@@ -126,7 +125,7 @@ class HaBroker : public management::Manageable
     qmf::org::apache::qpid::ha::HaBroker::shared_ptr mgmtObject;
     Url publicUrl, brokerUrl;
     std::vector<Url> knownBrokers;
-    BrokerStatus status;
+    sys::AtomicValue<BrokerStatus> status;
     BrokerInfo brokerInfo;
     Membership membership;
     ReplicationTest replicationTest;

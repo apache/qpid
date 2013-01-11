@@ -1068,13 +1068,15 @@ class RecoveryTests(HaBrokerTest):
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
             # We don't want backups to time out for this test, set long timeout.
-            cluster = HaCluster(self, 4, args=["--ha-backup-timeout=100000"]);
+            cluster = HaCluster(self, 4, args=["--ha-backup-timeout=120"]);
             # Wait for the primary to be ready
             cluster[0].wait_status("active")
+            for b in cluster[1:4]: b.wait_status("ready")
             # Create a queue before the failure.
             s1 = cluster.connect(0).session().sender("q1;{create:always}")
             for b in cluster: b.wait_backup("q1")
             for i in xrange(100): s1.send(str(i))
+
             # Kill primary and 2 backups
             cluster[3].wait_status("ready")
             for i in [0,1,2]: cluster.kill(i, False)
@@ -1091,14 +1093,16 @@ class RecoveryTests(HaBrokerTest):
             s2 = cluster.connect(3).session().sender("q2;{create:always}")
 
             # Verify that messages sent are not completed
-            for i in xrange(100,200): s1.send(str(i), sync=False); s2.send(str(i), sync=False)
+            for i in xrange(100,200):
+                s1.send(str(i), sync=False);
+                s2.send(str(i), sync=False)
             assertSyncTimeout(s1)
             self.assertEqual(s1.unsettled(), 100)
             assertSyncTimeout(s2)
             self.assertEqual(s2.unsettled(), 100)
 
             # Verify we can receive even if sending is on hold:
-            cluster[3].assert_browse("q1", [str(i) for i in range(100)+range(100,200)])
+            cluster[3].assert_browse("q1", [str(i) for i in range(200)])
 
             # Restart backups, verify queues are released only when both backups are up
             cluster.restart(1)
@@ -1106,11 +1110,10 @@ class RecoveryTests(HaBrokerTest):
             self.assertEqual(s1.unsettled(), 100)
             assertSyncTimeout(s2)
             self.assertEqual(s2.unsettled(), 100)
-            self.assertEqual(cluster[3].ha_status(), "recovering")
             cluster.restart(2)
 
             # Verify everything is up to date and active
-            def settled(sender): sender.sync(); return sender.unsettled() == 0;
+            def settled(sender): sender.sync(timeout=1); return sender.unsettled() == 0;
             assert retry(lambda: settled(s1)), "Unsetttled=%s"%(s1.unsettled())
             assert retry(lambda: settled(s2)), "Unsetttled=%s"%(s2.unsettled())
             cluster[1].assert_browse_backup("q1", [str(i) for i in range(100)+range(100,200)])
