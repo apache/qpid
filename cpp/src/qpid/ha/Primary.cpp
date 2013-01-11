@@ -161,6 +161,10 @@ void Primary::timeoutExpectedBackups() {
                 expectedBackups.erase(i++);
                 backups.erase(info.getSystemId());
                 rb->cancel();
+                // Downgrade the broker's status to CATCHUP
+                // The broker will get this status change when it eventually connects.
+                info.setStatus(CATCHUP);
+                haBroker.addBroker(info);
             }
             else ++i;
         }
