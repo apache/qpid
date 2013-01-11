@@ -29,23 +29,25 @@
 
  <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Introduction">
   <title>Introduction</title>
-  <para> Messages that cannot be delivered successfully to a consumer (for instance, because a
-   consumer using a transcation sessions rolls-back the transaction) will automatically be returned
-   to the queue and be subsequently redelivered. This is desirable behaviour that contributes to the
-   ability of a system to withstand unexpected errors. However, this leaves open the possibility for
-   a message to be repeatedily delivered (potentially indefinitely), consuming system resources and
-   preventing the delivery of other messages. Such undeliverable messages are sometimes known as
-   poison messages.</para>
+  <para> Messages that cannot be delivered successfully to a consumer (for instance, because the
+   client is using a transacted session and rolls-back the transaction) can be made available on
+   the queue again and then subsequently be redelivered, depending on the precise session
+   acknowledgement mode and messaging model used by the application. This is normally desirable
+   behaviour that contributes to the ability of a system to withstand unexpected errors. However, it
+   leaves open the possibility for a message to be repeatedly redelivered (potentially indefinitely),
+   consuming system resources and preventing the delivery of other messages. Such undeliverable
+   messages are sometimes known as poison messages.</para>
   <para>For an example, consider a stock ticker application that has been designed to consume prices
    contained within JMS TextMessages. What if inadvertently a BytesMessage is placed onto the queue?
-   As the ticker application does not expect the BytesMessage, it processing with fail and
-   rolls-back the transaction, however the default behavior of the Broker would mean that the
+   As the ticker application does not expect the BytesMessage, its processing might fail and cause it
+   to roll-back the transaction, however the default behavior of the Broker would mean that the
    BytesMessage would be delivered over and over again, preventing the delivery of other legitimate
-   messages, until an operator intervenes and removes the erroneous message. </para>
-  <para>Qpid has a maximum delivery count and dead-letter queue (DLQ) features which can be used in
-   concert to construct a system that automatically handle such a condition. These features are
+   messages, until an operator intervenes and removes the erroneous message from the queue. </para>
+  <para>Qpid has maximum delivery count and dead-letter queue (DLQ) features which can be used in
+   concert to construct a system that automatically handles such a condition. These features are
    described in the following sections.</para>
  </section>
+
  <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Maximum-Delivery-Count">
   <title>Maximum Delivery Count</title>
   <para> Maximum delivery count is a property of a queue. If a consumer application is unable to
@@ -54,8 +56,8 @@
   <para> In order for a maximum delivery count to be enforced, the consuming client
     <emphasis>must</emphasis> call <ulink url="&oracleJeeDocUrl;javax/jms/Session.html#rollback()"
     >Session#rollback()</ulink> (or <ulink url="&oracleJeeDocUrl;javax/jms/Session.html#recover()"
-    >Session#recover()</ulink> depending on the session's transaction mode). It is during the
-   Broker's processing of Session#rollback() (or Session#recover()) that if a message has been seen
+    >Session#recover()</ulink> if the session is not transacted). It is during the Broker's
+   processing of Session#rollback() (or Session#recover()) that if a message has been seen
    at least the maximum number of times then it will move the message to the DLQ or discard the
    message.</para>
   <para>If the consuming client fails in another manner, for instance, closes the connection, the
@@ -65,15 +67,16 @@
    set the client system property <varname>qpid.reject.behaviour</varname> or connection or binding
    URL option <varname>rejectbehaviour</varname> to the value <literal>system</literal>.</para>
   <para>It is possible to determine the number of times a message has been sent to a consumer via
-   the Management interfaces, but is not possible to determine this information from JMS.
+   the Management interfaces, but is not possible to determine this information from a message client.
    Specifically, the optional JMS message header <property>JMSXDeliveryCount</property> is not
    supported.</para>
   <para>Maximum Delivery Count can be enabled via management (see <xref
     linkend="Java-Broker-Configuring-And-Managing"/>) using the the queue declare property
     <property>x-qpid-maximum-delivery-count</property> or via <link
-    linkend="Java-Broker-Queues-Handling-Undeliverable-Messages-Configuration">configuration</link>
+    linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">configuration</link>
    as illustrated below.</para>
  </section>
+
  <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Dead-Letter-Queues">
   <title>Dead Letter Queues (DLQ)</title>
   <para>A Dead Letter Queue (DLQ) acts as an destination for messages that have somehow exceeded the
@@ -82,10 +85,10 @@
    receive the message (typically by exceeding a Maximum Delivery Count) then the message is moved
    onto the DLQ and removed from the original queue. </para>
   <para>The DLQ feature causes generation of a Dead Letter Exchange and a Dead Letter Queue. These
-   are named convention queue_name_DLE and queue_name_DLQ.</para>
+   are named convention QueueName<emphasis>_DLE</emphasis> and QueueName<emphasis>_DLQ</emphasis>.</para>
   <para>DLQs can be enabled via management (see <xref linkend="Java-Broker-Configuring-And-Managing"
    />) using the queue declare property <property>x-qpid-dlq-enabled</property> or via <link
-    linkend="Java-Broker-Queues-Handling-Undeliverable-Messages-Configuration">configuration</link>
+    linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">configuration</link>
    as illustrated below.</para>
   <caution>
    <title>Avoid excessive queue depth</title>
@@ -96,6 +99,7 @@
     depths should not be permitted to develop.</para>
   </caution>
  </section>
+
  <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">
   <title>Configuration</title>
   <para>In the below configuration it can be seen that DLQs/Maximum Delivery Count are enabled at
