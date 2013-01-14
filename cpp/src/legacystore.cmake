@@ -30,7 +30,24 @@ else (DEFINED legacystore_force)
         #
         include (finddb.cmake)
         if (DB_FOUND)
-            set (legacystore_default ON)
+	    #
+	    # find libaio
+	    #
+	    CHECK_LIBRARY_EXISTS (aio io_queue_init "" HAVE_AIO)
+	    CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
+	    if (HAVE_AIO AND HAVE_AIO_H)
+	        #
+		# find libuuid
+		#
+  	        CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
+		CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
+		IF (HAVE_UUID AND HAVE_UUID_H)
+		    #
+		    # allow legacystore to be built
+		    #
+		    set (legacystore_default ON)
+		ENDIF (HAVE_UUID AND HAVE_UUID_H)
+	    endif (HAVE_AIO AND HAVE_AIO_H)
         endif (DB_FOUND)
     endif (UNIX)
 endif (DEFINED legacystore_force)
@@ -42,8 +59,20 @@ if (BUILD_LEGACYSTORE)
         message(FATAL_ERROR "Legacystore produced only on Unix platforms")
     endif (NOT UNIX)
     if (NOT DB_FOUND)
-        message(STATUS "Legacystore requires BerkeleyDB which is absent.")
+        message(FATAL_ERROR "Legacystore requires BerkeleyDB which is absent.")
     endif (NOT DB_FOUND)
+    if (NOT HAVE_AIO)
+        message(FATAL_ERROR "Legacystore requires libaio which is absent.")
+    endif (NOT HAVE_AIO)
+    if (NOT HAVE_AIO_H)
+        message(FATAL_ERROR "Legacystore requires libaio.h which is absent.")
+    endif (NOT HAVE_AIO_H)
+    if (NOT HAVE_UUID)
+        message(FATAL_ERROR "Legacystore requires uuid which is absent.")
+    endif (NOT HAVE_UUID)
+    if (NOT HAVE_UUID_H)
+        message(FATAL_ERROR "Legacystore requires uuid.h which is absent.")
+    endif (NOT HAVE_UUID_H)
 
     # Journal source files
     set (legacy_jrnl_SOURCES
@@ -119,7 +148,6 @@ if (BUILD_LEGACYSTORE)
 
     target_link_libraries (legacystore
         aio
-        rt
         uuid
         qpidcommon qpidtypes qpidbroker
         ${DB_LIBRARY}
