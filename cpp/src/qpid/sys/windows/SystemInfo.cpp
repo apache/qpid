@@ -67,35 +67,6 @@ bool SystemInfo::getLocalHostname (Address &address) {
 static const std::string LOCALHOST("127.0.0.1");
 static const std::string TCP("tcp");
 
-void SystemInfo::getLocalIpAddresses (uint16_t port,
-                                      std::vector<Address> &addrList) {
-    enum { MAX_URL_INTERFACES = 100 };
-
-    SOCKET s = socket (PF_INET, SOCK_STREAM, 0);
-    if (s != INVALID_SOCKET) {
-        INTERFACE_INFO interfaces[MAX_URL_INTERFACES];
-        DWORD filledBytes = 0;
-        WSAIoctl (s,
-                  SIO_GET_INTERFACE_LIST,
-                  0,
-                  0,
-                  interfaces,
-                  sizeof (interfaces),
-                  &filledBytes,
-                  0,
-                  0);
-        unsigned int interfaceCount = filledBytes / sizeof (INTERFACE_INFO);
-        for (unsigned int i = 0; i < interfaceCount; ++i) {
-            if (interfaces[i].iiFlags & IFF_UP) {
-                std::string addr(inet_ntoa(interfaces[i].iiAddress.AddressIn.sin_addr));
-                if (addr != LOCALHOST)
-                    addrList.push_back(Address(TCP, addr, port));
-            }
-        }
-        closesocket (s);
-    }
-}
-
 // Null function which always fails to find an network interface name
 bool SystemInfo::getInterfaceAddresses(const std::string&, std::vector<std::string>&)
 {
