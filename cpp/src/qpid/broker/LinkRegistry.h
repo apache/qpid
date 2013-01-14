@@ -53,7 +53,6 @@ namespace broker {
         Broker* broker;
         management::Manageable* parent;
         MessageStore* store;
-        bool passive;
         std::string realm;
 
         boost::shared_ptr<Link> findLink(const std::string& key);
@@ -144,15 +143,6 @@ namespace broker {
         QPID_BROKER_EXTERN std::string getPassword        (const std::string& key);
         QPID_BROKER_EXTERN std::string getHost            (const std::string& key);
         QPID_BROKER_EXTERN uint16_t    getPort            (const std::string& key);
-
-        /**
-         * Called to alter passive state. In passive state the links
-         * and bridges managed by a link registry will be recorded and
-         * updated but links won't actually establish connections and
-         * bridges won't therefore pull or push any messages.
-         */
-        QPID_BROKER_EXTERN void setPassive(bool);
-        QPID_BROKER_EXTERN bool isPassive() { return passive; }
     };
 }
 }

@@ -171,12 +171,8 @@ Link::Link(const string&  _name,
             agent->addObject(mgmtObject, 0, durable);
         }
     }
-    if (links->isPassive()) {
-        setStateLH(STATE_PASSIVE);
-    } else {
-        setStateLH(STATE_WAITING);
-        startConnectionLH();
-    }
+    setStateLH(STATE_WAITING);
+    startConnectionLH();
     broker->getTimer().add(timerTask);
 
     if (failover) {
@@ -217,7 +213,6 @@ void Link::setStateLH (int newState)
     case STATE_OPERATIONAL : mgmtObject->set_state("Operational"); break;
     case STATE_FAILED      : mgmtObject->set_state("Failed");      break;
     case STATE_CLOSED      : mgmtObject->set_state("Closed");      break;
-    case STATE_PASSIVE     : mgmtObject->set_state("Passive");      break;
     }
 }
 
@@ -241,7 +236,6 @@ void Link::startConnectionLH ()
 
 void Link::established(Connection* c)
 {
-    if (state == STATE_PASSIVE) return;
     stringstream addr;
     addr << host << ":" << port;
     QPID_LOG (info, "Inter-broker link established to " << addr.str());
@@ -364,7 +358,7 @@ void Link::closed(int, std::string text)
     }
     active.clear();
 
-    if (state != STATE_FAILED && state != STATE_PASSIVE)
+    if (state != STATE_FAILED)
     {
         setStateLH(STATE_WAITING);
         mgmtObject->set_lastError (text);
@@ -712,22 +706,6 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
 
     return Manageable::STATUS_UNKNOWN_METHOD;
 }
-
-void Link::setPassive(bool passive)
-{
-    Mutex::ScopedLock mutex(lock);
-    if (passive) {
-        setStateLH(STATE_PASSIVE);
-    } else {
-        if (state == STATE_PASSIVE) {
-            setStateLH(STATE_WAITING);
-        } else {
-            QPID_LOG(warning, "Ignoring attempt to activate non-passive link "
-                     << host << ":" << port);
-        }
-    }
-}
-
 
 /** utility to clean up connection resources correctly */
 void Link::closeConnection( const std::string& reason)
