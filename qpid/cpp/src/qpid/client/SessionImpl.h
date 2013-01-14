@@ -87,15 +87,7 @@ public:
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
-    /**
-     * This method takes the content as a FrameSet; if reframe=false,
-     * the caller is resposnible for ensuring that the header and
-     * content frames in that set are correct for this connection
-     * (right flags, right fragmentation etc). If reframe=true, then
-     * the header and content from the frameset will be copied and
-     * reframed correctly for the connection.
-     */
-    QPID_CLIENT_EXTERN Future send(const framing::AMQBody& command, const framing::FrameSet& content, bool reframe=false);
+    QPID_CLIENT_EXTERN Future send(const framing::AMQBody& command, const framing::FrameSet& content);
     void sendRawFrame(framing::AMQFrame& frame);
 
     Demux& getDemux();
@@ -124,11 +116,6 @@ public:
      * get the Connection associated with this connection
      */
     boost::shared_ptr<ConnectionImpl> getConnection();
-
-    void setDoClearDeliveryPropertiesExchange(bool b=true) { doClearDeliveryPropertiesExchange = b; }
-
-    /** Suppress sending detach in destructor. Used by cluster to build session state */
-    void disableAutoDetach();
 
 private:
     enum State {
@@ -225,10 +212,6 @@ private:
 
     SessionState sessionState;
 
-    bool doClearDeliveryPropertiesExchange;
-
-    bool autoDetach;
-    
   friend class client::SessionHandler;
 };
 
