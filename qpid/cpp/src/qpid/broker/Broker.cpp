@@ -107,6 +107,14 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 
+const std::string empty;
+const std::string amq_direct("amq.direct");
+const std::string amq_topic("amq.topic");
+const std::string amq_fanout("amq.fanout");
+const std::string amq_match("amq.match");
+const std::string qpid_management("qpid.management");
+const std::string knownHostsNone("none");
+
 Broker::Options::Options(const std::string& name) :
     qpid::Options(name),
     noDataDir(0),
@@ -124,6 +132,7 @@ Broker::Options::Options(const std::string& name) :
     queueLimit(100*1048576/*100M default limit*/),
     tcpNoDelay(false),
     requireEncrypted(false),
+    knownHosts(knownHostsNone),
     qmf2Support(true),
     qmf1Support(true),
     queueFlowStopRatio(80),
@@ -181,14 +190,6 @@ Broker::Options::Options(const std::string& name) :
         ("federation-tag", optValue(fedTag, "NAME"), "Override the federation tag")
         ;
 }
-
-const std::string empty;
-const std::string amq_direct("amq.direct");
-const std::string amq_topic("amq.topic");
-const std::string amq_fanout("amq.fanout");
-const std::string amq_match("amq.match");
-const std::string qpid_management("qpid.management");
-const std::string knownHostsNone("none");
 
 namespace {
 // Arguments to declare a non-replicated exchange.
@@ -355,13 +356,7 @@ Broker::Broker(const Broker::Options& conf) :
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
     }
 
-    //initialize known broker urls (TODO: add support for urls for other transports (SSL, RDMA)):
-    if (conf.knownHosts.empty()) {
-        boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
-        if (factory) {
-            knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( factory->getPort() ) );
-        }
-    } else if (conf.knownHosts != knownHostsNone) {
+    if (!conf.knownHosts.empty() && conf.knownHosts != knownHostsNone) {
         knownBrokers.push_back(Url(conf.knownHosts));
     }
 

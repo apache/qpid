@@ -32,13 +32,6 @@ namespace qpid {
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {
 
-    /** Url with the hostname as returned by gethostname(2)  */
-    QPID_COMMON_EXTERN static Url getHostNameUrl(uint16_t port);
-
-    /** Url with local IP address(es), may be more than one address
-     * on a multi-homed host. */
-    QPID_COMMON_EXTERN static Url getIpAddressesUrl(uint16_t port);
-
     struct Invalid : public Exception { QPID_COMMON_EXTERN Invalid(const std::string& s); };
 
     /** Convert to string form. */

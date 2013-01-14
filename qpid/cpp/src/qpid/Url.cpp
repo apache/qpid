@@ -64,19 +64,6 @@ class ProtocolTags {
 
 Url::Invalid::Invalid(const string& s) : Exception(s) {}
 
-Url Url::getHostNameUrl(uint16_t port) {
-    Address address("tcp", std::string(), port);
-    if (!sys::SystemInfo::getLocalHostname(address))
-        throw Url::Invalid(QPID_MSG("Cannot get host name: " << qpid::sys::strError(errno)));
-    return Url(address);
-}
-
-Url Url::getIpAddressesUrl(uint16_t port) {
-    Url url;
-    sys::SystemInfo::getLocalIpAddresses(port, url);
-    return url;
-}
-
 string Url::str() const {
     if (cache.empty() && !this->empty()) {
         ostringstream os;
