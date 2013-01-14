@@ -102,6 +102,11 @@ under the License.
 	primary. This protects those messages against a failure of the new
 	primary until the backups have a chance to connect and catch up.
       </para>
+      <para>
+	Not all messages need to be replicated to the back-up brokers. If a
+	message is consumed and acknowledged by a regular client before it has
+	been replicated to a backup, then it doesn't need to be replicated.
+      </para>
       <variablelist>
 	<title>Status of a HA broker</title>
 	<varlistentry>
