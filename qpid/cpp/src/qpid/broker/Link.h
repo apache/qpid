@@ -98,7 +98,6 @@ class Link : public PersistableConfig, public management::Manageable {
     static const int STATE_OPERATIONAL = 3;
     static const int STATE_FAILED      = 4;
     static const int STATE_CLOSED      = 5;
-    static const int STATE_PASSIVE     = 6;
 
     static const uint32_t MAX_INTERVAL = 32;
 
@@ -165,7 +164,6 @@ class Link : public PersistableConfig, public management::Manageable {
     std::string getPassword()      { return password; }
     Broker* getBroker()       { return broker; }
 
-    void setPassive(bool p);
     bool isConnecting() const { return state == STATE_CONNECTING; }
 
     // PersistableConfig:
