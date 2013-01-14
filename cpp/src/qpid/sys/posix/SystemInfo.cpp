@@ -77,51 +77,6 @@ inline bool isLoopback(const ::sockaddr* addr) {
     }
 }
 
-void SystemInfo::getLocalIpAddresses (uint16_t port,
-                                      std::vector<Address> &addrList) {
-    ::ifaddrs* ifaddr = 0;
-    QPID_POSIX_CHECK(::getifaddrs(&ifaddr));
-    for (::ifaddrs* ifap = ifaddr; ifap != 0; ifap = ifap->ifa_next) {
-        if (ifap->ifa_addr == 0) continue;
-        if (isLoopback(ifap->ifa_addr)) continue;
-        int family = ifap->ifa_addr->sa_family;
-        switch (family) {
-            case AF_INET6: {
-                // Ignore link local addresses as:
-                // * The scope id is illegal in URL syntax
-                // * Clients won't be able to use a link local address
-                //   without adding their own (potentially different) scope id
-                sockaddr_in6* sa6 = (sockaddr_in6*)((void*)ifap->ifa_addr);
-                if (IN6_IS_ADDR_LINKLOCAL(&sa6->sin6_addr)) break;
-                // Fallthrough
-            }
-            case AF_INET: {
-              char dispName[NI_MAXHOST];
-              int rc = ::getnameinfo(
-                  ifap->ifa_addr,
-                  (family == AF_INET)
-                  ? sizeof(struct sockaddr_in)
-                  : sizeof(struct sockaddr_in6),
-                  dispName, sizeof(dispName),
-                  0, 0, NI_NUMERICHOST);
-              if (rc != 0) {
-                  throw QPID_POSIX_ERROR(rc);
-              }
-              string addr(dispName);
-              addrList.push_back(Address(TCP, addr, port));
-              break;
-          }
-          default:
-            continue;
-        }
-    }
-    ::freeifaddrs(ifaddr);
-
-    if (addrList.empty()) {
-        addrList.push_back(Address(TCP, LOOPBACK, port));
-    }
-}
-
 namespace {
     inline socklen_t sa_len(::sockaddr* sa)
     {
