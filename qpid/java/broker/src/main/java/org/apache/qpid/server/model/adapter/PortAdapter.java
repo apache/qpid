@@ -21,15 +21,12 @@
 
 package org.apache.qpid.server.model.adapter;
 
-import java.net.InetSocketAddress;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -44,22 +41,12 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class PortAdapter extends AbstractAdapter implements Port
 {
 
     private final String _name;
     private final Broker _broker;
-    private final Set<Protocol> _protocols;
-    private final Set<Transport> _transports;
-    private final InetSocketAddress _bindingSocketAddress;
-    private final boolean _tcpNoDelay;
-    private final int _receiveBufferSize;
-    private final int _sendBufferSize;
-    private final boolean _needClientAuth;
-    private final boolean _wantClientAuth;
-    private final String _authenticationManager;
     private AuthenticationProvider _authenticationProvider;
 
     /*
@@ -74,40 +61,42 @@ public class PortAdapter extends AbstractAdapter implements Port
 
         addParent(Broker.class, broker);
 
-        String bindingAddress = MapValueConverter.getStringAttribute(BINDING_ADDRESS, attributes, null);
-        int portNumber = MapValueConverter.getIntegerAttribute(PORT, attributes, null);
+        Collection<String> names = getAttributeNames();
+        for (String name : names)
+        {
+            if (attributes.containsKey(name))
+            {
+                setAttribute(name, defaults.get(name), attributes.get(name));
+            }
+        }
 
-        final Set<Protocol> protocolSet = MapValueConverter.getSetAttribute(PROTOCOLS, attributes);
-        final Set<Transport> transportSet = MapValueConverter.getSetAttribute(TRANSPORTS, attributes);
-
-        _bindingSocketAddress = determineBindingAddress(bindingAddress, portNumber);
-        _name = MapValueConverter.getStringAttribute(NAME, attributes, _bindingSocketAddress.getHostName() + ":" + portNumber);
-        _protocols = Collections.unmodifiableSet(new TreeSet<Protocol>(protocolSet));
-        _transports = Collections.unmodifiableSet(new TreeSet<Transport>(transportSet));
-        _tcpNoDelay = MapValueConverter.getBooleanAttribute(TCP_NO_DELAY, attributes);
-        _receiveBufferSize = MapValueConverter.getIntegerAttribute(RECEIVE_BUFFER_SIZE, attributes);
-        _sendBufferSize = MapValueConverter.getIntegerAttribute(SEND_BUFFER_SIZE, attributes);
-        _needClientAuth = MapValueConverter.getBooleanAttribute(NEED_CLIENT_AUTH, attributes);
-        _wantClientAuth = MapValueConverter.getBooleanAttribute(WANT_CLIENT_AUTH, attributes);
-        _authenticationManager = MapValueConverter.getStringAttribute(AUTHENTICATION_MANAGER, attributes, null);
+        String name = (String)getAttribute(NAME);
+        if (name == null)
+        {
+            Integer port = getPort();
+            String bindingAddress = getBindingAddress();
+            name = bindingAddress == null? port + "" : bindingAddress + ":" + port;
+        }
+        _name = name;
     }
 
     @Override
     public String getBindingAddress()
     {
-        return _bindingSocketAddress.getAddress().getHostAddress();
+        return (String)getAttribute(BINDING_ADDRESS);
     }
 
     @Override
     public int getPort()
     {
-        return _bindingSocketAddress.getPort();
+        return (Integer)getAttribute(PORT);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Collection<Transport> getTransports()
     {
-        return _transports;
+        return (Collection<Transport>)getAttribute(TRANSPORTS);
     }
 
     @Override
@@ -124,10 +113,11 @@ public class PortAdapter extends AbstractAdapter implements Port
         throw new IllegalStateException();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Collection<Protocol> getProtocols()
     {
-        return _protocols;
+        return (Collection<Protocol>)getAttribute(PROTOCOLS);
     }
 
     @Override
@@ -284,46 +274,6 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
 
         }
-        else if(BINDING_ADDRESS.equals(name))
-        {
-            return getBindingAddress();
-        }
-        else if(PORT.equals(name))
-        {
-            return getPort();
-        }
-        else if(PROTOCOLS.equals(name))
-        {
-            return getProtocols();
-        }
-        else if(TRANSPORTS.equals(name))
-        {
-            return getTransports();
-        }
-        else if(TCP_NO_DELAY.equals(name))
-        {
-            return isTcpNoDelay();
-        }
-        else if(SEND_BUFFER_SIZE.equals(name))
-        {
-            return getSendBufferSize();
-        }
-        else if(RECEIVE_BUFFER_SIZE.equals(name))
-        {
-            return getReceiveBufferSize();
-        }
-        else if(NEED_CLIENT_AUTH.equals(name))
-        {
-            return isNeedClientAuth();
-        }
-        else if(WANT_CLIENT_AUTH.equals(name))
-        {
-            return isWantClientAuth();
-        }
-        else if(AUTHENTICATION_MANAGER.equals(name))
-        {
-            return getAuthenticationManagerName();
-        }
         return super.getAttribute(name);
     }
 
@@ -368,47 +318,6 @@ public class PortAdapter extends AbstractAdapter implements Port
     protected void onStop()
     {
         // no-op: expected to be overridden by subclass
-    }
-
-    private InetSocketAddress determineBindingAddress(String bindingAddress, int portNumber)
-    {
-        return bindingAddress == null ? new InetSocketAddress(portNumber) : new InetSocketAddress(bindingAddress, portNumber);
-    }
-
-    @Override
-    public boolean isTcpNoDelay()
-    {
-        return _tcpNoDelay;
-    }
-
-    @Override
-    public int getReceiveBufferSize()
-    {
-        return _receiveBufferSize;
-    }
-
-    @Override
-    public int getSendBufferSize()
-    {
-        return _sendBufferSize;
-    }
-
-    @Override
-    public boolean isNeedClientAuth()
-    {
-        return _needClientAuth;
-    }
-
-    @Override
-    public boolean isWantClientAuth()
-    {
-        return _wantClientAuth;
-    }
-
-    @Override
-    public String getAuthenticationManagerName()
-    {
-        return _authenticationManager;
     }
 
     @Override

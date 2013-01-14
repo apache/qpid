@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.server.transport;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
@@ -36,6 +38,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
@@ -70,12 +73,27 @@ public class AmqpPortAdapter extends PortAdapter
         }
 
         AmqpProtocolVersion defaultSupportedProtocolReply = getDefaultAmqpSupportedReply();
-        InetSocketAddress bindingSocketAddress = new InetSocketAddress(getBindingAddress(), getPort());
+
+        String bindingAddress = (String) getAttribute(Port.BINDING_ADDRESS);
+        if (WILDCARD_ADDRESS.equals(bindingAddress))
+        {
+            bindingAddress = null;
+        }
+        Integer port = (Integer) getAttribute(Port.PORT);
+        InetSocketAddress bindingSocketAddress = null;
+        if ( bindingAddress == null )
+        {
+            bindingSocketAddress = new InetSocketAddress(port);
+        }
+        else
+        {
+            bindingSocketAddress = new InetSocketAddress(bindingAddress, port);
+        }
 
         final NetworkTransportConfiguration settings = new ServerNetworkTransportConfiguration(
-                bindingSocketAddress, isTcpNoDelay(),
-                getSendBufferSize(), getReceiveBufferSize(),
-                isNeedClientAuth(), isWantClientAuth());
+                bindingSocketAddress, (Boolean)getAttribute(TCP_NO_DELAY),
+                (Integer)getAttribute(SEND_BUFFER_SIZE), (Integer)getAttribute(RECEIVE_BUFFER_SIZE),
+                (Boolean)getAttribute(NEED_CLIENT_AUTH), (Boolean)getAttribute(WANT_CLIENT_AUTH));
 
         _transport = org.apache.qpid.transport.network.Transport.getIncomingTransportInstance();
         final MultiVersionProtocolEngineFactory protocolEngineFactory = new MultiVersionProtocolEngineFactory(

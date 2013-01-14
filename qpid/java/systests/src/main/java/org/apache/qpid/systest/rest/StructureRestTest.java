@@ -23,6 +23,8 @@ package org.apache.qpid.systest.rest;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.model.Port;
+
 public class StructureRestTest extends QpidRestTestCase
 {
 
@@ -99,14 +101,16 @@ public class StructureRestTest extends QpidRestTestCase
             */
         }
 
-        int[] expectedPorts = { getPort(), getRestTestHelper().getHttpPort() };
-        for (int port : expectedPorts)
-        {
-            String portName = "0.0.0.0:" + port;
-            Map<String, Object> portData = getRestTestHelper().find("name", portName, ports);
-            assertNotNull("Port " + portName + " is not found ", portData);
-            assertNode(portData, portName);
-        }
+
+        String httpPortName = "" + getRestTestHelper().getHttpPort();
+        Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
+        assertNotNull("Http Port " + httpPortName + " is not found", portData);
+        assertNode(portData, httpPortName);
+
+        String amqpPortName = "*:" + getPort();
+        Map<String, Object> amqpPortData = getRestTestHelper().find(Port.NAME, amqpPortName, ports);
+        assertNotNull("Amqp port " + amqpPortName + " is not found", amqpPortData);
+        assertNode(amqpPortData, amqpPortName);
     }
 
     private void assertNode(Map<String, Object> node, String name)

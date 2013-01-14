@@ -105,7 +105,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         Collection<Port> ports = broker.getPorts();
         for (Port port : ports)
         {
-            String authenticationProviderName = port.getAuthenticationManagerName();
+            String authenticationProviderName = (String)port.getAttribute(Port.AUTHENTICATION_MANAGER);
             AuthenticationProvider provider = null;
             if (authenticationProviderName != null)
             {

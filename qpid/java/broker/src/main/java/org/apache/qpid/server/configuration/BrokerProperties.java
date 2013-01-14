@@ -32,6 +32,8 @@ public class BrokerProperties
     public static final String PROPERTY_DISABLED_FEATURES = "qpid.broker_disabled_features";
 
     public static final int  DEFAULT_FRAME_SIZE = Integer.getInteger(PROPERTY_FRAME_SIZE, 65535);
+    public static final String PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES = "qpid.broker_default_amqp_protocol_excludes";
+    public static final String PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES = "qpid.broker_default_amqp_protocol_includes";
 
     private BrokerProperties()
     {

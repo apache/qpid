@@ -105,18 +105,6 @@ public interface Port extends ConfiguredObject
     Collection<VirtualHostAlias> getVirtualHostBindings();
     Collection<Connection> getConnections();
 
-    boolean isTcpNoDelay();
-
-    int getReceiveBufferSize();
-
-    int getSendBufferSize();
-
-    boolean isNeedClientAuth();
-
-    boolean isWantClientAuth();
-
-    String getAuthenticationManagerName();
-
     AuthenticationProvider getAuthenticationProvider();
 
     void setAuthenticationProvider(AuthenticationProvider authenticationProvider);

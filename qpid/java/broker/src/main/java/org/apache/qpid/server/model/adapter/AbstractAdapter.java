@@ -43,13 +43,22 @@ abstract class AbstractAdapter implements ConfiguredObject
     private final UUID _id;
     private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
 
-    protected AbstractAdapter(UUID id, Map<String, Object> defaults)
+    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes)
     {
         _id = id;
+        if (attributes != null)
+        {
+            _attributes.putAll(attributes);
+        }
         if (defaults != null)
         {
             _defaultAttributes.putAll(defaults);
         }
+    }
+
+    protected AbstractAdapter(UUID id, Map<String, Object> defaults)
+    {
+        this(id, defaults, null);
     }
 
     public final UUID getId()

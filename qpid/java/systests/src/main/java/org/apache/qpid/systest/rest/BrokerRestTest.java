@@ -71,7 +71,7 @@ public class BrokerRestTest extends QpidRestTestCase
         String bindingAddress = (String)ports.get(0).get(Port.BINDING_ADDRESS);
 
         Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getPort(), ports);
-        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getRestTestHelper().getHttpPort(), ports);
+        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, "" + getRestTestHelper().getHttpPort(), ports);
 
         assertNotNull("Cannot find AMQP port", amqpPort);
         assertNotNull("Cannot find HTTP port", httpPort);
