@@ -44,7 +44,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 // factored: The persistence element should be factored separately
 LinkRegistry::LinkRegistry () :
     broker(0),
-    parent(0), store(0), passive(false),
+    parent(0), store(0),
     realm("")
 {
 }
@@ -61,7 +61,7 @@ class LinkRegistryConnectionObserver : public ConnectionObserver {
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker),
-    parent(0), store(0), passive(false),
+    parent(0), store(0),
     realm(broker->getOptions().realm)
 {
     broker->getConnectionObservers().add(
@@ -412,18 +412,6 @@ std::string LinkRegistry::getAuthIdentity(const std::string& key)
         return string();
 
     return link->getUsername();
-}
-
-
-void LinkRegistry::setPassive(bool p)
-{
-    Mutex::ScopedLock locker(lock);
-    passive = p;
-    if (passive) { QPID_LOG(info, "Passivating links"); }
-    else { QPID_LOG(info, "Activating links"); }
-    for (LinkMap::iterator i = links.begin(); i != links.end(); i++) {
-        i->second->setPassive(passive);
-    }
 }
 
 }} // namespace qpid::broker
