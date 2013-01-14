@@ -34,15 +34,9 @@ then
   echo
   # These are the four different ways of creating links ( or routes+links ) 
   # that the qpid-route command provides.
-  echo "Usage: ${script_name} dynamic|link|queue|route [cluster]"
+  echo "Usage: ${script_name} dynamic|link|queue|route"
   echo
   exit 1
-fi
-
-# Has the user told us to do clustering ? -----------
-clustering_flag=
-if [ $# -eq "2" ] && [ "$2" == "cluster" ]; then
-  clustering_flag=true
 fi
 
 qpid_route_method=$1
@@ -128,15 +122,7 @@ DST_TCP_PORT=5807
 SRC_TCP_PORT_2=5802
 DST_TCP_PORT_2=5803
 
-CLUSTER_NAME_SUFFIX=`hostname | tr '.' ' ' | awk '{print $1}'`
-CLUSTER_1_NAME=sasl_fed_ex_cluster_1_${CLUSTER_NAME_SUFFIX}
-CLUSTER_2_NAME=sasl_fed_ex_cluster_2_${CLUSTER_NAME_SUFFIX}
-
-print "CLUSTER_1_NAME == ${CLUSTER_1_NAME}"
-print "CLUSTER_2_NAME == ${CLUSTER_2_NAME}"
-
 SSL_LIB=${moduledir}/ssl.so
-CLUSTER_LIB=${moduledir}/cluster.so
 
 export QPID_SSL_CERT_NAME=${TEST_HOSTNAME}
 
@@ -183,79 +169,25 @@ COMMON_BROKER_OPTIONS="                          \
                       
 
 function start_brokers {
-  if [ $1 ]; then
-    # clustered ----------------------------------------
-    print "Starting SRC cluster"
-
-    print "  src broker 1"
-    $QPIDD_EXEC                                  \
-      --port=${SRC_TCP_PORT}                     \
-      --ssl-port ${SRC_SSL_PORT}                 \
-      ${COMMON_BROKER_OPTIONS}                   \
-      --load-module ${CLUSTER_LIB}               \
-      --cluster-name ${CLUSTER_1_NAME}           \
-      --log-to-file $tmp_root/qpidd_src.log 2> /dev/null
-
-    broker_ports[0]=${SRC_TCP_PORT}
-
-    print "  src broker 2"
-    $QPIDD_EXEC                                  \
-      --port=${SRC_TCP_PORT_2}                   \
-      --ssl-port ${SRC_SSL_PORT_2}               \
-      ${COMMON_BROKER_OPTIONS}                   \
-      --load-module ${CLUSTER_LIB}               \
-      --cluster-name ${CLUSTER_1_NAME}           \
-      --log-to-file $tmp_root/qpidd_src_2.log 2> /dev/null
-
-    broker_ports[1]=${SRC_TCP_PORT_2}
-
-
-    print "Starting DST cluster"
-
-    print "  dst broker 1"
-    $QPIDD_EXEC                                  \
-      --port=${DST_TCP_PORT}                     \
-      --ssl-port ${DST_SSL_PORT}                 \
-      ${COMMON_BROKER_OPTIONS}                   \
-      --load-module ${CLUSTER_LIB}               \
-      --cluster-name ${CLUSTER_2_NAME}           \
-      --log-to-file $tmp_root/qpidd_dst.log 2> /dev/null
-
-    broker_ports[2]=${DST_TCP_PORT}
-
-    print "  dst broker 2"
-    $QPIDD_EXEC                                  \
-      --port=${DST_TCP_PORT_2}                   \
-      --ssl-port ${DST_SSL_PORT_2}               \
-      ${COMMON_BROKER_OPTIONS}                   \
-      --load-module ${CLUSTER_LIB}               \
-      --cluster-name ${CLUSTER_2_NAME}           \
-      --log-to-file $tmp_root/qpidd_dst_2.log 2> /dev/null
-
-    broker_ports[3]=${DST_TCP_PORT_2}
-
-  else
     # vanilla brokers --------------------------------
     print "Starting SRC broker"
     $QPIDD_EXEC                                  \
-      --port=${SRC_TCP_PORT}                     \
-      --ssl-port ${SRC_SSL_PORT}                 \
-      ${COMMON_BROKER_OPTIONS}                   \
-      --log-to-file $tmp_root/qpidd_src.log 2> /dev/null
+	--port=${SRC_TCP_PORT}                     \
+	--ssl-port ${SRC_SSL_PORT}                 \
+	${COMMON_BROKER_OPTIONS}                   \
+	--log-to-file $tmp_root/qpidd_src.log 2> /dev/null
 
     broker_ports[0]=${SRC_TCP_PORT}
 
     print "Starting DST broker"
     $QPIDD_EXEC                                  \
-      --port=${DST_TCP_PORT}                     \
-      --ssl-port ${DST_SSL_PORT}                 \
-      ${COMMON_BROKER_OPTIONS}                   \
-      --log-to-file $tmp_root/qpidd_dst.log 2> /dev/null
+	--port=${DST_TCP_PORT}                     \
+	--ssl-port ${DST_SSL_PORT}                 \
+	${COMMON_BROKER_OPTIONS}                   \
+	--log-to-file $tmp_root/qpidd_dst.log 2> /dev/null
 
     broker_ports[1]=${DST_TCP_PORT}
-  fi
 }
-
 
 function halt_brokers {
   n_brokers=${#broker_ports[@]}
@@ -270,7 +202,7 @@ function halt_brokers {
 }
 
 
-start_brokers $clustering_flag
+start_brokers
 
 
 # I am not randomizing these names, because this test creates its own brokers.
@@ -329,9 +261,7 @@ fi
 # to avoid false negatives.
 sleep 5
 
-# This should work the same whether or not we are running a clustered test.
-# In the case of clustered tests, the status is not printed by qpid_route.
-# So in either case, I will look only at the transport field, which should be "ssl".
+# Look only at the transport field, which should be "ssl".
 print "check the link"
 link_status=$($QPID_ROUTE_EXEC link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $3}')
 
