@@ -162,11 +162,6 @@ void BSDSocket::connect(const SocketAddress& addr) const
     // remote port (which is unoccupied) as the port to bind the local
     // end of the socket, resulting in a "circular" connection.
     //
-    // This seems like something the OS should prevent but I have
-    // confirmed that sporadic hangs in
-    // cluster_tests.LongTests.test_failover on RHEL5 are caused by
-    // such a circular connection.
-    //
     // Raise an error if we see such a connection, since we know there is
     // no listener on the peer address.
     //
