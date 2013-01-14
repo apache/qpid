@@ -2551,70 +2551,6 @@ void ManagementAgent::SchemaClass::mapDecode(const Variant::Map& _map) {
     }
 }
 
-void ManagementAgent::exportSchemas(string& out) {
-    Variant::List list_;
-    Variant::Map map_, kmap, cmap;
-
-    for (PackageMap::const_iterator i = packages.begin(); i != packages.end(); ++i) {
-        string name = i->first;
-        const ClassMap& classes = i ->second;
-        for (ClassMap::const_iterator j = classes.begin(); j != classes.end(); ++j) {
-            const SchemaClassKey& key = j->first;
-            const SchemaClass& klass = j->second;
-            if (klass.writeSchemaCall == 0) { // Ignore built-in schemas.
-                // Encode name, schema-key, schema-class
-
-                map_.clear();
-                kmap.clear();
-                cmap.clear();
-
-                key.mapEncode(kmap);
-                klass.mapEncode(cmap);
-
-                map_["_pname"] = name;
-                map_["_key"] = kmap;
-                map_["_class"] = cmap;
-                list_.push_back(map_);
-            }
-        }
-    }
-
-    ListCodec::encode(list_, out);
-}
-
-void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
-
-    string buf(inBuf.getPointer(), inBuf.available());
-    Variant::List content;
-    ListCodec::decode(buf, content);
-    Variant::List::const_iterator l;
-
-
-    for (l = content.begin(); l != content.end(); l++) {
-        string package;
-        SchemaClassKey key;
-        SchemaClass klass;
-        Variant::Map map_, kmap, cmap;
-        Variant::Map::const_iterator i;
-        
-        map_ = l->asMap();
-
-        if ((i = map_.find("_pname")) != map_.end()) {
-            package = i->second.asString();
-
-            if ((i = map_.find("_key")) != map_.end()) {
-                key.mapDecode(i->second.asMap());
-
-                if ((i = map_.find("_class")) != map_.end()) {
-                    klass.mapDecode(i->second.asMap());
-
-                    packages[package][key] = klass;
-                }
-            }
-        }
-    }
-}
-
 void ManagementAgent::RemoteAgent::mapEncode(Variant::Map& map_) const {
     Variant::Map _objId, _values;
 
@@ -2656,52 +2592,6 @@ void ManagementAgent::RemoteAgent::mapDecode(const Variant::Map& map_) {
 
     // TODO aconway 2010-03-04: see comment in encode(), readProperties doesn't set v2key.
     mgmtObject->set_connectionRef(connectionRef);
-}
-
-void ManagementAgent::exportAgents(string& out) {
-    Variant::List list_;
-    Variant::Map map_, omap, amap;
-
-    for (RemoteAgentMap::const_iterator i = remoteAgents.begin();
-         i != remoteAgents.end();
-         ++i)
-    {
-        // TODO aconway 2010-03-04: see comment in ManagementAgent::RemoteAgent::encode
-        boost::shared_ptr<RemoteAgent> agent(i->second);
-
-        map_.clear();
-        amap.clear();
-
-        agent->mapEncode(amap);
-        map_["_remote_agent"] = amap;
-        list_.push_back(map_);
-    }
-
-    ListCodec::encode(list_, out);
-}
-
-void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
-    string buf(inBuf.getPointer(), inBuf.available());
-    Variant::List content;
-    ListCodec::decode(buf, content);
-    Variant::List::const_iterator l;
-    sys::Mutex::ScopedLock lock(userLock);
-
-    for (l = content.begin(); l != content.end(); l++) {
-        boost::shared_ptr<RemoteAgent> agent(new RemoteAgent(*this));
-        Variant::Map map_;
-        Variant::Map::const_iterator i;
-
-        map_ = l->asMap();
-
-        if ((i = map_.find("_remote_agent")) != map_.end()) {
-
-            agent->mapDecode(i->second.asMap());
-
-            addObject (agent->mgmtObject, 0, false);
-            remoteAgents[agent->connectionRef] = agent;
-        }
-    }
 }
 
 namespace {
@@ -2782,54 +2672,6 @@ Variant::Map ManagementAgent::toMap(const FieldTable& from)
     return map;
 }
 
-
-// Build up a list of the current set of deleted objects that are pending their
-// next (last) publish-ment.
-void ManagementAgent::exportDeletedObjects(DeletedObjectList& outList)
-{
-    outList.clear();
-
-    sys::Mutex::ScopedLock lock (userLock);
-
-    moveNewObjects();
-    moveDeletedObjects();
-
-    // now copy the pending deletes into the outList
-    for (PendingDeletedObjsMap::iterator mIter = pendingDeletedObjs.begin();
-         mIter != pendingDeletedObjs.end(); mIter++) {
-        for (DeletedObjectList::iterator lIter = mIter->second.begin();
-             lIter != mIter->second.end(); lIter++) {
-            outList.push_back(*lIter);
-        }
-    }
-}
-
-// Called by cluster to reset the management agent's list of deleted
-// objects to match the rest of the cluster.
-void ManagementAgent::importDeletedObjects(const DeletedObjectList& inList)
-{
-    sys::Mutex::ScopedLock lock (userLock);
-    sys::Mutex::ScopedLock objLock(objectLock);
-    // Clear out any existing deleted objects
-    moveNewObjects();
-    pendingDeletedObjs.clear();
-    ManagementObjectMap::iterator i = managementObjects.begin();
-    // Silently drop any deleted objects left over from receiving the update.
-    while (i != managementObjects.end()) {
-        ManagementObject::shared_ptr object = i->second;
-        if (object->isDeleted()) {
-            managementObjects.erase(i++);
-        }
-        else ++i;
-    }
-    for (DeletedObjectList::const_iterator lIter = inList.begin(); lIter != inList.end(); lIter++) {
-
-        std::string classkey((*lIter)->packageName + std::string(":") + (*lIter)->className);
-        pendingDeletedObjs[classkey].push_back(*lIter);
-    }
-}
-
-
 // construct a DeletedObject from a management object.
 ManagementAgent::DeletedObject::DeletedObject(ManagementObject::shared_ptr src, bool v1, bool v2)
     : packageName(src->getPackageName()),
@@ -2866,26 +2708,6 @@ ManagementAgent::DeletedObject::DeletedObject(ManagementObject::shared_ptr src, 
         encodedV2 = map_;
     }
 }
-
-
-
-// construct a DeletedObject from an encoded representation. Used by
-// clustering to move deleted objects between clustered brokers.  See
-// DeletedObject::encode() for the reverse.
-ManagementAgent::DeletedObject::DeletedObject(const std::string& encoded)
-{
-    qpid::types::Variant::Map map_;
-    MapCodec::decode(encoded, map_);
-
-    packageName = map_["_package_name"].getString();
-    className = map_["_class_name"].getString();
-    objectId = map_["_object_id"].getString();
-
-    encodedV1Config = map_["_v1_config"].getString();
-    encodedV1Inst = map_["_v1_inst"].getString();
-    encodedV2 = map_["_v2_data"].asMap();
-}
-
 
 // Remove Deleted objects, and save for later publishing...
 bool ManagementAgent::moveDeletedObjects() {
