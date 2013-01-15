@@ -31,8 +31,9 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-
+        BrokerTestHelper.setUp();
         _session = BrokerTestHelper.createSession();
+
         setAmqpActor(new AMQPConnectionActor(_session, getRootLogger()));
     }
 
@@ -48,6 +49,7 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

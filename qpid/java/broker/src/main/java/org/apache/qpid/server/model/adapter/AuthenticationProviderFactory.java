@@ -75,7 +75,7 @@ public class AuthenticationProviderFactory
             }
         }
 
-        throw new IllegalArgumentException("No factories found for configuration attributes " + attributes);
+        throw new IllegalArgumentException("No authentication provider factory found for configuration attributes " + attributes);
     }
 
 }

@@ -68,11 +68,19 @@ public class AckTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _channel = BrokerTestHelper.createChannel(5);
         _protocolSession = _channel.getProtocolSession();
         _virtualHost = _protocolSession.getVirtualHost();
         _queue = BrokerTestHelper.createQueue(getTestName(), _virtualHost);
         _messageStore = (TestableMemoryMessageStore)_virtualHost.getMessageStore();
+    }
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
     }
 
     private void publishMessages(int count) throws AMQException

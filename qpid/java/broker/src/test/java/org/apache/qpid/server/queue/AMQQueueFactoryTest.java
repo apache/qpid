@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.apache.commons.configuration.XMLConfiguration;
@@ -51,11 +50,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         super.setUp();
 
+        BrokerTestHelper.setUp();
         XMLConfiguration configXml = new XMLConfiguration();
         configXml.addProperty("store.class", TestableMemoryMessageStore.class.getName());
 
 
-        Broker broker = mock(Broker.class);
+        Broker broker = BrokerTestHelper.createBrokerMock();
         if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
         {
             when(broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
@@ -73,11 +73,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         try
         {
-            super.tearDown();
+            _virtualHost.close();
         }
         finally
         {
-            _virtualHost.close();
+            BrokerTestHelper.tearDown();
+            super.tearDown();
         }
     }
 

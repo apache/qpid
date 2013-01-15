@@ -61,7 +61,7 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final String QPID_WORK = "QPID_WORK";
     public static final String LIB_DIR = "lib";
 
-    private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
+    private Map<String, Configuration> _virtualHosts = new HashMap<String, Configuration>();
 
     private File _configFile;
     private File _vhostsFile;
@@ -291,8 +291,7 @@ public class ServerConfiguration extends AbstractConfiguration
             String name = (String) hosts.get(j);
 
             // Add the virtual hosts to the server configuration
-            VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)), null);
-            _virtualHosts.put(virtualhost.getName(), virtualhost);
+            _virtualHosts.put(name, vhostConfiguration.subset("virtualhost." + escapeTagName(name)));
         }
     }
 
@@ -379,14 +378,14 @@ public class ServerConfiguration extends AbstractConfiguration
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
     }
 
-    public VirtualHostConfiguration getVirtualHostConfig(String name)
+    public Configuration getVirtualHostConfig(String name)
     {
         return _virtualHosts.get(name);
     }
 
-    public void setVirtualHostConfig(VirtualHostConfiguration config)
+    public void setVirtualHostConfig(String name, Configuration config)
     {
-        _virtualHosts.put(config.getName(), config);
+        _virtualHosts.put(name, config);
     }
 
     public String getDefaultAuthenticationManager()

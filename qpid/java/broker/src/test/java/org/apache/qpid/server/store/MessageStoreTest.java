@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import static org.mockito.Mockito.mock;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -104,6 +103,7 @@ public class MessageStoreTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
 
         String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
         
@@ -113,7 +113,8 @@ public class MessageStoreTest extends QpidTestCase
 
         cleanup(new File(storePath));
 
-        _broker = mock(Broker.class);
+        _broker = BrokerTestHelper.createBrokerMock();
+
         reloadVirtualHost();
     }
 
@@ -129,6 +130,7 @@ public class MessageStoreTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

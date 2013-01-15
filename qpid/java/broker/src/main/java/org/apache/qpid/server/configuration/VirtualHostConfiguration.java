@@ -40,18 +40,25 @@ public class VirtualHostConfiguration extends AbstractConfiguration
     private final Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
     private final Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
     private final Broker _broker;
+    private final long _defaultHouseKeepingCheckPeriod;
 
     public VirtualHostConfiguration(String name, Configuration config, Broker broker) throws ConfigurationException
     {
         _name = name;
         _broker = broker;
+
+        // store value of this attribute for running life of virtual host since updating of this value has no run-time effect
+        _defaultHouseKeepingCheckPeriod = ((Number)_broker.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).longValue();
         setConfiguration(config);
     }
 
     public VirtualHostConfiguration(String name, File configurationFile, Broker broker) throws ConfigurationException
     {
-        _name = name;
-        _broker = broker;
+        this(name, loadConfiguration(name, configurationFile), broker);
+    }
+
+    private static Configuration loadConfiguration(String name, File configurationFile) throws ConfigurationException
+    {
         Configuration configuration = null;
         if (configurationFile == null)
         {
@@ -73,7 +80,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
                 configuration = config;
             }
         }
-        setConfiguration(configuration);
+        return configuration;
     }
 
     /**
@@ -113,7 +120,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public long getHousekeepingCheckPeriod()
     {
-        return getLongValue("housekeeping.checkPeriod", getBrokerAttributeAsLong(Broker.HOUSEKEEPING_CHECK_PERIOD));
+        return getLongValue("housekeeping.checkPeriod", _defaultHouseKeepingCheckPeriod);
     }
 
     public Configuration getStoreConfiguration()

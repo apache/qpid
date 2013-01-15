@@ -72,7 +72,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-
+        BrokerTestHelper.setUp();
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
     }
 
@@ -88,6 +88,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

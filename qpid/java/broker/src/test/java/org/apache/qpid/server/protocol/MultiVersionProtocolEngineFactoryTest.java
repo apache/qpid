@@ -43,7 +43,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-
+        BrokerTestHelper.setUp();
         _broker = BrokerTestHelper.createBrokerMock();
         VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
         when(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)).thenReturn("default");
@@ -55,8 +55,15 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
     @Override
     protected void tearDown() throws Exception
     {
-        _virtualHost.close();
-        super.tearDown();
+        try
+        {
+            _virtualHost.close();
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     private static final byte[] AMQP_0_8_HEADER =

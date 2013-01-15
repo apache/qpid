@@ -317,16 +317,16 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
     private void createVirtualHostConfig(ServerConfiguration serverConfiguration, Map<UUID, ConfigurationEntry> rootChildren)
     {
+        File configuration = serverConfiguration.getVirtualHostsFile();
         for (String name : serverConfiguration.getVirtualHostsNames())
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, name);
-            File configuration = serverConfiguration.getVirtualHostsFile();
             if (configuration == null)
             {
                 try
                 {
-                    HierarchicalConfiguration virtualHostConfig = ConfigurationUtils.convertToHierarchical(serverConfiguration.getVirtualHostConfig(name).getConfig());
+                    HierarchicalConfiguration virtualHostConfig = ConfigurationUtils.convertToHierarchical(serverConfiguration.getVirtualHostConfig(name));
                     virtualHostConfig.getRootNode().setName(name);
                     configuration = File.createTempFile("_virtualhost", ".xml");
                     XMLConfiguration config = new XMLConfiguration();

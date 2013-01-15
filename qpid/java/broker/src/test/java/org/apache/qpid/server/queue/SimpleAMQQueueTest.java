@@ -104,6 +104,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
 
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
@@ -116,9 +117,16 @@ public class SimpleAMQQueueTest extends QpidTestCase
     @Override
     public void tearDown() throws Exception
     {
-        _queue.stop();
-        _virtualHost.close();
-        super.tearDown();
+        try
+        {
+            _queue.stop();
+            _virtualHost.close();
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     public void testCreateQueue() throws AMQException

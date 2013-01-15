@@ -80,7 +80,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         // create virtual host configuration, registry and host instance
         addVirtualHostConfiguration();
         String vhostName = "test" + _masterPort;
-        VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), mock(Broker.class));
+        VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), BrokerTestHelper.createBrokerMock());
         _virtualHost = BrokerTestHelper.createVirtualHost(configuration);
         BDBHAMessageStore store = (BDBHAMessageStore) _virtualHost.getMessageStore();
 

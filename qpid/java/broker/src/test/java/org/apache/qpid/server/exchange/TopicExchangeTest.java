@@ -53,6 +53,7 @@ public class TopicExchangeTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _exchange = new TopicExchange();
         _vhost = BrokerTestHelper.createVirtualHost(getName());
         _store = new MemoryMessageStore();
@@ -70,6 +71,7 @@ public class TopicExchangeTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

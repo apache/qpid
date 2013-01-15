@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.configuration;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
@@ -33,6 +34,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -53,17 +55,21 @@ public class ServerConfigurationTest extends QpidTestCase
 {
     private XMLConfiguration _config = new XMLConfiguration();
     private ServerConfiguration _serverConfig = null;
+    private Broker _broker;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
         _serverConfig = new ServerConfiguration(_config);
+        BrokerTestHelper.setUp();
+        _broker = BrokerTestHelper.createBrokerMock();
     }
 
     @Override
     protected void tearDown() throws Exception
     {
+        BrokerTestHelper.tearDown();
         super.tearDown();
     }
 
@@ -1001,10 +1007,10 @@ public class ServerConfigurationTest extends QpidTestCase
         config.initialise();
         
         // Test config
-        VirtualHostConfiguration virtualHost = config.getVirtualHostConfig("a");
+        Configuration virtualHost = config.getVirtualHostConfig("a");
 
         assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
-        assertEquals("Incorrect virtualhost name", "a", virtualHost.getName());
+        assertNotNull("Unexpected virtual host configuration", virtualHost);
     }
 
     /**
@@ -1037,12 +1043,12 @@ public class ServerConfigurationTest extends QpidTestCase
         // Load config
         ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
         config.initialise();
-        
+
         // Test config
-        VirtualHostConfiguration virtualHost = config.getVirtualHostConfig("one");
+        Configuration virtualHost = config.getVirtualHostConfig("one");
 
         assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
-        assertEquals("Incorrect virtualhost name", "one", virtualHost.getName());
+        assertNotNull("Unexpected virtual host configuration", virtualHost);
     }
 
     /**
@@ -1091,11 +1097,11 @@ public class ServerConfigurationTest extends QpidTestCase
         // Load config
         ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
         config.initialise();
-        
+
         // Test config
-        VirtualHostConfiguration testHost = config.getVirtualHostConfig("test");
+        VirtualHostConfiguration testHost = new VirtualHostConfiguration("test", config.getVirtualHostConfig("test"), _broker);
         ExchangeConfiguration testExchange = testHost.getExchangeConfiguration("test.topic");
-        VirtualHostConfiguration fishHost = config.getVirtualHostConfig("fish");
+        VirtualHostConfiguration fishHost = new VirtualHostConfiguration("fish", config.getVirtualHostConfig("fish"), _broker);
         ExchangeConfiguration fishExchange = fishHost.getExchangeConfiguration("fish.topic");
 
         assertEquals("Incorrect virtualhost count", 2, config.getVirtualHostsNames().length);
@@ -1147,7 +1153,7 @@ public class ServerConfigurationTest extends QpidTestCase
         config.initialise();
         
         // Test config
-        VirtualHostConfiguration testHost = config.getVirtualHostConfig("test");
+        VirtualHostConfiguration testHost = new VirtualHostConfiguration("test", config.getVirtualHostConfig("test"), _broker);
         ExchangeConfiguration testExchange = testHost.getExchangeConfiguration("test.topic");
 
         assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
@@ -1185,7 +1191,7 @@ public class ServerConfigurationTest extends QpidTestCase
         config.initialise();
         
         // Test config
-        VirtualHostConfiguration oneHost = config.getVirtualHostConfig("test-one");
+        VirtualHostConfiguration oneHost =  new VirtualHostConfiguration("test-one", config.getVirtualHostConfig("test-one"), _broker);
 
         assertEquals("Incorrect virtualhost count", 1, config.getVirtualHostsNames().length);
         assertEquals("Incorrect virtualhost name", "test-one", oneHost.getName());
@@ -1391,11 +1397,10 @@ public class ServerConfigurationTest extends QpidTestCase
         ServerConfiguration serverConfiguration = new ServerConfiguration(xml);
         serverConfiguration.initialise();
 
-        Broker broker = mock(Broker.class);
-        when(broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
-        VirtualHostConfiguration test = new VirtualHostConfiguration("test", serverConfiguration.getVirtualHostConfig("test").getConfig(), broker );
+        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
+        VirtualHostConfiguration test = new VirtualHostConfiguration("test", serverConfiguration.getVirtualHostConfig("test"), _broker );
         assertNotNull("Host 'test' is not found", test);
-        VirtualHostConfiguration extra = new VirtualHostConfiguration("extra", serverConfiguration.getVirtualHostConfig("extra").getConfig(), broker);
+        VirtualHostConfiguration extra = new VirtualHostConfiguration("extra", serverConfiguration.getVirtualHostConfig("extra"), _broker);
         assertNotNull("Host 'extra' is not found", test);
 
         QueueConfiguration biggles = test.getQueueConfiguration("biggles");

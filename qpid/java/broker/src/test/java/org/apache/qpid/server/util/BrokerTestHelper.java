@@ -66,15 +66,13 @@ public class BrokerTestHelper
     protected static final String BROKER_STORE_CLASS_NAME_KEY = "brokerstore.class.name";
     protected static final String JSON_BROKER_STORE_CLASS_NAME = JsonConfigurationEntryStore.class.getName();
 
-
     public static Broker createBrokerMock()
     {
-        setCurrentActorIfNecessary();
-
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
         when(subjectCreator.getMechanisms()).thenReturn("");
         Broker broker = mock(Broker.class);
         when(broker.getAttribute(Broker.SESSION_COUNT_LIMIT)).thenReturn(1);
+        when(broker.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).thenReturn(10000l);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
         RootMessageLogger rootMessageLogger = CurrentActor.get().getRootMessageLogger();
@@ -85,18 +83,19 @@ public class BrokerTestHelper
         return broker;
     }
 
-    public static void setCurrentActorIfNecessary()
+    public static void setUp()
     {
-        if (CurrentActor.get() == null)
-        {
-            CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        }
+       CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
+    }
+
+    public static void tearDown()
+    {
+        CurrentActor.remove();
     }
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration, VirtualHostRegistry virtualHostRegistry)
             throws Exception
     {
-        setCurrentActorIfNecessary();
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         VirtualHost host = new VirtualHostImpl(virtualHostRegistry, statisticsGatherer, new SecurityManager(null), virtualHostConfiguration);
         virtualHostRegistry.registerVirtualHost(host);
@@ -105,8 +104,6 @@ public class BrokerTestHelper
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration) throws Exception
     {
-        setCurrentActorIfNecessary();
-
         return new VirtualHostImpl(null, mock(StatisticsGatherer.class), new SecurityManager(null), virtualHostConfiguration);
     }
 
@@ -124,7 +121,7 @@ public class BrokerTestHelper
 
     private static VirtualHostConfiguration createVirtualHostConfiguration(String name) throws ConfigurationException
     {
-        VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, new PropertiesConfiguration(), mock(Broker.class));
+        VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, new PropertiesConfiguration(), createBrokerMock());
         vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
         return vhostConfig;
     }
@@ -160,8 +157,6 @@ public class BrokerTestHelper
 
     public static Exchange createExchange(String hostName) throws Exception
     {
-        setCurrentActorIfNecessary();
-
         SecurityManager securityManager = new SecurityManager(null);
         VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getName()).thenReturn(hostName);

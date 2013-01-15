@@ -98,4 +98,10 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject);
     }
 
+    @Override
+    protected void tearDown() throws Exception
+    {
+        CurrentActor.remove();
+        super.tearDown();
+    }
 }

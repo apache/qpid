@@ -35,6 +35,7 @@ public class MaxChannelsTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _session = BrokerTestHelper.createSession();
     }
 
@@ -75,6 +76,7 @@ public class MaxChannelsTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

@@ -49,6 +49,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _channel = BrokerTestHelper.createChannel();
         VirtualHost virtualHost = _channel.getVirtualHost();
         _queueName = getTestName();
@@ -70,6 +71,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

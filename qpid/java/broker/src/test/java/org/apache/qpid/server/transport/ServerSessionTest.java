@@ -34,6 +34,7 @@ public class ServerSessionTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _virtualHost = BrokerTestHelper.createVirtualHost(getName());
         GenericActor.setDefaultMessageLogger(CurrentActor.get().getRootMessageLogger());
     }
@@ -50,6 +51,7 @@ public class ServerSessionTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

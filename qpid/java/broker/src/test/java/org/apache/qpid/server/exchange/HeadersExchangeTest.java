@@ -33,8 +33,15 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-
+        BrokerTestHelper.setUp();
         _protocolSession = new InternalTestProtocolSession(getVirtualHost(), BrokerTestHelper.createBrokerMock());
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
     }
 
     public void testSimple() throws AMQException

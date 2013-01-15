@@ -47,6 +47,7 @@ public class VirtualHostConfigurationTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _configXml = new XMLConfiguration();
         _configXml.addProperty("security." + TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER, "");
         _configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
@@ -68,6 +69,7 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

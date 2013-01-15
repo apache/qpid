@@ -29,6 +29,20 @@ import org.apache.qpid.test.utils.QpidTestCase;
 public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
 {
 
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
+    }
+
     public void test() throws Exception
     {
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();

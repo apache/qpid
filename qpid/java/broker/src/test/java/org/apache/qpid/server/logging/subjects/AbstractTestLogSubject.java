@@ -30,6 +30,7 @@ import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -51,8 +52,16 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
     protected LogSubject _subject = null;
 
     @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+    }
+
+    @Override
     public void tearDown() throws Exception
     {
+        BrokerTestHelper.tearDown();
         try
         {
             CurrentActor.removeAll();

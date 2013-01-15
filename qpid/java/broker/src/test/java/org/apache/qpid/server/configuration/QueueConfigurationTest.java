@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.configuration;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import junit.framework.TestCase;
@@ -29,6 +28,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class QueueConfigurationTest extends TestCase
 {
@@ -37,9 +37,12 @@ public class QueueConfigurationTest extends TestCase
     private VirtualHostConfiguration _fullHostConf;
     private Broker _broker;
 
+    @Override
     public void setUp() throws Exception
     {
-        _broker = mock(Broker.class);
+        super.setUp();
+        BrokerTestHelper.setUp();
+        _broker = BrokerTestHelper.createBrokerMock();
         _env = new PropertiesConfiguration();
         _emptyConf = new VirtualHostConfiguration("test", _env, _broker);
 
@@ -54,6 +57,13 @@ public class QueueConfigurationTest extends TestCase
 
         _fullHostConf = new VirtualHostConfiguration("test", fullEnv, _broker);
 
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
     }
 
     public void testMaxDeliveryCount() throws Exception

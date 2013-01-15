@@ -45,18 +45,26 @@ public class VirtualHostImplTest extends QpidTestCase
     private VirtualHostRegistry _virtualHostRegistry;
 
     @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+    }
+
+    @Override
     public void tearDown() throws Exception
     {
         try
-        {
-            super.tearDown();
-        }
-        finally
         {
             if (_virtualHostRegistry != null)
             {
                 _virtualHostRegistry.close();
             }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
         }
 
     }

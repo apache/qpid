@@ -52,6 +52,7 @@ public class AMQChannelTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _virtualHost = BrokerTestHelper.createVirtualHost(getTestName());
         _broker = BrokerTestHelper.createBrokerMock();
         _protocolSession = new InternalTestProtocolSession(_virtualHost, _broker)
@@ -79,6 +80,7 @@ public class AMQChannelTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }

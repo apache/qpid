@@ -49,6 +49,7 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _channel = BrokerTestHelper.createChannel();
         _session = _channel.getProtocolSession();
         GenericActor.setDefaultMessageLogger(new UnitTestMessageLogger(false));
@@ -66,6 +67,7 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
         }
         finally
         {
+            BrokerTestHelper.tearDown();
             super.tearDown();
         }
     }
