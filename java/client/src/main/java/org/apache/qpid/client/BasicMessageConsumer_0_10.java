@@ -510,6 +510,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                 dest.getDelete() == AddressOption.RECEIVER )
             {
                 ((AMQSession_0_10) getSession()).handleNodeDelete(dest);
+                ((AMQSession_0_10) getSession()).deleteSubscriptionQueue(dest);
             }
             // Subscription queue is handled as part of linkDelete method.
             ((AMQSession_0_10) getSession()).handleLinkDelete(dest);
