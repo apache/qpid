@@ -32,7 +32,7 @@ import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
 
 /**
  * This provide will create a {@link BDBHAMessageStoreManagerMBean} if the child is a virtual
- * host and of type {@link BDBHAMessageStore#BDB_HA_STORE_TYPE}.
+ * host and of type {@link BDBHAMessageStore#TYPE}.
  *
  */
 public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
@@ -48,7 +48,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     public boolean isChildManageableByMBean(ConfiguredObject child)
     {
         return (child instanceof VirtualHost
-            && BDBHAMessageStore.BDB_HA_STORE_TYPE.equals(child.getAttribute(VirtualHost.STORE_TYPE)));
+            && BDBHAMessageStore.TYPE.equals(child.getAttribute(VirtualHost.STORE_TYPE)));
     }
 
     @Override

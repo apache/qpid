@@ -34,9 +34,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.message.ServerMessage;
@@ -75,6 +80,14 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                                                                   IConnectionRegistry.RegistryChangeListener
 {
 
+    @SuppressWarnings("serial")
+    public static final Map<String, Class<?>> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Class<?>>(){{
+        put(NAME, String.class);
+        put(STORE_PATH, String.class);
+        put(STORE_TYPE, String.class);
+        put(CONFIG_PATH, String.class);
+    }});
+
     private org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
 
     private final Map<AMQConnectionModel, ConnectionAdapter> _connectionAdapters =
@@ -88,18 +101,47 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private StatisticsAdapter _statistics;
     private final Broker _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
-    private final String _name;
-    private final String _configurationFile;
     private StatisticsGatherer _brokerStatisticsGatherer;
 
-    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, Map<String, Object> defaults)
+    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer)
     {
-        super(id, defaults);
+        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        validateAttributes();
         _broker = broker;
-        _name = MapValueConverter.getStringAttribute(NAME, attributes);
-        _configurationFile = MapValueConverter.getStringAttribute(CONFIGURATION, attributes);
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         addParent(Broker.class, broker);
+    }
+
+    private void validateAttributes()
+    {
+        String name = getName();
+        if (name == null || "".equals(name.trim()))
+        {
+            throw new IllegalConfigurationException("Virtual host name must be specified");
+        }
+        Map<String, Object> actualAttributes = getActualAttributes();
+        String configurationFile = (String) actualAttributes.get(CONFIG_PATH);
+        String storePath = (String) actualAttributes.get(STORE_PATH);
+        String storeType = (String) actualAttributes.get(STORE_TYPE);
+        boolean invalidAttributes = false;
+        if (configurationFile == null)
+        {
+            if (storePath == null || storeType == null)
+            {
+                invalidAttributes = true;
+            }
+        }
+        else
+        {
+            if (storePath != null || storeType != null)
+            {
+                invalidAttributes = true;
+            }
+        }
+        if (invalidAttributes)
+        {
+            throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or both 'storePath' and 'storeType' attributes");
+        }
     }
 
     private void populateExchanges()
@@ -373,7 +415,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     public String getName()
     {
-        return _name;
+        return (String)getAttribute(NAME);
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -716,10 +758,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             return getId();
         }
-        else if(NAME.equals(name))
-        {
-            return getName();
-        }
         else if(STATE.equals(name))
         {
             return State.ACTIVE;
@@ -781,9 +819,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             return _virtualHost.getMessageStore().getStoreType();
         }
-        else if(STORE_CONFIGURATION.equals(name))
+        else if(STORE_PATH.equals(name))
         {
-            // TODO
+            return _virtualHost.getMessageStore().getStoreLocation();
         }
         else if(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE.equals(name))
         {
@@ -899,14 +937,33 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         if (desiredState == State.ACTIVE)
         {
             VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
+            String virtualHostName = getName();
+            String configurationFile = (String)getAttribute(CONFIG_PATH);
+            VirtualHostConfiguration configuration = null;
             try
             {
-                VirtualHostConfiguration configuration = new VirtualHostConfiguration(_name, new File(_configurationFile) , _broker);
+                if (configurationFile == null)
+                {
+                    final MyConfiguration basicConfiguration = new MyConfiguration();
+                    PropertiesConfiguration config = new PropertiesConfiguration();
+                    config.addProperty("store.type", (String)getAttribute(STORE_TYPE));
+                    config.addProperty("store.environment-path", (String)getAttribute(STORE_PATH));
+                    basicConfiguration.addConfiguration(config);
+
+                    CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
+                    compositeConfiguration.addConfiguration(new SystemConfiguration());
+                    compositeConfiguration.addConfiguration(basicConfiguration);
+                    configuration = new VirtualHostConfiguration(virtualHostName, compositeConfiguration , _broker);
+                }
+                else
+                {
+                    configuration = new VirtualHostConfiguration(virtualHostName, new File(configurationFile) , _broker);
+                }
                 _virtualHost = new VirtualHostImpl(_broker.getVirtualHostRegistry(), _brokerStatisticsGatherer, _broker.getSecurityManager(), configuration);
             }
             catch (Exception e)
             {
-               throw new RuntimeException("Failed to create virtual host " + _name, e);
+               throw new RuntimeException("Failed to create virtual host " + virtualHostName, e);
             }
 
             virtualHostRegistry.registerVirtualHost(_virtualHost);

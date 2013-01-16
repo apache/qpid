@@ -29,6 +29,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
@@ -47,7 +48,7 @@ public class VirtualHostRecovererTest extends TestCase
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.CONFIGURATION, "/path/to/virtualhost.xml");
+        attributes.put(VirtualHost.CONFIG_PATH, "/path/to/virtualhost.xml");
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = recoverer.create(null, entry, parent);
@@ -58,20 +59,31 @@ public class VirtualHostRecovererTest extends TestCase
 
     public void testCreateWithoutMandatoryAttributesResultsInException()
     {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.CONFIG_PATH, "/path/to/virtualhost.xml");
+        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.CONFIG_PATH};
+
+        checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.STORE_PATH, "/path/to/store");
+        attributes.put(VirtualHost.STORE_TYPE, "DERBY");
+        mandatoryAttributes = new String[]{VirtualHost.NAME, VirtualHost.STORE_PATH, VirtualHost.STORE_TYPE};
+
+        checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
+    }
+
+    public void checkMandatoryAttributesAreValidated(String[] mandatoryAttributes, Map<String, Object> attributes)
+    {
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
         when(parent.getSecurityManager()).thenReturn(securityManager);
-
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.CONFIGURATION, "/path/to/virtualhost.xml");
-
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
 
-        //TODO: configuration is made mandatory temporarily, it will became optional later.
-        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.CONFIGURATION};
         for (String name : mandatoryAttributes)
         {
             Map<String, Object> copy = new HashMap<String, Object>(attributes);
@@ -82,7 +94,7 @@ public class VirtualHostRecovererTest extends TestCase
                 recoverer.create(null, entry, parent);
                 fail("Cannot create a virtual host without a manadatory attribute " + name);
             }
-            catch(IllegalArgumentException e)
+            catch(IllegalConfigurationException e)
             {
                 // pass
             }

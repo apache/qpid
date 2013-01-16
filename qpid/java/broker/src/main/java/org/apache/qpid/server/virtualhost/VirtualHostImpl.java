@@ -62,6 +62,7 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 
@@ -145,7 +146,15 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _bindingFactory = new BindingFactory(this);
 
-        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
+        String storeType = hostConfig.getConfig().getString("store.type");
+        if (storeType == null)
+        {
+            _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
+        }
+        else
+        {
+            _messageStore = new MessageStoreCreator().createMessageStore(storeType);
+        }
 
         configureMessageStore(hostConfig);
 
@@ -269,7 +278,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         if (!(o instanceof MessageStore))
         {
-            throw new ClassCastException("Message store factory class must implement " + MessageStore.class +
+            throw new ClassCastException("Message store class must implement " + MessageStore.class +
                                         ". Class " + clazz + " does not.");
         }
 

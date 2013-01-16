@@ -80,7 +80,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _virtualHostId = UUID.randomUUID();
         _virtualHostAttributes = new HashMap<String, Object>();
         _virtualHostAttributes.put(VirtualHost.NAME, "test");
-        _virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/test");
+        _virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/test");
 
         _authenticationProviderId = UUID.randomUUID();
         _authenticationProviderAttributes = new HashMap<String, Object>();
@@ -128,7 +128,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     {
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, getName());
-        virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config");
+        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config");
         UUID virtualHostId = UUID.randomUUID();
         addConfiguration(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes);
 
@@ -142,13 +142,13 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     {
         Map<String, Object> virtualHost1Attributes = new HashMap<String, Object>();
         virtualHost1Attributes.put(VirtualHost.NAME, "test1");
-        virtualHost1Attributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config1");
+        virtualHost1Attributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config1");
         UUID virtualHost1Id = UUID.randomUUID();
         addConfiguration(virtualHost1Id, VirtualHost.class.getSimpleName(), virtualHost1Attributes);
 
         Map<String, Object> virtualHost2Attributes = new HashMap<String, Object>();
         virtualHost2Attributes.put(VirtualHost.NAME, "test1");
-        virtualHost2Attributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config2");
+        virtualHost2Attributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config2");
         UUID virtualHost2Id = UUID.randomUUID();
         addConfiguration(virtualHost2Id, VirtualHost.class.getSimpleName(), virtualHost2Attributes);
 
@@ -202,7 +202,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     {
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test1");
-        virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config1");
+        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config1");
         UUID virtualHostId = UUID.randomUUID();
         ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 Collections.<UUID> emptySet(), _store);
@@ -223,7 +223,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test");
-        virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/new/phantom/test/configuration");
+        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/new/phantom/test/configuration");
 
         ConfigurationEntry updatedEntry = new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 hostEntry.getChildrenIds(), _store);
@@ -367,7 +367,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         UUID virtualHostId = UUID.randomUUID();
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test1");
-        virtualHostAttributes.put(VirtualHost.CONFIGURATION, "/path/to/phantom/virtualhost/config1");
+        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config1");
         ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 Collections.<UUID> emptySet(), _store);
 

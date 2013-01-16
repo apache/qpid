@@ -341,7 +341,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
                 }
             }
 
-            attributes.put(org.apache.qpid.server.model.VirtualHost.CONFIGURATION, configuration.getAbsolutePath());
+            attributes.put(org.apache.qpid.server.model.VirtualHost.CONFIG_PATH, configuration.getAbsolutePath());
             ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                     attributes, null, this);
             rootChildren.put(entry.getId(), entry);
