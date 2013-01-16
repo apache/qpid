@@ -1407,10 +1407,16 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                           "}";
 
         String addr = "ADDR:amq.topic/test; {link: {name:my-queue, durable:true," + xDeclareArgs + "}}";
-        MessageConsumer cons = ssn.createConsumer(ssn.createTopic(addr));
+        Destination dest = ssn.createTopic(addr);
+        MessageConsumer cons = ssn.createConsumer(dest);
 
         String verifyAddr = "ADDR:my-queue;{ node: {durable:true, " + xDeclareArgs + "}}";
         AMQDestination verifyDest = (AMQDestination)ssn.createQueue(verifyAddr);
+        ((AMQSession_0_10)ssn).isQueueExist(verifyDest, true);
+
+        // Verify that the producer does not delete the subscription queue.
+        MessageProducer prod = ssn.createProducer(dest);
+        prod.close();
         ((AMQSession_0_10)ssn).isQueueExist(verifyDest, true);
     }
 }
