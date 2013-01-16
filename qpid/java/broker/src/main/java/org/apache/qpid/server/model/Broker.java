@@ -77,7 +77,7 @@ public interface Broker extends ConfiguredObject
     String ACL_FILE = "aclFile";
 
     // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
+    Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
                 Arrays.asList(BUILD_VERSION,
                               BYTES_RETAINED,
@@ -162,5 +162,5 @@ public interface Broker extends ConfiguredObject
     /*
      * TODO: Remove this method. Eventually the broker will become a registry.
      */
-    public VirtualHostRegistry getVirtualHostRegistry();
+    VirtualHostRegistry getVirtualHostRegistry();
 }

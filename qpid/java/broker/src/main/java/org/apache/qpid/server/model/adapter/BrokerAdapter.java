@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import static org.apache.qpid.server.util.MapValueConverter.getLongAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
@@ -37,7 +32,6 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -60,17 +54,77 @@ import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
+    @SuppressWarnings("serial")
+    public static final Map<String, Class<?>> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Class<?>>(){{
+        put(ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
+        put(ALERT_THRESHOLD_MESSAGE_COUNT, Long.class);
+        put(ALERT_THRESHOLD_QUEUE_DEPTH, Long.class);
+        put(ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
+        put(ALERT_REPEAT_GAP, Long.class);
+        put(FLOW_CONTROL_SIZE_BYTES, Long.class);
+        put(FLOW_CONTROL_RESUME_SIZE_BYTES, Long.class);
+        put(HOUSEKEEPING_CHECK_PERIOD, Long.class);
+
+        put(DEAD_LETTER_QUEUE_ENABLED, Boolean.class);
+        put(STATISTICS_REPORTING_RESET_ENABLED, Boolean.class);
+
+        put(MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
+        put(SESSION_COUNT_LIMIT, Integer.class);
+        put(HEART_BEAT_DELAY, Integer.class);
+        put(STATISTICS_REPORTING_PERIOD, Integer.class);
+
+        put(ACL_FILE, String.class);
+        put(NAME, String.class);
+        put(DEFAULT_VIRTUAL_HOST, String.class);
+        put(DEFAULT_AUTHENTICATION_PROVIDER, String.class);
+    }});
+
+    public static final int DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
+    public static final boolean DEFAULT_STATISTICS_REPORTING_RESET_ENABLED = false;
+    public static final long DEFAULT_ALERT_REPEAT_GAP = 30000l;
+    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE = 0l;
+    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT = 0l;
+    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE = 0l;
+    public static final long DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH = 0l;
+    public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
+    public static final int DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS = 0;
+    public static final long DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES = 0l;
+    public static final long DEFAULT_FLOW_CONTROL_SIZE_BYTES = 0l;
+    public static final long DEFAULT_HOUSEKEEPING_CHECK_PERIOD = 30000l;
+    public static final int DEFAULT_HEART_BEAT_DELAY = 0;
+    public static final int DEFAULT_SESSION_COUNT_LIMIT = 256;
+    public static final String DEFAULT_NAME = "QpidBroker";
+
+    @SuppressWarnings("serial")
+    private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
+        put(Broker.STATISTICS_REPORTING_PERIOD, DEFAULT_STATISTICS_REPORTING_PERIOD);
+        put(Broker.STATISTICS_REPORTING_RESET_ENABLED, DEFAULT_STATISTICS_REPORTING_RESET_ENABLED);
+        put(Broker.ALERT_REPEAT_GAP, DEFAULT_ALERT_REPEAT_GAP);
+        put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE);
+        put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT);
+        put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE);
+        put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH);
+        put(Broker.DEAD_LETTER_QUEUE_ENABLED, DEFAULT_DEAD_LETTER_QUEUE_ENABLED);
+        put(Broker.MAXIMUM_DELIVERY_ATTEMPTS, DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS);
+        put(Broker.FLOW_CONTROL_RESUME_SIZE_BYTES, DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES);
+        put(Broker.FLOW_CONTROL_SIZE_BYTES, DEFAULT_FLOW_CONTROL_SIZE_BYTES);
+        put(Broker.HOUSEKEEPING_CHECK_PERIOD, DEFAULT_HOUSEKEEPING_CHECK_PERIOD);
+        put(Broker.HEART_BEAT_DELAY, DEFAULT_HEART_BEAT_DELAY);
+        put(Broker.SESSION_COUNT_LIMIT, DEFAULT_SESSION_COUNT_LIMIT);
+        put(Broker.NAME, DEFAULT_NAME);
+    }});
+
     private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
     private final RootMessageLogger _rootMessageLogger;
-    private String _name;
     private StatisticsAdapter _statistics;
 
     private final Map<String, VirtualHost> _vhostAdapters = new HashMap<String, VirtualHost>();
@@ -87,57 +141,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
 
-    //TODO: delete these fields, instead, add the attributes into attribute map
-    private long _maximumMessageAge;
-    private long _maximumMessageCount;
-    private long _maximumQueueDepth;
-    private long _maximumMessageSize;
-    private long _minimumAlertRepeatGap;
-    private long _flowResumeCapacity;
-    private long _flowCapacity;
-    private int _maximumDeliveryCount;
-    private boolean _deadLetterQueueEnabled;
-    private long _housekeepingCheckPeriod;
-    private String _defaultVirtualHost;
-    private String _aclFile;
-    private int _sessionCountLimit;
-    private int _heartBeatDelay;
-    private int _statisticsReportingPeriod;
-    private boolean _statisticsReportingResetEnabled;
-
-    public BrokerAdapter(UUID id, Map<String, Object> attributes, Map<String, Object> defaults, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
+    public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
             PortFactory portFactory)
     {
-        super(id, defaults);
-        _name = "Broker";
+        super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
         _rootMessageLogger = rootMessageLogger;
-        _name = "Broker";
         _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
         _portFactory = portFactory;
+        _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
 
-        _maximumMessageAge = getLongAttribute(ALERT_THRESHOLD_MESSAGE_AGE, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_AGE, 0));
-        _maximumMessageCount = getLongAttribute(ALERT_THRESHOLD_MESSAGE_COUNT, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_COUNT, 0));
-        _maximumQueueDepth = getLongAttribute(ALERT_THRESHOLD_QUEUE_DEPTH, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_QUEUE_DEPTH, 0));
-        _maximumMessageSize = getLongAttribute(ALERT_THRESHOLD_MESSAGE_SIZE, attributes, Long.getLong(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_SIZE, 0));
-        _minimumAlertRepeatGap = getLongAttribute(ALERT_REPEAT_GAP, attributes, Long.getLong(BrokerProperties.PROPERTY_MINIMUM_ALERT_REPEAT_GAP, BrokerProperties.DEFAULT_MINIMUM_ALERT_REPEAT_GAP));
-        _flowCapacity = getLongAttribute(FLOW_CONTROL_SIZE_BYTES, attributes, Long.getLong(BrokerProperties.PROPERTY_FLOW_CAPACITY, 0));
-        _flowResumeCapacity = getLongAttribute(FLOW_CONTROL_RESUME_SIZE_BYTES, attributes, Long.getLong(BrokerProperties.PROPERTY_FLOW_RESUME_CAPACITY, _flowCapacity));
-        _maximumDeliveryCount = getIntegerAttribute(MAXIMUM_DELIVERY_ATTEMPTS, attributes, 0);
-        _deadLetterQueueEnabled = getBooleanAttribute(DEAD_LETTER_QUEUE_ENABLED, attributes, false);
-        _housekeepingCheckPeriod = getLongAttribute(HOUSEKEEPING_CHECK_PERIOD, attributes, Long.getLong(BrokerProperties.PROPERTY_HOUSE_KEEPING_CHECK_PERIOD, BrokerProperties.DEFAULT_HOUSEKEEPING_PERIOD));
-        _defaultVirtualHost = getStringAttribute(DEFAULT_VIRTUAL_HOST, attributes, null);
-        _aclFile = getStringAttribute(ACL_FILE, attributes, null);
-        _securityManager = new SecurityManager(_aclFile);
-
-        _sessionCountLimit = getIntegerAttribute(SESSION_COUNT_LIMIT, attributes, 256);
-        _heartBeatDelay = getIntegerAttribute(HEART_BEAT_DELAY, attributes, BrokerProperties.DEFAULT_HEART_BEAT_DELAY);
-        _statisticsReportingPeriod =  getIntegerAttribute(STATISTICS_REPORTING_PERIOD, attributes, BrokerProperties.DEFAULT_STATISTICS_REPORTING_PERIOD);
-        _statisticsReportingResetEnabled = getBooleanAttribute(STATISTICS_REPORTING_RESET_ENABLED, attributes, false);
     }
 
     public Collection<VirtualHost> getVirtualHosts()
@@ -240,7 +257,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public String getName()
     {
-        return _name;
+        return (String)getAttribute(NAME);
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -471,10 +488,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return getId();
         }
-        else if(NAME.equals(name))
-        {
-            return getName();
-        }
         else if(STATE.equals(name))
         {
             return State.ACTIVE;
@@ -534,71 +547,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _defaultAuthenticationProvider == null ? null : _defaultAuthenticationProvider.getName();
         }
-        else if (DEFAULT_VIRTUAL_HOST.equals(name))
-        {
-            return _defaultVirtualHost;
-        }
-        else if (ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
-        {
-            return _maximumMessageAge;
-        }
-        else if (ALERT_THRESHOLD_MESSAGE_COUNT.equals(name))
-        {
-            return _maximumMessageCount;
-        }
-        else if (ALERT_THRESHOLD_QUEUE_DEPTH.equals(name))
-        {
-            return _maximumQueueDepth;
-        }
-        else if (ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
-        {
-            return _maximumMessageSize;
-        }
-        else if (ALERT_REPEAT_GAP.equals(name))
-        {
-            return _minimumAlertRepeatGap;
-        }
-        else if (FLOW_CONTROL_SIZE_BYTES.equals(name))
-        {
-            return _flowCapacity;
-        }
-        else if (FLOW_CONTROL_RESUME_SIZE_BYTES.equals(name))
-        {
-            return _flowResumeCapacity;
-        }
-        else if (MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
-        {
-            return _maximumDeliveryCount;
-        }
-        else if (DEAD_LETTER_QUEUE_ENABLED.equals(name))
-        {
-            return _deadLetterQueueEnabled;
-        }
-        else if (HOUSEKEEPING_CHECK_PERIOD.equals(name))
-        {
-            return _housekeepingCheckPeriod;
-        }
-        else if (ACL_FILE.equals(name))
-        {
-            return _aclFile;
-        }
-        else if (SESSION_COUNT_LIMIT.equals(name))
-        {
-            return _sessionCountLimit;
-        }
-        else if (HEART_BEAT_DELAY.equals(name))
-        {
-            return _heartBeatDelay;
-        }
-        else if (STATISTICS_REPORTING_PERIOD.equals(name))
-        {
-            return _statisticsReportingPeriod;
-        }
-        else if (STATISTICS_REPORTING_RESET_ENABLED.equals(name))
-        {
-            return _statisticsReportingResetEnabled;
-        }
-        return super.getAttribute(name);    //TODO - Implement.
+        return super.getAttribute(name);
     }
 
     @Override

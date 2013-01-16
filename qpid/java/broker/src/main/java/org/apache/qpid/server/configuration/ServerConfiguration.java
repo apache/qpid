@@ -89,14 +89,6 @@ public class ServerConfiguration extends AbstractConfiguration
 
     {
         envVarMap.put(BrokerProperties.PROPERTY_MSG_AUTH, "security.msg-auth");
-        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_AGE, "maximumMessageAge");
-        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_COUNT, "maximumMessageCount");
-        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_QUEUE_DEPTH, "maximumQueueDepth");
-        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_MESSAGE_SIZE, "maximumMessageSize");
-        envVarMap.put(BrokerProperties.PROPERTY_MAXIMUM_CHANNEL_COUNT, "maximumChannelCount");
-        envVarMap.put(BrokerProperties.PROPERTY_MINIMUM_ALERT_REPEAT_GAP, "minimumAlertRepeatGap");
-        envVarMap.put(BrokerProperties.PROPERTY_FLOW_CAPACITY, "capacity");
-        envVarMap.put(BrokerProperties.PROPERTY_FLOW_RESUME_CAPACITY, "flowResumeCapacity");
     }
 
     /**

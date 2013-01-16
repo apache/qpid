@@ -22,6 +22,7 @@ package org.apache.qpid.server.util;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +33,25 @@ public class MapValueConverter
     public static String getStringAttribute(String name, Map<String,Object> attributes, String defaultVal)
     {
         final Object value = attributes.get(name);
-        return value == null ? defaultVal : String.valueOf(value);
+        return toString(value, defaultVal);
+    }
+
+    public static String toString(final Object value)
+    {
+        return toString(value, null);
+    }
+
+    public static String toString(final Object value, String defaultVal)
+    {
+        if (value == null)
+        {
+            return defaultVal;
+        }
+        else if (value instanceof String)
+        {
+            return (String)value;
+        }
+        return String.valueOf(value);
     }
 
     public static String getStringAttribute(String name, Map<String, Object> attributes)
@@ -100,6 +119,16 @@ public class MapValueConverter
     public static Boolean getBooleanAttribute(String name, Map<String,Object> attributes, Boolean defaultValue)
     {
         Object obj = attributes.get(name);
+        return toBoolean(name, obj, defaultValue);
+    }
+
+    public static Boolean toBoolean(String name, Object obj)
+    {
+        return toBoolean(name, obj, null);
+    }
+
+    public static Boolean toBoolean(String name, Object obj, Boolean defaultValue)
+    {
         if(obj == null)
         {
             return defaultValue;
@@ -128,6 +157,16 @@ public class MapValueConverter
     public static Integer getIntegerAttribute(String name, Map<String,Object> attributes, Integer defaultValue)
     {
         Object obj = attributes.get(name);
+        return toInteger(name, obj, defaultValue);
+    }
+
+    public static Integer toInteger(String name, Object obj)
+    {
+        return toInteger(name, obj, null);
+    }
+
+    public static Integer toInteger(String name, Object obj, Integer defaultValue)
+    {
         if(obj == null)
         {
             return defaultValue;
@@ -155,6 +194,16 @@ public class MapValueConverter
     public static Long getLongAttribute(String name, Map<String,Object> attributes, Long defaultValue)
     {
         Object obj = attributes.get(name);
+        return toLong(name, obj, defaultValue);
+    }
+
+    public static Long toLong(String name, Object obj)
+    {
+        return toLong(name, obj, null);
+    }
+
+    public static Long toLong(String name, Object obj, Long defaultValue)
+    {
         if(obj == null)
         {
             return defaultValue;
@@ -245,5 +294,42 @@ public class MapValueConverter
             set.add(item);
         }
         return set;
+    }
+
+    public static Map<String, Object> convert(Map<String, Object> configurationAttributes, Map<String, Class<?>> attributeTypes)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        for (Map.Entry<String, Class<?>> attributeEntry : attributeTypes.entrySet())
+        {
+            String attributeName = attributeEntry.getKey();
+            if (configurationAttributes.containsKey(attributeName))
+            {
+                Class<?> classObject = attributeEntry.getValue();
+                Object rawValue = configurationAttributes.get(attributeName);
+                Object value = null;
+                if (classObject == Long.class || classObject == long.class)
+                {
+                    value = toLong(attributeName, rawValue);
+                }
+                else if (classObject == Integer.class || classObject == int.class)
+                {
+                    value = toInteger(attributeName, rawValue);
+                }
+                else if (classObject == Boolean.class || classObject == boolean.class)
+                {
+                    value = toBoolean(attributeName, rawValue);
+                }
+                else if (classObject == String.class)
+                {
+                    value = toString(rawValue);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Cannot convert '" + rawValue + "' into " + classObject);
+                }
+                attributes.put(attributeName, value);
+            }
+        }
+        return attributes;
     }
 }

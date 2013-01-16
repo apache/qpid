@@ -48,7 +48,14 @@ abstract class AbstractAdapter implements ConfiguredObject
         _id = id;
         if (attributes != null)
         {
-            _attributes.putAll(attributes);
+            Collection<String> names = getAttributeNames();
+            for (String name : names)
+            {
+                if (attributes.containsKey(name))
+                {
+                    _attributes.put(name, attributes.get(name));
+                }
+            }
         }
         if (defaults != null)
         {

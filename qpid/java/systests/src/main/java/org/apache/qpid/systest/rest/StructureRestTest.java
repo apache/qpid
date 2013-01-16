@@ -32,7 +32,7 @@ public class StructureRestTest extends QpidRestTestCase
     {
         Map<String, Object> structure = getRestTestHelper().getJsonAsMap("/rest/structure");
         assertNotNull("Structure data cannot be null", structure);
-        assertNode(structure, "Broker");
+        assertNode(structure, "QpidBroker");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) structure.get("virtualhosts");

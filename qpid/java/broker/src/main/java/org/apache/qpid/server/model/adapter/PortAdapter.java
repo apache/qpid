@@ -56,19 +56,10 @@ public class PortAdapter extends AbstractAdapter implements Port
      */
     public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults)
     {
-        super(id, defaults);
+        super(id, defaults, attributes);
         _broker = broker;
 
         addParent(Broker.class, broker);
-
-        Collection<String> names = getAttributeNames();
-        for (String name : names)
-        {
-            if (attributes.containsKey(name))
-            {
-                setAttribute(name, defaults.get(name), attributes.get(name));
-            }
-        }
 
         String name = (String)getAttribute(NAME);
         if (name == null)
