@@ -380,7 +380,7 @@ public class HttpManagement extends AbstractPluginAdapter
     @Override
     public String getName()
     {
-        return "HttpManagement";
+        return (String)getAttribute(NAME);
     }
 
     @Override
