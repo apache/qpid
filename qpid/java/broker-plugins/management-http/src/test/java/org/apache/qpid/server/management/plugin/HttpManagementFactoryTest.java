@@ -51,8 +51,8 @@ public class HttpManagementFactoryTest extends QpidTestCase
 
     public void testCreateInstanceWithoutKeystore() throws Exception
     {
-        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagementFactory.PLUGIN_NAME);
-        _attributes.put(HttpManagementFactory.TIME_OUT, SESSION_TIMEOUT);
+        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_NAME);
+        _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
 
         HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
 
@@ -64,10 +64,10 @@ public class HttpManagementFactoryTest extends QpidTestCase
 
     public void testCreateInstanceWithKeystore() throws Exception
     {
-        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagementFactory.PLUGIN_NAME);
-        _attributes.put(HttpManagementFactory.KEY_STORE_PASSWORD, KEY_STORE_PASSWORD);
-        _attributes.put(HttpManagementFactory.KEY_STORE_PATH, KEY_STORE_PATH);
-        _attributes.put(HttpManagementFactory.TIME_OUT, SESSION_TIMEOUT);
+        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_NAME);
+        _attributes.put(HttpManagement.KEY_STORE_PASSWORD, KEY_STORE_PASSWORD);
+        _attributes.put(HttpManagement.KEY_STORE_PATH, KEY_STORE_PATH);
+        _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
 
         HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
 

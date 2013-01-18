@@ -47,9 +47,9 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 {
     private final GroupManager _groupManager;
     private final Broker _broker;
-    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker, Map<String, Object> defaults)
+    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker)
     {
-        super(id, defaults);
+        super(id);
 
         if (groupManager == null)
         {

@@ -54,9 +54,7 @@ public class GroupProviderRecoverer implements ConfiguredObjectRecoverer<GroupPr
         {
             throw new IllegalConfigurationException("Cannot create GroupManager from attributes : " + attributes);
         }
-        //TODO: add defaults
-        Map<String, Object> defaults = null;
-        GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(configurationEntry.getId(), groupManager, broker, defaults);
+        GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(configurationEntry.getId(), groupManager, broker);
         return groupProviderAdapter;
     }
 

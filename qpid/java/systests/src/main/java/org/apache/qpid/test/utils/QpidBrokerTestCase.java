@@ -61,6 +61,7 @@ import org.apache.qpid.server.BrokerLauncher;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.ProtocolInclusion;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.MessageStoreConstants;
@@ -394,7 +395,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
-            setSystemProperty("qpid.use_custom_rmi_socket_factory", "false");
+            setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
             testConfig = saveTestConfiguration(port, testConfiguration);
             _logger.info("Set test.config property to: " + testConfig);
             _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);

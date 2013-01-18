@@ -21,6 +21,7 @@
 package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -64,8 +65,6 @@ import java.util.HashMap;
  */
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
-    public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = "qpid.use_custom_rmi_socket_factory";
-
     private static final Logger _log = Logger.getLogger(JMXManagedObjectRegistry.class);
 
     private static final String OPERATIONAL_LOGGING_NAME = "JMX";
@@ -79,24 +78,21 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private final Port _registryPort;
     private final Port _connectorPort;
 
-    private final JMXConfiguration _jmxConfiguration;
-
-    public JMXManagedObjectRegistry(
+     public JMXManagedObjectRegistry(
             Broker broker,
             Port connectorPort, Port registryPort,
-            JMXConfiguration jmxConfiguration)
+            JMXManagement jmxManagement)
     {
         _broker = broker;
         _registryPort = registryPort;
         _connectorPort = connectorPort;
 
-        boolean platformServer = jmxConfiguration.isPlatformMBeanServer();
+        boolean usePlatformServer = (Boolean)jmxManagement.getAttribute(JMXManagement.USE_PLATFORM_MBEAN_SERVER);
 
         _mbeanServer =
-                platformServer ? ManagementFactory.getPlatformMBeanServer()
+                usePlatformServer ? ManagementFactory.getPlatformMBeanServer()
                 : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
-        _jmxConfiguration = jmxConfiguration;
-    }
+     }
 
     @Override
     public void start() throws IOException
@@ -126,23 +122,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         if (connectorSslEnabled)
         {
-            String managementKeyStorePath = _jmxConfiguration.getManagementKeyStorePath();
-            String managementKeyStorePassword = _jmxConfiguration.getManagementKeyStorePath();
+            checkKeyStorePathExistsAndIsReadable();
 
-            //set the SSL related system properties used by the SSL RMI socket factories to the values
-            //given in the configuration file
-            checkKeyStorePathExistsAndIsReadable(managementKeyStorePath );
+            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(System.getProperty("javax.net.ssl.keyStore")));
 
-            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(managementKeyStorePath));
-
-            if (managementKeyStorePassword == null)
+            if (System.getProperty("javax.net.ssl.keyStorePassword") == null)
             {
                 throw new IllegalConfigurationException(
                         "JMX management SSL keystore password not defined, unable to start requested SSL protected JMX server");
-            }
-            else
-            {
-               System.setProperty("javax.net.ssl.keyStorePassword", managementKeyStorePassword);
             }
 
             //create the SSL RMI socket factories
@@ -165,7 +152,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
         System.setProperty("java.rmi.server.randomIDs", "true");
-        boolean useCustomSocketFactory = Boolean.parseBoolean(System.getProperty(USE_CUSTOM_RMI_SOCKET_FACTORY, Boolean.TRUE.toString()));
+        boolean useCustomSocketFactory = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, Boolean.TRUE.toString()));
 
         /*
          * Start a RMI registry on the management port, to hold the JMX RMI ConnectorServer stub.
@@ -242,7 +229,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         };
 
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
-        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance(_broker, _jmxConfiguration);
+        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance(_broker);
         _cs.setMBeanServerForwarder(mbsf);
 
         // Install a ManagementLogonLogoffReporter so we can report as users logon/logoff
@@ -278,20 +265,17 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         return rmiRegistry;
     }
 
-    private void checkKeyStorePathExistsAndIsReadable(String keyStorePath) throws FileNotFoundException
+    private void checkKeyStorePathExistsAndIsReadable() throws FileNotFoundException
     {
-        //check the keystore path value is valid
+        String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+
         if (keyStorePath == null)
         {
             throw new IllegalConfigurationException(
-                    "JMX management SSL keystore path not defined, unable to start SSL protected JMX ConnectorServer");
+                    "JVM system proprty 'javax.net.ssl.keyStore' is not set, unable to start SSL protected JMX ConnectorServer");
         }
         else
         {
-            //ensure the system property is set (for use by SslRMIClientSocketFactory and SslRMIServerSocketFactory)
-            System.setProperty("javax.net.ssl.keyStore", keyStorePath);
-
-            //check the file is usable
             File ksf = new File(keyStorePath);
 
             if (!ksf.exists())

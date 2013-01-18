@@ -22,6 +22,7 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.model.Broker;
@@ -62,16 +63,16 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private final boolean _managementRightsInferAllAccess;
     private final Broker _broker;
 
-    MBeanInvocationHandlerImpl(Broker broker, boolean managementRightsInferAllAccess)
+    MBeanInvocationHandlerImpl(Broker broker)
     {
-        _managementRightsInferAllAccess = managementRightsInferAllAccess;
+        _managementRightsInferAllAccess = Boolean.valueOf(System.getProperty(BrokerProperties.PROPERTY_MANAGEMENT_RIGHTS_INFER_ALL_ACCESS, "true"));
         _broker = broker;
         _logActor = new ManagementActor(broker.getRootMessageLogger());
     }
 
-    public static MBeanServerForwarder newProxyInstance(Broker broker, JMXConfiguration configuration)
+    public static MBeanServerForwarder newProxyInstance(Broker broker)
     {
-        final InvocationHandler handler = new MBeanInvocationHandlerImpl(broker, configuration.isManagementRightsInferAllAccess());
+        final InvocationHandler handler = new MBeanInvocationHandlerImpl(broker);
         final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
 
         Object proxy = Proxy.newProxyInstance(MBeanServerForwarder.class.getClassLoader(), interfaces, handler);

@@ -23,6 +23,7 @@ package org.apache.qpid.server.management.plugin;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
@@ -58,6 +59,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
+import org.apache.qpid.server.plugin.PluginFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
@@ -71,21 +73,47 @@ public class HttpManagement extends AbstractPluginAdapter
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
 
+    // 10 minutes by default
+    public static final int DEFAULT_TIMEOUT_IN_SECONDS = 60 * 10;
+
+    public static final String TIME_OUT = "sessionTimeout";
+    public static final String KEY_STORE_PATH = "keyStorePath";
+    public static final String KEY_STORE_PASSWORD = "keyStorePassword";
+    public static final String HTTP_BASIC_AUTHENTICATION_ENABLED = "httpBasicAuthenticationEnabled";
+    public static final String HTTPS_BASIC_AUTHENTICATION_ENABLED = "httpsBasicAuthenticationEnabled";
+    public static final String HTTP_SASL_AUTHENTICATION_ENABLED = "httpSaslAuthenticationEnabled";
+    public static final String HTTPS_SASL_AUTHENTICATION_ENABLED = "httpsSaslAuthenticationEnabled";
+
+    public static final String PLUGIN_NAME = "MANAGEMENT-HTTP";
+
     private static final Collection<String> AVAILABLE_ATTRIBUTES = new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES);
     static
     {
-        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTP_BASIC_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTPS_BASIC_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTP_SASL_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.HTTPS_SASL_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.TIME_OUT);
-        AVAILABLE_ATTRIBUTES.add(HttpManagementFactory.PLUGIN_TYPE);
+        AVAILABLE_ATTRIBUTES.add(HTTP_BASIC_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HTTPS_BASIC_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HTTP_SASL_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(HTTPS_SASL_AUTHENTICATION_ENABLED);
+        AVAILABLE_ATTRIBUTES.add(TIME_OUT);
+        AVAILABLE_ATTRIBUTES.add(PluginFactory.PLUGIN_TYPE);
     }
-
 
     public static final String ENTRY_POINT_PATH = "/management";
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
+
+    protected static final boolean DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED = false;
+    protected static final boolean DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED = true;
+    protected static final boolean DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED = true;
+    protected static final boolean DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED = true;
+
+    @SuppressWarnings("serial")
+    public static final Map<String, Object> DEFAULTS = new HashMap<String, Object>()
+            {{
+                put(HTTP_BASIC_AUTHENTICATION_ENABLED, DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED);
+                put(HTTPS_BASIC_AUTHENTICATION_ENABLED, DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED);
+                put(HTTP_SASL_AUTHENTICATION_ENABLED, DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED);
+                put(HTTPS_SASL_AUTHENTICATION_ENABLED, DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED);
+            }};
 
     private final Broker _broker;
 
@@ -93,9 +121,9 @@ public class HttpManagement extends AbstractPluginAdapter
 
     private final HttpConfiguration _configuration;
 
-    public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration, Map<String, Object> defaults)
+    public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration)
     {
-        super(id, defaults);
+        super(id, DEFAULTS, null);
         _broker = broker;
         _configuration = configuration;
         addParent(Broker.class, broker);
@@ -357,29 +385,29 @@ public class HttpManagement extends AbstractPluginAdapter
     @Override
     public Object getAttribute(String name)
     {
-        if(HttpManagementFactory.HTTP_BASIC_AUTHENTICATION_ENABLED.equals(name))
+        if(HTTP_BASIC_AUTHENTICATION_ENABLED.equals(name))
         {
             return _configuration.isHttpBasicAuthenticationEnabled();
         }
-        else if(HttpManagementFactory.HTTPS_BASIC_AUTHENTICATION_ENABLED.equals(name))
+        else if(HTTPS_BASIC_AUTHENTICATION_ENABLED.equals(name))
         {
             return _configuration.isHttpsBasicAuthenticationEnabled();
         }
-        else if(HttpManagementFactory.HTTP_SASL_AUTHENTICATION_ENABLED.equals(name))
+        else if(HTTP_SASL_AUTHENTICATION_ENABLED.equals(name))
         {
             return _configuration.isHttpSaslAuthenticationEnabled();
         }
-        else if(HttpManagementFactory.HTTPS_SASL_AUTHENTICATION_ENABLED.equals(name))
+        else if(HTTPS_SASL_AUTHENTICATION_ENABLED.equals(name))
         {
             return _configuration.isHttpSaslAuthenticationEnabled();
         }
-        else if(HttpManagementFactory.TIME_OUT.equals(name))
+        else if(TIME_OUT.equals(name))
         {
             return _configuration.getSessionTimeout();
         }
-        else if(HttpManagementFactory.PLUGIN_TYPE.equals(name))
+        else if(PluginFactory.PLUGIN_TYPE.equals(name))
         {
-            return HttpManagementFactory.PLUGIN_NAME;
+            return PLUGIN_NAME;
         }
         return super.getAttribute(name);
     }

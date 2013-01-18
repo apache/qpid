@@ -22,7 +22,9 @@ package org.apache.qpid.server.virtualhost;
 
 import static org.mockito.Mockito.mock;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
@@ -122,6 +124,14 @@ public class VirtualHostImplTest extends QpidTestCase
         assertEquals(State.ACTIVE, vhost.getState());
     }
 
+    public void testVirtualHostHavingStoreSetAsTypeBecomesActive() throws Exception
+    {
+        String virtualHostName = getName();
+        VirtualHost host = createVirtualHostUsingStoreType(virtualHostName);
+        assertNotNull(host);
+        assertEquals(State.ACTIVE, host.getState());
+    }
+
     public void testVirtualHostBecomesStoppedOnClose() throws Exception
     {
         File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
@@ -131,6 +141,17 @@ public class VirtualHostImplTest extends QpidTestCase
         vhost.close();
         assertEquals(State.STOPPED, vhost.getState());
         assertEquals(0, vhost.getHouseKeepingActiveCount());
+    }
+
+    public void testVirtualHostHavingStoreSetAsTypeBecomesStoppedOnClose() throws Exception
+    {
+        String virtualHostName = getName();
+        VirtualHost host = createVirtualHostUsingStoreType(virtualHostName);
+        assertNotNull(host);
+        assertEquals(State.ACTIVE, host.getState());
+        host.close();
+        assertEquals(State.STOPPED, host.getState());
+        assertEquals(0, host.getHouseKeepingActiveCount());
     }
 
     /**
@@ -264,5 +285,18 @@ public class VirtualHostImplTest extends QpidTestCase
         }
 
         return tmpFile;
+    }
+
+    private VirtualHost createVirtualHostUsingStoreType(String virtualHostName) throws ConfigurationException, Exception
+    {
+        Broker broker = BrokerTestHelper.createBrokerMock();
+        _virtualHostRegistry = broker.getVirtualHostRegistry();
+
+        Configuration config = new PropertiesConfiguration();
+        config.setProperty("store.type", MemoryMessageStore.TYPE);
+        VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
+        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(null), configuration);
+        _virtualHostRegistry.registerVirtualHost(host);
+        return host;
     }
 }

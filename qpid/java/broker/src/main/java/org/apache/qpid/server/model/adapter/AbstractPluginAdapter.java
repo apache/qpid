@@ -35,9 +35,9 @@ import org.apache.qpid.server.model.Statistics;
 public abstract class AbstractPluginAdapter extends AbstractAdapter implements Plugin
 {
 
-    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults)
+    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes)
     {
-        super(id, defaults);
+        super(id, defaults, attributes);
     }
 
     @Override
@@ -121,10 +121,6 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
         if (ID.equals(name))
         {
             return getId();
-        }
-        else if (NAME.equals(name))
-        {
-            return getName();
         }
         else if (STATE.equals(name))
         {

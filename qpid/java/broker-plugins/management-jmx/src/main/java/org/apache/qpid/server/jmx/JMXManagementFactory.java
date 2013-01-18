@@ -18,9 +18,6 @@
  */
 package org.apache.qpid.server.jmx;
 
-import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
-
 import java.util.Map;
 import java.util.UUID;
 
@@ -33,35 +30,16 @@ public class JMXManagementFactory implements PluginFactory
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagementFactory.class);
 
-    public static final String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
-
-    //TODO: re-factor key store settings
-    public static final String KEY_STORE_PATH = "keyStorePath";
-    public static final String KEY_STORE_PASSWORD = "keyStorePassword";
-
-    //TODO: make it set via system property
-    public static final String MANAGEMENT_RIGHTS_INFER_ALL_ACCESS = "managementRightsInferAllAccess";
-
-    public static final String PLUGIN_NAME = "MANAGEMENT-JMX";
-
     @Override
     public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
-        if (PLUGIN_NAME.equals(attributes.get(PLUGIN_TYPE)))
+        if (JMXManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
         {
-            JMXConfiguration jmxConfiguration = new JMXConfiguration(
-                    getBooleanAttribute(USE_PLATFORM_MBEAN_SERVER, attributes, true),
-                    getStringAttribute(KEY_STORE_PATH, attributes, null),
-                    getStringAttribute(KEY_STORE_PASSWORD, attributes, null),
-                    getBooleanAttribute(MANAGEMENT_RIGHTS_INFER_ALL_ACCESS, attributes, true));
-
-            //TODO: create defaults
-            Map<String, Object> defaults = null;
-            return new JMXManagement(id, broker, jmxConfiguration, defaults);
+            return new JMXManagement(id, broker, attributes);
         }
         else
         {
-            if(LOGGER.isDebugEnabled())
+            if (LOGGER.isDebugEnabled())
             {
                 LOGGER.debug("Skipping registration of JMX plugin as JMX Management disabled in config.");
             }

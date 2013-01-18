@@ -49,32 +49,55 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
+import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.util.MapValueConverter;
 
 public class JMXManagement extends AbstractPluginAdapter implements ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
 
-    private static final Collection<String> AVAILABLE_ATTRIBUTES = new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES);
-    static
-    {
-        AVAILABLE_ATTRIBUTES.add(JMXManagementFactory.MANAGEMENT_RIGHTS_INFER_ALL_ACCESS);
-        AVAILABLE_ATTRIBUTES.add(JMXManagementFactory.PLUGIN_TYPE);
-        AVAILABLE_ATTRIBUTES.add(JMXManagementFactory.USE_PLATFORM_MBEAN_SERVER);
-    }
+    public static final String PLUGIN_TYPE = "MANAGEMENT-JMX";
+
+    // attributes
+    public static final String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
+    public static final String NAME = "name";
+
+    // default values
+    public static final String DEFAULT_NAME = "JMXManagement";
+    public static final boolean DEFAULT_USE_PLATFORM_MBEAN_SERVER = true;
+
+    @SuppressWarnings("serial")
+    private static final Collection<String> AVAILABLE_ATTRIBUTES = Collections.unmodifiableCollection(new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES){{
+        add(NAME);
+        add(USE_PLATFORM_MBEAN_SERVER);
+        add(PluginFactory.PLUGIN_TYPE);
+    }});
+
+    @SuppressWarnings("serial")
+    private static final Map<String, Object> DEFAULTS = new HashMap<String, Object>(){{
+        put(USE_PLATFORM_MBEAN_SERVER, DEFAULT_USE_PLATFORM_MBEAN_SERVER);
+        put(NAME, DEFAULT_NAME);
+        put(PluginFactory.PLUGIN_TYPE, PLUGIN_TYPE);
+    }};
+
+    @SuppressWarnings("serial")
+    private static final Map<String, Class<?>> ATTRIBUTE_TYPES = new HashMap<String, Class<?>>(){{
+        put(USE_PLATFORM_MBEAN_SERVER, Boolean.class);
+        put(NAME, String.class);
+        put(PluginFactory.PLUGIN_TYPE, String.class);
+    }};
 
     private final Broker _broker;
     private JMXManagedObjectRegistry _objectRegistry;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children = new HashMap<ConfiguredObject, AMQManagedObject>();
 
-    private final JMXConfiguration _jmxConfiguration;
-
-    public JMXManagement(UUID id, Broker broker, JMXConfiguration jmxConfiguration, Map<String, Object> defaults)
+    public JMXManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, defaults);
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
         _broker = broker;
-        _jmxConfiguration = jmxConfiguration;
+        addParent(Broker.class, broker);
     }
 
     @Override
@@ -129,7 +152,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             throw new IllegalStateException("No JMX RMI port found supporting protocol " + Protocol.RMI);
         }
 
-        _objectRegistry = new JMXManagedObjectRegistry(_broker, connectorPort, registryPort, _jmxConfiguration);
+        _objectRegistry = new JMXManagedObjectRegistry(_broker, connectorPort, registryPort, this);
 
         _broker.addChangeListener(this);
 
@@ -294,30 +317,13 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     @Override
     public String getName()
     {
-        return "JMXManagement";
+        return (String)getAttribute(NAME);
     }
 
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
+        return AVAILABLE_ATTRIBUTES;
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(JMXManagementFactory.MANAGEMENT_RIGHTS_INFER_ALL_ACCESS.equals(name))
-        {
-            return _jmxConfiguration.isManagementRightsInferAllAccess();
-        }
-        else if(JMXManagementFactory.USE_PLATFORM_MBEAN_SERVER.equals(name))
-        {
-            return _jmxConfiguration.isPlatformMBeanServer();
-        }
-        else if(JMXManagementFactory.PLUGIN_TYPE.equals(name))
-        {
-            return JMXManagementFactory.PLUGIN_NAME;
-        }
-        return super.getAttribute(name);
-    }
 }

@@ -21,6 +21,7 @@
 package org.apache.qpid.systest.management.jmx;
 
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.test.utils.JMXTestUtils;
@@ -266,7 +267,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
     {
         if (isJavaBroker())
         {
-            setSystemProperty("qpid.use_custom_rmi_socket_factory", "false");
+            setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
             startBrokerAndCreateMonitor(true, false);
 
             final JMXTestUtils jmxUtils = new JMXTestUtils(this);

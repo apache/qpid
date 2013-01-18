@@ -146,15 +146,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _bindingFactory = new BindingFactory(this);
 
-        String storeType = hostConfig.getConfig().getString("store.type");
-        if (storeType == null)
-        {
-            _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
-        }
-        else
-        {
-            _messageStore = new MessageStoreCreator().createMessageStore(storeType);
-        }
+        _messageStore = initialiseMessageStore(hostConfig);
 
         configureMessageStore(hostConfig);
 
@@ -283,14 +275,29 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
 
         final MessageStore messageStore = (MessageStore) o;
-        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, clazz.getSimpleName());
+        return messageStore;
+    }
+
+    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    {
+        String storeType = hostConfig.getConfig().getString("store.type");
+        MessageStore  messageStore = null;
+        if (storeType == null)
+        {
+            messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
+        }
+        else
+        {
+            messageStore = new MessageStoreCreator().createMessageStore(storeType);
+        }
+
+        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore.getClass().getSimpleName());
         OperationalLoggingListener.listen(messageStore, storeLogSubject);
 
         messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
         messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
         messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
         messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
-
         return messageStore;
     }
 

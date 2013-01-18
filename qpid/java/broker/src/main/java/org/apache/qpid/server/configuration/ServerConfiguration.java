@@ -55,7 +55,7 @@ public class ServerConfiguration extends AbstractConfiguration
     public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
     public static final long DEFAULT_MINIMUM_ALERT_REPEAT_GAP = 30000l;
 
-    public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = "qpid.use_custom_rmi_socket_factory";
+    public static final String USE_CUSTOM_RMI_SOCKET_FACTORY = BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";

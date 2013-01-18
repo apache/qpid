@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import static org.apache.qpid.server.management.plugin.HttpManagement.*;
 import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
 import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
@@ -31,18 +32,6 @@ import org.apache.qpid.server.plugin.PluginFactory;
 
 public class HttpManagementFactory implements PluginFactory
 {
-    // 10 minutes by default
-    private static final int DEFAULT_TIMEOUT_IN_SECONDS = 60 * 10;
-
-    public static final String TIME_OUT = "sessionTimeout";
-    public static final String KEY_STORE_PATH = "keyStorePath";
-    public static final String KEY_STORE_PASSWORD = "keyStorePassword";
-    public static final String HTTP_BASIC_AUTHENTICATION_ENABLED = "httpBasicAuthenticationEnabled";
-    public static final String HTTPS_BASIC_AUTHENTICATION_ENABLED = "httpsBasicAuthenticationEnabled";
-    public static final String HTTP_SASL_AUTHENTICATION_ENABLED = "httpSaslAuthenticationEnabled";
-    public static final String HTTPS_SASL_AUTHENTICATION_ENABLED = "httpsSaslAuthenticationEnabled";
-
-    public static final String PLUGIN_NAME = "MANAGEMENT-HTTP";
 
     @Override
     public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
@@ -61,8 +50,7 @@ public class HttpManagementFactory implements PluginFactory
                 getStringAttribute(KEY_STORE_PATH, attributes, null),
                 getStringAttribute(KEY_STORE_PASSWORD, attributes, null)
                 );
-        //TODO: create defaults
-        Map<String, Object> defaults = null;
-        return new HttpManagement( id, broker, configuration, defaults);
+
+        return new HttpManagement( id, broker, configuration);
     }
 }
