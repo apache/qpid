@@ -385,7 +385,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
             public PrincipalAdapter(Principal user)
             {
-                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()), null);
+                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()));
                 _user = user;
 
             }

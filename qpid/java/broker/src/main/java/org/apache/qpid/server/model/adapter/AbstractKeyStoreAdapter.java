@@ -42,7 +42,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
 
     protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, null);
+        super(id);
         addParent(Broker.class, broker);
         _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
         _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);

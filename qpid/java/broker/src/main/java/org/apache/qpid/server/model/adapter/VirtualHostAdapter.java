@@ -174,33 +174,11 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 {
                     if(!_queueAdapters.containsKey(queue))
                     {
-                        //TODO: create queue defaults map
-                        Map<String, Object> queueDefaults = null;
-                        _queueAdapters.put(queue, new QueueAdapter(this,queue, queueDefaults));
+                        _queueAdapters.put(queue, new QueueAdapter(this, queue));
                     }
                 }
             }
         }
-    }
-
-    private void populateConnections()
-    {
-
-        List<AMQConnectionModel> actualConnections = _virtualHost.getConnectionRegistry().getConnections();
-
-        synchronized(_connectionAdapters)
-        {
-            for(AMQConnectionModel conn : actualConnections)
-            {
-                if(!_connectionAdapters.containsKey(conn))
-                {
-                    //TODO: create connection defaults
-                    Map<String, Object> connectionDefaults = null;
-                    _connectionAdapters.put(conn, new ConnectionAdapter(conn, connectionDefaults));
-                }
-            }
-        }
-
     }
 
     @Override
@@ -558,9 +536,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             if(!_queueAdapters.containsKey(queue))
             {
-                //TODO: create queue defaults
-                Map<String, Object> queueDefaults = null;
-                adapter = new QueueAdapter(this, queue, queueDefaults);
+                adapter = new QueueAdapter(this, queue);
                 _queueAdapters.put(queue, adapter);
 
             }
@@ -596,9 +572,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             if(!_connectionAdapters.containsKey(connection))
             {
-                //TODO: create defaults
-                Map<String, Object> defaults = null;
-                adapter = new ConnectionAdapter(connection, defaults);
+                adapter = new ConnectionAdapter(connection);
                 _connectionAdapters.put(connection, adapter);
 
             }
@@ -946,38 +920,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         if (desiredState == State.ACTIVE)
         {
-            VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
-            String virtualHostName = getName();
-            try
-            {
-                VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName);
-                _virtualHost = new VirtualHostImpl(_broker.getVirtualHostRegistry(), _brokerStatisticsGatherer, _broker.getSecurityManager(), configuration);
-            }
-            catch (Exception e)
-            {
-               throw new RuntimeException("Failed to create virtual host " + virtualHostName, e);
-            }
-
-            virtualHostRegistry.registerVirtualHost(_virtualHost);
-
-            _statistics = new VirtualHostStatisticsAdapter(_virtualHost);
-            _virtualHost.getQueueRegistry().addRegistryChangeListener(this);
-            populateQueues();
-            _virtualHost.getExchangeRegistry().addRegistryChangeListener(this);
-            populateExchanges();
-            _virtualHost.getConnectionRegistry().addRegistryChangeListener(this);
-            populateConnections();
-
-            synchronized(_aliases)
-            {
-                for(Port port :_broker.getPorts())
-                {
-                   if (Protocol.hasAmqpProtocol(port.getProtocols()))
-                   {
-                       _aliases.add(new VirtualHostAliasAdapter(this, port));
-                   }
-                }
-            }
+            activate();
             return true;
         }
         else if (desiredState == State.STOPPED)
@@ -996,6 +939,41 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             return true;
         }
         return false;
+    }
+
+    private void activate()
+    {
+        VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
+        String virtualHostName = getName();
+        try
+        {
+            VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName);
+            _virtualHost = new VirtualHostImpl(_broker.getVirtualHostRegistry(), _brokerStatisticsGatherer, _broker.getSecurityManager(), configuration);
+        }
+        catch (Exception e)
+        {
+           throw new RuntimeException("Failed to create virtual host " + virtualHostName, e);
+        }
+
+        virtualHostRegistry.registerVirtualHost(_virtualHost);
+
+        _statistics = new VirtualHostStatisticsAdapter(_virtualHost);
+        _virtualHost.getQueueRegistry().addRegistryChangeListener(this);
+        populateQueues();
+        _virtualHost.getExchangeRegistry().addRegistryChangeListener(this);
+        populateExchanges();
+        _virtualHost.getConnectionRegistry().addRegistryChangeListener(this);
+
+        synchronized(_aliases)
+        {
+            for(Port port :_broker.getPorts())
+            {
+               if (Protocol.hasAmqpProtocol(port.getProtocols()))
+               {
+                   _aliases.add(new VirtualHostAliasAdapter(this, port));
+               }
+            }
+        }
     }
 
     private VirtualHostConfiguration createVirtualHostConfiguration(String virtualHostName) throws ConfigurationException

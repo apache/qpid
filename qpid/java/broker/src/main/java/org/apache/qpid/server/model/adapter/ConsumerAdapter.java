@@ -45,7 +45,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
                                                queueAdapter.getName(),
                                                subscription.getSessionModel().getConnectionModel().getRemoteAddressString(),
                                                String.valueOf(subscription.getSessionModel().getChannelId()),
-                                               subscription.getConsumerName()), null);
+                                               subscription.getConsumerName()));
         _subscription = subscription;
         _queue = queueAdapter;
         _statistics = new ConsumerStatistics();

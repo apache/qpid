@@ -230,8 +230,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 
         public GroupAdapter(String group)
         {
-            super(UUIDGenerator.generateGroupUUID(
-                    GroupProviderAdapter.this.getName(), group), null);
+            super(UUIDGenerator.generateGroupUUID(GroupProviderAdapter.this.getName(), group));
             _group = group;
 
         }
@@ -406,10 +405,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 
             public GroupMemberAdapter(String memberName)
             {
-                super(UUIDGenerator
-                        .generateGroupMemberUUID(
-                                GroupProviderAdapter.this.getName(), _group,
-                                memberName), null);
+                super(UUIDGenerator.generateGroupMemberUUID(GroupProviderAdapter.this.getName(), _group, memberName));
                 _memberName = memberName;
             }
 

@@ -50,9 +50,9 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             new HashMap<AMQSessionModel, SessionAdapter>();
     private final Statistics _statistics;
 
-    public ConnectionAdapter(final AMQConnectionModel conn, Map<String, Object> defaults)
+    public ConnectionAdapter(final AMQConnectionModel conn)
     {
-        super(UUIDGenerator.generateRandomUUID(), defaults);
+        super(UUIDGenerator.generateRandomUUID());
         _connection = conn;
         _statistics = new ConnectionStatisticsAdapter(conn);
     }

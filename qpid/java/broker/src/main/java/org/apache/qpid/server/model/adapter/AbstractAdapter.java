@@ -63,6 +63,11 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
+    protected AbstractAdapter(UUID id)
+    {
+        this(id, null, null);
+    }
+
     protected AbstractAdapter(UUID id, Map<String, Object> defaults)
     {
         this(id, defaults, null);
