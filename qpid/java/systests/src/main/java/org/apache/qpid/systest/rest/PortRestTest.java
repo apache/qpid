@@ -34,12 +34,12 @@ public class PortRestTest extends QpidRestTestCase
         assertNotNull("Port data cannot be null", ports);
         assertEquals("Unexpected number of ports", 2, ports.size());
 
-        String httpPortName = "" + getRestTestHelper().getHttpPort();
+        String httpPortName = getRestTestHelper().getHttpPort() + "-HTTP";
         Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
         assertNotNull("Http port " + httpPortName + " is not found", portData);
         Asserts.assertPortAttributes(portData);
 
-        String amqpPortName = "*:" + getPort();
+        String amqpPortName = getPort() + "-AMQP";
         Map<String, Object> amqpPortData = getRestTestHelper().find(Port.NAME, amqpPortName, ports);
         assertNotNull("Amqp port " + amqpPortName + " is not found", amqpPortData);
         Asserts.assertPortAttributes(amqpPortData);

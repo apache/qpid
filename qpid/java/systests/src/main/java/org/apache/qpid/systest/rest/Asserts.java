@@ -212,7 +212,6 @@ public class Asserts
                     Port.BINDING_ADDRESS, Port.TCP_NO_DELAY, Port.SEND_BUFFER_SIZE, Port.RECEIVE_BUFFER_SIZE,
                     Port.NEED_CLIENT_AUTH, Port.WANT_CLIENT_AUTH);
         }
-        assertNotNull("Unexpected value of attribute " + Port.NAME, port.get(Port.NAME));
 
         @SuppressWarnings("unchecked")
         Collection<String> transports = (Collection<String>) port.get(Port.TRANSPORTS);

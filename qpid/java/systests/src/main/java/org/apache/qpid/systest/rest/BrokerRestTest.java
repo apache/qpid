@@ -68,11 +68,10 @@ public class BrokerRestTest extends QpidRestTestCase
             Asserts.assertPortAttributes(port);
         }
 
-        String bindingAddress = (String)ports.get(0).get(Port.BINDING_ADDRESS);
+        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, getPort() +"-AMQP", ports);
+        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, getRestTestHelper().getHttpPort() + "-HTTP", ports);
 
-        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getPort(), ports);
-        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, "" + getRestTestHelper().getHttpPort(), ports);
-
+        assertEquals("Unexpected binding address", "*", amqpPort.get(Port.BINDING_ADDRESS));
         assertNotNull("Cannot find AMQP port", amqpPort);
         assertNotNull("Cannot find HTTP port", httpPort);
 

@@ -201,6 +201,7 @@ public class PortConfigurationHelper
                     serverConfig);
 
             Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(Port.NAME, port + "-" + Protocol.ProtocolType.AMQP);
             attributes.put(Port.PROTOCOLS, supported);
             attributes.put(Port.TRANSPORTS, Collections.singleton(transport));
             attributes.put(Port.PORT, port);

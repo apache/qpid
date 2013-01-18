@@ -42,19 +42,11 @@ import org.apache.qpid.server.util.MapValueConverter;
 public class PortFactory
 {
     public static final int DEFAULT_AMQP_SEND_BUFFER_SIZE = 262144;
-
     public static final int DEFAULT_AMQP_RECEIVE_BUFFER_SIZE = 262144;
-
     public static final boolean DEFAULT_AMQP_NEED_CLIENT_AUTH = false;
-
     public static final boolean DEFAULT_AMQP_WANT_CLIENT_AUTH = false;
-
     public static final boolean DEFAULT_AMQP_TCP_NO_DELAY = true;
-
-    public static final int DEFAULT_AMQP_PORT = 5672;
-
     public static final String DEFAULT_AMQP_BINDING = "*";
-
     public static final Transport DEFAULT_TRANSPORT = Transport.TCP;
 
     private final Collection<Protocol> _defaultProtocols;
@@ -93,20 +85,38 @@ public class PortFactory
         final Port port;
         Map<String, Object> defaults = new HashMap<String, Object>();
         defaults.put(Port.TRANSPORTS, Collections.singleton(DEFAULT_TRANSPORT));
+        Object portValue = attributes.get(Port.PORT);
+        if (portValue == null)
+        {
+            throw new IllegalConfigurationException("Port attribute is not specified for port: " + attributes);
+        }
         if (isAmqpProtocol(attributes))
         {
+            Object binding = attributes.get(Port.BINDING_ADDRESS);
+            if (binding == null)
+            {
+                binding = DEFAULT_AMQP_BINDING;
+                defaults.put(Port.BINDING_ADDRESS, DEFAULT_AMQP_BINDING);
+            }
+            defaults.put(Port.NAME, binding + ":" + portValue);
             defaults.put(Port.PROTOCOLS, _defaultProtocols);
-            defaults.put(Port.PORT, DEFAULT_AMQP_PORT);
             defaults.put(Port.TCP_NO_DELAY, DEFAULT_AMQP_TCP_NO_DELAY);
             defaults.put(Port.WANT_CLIENT_AUTH, DEFAULT_AMQP_WANT_CLIENT_AUTH);
             defaults.put(Port.NEED_CLIENT_AUTH, DEFAULT_AMQP_NEED_CLIENT_AUTH);
             defaults.put(Port.RECEIVE_BUFFER_SIZE, DEFAULT_AMQP_RECEIVE_BUFFER_SIZE);
             defaults.put(Port.SEND_BUFFER_SIZE, DEFAULT_AMQP_SEND_BUFFER_SIZE);
-            defaults.put(Port.BINDING_ADDRESS, DEFAULT_AMQP_BINDING);
             port = new AmqpPortAdapter(id, broker, attributes, defaults);
         }
         else
         {
+            @SuppressWarnings("unchecked")
+            Collection<Protocol> protocols = (Collection<Protocol>)attributes.get(Port.PROTOCOLS);
+            if (protocols.size() > 1)
+            {
+                throw new IllegalConfigurationException("Only one protocol can be used on non AMQP port");
+            }
+            Protocol protocol = protocols.iterator().next();
+            defaults.put(Port.NAME, portValue + "-" + protocol.name());
             port = new PortAdapter(id, broker, attributes, defaults);
         }
         return port;
@@ -179,6 +189,7 @@ public class PortFactory
         Set<Protocol> protocols = (Set<Protocol>) portAttributes.get(Port.PROTOCOLS);
         if (protocols == null || protocols.isEmpty())
         {
+            // defaulting to AMQP if protocol is not specified
             return true;
         }
 

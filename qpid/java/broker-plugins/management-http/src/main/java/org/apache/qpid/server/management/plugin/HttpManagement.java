@@ -196,6 +196,8 @@ public class HttpManagement extends AbstractPluginAdapter
         {
             final Collection<Protocol> protocols = port.getProtocols();
             Connector connector = null;
+
+            //TODO: what to do if protocol HTTP and transport SSL?
             if (protocols.contains(Protocol.HTTP))
             {
                 connector = new SelectChannelConnector();

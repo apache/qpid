@@ -312,6 +312,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         attributes.put(Port.TRANSPORTS, Collections.singleton(transport));
         attributes.put(Port.PORT, port);
         attributes.put(Port.BINDING_ADDRESS, null);
+        attributes.put(Port.NAME, port + "-" + protocol);
         return new ConfigurationEntry(UUID.randomUUID(), Port.class.getSimpleName(), attributes, null, this);
     }
 

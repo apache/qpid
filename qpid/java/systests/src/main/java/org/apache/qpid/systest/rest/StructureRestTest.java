@@ -91,23 +91,15 @@ public class StructureRestTest extends QpidRestTestCase
                     }
                 }
             }
-
-            /*
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> aliases = (List<Map<String, Object>>) host.get("virtualhostaliases");
-            assertNotNull("Host " + hostName + " aliases are not found ", aliases);
-            assertEquals("Unexpected aliases size", 1, aliases.size());
-            assertNode(aliases.get(0), hostName);
-            */
         }
 
 
-        String httpPortName = "" + getRestTestHelper().getHttpPort();
+        String httpPortName = getRestTestHelper().getHttpPort() + "-HTTP";
         Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
         assertNotNull("Http Port " + httpPortName + " is not found", portData);
         assertNode(portData, httpPortName);
 
-        String amqpPortName = "*:" + getPort();
+        String amqpPortName = getPort() + "-AMQP";
         Map<String, Object> amqpPortData = getRestTestHelper().find(Port.NAME, amqpPortName, ports);
         assertNotNull("Amqp port " + amqpPortName + " is not found", amqpPortData);
         assertNode(amqpPortData, amqpPortName);

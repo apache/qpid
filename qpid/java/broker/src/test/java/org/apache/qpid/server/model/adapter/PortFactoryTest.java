@@ -97,13 +97,15 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals("Unexpected protocols", new HashSet<Protocol>(expected), new HashSet<Protocol>(protocols));
     }
 
-    public void testCreatePortWithEmptyAttributes()
+    public void testCreatePortWithMinimumAttributes()
     {
-        Port port = _portFactory.createPort(_portId, _broker, Collections.<String, Object> emptyMap());
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, 1);
+        Port port = _portFactory.createPort(_portId, _broker, attributes);
 
         assertNotNull(port);
         assertTrue(port instanceof AmqpPortAdapter);
-        assertEquals("Unexpected port", PortFactory.DEFAULT_AMQP_PORT, port.getPort());
+        assertEquals("Unexpected port", 1, port.getPort());
         assertEquals("Unexpected transports", Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());
         assertEquals("Unexpected protocols", _portFactory.getDefaultProtocols(), port.getProtocols());
         assertEquals("Unexpected send buffer size", PortFactory.DEFAULT_AMQP_SEND_BUFFER_SIZE,

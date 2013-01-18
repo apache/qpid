@@ -45,7 +45,6 @@ import org.apache.qpid.server.model.VirtualHostAlias;
 public class PortAdapter extends AbstractAdapter implements Port
 {
 
-    private final String _name;
     private final Broker _broker;
     private AuthenticationProvider _authenticationProvider;
 
@@ -61,14 +60,6 @@ public class PortAdapter extends AbstractAdapter implements Port
 
         addParent(Broker.class, broker);
 
-        String name = (String)getAttribute(NAME);
-        if (name == null)
-        {
-            Integer port = getPort();
-            String bindingAddress = getBindingAddress();
-            name = bindingAddress == null? port + "" : bindingAddress + ":" + port;
-        }
-        _name = name;
     }
 
     @Override
@@ -151,7 +142,7 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public String getName()
     {
-        return _name;
+        return (String)getAttribute(NAME);
     }
 
     @Override
@@ -236,10 +227,6 @@ public class PortAdapter extends AbstractAdapter implements Port
         if(ID.equals(name))
         {
             return getId();
-        }
-        else if(NAME.equals(name))
-        {
-            return getName();
         }
         else if(STATE.equals(name))
         {
