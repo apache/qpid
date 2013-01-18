@@ -70,11 +70,21 @@ public interface Broker extends ConfiguredObject
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
 
-    /**
+    /*
      * A temporary attribute to pass the path to ACL file.
      * TODO: It should be a part of AuthorizationProvider.
      */
     String ACL_FILE = "aclFile";
+
+    /*
+     * A temporary attributes to set the broker default key/trust stores.
+     * TODO: Remove them after adding a full support to configure KeyStore/TrustStore via management layers.
+     */
+    String KEY_STORE_PATH = "keyStorePath";
+    String KEY_STORE_PASSWORD = "keyStorePassword";
+    String KEY_STORE_CERT_ALIAS = "keyStoreCertAlias";
+    String TRUST_STORE_PATH = "trustStorePath";
+    String TRUST_STORE_PASSWORD = "trustStorePassword";
 
     // Attributes
     Collection<String> AVAILABLE_ATTRIBUTES =
@@ -106,11 +116,17 @@ public interface Broker extends ConfiguredObject
                               MAXIMUM_DELIVERY_ATTEMPTS,
                               DEAD_LETTER_QUEUE_ENABLED,
                               HOUSEKEEPING_CHECK_PERIOD,
-                              ACL_FILE,
                               SESSION_COUNT_LIMIT,
                               HEART_BEAT_DELAY,
                               STATISTICS_REPORTING_PERIOD,
-                              STATISTICS_REPORTING_RESET_ENABLED
+                              STATISTICS_REPORTING_RESET_ENABLED,
+
+                              ACL_FILE,
+                              KEY_STORE_PATH,
+                              KEY_STORE_PASSWORD,
+                              KEY_STORE_CERT_ALIAS,
+                              TRUST_STORE_PATH,
+                              TRUST_STORE_PASSWORD
                               ));
 
     //children
@@ -163,4 +179,8 @@ public interface Broker extends ConfiguredObject
      * TODO: Remove this method. Eventually the broker will become a registry.
      */
     VirtualHostRegistry getVirtualHostRegistry();
+
+    KeyStore getDefaultKeyStore();
+
+    TrustStore getDefaultTrustStore();
 }

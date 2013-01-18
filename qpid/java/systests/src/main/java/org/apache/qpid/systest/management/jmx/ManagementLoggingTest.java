@@ -25,6 +25,7 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.TestSSLConstants;
 import org.apache.qpid.util.LogMonitor;
 
 import java.io.File;
@@ -310,6 +311,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
         {
             // This test requires we have an ssl connection
             setConfigurationProperty("management.ssl.enabled", "true");
+
+            setSystemProperty("javax.net.ssl.keyStore", "test-profiles/test_resources/ssl/java_broker_keystore.jks");
+            setSystemProperty("javax.net.ssl.keyStorePassword", "password");
         }
 
         startBroker();

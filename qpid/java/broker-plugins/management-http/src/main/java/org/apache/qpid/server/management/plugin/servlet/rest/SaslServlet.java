@@ -25,7 +25,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.management.plugin.HttpConfiguration;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
@@ -196,14 +196,14 @@ public class SaslServlet extends AbstractServlet
     private void checkSaslAuthEnabled(HttpServletRequest request)
     {
         boolean saslAuthEnabled;
-        HttpConfiguration configuration = getConfiguration();
+        HttpManagement management = getManagement();
         if (request.isSecure())
         {
-            saslAuthEnabled = configuration.isHttpsSaslAuthenticationEnabled();
+            saslAuthEnabled = management.isHttpsSaslAuthenticationEnabled();
         }
         else
         {
-            saslAuthEnabled = configuration.isHttpSaslAuthenticationEnabled();
+            saslAuthEnabled = management.isHttpSaslAuthenticationEnabled();
         }
 
         if (!saslAuthEnabled)

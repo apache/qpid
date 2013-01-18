@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
@@ -50,6 +51,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupMember;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -60,6 +62,7 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
@@ -75,57 +78,66 @@ public class HttpManagement extends AbstractPluginAdapter
 
     // 10 minutes by default
     public static final int DEFAULT_TIMEOUT_IN_SECONDS = 60 * 10;
+    public static final boolean DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED = false;
+    public static final boolean DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED = true;
+    public static final boolean DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED = true;
+    public static final boolean DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED = true;
+    public static final String DEFAULT_NAME = "httpManagement";
 
     public static final String TIME_OUT = "sessionTimeout";
-    public static final String KEY_STORE_PATH = "keyStorePath";
-    public static final String KEY_STORE_PASSWORD = "keyStorePassword";
     public static final String HTTP_BASIC_AUTHENTICATION_ENABLED = "httpBasicAuthenticationEnabled";
     public static final String HTTPS_BASIC_AUTHENTICATION_ENABLED = "httpsBasicAuthenticationEnabled";
     public static final String HTTP_SASL_AUTHENTICATION_ENABLED = "httpSaslAuthenticationEnabled";
     public static final String HTTPS_SASL_AUTHENTICATION_ENABLED = "httpsSaslAuthenticationEnabled";
 
-    public static final String PLUGIN_NAME = "MANAGEMENT-HTTP";
+    public static final String PLUGIN_TYPE = "MANAGEMENT-HTTP";
 
-    private static final Collection<String> AVAILABLE_ATTRIBUTES = new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES);
-    static
-    {
-        AVAILABLE_ATTRIBUTES.add(HTTP_BASIC_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HTTPS_BASIC_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HTTP_SASL_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(HTTPS_SASL_AUTHENTICATION_ENABLED);
-        AVAILABLE_ATTRIBUTES.add(TIME_OUT);
-        AVAILABLE_ATTRIBUTES.add(PluginFactory.PLUGIN_TYPE);
-    }
+    @SuppressWarnings("serial")
+    private static final Collection<String> AVAILABLE_ATTRIBUTES = Collections.unmodifiableSet(new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES)
+    {{
+        add(HTTP_BASIC_AUTHENTICATION_ENABLED);
+        add(HTTPS_BASIC_AUTHENTICATION_ENABLED);
+        add(HTTP_SASL_AUTHENTICATION_ENABLED);
+        add(HTTPS_SASL_AUTHENTICATION_ENABLED);
+        add(TIME_OUT);
+        add(PluginFactory.PLUGIN_TYPE);
+    }});
 
     public static final String ENTRY_POINT_PATH = "/management";
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
-    protected static final boolean DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED = false;
-    protected static final boolean DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED = true;
-    protected static final boolean DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED = true;
-    protected static final boolean DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED = true;
 
     @SuppressWarnings("serial")
-    public static final Map<String, Object> DEFAULTS = new HashMap<String, Object>()
+    public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>()
             {{
                 put(HTTP_BASIC_AUTHENTICATION_ENABLED, DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED);
                 put(HTTPS_BASIC_AUTHENTICATION_ENABLED, DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED);
                 put(HTTP_SASL_AUTHENTICATION_ENABLED, DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED);
                 put(HTTPS_SASL_AUTHENTICATION_ENABLED, DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED);
-            }};
+                put(TIME_OUT, DEFAULT_TIMEOUT_IN_SECONDS);
+                put(NAME, DEFAULT_NAME);
+            }});
+
+    @SuppressWarnings("serial")
+    private static final Map<String, Class<?>> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Class<?>>(){{
+        put(HTTP_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
+        put(HTTPS_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
+        put(HTTP_SASL_AUTHENTICATION_ENABLED, Boolean.class);
+        put(HTTPS_SASL_AUTHENTICATION_ENABLED, Boolean.class);
+        put(NAME, Boolean.class);
+        put(TIME_OUT, Integer.class);
+        put(PluginFactory.PLUGIN_TYPE, String.class);
+    }});
 
     private final Broker _broker;
 
     private Server _server;
 
-    private final HttpConfiguration _configuration;
-
-    public HttpManagement(UUID id, Broker broker, HttpConfiguration configuration)
+    public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, null);
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
         _broker = broker;
-        _configuration = configuration;
         addParent(Broker.class, broker);
     }
 
@@ -189,21 +201,9 @@ public class HttpManagement extends AbstractPluginAdapter
     }
 
     /** Added for testing purposes */
-    String getKeyStorePassword()
-    {
-        return _configuration.getKeyStorePassword();
-    }
-
-    /** Added for testing purposes */
-    String getKeyStorePath()
-    {
-        return _configuration.getKeyStorePath();
-    }
-
-    /** Added for testing purposes */
     int getSessionTimeout()
     {
-        return _configuration.getSessionTimeout();
+        return (Integer)getAttribute(TIME_OUT);
     }
 
     private boolean isManagementHttp(Port port)
@@ -232,12 +232,18 @@ public class HttpManagement extends AbstractPluginAdapter
             }
             else if (protocols.contains(Protocol.HTTPS))
             {
-                String keyStorePath = _configuration.getKeyStorePath();
-                checkKeyStorePath(keyStorePath);
+                KeyStore keyStore = _broker.getDefaultKeyStore();
+                if (keyStore == null)
+                {
+                    throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
+                }
+                String keyStorePath = (String)keyStore.getAttribute(KeyStore.PATH);
+                String keyStorePassword = keyStore.getPassword();
+                validateKeystoreParameters(keyStorePath, keyStorePassword);
 
                 SslContextFactory factory = new SslContextFactory();
                 factory.setKeyStorePath(keyStorePath);
-                factory.setKeyStorePassword(_configuration.getKeyStorePassword());
+                factory.setKeyStorePassword(keyStorePassword);
 
                 connector = new SslSocketConnector(factory);
             }
@@ -255,7 +261,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
         // set servlet context attributes for broker and configuration
         root.getServletContext().setAttribute(AbstractServlet.ATTR_BROKER, _broker);
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_CONFIGURATION, _configuration);
+        root.getServletContext().setAttribute(AbstractServlet.ATTR_MANAGEMENT, this);
 
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
@@ -295,7 +301,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
 
-        sessionManager.setMaxInactiveInterval(_configuration.getSessionTimeout());
+        sessionManager.setMaxInactiveInterval((Integer)getAttribute(TIME_OUT));
 
         return server;
     }
@@ -305,23 +311,24 @@ public class HttpManagement extends AbstractPluginAdapter
         root.addServlet(new ServletHolder(new RestServlet(hierarchy)), "/rest/" + name + "/*");
     }
 
-    private void checkKeyStorePath(String keyStorePath)
+    private void validateKeystoreParameters(String keyStorePath, String password)
     {
         if (keyStorePath == null)
         {
             throw new RuntimeException("Management SSL keystore path not defined, unable to start SSL protected HTTP connector");
         }
-        else
+        if (password == null)
         {
-            File ksf = new File(keyStorePath);
-            if (!ksf.exists())
-            {
-                throw new RuntimeException("Cannot find management SSL keystore file: " + ksf);
-            }
-            if (!ksf.canRead())
-            {
-                throw new RuntimeException("Cannot read management SSL keystore file: " + ksf + ". Check permissions.");
-            }
+            throw new RuntimeException("Management SSL keystore password, unable to start SSL protected HTTP connector");
+        }
+        File ksf = new File(keyStorePath);
+        if (!ksf.exists())
+        {
+            throw new RuntimeException("Cannot find management SSL keystore file: " + ksf);
+        }
+        if (!ksf.canRead())
+        {
+            throw new RuntimeException("Cannot read management SSL keystore file: " + ksf + ". Check permissions.");
         }
     }
 
@@ -382,33 +389,24 @@ public class HttpManagement extends AbstractPluginAdapter
         return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
     }
 
-    @Override
-    public Object getAttribute(String name)
+    public boolean isHttpsSaslAuthenticationEnabled()
     {
-        if(HTTP_BASIC_AUTHENTICATION_ENABLED.equals(name))
-        {
-            return _configuration.isHttpBasicAuthenticationEnabled();
-        }
-        else if(HTTPS_BASIC_AUTHENTICATION_ENABLED.equals(name))
-        {
-            return _configuration.isHttpsBasicAuthenticationEnabled();
-        }
-        else if(HTTP_SASL_AUTHENTICATION_ENABLED.equals(name))
-        {
-            return _configuration.isHttpSaslAuthenticationEnabled();
-        }
-        else if(HTTPS_SASL_AUTHENTICATION_ENABLED.equals(name))
-        {
-            return _configuration.isHttpSaslAuthenticationEnabled();
-        }
-        else if(TIME_OUT.equals(name))
-        {
-            return _configuration.getSessionTimeout();
-        }
-        else if(PluginFactory.PLUGIN_TYPE.equals(name))
-        {
-            return PLUGIN_NAME;
-        }
-        return super.getAttribute(name);
+        return (Boolean)getAttribute(HTTPS_SASL_AUTHENTICATION_ENABLED);
     }
+
+    public boolean isHttpSaslAuthenticationEnabled()
+    {
+        return (Boolean)getAttribute(HTTP_SASL_AUTHENTICATION_ENABLED);
+    }
+
+    public boolean isHttpsBasicAuthenticationEnabled()
+    {
+        return (Boolean)getAttribute(HTTPS_BASIC_AUTHENTICATION_ENABLED);
+    }
+
+    public boolean isHttpBasicAuthenticationEnabled()
+    {
+        return (Boolean)getAttribute(HTTP_BASIC_AUTHENTICATION_ENABLED);
+    }
+
 }

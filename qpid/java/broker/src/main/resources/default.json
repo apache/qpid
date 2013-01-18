@@ -58,11 +58,7 @@
   "plugins" : [ {
     "type" : "Plugin",
     "pluginType" : "MANAGEMENT-HTTP",
-    "name" : "httpManagement",
-    "httpSaslAuthenticationEnabled" : true,
-    "httpsSaslAuthenticationEnabled" : false,
-    "httpBasicAuthenticationEnabled" : false,
-    "httpsBasicAuthenticationEnabled" : false
+    "name" : "httpManagement"
   }, {
     "type" : "Plugin",
     "pluginType" : "MANAGEMENT-JMX",

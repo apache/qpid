@@ -18,11 +18,6 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import static org.apache.qpid.server.management.plugin.HttpManagement.*;
-import static org.apache.qpid.server.util.MapValueConverter.getBooleanAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getIntegerAttribute;
-import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
-
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,21 +31,11 @@ public class HttpManagementFactory implements PluginFactory
     @Override
     public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
-        if (!PLUGIN_NAME.equals(attributes.get(PLUGIN_TYPE)))
+        if (!HttpManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
         {
             return null;
         }
 
-        HttpConfiguration configuration = new HttpConfiguration(
-                getIntegerAttribute(TIME_OUT, attributes, DEFAULT_TIMEOUT_IN_SECONDS),
-                getBooleanAttribute(HTTP_BASIC_AUTHENTICATION_ENABLED, attributes, false),
-                getBooleanAttribute(HTTPS_BASIC_AUTHENTICATION_ENABLED, attributes, true),
-                getBooleanAttribute(HTTP_SASL_AUTHENTICATION_ENABLED, attributes, true),
-                getBooleanAttribute(HTTPS_SASL_AUTHENTICATION_ENABLED, attributes, true),
-                getStringAttribute(KEY_STORE_PATH, attributes, null),
-                getStringAttribute(KEY_STORE_PASSWORD, attributes, null)
-                );
-
-        return new HttpManagement( id, broker, configuration);
+        return new HttpManagement(id, broker, attributes);
     }
 }

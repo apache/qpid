@@ -30,8 +30,6 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementFactoryTest extends QpidTestCase
 {
-    private static final String KEY_STORE_PASSWORD = "keyStorePassword";
-    private static final String KEY_STORE_PATH = "keyStorePath";
     private static final int SESSION_TIMEOUT = 3600;
 
     private PluginFactory _pluginFactory = new HttpManagementFactory();
@@ -49,31 +47,14 @@ public class HttpManagementFactoryTest extends QpidTestCase
         assertNull(_pluginFactory.createInstance(_id, _attributes, _broker));
     }
 
-    public void testCreateInstanceWithoutKeystore() throws Exception
+    public void testCreateInstance() throws Exception
     {
-        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_NAME);
+        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_TYPE);
         _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
 
         HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
 
         assertEquals(_broker, management.getBroker());
-        assertNull(management.getKeyStorePassword());
-        assertNull(management.getKeyStorePath());
-        assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());
-    }
-
-    public void testCreateInstanceWithKeystore() throws Exception
-    {
-        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_NAME);
-        _attributes.put(HttpManagement.KEY_STORE_PASSWORD, KEY_STORE_PASSWORD);
-        _attributes.put(HttpManagement.KEY_STORE_PATH, KEY_STORE_PATH);
-        _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
-
-        HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
-
-        assertEquals(_broker, management.getBroker());
-        assertEquals(KEY_STORE_PASSWORD, management.getKeyStorePassword());
-        assertEquals(KEY_STORE_PATH, management.getKeyStorePath());
         assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());
     }
 

@@ -42,7 +42,7 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.HttpManagementActor;
-import org.apache.qpid.server.management.plugin.HttpConfiguration;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
@@ -63,7 +63,7 @@ public abstract class AbstractServlet extends HttpServlet
     /**
      * Servlet context attribute holding a reference to plugin configuration
      */
-    public static final String ATTR_CONFIGURATION = "Qpid.configuration";
+    public static final String ATTR_MANAGEMENT = "Qpid.management";
 
     private static final String ATTR_LOGIN_LOGOUT_REPORTER = "AbstractServlet.loginLogoutReporter";
     private static final String ATTR_SUBJECT = "AbstractServlet.subject";
@@ -71,7 +71,7 @@ public abstract class AbstractServlet extends HttpServlet
 
     private Broker _broker;
     private RootMessageLogger _rootLogger;
-    private HttpConfiguration _configuration;
+    private HttpManagement _httpManagement;
 
     protected AbstractServlet()
     {
@@ -85,7 +85,7 @@ public abstract class AbstractServlet extends HttpServlet
         ServletContext servletContext = servletConfig.getServletContext();
         _broker = (Broker)servletContext.getAttribute(ATTR_BROKER);
         _rootLogger = _broker.getRootMessageLogger();
-        _configuration = (HttpConfiguration)servletContext.getAttribute(ATTR_CONFIGURATION);
+        _httpManagement = (HttpManagement)servletContext.getAttribute(ATTR_MANAGEMENT);
         super.init();
     }
 
@@ -397,8 +397,8 @@ public abstract class AbstractServlet extends HttpServlet
 
     private boolean isBasicAuthSupported(HttpServletRequest req)
     {
-        return req.isSecure()  ? _configuration.isHttpsBasicAuthenticationEnabled()
-                : _configuration.isHttpBasicAuthenticationEnabled();
+        return req.isSecure()  ? _httpManagement.isHttpsBasicAuthenticationEnabled()
+                : _httpManagement.isHttpBasicAuthenticationEnabled();
     }
 
     private HttpManagementActor getLogActorAndCacheInSession(HttpServletRequest req)
@@ -456,9 +456,9 @@ public abstract class AbstractServlet extends HttpServlet
         return new HttpManagementActor(_rootLogger, request.getRemoteAddr(), request.getRemotePort());
     }
 
-    protected HttpConfiguration getConfiguration()
+    protected HttpManagement getManagement()
     {
-        return _configuration;
+        return _httpManagement;
     }
 
     protected SecurityManager getSecurityManager()

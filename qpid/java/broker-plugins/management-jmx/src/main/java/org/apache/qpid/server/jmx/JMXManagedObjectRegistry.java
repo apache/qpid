@@ -122,15 +122,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         if (connectorSslEnabled)
         {
-            checkKeyStorePathExistsAndIsReadable();
+            String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+            String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
 
-            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(System.getProperty("javax.net.ssl.keyStore")));
+            validateKeyStoreProperties(keyStorePath, keyStorePassword);
 
-            if (System.getProperty("javax.net.ssl.keyStorePassword") == null)
-            {
-                throw new IllegalConfigurationException(
-                        "JMX management SSL keystore password not defined, unable to start requested SSL protected JMX server");
-            }
+            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStorePath));
 
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
@@ -265,28 +262,28 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         return rmiRegistry;
     }
 
-    private void checkKeyStorePathExistsAndIsReadable() throws FileNotFoundException
+    private void validateKeyStoreProperties(String keyStorePath, String keyStorePassword) throws FileNotFoundException
     {
-        String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
-
         if (keyStorePath == null)
         {
-            throw new IllegalConfigurationException(
-                    "JVM system proprty 'javax.net.ssl.keyStore' is not set, unable to start SSL protected JMX ConnectorServer");
+            throw new IllegalConfigurationException("JVM system property 'javax.net.ssl.keyStore' is not set, "
+                    + "unable to start requested SSL protected JMX connector");
         }
-        else
+        if (keyStorePassword == null)
         {
-            File ksf = new File(keyStorePath);
+            throw new IllegalConfigurationException( "JVM system property 'javax.net.ssl.keyStorePassword' is not set, "
+                    + "unable to start requested SSL protected JMX connector");
+        }
 
-            if (!ksf.exists())
-            {
-                throw new FileNotFoundException("Cannot find JMX management SSL keystore file: " + ksf);
-            }
-            if (!ksf.canRead())
-            {
-                throw new FileNotFoundException("Cannot read JMX management SSL keystore file: "
-                                                + ksf +  ". Check permissions.");
-            }
+        File ksf = new File(keyStorePath);
+        if (!ksf.exists())
+        {
+            throw new FileNotFoundException("Cannot find JMX management SSL keystore file: " + ksf);
+        }
+        if (!ksf.canRead())
+        {
+            throw new FileNotFoundException("Cannot read JMX management SSL keystore file: "
+                                            + ksf +  ". Check permissions.");
         }
     }
 

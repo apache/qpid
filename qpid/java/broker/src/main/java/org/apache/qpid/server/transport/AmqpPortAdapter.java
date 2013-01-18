@@ -125,17 +125,20 @@ public class AmqpPortAdapter extends PortAdapter
 
     private SSLContext createSslContext()
     {
-        Collection<KeyStore> brokerKeyStores = _broker.getKeyStores();
-        if (brokerKeyStores.isEmpty())
+        KeyStore keyStore = _broker.getDefaultKeyStore();
+        if (keyStore == null)
         {
-            throw new IllegalConfigurationException("Kesy store is not configured for AMQP SSL port");
+            throw new IllegalConfigurationException("SSL was requested on AMQP port '"
+                    + this.getName() + "' but no key store defined");
         }
-        Collection<TrustStore> brokerTrustStores = _broker.getTrustStores();
 
-        // TODO: use correct key store and trust store for a port
-        // XXX: temporarily using first keystore and trustore
-        KeyStore keyStore = brokerKeyStores.iterator().next();
-        TrustStore trustStore = brokerTrustStores.isEmpty() ? null : brokerTrustStores.iterator().next();
+        TrustStore trustStore = _broker.getDefaultTrustStore();
+        if (((Boolean)getAttribute(NEED_CLIENT_AUTH) || (Boolean)getAttribute(WANT_CLIENT_AUTH)) && trustStore == null)
+        {
+            throw new IllegalConfigurationException("Client certificate authentication is enabled on AMQP port '"
+                    + this.getName() + "' but no trust store defined");
+        }
+
         String keystorePath = (String)keyStore.getAttribute(KeyStore.PATH);
         String keystorePassword = keyStore.getPassword();
         String keystoreType = (String)keyStore.getAttribute(KeyStore.TYPE);

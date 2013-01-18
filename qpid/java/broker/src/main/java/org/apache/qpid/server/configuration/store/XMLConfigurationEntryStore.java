@@ -128,6 +128,18 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         brokerAttributes.put(Broker.HEART_BEAT_DELAY, _serverConfiguration.getHeartBeatDelay());
         brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, _serverConfiguration.getStatisticsReportingPeriod());
         brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, _serverConfiguration.isStatisticsReportResetEnabled());
+
+        if (_serverConfiguration.getEnableSSL() && _serverConfiguration.getConnectorTrustStorePath() != null)
+        {
+            brokerAttributes.put(Broker.TRUST_STORE_PATH, _serverConfiguration.getConnectorTrustStorePath());
+            brokerAttributes.put(Broker.TRUST_STORE_PASSWORD, _serverConfiguration.getConnectorTrustStorePassword());
+        }
+        if (_serverConfiguration.getEnableSSL() || _serverConfiguration.getManagementSSLEnabled() || _serverConfiguration.getHTTPSManagementEnabled())
+        {
+            brokerAttributes.put(Broker.KEY_STORE_PATH, _serverConfiguration.getConnectorKeyStorePath());
+            brokerAttributes.put(Broker.KEY_STORE_PASSWORD, _serverConfiguration.getConnectorKeyStorePassword());
+            brokerAttributes.put(Broker.KEY_STORE_CERT_ALIAS, _serverConfiguration.getCertAlias());
+        }
         ConfigurationEntry rootEntry = new ConfigurationEntry(_rootId, Broker.class.getSimpleName(), brokerAttributes,
                 Collections.unmodifiableSet(_rootChildren.keySet()), this);
 
@@ -478,8 +490,8 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
         updateManagementPorts(_serverConfiguration, options);
 
-        createKeyStoreConfig(config, _rootChildren);
-        createTrustStoreConfig(config, _rootChildren);
+        //createKeyStoreConfig(config, _rootChildren);
+        //createTrustStoreConfig(config, _rootChildren);
         createGroupProviderConfig(_configuration, _rootChildren);
         createAuthenticationProviderConfig(_configuration, _rootChildren);
         createAmqpPortConfig(_serverConfiguration, _rootChildren, options);
