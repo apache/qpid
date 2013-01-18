@@ -57,6 +57,27 @@ public class VirtualHostRecovererTest extends TestCase
         assertEquals("Unexpected name", getName(), host.getName());
     }
 
+    public void testCreateVirtualHostFromStoreConfigAtrributes()
+    {
+        StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
+        SecurityManager securityManager = mock(SecurityManager.class);
+        ConfigurationEntry entry = mock(ConfigurationEntry.class);
+        Broker parent = mock(Broker.class);
+        when(parent.getSecurityManager()).thenReturn(securityManager);
+
+        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.STORE_PATH, "/path/to/virtualhost/store");
+        attributes.put(VirtualHost.STORE_TYPE, "DERBY");
+        when(entry.getAttributes()).thenReturn(attributes);
+
+        VirtualHost host = recoverer.create(null, entry, parent);
+
+        assertNotNull("Null is returned", host);
+        assertEquals("Unexpected name", getName(), host.getName());
+    }
+
     public void testCreateWithoutMandatoryAttributesResultsInException()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();

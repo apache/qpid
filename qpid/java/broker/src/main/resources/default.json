@@ -23,21 +23,6 @@
   "name": "Broker",
   "defaultAuthenticationProvider" : "defaultAuthenticationProvider",
   "defaultVirtualHost" : "default",
-  "aclFile" : null,
-  "alertThresholdQueueDepth" : 0,
-  "alertThresholdMessageCount" : 0,
-  "alertThresholdMessageSize" : 0,
-  "alertThresholdMessageAge" : 0,
-  "alertRepeatGap" : 30000,
-  "heartBeatDelay" : 0,
-  "sessionCountLimit" : 256,
-  "deadLetterQueueEnabled" : false,
-  "maximumDeliveryAttempts" : 0,
-  "housekeepingCheckPeriod" : 30000,
-  "queueFlowControlSizeBytes" : 0,
-  "queueFlowResumeSizeBytes" : 0,
-  "statisticsReportingPeriod" : 0,
-  "statisticsReportingResetEnabled" : false,
   "authenticationproviders" : [ {
     "type" : "AuthenticationProvider",
     "name" : "defaultAuthenticationProvider",
@@ -46,38 +31,29 @@
   } ],
   "ports" : [ {
     "type" : "Port",
-    "name" : "8080",
     "port" : 8080,
-    "transports" : [ "TCP" ],
+    "name" : "8080",
     "protocols" : [ "HTTP" ]
   }, {
     "type" : "Port",
     "name" : "5672",
-    "port" : 5672,
-    "tcpNoDelay" : true,
-    "transports" : [ "TCP" ],
-    "protocols" : [ "AMQP_0_8", "AMQP_0_9", "AMQP_0_9_1", "AMQP_0_10", "AMQP_1_0" ],
-    "wantClientAuth" : false,
-    "needClientAuth" : false,
-    "receiveBufferSize" : 262144,
-    "sendBufferSize" : 262144
+    "port" : 5672
   }, {
     "type" : "Port",
     "name" : "9099",
     "port" : 9099,
-    "transports" : [ "TCP" ],
     "protocols" : [ "JMX_RMI" ]
   }, {
     "type" : "Port",
     "name" : "8999",
     "port" : 8999,
-    "transports" : [ "TCP" ],
     "protocols" : [ "RMI" ]
   } ],
   "virtualhosts" : [ {
     "type" : "VirtualHost",
     "name" : "default",
-    "configuration" : "${QPID_HOME}/etc/virtualhosts.xml"
+    "storeType" : "DERBY",
+    "storePath" : "${QPID_WORK}/store"
   } ],
   "plugins" : [ {
     "type" : "Plugin",

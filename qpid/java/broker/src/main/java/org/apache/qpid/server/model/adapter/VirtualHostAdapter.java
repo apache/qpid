@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.qpid.AMQException;
@@ -119,10 +120,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new IllegalConfigurationException("Virtual host name must be specified");
         }
-        Map<String, Object> actualAttributes = getActualAttributes();
-        String configurationFile = (String) actualAttributes.get(CONFIG_PATH);
-        String storePath = (String) actualAttributes.get(STORE_PATH);
-        String storeType = (String) actualAttributes.get(STORE_TYPE);
+
+        String configurationFile = (String) getAttribute(CONFIG_PATH);
+        String storePath = (String) getAttribute(STORE_PATH);
+        String storeType = (String) getAttribute(STORE_TYPE);
         boolean invalidAttributes = false;
         if (configurationFile == null)
         {
@@ -782,10 +783,19 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             // TODO
         }
-        else if(SUPPORTED_EXCHANGE_TYPES.equals(name))
+        else if (_virtualHost != null)
+        {
+            return getAttributeFromVirtualHostImplementation(name);
+        }
+        return super.getAttribute(name);
+    }
+
+    private Object getAttributeFromVirtualHostImplementation(String name)
+    {
+        if(SUPPORTED_EXCHANGE_TYPES.equals(name))
         {
             List<String> types = new ArrayList<String>();
-            for(ExchangeType type : _virtualHost.getExchangeFactory().getRegisteredTypes())
+            for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeFactory().getRegisteredTypes())
             {
                 types.add(type.getName().asString());
             }
@@ -938,27 +948,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
             String virtualHostName = getName();
-            String configurationFile = (String)getAttribute(CONFIG_PATH);
-            VirtualHostConfiguration configuration = null;
             try
             {
-                if (configurationFile == null)
-                {
-                    final MyConfiguration basicConfiguration = new MyConfiguration();
-                    PropertiesConfiguration config = new PropertiesConfiguration();
-                    config.addProperty("store.type", (String)getAttribute(STORE_TYPE));
-                    config.addProperty("store.environment-path", (String)getAttribute(STORE_PATH));
-                    basicConfiguration.addConfiguration(config);
-
-                    CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
-                    compositeConfiguration.addConfiguration(new SystemConfiguration());
-                    compositeConfiguration.addConfiguration(basicConfiguration);
-                    configuration = new VirtualHostConfiguration(virtualHostName, compositeConfiguration , _broker);
-                }
-                else
-                {
-                    configuration = new VirtualHostConfiguration(virtualHostName, new File(configurationFile) , _broker);
-                }
+                VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName);
                 _virtualHost = new VirtualHostImpl(_broker.getVirtualHostRegistry(), _brokerStatisticsGatherer, _broker.getSecurityManager(), configuration);
             }
             catch (Exception e)
@@ -1004,6 +996,30 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             return true;
         }
         return false;
+    }
+
+    private VirtualHostConfiguration createVirtualHostConfiguration(String virtualHostName) throws ConfigurationException
+    {
+        VirtualHostConfiguration configuration;
+        String configurationFile = (String)getAttribute(CONFIG_PATH);
+        if (configurationFile == null)
+        {
+            final MyConfiguration basicConfiguration = new MyConfiguration();
+            PropertiesConfiguration config = new PropertiesConfiguration();
+            config.addProperty("store.type", (String)getAttribute(STORE_TYPE));
+            config.addProperty("store.environment-path", (String)getAttribute(STORE_PATH));
+            basicConfiguration.addConfiguration(config);
+
+            CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
+            compositeConfiguration.addConfiguration(new SystemConfiguration());
+            compositeConfiguration.addConfiguration(basicConfiguration);
+            configuration = new VirtualHostConfiguration(virtualHostName, compositeConfiguration , _broker);
+        }
+        else
+        {
+            configuration = new VirtualHostConfiguration(virtualHostName, new File(configurationFile) , _broker);
+        }
+        return configuration;
     }
 
     @Override
