@@ -306,7 +306,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # Boost.system is sometimes needed; it's handled separately, below.
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components filesystem program_options date_time thread unit_test_framework regex)
+  set (Boost_components program_options date_time thread unit_test_framework regex)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (Boost_components program_options unit_test_framework)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -316,7 +316,10 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # where Boost 1.45 is supported, or we can just accept some versions using
 # the Additional_versions variable.
 if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
-  set (Boost_ADDITIONAL_VERSIONS "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0")
+  set (Boost_ADDITIONAL_VERSIONS 
+        "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0"
+        "1.48" "1.48.0" "1.49" "1.49.0" "1.50" "1.50.0"
+        "1.51" "1.51.0" "1.52" "1.52.0")
 endif (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 
 find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
@@ -340,10 +343,6 @@ endif (Boost_VERSION GREATER 103499)
 if (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
   set(Boost_PROGRAM_OPTIONS_LIBRARY boost_program_options)
 endif (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
-
-if (NOT Boost_FILESYSTEM_LIBRARY)
-  set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
-endif (NOT Boost_FILESYSTEM_LIBRARY)
 
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
@@ -370,7 +369,6 @@ option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
-            ${Boost_FILESYSTEM_LIBRARY_DEBUG} ${Boost_FILESYSTEM_LIBRARY_RELEASE}
             ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG} ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
             ${Boost_REGEX_LIBRARY_DEBUG} ${Boost_REGEX_LIBRARY_RELEASE}
             ${Boost_THREAD_LIBRARY_DEBUG} ${Boost_THREAD_LIBRARY_RELEASE}
@@ -390,10 +388,6 @@ if (MSVC)
               _boost_date_time_debug ${Boost_DATE_TIME_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
               _boost_date_time_release ${Boost_DATE_TIME_LIBRARY_RELEASE})
-      string (REPLACE .lib .dll
-              _boost_filesystem_debug ${Boost_FILESYSTEM_LIBRARY_DEBUG})
-      string (REPLACE .lib .dll
-              _boost_filesystem_release ${Boost_FILESYSTEM_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
               _boost_program_options_debug ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
@@ -417,7 +411,6 @@ if (MSVC)
       endif (NOT Boost_VERSION LESS 103500)
       install (PROGRAMS
                ${_boost_date_time_debug} ${_boost_date_time_release}
-               ${_boost_filesystem_debug} ${_boost_filesystem_release}
                ${_boost_program_options_debug} ${_boost_program_options_release}
                ${_boost_regex_debug} ${_boost_regex_release}
                ${_boost_system_debug} ${_boost_system_release}
@@ -466,7 +459,6 @@ if (MSVC)
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
    set(Boost_PROGRAM_OPTIONS_LIBRARY "")
-   set(Boost_FILESYSTEM_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
    set(Boost_REGEX_LIBRARY "")
    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/windows/resources )
@@ -768,7 +760,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
+    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
