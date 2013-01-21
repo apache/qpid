@@ -1061,16 +1061,9 @@ install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 set (qpidmessaging_SOURCES_hidden
      qpid/messaging/AddressParser.h
      qpid/messaging/ConnectionImpl.h
-     qpid/messaging/ConnectionOptions.h
-     qpid/messaging/ConnectionOptions.cpp
-     qpid/messaging/MessageImpl.h
-     qpid/messaging/MessageImpl.cpp
-     qpid/messaging/ProtocolRegistry.cpp
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/SessionImpl.h
      qpid/messaging/SenderImpl.h
-     qpid/messaging/amqp/EncodedMessage.h
-     qpid/messaging/amqp/EncodedMessage.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h
@@ -1108,6 +1101,14 @@ set (qpidmessaging_SOURCES
      qpid/messaging/Receiver.cpp
      qpid/messaging/Session.cpp
      qpid/messaging/Sender.cpp
+     #functions from the following are not in the public interface but are used by the AMQP 1.0 client module
+     qpid/messaging/ConnectionOptions.h
+     qpid/messaging/ConnectionOptions.cpp
+     qpid/messaging/MessageImpl.h
+     qpid/messaging/MessageImpl.cpp
+     qpid/messaging/ProtocolRegistry.cpp
+     qpid/messaging/amqp/EncodedMessage.h
+     qpid/messaging/amqp/EncodedMessage.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
