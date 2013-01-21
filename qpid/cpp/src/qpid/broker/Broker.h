@@ -240,8 +240,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     /** Move messages from one queue to another.
         A zero quantity means to move all messages
+        Return -1 if one of the queues does not exist, otherwise
+               the number of messages moved.
     */
-    QPID_BROKER_EXTERN uint32_t queueMoveMessages(
+    QPID_BROKER_EXTERN int32_t queueMoveMessages(
         const std::string& srcQueue,
         const std::string& destQueue,
         uint32_t  qty,

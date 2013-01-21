@@ -510,7 +510,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
         QPID_LOG (debug, "Broker::queueMoveMessages()");
-        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter))
+        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter) >= 0)
             status = Manageable::STATUS_OK;
         else
             return Manageable::STATUS_PARAMETER_INVALID;
@@ -1019,20 +1019,20 @@ void Broker::connect(
     else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
 }
 
-uint32_t Broker::queueMoveMessages(
+int32_t Broker::queueMoveMessages(
      const std::string& srcQueue,
      const std::string& destQueue,
      uint32_t  qty,
      const Variant::Map& filter)
 {
-  Queue::shared_ptr src_queue = queues.find(srcQueue);
-  if (!src_queue)
-    return 0;
-  Queue::shared_ptr dest_queue = queues.find(destQueue);
-  if (!dest_queue)
-    return 0;
+    Queue::shared_ptr src_queue = queues.find(srcQueue);
+    if (!src_queue)
+        return -1;
+    Queue::shared_ptr dest_queue = queues.find(destQueue);
+    if (!dest_queue)
+        return -1;
 
-  return src_queue->move(dest_queue, qty, &filter);
+    return (int32_t) src_queue->move(dest_queue, qty, &filter);
 }
 
 
