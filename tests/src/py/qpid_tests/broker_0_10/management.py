@@ -140,6 +140,30 @@ class ManagementTest (TestBase010):
                 return exchange
         return None
 
+    def test_move_queued_messages_empty(self):
+        """
+        Test that moving messages from an empty queue does not cause an error.
+        """
+        self.startQmf()
+        session = self.session
+        "Set up source queue"
+        session.queue_declare(queue="src-queue-empty", exclusive=True, auto_delete=True)
+
+        "Set up destination queue"
+        session.queue_declare(queue="dest-queue-empty", exclusive=True, auto_delete=True)
+
+        queues = self.qmf.getObjects(_class="queue")
+
+        "Move all messages from src-queue-empty to dest-queue-empty"
+        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue-empty", "dest-queue-empty", 0, {})
+        self.assertEqual (result.status, 0) 
+
+        sq = self.qmf.getObjects(_class="queue", name="src-queue-empty")[0]
+        dq = self.qmf.getObjects(_class="queue", name="dest-queue-empty")[0]
+
+        self.assertEqual (sq.msgDepth,0)
+        self.assertEqual (dq.msgDepth,0)
+
     def test_move_queued_messages(self):
         """
         Test ability to move messages from the head of one queue to another.
