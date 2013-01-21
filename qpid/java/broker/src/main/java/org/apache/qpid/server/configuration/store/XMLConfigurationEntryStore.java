@@ -129,6 +129,13 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
         brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, _serverConfiguration.getStatisticsReportingPeriod());
         brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, _serverConfiguration.isStatisticsReportResetEnabled());
 
+        Configuration fileGroupManagerConfig = _serverConfiguration.getConfig().subset("security.file-group-manager");
+        if(fileGroupManagerConfig != null && !fileGroupManagerConfig.isEmpty())
+        {
+            String file = fileGroupManagerConfig.getString("attributes.attribute.value");
+            brokerAttributes.put(Broker.GROUP_FILE, file);
+        }
+
         if (_serverConfiguration.getEnableSSL() && _serverConfiguration.getConnectorTrustStorePath() != null)
         {
             brokerAttributes.put(Broker.TRUST_STORE_PATH, _serverConfiguration.getConnectorTrustStorePath());
@@ -492,7 +499,7 @@ public class XMLConfigurationEntryStore implements ConfigurationEntryStore
 
         //createKeyStoreConfig(config, _rootChildren);
         //createTrustStoreConfig(config, _rootChildren);
-        createGroupProviderConfig(_configuration, _rootChildren);
+        //createGroupProviderConfig(_configuration, _rootChildren);
         createAuthenticationProviderConfig(_configuration, _rootChildren);
         createAmqpPortConfig(_serverConfiguration, _rootChildren, options);
         createManagementPortConfig(_serverConfiguration, _rootChildren, options);

@@ -22,7 +22,6 @@ import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
 
 import java.util.Map;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.GroupProvider;
@@ -46,14 +45,7 @@ public class FileGroupManagerFactory implements GroupManagerFactory
         {
             throw new IllegalConfigurationException("Path to file containing groups is not specified!");
         }
-        try
-        {
-            return new FileGroupManager(groupFile);
-        }
-        catch (ConfigurationException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new FileGroupManager(groupFile);
     }
 
 }

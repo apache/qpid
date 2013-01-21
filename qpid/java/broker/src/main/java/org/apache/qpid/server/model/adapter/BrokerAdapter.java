@@ -53,6 +53,8 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.security.group.FileGroupManager;
+import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -94,6 +96,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(KEY_STORE_CERT_ALIAS, String.class);
         put(TRUST_STORE_PATH, String.class);
         put(TRUST_STORE_PASSWORD, String.class);
+        put(GROUP_FILE, String.class);
     }});
 
     public static final int DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
@@ -113,6 +116,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public static final String DEFAULT_NAME = "QpidBroker";
     private static final String DEFAULT_KEY_STORE_NAME = "defaultKeyStore";
     private static final String DEFAULT_TRUST_STORE_NAME = "defaultTrustStore";
+    private static final String DEFAULT_GROUP_PROFIDER_NAME = "defaultGroupProvider";
 
     private static final String DUMMY_PASSWORD_MASK = "********";
 
@@ -137,6 +141,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
 
 
+
     private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
@@ -156,6 +161,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
+    private final UUID _defaultKeyStoreId;
+    private final UUID _defaultTrustStoreId;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
@@ -170,6 +177,52 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _authenticationProviderFactory = authenticationProviderFactory;
         _portFactory = portFactory;
         _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
+
+        _defaultKeyStoreId = UUIDGenerator.generateBrokerChildUUID(KeyStore.class.getSimpleName(), DEFAULT_KEY_STORE_NAME);
+        _defaultTrustStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_TRUST_STORE_NAME);
+        createBrokerChildrenFromAttributes();
+    }
+
+    /*
+     * A temporary method to create broker children that can be only configured via broker attributes
+     */
+    private void createBrokerChildrenFromAttributes()
+    {
+        String groupFile = (String) getAttribute(GROUP_FILE);
+        if (groupFile != null)
+        {
+            GroupManager groupManager = new FileGroupManager(groupFile);
+            UUID groupProviderId = UUIDGenerator.generateBrokerChildUUID(GroupProvider.class.getSimpleName(),
+                    DEFAULT_GROUP_PROFIDER_NAME);
+            GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(groupProviderId, groupManager, this);
+            addGroupProvider(groupProviderAdapter);
+        }
+        Map<String, Object> actualAttributes = getActualAttributes();
+        String keyStorePath = (String) getAttribute(KEY_STORE_PATH);
+        if (keyStorePath != null)
+        {
+            Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
+            keyStoreAttributes.put(KeyStore.NAME, DEFAULT_KEY_STORE_NAME);
+            keyStoreAttributes.put(KeyStore.PATH, keyStorePath);
+            keyStoreAttributes.put(KeyStore.PASSWORD, (String) actualAttributes.get(KEY_STORE_PASSWORD));
+            keyStoreAttributes.put(KeyStore.TYPE, java.security.KeyStore.getDefaultType());
+            keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, getAttribute(KEY_STORE_CERT_ALIAS));
+            keyStoreAttributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
+            KeyStoreAdapter KeyStoreAdapter = new KeyStoreAdapter(_defaultKeyStoreId, this, keyStoreAttributes);
+            addKeyStore(KeyStoreAdapter);
+        }
+        String trustStorePath = (String) getAttribute(TRUST_STORE_PATH);
+        if (trustStorePath != null)
+        {
+            Map<String, Object> trsustStoreAttributes = new HashMap<String, Object>();
+            trsustStoreAttributes.put(TrustStore.NAME, DEFAULT_TRUST_STORE_NAME);
+            trsustStoreAttributes.put(TrustStore.PATH, trustStorePath);
+            trsustStoreAttributes.put(TrustStore.PASSWORD, (String) actualAttributes.get(TRUST_STORE_PASSWORD));
+            trsustStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
+            trsustStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
+            TrustStoreAdapter trustStore = new TrustStoreAdapter(_defaultTrustStoreId, this, trsustStoreAttributes);
+            addTrustStore(trustStore);
+        }
     }
 
     public Collection<VirtualHost> getVirtualHosts()
@@ -847,42 +900,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public KeyStore getDefaultKeyStore()
     {
-        // TODO: throw exception when password/path are not set (except
-        // management only mode)
-        Map<String, Object> actualAttributes = getActualAttributes();
-        String storePath = (String) actualAttributes.get(KEY_STORE_PATH);
-        if (storePath != null)
-        {
-            Map<String, Object> attributes = new HashMap<String, Object>();
-            attributes.put(KeyStore.NAME, DEFAULT_KEY_STORE_NAME);
-            attributes.put(KeyStore.PATH, storePath);
-            attributes.put(KeyStore.PASSWORD, (String) actualAttributes.get(KEY_STORE_PASSWORD));
-            attributes.put(KeyStore.TYPE, java.security.KeyStore.getDefaultType());
-            attributes.put(KeyStore.CERTIFICATE_ALIAS, actualAttributes.get(KEY_STORE_CERT_ALIAS));
-            attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            return new KeyStoreAdapter(UUIDGenerator.generateBrokerChildUUID(KeyStore.class.getSimpleName(),
-                    DEFAULT_KEY_STORE_NAME), this, attributes);
-        }
-        return null;
+        return _keyStores.get(_defaultKeyStoreId);
     }
 
     @Override
     public TrustStore getDefaultTrustStore()
     {
-        Map<String, Object> actualAttributes = getActualAttributes();
-        String storePath = (String) actualAttributes.get(TRUST_STORE_PATH);
-        if (storePath != null)
-        {
-            Map<String, Object> attributes = new HashMap<String, Object>();
-            attributes.put(TrustStore.NAME, DEFAULT_TRUST_STORE_NAME);
-            attributes.put(TrustStore.PATH, storePath);
-            attributes.put(TrustStore.PASSWORD, (String) actualAttributes.get(TRUST_STORE_PASSWORD));
-            attributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
-            attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            return new TrustStoreAdapter(UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(),
-                    DEFAULT_TRUST_STORE_NAME), this, attributes);
-        }
-        return null;
+        return _trustStores.get(_defaultTrustStoreId);
     }
 
 }

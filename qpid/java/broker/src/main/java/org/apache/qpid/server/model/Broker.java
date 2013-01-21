@@ -86,6 +86,12 @@ public interface Broker extends ConfiguredObject
     String TRUST_STORE_PATH = "trustStorePath";
     String TRUST_STORE_PASSWORD = "trustStorePassword";
 
+    /*
+     * A temporary attributes to set the broker group file.
+     * TODO: Remove them after adding a full support to configure authorization providers via management layers.
+     */
+    String GROUP_FILE = "groupFile";
+
     // Attributes
     Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -126,7 +132,8 @@ public interface Broker extends ConfiguredObject
                               KEY_STORE_PASSWORD,
                               KEY_STORE_CERT_ALIAS,
                               TRUST_STORE_PATH,
-                              TRUST_STORE_PASSWORD
+                              TRUST_STORE_PASSWORD,
+                              GROUP_FILE
                               ));
 
     //children
