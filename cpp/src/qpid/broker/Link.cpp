@@ -487,8 +487,9 @@ void Link::ioThreadProcessing()
 void Link::maintenanceVisit ()
 {
     Mutex::ScopedLock mutex(lock);
-    if (state == STATE_WAITING)
-    {
+
+    switch (state) {
+    case STATE_WAITING:
         visitCount++;
         if (visitCount >= currentInterval)
         {
@@ -501,11 +502,16 @@ void Link::maintenanceVisit ()
                 startConnectionLH();
             }
         }
-    }
-    else if (state == STATE_OPERATIONAL) {
+        break;
+
+    case STATE_OPERATIONAL:
         if ((!active.empty() || !created.empty() || !cancellations.empty()) &&
             connection && connection->isOpen())
             connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+        break;
+
+    default:    // no-op for all other states
+        break;
     }
 }
 
