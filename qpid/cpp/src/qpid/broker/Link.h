@@ -74,7 +74,6 @@ class Link : public PersistableConfig, public management::Manageable {
     int     state;
     uint32_t visitCount;
     uint32_t currentInterval;
-    bool     closing;
     Url      url;       // URL can contain many addresses.
     size_t   reconnectNext; // Index for next re-connect attempt
 
@@ -98,6 +97,7 @@ class Link : public PersistableConfig, public management::Manageable {
     static const int STATE_OPERATIONAL = 3;
     static const int STATE_FAILED      = 4;
     static const int STATE_CLOSED      = 5;
+    static const int STATE_CLOSING     = 6;  // Waiting for outstanding connect to complete first
 
     static const uint32_t MAX_INTERVAL = 32;
 
