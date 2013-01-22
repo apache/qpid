@@ -90,9 +90,11 @@ class SslConnector : public Connector
     void connect(const std::string& host, const std::string& port);
     void connected(const sys::Socket&);
     void connectFailed(const std::string& msg);
+
     void close();
     void send(framing::AMQFrame& frame);
-    void abort() {} // TODO: Need to fix for heartbeat timeouts to work
+    void abort();
+    void connectAborted();
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
@@ -222,6 +224,24 @@ void SslConnector::socketClosed(AsynchIO&, const Socket&) {
         aio->queueForDeletion();
     if (shutdownHandler)
         shutdownHandler->shutdown();
+}
+
+void SslConnector::connectAborted() {
+    connector->stop();
+    connectFailed("Connection timedout");
+}
+
+void SslConnector::abort() {
+    // Can't abort a closed connection
+    if (!closed) {
+        if (aio) {
+            // Established connection
+            aio->requestCallback(boost::bind(&SslConnector::eof, this, _1));
+        } else if (connector) {
+            // We're still connecting
+            connector->requestCallback(boost::bind(&SslConnector::connectAborted, this));
+        }
+    }
 }
 
 void SslConnector::setInputHandler(InputHandler* handler){
