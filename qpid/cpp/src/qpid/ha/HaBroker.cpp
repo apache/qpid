@@ -256,9 +256,10 @@ std::vector<Url> HaBroker::getKnownBrokers() const {
     return knownBrokers;
 }
 
-void HaBroker::shutdown() {
-    QPID_LOG(critical, logPrefix << "Critical error, shutting down.");
+void HaBroker::shutdown(const std::string& message) {
+    QPID_LOG(critical, message);
     broker.shutdown();
+    throw Exception(message);
 }
 
 BrokerStatus HaBroker::getStatus() const {
@@ -294,12 +295,11 @@ void HaBroker::setStatus(BrokerStatus newStatus, Mutex::ScopedLock& l) {
     QPID_LOG(info, logPrefix << "Status change: "
              << printable(status) << " -> " << printable(newStatus));
     bool legal = checkTransition(status, newStatus);
+    assert(legal);
     if (!legal) {
-        QPID_LOG(critical, logPrefix << "Illegal state transition: "
-                 << printable(status) << " -> " << printable(newStatus));
-        shutdown();
+        shutdown(QPID_MSG(logPrefix << "Illegal state transition: "
+                 << printable(status) << " -> " << printable(newStatus)));
     }
-    assert(legal);              // FIXME aconway 2012-12-07: fail
     status = newStatus;
     statusChanged(l);
 }

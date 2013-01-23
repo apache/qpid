@@ -78,8 +78,8 @@ class HaBroker : public management::Manageable
     broker::Broker& getBroker() { return broker; }
     const Settings& getSettings() const { return settings; }
 
-    /** Shut down the broker. Caller should log a critical error message. */
-    void shutdown();
+    /** Shut down the broker because of a critical error. */
+    void shutdown(const std::string& message);
 
     BrokerStatus getStatus() const;
     void setStatus(BrokerStatus);

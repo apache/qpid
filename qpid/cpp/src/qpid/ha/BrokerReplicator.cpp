@@ -439,9 +439,10 @@ void BrokerReplicator::route(Deliverable& msg) {
             }
         }
     } catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "Configuration replication failed: " << e.what()
-                 << ": while handling: " << list);
-        haBroker.shutdown();
+;
+        haBroker.shutdown(
+            QPID_MSG(logPrefix << "Configuration replication failed: "
+                     << e.what() << ": while handling: " << list));
         throw;
     }
 }
@@ -725,9 +726,10 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
                                      << ") does not match primary (" <<  primary << ")"));
         haBroker.setMembership(values[MEMBERS].asList());
     } catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "Invalid HA Broker response: " << e.what()
-                 << ": " << values);
-        haBroker.shutdown();
+        haBroker.shutdown(
+            QPID_MSG(logPrefix << "Invalid HA Broker response: " << e.what()
+                     << ": " << values));
+
         throw;
     }
 }
