@@ -260,9 +260,7 @@ void QueueReplicator::route(Deliverable& msg)
         // Ignore unknown event keys, may be introduced in later versions.
     }
     catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "Replication failed: " << e.what());
-        haBroker.shutdown();
-        throw;
+        haBroker.shutdown(QPID_MSG(logPrefix << "Replication failed: " << e.what()));
     }
 }
 
