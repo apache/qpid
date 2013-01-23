@@ -227,7 +227,9 @@ class BrokerReplicator::UpdateTracker {
     typedef std::set<std::string> Names;
     typedef boost::function<void (const std::string&)> CleanFn;
 
-    UpdateTracker(CleanFn f, const ReplicationTest& rt) : cleanFn(f), repTest(rt) {}
+    UpdateTracker(const std::string& type_, // "queue" or "exchange"
+                  CleanFn f, const ReplicationTest& rt)
+        : type(type_), cleanFn(f), repTest(rt) {}
 
     /** Destructor cleans up remaining initial queues. */
     ~UpdateTracker() {
@@ -264,6 +266,12 @@ class BrokerReplicator::UpdateTracker {
     }
 
   private:
+    void clean(const std::string& name) {
+        QPID_LOG(info, "Backup updated, deleting  " << type << " " << name);
+        cleanFn(name);
+    }
+
+    std::string type;
     Names initial, events;
     CleanFn cleanFn;
     ReplicationTest repTest;
@@ -353,13 +361,15 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     initialized = true;
 
     exchangeTracker.reset(
-        new UpdateTracker(boost::bind(&BrokerReplicator::deleteExchange, this, _1),
+        new UpdateTracker("exchange",
+                          boost::bind(&BrokerReplicator::deleteExchange, this, _1),
                           replicationTest));
     exchanges.eachExchange(
         boost::bind(&UpdateTracker::addExchange, exchangeTracker.get(), _1));
 
     queueTracker.reset(
-        new UpdateTracker(boost::bind(&BrokerReplicator::deleteQueue, this, _1, true),
+        new UpdateTracker("queue",
+                          boost::bind(&BrokerReplicator::deleteQueue, this, _1, true),
                           replicationTest));
     queues.eachQueue(boost::bind(&UpdateTracker::addQueue, queueTracker.get(), _1));
 
@@ -394,7 +404,7 @@ void BrokerReplicator::route(Deliverable& msg) {
     // We transition from JOINING->CATCHUP on the first message received from the primary.
     // Until now we couldn't be sure if we had a good connection to the primary.
     if (haBroker.getStatus() == JOINING) {
-        haBroker.setStatus(CATCHUP);
+        haBroker.getMembership().setStatus(CATCHUP);
         QPID_LOG(notice, logPrefix << "Connected to primary " << primary);
     }
     Variant::List list;
@@ -572,7 +582,7 @@ void BrokerReplicator::doEventUnbind(Variant::Map& values) {
 
 void BrokerReplicator::doEventMembersUpdate(Variant::Map& values) {
     Variant::List members = values[MEMBERS].asList();
-    haBroker.setMembership(members);
+    setMembership(members);
 }
 
 void BrokerReplicator::doEventSubscribe(Variant::Map& values) {
@@ -724,7 +734,7 @@ void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
         if (mine != primary)
             throw Exception(QPID_MSG("Replicate default on backup (" << mine
                                      << ") does not match primary (" <<  primary << ")"));
-        haBroker.setMembership(values[MEMBERS].asList());
+        setMembership(values[MEMBERS].asList());
     } catch (const std::exception& e) {
         haBroker.shutdown(
             QPID_MSG(logPrefix << "Invalid HA Broker response: " << e.what()
@@ -859,6 +869,27 @@ void BrokerReplicator::disconnected() {
         boost::bind(&exchangeAccumulatorCallback, boost::ref(collect), _1));
     for_each(collect.begin(), collect.end(),
              boost::bind(&BrokerReplicator::autoDeleteCheck, this, _1));
+}
+
+void BrokerReplicator::setMembership(const Variant::List& brokers) {
+    Membership& membership(haBroker.getMembership());
+    membership.assign(brokers);
+    // Check if the primary has signalled a change in my status:
+    // from CATCHUP to READY when we are caught up.
+    // from READY TO CATCHUP if we are timed out during fail-over.
+    BrokerInfo info;
+    if (membership.get(membership.getSelf(), info)) {
+        BrokerStatus oldStatus = haBroker.getStatus();
+        BrokerStatus newStatus = info.getStatus();
+        if (oldStatus == CATCHUP && newStatus == READY) {
+            QPID_LOG(info, logPrefix << logPrefix << "Caught-up and ready");
+            haBroker.getMembership().setStatus(READY);
+        }
+        else if (oldStatus == READY && newStatus == CATCHUP) {
+            QPID_LOG(info, logPrefix << logPrefix << "No longer ready, catching up");
+            haBroker.getMembership().setStatus(CATCHUP);
+        }
+    }
 }
 
 }} // namespace broker
