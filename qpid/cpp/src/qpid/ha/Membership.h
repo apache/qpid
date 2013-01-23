@@ -24,44 +24,71 @@
 
 #include "BrokerInfo.h"
 #include "types.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/types/Variant.h"
 #include <boost/function.hpp>
 #include <set>
 #include <vector>
 #include <iosfwd>
+
+namespace qmf { namespace org { namespace apache { namespace qpid { namespace ha {
+class HaBroker;
+}}}}}
+
 namespace qpid {
+
+namespace broker {
+class Broker;
+}
+
+namespace types {
+class Uuid;
+}
+
 namespace ha {
+class HaBroker;
 
 /**
  * Keep track of the brokers in the membership.
- * THREAD UNSAFE: caller must serialize
+ * Send management when events on membership changes.
+ * THREAD SAFE
  */
 class Membership
 {
   public:
-    Membership(const types::Uuid& self_) : self(self_) {}
+    Membership(const BrokerInfo& info, HaBroker&);
 
-    void reset(const BrokerInfo& b); ///< Reset to contain just one member.
+    void setMgmtObject(boost::shared_ptr<qmf::org::apache::qpid::ha::HaBroker>);
+
+    void clear();               ///< Clear all but self.
     void add(const BrokerInfo& b);
     void remove(const types::Uuid& id);
     bool contains(const types::Uuid& id);
+
     /** Return IDs of all READY backups other than self */
     BrokerInfo::Set otherBackups() const;
 
     void assign(const types::Variant::List&);
     types::Variant::List asList() const;
 
-    bool get(const types::Uuid& id, BrokerInfo& result);
+    bool get(const types::Uuid& id, BrokerInfo& result) const;
+
+    types::Uuid getSelf() const  { return self; }
+    BrokerInfo getInfo() const;
+    BrokerStatus getStatus() const;
+    void setStatus(BrokerStatus s);
 
   private:
-    types::Uuid self;
-    BrokerInfo::Map brokers;
-    friend std::ostream& operator<<(std::ostream&, const Membership&);
-};
+    void update(sys::Mutex::ScopedLock&);
+    BrokerStatus getStatus(sys::Mutex::ScopedLock&) const;
 
-std::ostream& operator<<(std::ostream&, const Membership&);
+    mutable sys::Mutex lock;
+    HaBroker& haBroker;
+    boost::shared_ptr<qmf::org::apache::qpid::ha::HaBroker> mgmtObject;
+    const types::Uuid self;
+    BrokerInfo::Map brokers;
+};
 
 }} // namespace qpid::ha
 

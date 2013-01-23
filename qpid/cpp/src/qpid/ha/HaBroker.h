@@ -53,12 +53,15 @@ namespace ha {
 class Backup;
 class ConnectionObserver;
 class Primary;
-class StatusCheck;
-
+class Role;
 /**
  * HA state and actions associated with a HA broker. Holds all the management info.
  *
  * THREAD SAFE: may be called in arbitrary broker IO or timer threads.
+
+ * NOTE: HaBroker and Role subclasses follow this lock hierarchy:
+ * - HaBroker MUST NOT hold its own lock across calls Role subclasses.
+ * - Role subclasses MAY hold their locks accross calls to HaBroker.
  */
 class HaBroker : public management::Manageable
 {
@@ -82,53 +85,37 @@ class HaBroker : public management::Manageable
     void shutdown(const std::string& message);
 
     BrokerStatus getStatus() const;
-    void setStatus(BrokerStatus);
-    void activate();
-
-    Backup* getBackup() { return backup.get(); }
     ReplicationTest getReplicationTest() const { return replicationTest; }
-
     boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
-    const BrokerInfo& getBrokerInfo() const { return brokerInfo; }
-
-    void setMembership(const types::Variant::List&); // Set membership from list.
-    void addBroker(const BrokerInfo& b);       // Add a broker to the membership.
-    void removeBroker(const types::Uuid& id);  // Remove a broker from membership.
-
+    BrokerInfo getBrokerInfo() const { return membership.getInfo(); }
+    Membership& getMembership() { return membership; }
     types::Uuid getSystemId() const { return systemId; }
 
   private:
+
     void setPublicUrl(const Url&);
     void setBrokerUrl(const Url&);
     void updateClientUrl(sys::Mutex::ScopedLock&);
 
-    void setStatus(BrokerStatus, sys::Mutex::ScopedLock&);
-    void recover();
-    void statusChanged(sys::Mutex::ScopedLock&);
-    void setLinkProperties(sys::Mutex::ScopedLock&);
-
     std::vector<Url> getKnownBrokers() const;
 
-    void membershipUpdated(sys::Mutex::ScopedLock&);
-
-    broker::Broker& broker;
-    types::Uuid systemId;
+    // Immutable members
+    const types::Uuid systemId;
     const Settings settings;
 
+    // Member variables protected by lock
     mutable sys::Mutex lock;
-    boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
-    boost::shared_ptr<Backup> backup;
-    boost::shared_ptr<Primary> primary;
-    qmf::org::apache::qpid::ha::HaBroker::shared_ptr mgmtObject;
     Url publicUrl, brokerUrl;
     std::vector<Url> knownBrokers;
-    BrokerStatus status;
-    std::string logPrefix;
-    BrokerInfo brokerInfo;
-    Membership membership;
     ReplicationTest replicationTest;
-    std::auto_ptr<StatusCheck> statusCheck;
+
+    // Independently thread-safe member variables
+    broker::Broker& broker;
+    qmf::org::apache::qpid::ha::HaBroker::shared_ptr mgmtObject;
+    boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
+    boost::shared_ptr<Role> role;
+    Membership membership;
 };
 }} // namespace qpid::ha
 

@@ -1,5 +1,5 @@
-#ifndef QPID_HA_BACKUP_H
-#define QPID_HA_BACKUP_H
+#ifndef QPID_HA_STANDALONE_H
+#define QPID_HA_STANDALONE_H
 
 /*
  *
@@ -21,61 +21,25 @@
  * under the License.
  *
  */
-
-#include "Role.h"
-#include "Settings.h"
-#include "qpid/Url.h"
-#include "qpid/sys/Mutex.h"
-#include <boost/shared_ptr.hpp>
-
 namespace qpid {
-
-namespace broker {
-class Broker;
-class Link;
-}
+class Url;
 
 namespace ha {
-class Settings;
-class BrokerReplicator;
-class HaBroker;
-class StatusCheck;
-class Membership;
 
 /**
- * Backup role: Manages connections to primary, replicates  management events and queue contents.
- *
- * THREAD SAFE
+ * Stand-alone role: acts as a stand-alone broker, no clustering.
+ * HA module needed to setting up replication via QMF methods.
  */
-class Backup : public Role
+class StandAlone : public Role
 {
   public:
-    Backup(HaBroker&, const Settings&);
-    ~Backup();
-
     std::string getLogPrefix() const { return logPrefix; }
-
-    void setBrokerUrl(const Url&);
-
-    Role* promote();
+    Role* promote() { return 0; }
+    void setBrokerUrl(const Url&) {}
 
   private:
-    void stop(sys::Mutex::ScopedLock&);
-    Role* recover(sys::Mutex::ScopedLock&);
-
     std::string logPrefix;
-    Membership& membership;
-
-    sys::Mutex lock;
-    bool stopped;
-    HaBroker& haBroker;
-    broker::Broker& broker;
-    Settings settings;
-    boost::shared_ptr<broker::Link> link;
-    boost::shared_ptr<BrokerReplicator> replicator;
-    std::auto_ptr<StatusCheck> statusCheck;
 };
-
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_BACKUP_H*/
+#endif  /*!QPID_HA_STANDALONE_H*/

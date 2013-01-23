@@ -136,6 +136,8 @@ class BrokerReplicator : public broker::Exchange,
     void autoDeleteCheck(boost::shared_ptr<broker::Exchange>);
     void disconnected();
 
+    void setMembership(const types::Variant::List&); // Set membership from list.
+
     std::string logPrefix;
     std::string userId, remoteHost;
     ReplicationTest replicationTest;
