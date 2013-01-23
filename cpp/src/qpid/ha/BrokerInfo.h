@@ -44,7 +44,8 @@ class BrokerInfo
     typedef std::map<types::Uuid, BrokerInfo> Map;
 
     BrokerInfo();
-    BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id);
+    BrokerInfo(const types::Uuid& id, BrokerStatus,
+               const std::string& host=std::string(), uint16_t port=0);
     BrokerInfo(const framing::FieldTable& ft) { assign(ft); }
     BrokerInfo(const types::Variant::Map& m) { assign(m); }
 

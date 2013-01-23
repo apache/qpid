@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "BrokerInfo.h"
+#include "Role.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -48,6 +49,7 @@ class HaBroker;
 class ReplicatingSubscription;
 class RemoteBackup;
 class QueueGuard;
+class Membership;
 
 /**
  * State associated with a primary broker:
@@ -56,7 +58,7 @@ class QueueGuard;
  *
  * THREAD SAFE: called concurrently in arbitrary connection threads.
  */
-class Primary
+class Primary : public Role
 {
   public:
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
@@ -66,6 +68,11 @@ class Primary
 
     Primary(HaBroker& hb, const BrokerInfo::Set& expectedBackups);
     ~Primary();
+
+    // Role implementation
+    std::string getLogPrefix() const { return logPrefix; }
+    Role* promote();
+    void setBrokerUrl(const Url&) {}
 
     void readyReplica(const ReplicatingSubscription&);
     void removeReplica(const std::string& q);
@@ -94,6 +101,7 @@ class Primary
 
     sys::Mutex lock;
     HaBroker& haBroker;
+    Membership& membership;
     std::string logPrefix;
     bool active;
     /**

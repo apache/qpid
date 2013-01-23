@@ -26,7 +26,7 @@
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
-#include "StatusCheck.h"
+#include "StandAlone.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
@@ -42,7 +42,6 @@
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerReplicate.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetBrokersUrl.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetPublicUrl.h"
-#include "qmf/org/apache/qpid/ha/EventMembersUpdate.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
 
@@ -56,24 +55,23 @@ using types::Variant;
 using types::Uuid;
 using sys::Mutex;
 using boost::shared_ptr;
+using boost::dynamic_pointer_cast;
 
 // Called in Plugin::earlyInitialize
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
-    : broker(b),
-      systemId(broker.getSystem()->getSystemId().data()),
+    : systemId(b.getSystem()->getSystemId().data()),
       settings(s),
+      replicationTest(s.replicateDefault.get()),
+      broker(b),
       observer(new ConnectionObserver(*this, systemId)),
-      status(STANDALONE),
-      logPrefix("Broker: "),
-      membership(systemId),
-      replicationTest(s.replicateDefault.get())
+      role(new StandAlone),
+      membership(BrokerInfo(systemId, STANDALONE), *this)
 {
     // If we are joining a cluster we must start excluding clients now,
     // otherwise there's a window for a client to connect before we get to
     // initialize()
     if (settings.cluster) {
-        status = JOINING;
-        QPID_LOG(debug, logPrefix << "Rejecting client connections.");
+        QPID_LOG(debug, role->getLogPrefix() << "Rejecting client connections.");
         shared_ptr<broker::ConnectionObserver> excluder(new BackupConnectionExcluder);
         observer->setObserver(excluder, "Backup: ");
         broker.getConnectionObservers().add(observer);
@@ -87,13 +85,16 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 
 // Called in Plugin::initialize
 void HaBroker::initialize() {
-
     // FIXME aconway 2012-07-19: assumes there's a TCP transport with a meaningful port.
-    brokerInfo = BrokerInfo(
-        broker.getSystem()->getNodeName(),
-        broker.getPort(broker::Broker::TCP_TRANSPORT),
-        systemId);
-    QPID_LOG(notice, logPrefix << "Initializing: " << brokerInfo);
+    membership.add(
+        BrokerInfo(
+            membership.getSelf(),
+            settings.cluster ? JOINING : membership.getStatus(),
+            broker.getSystem()->getNodeName(),
+            broker.getPort(broker::Broker::TCP_TRANSPORT)
+        )
+    );
+    QPID_LOG(notice, role->getLogPrefix() << "Initializing: " << membership.getInfo());
 
     // Set up the management object.
     ManagementAgent* ma = broker.getManagementAgent();
@@ -104,90 +105,34 @@ void HaBroker::initialize() {
     mgmtObject->set_replicateDefault(settings.replicateDefault.str());
     mgmtObject->set_systemId(systemId);
     ma->addObject(mgmtObject);
+    membership.setMgmtObject(mgmtObject);
 
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
-        boost::shared_ptr<ReplicatingSubscription::Factory>(
+        shared_ptr<ReplicatingSubscription::Factory>(
             new ReplicatingSubscription::Factory()));
 
     // If we are in a cluster, start as backup in joining state.
     if (settings.cluster) {
-        status = JOINING;
-        backup.reset(new Backup(*this, settings));
+        assert(membership.getStatus() == JOINING);
+        role.reset(new Backup(*this, settings));
         broker.getKnownBrokers = boost::bind(&HaBroker::getKnownBrokers, this);
-        statusCheck.reset(new StatusCheck(logPrefix, broker.getLinkHearbeatInterval(), brokerInfo));
         if (!isNone(settings.publicUrl)) setPublicUrl(Url(settings.publicUrl));
         if (!isNone(settings.brokerUrl)) setBrokerUrl(Url(settings.brokerUrl));
     }
-
-
-    // NOTE: lock is not needed in a constructor, but create one
-    // to pass to functions that have a ScopedLock parameter.
-    Mutex::ScopedLock l(lock);
-    statusChanged(l);
 }
 
 HaBroker::~HaBroker() {
-    QPID_LOG(notice, logPrefix << "Shut down");
+    QPID_LOG(notice, role->getLogPrefix() << "Shut down");
     broker.getConnectionObservers().remove(observer);
 }
-
-// Called from ManagementMethod on promote.
-void HaBroker::recover() {
-    boost::shared_ptr<Backup> b;
-    BrokerInfo::Set backups;
-   {
-        Mutex::ScopedLock l(lock);
-        if (isPrimary(status)) {
-            QPID_LOG(info, "Ignoring promotion, already primary: " << brokerInfo);
-            return;
-        }
-        QPID_LOG(notice, "Promoting to primary: " << brokerInfo);
-        // Reset membership before allowing backups to connect.
-        backups = membership.otherBackups();
-        membership.reset(brokerInfo);
-        // No longer replicating, close link. Note: link must be closed before we
-        // setStatus(RECOVERING) as that will remove our broker info from the
-        // outgoing link properties so we won't recognize self-connects.
-        b = backup;
-        backup.reset();         // Reset in lock.
-    }
-    b.reset();                  // Call destructor outside of lock.
-     {
-        Mutex::ScopedLock l(lock);
-        setStatus(RECOVERING, l);
-        // Drop the lock, new Primary may call back on activate.
-    }
-    // Outside of lock, may call back on activate()
-    primary.reset(new Primary(*this, backups)); // Starts primary-ready check.
-}
-
-// Called back from Primary active check.
-void HaBroker::activate() { setStatus(ACTIVE); }
 
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {
     switch (methodId) {
       case _qmf::HaBroker::METHOD_PROMOTE: {
-          switch (getStatus()) {
-            case JOINING:
-              if (statusCheck->canPromote())
-                  recover();
-              else {
-                  QPID_LOG(error,
-                           logPrefix << "Joining active cluster, cannot be promoted.");
-                  throw Exception("Cluster already active, cannot be promoted.");
-              }
-              break;
-             case CATCHUP:
-              QPID_LOG(error, logPrefix << "Still catching up, cannot be promoted.");
-              throw Exception("Still catching up, cannot be promoted.");
-              break;
-            case READY: recover(); break;
-            case RECOVERING: break;
-            case ACTIVE: break;
-            case STANDALONE: break;
-          }
-          break;
+        Role* r = role->promote();
+        if (r) role.reset(r);
+        break;
       }
       case _qmf::HaBroker::METHOD_SETBROKERSURL: {
           setBrokerUrl(Url(dynamic_cast<_qmf::ArgsHaBrokerSetBrokersUrl&>(args).i_url));
@@ -200,10 +145,10 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
       case _qmf::HaBroker::METHOD_REPLICATE: {
           _qmf::ArgsHaBrokerReplicate& bq_args =
               dynamic_cast<_qmf::ArgsHaBrokerReplicate&>(args);
-          QPID_LOG(debug, logPrefix << "Replicate individual queue "
+          QPID_LOG(debug, role->getLogPrefix() << "Replicate individual queue "
                    << bq_args.i_queue << " from " << bq_args.i_broker);
 
-          boost::shared_ptr<broker::Queue> queue = broker.getQueues().get(bq_args.i_queue);
+          shared_ptr<broker::Queue> queue = broker.getQueues().get(bq_args.i_queue);
           Url url(bq_args.i_broker);
           string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
           Uuid uuid(true);
@@ -213,10 +158,10 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
               false,              // durable
               settings.mechanism, settings.username, settings.password,
               false);           // no amq.failover - don't want to use client URL.
-          boost::shared_ptr<broker::Link> link = result.first;
+          shared_ptr<broker::Link> link = result.first;
           link->setUrl(url);
           // Create a queue replicator
-          boost::shared_ptr<QueueReplicator> qr(
+          shared_ptr<QueueReplicator> qr(
               new QueueReplicator(*this, queue, link));
           qr->activate();
           broker.getExchanges().registerExchange(qr);
@@ -235,20 +180,17 @@ void HaBroker::setPublicUrl(const Url& url) {
     mgmtObject->set_publicUrl(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
-    QPID_LOG(debug, logPrefix << "Setting public URL to: " << url);
+    QPID_LOG(debug, role->getLogPrefix() << "Setting public URL to: " << url);
 }
 
 void HaBroker::setBrokerUrl(const Url& url) {
-    boost::shared_ptr<Backup> b;
     {
         Mutex::ScopedLock l(lock);
         brokerUrl = url;
         mgmtObject->set_brokersUrl(brokerUrl.str());
-        QPID_LOG(info, logPrefix << "Brokers URL set to: " << url);
-        if (status == JOINING && statusCheck.get()) statusCheck->setUrl(url);
-        b = backup;
+        QPID_LOG(info, role->getLogPrefix() << "Brokers URL set to: " << url);
     }
-    if (b) b->setBrokerUrl(url); // Oustside lock, avoid deadlock
+    role->setBrokerUrl(url); // Oustside lock
 }
 
 std::vector<Url> HaBroker::getKnownBrokers() const {
@@ -263,110 +205,7 @@ void HaBroker::shutdown(const std::string& message) {
 }
 
 BrokerStatus HaBroker::getStatus() const {
-    return status;
-}
-
-void HaBroker::setStatus(BrokerStatus newStatus) {
-    Mutex::ScopedLock l(lock);
-    setStatus(newStatus, l);
-}
-
-namespace {
-bool checkTransition(BrokerStatus from, BrokerStatus to) {
-    // Legal state transitions. Initial state is JOINING, ACTIVE is terminal.
-    static const BrokerStatus TRANSITIONS[][2] = {
-        { JOINING, CATCHUP },    // Connected to primary
-        { JOINING, RECOVERING }, // Chosen as initial primary.
-        { CATCHUP, READY },      // Caught up all queues, ready to take over.
-        { READY, RECOVERING },   // Chosen as new primary
-        { READY, CATCHUP },      // Timed out failing over, demoted to catch-up.
-        { RECOVERING, ACTIVE }   // All expected backups are ready
-    };
-    static const size_t N = sizeof(TRANSITIONS)/sizeof(TRANSITIONS[0]);
-    for (size_t i = 0; i < N; ++i) {
-        if (TRANSITIONS[i][0] == from && TRANSITIONS[i][1] == to)
-            return true;
-    }
-    return false;
-}
-} // namespace
-
-void HaBroker::setStatus(BrokerStatus newStatus, Mutex::ScopedLock& l) {
-    QPID_LOG(info, logPrefix << "Status change: "
-             << printable(status) << " -> " << printable(newStatus));
-    bool legal = checkTransition(status, newStatus);
-    assert(legal);
-    if (!legal) {
-        shutdown(QPID_MSG(logPrefix << "Illegal state transition: "
-                 << printable(status) << " -> " << printable(newStatus)));
-    }
-    status = newStatus;
-    statusChanged(l);
-}
-
-void HaBroker::statusChanged(Mutex::ScopedLock& l) {
-    mgmtObject->set_status(printable(status).str());
-    brokerInfo.setStatus(status);
-    membership.add(brokerInfo);
-    membershipUpdated(l);
-    setLinkProperties(l);
-}
-
-void HaBroker::membershipUpdated(Mutex::ScopedLock&) {
-    QPID_LOG(info, logPrefix << "Membership: " <<  membership);
-    Variant::List brokers = membership.asList();
-    mgmtObject->set_members(brokers);
-    broker.getManagementAgent()->raiseEvent(_qmf::EventMembersUpdate(brokers));
-}
-
-void HaBroker::setMembership(const Variant::List& brokers) {
-    boost::shared_ptr<Backup> b;
-    {
-        Mutex::ScopedLock l(lock);
-        membership.assign(brokers);
-        BrokerInfo info;
-        // Update my status to what the primary says it is.  The primary sets
-        // status to READY when we are caught up, and sets status to CATCHUP
-        // (from READY) if we are timed out during recovery.
-        if (membership.get(systemId, info) && status != info.getStatus()) {
-            assert((status == CATCHUP && info.getStatus() == READY) ||
-                   (status == READY && info.getStatus() == CATCHUP));
-            setStatus(info.getStatus(), l);
-            b = backup;
-        }
-        membershipUpdated(l);
-    }
-    if (b) b->setStatus(status); // Oustside lock, avoid deadlock
-}
-
-void HaBroker::addBroker(const BrokerInfo& b) {
-    Mutex::ScopedLock l(lock);
-    membership.add(b);
-    membershipUpdated(l);
-}
-
-void HaBroker::removeBroker(const Uuid& id) {
-    Mutex::ScopedLock l(lock);
-    BrokerInfo info;
-    if (membership.get(id, info)) {
-        membership.remove(id);
-        membershipUpdated(l);
-    }
-}
-
-void HaBroker::setLinkProperties(Mutex::ScopedLock&) {
-    framing::FieldTable linkProperties = broker.getLinkClientProperties();
-    if (isBackup(status)) {
-        // If this is a backup then any outgoing links are backup
-        // links and need to be tagged.
-        linkProperties.setTable(ConnectionObserver::BACKUP_TAG, brokerInfo.asFieldTable());
-    }
-    else {
-        // If this is a primary then any outgoing links are federation links
-        // and should not be tagged.
-        linkProperties.erase(ConnectionObserver::BACKUP_TAG);
-    }
-    broker.setLinkClientProperties(linkProperties);
+    return membership.getStatus();
 }
 
 }} // namespace qpid::ha
