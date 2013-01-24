@@ -21,7 +21,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +46,7 @@ import javax.jms.Session;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
@@ -76,7 +80,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     public enum BrokerType
     {
         EXTERNAL /** Test case relies on a Broker started independently of the test-suite */,
-        INTERNAL /** Test case starts an embedded broker within this JVM */, 
+        INTERNAL /** Test case starts an embedded broker within this JVM */,
         SPAWNED /** Test case spawns a new broker as a separate process */
     }
 
@@ -85,7 +89,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected final static String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
-    protected File _logConfigFile = new File(System.getProperty("log4j.configuration"));
+    private File _logConfigFile;
 
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
     protected static final int LOGMONITOR_TIMEOUT = 5000;
@@ -104,11 +108,11 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     static
     {
-        String initialContext = System.getProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+        String initialContext = System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
 
         if (initialContext == null || initialContext.length() == 0)
         {
-            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
+            System.setProperty(Context.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
         }
     }
 
@@ -145,7 +149,8 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
-    protected String _brokerCommand = System.getProperty(BROKER_COMMAND);
+
+    protected BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper(System.getProperty(BROKER_COMMAND));
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
     protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
@@ -190,11 +195,32 @@ public class QpidBrokerTestCase extends QpidTestCase
     public QpidBrokerTestCase(String name)
     {
         super(name);
+        initialiseLogConfigFile();
     }
-    
+
     public QpidBrokerTestCase()
     {
         super();
+        initialiseLogConfigFile();
+    }
+
+    private void initialiseLogConfigFile()
+    {
+        try
+        {
+            _logger.info("About to initialise log config file from system property: " + LOG4J_CONFIG_FILE_PATH);
+
+            URI uri = new URI("file", LOG4J_CONFIG_FILE_PATH, null);
+            _logConfigFile = new File(uri);
+            if(!_logConfigFile.exists())
+            {
+                throw new RuntimeException("Log config file " + _logConfigFile.getAbsolutePath() + " does not exist");
+            }
+        }
+        catch (URISyntaxException e)
+        {
+            throw new RuntimeException("Couldn't create URI from log4.configuration: " + LOG4J_CONFIG_FILE_PATH, e);
+        }
     }
 
     public Logger getLogger()
@@ -351,22 +377,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    protected String getBrokerCommand(int port) throws MalformedURLException
-    {
-        final int sslPort = port-1;
-        final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
-        final String protocolIncludesList = getProtocolIncludesList(port, sslPort);
-
-        return _brokerCommand
-                .replace("@PORT", "" + port)
-                .replace("@SSL_PORT", "" + sslPort)
-                .replace("@MPORT", "" + getManagementPort(port))
-                .replace("@CONFIG_FILE", _configFile.toString())
-                .replace("@LOG_CONFIG_FILE", _logConfigFile.toString())
-                .replace("@EXCLUDES", protocolExcludesList)
-                .replace("@INCLUDES", protocolIncludesList);
-    }
-
     public void startBroker() throws Exception
     {
         startBroker(0);
@@ -377,12 +387,33 @@ public class QpidBrokerTestCase extends QpidTestCase
         startBroker(port, _testConfiguration, _testVirtualhosts);
     }
 
+    private List<String> getBrokerCommand(int port)
+    {
+        final int sslPort = port-1;
+        final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
+        final String protocolIncludesList = getProtocolIncludesList(port, sslPort);
+        return _brokerCommandHelper.getBrokerCommand(
+            port, sslPort, getManagementPort(port),
+            _configFile, _logConfigFile,
+            protocolIncludesList, protocolExcludesList);
+    }
+
+    protected File getBrokerCommandLog4JFile()
+    {
+        return _logConfigFile;
+    }
+
+    protected void setBrokerCommandLog4JFile(File file)
+    {
+        _logConfigFile = file;
+        _logger.info("Modified log config file to: " + file);
+    }
+
     public void startBroker(int port, XMLConfiguration testConfiguration, XMLConfiguration virtualHosts) throws Exception
     {
         port = getPort(port);
 
-        // Save any configuration changes that have been made
-        String testConfig = saveTestConfiguration(port, testConfiguration);
+        // Save only virtual host configuration changes that have been made
         String virtualHostsConfig = saveTestVirtualhosts(port, virtualHosts);
 
         if(_brokers.get(port) != null)
@@ -394,10 +425,8 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
-            setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
-            testConfig = saveTestConfiguration(port, testConfiguration);
-            _logger.info("Set test.config property to: " + testConfig);
-            _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);
+            testConfiguration.setProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
+            String testConfig = saveTestConfiguration(port, testConfiguration);
             setSystemProperty(TEST_CONFIG, testConfig);
             setSystemProperty(TEST_VIRTUALHOSTS, virtualHostsConfig);
 
@@ -415,7 +444,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             options.setLogConfigFile(_logConfigFile.getAbsolutePath());
 
             Broker broker = new Broker();
-            _logger.info("starting internal broker (same JVM)");
+            _logger.info("Starting internal broker (same JVM)");
             broker.startup(options);
 
             _brokers.put(port, new InternalBrokerHolder(broker, System.getProperty("QPID_WORK"), portsUsedByBroker));
@@ -424,9 +453,9 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
             final String qpidWork = getQpidWork(_brokerType, port);
-            String cmd = getBrokerCommand(port);
-            _logger.info("starting external broker: " + cmd);
-            ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
+            List<String> cmd = getBrokerCommand(port);
+            _logger.info("Starting external broker using command: " + StringUtils.join(cmd, " "));
+            ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
             Map<String, String> processEnv = pb.environment();
             String qpidHome = System.getProperty(QPID_HOME);
@@ -456,28 +485,37 @@ public class QpidBrokerTestCase extends QpidTestCase
                 }
             }
 
+            String testConfig = saveTestConfiguration(port, testConfiguration);
+            String qpidOpts = "";
 
-            // Add default test logging levels that are used by the log4j-test
-            // Use the convenience methods to push the current logging setting
-            // in to the external broker's QPID_OPTS string.
-            if (System.getProperty("amqj.protocol.logging.level") != null)
+            // a synchronized hack to avoid adding into QPID_OPTS the values
+            // of JVM properties "test.virtualhosts" and "test.config" set by a concurrent startup process
+            synchronized (_propertiesSetForBroker)
             {
-                setSystemProperty("amqj.protocol.logging.level");
-            }
-            if (System.getProperty("root.logging.level") != null)
-            {
-                setSystemProperty("root.logging.level");
-            }
-
-            // set test.config and test.virtualhosts
-            String qpidOpts = " -D" + TEST_CONFIG + "=" + testConfig + " -D" + TEST_VIRTUALHOSTS + "=" + virtualHostsConfig;
-
-            // Add all the specified system properties to QPID_OPTS
-            if (!_propertiesSetForBroker.isEmpty())
-            {
-                for (String key : _propertiesSetForBroker.keySet())
+                // Add default test logging levels that are used by the log4j-test
+                // Use the convenience methods to push the current logging setting
+                // in to the external broker's QPID_OPTS string.
+                if (System.getProperty("amqj.protocol.logging.level") != null)
                 {
-                    qpidOpts += " -D" + key + "=" + _propertiesSetForBroker.get(key);
+                    setSystemProperty("amqj.protocol.logging.level");
+                }
+                if (System.getProperty("root.logging.level") != null)
+                {
+                    setSystemProperty("root.logging.level");
+                }
+
+                setSystemProperty(TEST_CONFIG, testConfig);
+                setSystemProperty(TEST_VIRTUALHOSTS, virtualHostsConfig);
+                // set test.config and test.virtualhosts
+                qpidOpts += " -D" + TEST_CONFIG + "=" + testConfig + " -D" + TEST_VIRTUALHOSTS + "=" + virtualHostsConfig;
+
+                // Add all the specified system properties to QPID_OPTS
+                if (!_propertiesSetForBroker.isEmpty())
+                {
+                    for (String key : _propertiesSetForBroker.keySet())
+                    {
+                        qpidOpts += " -D" + key + "=" + _propertiesSetForBroker.get(key);
+                    }
                 }
             }
             if (processEnv.containsKey("QPID_OPTS"))
@@ -485,9 +523,6 @@ public class QpidBrokerTestCase extends QpidTestCase
                 qpidOpts = processEnv.get("QPID_OPTS") + qpidOpts;
             }
             processEnv.put("QPID_OPTS", qpidOpts);
-
-            _logger.info("Set test.config property to: " + testConfig);
-            _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);
 
             // cpp broker requires that the work directory is created
             createBrokerWork(qpidWork);
@@ -633,7 +668,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void saveTestConfiguration() throws ConfigurationException
     {
         String relative = saveTestConfiguration(getPort(), _testConfiguration);
-        _logger.info("Set test.config property to: " + relative);
         setSystemProperty(TEST_CONFIG, relative);
     }
 
@@ -657,7 +691,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void saveTestVirtualhosts() throws ConfigurationException
     {
         String relative = saveTestVirtualhosts(getPort(), _testVirtualhosts);
-        _logger.info("Set test.virtualhosts property to: " + relative);
         setSystemProperty(TEST_VIRTUALHOSTS, relative);
     }
 
@@ -667,7 +700,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         String testVirtualhosts = getTestVirtualhostsFile(port);
         String relative = relativeToQpidHome(testVirtualhosts);
 
-        _logger.info("Set test.virtualhosts property to: " + testVirtualhosts);
+        _logger.info("Path to virtualhosts configuration: " + testVirtualhosts);
 
         // Create the file if configuration does not exist
         if (virtualHostConfiguration.isEmpty())
@@ -933,7 +966,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      *
      * When the test run is complete the value will be reverted.
      *
-     * The values set using this method will also be propogated to the external
+     * The values set using this method will also be propagated to the external
      * Java Broker via a -D value defined in QPID_OPTS.
      *
      * If the value should not be set on the broker then use

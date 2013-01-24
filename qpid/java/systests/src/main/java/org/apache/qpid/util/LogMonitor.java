@@ -42,6 +42,8 @@ import java.util.List;
  */
 public class LogMonitor
 {
+    private static final Logger _logger = Logger.getLogger(LogMonitor.class);
+
     // The file that the log statements will be written to.
     private final File _logfile;
 
@@ -90,6 +92,8 @@ public class LogMonitor
             _appender.setImmediateFlush(true);
             Logger.getRootLogger().addAppender(_appender);
         }
+
+        _logger.info("Created LogMonitor. Monitoring file: " + _logfile.getAbsolutePath());
     }
 
     /**
