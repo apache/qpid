@@ -398,6 +398,7 @@
 
     <propertyref name="log4j.debug"/>
     <propertyref name="log4j.configuration"/>
+    <propertyref name="log4j.configuration.file"/>
 
     <propertyref name="root.logging.level"/>
     <propertyref name="java.naming.factory.initial"/>

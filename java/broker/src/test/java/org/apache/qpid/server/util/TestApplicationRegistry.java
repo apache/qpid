@@ -38,6 +38,7 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.Properties;
 
@@ -54,7 +55,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
     {
         CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));
         GenericActor.setDefaultMessageLogger(new NullRootMessageLogger());
-        LoggingManagementFacade.configure("test-profiles/log4j-test.xml");
+        LoggingManagementFacade.configure(QpidTestCase.LOG4J_CONFIG_FILE_PATH);
 
         super.initialise();
     }
