@@ -42,11 +42,18 @@
     <PropertyRef Id="NETFRAMEWORK35"/>
 
     <!-- Allow 64-bit builds to pick ProgramFiles64Folder instead -->
-    <?Define ProgramFiles = "ProgramFilesFolder"?>
+    <?define ProgramFiles = "ProgramFilesFolder"?>
+
+    <!-- Pick up Program Files for 32-bit from the correct place -->
+    <?ifdef env.ProgramFiles(x86)?>
+      <?define ProgramFilesx86 = "$(env.ProgramFiles(x86))"?>
+    <?else?>
+      <?define ProgramFilesx86 = "$(env.ProgramFiles)"?>
+    <?endif?>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Merge Id="VCRedist" SourceFile="C:\Program Files\Common Files\Merge Modules\Microsoft_VC90_CRT_x86.msm" DiskId="1" Language="0"/>
-      <Merge Id="VCRedistPolicy" SourceFile="C:\Program Files\Common Files\Merge Modules\policy_9_0_Microsoft_VC90_CRT_x86.msm" DiskId="1" Language="0"/>
+      <Merge Id="VCRedist" SourceFile="$(var.ProgramFilesx86)\Common Files\Merge Modules\Microsoft_VC90_CRT_x86.msm" DiskId="1" Language="0"/>
+      <Merge Id="VCRedistPolicy" SourceFile="$(var.ProgramFilesx86)\Common Files\Merge Modules\policy_9_0_Microsoft_VC90_CRT_x86.msm" DiskId="1" Language="0"/>
       <Directory Id="$(var.ProgramFiles)">
         <Directory Id="ApacheTop" Name="Apache">
           <Directory Id="INSTALLLOCATION" Name="qpidc-$(var.qpidc_version)">
@@ -269,7 +276,6 @@
         <ComponentRef Id="TopStorePlugin"/>
         <ComponentRef Id="SQLPersistence"/>
         <ComponentRef Id="CLFSPersistence"/>
-	<ComponentGroupRef Id="group_BoostDlls"/>
       </Feature>
 
       <Feature Id="ClientLib" Title="Client Libraries and Headers to develop and run programs" Level="1">
@@ -293,8 +299,6 @@
         <ComponentRef Id="WCFInteropDLL"/>
         <ComponentRef Id="WCFXADLL"/>
         <ComponentGroupRef Id="group_QpidHeaders"/>
-	<ComponentGroupRef Id="group_BoostHeaders"/>
-        <ComponentGroupRef Id="group_BoostDlls"/>
 
         <Feature Id="Examples" Title="Client Programming Examples" Level="1">
           <ComponentGroupRef Id="group_Examples"/>
