@@ -91,10 +91,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         InputStream src = getClass().getClassLoader().getResourceAsStream("upgrade/bdbstore-v4/test-store/00000000.jdb");
         FileUtils.copy(src, new File(_storeLocation, "00000000.jdb"));
 
-        //override the broker config used and then start the broker with the updated store
-        _configFile = new File("build/etc/config-systests-bdb.xml");
-        setConfigurationProperty("management.enabled", "true");
-
+        getBrokerConfiguration().addJmxManagementConfiguration();
         super.setUp();
     }
 

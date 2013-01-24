@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.registry;
 
+import java.util.Collection;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -136,7 +137,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         if (report > 0L)
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-            StatisticsReportingTask task = new StatisticsReportingTask(true, true, reset, _rootMessageLogger);
+            StatisticsReportingTask task = new StatisticsReportingTask(reset, _rootMessageLogger);
             _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
         }
     }
@@ -146,15 +147,11 @@ public class ApplicationRegistry implements IApplicationRegistry
         private final int DELIVERED = 0;
         private final int RECEIVED = 1;
 
-        private final boolean _broker;
-        private final boolean _virtualhost;
         private final boolean _reset;
         private final RootMessageLogger _logger;
 
-        public StatisticsReportingTask(boolean broker, boolean virtualhost, boolean reset, RootMessageLogger logger)
+        public StatisticsReportingTask(boolean reset, RootMessageLogger logger)
         {
-            _broker = broker;
-            _virtualhost = virtualhost;
             _reset = reset;
             _logger = logger;
         }
@@ -168,38 +165,44 @@ public class ApplicationRegistry implements IApplicationRegistry
                     return "[" + Thread.currentThread().getName() + "] ";
                 }
             });
-
-            if (_broker)
+            try
             {
                 CurrentActor.get().message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
                 CurrentActor.get().message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
                 CurrentActor.get().message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
                 CurrentActor.get().message(BrokerMessages.STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
-            }
+                Collection<VirtualHost>  hosts = _virtualHostRegistry.getVirtualHosts();
 
-            if (_virtualhost)
-            {
-                for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
+                if (hosts.size() > 1)
                 {
-                    String name = vhost.getName();
-                    StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
-                    StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
-                    StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
-                    StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
+                    for (VirtualHost vhost : hosts)
+                    {
+                        String name = vhost.getName();
+                        StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
+                        StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
+                        StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
+                        StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
 
-                    CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
-                    CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-                    CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-                    CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
+                        CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
+                        CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+                        CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+                        CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
+                    }
+                }
+
+                if (_reset)
+                {
+                    resetStatistics();
                 }
             }
-
-            if (_reset)
+            catch(Exception e)
             {
-                resetStatistics();
+                ApplicationRegistry._logger.warn("Unexpected exception occured while reporting the statistics", e);
             }
-
-            CurrentActor.remove();
+            finally
+            {
+                CurrentActor.remove();
+            }
         }
     }
 

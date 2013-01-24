@@ -51,11 +51,15 @@ public class PortFactoryTest extends QpidTestCase
     private Map<String, Object> _attributes = new HashMap<String, Object>();
 
     private Broker _broker = mock(Broker.class);
-    private PortFactory _portFactory = new PortFactory();
+    private PortFactory _portFactory;
 
     @Override
     protected void setUp() throws Exception
     {
+        setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
+        setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
+        _portFactory = new PortFactory();
+
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
 

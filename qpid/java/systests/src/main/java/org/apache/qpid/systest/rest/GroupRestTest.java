@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupMember;
 
 public class GroupRestTest extends QpidRestTestCase
@@ -42,8 +43,7 @@ public class GroupRestTest extends QpidRestTestCase
     {
         _groupFile = createTemporaryGroupFile();
 
-        setConfigurationProperty("security.file-group-manager.attributes.attribute.name", "groupFile");
-        setConfigurationProperty("security.file-group-manager.attributes.attribute.value", _groupFile.getAbsolutePath());
+        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
 
         super.setUp();
     }

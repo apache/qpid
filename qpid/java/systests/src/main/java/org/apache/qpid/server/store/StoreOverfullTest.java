@@ -60,9 +60,9 @@ public class StoreOverfullTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
-        setConfigurationProperty("virtualhosts.virtualhost.test.store.class", QuotaMessageStore.class.getName());
-        setConfigurationProperty("virtualhosts.virtualhost.test.store.overfull-size", String.valueOf(OVERFULL_SIZE));
-        setConfigurationProperty("virtualhosts.virtualhost.test.store.underfull-size", String.valueOf(UNDERFULL_SIZE));
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.store.class", QuotaMessageStore.class.getName());
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.store.overfull-size", String.valueOf(OVERFULL_SIZE));
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.store.underfull-size", String.valueOf(UNDERFULL_SIZE));
 
         super.setUp();
 

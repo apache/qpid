@@ -47,18 +47,29 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
     private Map<UUID, ConfigurationEntry> _entries;
     private File _storeFile;
     private UUID _rootId;
+    private String _initialStoreLocation;
+
 
     public JsonConfigurationEntryStore()
     {
+        this(BrokerConfigurationStoreCreator.INITIAL_STORE_LOCATION);
+    }
+
+    public JsonConfigurationEntryStore(String initialStore)
+    {
+        _initialStoreLocation = initialStore;
         _objectMapper = new ObjectMapper();
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         _entries = new HashMap<UUID, ConfigurationEntry>();
     }
 
-    public JsonConfigurationEntryStore(URL storeURL)
+    public void load(URL storeURL)
     {
-        this();
+        if (_rootId != null)
+        {
+            throw new IllegalStateException("Cannot load the store from");
+        }
         JsonNode node = load(storeURL, _objectMapper);
         ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
         _rootId = brokerEntry.getId();
@@ -73,11 +84,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
             copyInitialStore();
         }
 
-        URL storeURL = fileToURL(_storeFile);
-        JsonNode node = load(storeURL, _objectMapper);
-        ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
-        _rootId = brokerEntry.getId();
-
+        load(fileToURL(_storeFile));
     }
 
     private void copyInitialStore()
@@ -85,7 +92,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         InputStream in = null;
         try
         {
-            in = JsonConfigurationEntryStore.class.getClassLoader().getResourceAsStream(BrokerConfigurationStoreCreator.INITIAL_STORE_LOCATION);
+            in = JsonConfigurationEntryStore.class.getClassLoader().getResourceAsStream(_initialStoreLocation);
             FileUtils.copy(in, _storeFile);
         }
         catch (IOException e)
@@ -396,7 +403,14 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         UUID id = null;
         if (idAsString == null)
         {
-            id = createUUID(type, name);
+            if (isRoot)
+            {
+                id = UUIDGenerator.generateRandomUUID();
+            }
+            else
+            {
+                id = UUIDGenerator.generateBrokerChildUUID(type, name);
+            }
         }
         else
         {
@@ -418,11 +432,6 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         }
         entries.put(id, entry);
         return entry;
-    }
-
-    private UUID createUUID(String type, String name)
-    {
-        return UUIDGenerator.generateBrokerChildUUID(type, name);
     }
 
     private Object toObject(JsonNode node)

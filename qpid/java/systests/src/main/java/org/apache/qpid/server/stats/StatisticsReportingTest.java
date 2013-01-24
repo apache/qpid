@@ -27,7 +27,9 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
@@ -60,16 +62,15 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
-        createTestVirtualHost(VHOST_NAME1);
-        createTestVirtualHost(VHOST_NAME2);
-        createTestVirtualHost(VHOST_NAME3);
-
-        setConfigurationProperty("statistics.generation.broker", "true");
-        setConfigurationProperty("statistics.generation.virtualhosts", "true");
+        createTestVirtualHost(0, VHOST_NAME1);
+        createTestVirtualHost(0, VHOST_NAME2);
+        createTestVirtualHost(0, VHOST_NAME3);
 
         if (getName().equals("testEnabledStatisticsReporting"))
         {
-            setConfigurationProperty("statistics.reporting.period", "10");
+            TestBrokerConfiguration config = getBrokerConfiguration();
+            config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+            config.setBrokerAttribute(Broker.STATISTICS_REPORTING_PERIOD, 10);
         }
 
         _monitor = new LogMonitor(_outputFile);

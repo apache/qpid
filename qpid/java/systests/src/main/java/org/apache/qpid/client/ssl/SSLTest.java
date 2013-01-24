@@ -29,13 +29,19 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Session;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SSLTest extends QpidBrokerTestCase
 {
@@ -353,17 +359,13 @@ public class SSLTest extends QpidBrokerTestCase
     {
         if(isJavaBroker())
         {
-            setConfigurationProperty("connector.ssl.enabled", String.valueOf(sslEnabled));
-            setConfigurationProperty("connector.ssl.sslOnly", String.valueOf(sslOnly));
-            setConfigurationProperty("connector.ssl.needClientAuth", String.valueOf(needClientAuth));
-            setConfigurationProperty("connector.ssl.wantClientAuth", String.valueOf(wantClientAuth));
-
-            if(needClientAuth || wantClientAuth)
-            {
-                //TODO: make a broker trust store?
-                setConfigurationProperty("connector.ssl.trustStorePath", TRUSTSTORE);
-                setConfigurationProperty("connector.ssl.trustStorePassword", TRUSTSTORE_PASSWORD);
-            }
+            Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
+            sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
+            sslPortAttributes.put(Port.NEED_CLIENT_AUTH, needClientAuth);
+            sslPortAttributes.put(Port.WANT_CLIENT_AUTH, wantClientAuth);
+            sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
         }
     }
 

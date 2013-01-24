@@ -67,7 +67,6 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
     protected void setUp() throws Exception
     {
         _brokerType = BrokerType.SPAWNED;
-        _jmxUtils.setUp();
 
         _clusterCreator.configureClusterNodes();
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();

@@ -398,6 +398,7 @@
     <propertyref prefix="profile"/>
     <propertyref prefix="javax.net.ssl"/>
     <propertyref prefix="broker"/>
+    <propertyref prefix="qpid"/>
 
     <propertyref name="amqj.logging.level"/>
     <propertyref name="amqj.server.logging.level"/>
@@ -410,11 +411,8 @@
     <propertyref name="java.naming.factory.initial"/>
     <propertyref name="java.naming.provider.url"/>
     <propertyref name="messagestore.class.name" />
-    <propertyref name="qpid.amqp.version"/>
     <propertyref name="max_prefetch"/>
-    <propertyref name="qpid.dest_syntax"/>
 
-    <propertyref name="test.output"/>
     <propertyref name="QPID_HOME"/>
     <propertyref name="QPID_WORK"/>
     <propertyref name="example.plugin.target"/>

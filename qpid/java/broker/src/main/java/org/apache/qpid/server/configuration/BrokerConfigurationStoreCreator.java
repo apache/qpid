@@ -21,7 +21,6 @@
 package org.apache.qpid.server.configuration;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.store.CommandLineOptionsHandler;
 import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
@@ -60,7 +59,7 @@ public class BrokerConfigurationStoreCreator
             throw new IllegalConfigurationException("Cannot create store for the type " + storeType);
         }
         store.open(storeLocation);
-        return new CommandLineOptionsHandler(options, store);
+        return store;
     }
 
 }

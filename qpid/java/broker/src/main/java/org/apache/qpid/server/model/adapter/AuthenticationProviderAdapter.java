@@ -63,11 +63,14 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     private GroupPrincipalAccessor _groupAccessor;
 
-    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> defaults)
+    private Object _type;
+
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes)
     {
-        super(id, defaults);
+        super(id, null, attributes);
         _authManager = authManager;
         _broker = broker;
+        _type = authManager instanceof PrincipalDatabaseAuthenticationManager? PrincipalDatabaseAuthenticationManager.class.getSimpleName() : AuthenticationManager.class.getSimpleName() ;
         addParent(Broker.class, broker);
     }
 
@@ -85,7 +88,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public String getName()
     {
-        return _authManager.getClass().getSimpleName();
+        return (String)getAttribute(AuthenticationProvider.NAME);
     }
 
     @Override
@@ -155,7 +158,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     {
         if(TYPE.equals(name))
         {
-            return getName();
+            return _type;
         }
         else if(CREATED.equals(name))
         {
@@ -172,10 +175,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         else if(LIFETIME_POLICY.equals(name))
         {
             return LifetimePolicy.PERMANENT;
-        }
-        else if(NAME.equals(name))
-        {
-            return getName();
         }
         else if(STATE.equals(name))
         {
@@ -245,22 +244,22 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
+
         public SimpleAuthenticationProviderAdapter(
-                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> defaults)
+                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes)
         {
-            super(id, broker,authManager, defaults);
+            super(id, broker,authManager, attributes);
         }
     }
 
-    //TODO: add file path attribute into actual attributes
     public static class PrincipalDatabaseAuthenticationManagerAdapter
             extends AuthenticationProviderAdapter<PrincipalDatabaseAuthenticationManager>
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> defaults)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes)
         {
-            super(id, broker, authManager, defaults);
+            super(id, broker, authManager, attributes);
         }
 
         @Override

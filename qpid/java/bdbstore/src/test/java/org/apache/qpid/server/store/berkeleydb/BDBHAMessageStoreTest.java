@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.mockito.Mockito.mock;
-
 import java.io.File;
 import java.net.InetAddress;
 
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -63,16 +60,25 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         FileUtils.delete(new File(_workDir), true);
         _configXml = new XMLConfiguration();
+
+        BrokerTestHelper.setUp();
      }
 
     public void tearDown() throws Exception
     {
-        FileUtils.delete(new File(_workDir), true);
-        if (_virtualHost != null)
+        try
         {
-            _virtualHost.close();
+            FileUtils.delete(new File(_workDir), true);
+            if (_virtualHost != null)
+            {
+                _virtualHost.close();
+            }
         }
-        super.tearDown();
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     public void testSetSystemConfiguration() throws Exception

@@ -23,6 +23,8 @@ package org.apache.qpid.systest.rest;
 import java.io.IOException;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QpidRestTestCase extends QpidBrokerTestCase
@@ -43,11 +45,11 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         // Set up virtualhost config with queues and bindings to the amq.direct
         for (String virtualhost : EXPECTED_VIRTUALHOSTS)
         {
-            createTestVirtualHost(virtualhost);
+            createTestVirtualHost(0, virtualhost);
             for (String queue : EXPECTED_QUEUES)
             {
-                setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.exchange", "amq.direct");
-                setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.queue(-1).name", queue);
+                setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.exchange", "amq.direct");
+                setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.queue(-1).name", queue);
             }
         }
 
@@ -70,10 +72,9 @@ public class QpidRestTestCase extends QpidBrokerTestCase
 
     protected void customizeConfiguration() throws ConfigurationException, IOException
     {
-        setConfigurationProperty("management.enabled", "false");
-        setConfigurationProperty("management.http.enabled", "true");
-        setConfigurationProperty("management.https.enabled", "false");
-        setConfigurationProperty("management.http.port", Integer.toString(_restTestHelper.getHttpPort()));
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        config.addHttpManagementConfiguration();
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _restTestHelper.getHttpPort());
     }
 
     public RestTestHelper getRestTestHelper()

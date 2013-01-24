@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class StructureRestTest extends QpidRestTestCase
 {
@@ -40,7 +41,7 @@ public class StructureRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) structure.get("ports");
-        assertEquals("Unexpected number of ports", 2, ports.size());
+        assertEquals("Unexpected number of ports", 4, ports.size());
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> providers = (List<Map<String, Object>>) structure.get("authenticationproviders");
@@ -94,12 +95,12 @@ public class StructureRestTest extends QpidRestTestCase
         }
 
 
-        String httpPortName = getRestTestHelper().getHttpPort() + "-HTTP";
+        String httpPortName = TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT;
         Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
         assertNotNull("Http Port " + httpPortName + " is not found", portData);
         assertNode(portData, httpPortName);
 
-        String amqpPortName = getPort() + "-AMQP";
+        String amqpPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
         Map<String, Object> amqpPortData = getRestTestHelper().find(Port.NAME, amqpPortName, ports);
         assertNotNull("Amqp port " + amqpPortName + " is not found", amqpPortData);
         assertNode(amqpPortData, amqpPortName);

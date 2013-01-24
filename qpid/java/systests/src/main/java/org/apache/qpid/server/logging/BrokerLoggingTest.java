@@ -23,12 +23,18 @@ package org.apache.qpid.server.logging;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.util.LogMonitor;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Broker Test Suite
@@ -118,8 +124,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
                              1, results.size());
 
                 //3
-                assertTrue("Config file details not correctly logged",
-                           log.endsWith(configFilePath));
+                assertTrue("Config file details not correctly logged, got "
+                        + log + " but expected it to end with " + configFilePath,
+                        log.endsWith(configFilePath));
             }
             catch (AssertionFailedError afe)
             {
@@ -293,8 +300,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
                                  1, findMatches(TESTID).size());
 
                     //3
-                    assertTrue("Log4j file details not correctly logged:" + getMessageString(log),
-                               getMessageString(log).endsWith(customLog4j));
+                    assertTrue("Log4j file details not correctly logged, got "
+                            + getMessageString(log) + " but expected it to end with " +customLog4j,
+                            getMessageString(log).endsWith(customLog4j));
 
                     validation = true;
                 }
@@ -512,12 +520,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             String TESTID = "BRK-1002";
 
             // Enable SSL on the connection
-            setConfigurationProperty("connector.ssl.enabled", "true");
-            setConfigurationProperty("connector.ssl.sslOnly", "false");
-            setConfigurationProperty("connector.ssl.keyStorePath", getConfigurationStringProperty("management.ssl.keyStorePath"));
-            setConfigurationProperty("connector.ssl.keyStorePassword", getConfigurationStringProperty("management.ssl.keyStorePassword"));
-
-            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.ssl.port"));
+            Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
+            sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
+            sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 
             startBroker();
 
@@ -575,11 +582,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     // Check the third, ssl listen.
                     message = getMessageString(getLog(listenMessages .get(2)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP/SSL port " + sslPort));
+                               message.endsWith("Listening on TCP/SSL port " + DEFAULT_SSL_PORT));
 
                     //4 Test ports open
                     testSocketOpen(getPort());
-                    testSocketOpen(sslPort);
+                    testSocketOpen(DEFAULT_SSL_PORT);
 
                     validation = true;
                 }
@@ -803,11 +810,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             String TESTID = "BRK-1003";
 
             // Enable SSL on the connection
-            setConfigurationProperty("connector.ssl.enabled", "true");
-            setConfigurationProperty("connector.ssl.keyStorePath", getConfigurationStringProperty("management.ssl.keyStorePath"));
-            setConfigurationProperty("connector.ssl.keyStorePassword", getConfigurationStringProperty("management.ssl.keyStorePassword"));
-
-            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.ssl.port"));
+            Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
+            sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
+            sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 
             startBroker();
 
@@ -848,13 +855,13 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 // Check second, ssl, listen.
                 message = getMessageString(getLog(listenMessages.get(1)));
                 assertTrue("Expected shutdown log not correct" + message,
-                           message.endsWith("TCP/SSL port " + sslPort));
+                           message.endsWith("TCP/SSL port " + DEFAULT_SSL_PORT));
 
                 //4
                 //Test Port closed
                 checkSocketClosed(getPort());
                 //Test SSL Port closed
-                checkSocketClosed(sslPort);
+                checkSocketClosed(DEFAULT_SSL_PORT);
             }
             catch (AssertionFailedError afe)
             {

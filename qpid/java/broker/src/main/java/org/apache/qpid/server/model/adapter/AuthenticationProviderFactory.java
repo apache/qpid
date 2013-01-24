@@ -59,15 +59,11 @@ public class AuthenticationProviderFactory
                 AuthenticationProviderAdapter<?> authenticationProvider;
                 if (manager instanceof PrincipalDatabaseAuthenticationManager)
                 {
-                    // TODO : add defaults
-                    Map<String, Object> defaults = null;
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
-                            (PrincipalDatabaseAuthenticationManager) manager, defaults);
+                            (PrincipalDatabaseAuthenticationManager) manager, attributes);
                 }
                 else
                 {
-                    // TODO : add defaults
-                    Map<String, Object> defaults = null;
                     authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes);
                 }
                 authenticationProvider.setGroupAccessor(groupPrincipalAccessor);

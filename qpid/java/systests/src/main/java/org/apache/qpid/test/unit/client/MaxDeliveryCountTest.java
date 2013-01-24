@@ -74,14 +74,13 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         //enable DLQ/maximumDeliveryCount support for all queues at the vhost level
-        setConfigurationProperty("virtualhosts.virtualhost.test.queues.maximumDeliveryCount",
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.queues.maximumDeliveryCount",
                 String.valueOf(MAX_DELIVERY_COUNT));
-        setConfigurationProperty("virtualhosts.virtualhost.test.queues.deadLetterQueues",
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.queues.deadLetterQueues",
                                 String.valueOf(true));
 
         //Ensure management is on
-        setConfigurationProperty("management.enabled", "true");
-        setConfigurationProperty("management.ssl.enabled", "false");
+        getBrokerConfiguration().addJmxManagementConfiguration();
 
         // Set client-side flag to allow the server to determine if messages
         // dead-lettered or requeued.

@@ -23,15 +23,23 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.tools.security.Passwd;
 
 /**
@@ -53,9 +61,10 @@ public class UserManagementTest extends QpidBrokerTestCase
         _passwd = createPasswordEncodingUtility();
         _passwordFile = createTemporaryPasswordFileWithJmxAdminUser();
 
-        setConfigurationProperty("security.pd-auth-manager.principal-database.class", getPrincipalDatabaseImplClass().getName());
-        setConfigurationProperty("security.pd-auth-manager.principal-database.attributes.attribute.name", "passwordFile");
-        setConfigurationProperty("security.pd-auth-manager.principal-database.attributes.attribute.value", _passwordFile.getAbsolutePath());
+        Map<String, Object> newAttributes = new HashMap<String, Object>();
+        newAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, getAuthenticationManagerType());
+        newAttributes.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _passwordFile.getAbsolutePath());
+        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
 
         _jmxUtils = new JMXTestUtils(this);
         _jmxUtils.setUp();
@@ -163,9 +172,9 @@ public class UserManagementTest extends QpidBrokerTestCase
         };
     }
 
-    protected Class<? extends PrincipalDatabase> getPrincipalDatabaseImplClass()
+    protected String getAuthenticationManagerType()
     {
-        return PlainPasswordFilePrincipalDatabase.class;
+        return PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
     }
 
     private File createTemporaryPasswordFileWithJmxAdminUser() throws Exception

@@ -125,7 +125,7 @@ public class HttpManagement extends AbstractPluginAdapter
         put(HTTPS_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
         put(HTTP_SASL_AUTHENTICATION_ENABLED, Boolean.class);
         put(HTTPS_SASL_AUTHENTICATION_ENABLED, Boolean.class);
-        put(NAME, Boolean.class);
+        put(NAME, String.class);
         put(TIME_OUT, Integer.class);
         put(PluginFactory.PLUGIN_TYPE, String.class);
     }});

@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestTest extends QpidRestTestCase
 {
@@ -61,15 +62,15 @@ public class BrokerRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) brokerDetails.get(BROKER_PORTS_ATTRIBUTE);
-        assertEquals("Unexpected number of ports", 2, ports.size());
+        assertEquals("Unexpected number of ports", 4, ports.size());
 
         for (Map<String, Object> port : ports)
         {
             Asserts.assertPortAttributes(port);
         }
 
-        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, getPort() +"-AMQP", ports);
-        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, getRestTestHelper().getHttpPort() + "-HTTP", ports);
+        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, ports);
+        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, ports);
 
         assertEquals("Unexpected binding address", "*", amqpPort.get(Port.BINDING_ADDRESS));
         assertNotNull("Cannot find AMQP port", amqpPort);
