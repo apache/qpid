@@ -55,9 +55,8 @@ public class LoggingManagementTest extends QpidBrokerTestCase
 
         File tmpLogFile = File.createTempFile("log4j" + "." + getName(), ".xml");
         tmpLogFile.deleteOnExit();
-        FileUtils.copy(_logConfigFile, tmpLogFile);
-
-        _logConfigFile = tmpLogFile;
+        FileUtils.copy(getBrokerCommandLog4JFile(), tmpLogFile);
+        setBrokerCommandLog4JFile(tmpLogFile);
 
         super.setUp();
         _jmxUtils.open();
@@ -105,7 +104,7 @@ public class LoggingManagementTest extends QpidBrokerTestCase
         _monitor.markDiscardPoint();
         _loggingManagement.setRuntimeLoggerLevel(logger, "OFF");
 
-        List<String> matches = _monitor.findMatches("Setting level to OFF for logger 'org.apache.qpid'");
+        List<String> matches = _monitor.waitAndFindMatches("Setting level to OFF for logger 'org.apache.qpid'", 5000);
         assertEquals(1, matches.size());
 
         TabularData table = _loggingManagement.viewEffectiveRuntimeLoggerLevels();
@@ -121,7 +120,7 @@ public class LoggingManagementTest extends QpidBrokerTestCase
         _monitor.markDiscardPoint();
         _loggingManagement.setConfigFileLoggerLevel(operationalLoggingLogger, "OFF");
 
-        List<String> matches = _monitor.findMatches("Setting level to OFF for logger 'qpid.message'");
+        List<String> matches = _monitor.waitAndFindMatches("Setting level to OFF for logger 'qpid.message'", 5000);
         assertEquals(1, matches.size());
 
         assertEffectiveLoggingLevel(operationalLoggingLogger, "INFO");
