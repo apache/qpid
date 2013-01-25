@@ -1534,7 +1534,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             else
             {
                 ByteBuffer buf = ByteBuffer.allocate(size);
-                getContent(offsetInMessage, buf);
+                int length = getContent(offsetInMessage, buf);
+                buf.limit(length);
                 buf.position(0);
                 return  buf;
             }
