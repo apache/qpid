@@ -85,7 +85,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final String GUEST_PASSWORD = "guest";
 
     protected final static String QpidHome = System.getProperty("QPID_HOME");
-    protected final File _configFile = new File(System.getProperty("broker.config"));
+    private final File _configFile = new File(System.getProperty("broker.config"));
     protected File _logConfigFile = new File(System.getProperty("log4j.configuration"));
     protected final String _brokerStoreType = System.getProperty("broker.config-store-type", "json");
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
@@ -576,7 +576,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         return file.replace(System.getProperty(QPID_HOME,"QPID_HOME") + "/","");
     }
 
-    private String relativeToWorkingDirectory(String file)
+    protected String getPathRelativeToWorkingDirectory(String file)
     {
         File configLocation = new File(file);
         File workingDirectory = new File(System.getProperty("user.dir"));
@@ -587,7 +587,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         // Specify the test config file
         String testConfig = getTestConfigFile(port);
-        String relative = relativeToWorkingDirectory(testConfig);
+        String relative = getPathRelativeToWorkingDirectory(testConfig);
         _logger.info("Saving test broker configuration at: " + testConfig);
 
         testConfiguration.save(new File(testConfig));

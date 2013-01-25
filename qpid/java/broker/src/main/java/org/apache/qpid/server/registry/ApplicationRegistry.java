@@ -102,6 +102,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         BrokerActor actor = new BrokerActor(startupMessageLogger);
         CurrentActor.set(actor);
         CurrentActor.setDefault(actor);
+        GenericActor.setDefaultMessageLogger(_rootMessageLogger);
         try
         {
             logStartupMessages(CurrentActor.get());
@@ -125,7 +126,6 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
 
         CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
-        GenericActor.setDefaultMessageLogger(_rootMessageLogger);
     }
 
     private void initialiseStatisticsReporting()

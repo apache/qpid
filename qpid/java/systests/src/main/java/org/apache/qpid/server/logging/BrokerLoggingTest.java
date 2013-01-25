@@ -101,7 +101,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             _monitor = new LogMonitor(_outputFile);
 
 
-            String configFilePath = _configFile.toString();
+            String configFilePath = getConfigPath();
 
             // Ensure we wait for TESTID to be logged
             waitAndFindMatches(TESTID);
@@ -135,6 +135,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 throw afe;
             }
         }
+    }
+
+    private String getConfigPath()
+    {
+        return getPathRelativeToWorkingDirectory(getTestConfigFile(DEFAULT_PORT));
     }
 
     /**
@@ -251,7 +256,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
         if (isJavaBroker() && isExternalBroker())
         {
             // Get custom -l value used during testing for the broker startup
-            String customLog4j = _brokerCommand.substring(_brokerCommand.indexOf("-l") + 2).trim();
+            String brokerCommand = getBrokerCommand(DEFAULT_PORT, "");
+            String customLog4j = brokerCommand.substring(brokerCommand.indexOf("-l") + 2).trim();
 
             String TESTID = "BRK-1007";
 
