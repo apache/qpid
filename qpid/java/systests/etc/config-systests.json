@@ -19,7 +19,6 @@
  *
  */
 {
-  "type" : "Broker",
   "name": "QpidBroker",
   "defaultAuthenticationProvider" : "plain",
   "defaultVirtualHost" : "test",
@@ -28,44 +27,36 @@
   "trustStorePath": "${QPID_HOME}/../test-profiles/test_resources/ssl/java_client_truststore.jks",
   "trustStorePassword": "password",
   "authenticationproviders" : [ {
-    "type" : "AuthenticationProvider",
     "name" : "plain",
     "authenticationProviderType" : "PlainPasswordFileAuthenticationProvider",
     "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [  {
-    "type" : "Port",
     "name" : "amqp",
     "port" : "${test.port}"
   }, {
-    "type" : "Port",
     "name" : "http",
     "port" : "${test.hport}",
     "protocols" : [ "HTTP" ]
   }, {
-    "type" : "Port",
     "name" : "rmi",
     "port" : "${test.mport}",
     "protocols" : [ "RMI" ]
   }, {
-    "type" : "Port",
     "name" : "jmx",
     "port" : "${test.cport}",
     "protocols" : [ "JMX_RMI" ]
   }],
   "virtualhosts" : [ {
-    "type" : "VirtualHost",
     "name" : "test",
     "configPath" : "${broker.virtualhosts-config}"
   } ]
   /*
 ,
   "plugins" : [ {
-    "type" : "Plugin",
     "pluginType" : "MANAGEMENT-HTTP",
     "name" : "httpManagement"
   }, {
-    "type" : "Plugin",
     "pluginType" : "MANAGEMENT-JMX",
     "name" : "jmxManagement"
   } ]

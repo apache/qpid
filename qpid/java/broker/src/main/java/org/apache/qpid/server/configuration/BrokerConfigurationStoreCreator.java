@@ -29,7 +29,7 @@ public class BrokerConfigurationStoreCreator
     /**
      * Path to resource containing broker default configuration
      */
-    public static final String INITIAL_STORE_LOCATION = "default.json";
+    public static final String INITIAL_STORE_LOCATION = "initial-store.json";
 
     /**
      * Create broker configuration store for given store location, store type

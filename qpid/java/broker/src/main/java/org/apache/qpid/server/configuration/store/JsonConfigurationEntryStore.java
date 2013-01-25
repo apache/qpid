@@ -24,6 +24,8 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.Strings;
@@ -38,17 +40,16 @@ import org.codehaus.jackson.node.ArrayNode;
 
 public class JsonConfigurationEntryStore implements ConfigurationEntryStore
 {
-    private static final String DEFAULT_BROKER_TYPE = Broker.class.getSimpleName();
     private static final String DEFAULT_BROKER_NAME = "Broker";
     private static final String ID = "id";
-    private static final String TYPE = "type";
+    private static final String TYPE = "@type";
 
     private ObjectMapper _objectMapper;
     private Map<UUID, ConfigurationEntry> _entries;
     private File _storeFile;
     private UUID _rootId;
     private String _initialStoreLocation;
-
+    private Map<String, Class<? extends ConfiguredObject>> _relationshipClasses;
 
     public JsonConfigurationEntryStore()
     {
@@ -62,6 +63,21 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         _entries = new HashMap<UUID, ConfigurationEntry>();
+        _relationshipClasses = buildRelationshipClassMap();
+    }
+
+    private Map<String, Class<? extends ConfiguredObject>> buildRelationshipClassMap()
+    {
+        Map<String, Class<? extends ConfiguredObject>> relationships = new HashMap<String, Class<? extends ConfiguredObject>>();
+
+        Collection<Class<? extends ConfiguredObject>> children = Model.getInstance().getChildTypes(Broker.class);
+        for (Class<? extends ConfiguredObject> childClass : children)
+        {
+            String name = childClass.getSimpleName().toLowerCase();
+            String relationshipName = name + (name.endsWith("s") ? "es" : "s");
+            relationships.put(relationshipName, childClass);
+        }
+       return relationships;
     }
 
     public void load(URL storeURL)
@@ -71,7 +87,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
             throw new IllegalStateException("Cannot load the store from");
         }
         JsonNode node = load(storeURL, _objectMapper);
-        ConfigurationEntry brokerEntry = toEntry(node, true, _entries);
+        ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
         _rootId = brokerEntry.getId();
     }
 
@@ -309,7 +325,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return root;
     }
 
-    private ConfigurationEntry toEntry(JsonNode parent, boolean isRoot, Map<UUID, ConfigurationEntry> entries)
+    private ConfigurationEntry toEntry(JsonNode parent, Class<? extends ConfiguredObject> expectedConfiguredObjectClass, Map<UUID, ConfigurationEntry> entries)
     {
         Map<String, Object> attributes = null;
         Set<UUID> childrenIds = new TreeSet<UUID>();
@@ -338,8 +354,9 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
                     JsonNode element = elements.next();
                     if (element.isObject())
                     {
+                        Class<? extends ConfiguredObject> expectedChildConfiguredObjectClass = _relationshipClasses.get(fieldName);
                         // assuming it is a child node
-                        ConfigurationEntry entry = toEntry(element, false, entries);
+                        ConfigurationEntry entry = toEntry(element, expectedChildConfiguredObjectClass, entries);
                         childrenIds.add(entry.getId());
                     }
                     else
@@ -375,13 +392,13 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
 
         if (type == null)
         {
-            if (isRoot)
+            if (expectedConfiguredObjectClass == null)
             {
-                type = DEFAULT_BROKER_TYPE;
+                throw new IllegalConfigurationException("Type attribute is not provided for configuration entry " + parent);
             }
             else
             {
-                throw new IllegalConfigurationException("Type attribute is not provided for configuration entry " + parent);
+                type = expectedConfiguredObjectClass.getSimpleName();
             }
         }
         String name = null;
@@ -391,7 +408,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         }
         if ((name == null || "".equals(name)))
         {
-            if (isRoot)
+            if (expectedConfiguredObjectClass == Broker.class)
             {
                 name = DEFAULT_BROKER_NAME;
             }
@@ -403,7 +420,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         UUID id = null;
         if (idAsString == null)
         {
-            if (isRoot)
+            if (expectedConfiguredObjectClass == Broker.class)
             {
                 id = UUIDGenerator.generateRandomUUID();
             }

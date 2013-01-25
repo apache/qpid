@@ -19,48 +19,39 @@
  *
  */
 {
-  "type" : "Broker",
   "name": "QpidBroker",
   "defaultAuthenticationProvider" : "defaultAuthenticationProvider",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
-    "type" : "AuthenticationProvider",
     "name" : "defaultAuthenticationProvider",
     "authenticationProviderType" : "PlainPasswordFileAuthenticationProvider",
     "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [  {
-    "type" : "Port",
     "name" : "5672-AMQP",
     "port" : 5672
   }, {
-    "type" : "Port",
     "name" : "8080-HTTP",
     "port" : 8080,
     "protocols" : [ "HTTP" ]
   }, {
-    "type" : "Port",
     "name" : "8999-RMI",
     "port" : 8999,
     "protocols" : [ "RMI" ]
   }, {
-    "type" : "Port",
     "name" : "9099-JMX_RMI",
     "port" : 9099,
     "protocols" : [ "JMX_RMI" ]
   }],
   "virtualhosts" : [ {
-    "type" : "VirtualHost",
     "name" : "default",
     "storeType" : "DERBY",
     "storePath" : "${QPID_WORK}/store"
   } ],
   "plugins" : [ {
-    "type" : "Plugin",
     "pluginType" : "MANAGEMENT-HTTP",
     "name" : "httpManagement"
   }, {
-    "type" : "Plugin",
     "pluginType" : "MANAGEMENT-JMX",
     "name" : "jmxManagement"
   } ]
