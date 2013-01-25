@@ -210,8 +210,6 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
 
     ive = _args.get(qpidIVE);
     if (ive) {
-        if (broker && broker->isInCluster())
-            throw framing::NotImplementedException("Cannot use Initial Value Exchanges in a cluster");
         QPID_LOG(debug, "Configured exchange " <<  _name  << " with Initial Value");
     }
 }
@@ -225,6 +223,7 @@ Exchange::~Exchange ()
 void Exchange::setAlternate(Exchange::shared_ptr _alternate)
 {
     alternate = _alternate;
+    alternate->incAlternateUsers();
     if (mgmtExchange != 0) {
         if (alternate.get() != 0)
             mgmtExchange->set_altExchange(alternate->GetManagementObject()->getObjectId());

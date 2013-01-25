@@ -661,7 +661,7 @@ public class MessageStoreTest extends QpidTestCase
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
-            }, 0L);
+            });
         }
     }
 

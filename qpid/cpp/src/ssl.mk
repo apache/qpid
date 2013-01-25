@@ -50,7 +50,8 @@ sslconnector_la_SOURCES = \
 
 if HAVE_PROTON
 sslconnector_la_SOURCES += \
-  qpid/messaging/amqp/SslTransport.cpp
+  qpid/messaging/amqp/SslTransport.cpp \
+  qpid/messaging/amqp/SslTransport.h
 endif #HAVE_PROTON
 
 

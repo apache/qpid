@@ -67,10 +67,6 @@ class TimerTask : public RefCounted {
 
     std::string getName() const { return name; }
 
-    // Move the nextFireTime so readyToFire is true.
-    // Used by the cluster, where tasks are fired on cluster events, not on local time.
-    QPID_COMMON_EXTERN void setFired();
-
   protected:
     // Must be overridden with callback
     virtual void fire() = 0;
@@ -99,7 +95,7 @@ class Timer : private Runnable {
 
   protected:
     QPID_COMMON_EXTERN virtual void fire(boost::intrusive_ptr<TimerTask> task);
-    QPID_COMMON_EXTERN virtual void drop(boost::intrusive_ptr<TimerTask> task);
+
     // Allow derived classes to change the late/overran thresholds.
     Duration late;
     Duration overran;

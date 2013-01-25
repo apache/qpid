@@ -60,31 +60,6 @@ bool SystemInfo::getLocalHostname(Address &address) {
 static const string LOCALHOST("127.0.0.1");
 static const string TCP("tcp");
 
-void SystemInfo::getLocalIpAddresses(uint16_t port,
-                                     std::vector<Address> &addrList) {
-    int s = socket(PF_INET, SOCK_STREAM, 0);
-    for (int i=1;;i++) {
-        struct lifreq ifr;
-        ifr.lifr_index = i;
-        if (::ioctl(s, SIOCGIFADDR, &ifr) < 0) {
-            break;
-        }
-        struct sockaddr *sa = static_cast<struct sockaddr *>((void *) &ifr.lifr_addr);
-        if (sa->sa_family != AF_INET) {
-            // TODO: Url parsing currently can't cope with IPv6 addresses, defer for now
-            break;
-        }
-        struct sockaddr_in *sin = static_cast<struct sockaddr_in *>((void *)sa);
-        std::string addr(inet_ntoa(sin->sin_addr));
-        if (addr != LOCALHOST)
-            addrList.push_back(Address(TCP, addr, port));
-    }
-    if (addrList.empty()) {
-        addrList.push_back(Address(TCP, LOCALHOST, port));
-    }
-    close (s);
-}
-
 void SystemInfo::getSystemId(std::string &osName,
                              std::string &nodeName,
                              std::string &release,

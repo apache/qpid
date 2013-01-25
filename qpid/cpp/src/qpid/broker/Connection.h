@@ -55,6 +55,9 @@
 #include <algorithm>
 
 namespace qpid {
+namespace sys {
+class TimerTask;
+}
 namespace broker {
 
 class Broker;
@@ -83,10 +86,7 @@ class Connection : public sys::ConnectionInputHandler,
                const std::string& mgmtId,
                const qpid::sys::SecuritySettings&,
                bool isLink = false,
-               uint64_t objectId = 0,
-               bool shadow=false,
-               bool delayManagement = false,
-               bool authenticated=true);
+               uint64_t objectId = 0);
 
     ~Connection ();
 
@@ -130,7 +130,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     void notifyConnectionForced(const std::string& text);
     void setUserId(const std::string& uid);
-    void raiseConnectEvent();
 
     // credentials for connected client
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
@@ -144,26 +143,13 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
     void restartTimeout();
-    
+
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
             f(*ptr_map_ptr(i));
     }
 
-    void sendClose();
     void setSecureConnection(SecureConnection* secured);
-
-    /** True if this is a shadow connection in a cluster. */
-    bool isShadow() const { return shadow; }
-
-    /** True if this connection is authenticated */
-    bool isAuthenticated() const { return authenticated; }
-
-    // Used by cluster to update connection status
-    sys::AggregateOutput& getOutputTasks() { return outputTasks; }
-
-    /** Cluster delays adding management object in the constructor then calls this. */
-    void addManagementObject();
 
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
     {
@@ -176,9 +162,6 @@ class Connection : public sys::ConnectionInputHandler,
     bool isLink() { return link; }
     void startLinkHeartbeatTimeoutTask();
 
-    // Used by cluster during catch-up, see cluster::OutputInterceptor
-    void doIoCallbacks();
-
     void setClientProperties(const framing::FieldTable& cp) { clientProperties = cp; }
     const framing::FieldTable& getClientProperties() const { return clientProperties; }
 
@@ -188,8 +171,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
-    bool shadow;
-    bool authenticated;
     ConnectionHandler adapter;
     const bool link;
     bool mgmtClosing;
@@ -228,6 +209,7 @@ class Connection : public sys::ConnectionInputHandler,
     OutboundFrameTracker outboundTracker;
 
     void sent(const framing::AMQFrame& f);
+    void doIoCallbacks();
 
   public:
 

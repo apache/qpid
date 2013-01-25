@@ -26,6 +26,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/sys/SecuritySettings.h"
+#include "qpid/sys/Timer.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
@@ -84,15 +85,10 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        std::string& mgmtId_,
                        const qpid::sys::SecuritySettings& external,
                        bool link_,
-                       uint64_t objectId_,
-                       bool shadow_,
-                       bool delayManagement,
-                       bool authenticated_
+                       uint64_t objectId_
 ) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    shadow(shadow_),
-    authenticated(authenticated_),
     adapter(*this, link_),
     link(link_),
     mgmtClosing(false),
@@ -106,11 +102,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
 {
     outboundTracker.wrap(out);
     broker.getConnectionObservers().connection(*this);
-    // In a cluster, allow adding the management object to be delayed.
-    if (!delayManagement) addManagementObject();
-}
-
-void Connection::addManagementObject() {
     assert(agent == 0);
     assert(mgmtObject == 0);
     Manageable* parent = broker.GetVhostObject();
@@ -119,7 +110,6 @@ void Connection::addManagementObject() {
         if (agent != 0) {
             // TODO set last bool true if system connection
             mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false, "AMQP 0-10"));
-            mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId);
         }
         ConnectionState::setUrl(mgmtId);
@@ -136,8 +126,6 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 Connection::~Connection()
 {
     if (mgmtObject != 0) {
-        // In a cluster, Connections destroyed during shutdown are in
-        // a cluster-unsafe context. Don't raise an event in that case.
         if (!link)
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId(), mgmtObject->get_remoteProperties()));
         QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
@@ -185,7 +173,6 @@ bool isMessage(const AMQMethodBody* method)
 
 void Connection::recordFromServer(const framing::AMQFrame& frame)
 {
-    // Don't record management stats in cluster-unsafe contexts
     if (mgmtObject != 0)
     {
         qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
@@ -200,7 +187,6 @@ void Connection::recordFromServer(const framing::AMQFrame& frame)
 
 void Connection::recordFromClient(const framing::AMQFrame& frame)
 {
-    // Don't record management stats in cluster-unsafe contexts
     if (mgmtObject != 0)
     {
         qmf::org::apache::qpid::broker::Connection::PerThreadStats *cStats = mgmtObject->getStatistics();
@@ -277,20 +263,6 @@ void Connection::notifyConnectionForced(const string& text)
 void Connection::setUserId(const string& userId)
 {
     ConnectionState::setUserId(userId);
-    // In a cluster, the cluster code will raise the connect event
-    // when the connection is replicated to the cluster.
-    if (!broker.isInCluster()) raiseConnectEvent();
-}
-
-void Connection::raiseConnectEvent() {
-    if (mgmtObject != 0) {
-        mgmtObject->set_authIdentity(userId);
-        agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId, mgmtObject->get_remoteProperties()));
-    }
-
-    QPID_LOG_CAT(debug, model, "Create connection. user:" << userId
-        << " rhost:" << mgmtId );
-
 }
 
 void Connection::setUserProxyAuth(bool b)
@@ -314,19 +286,6 @@ void Connection::close(connection::CloseCode code, const string& text)
     //make sure we delete dangling pointers from outputTasks before deleting sessions
     outputTasks.removeAll();
     channels.clear();
-    getOutput().close();
-}
-
-// Send a close to the client but keep the channels. Used by cluster.
-void Connection::sendClose() {
-    if (heartbeatTimer)
-        heartbeatTimer->cancel();
-    if (timeoutTimer)
-        timeoutTimer->cancel();
-    if (linkHeartbeatTimer) {
-        linkHeartbeatTimer->cancel();
-    }
-    adapter.close(connection::CLOSE_CODE_NORMAL, "OK");
     getOutput().close();
 }
 
@@ -354,8 +313,6 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
 void Connection::doIoCallbacks() {
     if (!isOpen()) return; // Don't process IO callbacks until we are open.
     ScopedLock<Mutex> l(ioCallbackLock);
-    // Although IO callbacks execute in the connection thread context, they are
-    // not cluster safe because they are queued for execution in non-IO threads.
     while (!ioCallbacks.empty()) {
         boost::function0<void> cb = ioCallbacks.front();
         ioCallbacks.pop();
@@ -488,7 +445,7 @@ void Connection::abort()
 void Connection::setHeartbeatInterval(uint16_t heartbeat)
 {
     setHeartbeat(heartbeat);
-    if (heartbeat > 0 && !isShadow()) {
+    if (heartbeat > 0) {
         if (!heartbeatTimer) {
             heartbeatTimer = new ConnectionHeartbeatTask(heartbeat, timer, *this);
             timer.add(heartbeatTimer);

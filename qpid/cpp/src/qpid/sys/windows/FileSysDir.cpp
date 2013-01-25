@@ -24,6 +24,9 @@
 #include <sys/stat.h>
 #include <direct.h>
 #include <errno.h>
+#include <windows.h>
+#include <strsafe.h>
+
 
 namespace qpid {
 namespace sys {
@@ -48,6 +51,38 @@ void FileSysDir::mkdir(void)
 {
     if (::_mkdir(dirPath.c_str()) == -1)
         throw Exception ("Can't create directory: " + dirPath);
+}
+
+void FileSysDir::forEachFile(Callback cb) const {
+
+    WIN32_FIND_DATAA findFileData;
+    char             szDir[MAX_PATH];
+    size_t           dirPathLength;
+    HANDLE           hFind = INVALID_HANDLE_VALUE;
+
+    // create dirPath+"\*" in szDir
+    StringCchLength (dirPath.c_str(), MAX_PATH, &dirPathLength);
+
+    if (dirPathLength > (MAX_PATH - 3)) {
+        throw Exception ("Directory path is too long: " + dirPath);
+    }
+
+    StringCchCopy(szDir, MAX_PATH, dirPath.c_str());
+    StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+    // Special work for first file
+    hFind = FindFirstFileA(szDir, &findFileData);
+    if (INVALID_HANDLE_VALUE == hFind) {
+        return;
+    }
+
+    // process everything that isn't a directory
+    do {
+        if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            std::string fileName(findFileData.cFileName);
+            cb(fileName);
+        }
+    } while (FindNextFile(hFind, &findFileData) != 0);
 }
 
 }} // namespace qpid::sys

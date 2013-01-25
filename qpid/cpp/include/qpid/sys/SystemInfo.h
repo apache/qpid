@@ -47,12 +47,6 @@ QPID_COMMON_EXTERN long concurrency();
 QPID_COMMON_EXTERN bool getLocalHostname (Address &address);
 
 /**
- * Get the (possibly multiple) local IP addresses of this host
- * using the specified port.
- */
-QPID_COMMON_EXTERN void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
-
-/**
  * Get the names of all the network interfaces connected to
  * this host.
  * @param names Receives the list of interface names

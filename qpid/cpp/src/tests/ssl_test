@@ -193,29 +193,3 @@ echo "Running SSL/TCP mux test on random port $PORT"
 ./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary || error "TCP connection failed!"
 
 stop_brokers
-
-test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
-
-## Test failover in a cluster using SSL only
-source cpg_check.sh
-cpg_enabled || exit 0
-
-PORT1=`pick_port`; ssl_cluster_broker $PORT1
-echo "Running SSL cluster broker on port $PORT1"
-
-PORT2=`pick_port`; ssl_cluster_broker $PORT2
-echo "Running SSL cluster broker on port $PORT2"
-
-# Pipe receive output to uniq to remove duplicates
-./qpid-receive --connection-options "{reconnect:true, reconnect-timeout:5}" --failover-updates -b amqp:ssl:$TEST_HOSTNAME:$PORT1 -a "foo;{create:always}" -f | uniq > ssl_test_receive.tmp &
-./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=one -a "foo;{create:always}"
-
-stop_broker 0 # Kill broker 1 - receiver should fail-over.
-echo "Killed SSL cluster broker on port $PORT1"
-
-./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=two -a "foo;{create:always}" --send-eos 1
-wait				# Wait for qpid-receive
-{ echo one; echo two; } > ssl_test_receive.cmp
-diff  ssl_test_receive.tmp ssl_test_receive.cmp || { echo "Failover failed"; exit 1; }
-rm -f ssl_test_receive.*
-

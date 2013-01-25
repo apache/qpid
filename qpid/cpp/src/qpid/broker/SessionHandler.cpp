@@ -19,8 +19,9 @@
  */
 
 #include "qpid/broker/SessionHandler.h"
-#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>
@@ -34,9 +35,7 @@ using namespace qpid::sys;
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : qpid::amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c),
-      proxy(out),
-      clusterOrderProxy(c.getClusterOrderOutput() ?
-                        new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
+      proxy(out)
 {}
 
 SessionHandler::~SessionHandler() {}
@@ -110,10 +109,7 @@ void SessionHandler::attachAs(const std::string& name)
 {
     SessionId id(connection.getUserId(), name);
     SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
-    // Delay creating management object till attached(). In a cluster,
-    // only the active link broker calls attachAs but all brokers
-    // receive the subsequent attached() call.
-    session.reset(new SessionState(connection.getBroker(), *this, id, config, true));
+    session.reset(new SessionState(connection.getBroker(), *this, id, config));
     sendAttach(false);
 }
 

@@ -26,7 +26,7 @@
 #include <iostream>
 #include <memory>
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/StatefulQueueObserver.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/AtomicValue.h"
@@ -40,6 +40,7 @@ namespace broker {
 
 class Broker;
 class Queue;
+class Message;
 struct QueueSettings;
 
 /**
@@ -49,7 +50,7 @@ struct QueueSettings;
  * passing _either_ level may turn flow control ON, but _both_ must be
  * below level before flow control will be turned OFF.
  */
- class QueueFlowLimit : public StatefulQueueObserver
+ class QueueFlowLimit : public QueueObserver
 {
     static uint64_t defaultMaxSize;
     static uint defaultFlowStopRatio;
@@ -83,10 +84,6 @@ struct QueueSettings;
     /** ignored */
     QPID_BROKER_EXTERN void acquired(const Message&) {};
     QPID_BROKER_EXTERN void requeued(const Message&) {};
-
-    /** for clustering: */
-    QPID_BROKER_EXTERN void getState(qpid::framing::FieldTable&) const;
-    QPID_BROKER_EXTERN void setState(const qpid::framing::FieldTable&);
 
     uint32_t getFlowStopCount() const { return flowStopCount; }
     uint32_t getFlowResumeCount() const { return flowResumeCount; }

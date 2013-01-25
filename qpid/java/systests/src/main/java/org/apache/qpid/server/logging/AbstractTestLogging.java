@@ -122,7 +122,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     }
 
     protected String fromMessage(String log)
-    {
+    {;
         int startSubject = log.indexOf("]") + 1;
         int start = log.indexOf("]", startSubject) + 1;
 

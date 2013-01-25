@@ -66,7 +66,14 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         _futureRecorder = recorder;
     }
 
+    @Override
     public long getTransactionStartTime()
+    {
+        return 0L;
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
     {
         return 0L;
     }
@@ -241,7 +248,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
     {
         Transaction txn = null;
         try

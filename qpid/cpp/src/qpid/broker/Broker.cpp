@@ -20,11 +20,14 @@
  */
 
 #include "qpid/broker/Broker.h"
+
+#include "qpid/broker/AclModule.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/NameGenerator.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
 #include "qpid/broker/SaslAuthenticator.h"
@@ -37,6 +40,7 @@
 #include "qpid/broker/MessageGroupManager.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerConnect.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerCreate.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerDelete.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQuery.h"
@@ -67,6 +71,7 @@
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
@@ -102,6 +107,14 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 
+const std::string empty;
+const std::string amq_direct("amq.direct");
+const std::string amq_topic("amq.topic");
+const std::string amq_fanout("amq.fanout");
+const std::string amq_match("amq.match");
+const std::string qpid_management("qpid.management");
+const std::string knownHostsNone("none");
+
 Broker::Options::Options(const std::string& name) :
     qpid::Options(name),
     noDataDir(0),
@@ -119,6 +132,7 @@ Broker::Options::Options(const std::string& name) :
     queueLimit(100*1048576/*100M default limit*/),
     tcpNoDelay(false),
     requireEncrypted(false),
+    knownHosts(knownHostsNone),
     qmf2Support(true),
     qmf1Support(true),
     queueFlowStopRatio(80),
@@ -177,14 +191,6 @@ Broker::Options::Options(const std::string& name) :
         ;
 }
 
-const std::string empty;
-const std::string amq_direct("amq.direct");
-const std::string amq_topic("amq.topic");
-const std::string amq_fanout("amq.fanout");
-const std::string amq_match("amq.match");
-const std::string qpid_management("qpid.management");
-const std::string knownHostsNone("none");
-
 namespace {
 // Arguments to declare a non-replicated exchange.
 framing::FieldTable noReplicateArgs() {
@@ -196,6 +202,7 @@ framing::FieldTable noReplicateArgs() {
 
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
+    timer(new qpid::sys::Timer),
     config(conf),
     managementAgent(conf.enableMgmt ? new ManagementAgent(conf.qmf1Support,
                                                           conf.qmf2Support)
@@ -207,20 +214,16 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges(this),
     links(this),
     factory(new SecureConnectionFactory(*this)),
-    dtxManager(timer),
+    dtxManager(*timer.get()),
     sessionManager(
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    queueCleaner(queues, &timer),
+    queueCleaner(queues, timer.get()),
     recoveryInProgress(false),
-    recovery(true),
-    inCluster(false),
-    clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
-    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
-    deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
+    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     try {
     if (conf.enableMgmt) {
@@ -289,18 +292,11 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges.declare(empty, DirectExchange::typeName, false, noReplicateArgs());
 
     if (store.get() != 0) {
-        // The cluster plug-in will setRecovery(false) on all but the first
-        // broker to join a cluster.
-        if (getRecovery()) {
-            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, protocolRegistry);
-            recoveryInProgress = true;
-            store->recover(recoverer);
-            recoveryInProgress = false;
-        }
-        else {
-            QPID_LOG(notice, "Cluster recovery: recovered journal data discarded and journal files pushed down");
-            store->truncateInit(true); // save old files in subdir
-        }
+        RecoveryManagerImpl recoverer(
+            queues, exchanges, links, dtxManager, protocolRegistry);
+        recoveryInProgress = true;
+        store->recover(recoverer);
+        recoveryInProgress = false;
     }
 
     //ensure standard exchanges exist (done after recovery from store)
@@ -356,19 +352,11 @@ Broker::Broker(const Broker::Options& conf) :
         }
     }
 
-    if (managementAgent.get()) managementAgent->pluginsInitialized();
-
     if (conf.queueCleanInterval) {
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
     }
 
-    //initialize known broker urls (TODO: add support for urls for other transports (SSL, RDMA)):
-    if (conf.knownHosts.empty()) {
-        boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
-        if (factory) {
-            knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( factory->getPort() ) );
-        }
-    } else if (conf.knownHosts != knownHostsNone) {
+    if (!conf.knownHosts.empty() && conf.knownHosts != knownHostsNone) {
         knownBrokers.push_back(Url(conf.knownHosts));
     }
 
@@ -450,7 +438,7 @@ Broker::~Broker() {
     finalize();                 // Finalize any plugins.
     if (config.auth)
         SaslAuthenticator::fini();
-    timer.stop();
+    timer->stop();
     QPID_LOG(notice, "Shut down");
 }
 
@@ -522,7 +510,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
         QPID_LOG (debug, "Broker::queueMoveMessages()");
-        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter))
+        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter) >= 0)
             status = Manageable::STATUS_OK;
         else
             return Manageable::STATUS_PARAMETER_INVALID;
@@ -1022,39 +1010,29 @@ void Broker::accept() {
 }
 
 void Broker::connect(
+    const std::string& name,
     const std::string& host, const std::string& port, const std::string& transport,
-    boost::function2<void, int, std::string> failed,
-    sys::ConnectionCodec::Factory* f)
+    boost::function2<void, int, std::string> failed)
 {
     boost::shared_ptr<ProtocolFactory> pf = getProtocolFactory(transport);
-    if (pf) pf->connect(poller, host, port, f ? f : factory.get(), failed);
+    if (pf) pf->connect(poller, name, host, port, factory.get(), failed);
     else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
 }
 
-void Broker::connect(
-    const Url& url,
-    boost::function2<void, int, std::string> failed,
-    sys::ConnectionCodec::Factory* f)
-{
-    url.throwIfEmpty();
-    const Address& addr=url[0];
-    connect(addr.host, boost::lexical_cast<std::string>(addr.port), addr.protocol, failed, f);
-}
-
-uint32_t Broker::queueMoveMessages(
+int32_t Broker::queueMoveMessages(
      const std::string& srcQueue,
      const std::string& destQueue,
      uint32_t  qty,
      const Variant::Map& filter)
 {
-  Queue::shared_ptr src_queue = queues.find(srcQueue);
-  if (!src_queue)
-    return 0;
-  Queue::shared_ptr dest_queue = queues.find(destQueue);
-  if (!dest_queue)
-    return 0;
+    Queue::shared_ptr src_queue = queues.find(srcQueue);
+    if (!src_queue)
+        return -1;
+    Queue::shared_ptr dest_queue = queues.find(destQueue);
+    if (!dest_queue)
+        return -1;
 
-  return src_queue->move(dest_queue, qty, &filter);
+    return (int32_t) src_queue->move(dest_queue, qty, &filter);
 }
 
 
@@ -1068,12 +1046,6 @@ Broker::getKnownBrokersImpl()
 
 bool Broker::deferDeliveryImpl(const std::string&, const Message&)
 { return false; }
-
-void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
-    clusterTimer = t;
-    queueCleaner.setTimer(clusterTimer.get());
-    dtxManager.setTimer(*clusterTimer.get());
-}
 
 const std::string Broker::TCP_TRANSPORT("tcp");
 
@@ -1131,6 +1103,10 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
 void Broker::deleteQueue(const std::string& name, const std::string& userId,
                          const std::string& connectionId, QueueFunctor check)
 {
+    QPID_LOG_CAT(debug, model, "Deleting queue. name:" << name
+                 << " user:" << userId
+                 << " rhost:" << connectionId
+    );
     if (acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,NULL)) {
         throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
     }
@@ -1145,11 +1121,6 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
     } else {
         throw framing::NotFoundException(QPID_MSG("Delete failed. No such queue: " << name));
     }
-    QPID_LOG_CAT(debug, model, "Delete queue. name:" << name
-                 << " user:" << userId
-                 << " rhost:" << connectionId
-    );
-
 }
 
 std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
@@ -1196,6 +1167,9 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
 void Broker::deleteExchange(const std::string& name, const std::string& userId,
                            const std::string& connectionId)
 {
+    QPID_LOG_CAT(debug, model, "Deleting exchange. name:" << name
+        << " user:" << userId
+        << " rhost:" << connectionId);
     if (acl) {
         if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
@@ -1206,13 +1180,10 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
     }
     Exchange::shared_ptr exchange(exchanges.get(name));
     if (!exchange) throw framing::NotFoundException(QPID_MSG("Delete failed. No such exchange: " << name));
-    if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
+    if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Cannot delete " << name <<", in use as alternate-exchange."));
     if (exchange->isDurable()) store->destroy(*exchange);
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
     exchanges.destroy(name, connectionId,  userId);
-    QPID_LOG_CAT(debug, model, "Delete exchange. name:" << name
-        << " user:" << userId
-        << " rhost:" << connectionId);
 }
 
 void Broker::bind(const std::string& queueName,

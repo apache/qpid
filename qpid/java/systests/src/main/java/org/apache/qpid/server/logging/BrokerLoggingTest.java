@@ -171,8 +171,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
         {
             String TESTID = "BRK-1007";
 
-            //Remove test Log4j config from the commandline
-            _brokerCommand = _brokerCommand.substring(0, _brokerCommand.indexOf("-l"));
+            _brokerCommandHelper.removeBrokerCommandLog4JFile();
 
             startBroker();
 
@@ -259,9 +258,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
         // This logging startup code only occurs when you run a Java broker
         if (isJavaBroker() && isExternalBroker())
         {
-            // Get custom -l value used during testing for the broker startup
-            String brokerCommand = getBrokerCommand(DEFAULT_PORT, "");
-            String customLog4j = brokerCommand.substring(brokerCommand.indexOf("-l") + 2).trim();
+            String customLog4j = getBrokerCommandLog4JFile().getAbsolutePath();
 
             String TESTID = "BRK-1007";
 

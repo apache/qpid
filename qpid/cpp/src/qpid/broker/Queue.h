@@ -38,7 +38,6 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -56,6 +55,9 @@
 #include <algorithm>
 
 namespace qpid {
+namespace sys {
+class TimerTask;
+}
 namespace broker {
 class Broker;
 class Exchange;
@@ -370,7 +372,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      *
      * The _caller_ must ensure that any messages after pos have been dequeued.
      *
-     * Used by HA/cluster code for queue replication.
+     * Used by HA code for queue replication.
      */
     QPID_BROKER_EXTERN void setPosition(framing::SequenceNumber pos);
 
@@ -401,11 +403,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * Notify queue that recovery has completed.
      */
     QPID_BROKER_EXTERN void recoveryComplete(ExchangeRegistry& exchanges);
-
-    // For cluster update
-    QPID_BROKER_EXTERN QueueListeners& getListeners();
-    QPID_BROKER_EXTERN Messages& getMessages();
-    QPID_BROKER_EXTERN const Messages& getMessages() const;
 
     /**
      * Reserve space in policy for an enqueued message that

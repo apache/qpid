@@ -53,14 +53,14 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
     Broker& b, SessionHandler& h, const SessionId& id,
-    const SessionState::Configuration& config, bool delayManagement)
+    const SessionState::Configuration& config)
     : qpid::SessionState(id, config),
       broker(b), handler(&h),
       semanticState(*this),
       adapter(semanticState),
       asyncCommandCompleter(new AsyncCommandCompleter(this))
 {
-    if (!delayManagement) addManagementObject();
+    addManagementObject();
     attach(h);
 }
 
@@ -333,14 +333,8 @@ void SessionState::readyToSend() {
 Broker& SessionState::getBroker() { return broker; }
 
 // Session resume is not fully implemented so it is useless to set a
-// non-0 timeout. Moreover it creates problems in a cluster because
-// dead sessions are kept and interfere with failover.
+// non-0 timeout.
 void SessionState::setTimeout(uint32_t) { }
-
-framing::AMQP_ClientProxy& SessionState::getClusterOrderProxy() {
-    return handler->getClusterOrderProxy();
-}
-
 
 // Current received command is an execution.sync command.
 // Complete this command only when all preceding commands have completed.

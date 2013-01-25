@@ -902,7 +902,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             {
                 LOGGER.debug("Enqueuing message " + messageId + " on queue "
                         + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + queue.getId()
-                        + " [Transaction" + tx + "]");
+                        + " in transaction " + tx);
             }
             _deliveryDb.put(tx, key, value);
         }
@@ -1056,7 +1056,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("commitTranImpl completed for [Transaction:" + tx + "]");
+                String transactionType = syncCommit ? "synchronous" : "asynchronous";
+                LOGGER.debug("commitTranImpl completed " + transactionType + " transaction " + tx);
             }
         }
         catch (DatabaseException e)
@@ -1078,7 +1079,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("abortTran called for [Transaction:" + tx + "]");
+            LOGGER.debug("abortTran called for transaction " + tx);
         }
 
         try
@@ -1190,7 +1191,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Storing content for message " + messageId + "[Transaction" + tx + "]");
+                LOGGER.debug("Storing content for message " + messageId + " in transaction " + tx);
 
             }
         }
@@ -1215,8 +1216,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("public void storeMetaData(Txn tx = " + tx + ", Long messageId = "
-                       + messageId + ", MessageMetaData messageMetaData = " + messageMetaData + "): called");
+            LOGGER.debug("storeMetaData called for transaction " + tx
+                    + ", messageId " + messageId
+                    + ", messageMetaData " + messageMetaData);
         }
 
         DatabaseEntry key = new DatabaseEntry();
@@ -1230,7 +1232,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             _messageMetaDataDb.put(tx, key, value);
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Storing message metadata for message id " + messageId + "[Transaction" + tx + "]");
+                LOGGER.debug("Storing message metadata for message id " + messageId + " in transaction " + tx);
             }
         }
         catch (DatabaseException e)

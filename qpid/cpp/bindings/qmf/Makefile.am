@@ -19,7 +19,6 @@
 
 if HAVE_SWIG
 
-EXTRA_DIST = qmfengine.i
 SUBDIRS = tests
 
 if HAVE_RUBY_DEVEL

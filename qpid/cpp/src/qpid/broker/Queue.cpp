@@ -45,6 +45,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueueReroute.h"
@@ -237,9 +238,6 @@ void Queue::deliver(Message msg, TxBuffer* txn){
     //'link' for whatever protocol is used; that would let protocol
     //specific stuff be kept out the queue
 
-    // Check for deferred delivery in a cluster.
-    if (broker && broker->deferDelivery(name, msg))
-        return;
     if (broker::amqp_0_10::MessageTransfer::isImmediateDeliveryRequired(msg) && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg, 0);
@@ -1152,6 +1150,7 @@ Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
 void Queue::setAlternateExchange(boost::shared_ptr<Exchange> exchange)
 {
     alternateExchange = exchange;
+    alternateExchange->incAlternateUsers();
     if (mgmtObject) {
         if (exchange.get() != 0)
             mgmtObject->set_altExchange(exchange->GetManagementObject()->getObjectId());
@@ -1201,7 +1200,7 @@ void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue, const std::st
     if (queue->settings.autoDeleteDelay && queue->canAutoDelete()) {
         AbsTime time(now(), Duration(queue->settings.autoDeleteDelay * TIME_SEC));
         queue->autoDeleteTask = boost::intrusive_ptr<qpid::sys::TimerTask>(new AutoDeleteTask(broker, queue, connectionId, userId, time));
-        broker.getClusterTimer().add(queue->autoDeleteTask);
+        broker.getTimer().add(queue->autoDeleteTask);
         QPID_LOG(debug, "Timed auto-delete for " << queue->getName() << " initiated");
     } else {
         tryAutoDeleteImpl(broker, queue, connectionId, userId);
@@ -1430,15 +1429,6 @@ void Queue::observeEnqueue(const Message& m, const Mutex::ScopedLock&)
     }
     mgntEnqStats(m, mgmtObject, brokerMgmtObject);
 }
-
-// Note: accessing listeners outside of lock is dangerous.  Caller must ensure the queue's
-// state is not changed while listeners is referenced.
-QueueListeners& Queue::getListeners() { return listeners; }
-
-// Note: accessing messages outside of lock is dangerous.  Caller must ensure the queue's
-// state is not changed while messages is referenced.
-Messages& Queue::getMessages() { return *messages; }
-const Messages& Queue::getMessages() const { return *messages; }
 
 bool Queue::checkNotDeleted(const Consumer::shared_ptr& c)
 {

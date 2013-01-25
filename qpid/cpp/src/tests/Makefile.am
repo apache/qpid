@@ -108,8 +108,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	TopicExchangeTest.cpp \
 	TxBufferTest.cpp \
 	ConnectionOptions.h \
-	ForkedBroker.h \
-	ForkedBroker.cpp \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
@@ -242,11 +240,6 @@ header_test_INCLUDES=$(PUBLIC_INCLUDES)
 header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 header_test_LDADD=$(lib_client) 
 
-check_PROGRAMS+=failover_soak
-failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
-failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
-failover_soak_LDADD=$(lib_client) $(lib_broker)
-
 check_PROGRAMS+=declare_queues
 declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
 declare_queues_SOURCES=declare_queues.cpp  
@@ -319,7 +312,6 @@ EXTRA_DIST +=								\
   ssl_test								\
   ping_broker								\
   config.null								\
-  cpg_check.sh.in							\
   run_federation_tests							\
   run_federation_sys_tests                  \
   run_long_federation_sys_tests             \
@@ -352,6 +344,7 @@ EXTRA_DIST +=								\
   run_ha_tests								\
   ha_test.py								\
   ha_tests.py								\
+  brokertest.py								\
   ha_store_tests.py							\
   test_env.ps1.in
 
@@ -375,8 +368,6 @@ EXTRA_DIST+=						\
 	shared_perftest					\
 	multiq_perftest					\
 	topic_perftest					\
-	run_failover_soak				\
-	federated_cluster_test_with_node_failure        \
 	sasl_test_setup.sh                              \
 	run_msg_group_tests_soak			\
 	qpidd-empty.conf

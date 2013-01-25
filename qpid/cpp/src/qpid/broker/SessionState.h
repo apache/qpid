@@ -41,6 +41,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 
+#include <queue>
 #include <set>
 #include <vector>
 #include <ostream>
@@ -73,7 +74,7 @@ class SessionState : public qpid::SessionState,
 {
   public:
     SessionState(Broker&, SessionHandler&, const SessionId&,
-                 const SessionState::Configuration&, bool delayManagement=false);
+                 const SessionState::Configuration&);
     ~SessionState();
     bool isAttached() const { return handler; }
 
@@ -116,11 +117,6 @@ class SessionState : public qpid::SessionState,
 
     void readyToSend();
 
-    // Used by cluster to create replica sessions.
-    SemanticState& getSemanticState() { return semanticState; }
-    boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> getMessageInProgress() { return msgBuilder.getMessage(); }
-    SessionAdapter& getSessionAdapter() { return adapter; }
-
     const SessionId& getSessionId() const { return getId(); }
 
     // Used by ExecutionHandler sync command processing.  Notifies
@@ -152,15 +148,6 @@ class SessionState : public qpid::SessionState,
     void handleOutLast(framing::AMQFrame& frame);
 
     void sendAcceptAndCompletion();
-
-    /**
-     * If commands are sent based on the local time (e.g. in timers), they don't have
-     * a well-defined ordering across cluster nodes.
-     * This proxy is for sending such commands. In a clustered broker it will take steps
-     * to synchronize command order across the cluster. In a stand-alone broker
-     * it is just a synonym for getProxy()
-     */
-    framing::AMQP_ClientProxy& getClusterOrderProxy();
 
     Broker& broker;
     SessionHandler* handler;

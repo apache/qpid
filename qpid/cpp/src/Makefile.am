@@ -138,7 +138,6 @@ qpidtest_SCRIPTS =
 tmoduleexecdir = $(libdir)/qpid/tests
 tmoduleexec_LTLIBRARIES=
 
-AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
 BROKER_CXXFLAGS = -D_IN_QPID_BROKER
 
 ## Automake macros to build libraries and executables.
@@ -299,6 +298,7 @@ EXTRA_DIST +=\
   amqp.cmake \
   rdma.cmake \
   ssl.cmake \
+  legacystore.cmake \
   managementgen.cmake \
   rubygen.cmake \
   versions.cmake \
@@ -338,7 +338,6 @@ EXTRA_DIST +=\
 libqpidcommon_la_LIBADD = \
   libqpidtypes.la \
   -lboost_program_options \
-  -lboost_filesystem \
   -luuid \
   -lpthread \
   $(LIB_DLOPEN) \
@@ -582,6 +581,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionHandler.h \
+  qpid/broker/ConnectionState.cpp \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionToken.h \
   qpid/broker/Consumer.h \
@@ -727,7 +727,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionState.h \
   qpid/broker/SignalHandler.cpp \
   qpid/broker/SignalHandler.h \
-  qpid/broker/StatefulQueueObserver.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
   qpid/broker/ThresholdAlerts.cpp \

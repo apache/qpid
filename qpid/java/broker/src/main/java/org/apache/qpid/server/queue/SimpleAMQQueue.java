@@ -1397,7 +1397,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                                         {
 
                                         }
-                                    }, 0L);
+                                    });
                         txn.dequeue(this, entry.getMessage(),
                                     new ServerTransaction.Action()
                                     {

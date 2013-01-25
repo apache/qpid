@@ -55,9 +55,11 @@
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
+
   <property name="module.src.resources" location="src/main/resources"/>
   <property name="module.src.resources.metainf" location="${module.src.resources}/META-INF"/>
-  <property name="module.metainf" location="${module.build}/META-INF"/>
+  <property name="module.resources.dir" location="resources/"/>
+  <property name="module.metainf"      location="${module.build}/META-INF"/>
 
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>
@@ -89,6 +91,7 @@
   <available property="module.src.resources.exists" file="${module.src.resources}"/>
   <available property="module.test.src.resources.exists" file="${module.test.resources}"/>
   <available property="module.src.resources.metainf.exists" file="${module.src.resources.metainf}"/>
+  <available property="module.resources.dir.exists" file="${module.resources.dir}"/>
 
   <property name="module.source.jar"
             location="${build.lib}/${project.name}-${module.name}-${project.version}-sources.jar"/>
@@ -241,7 +244,7 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
-    <mkdir dir="${build.lib.broker.plugins}"/>
+    <mkdir dir="${build.scratch.broker.plugins.lib}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
@@ -369,9 +372,8 @@
   <map property="_profile_files" value="${profiles}" join=" ">
     <globmapper from="*" to="*.testprofile"/>
   </map>
-  
-  <delete file="${build.scratch}/test-${profile}.properties" quiet="true"/>
-  <concat destfile="${build.scratch}/test-${profile}.properties" force="no" fixlastline="yes">
+
+  <concat destfile="${build.scratch}/test-${profile}.properties" force="yes" append="no" fixlastline="yes">
     <filelist dir="${test.profiles}" files="testprofile.defaults"/>
     <filelist dir="${test.profiles}" files="${_profile_files}"/>
   </concat>
@@ -406,6 +408,7 @@
 
     <propertyref name="log4j.debug"/>
     <propertyref name="log4j.configuration"/>
+    <propertyref name="log4j.configuration.file"/>
 
     <propertyref name="root.logging.level"/>
     <propertyref name="java.naming.factory.initial"/>
@@ -502,25 +505,27 @@
 
   <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild,copy-broker-plugin-jars" description="compile and copy resources into build tree"/>
 
-  <target name="jar.manifest" depends="compile, copy-resources, copy-module-metainf" if="module.manifest">
+  <target name="jar.manifest" depends="compile,copy-resources,copy-files-to-module-metainf" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}">
        <metainf dir="${module.metainf}" />
     </jar>
   </target>
 
-  <target name="jar.nomanifest" depends="compile, copy-resources, copy-module-metainf" unless="module.manifest">
+  <target name="jar.nomanifest" depends="compile,copy-resources,copy-files-to-module-metainf" unless="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}">
        <metainf dir="${module.metainf}" />
     </jar>
   </target>
 
-  <target name="copy-broker-plugin-jars" if="${broker.plugin}" description="copy broker plugins for use in release packaging">
-    <copy file="${module.jar}" todir="${build.lib.broker.plugins}" failonerror="true"/>
+  <target name="copy-broker-plugin-jars" if="broker.plugin" description="copy broker plugins for use in release packaging">
+    <copy file="${module.jar}" todir="${build.scratch.broker.plugins.lib}" failonerror="true"/>
   </target>
 
-  <target name="copy-module-metainf" depends="copy-metainf-resources" if="module.src.resources.metainf.exists">
+  <target name="copy-files-to-module-metainf" depends="copy-project-resources-metainf, copy-module-resources-metainf, copy-module-src-resources-metainf"/>
+
+  <target name="copy-project-resources-metainf">
     <copy todir="${module.metainf}" failonerror="true">
-        <fileset dir="${module.src.resources.metainf}"/>
+        <fileset dir="${project.root}/resources/"/>
     </copy>
   </target>
 
@@ -531,12 +536,15 @@
       </copy>
   </target>
 
-  <target name="copy-metainf-resources">
-    <copy todir="${module.metainf}" failonerror="true">
-        <fileset dir="${project.root}/resources/"/>
-    </copy>
+  <target name="copy-module-resources-metainf" if="module.resources.dir.exists">
     <copy todir="${module.metainf}" failonerror="false" overwrite="true">
-        <fileset dir="resources/"/>
+        <fileset dir="${module.resources.dir}"/>
+    </copy>
+  </target>
+
+  <target name="copy-module-src-resources-metainf" if="module.src.resources.metainf.exists">
+    <copy todir="${module.metainf}" failonerror="true">
+        <fileset dir="${module.src.resources.metainf}"/>
     </copy>
   </target>
 
@@ -809,7 +817,8 @@ qpid.name=${project.name}
 
    -->
 
-    <property name="gentools.home" location="${project.root}/../gentools" />
+    <property name="gentools.home" location="${project.root}/common/gentools" />
+    <property name="gentools.build" location="${build.scratch}/common/gentools" />
     <property name="generated.dir" location="${module.precompiled}" />
     <property name="velocity.compile.dir" value="${build.scratch}/broker/velocity"/>
     <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
@@ -822,7 +831,7 @@ qpid.name=${project.name}
                deprecation="${javac.deprecation}"
                srcdir="${project.root}/broker/src/velocity/java" >
           <classpath>
-            <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+            <pathelement path="${project.root}/${velocity.jar}" />
           </classpath>
           <compilerarg line="${javac.compiler.args}"/>
         </javac>
@@ -852,7 +861,7 @@ qpid.name=${project.name}
 
       <echo message="logmessages is ${logmessages}"/>
 
-      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
+      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.build}/classes" failonerror="true">
         <arg line="'${logmessages}'"/>
           <arg value="-j"/>
           <arg value="-o"/>
@@ -869,7 +878,7 @@ qpid.name=${project.name}
           <fileset dir="${project.root}/lib/required">
             <include name="**/*.jar"/>
           </fileset>
-          <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+          <pathelement path="${project.root}/${velocity.jar}" />
         </classpath>
       </java>
       <touch file="${velocity.timestamp}" />

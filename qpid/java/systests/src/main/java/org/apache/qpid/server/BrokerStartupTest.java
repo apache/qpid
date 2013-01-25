@@ -30,6 +30,7 @@ import org.apache.qpid.util.LogMonitor;
 import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -72,10 +73,7 @@ public class BrokerStartupTest extends AbstractTestLogging
         if (isJavaBroker() && isExternalBroker() && !isInternalBroker())
         {
             //Remove test Log4j config from the commandline
-            _brokerCommand = _brokerCommand.substring(0, _brokerCommand.indexOf("-l"));
-
-            // Add an invalid value
-            _brokerCommand += " -l invalid";
+            setBrokerCommandLog4JFile(new File("invalid file"));
 
             // The  broker has a built in default log4j configuration set up
             // so if the the broker cannot load the -l value it will use default

@@ -208,6 +208,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
+                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
@@ -305,9 +306,9 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # Boost.system is sometimes needed; it's handled separately, below.
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components filesystem program_options date_time thread unit_test_framework regex)
+  set (Boost_components program_options date_time thread unit_test_framework regex)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components filesystem program_options unit_test_framework)
+  set (Boost_components program_options unit_test_framework)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # Visual Studio 2010 requires boost 1.45 or better.
@@ -315,7 +316,10 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # where Boost 1.45 is supported, or we can just accept some versions using
 # the Additional_versions variable.
 if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
-  set (Boost_ADDITIONAL_VERSIONS "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0")
+  set (Boost_ADDITIONAL_VERSIONS 
+        "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0"
+        "1.48" "1.48.0" "1.49" "1.49.0" "1.50" "1.50.0"
+        "1.51" "1.51.0" "1.52" "1.52.0")
 endif (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 
 find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
@@ -339,10 +343,6 @@ endif (Boost_VERSION GREATER 103499)
 if (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
   set(Boost_PROGRAM_OPTIONS_LIBRARY boost_program_options)
 endif (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
-
-if (NOT Boost_FILESYSTEM_LIBRARY)
-  set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
-endif (NOT Boost_FILESYSTEM_LIBRARY)
 
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
@@ -369,7 +369,6 @@ option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
-            ${Boost_FILESYSTEM_LIBRARY_DEBUG} ${Boost_FILESYSTEM_LIBRARY_RELEASE}
             ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG} ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
             ${Boost_REGEX_LIBRARY_DEBUG} ${Boost_REGEX_LIBRARY_RELEASE}
             ${Boost_THREAD_LIBRARY_DEBUG} ${Boost_THREAD_LIBRARY_RELEASE}
@@ -389,10 +388,6 @@ if (MSVC)
               _boost_date_time_debug ${Boost_DATE_TIME_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
               _boost_date_time_release ${Boost_DATE_TIME_LIBRARY_RELEASE})
-      string (REPLACE .lib .dll
-              _boost_filesystem_debug ${Boost_FILESYSTEM_LIBRARY_DEBUG})
-      string (REPLACE .lib .dll
-              _boost_filesystem_release ${Boost_FILESYSTEM_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
               _boost_program_options_debug ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
@@ -416,7 +411,6 @@ if (MSVC)
       endif (NOT Boost_VERSION LESS 103500)
       install (PROGRAMS
                ${_boost_date_time_debug} ${_boost_date_time_release}
-               ${_boost_filesystem_debug} ${_boost_filesystem_release}
                ${_boost_program_options_debug} ${_boost_program_options_release}
                ${_boost_regex_debug} ${_boost_regex_release}
                ${_boost_system_debug} ${_boost_system_release}
@@ -465,7 +459,6 @@ if (MSVC)
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
    set(Boost_PROGRAM_OPTIONS_LIBRARY "")
-   set(Boost_FILESYSTEM_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
    set(Boost_REGEX_LIBRARY "")
    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/windows/resources )
@@ -767,7 +760,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
+    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
@@ -871,7 +864,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
   set (qpidcommon_platform_LIBS
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_FILESYSTEM_LIBRARY}
     ${CMAKE_DL_LIBS}
   )
 
@@ -1069,16 +1061,9 @@ install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 set (qpidmessaging_SOURCES_hidden
      qpid/messaging/AddressParser.h
      qpid/messaging/ConnectionImpl.h
-     qpid/messaging/ConnectionOptions.h
-     qpid/messaging/ConnectionOptions.cpp
-     qpid/messaging/MessageImpl.h
-     qpid/messaging/MessageImpl.cpp
-     qpid/messaging/ProtocolRegistry.cpp
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/SessionImpl.h
      qpid/messaging/SenderImpl.h
-     qpid/messaging/amqp/EncodedMessage.h
-     qpid/messaging/amqp/EncodedMessage.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h
@@ -1116,6 +1101,14 @@ set (qpidmessaging_SOURCES
      qpid/messaging/Receiver.cpp
      qpid/messaging/Session.cpp
      qpid/messaging/Sender.cpp
+     #functions from the following are not in the public interface but are used by the AMQP 1.0 client module
+     qpid/messaging/ConnectionOptions.h
+     qpid/messaging/ConnectionOptions.cpp
+     qpid/messaging/MessageImpl.h
+     qpid/messaging/MessageImpl.cpp
+     qpid/messaging/ProtocolRegistry.cpp
+     qpid/messaging/amqp/EncodedMessage.h
+     qpid/messaging/amqp/EncodedMessage.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
@@ -1175,6 +1168,7 @@ set (qpidbroker_SOURCES
      qpid/broker/Bridge.cpp
      qpid/broker/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
+     qpid/broker/ConnectionState.cpp
      qpid/broker/DeliverableMessage.cpp
      qpid/broker/DeliveryRecord.cpp
      qpid/broker/DirectExchange.cpp
@@ -1252,8 +1246,7 @@ set (qpidd_SOURCES
 )
 add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
-target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                          ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
 set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 install (TARGETS qpidd RUNTIME
          DESTINATION ${QPID_INSTALL_SBINDIR}
@@ -1476,12 +1469,15 @@ install (FILES ${qmfconsole_HEADERS}
 install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 
 
+#
+# Legacy store
+#
+include (legacystore.cmake)
+
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h
 # file whereas older builds only have config.h on autoconf-generated builds.
 add_definitions(-DHAVE_CONFIG_H)
-
-add_definitions(-DBOOST_FILESYSTEM_VERSION=2)
 
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake

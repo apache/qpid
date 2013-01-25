@@ -45,8 +45,9 @@ using framing::FieldTable;
 
 BrokerInfo::BrokerInfo() : port(0), status(JOINING) {}
 
-BrokerInfo::BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
-    hostName(host), port(port_), systemId(id), status(JOINING)
+BrokerInfo::BrokerInfo(const types::Uuid& id, BrokerStatus s,
+                       const std::string& host, uint16_t port_) :
+    hostName(host), port(port_), systemId(id), status(s)
 {
     updateLogId();
 }

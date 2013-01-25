@@ -33,7 +33,12 @@ amqj.logging.level=${log}
 amqj.server.logging.level=${log}
 amqj.protocol.logging.level=${log}
 root.logging.level=warn
-log4j.configuration=test-profiles/log4j-test.xml
+
+# System property log4j.configuration is used by log4j.
+# QpidBrokerTestCase uses log4j.configuration.file to construct a java.io.File, eg for log configuration of spawned brokers.
+log4j.configuration.file=${test.profiles}/log4j-test.xml
+log4j.configuration=file:///${log4j.configuration.file}
+
 log4j.debug=false
 
 # Note test-provider.properties also has variables of same name.

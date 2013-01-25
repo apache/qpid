@@ -140,7 +140,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(false);
         _queues = createTestBaseQueues(new boolean[] {false, false, false});
         
-        _transaction.enqueue(_queues, _message, _action1, 0L);
+        _transaction.enqueue(_queues, _message, _action1);
 
         assertEquals("Enqueue of non-persistent message must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -156,7 +156,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queues = createTestBaseQueues(new boolean[] {false, false, false});
         
-        _transaction.enqueue(_queues, _message, _action1, 0L);
+        _transaction.enqueue(_queues, _message, _action1);
   
         assertEquals("Enqueue of persistent message to non-durable queues must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -173,7 +173,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queues = createTestBaseQueues(new boolean[] {false, true, false, true});
         
-        _transaction.enqueue(_queues, _message, _action1, 0L);
+        _transaction.enqueue(_queues, _message, _action1);
 
         assertEquals("Enqueue of persistent message to durable/non-durable queues must cause messages to be enqueued", 2, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.STARTED, _storeTransaction.getState());
@@ -196,7 +196,7 @@ public class LocalTransactionTest extends QpidTestCase
         
         try
         {
-            _transaction.enqueue(_queues, _message, _action1, 0L);
+            _transaction.enqueue(_queues, _message, _action1);
             fail("Exception not thrown");
         }
         catch (RuntimeException re)
@@ -217,7 +217,7 @@ public class LocalTransactionTest extends QpidTestCase
     {
         _message = createTestMessage(false);
         _queue = createTestAMQQueue(false);
-        
+
         _transaction.dequeue(_queue, _message, _action1);
 
         assertEquals("Dequeue of non-persistent message must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
@@ -465,7 +465,6 @@ public class LocalTransactionTest extends QpidTestCase
      */
     public void testRollbackWorkWithAdditionalPostAction() throws Exception
     {
-        
         _message = createTestMessage(true);
         _queue = createTestAMQQueue(true);
         
@@ -480,6 +479,122 @@ public class LocalTransactionTest extends QpidTestCase
         
         assertTrue("Rollback action1 must be fired", _action1.isRollbackActionFired());
         assertTrue("Rollback action2 must be fired", _action1.isRollbackActionFired());
+    }
+
+    public void testFirstEnqueueRecordsTransactionStartAndUpdateTime() throws Exception
+    {
+        assertEquals("Unexpected transaction start time before test", 0, _transaction.getTransactionStartTime());
+        assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
+
+        _message = createTestMessage(true);
+        _queue = createTestAMQQueue(true);
+
+        long startTime = System.currentTimeMillis();
+        _transaction.enqueue(_queue, _message, _action1);
+
+        assertTrue("Transaction start time should have been recorded", _transaction.getTransactionStartTime() >= startTime);
+        assertEquals("Transaction update time should be the same as transaction start time", _transaction.getTransactionStartTime(), _transaction.getTransactionUpdateTime());
+    }
+
+    public void testSubsequentEnqueueAdvancesTransactionUpdateTimeOnly() throws Exception
+    {
+        assertEquals("Unexpected transaction start time before test", 0, _transaction.getTransactionStartTime());
+        assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
+
+        _message = createTestMessage(true);
+        _queue = createTestAMQQueue(true);
+
+        _transaction.enqueue(_queue, _message, _action1);
+
+        final long transactionStartTimeAfterFirstEnqueue = _transaction.getTransactionStartTime();
+        final long transactionUpdateTimeAfterFirstEnqueue = _transaction.getTransactionUpdateTime();
+
+        Thread.sleep(1);
+        _transaction.enqueue(_queue, _message, _action2);
+
+        final long transactionStartTimeAfterSecondEnqueue = _transaction.getTransactionStartTime();
+        final long transactionUpdateTimeAfterSecondEnqueue = _transaction.getTransactionUpdateTime();
+
+        assertEquals("Transaction start time after second enqueue should be unchanged", transactionStartTimeAfterFirstEnqueue, transactionStartTimeAfterSecondEnqueue);
+        assertTrue("Transaction update time after second enqueue should be greater than first update time", transactionUpdateTimeAfterSecondEnqueue > transactionUpdateTimeAfterFirstEnqueue);
+    }
+
+    public void testFirstDequeueRecordsTransactionStartAndUpdateTime() throws Exception
+    {
+        assertEquals("Unexpected transaction start time before test", 0, _transaction.getTransactionStartTime());
+        assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
+
+        _message = createTestMessage(true);
+        _queue = createTestAMQQueue(true);
+
+        long startTime = System.currentTimeMillis();
+        _transaction.dequeue(_queue, _message, _action1);
+
+        assertTrue("Transaction start time should have been recorded", _transaction.getTransactionStartTime() >= startTime);
+        assertEquals("Transaction update time should be the same as transaction start time", _transaction.getTransactionStartTime(), _transaction.getTransactionUpdateTime());
+    }
+
+    public void testMixedEnqueuesAndDequeuesAdvancesTransactionUpdateTimeOnly() throws Exception
+    {
+        assertEquals("Unexpected transaction start time before test", 0, _transaction.getTransactionStartTime());
+        assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
+
+        _message = createTestMessage(true);
+        _queue = createTestAMQQueue(true);
+
+        _transaction.enqueue(_queue, _message, _action1);
+
+        final long transactionStartTimeAfterFirstEnqueue = _transaction.getTransactionStartTime();
+        final long transactionUpdateTimeAfterFirstEnqueue = _transaction.getTransactionUpdateTime();
+
+        Thread.sleep(1);
+        _transaction.dequeue(_queue, _message, _action2);
+
+        final long transactionStartTimeAfterFirstDequeue = _transaction.getTransactionStartTime();
+        final long transactionUpdateTimeAfterFirstDequeue = _transaction.getTransactionUpdateTime();
+
+        assertEquals("Transaction start time after first dequeue should be unchanged", transactionStartTimeAfterFirstEnqueue, transactionStartTimeAfterFirstDequeue);
+        assertTrue("Transaction update time after first dequeue should be greater than first update time", transactionUpdateTimeAfterFirstDequeue > transactionUpdateTimeAfterFirstEnqueue);
+    }
+
+    public void testCommitResetsTransactionStartAndUpdateTime() throws Exception
+    {
+        assertEquals("Unexpected transaction start time before test", 0, _transaction.getTransactionStartTime());
+        assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
+
+        _message = createTestMessage(true);
+        _queue = createTestAMQQueue(true);
+
+        long startTime = System.currentTimeMillis();
+        _transaction.enqueue(_queue, _message, _action1);
+
+        assertTrue(_transaction.getTransactionStartTime() >= startTime);
+        assertTrue(_transaction.getTransactionUpdateTime() >= startTime);
+
+        _transaction.commit();
+
+        assertEquals("Transaction start time should be reset after commit", 0, _transaction.getTransactionStartTime());
+        assertEquals("Transaction update time should be reset after commit", 0, _transaction.getTransactionUpdateTime());
+    }
+
+    public void testRollbackResetsTransactionStartAndUpdateTime() throws Exception
+    {
+        assertEquals("Unexpected transaction start time before test", 0, _transaction.getTransactionStartTime());
+        assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
+
+        _message = createTestMessage(true);
+        _queue = createTestAMQQueue(true);
+
+        long startTime = System.currentTimeMillis();
+        _transaction.enqueue(_queue, _message, _action1);
+
+        assertTrue(_transaction.getTransactionStartTime() >= startTime);
+        assertTrue(_transaction.getTransactionUpdateTime() >= startTime);
+
+        _transaction.rollback();
+
+        assertEquals("Transaction start time should be reset after rollback", 0, _transaction.getTransactionStartTime());
+        assertEquals("Transaction update time should be reset after rollback", 0, _transaction.getTransactionUpdateTime());
     }
 
     private Collection<QueueEntry> createTestQueueEntries(boolean[] queueDurableFlags, boolean[] messagePersistentFlags)

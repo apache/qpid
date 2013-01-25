@@ -65,6 +65,8 @@ class QueueGuard;
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 {
   public:
+    typedef broker::SemanticState::ConsumerImpl ConsumerImpl;
+
     struct Factory : public broker::ConsumerFactory {
         boost::shared_ptr<broker::SemanticState::ConsumerImpl> create(
             broker::SemanticState* parent,

@@ -55,10 +55,17 @@ public interface ServerTransaction
 
     /**
      * Return the time the current transaction started.
-     * 
+     *
      * @return the time this transaction started or 0 if not in a transaction
      */
     long getTransactionStartTime();
+
+    /**
+     * Return the time of the last activity on the current transaction.
+     *
+     * @return the time of the last activity or 0 if not in a transaction
+     */
+    long getTransactionUpdateTime();
 
     /** 
      * Register an Action for execution after transaction commit or rollback.  Actions
@@ -92,7 +99,7 @@ public interface ServerTransaction
      * 
      * Store operations will result only for a persistent messages on durable queues.
      */
-    void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime);
+    void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction);
 
     /** 
      * Commit the transaction represented by this object.

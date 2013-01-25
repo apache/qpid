@@ -314,6 +314,7 @@ if (PYTHON_EXECUTABLE)
   add_test (ha_tests ${test_wrap} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ha_tests.py)
   add_test (ipv6_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ipv6_test${test_script_suffix})
   add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
+  add_test (federation_sys_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_sys_tests${test_script_suffix})
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
 endif (BUILD_ACL)
@@ -340,7 +341,12 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 #
 ## Longer running stability tests, not run by default check: target.
 ## Not run under valgrind, too slow
-#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak
+#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest
 #EXTRA_DIST+=$(LONG_TESTS) run_perftest
 #check-long:
 #	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
+
+#
+# legacystore
+#
+add_subdirectory(legacystore)

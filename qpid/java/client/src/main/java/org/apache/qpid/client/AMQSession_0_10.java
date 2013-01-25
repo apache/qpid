@@ -1575,6 +1575,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             getQpidSession().exchangeUnbind(queue, exchange,
                                             binding.getBindingKey());
         }
+    }
+
+    void deleteSubscriptionQueue(AMQDestination dest) throws AMQException
+    {
         // We need to delete the subscription queue.
         if (dest.getAddressType() == AMQDestination.TOPIC_TYPE &&
             dest.getLink().getSubscriptionQueue().isExclusive() &&

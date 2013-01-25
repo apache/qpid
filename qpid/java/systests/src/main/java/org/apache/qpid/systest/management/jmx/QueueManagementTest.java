@@ -580,6 +580,60 @@ public class QueueManagementTest extends QpidBrokerTestCase
         assertMessageIndicesOn(_destinationQueue, 0);
     }
 
+    /**
+     * Tests {@link ManagedQueue#deleteMessages(long, long)} interface.
+     */
+    public void testDeleteMessages() throws Exception
+    {
+        final int numberOfMessagesToSend = 15;
+
+        sendMessage(_session, _sourceQueue, numberOfMessagesToSend);
+        syncSession(_session);
+        assertEquals("Unexpected queue depth after send", numberOfMessagesToSend, _managedSourceQueue.getMessageCount().intValue());
+        List<Long> amqMessagesIds = getAMQMessageIdsOn(_managedSourceQueue, 1, numberOfMessagesToSend);
+        // Current expected queue state, in terms of message header indices: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+
+        // Delete the first message (Remember the amqMessagesIds list, and the message indices added as a property when sending, are both 0-based index)
+        long fromMessageId = amqMessagesIds.get(0);
+        long toMessageId = fromMessageId;
+        _managedSourceQueue.deleteMessages(fromMessageId, toMessageId);
+        assertEquals("Unexpected message count after first deletion", numberOfMessagesToSend - 1, _managedSourceQueue.getMessageCount().intValue());
+        // Current expected queue state, in terms of message header indices: [X,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+
+        // Delete the 9th-10th messages, in the middle of the queue
+        fromMessageId = amqMessagesIds.get(8);
+        toMessageId = amqMessagesIds.get(9);
+        _managedSourceQueue.deleteMessages(fromMessageId, toMessageId);
+        assertEquals("Unexpected message count after third deletion", numberOfMessagesToSend - 3, _managedSourceQueue.getMessageCount().intValue());
+        // Current expected queue state, in terms of message header indices: [X,1,2,3,4,5,6,7,X,X,10,11,12,13,14]
+
+        // Delete the 11th and 12th messages, but still include the IDs for the 9th and 10th messages in the
+        // range to ensure their IDs are 'skipped' until the matching messages are found
+        fromMessageId = amqMessagesIds.get(8);
+        toMessageId = amqMessagesIds.get(11);
+        _managedSourceQueue.deleteMessages(fromMessageId, toMessageId);
+        assertEquals("Unexpected message count after fourth deletion", numberOfMessagesToSend - 5, _managedSourceQueue.getMessageCount().intValue());
+        // Current expected queue state, in terms of message header indices: [X,1,2,3,4,5,6,7,X,X,X,X,12,13,14]
+
+        // Delete the 8th message and the 13th message, including the IDs for the 9th-12th messages in the
+        // range to ensure their IDs are 'skipped' and the other matching message is found
+        fromMessageId = amqMessagesIds.get(7);
+        toMessageId = amqMessagesIds.get(12);
+        _managedSourceQueue.deleteMessages(fromMessageId, toMessageId);
+        assertEquals("Unexpected message count after fourth deletion", numberOfMessagesToSend - 7, _managedSourceQueue.getMessageCount().intValue());
+        // Current expected queue state, in terms of message header indices: [X,1,2,3,4,5,6,X,X,X,X,X,X,13,14]
+
+        // Delete the last message message
+        fromMessageId = amqMessagesIds.get(numberOfMessagesToSend -1);
+        toMessageId = fromMessageId;
+        _managedSourceQueue.deleteMessages(fromMessageId, toMessageId);
+        assertEquals("Unexpected message count after second deletion", numberOfMessagesToSend - 8, _managedSourceQueue.getMessageCount().intValue());
+        // Current expected queue state, in terms of message header indices: [X,1,2,3,4,5,6,X,X,X,X,X,X,13,X]
+
+        // Verify the message indices with a consumer
+        assertMessageIndicesOn(_sourceQueue, 1,2,3,4,5,6,13);
+    }
+
     @Override
     public Message createNextMessage(Session session, int messageNumber) throws JMSException
     {

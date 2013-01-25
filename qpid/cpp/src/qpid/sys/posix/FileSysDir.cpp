@@ -18,6 +18,7 @@
 
 #include "qpid/sys/FileSysDir.h"
 #include "qpid/sys/StrError.h"
+#include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
 
 #include <sys/types.h>
@@ -25,6 +26,8 @@
 #include <fcntl.h>
 #include <cerrno>
 #include <unistd.h>
+#include <dirent.h>
+#include <stdlib.h>
 
 namespace qpid {
 namespace sys {
@@ -49,6 +52,29 @@ void FileSysDir::mkdir(void)
 {
     if (::mkdir(dirPath.c_str(), 0755))
         throw Exception ("Can't create directory: " + dirPath);
+}
+
+void FileSysDir::forEachFile(Callback cb) const {
+
+    ::dirent** namelist;
+
+    int n = scandir(dirPath.c_str(), &namelist, 0, alphasort);
+    if (n == -1) throw Exception (strError(errno) + ": Can't scan directory: " + dirPath);
+
+    for (int i = 0; i<n; ++i) {
+        std::string fullpath = dirPath + "/" + namelist[i]->d_name;
+        // Filter out non files/stat problems etc.
+        struct ::stat s;
+        // Can't throw here without leaking memory, so just do nothing with
+        // entries for which stat() fails.
+        if (!::stat(fullpath.c_str(), &s)) {
+            if (S_ISREG(s.st_mode)) {
+                cb(fullpath);
+            }
+        }
+        ::free(namelist[i]);
+    }
+    ::free(namelist);
 }
 
 }} // namespace qpid::sys

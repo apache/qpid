@@ -20,7 +20,7 @@
 
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math, unittest, random
 import traceback
-from qpid.messaging import Message, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty
+from qpid.messaging import Message, SessionError, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty
 from qpid.datatypes import uuid4
 from brokertest import *
 from ha_test import *
@@ -613,22 +613,24 @@ acl deny all all
         to new members of a cluster. """
         cluster = HaCluster(self, 2)
         s = cluster[0].connect().session()
+        cluster[0].wait_status("active")
+        cluster[1].wait_status("ready")
         # altex exchange: acts as alternate exchange
         s.sender("altex;{create:always,node:{type:topic,x-declare:{type:'fanout'}}}")
         # altq queue bound to altex, collect re-routed messages.
         s.sender("altq;{create:always,node:{x-bindings:[{exchange:'altex',queue:altq}]}}")
-        # 0ex exchange with alternate-exchange altex and no queues bound
-        s.sender("0ex;{create:always,node:{type:topic, x-declare:{type:'direct', alternate-exchange:'altex'}}}")
+        # ex exchange with alternate-exchange altex and no queues bound
+        s.sender("ex;{create:always,node:{type:topic, x-declare:{type:'direct', alternate-exchange:'altex'}}}")
         # create queue q with alternate-exchange altex
         s.sender("q;{create:always,node:{type:queue, x-declare:{alternate-exchange:'altex'}}}")
         # create a bunch of exchanges to ensure we don't clean up prematurely if the
         # response comes in multiple fragments.
-        for i in xrange(200): s.sender("00ex%s;{create:always,node:{type:topic}}"%i)
+        for i in xrange(200): s.sender("ex.%s;{create:always,node:{type:topic}}"%i)
 
         def verify(broker):
             s = broker.connect().session()
             # Verify unmatched message goes to ex's alternate.
-            s.sender("0ex").send("foo")
+            s.sender("ex").send("foo")
             altq = s.receiver("altq")
             self.assertEqual("foo", altq.fetch(timeout=0).content)
             s.acknowledge()
@@ -640,19 +642,38 @@ acl deny all all
             self.assertEqual("bar", altq.fetch(timeout=0).content)
             s.acknowledge()
 
+        def ss(n): return cluster[n].connect().session()
+
         # Sanity check: alternate exchanges on original broker
         verify(cluster[0])
+        # Altex is in use as an alternate exchange.
+        self.assertRaises(SessionError,
+                          lambda:ss(0).sender("altex;{delete:always}").close())
         # Check backup that was connected during setup.
-        cluster[1].wait_backup("0ex")
+        cluster[1].wait_status("ready")
+        cluster[1].wait_backup("ex")
         cluster[1].wait_backup("q")
         cluster.bounce(0)
         verify(cluster[1])
+
         # Check a newly started backup.
         cluster.start()
-        cluster[2].wait_backup("0ex")
+        cluster[2].wait_status("ready")
+        cluster[2].wait_backup("ex")
         cluster[2].wait_backup("q")
         cluster.bounce(1)
         verify(cluster[2])
+
+        # Check that alt-exchange in-use count is replicated
+        s = cluster[2].connect().session();
+
+        self.assertRaises(SessionError,
+                          lambda:ss(2).sender("altex;{delete:always}").close())
+        s.sender("q;{delete:always}").close()
+        self.assertRaises(SessionError,
+                          lambda:ss(2).sender("altex;{delete:always}").close())
+        s.sender("ex;{delete:always}").close()
+        s.sender("altex;{delete:always}").close()
 
     def test_priority_reroute(self):
         """Regression test for QPID-4262, rerouting messages from a priority queue
@@ -1047,13 +1068,15 @@ class RecoveryTests(HaBrokerTest):
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
             # We don't want backups to time out for this test, set long timeout.
-            cluster = HaCluster(self, 4, args=["--ha-backup-timeout=100000"]);
+            cluster = HaCluster(self, 4, args=["--ha-backup-timeout=120"]);
             # Wait for the primary to be ready
             cluster[0].wait_status("active")
+            for b in cluster[1:4]: b.wait_status("ready")
             # Create a queue before the failure.
             s1 = cluster.connect(0).session().sender("q1;{create:always}")
             for b in cluster: b.wait_backup("q1")
             for i in xrange(100): s1.send(str(i))
+
             # Kill primary and 2 backups
             cluster[3].wait_status("ready")
             for i in [0,1,2]: cluster.kill(i, False)
@@ -1070,14 +1093,16 @@ class RecoveryTests(HaBrokerTest):
             s2 = cluster.connect(3).session().sender("q2;{create:always}")
 
             # Verify that messages sent are not completed
-            for i in xrange(100,200): s1.send(str(i), sync=False); s2.send(str(i), sync=False)
+            for i in xrange(100,200):
+                s1.send(str(i), sync=False);
+                s2.send(str(i), sync=False)
             assertSyncTimeout(s1)
             self.assertEqual(s1.unsettled(), 100)
             assertSyncTimeout(s2)
             self.assertEqual(s2.unsettled(), 100)
 
             # Verify we can receive even if sending is on hold:
-            cluster[3].assert_browse("q1", [str(i) for i in range(100)+range(100,200)])
+            cluster[3].assert_browse("q1", [str(i) for i in range(200)])
 
             # Restart backups, verify queues are released only when both backups are up
             cluster.restart(1)
@@ -1085,11 +1110,10 @@ class RecoveryTests(HaBrokerTest):
             self.assertEqual(s1.unsettled(), 100)
             assertSyncTimeout(s2)
             self.assertEqual(s2.unsettled(), 100)
-            self.assertEqual(cluster[3].ha_status(), "recovering")
             cluster.restart(2)
 
             # Verify everything is up to date and active
-            def settled(sender): sender.sync(); return sender.unsettled() == 0;
+            def settled(sender): sender.sync(timeout=1); return sender.unsettled() == 0;
             assert retry(lambda: settled(s1)), "Unsetttled=%s"%(s1.unsettled())
             assert retry(lambda: settled(s2)), "Unsetttled=%s"%(s2.unsettled())
             cluster[1].assert_browse_backup("q1", [str(i) for i in range(100)+range(100,200)])

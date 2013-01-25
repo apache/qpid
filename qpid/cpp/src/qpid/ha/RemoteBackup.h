@@ -33,6 +33,7 @@ namespace qpid {
 namespace broker {
 class Queue;
 class QueueRegistry;
+class Connection;
 }
 
 namespace ha {
@@ -54,7 +55,7 @@ class RemoteBackup
     /** Note: isReady() can be true after construction
      *@param connected true if the backup is already connected.
      */
-    RemoteBackup(const BrokerInfo& info, ReplicationTest, bool connected);
+    RemoteBackup(const BrokerInfo&, ReplicationTest, broker::Connection*);
     ~RemoteBackup();
 
     /** Set all queues in the registry as catch-up queues.
@@ -66,8 +67,8 @@ class RemoteBackup
     GuardPtr guard(const QueuePtr&);
 
     /** Is the remote backup connected? */
-    void setConnected(bool b) { connected=b; }
-    bool isConnected() const { return connected; }
+    void setConnection(broker::Connection* c) { connection = c; }
+    bool isConnected() const { return connection; }
 
     /** ReplicatingSubscription associated with queue is ready.
      * Note: may set isReady()
@@ -101,7 +102,7 @@ class RemoteBackup
     ReplicationTest replicationTest;
     GuardMap guards;
     QueueSet catchupQueues;
-    bool connected;
+    broker::Connection* connection;
     bool reportedReady;
 };
 

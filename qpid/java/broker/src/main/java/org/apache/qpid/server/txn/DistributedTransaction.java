@@ -26,7 +26,6 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Xid;
 
@@ -38,10 +37,6 @@ public class DistributedTransaction implements ServerTransaction
 {
 
     private final AutoCommitTransaction _autoCommitTransaction;
-
-    private volatile Transaction _transaction;
-
-    private long _txnStartTime = 0L;
 
     private DtxBranch _branch;
     private AMQSessionModel _session;
@@ -55,9 +50,16 @@ public class DistributedTransaction implements ServerTransaction
         _autoCommitTransaction = new AutoCommitTransaction(vhost.getMessageStore());
     }
 
+    @Override
     public long getTransactionStartTime()
     {
-        return _txnStartTime;
+        return 0;
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
+    {
+        return 0;
     }
 
     public void addPostTransactionAction(Action postTransactionAction)
@@ -107,7 +109,7 @@ public class DistributedTransaction implements ServerTransaction
         {
             _branch.enqueue(queue, message);
             _branch.addPostTransactionAcion(postTransactionAction);
-            enqueue(Collections.singletonList(queue), message, postTransactionAction, System.currentTimeMillis());
+            enqueue(Collections.singletonList(queue), message, postTransactionAction);
         }
         else
         {
@@ -116,7 +118,7 @@ public class DistributedTransaction implements ServerTransaction
     }
 
     public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message,
-                        Action postTransactionAction, long currentTime)
+                        Action postTransactionAction)
     {
         if(_branch != null)
         {
@@ -128,7 +130,7 @@ public class DistributedTransaction implements ServerTransaction
         }
         else
         {
-            _autoCommitTransaction.enqueue(queues, message, postTransactionAction, currentTime);
+            _autoCommitTransaction.enqueue(queues, message, postTransactionAction);
         }
     }
 

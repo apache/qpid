@@ -26,7 +26,6 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/broker/ConnectionToken.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
@@ -46,6 +45,9 @@
 namespace qpid {
 namespace broker {
 class ConnectionState;
+}
+namespace sys {
+class Timer;
 }
 namespace management {
 
@@ -75,11 +77,6 @@ public:
     /** Called before plugins are initialized */
     void configure       (const std::string& dataDir, bool publish, uint16_t interval,
                           qpid::broker::Broker* broker, int threadPoolSize);
-    /** Called after plugins are initialized. */
-    void pluginsInitialized();
-
-    /** Called by cluster to suppress management output during update. */
-    void suppress(bool s) { suppressed = s; }
 
     void setName(const std::string& vendor,
                  const std::string& product,
@@ -112,8 +109,6 @@ public:
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
 
-    QPID_BROKER_EXTERN void clusterUpdate();
-
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args,
@@ -123,25 +118,6 @@ public:
     /** Disallow a method. Attempts to call it will receive an exception with message. */
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
 
-    /** Disallow all QMFv1 methods (used in clustered brokers). */
-    void disallowV1Methods() { disallowAllV1Methods = true; }
-
-    /** Serialize my schemas as a binary blob into schemaOut */
-    void exportSchemas(std::string& schemaOut);
-
-    /** Serialize my remote-agent map as a binary blob into agentsOut */
-    void exportAgents(std::string& agentsOut);
-
-    /** Decode a serialized schemas and add to my schema cache */
-    void importSchemas(framing::Buffer& inBuf);
-
-    /** Decode a serialized agent map */
-    void importAgents(framing::Buffer& inBuf);
-
-    // these are in support of the managementSetup-state stuff, for synch'ing clustered brokers
-    uint64_t getNextObjectId(void) { return nextObjectId; }
-    void setNextObjectId(uint64_t o) { nextObjectId = o; }
-
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; writeData(); }
 
@@ -150,20 +126,11 @@ public:
 
     static types::Variant::Map toMap(const framing::FieldTable& from);
 
-    // For Clustering: management objects that have been marked as
-    // "deleted", but are waiting for their last published object
-    // update are not visible to the cluster replication code.  These
-    // interfaces allow clustering to gather up all the management
-    // objects that are deleted in order to allow all clustered
-    // brokers to publish the same set of deleted objects.
-
     class DeletedObject {
       public:
         typedef boost::shared_ptr<DeletedObject> shared_ptr;
         DeletedObject(ManagementObject::shared_ptr, bool v1, bool v2);
-        DeletedObject( const std::string &encoded );
         ~DeletedObject() {};
-        void encode( std::string& toBuffer );
         const std::string getKey() const {
             // used to batch up objects of the same class type
             return std::string(packageName + std::string(":") + className);
@@ -183,22 +150,7 @@ public:
 
     typedef std::vector<DeletedObject::shared_ptr> DeletedObjectList;
 
-    /** returns a snapshot of all currently deleted management objects. */
-    void exportDeletedObjects( DeletedObjectList& outList );
-
-    /** Import a list of deleted objects to send on next publish interval. */
-    void importDeletedObjects( const DeletedObjectList& inList );
-
 private:
-    struct Periodic : public qpid::sys::TimerTask
-    {
-        ManagementAgent& agent;
-
-        Periodic (ManagementAgent& agent, uint32_t seconds);
-        virtual ~Periodic ();
-        void fire ();
-    };
-
     //  Storage for tracking remote management agents, attached via the client
     //  management agent API.
     //

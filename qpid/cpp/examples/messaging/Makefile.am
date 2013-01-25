@@ -62,7 +62,7 @@ examples_DATA=                 \
 	server.cpp             \
 	map_sender.cpp         \
 	map_receiver.cpp       \
-        extra_dist/Makefile
+	extra_dist/CMakeLists.txt
 
 EXTRA_DIST=                  \
 	$(examples_DATA)     \

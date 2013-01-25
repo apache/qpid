@@ -74,7 +74,6 @@ class Link : public PersistableConfig, public management::Manageable {
     int     state;
     uint32_t visitCount;
     uint32_t currentInterval;
-    bool     closing;
     Url      url;       // URL can contain many addresses.
     size_t   reconnectNext; // Index for next re-connect attempt
 
@@ -98,7 +97,7 @@ class Link : public PersistableConfig, public management::Manageable {
     static const int STATE_OPERATIONAL = 3;
     static const int STATE_FAILED      = 4;
     static const int STATE_CLOSED      = 5;
-    static const int STATE_PASSIVE     = 6;
+    static const int STATE_CLOSING     = 6;  // Waiting for outstanding connect to complete first
 
     static const uint32_t MAX_INTERVAL = 32;
 
@@ -107,7 +106,6 @@ class Link : public PersistableConfig, public management::Manageable {
     void destroy();                  // Cleanup connection before link goes away
     void ioThreadProcessing();       // Called on connection's IO thread by request
     bool tryFailoverLH();            // Called during maintenance visit
-    bool hideManagement() const;
     void reconnectLH(const Address&); //called by LinkRegistry
 
     // connection management (called by LinkRegistry)
@@ -116,7 +114,6 @@ class Link : public PersistableConfig, public management::Manageable {
     void closed(int, std::string);   // Called when connection goes away
     void notifyConnectionForced(const std::string text);
     void closeConnection(const std::string& reason);
-    bool pendingConnection(const std::string& host, uint16_t port) const;  // is Link trying to connect to this remote?
 
     friend class LinkRegistry; // to call established, opened, closed
 
@@ -167,7 +164,6 @@ class Link : public PersistableConfig, public management::Manageable {
     std::string getPassword()      { return password; }
     Broker* getBroker()       { return broker; }
 
-    void setPassive(bool p);
     bool isConnecting() const { return state == STATE_CONNECTING; }
 
     // PersistableConfig:
@@ -189,10 +185,6 @@ class Link : public PersistableConfig, public management::Manageable {
     // manage the exchange owned by this link
     static const std::string exchangeTypeName;
     static boost::shared_ptr<Exchange> linkExchangeFactory(const std::string& name);
-
-    // replicate internal state of this Link for clustering
-    void getState(framing::FieldTable& state) const;
-    void setState(const framing::FieldTable& state);
 
     /** create a name for a link (if none supplied by user config) */
     static std::string createName(const std::string& transport,

@@ -27,13 +27,17 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 
-import javax.jms.ConnectionFactory;
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.spi.ObjectFactory;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
 
 import org.apache.qpid.client.AMQConnectionFactory;
 
@@ -44,7 +48,7 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-public class QpidConnectionFactoryProxy implements Externalizable, Referenceable, ConnectionFactory, Serializable
+public class QpidConnectionFactoryProxy implements QueueConnectionFactory, TopicConnectionFactory, Externalizable, Referenceable, Serializable
 {
     private static final Logger _log = LoggerFactory.getLogger(QpidDestinationProxy.class);
 
@@ -100,13 +104,6 @@ public class QpidConnectionFactoryProxy implements Externalizable, Referenceable
         try
         {
             _delegate = new AMQConnectionFactory(getConnectionURL());
-            /*
-            QpidResourceAdapter ra = new QpidResourceAdapter();
-            QpidRAManagedConnectionFactory mcf = new QpidRAManagedConnectionFactory();
-            mcf.setResourceAdapter(ra);
-            mcf.setConnectionURL(getConnectionURL());
-            delegate = new QpidRAConnectionFactoryImpl(mcf, null);
-            */
             return ((Referenceable) _delegate).getReference();
         }
         catch(Exception e)
@@ -162,7 +159,63 @@ public class QpidConnectionFactoryProxy implements Externalizable, Referenceable
     */
    public Connection createConnection(final String userName, final String password) throws JMSException
    {
-      return _delegate.createConnection(userName, password);
+       try
+       {
+           if(_delegate == null)
+           {
+               getReference();
+           }
+
+           return _delegate.createConnection(userName, password);
+       }
+       catch(Exception e)
+       {
+          throw new JMSException(e.getMessage());
+       }
+   }
+
+   /**
+    * Create a queue connection
+    * @return The queue connection
+    * @exception JMSException Thrown if the operation fails
+    */
+   public QueueConnection createQueueConnection() throws JMSException
+   {
+       return (QueueConnection)createConnection();
+   }
+
+   /**
+    * Create a queue connection
+    * @param userName The user name
+    * @param password The password
+    * @return The connection
+    * @exception JMSException Thrown if the operation fails
+    */
+   public QueueConnection createQueueConnection(final String userName, final String password) throws JMSException
+   {
+      return (QueueConnection)createConnection(userName, password);
+   }
+
+   /**
+    * Create a topic connection
+    * @return The topic connection
+    * @exception JMSException Thrown if the operation fails
+    */
+   public TopicConnection createTopicConnection() throws JMSException
+   {
+       return (TopicConnection)createConnection();
+   }
+
+   /**
+    * Create a topic connection
+    * @param userName The user name
+    * @param password The password
+    * @return The topic connection
+    * @exception JMSException Thrown if the operation fails
+    */
+   public TopicConnection createTopicConnection(final String userName, final String password) throws JMSException
+   {
+      return (TopicConnection)createConnection(userName, password);
    }
 
 }

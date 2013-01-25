@@ -82,8 +82,10 @@ class ExpectedBackupTimerTask : public sys::TimerTask {
 Primary* Primary::instance = 0;
 
 Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
-    haBroker(hb), logPrefix("Primary: "), active(false)
+    haBroker(hb), membership(hb.getMembership()),
+    logPrefix("Primary: "), active(false)
 {
+    hb.getMembership().setStatus(RECOVERING);
     assert(instance == 0);
     instance = this;            // Let queue replicators find us.
     if (expect.empty()) {
@@ -96,7 +98,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         QPID_LOG(notice, logPrefix << "Promoted to primary. Expected backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(*i, haBroker.getReplicationTest(), false));
+                new RemoteBackup(*i, haBroker.getReplicationTest(), 0));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
             backup->setCatchupQueues(hb.getBroker().getQueues(), true); // Create guards
@@ -108,11 +110,18 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         hb.getBroker().getTimer().add(timerTask);
     }
 
+
+    // Remove backup tag property from outgoing link properties.
+    framing::FieldTable linkProperties = hb.getBroker().getLinkClientProperties();
+    linkProperties.erase(ConnectionObserver::BACKUP_TAG);
+    hb.getBroker().setLinkClientProperties(linkProperties);
+
     configurationObserver.reset(new PrimaryConfigurationObserver(*this));
     haBroker.getBroker().getConfigurationObservers().add(configurationObserver);
 
     Mutex::ScopedLock l(lock);  // We are now active as a configurationObserver
     checkReady(l);
+
     // Allow client connections
     connectionObserver.reset(new PrimaryConnectionObserver(*this));
     haBroker.getObserver()->setObserver(connectionObserver, logPrefix);
@@ -128,7 +137,7 @@ void Primary::checkReady(Mutex::ScopedLock&) {
         active = true;
         Mutex::ScopedUnlock u(lock); // Don't hold lock across callback
         QPID_LOG(notice, logPrefix << "Finished waiting for backups, primary is active.");
-        haBroker.activate();
+        membership.setStatus(ACTIVE);
     }
 }
 
@@ -136,7 +145,7 @@ void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
     if (i != backups.end() && i->second->reportReady()) {
         BrokerInfo info = i->second->getBrokerInfo();
         info.setStatus(READY);
-        haBroker.addBroker(info);
+        membership.add(info);
         if (expectedBackups.erase(i->second)) {
             QPID_LOG(info, logPrefix << "Expected backup is ready: " << info);
             checkReady(l);
@@ -161,9 +170,10 @@ void Primary::timeoutExpectedBackups() {
                 expectedBackups.erase(i++);
                 backups.erase(info.getSystemId());
                 rb->cancel();
-                // Downgrade the broker to CATCHUP
+                // Downgrade the broker's status to CATCHUP
+                // The broker will get this status change when it eventually connects.
                 info.setStatus(CATCHUP);
-                haBroker.addBroker(info);
+                membership.add(info);
             }
             else ++i;
         }
@@ -228,7 +238,7 @@ void Primary::opened(broker::Connection& connection) {
         if (i == backups.end()) {
             QPID_LOG(info, logPrefix << "New backup connected: " << info);
             boost::shared_ptr<RemoteBackup> backup(
-                new RemoteBackup(info, haBroker.getReplicationTest(), true));
+                new RemoteBackup(info, haBroker.getReplicationTest(), &connection));
             {
                 // Avoid deadlock with queue registry lock.
                 Mutex::ScopedUnlock u(lock);
@@ -238,11 +248,11 @@ void Primary::opened(broker::Connection& connection) {
         }
         else {
             QPID_LOG(info, logPrefix << "Known backup connected: " << info);
-            i->second->setConnected(true);
+            i->second->setConnection(&connection);
             checkReady(i, l);
         }
         if (info.getStatus() == JOINING) info.setStatus(CATCHUP);
-        haBroker.addBroker(info);
+        membership.add(info);
     }
     else
         QPID_LOG(debug, logPrefix << "Accepted client connection "
@@ -259,7 +269,7 @@ void Primary::closed(broker::Connection& connection) {
         // Checking  isConnected() lets us ignore such spurious closes.
         if (i != backups.end() && i->second->isConnected()) {
             QPID_LOG(info, logPrefix << "Backup disconnected: " << info);
-            haBroker.removeBroker(info.getSystemId());
+            membership.remove(info.getSystemId());
             expectedBackups.erase(i->second);
             backups.erase(i);
             checkReady(l);
@@ -273,6 +283,11 @@ boost::shared_ptr<QueueGuard> Primary::getGuard(const QueuePtr& q, const BrokerI
     Mutex::ScopedLock l(lock);
     BackupMap::iterator i = backups.find(info.getSystemId());
     return i == backups.end() ? boost::shared_ptr<QueueGuard>() : i->second->guard(q);
+}
+
+Role* Primary::promote() {
+    QPID_LOG(info, "Ignoring promotion, already primary: " << haBroker.getBrokerInfo());
+    return 0;
 }
 
 }} // namespace qpid::ha

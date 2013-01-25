@@ -103,16 +103,22 @@ public class ConsumerParticipant implements Participant
         }
 
         Date end = new Date();
-        int numberOfMessagesSent = _totalNumberOfMessagesReceived.get();
+        int numberOfMessagesReceived = _totalNumberOfMessagesReceived.get();
         long totalPayloadSize = _totalPayloadSizeOfAllMessagesReceived.get();
         int payloadSize = getPayloadSizeForResultIfConstantOrZeroOtherwise(_allConsumedPayloadSizes);
+
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Consumer {} finished consuming. Number of messages consumed: {}",
+                        getName(), numberOfMessagesReceived);
+        }
 
         ConsumerParticipantResult result = _resultFactory.createForConsumer(
                 getName(),
                 registeredClientName,
                 _command,
                 acknowledgeMode,
-                numberOfMessagesSent,
+                numberOfMessagesReceived,
                 payloadSize,
                 totalPayloadSize,
                 start, end, _messageLatencies);
