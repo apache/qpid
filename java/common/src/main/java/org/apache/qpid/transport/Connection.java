@@ -86,15 +86,15 @@ public class Connection extends ConnectionInvoker
 
     public static interface SessionFactory
     {
-        Session newSession(Connection conn, Binary name, long expiry);
+        Session newSession(Connection conn, Binary name, long expiry, boolean isNoReplay);
     }
 
     private static final class DefaultSessionFactory implements SessionFactory
     {
 
-        public Session newSession(final Connection conn, final Binary name, final long expiry)
+        public Session newSession(final Connection conn, final Binary name, final long expiry, final boolean isNoReplay)
         {
-            return new Session(conn, name, expiry);
+            return new Session(conn, name, expiry, isNoReplay);
         }
     }
 
@@ -296,7 +296,12 @@ public class Connection extends ConnectionInvoker
 
     public Session createSession(long expiry)
     {
-        return createSession(UUID.randomUUID().toString(), expiry);
+        return createSession(expiry, false);
+    }
+
+    public Session createSession(long expiry, boolean isNoReplay)
+    {
+        return createSession(UUID.randomUUID().toString(), expiry, isNoReplay);
     }
 
     public Session createSession(String name)
@@ -309,12 +314,22 @@ public class Connection extends ConnectionInvoker
         return createSession(Strings.toUTF8(name), expiry);
     }
 
+    public Session createSession(String name, long expiry,boolean isNoReplay)
+    {
+        return createSession(new Binary(Strings.toUTF8(name)), expiry, isNoReplay);
+    }
+
     public Session createSession(byte[] name, long expiry)
     {
         return createSession(new Binary(name), expiry);
     }
 
     public Session createSession(Binary name, long expiry)
+    {
+        return createSession(name, expiry, false);
+    }
+
+    public Session createSession(Binary name, long expiry, boolean isNoReplay)
     {
         synchronized (lock)
         {
@@ -329,7 +344,7 @@ public class Connection extends ConnectionInvoker
                 throw new ConnectionException("Timed out waiting for connection to be ready. Current state is :" + state);
             }
 
-            Session ssn = _sessionFactory.newSession(this, name, expiry);
+            Session ssn = _sessionFactory.newSession(this, name, expiry, isNoReplay);
             registerSession(ssn);
             map(ssn);
             ssn.attach();
