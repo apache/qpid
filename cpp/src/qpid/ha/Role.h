@@ -25,7 +25,7 @@
 #include <string>
 
 namespace qpid {
-class Url;
+struct Url;
 
 namespace ha {
 
