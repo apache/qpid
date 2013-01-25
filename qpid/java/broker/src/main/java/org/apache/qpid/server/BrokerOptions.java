@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class BrokerOptions
 {
-    public static final String DEFAULT_STORE_TYPE = "xml";
+    public static final String DEFAULT_STORE_TYPE = "json";
     public static final String DEFAULT_CONFIG_FILE = "etc/config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
