@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Broker Test Suite
@@ -53,6 +55,8 @@ import java.util.Map;
  */
 public class BrokerLoggingTest extends AbstractTestLogging
 {
+    private static final String BROKER_MESSAGE_LOG_REG_EXP = ".*\\[\\w*\\] (BRK\\-\\d*) .*";
+    private static final Pattern BROKER_MESSAGE_LOG_PATTERN = Pattern.compile(BROKER_MESSAGE_LOG_REG_EXP);
     private static final String BRK_LOG_PREFIX = "BRK-";
 
     public void setUp() throws Exception
@@ -306,9 +310,10 @@ public class BrokerLoggingTest extends AbstractTestLogging
                                  1, findMatches(TESTID).size());
 
                     //3
-                    assertTrue("Log4j file details not correctly logged, got "
-                            + getMessageString(log) + " but expected it to end with " +customLog4j,
-                            getMessageString(log).endsWith(customLog4j));
+                    String messageString = getMessageString(log);
+                    assertTrue("Log4j file details not correctly logged. Message '"
+                            + messageString + "' should contain '" +customLog4j + "'",
+                            messageString.endsWith(customLog4j));
 
                     validation = true;
                 }
@@ -456,10 +461,13 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 {
                     String log = getLog(rawLog);
 
+                    // using custom method to get id as getMessageId() fails to correctly identify id
+                    // because of using brackets for protocols
+                    String id = getBrokerLogId(log);
                     // Ensure we do not have a BRK-1002 message
-                    if (!getMessageID(log).equals(TESTID))
+                    if (!id.equals(TESTID))
                     {
-                        if (getMessageID(log).equals("BRK-1001"))
+                        if (id.equals("BRK-1001"))
                         {
                             foundBRK1001 = true;
                         }
@@ -469,7 +477,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertTrue("BRK-1001 not logged before this message", foundBRK1001);
 
                     //1
-                    validateMessageID(TESTID, log);
+                    assertEquals("Incorrect message", TESTID, id);
 
                     //2
                     //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
@@ -479,7 +487,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //3
                     String message = getMessageString(log);
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP port " + getPort()));
+                               message.endsWith("Listening on [TCP] port " + getPort()));
 
                     validation = true;
                 }
@@ -493,6 +501,16 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 throw afe;
             }
         }
+    }
+
+    private String getBrokerLogId(String log)
+    {
+        Matcher m = BROKER_MESSAGE_LOG_PATTERN.matcher(log);
+        if (m.matches())
+        {
+            return m.group(1);
+        }
+        return getMessageID(log);
     }
 
     /**
@@ -512,8 +530,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
      * 1. The BRK ID is correct
      * 2. This occurs after the BRK-1001 startup message
      * 3. With SSL enabled in the configuration two BRK-1002 will be printed (order is not specified)
-     * 1. One showing values TCP / 5672
-     * 2. One showing values TCP/SSL / 5672
+     * 1. One showing values [TCP] 5672
+     * 2. One showing values [SSL] 5671
      *
      * @throws Exception caused by broker startup
      */
@@ -558,10 +576,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 {
                     String log = getLog(rawLog);
 
+                    String id = getBrokerLogId(log);
                     // Ensure we do not have a BRK-1002 message
-                    if (!getMessageID(log).equals(TESTID))
+                    if (!id.equals(TESTID))
                     {
-                        if (getMessageID(log).equals("BRK-1001"))
+                        if (id.equals("BRK-1001"))
                         {
                             foundBRK1001 = true;
                         }
@@ -571,7 +590,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertTrue("BRK-1001 not logged before this message", foundBRK1001);
 
                     //1
-                    validateMessageID(TESTID, log);
+                    assertEquals("Incorrect message", TESTID, id);
 
                     //2
                     //There will be 4 copies of the startup message (two via SystemOut, and two via Log4J)
@@ -583,12 +602,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //Check the first
                     String message = getMessageString(getLog(listenMessages .get(0)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP port " + getPort()));
+                               message.endsWith("Listening on [TCP] port " + getPort()));
 
                     // Check the third, ssl listen.
                     message = getMessageString(getLog(listenMessages .get(2)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP/SSL port " + DEFAULT_SSL_PORT));
+                               message.endsWith("Listening on [SSL] port " + DEFAULT_SSL_PORT));
 
                     //4 Test ports open
                     testSocketOpen(getPort());
@@ -1012,4 +1031,5 @@ public class BrokerLoggingTest extends AbstractTestLogging
                  + ". Due to:" + e.getMessage());
         }
     }
+
 }
