@@ -27,6 +27,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -86,10 +87,12 @@ public class ReferenceCountingTest extends QpidTestCase
 
         AMQMessage message = new AMQMessage(storedMessage);
 
-        message.incrementReference();
+        MessageReference ref = message.newReference();
 
         assertEquals(1, _store.getMessageCount());
-        message.decrementReference();
+
+        ref.release();
+
         assertEquals(0, _store.getMessageCount());
     }
 
@@ -142,13 +145,13 @@ public class ReferenceCountingTest extends QpidTestCase
         AMQMessage message = new AMQMessage(storedMessage);
 
 
-        message.incrementReference();
+        MessageReference ref = message.newReference();
         // we call routing complete to set up the handle
      //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
         assertEquals(1, _store.getMessageCount());
-        message.incrementReference();
-        message.decrementReference();
+        MessageReference ref2 = message.newReference();
+        ref.release();
         assertEquals(1, _store.getMessageCount());
     }
 
