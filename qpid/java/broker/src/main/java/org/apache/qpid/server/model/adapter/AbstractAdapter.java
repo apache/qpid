@@ -101,7 +101,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected void notifyStateChanged(final State currentState, final State desiredState)
     {
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             for(ConfigurationChangeListener listener : _changeListeners)
             {
@@ -116,7 +116,7 @@ abstract class AbstractAdapter implements ConfiguredObject
         {
             throw new NullPointerException("Cannot add a null listener");
         }
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             if(!_changeListeners.contains(listener))
             {
@@ -131,7 +131,7 @@ abstract class AbstractAdapter implements ConfiguredObject
         {
             throw new NullPointerException("Cannot remove a null listener");
         }
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             return _changeListeners.remove(listener);
         }
@@ -140,7 +140,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected void childAdded(ConfiguredObject child)
     {
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             for(ConfigurationChangeListener listener : _changeListeners)
             {
@@ -152,7 +152,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected void childRemoved(ConfiguredObject child)
     {
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             for(ConfigurationChangeListener listener : _changeListeners)
             {
@@ -181,7 +181,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public final Map<String, Object> getActualAttributes()
     {
-        synchronized (this)
+        synchronized (_attributes)
         {
             return new HashMap<String, Object>(_attributes);
         }
@@ -189,7 +189,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     private Object getActualAttribute(final String name)
     {
-        synchronized (this)
+        synchronized (_attributes)
         {
             return _attributes.get(name);
         }
@@ -198,7 +198,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        synchronized (this)
+        synchronized (_attributes)
         {
             Object currentValue = getAttribute(name);
             if((currentValue == null && expected == null)
@@ -216,7 +216,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
     {
-        synchronized (this)
+        synchronized (_parents)
         {
             return (T) _parents.get(clazz);
         }
@@ -224,7 +224,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected <T extends ConfiguredObject> void addParent(Class<T> clazz, T parent)
     {
-        synchronized (this)
+        synchronized (_parents)
         {
             _parents.put(clazz, parent);
         }
