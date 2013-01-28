@@ -132,6 +132,7 @@ Role* Backup::promote() {
       default:
         assert(0);              // Not a valid state for the Backup role..
     }
+    return 0; 			// Keep compiler happy
 }
 
 Backup::~Backup() {
