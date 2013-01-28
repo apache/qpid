@@ -119,28 +119,24 @@
     }
 
     SV* MapToPerl(const qpid::types::Variant::Map* map) {
-        SV *result = newSV(0);
-        HV *hv = (HV *)sv_2mortal((SV *)newHV());
+        HV *hv = newHV();
         qpid::types::Variant::Map::const_iterator iter;
         for (iter = map->begin(); iter != map->end(); iter++) {
             const std::string key(iter->first);
             SV* perlval = VariantToPerl(&(iter->second));
             hv_store(hv, key.c_str(), key.size(), perlval, 0);
         }
-        SvSetSV(result, newRV_noinc((SV *)hv));
-        return result;
+        return sv_2mortal(newRV_noinc((SV *)hv));
     }
 
     SV* ListToPerl(const qpid::types::Variant::List* list) {
-        SV* result = newSV(0);
-        AV* av  = (AV *)sv_2mortal((SV *)newAV());
+        AV* av = newAV();
         qpid::types::Variant::List::const_iterator iter;
         for (iter = list->begin(); iter != list->end(); iter++) {
             SV* perlval = VariantToPerl(&(*iter));
             av_push(av, perlval);
         }
-        SvSetSV(result, newRV_noinc((SV *)av));
-        return result;
+        return sv_2mortal(newRV_noinc((SV *)av));
     }
 
     void PerlToMap(SV* hash, qpid::types::Variant::Map* map) {
