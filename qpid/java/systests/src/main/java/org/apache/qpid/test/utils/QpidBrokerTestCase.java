@@ -533,9 +533,15 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             p.start();
 
+            SpawnedBrokerHolder holder = new SpawnedBrokerHolder(process, qpidWork, portsUsedByBroker);
             if (!p.await(30, TimeUnit.SECONDS))
             {
                 _logger.info("broker failed to become ready (" + p.getReady() + "):" + p.getStopLine());
+                String threadDump = holder.dumpThreads();
+                if (!threadDump.isEmpty())
+                {
+                    _logger.info("the result of a try to capture thread dump:" + threadDump);
+                }
                 //Ensure broker has stopped
                 process.destroy();
                 cleanBrokerWork(qpidWork);
@@ -556,7 +562,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 // this is expect if the broker started successfully
             }
 
-            _brokers.put(port, new SpawnedBrokerHolder(process, qpidWork, portsUsedByBroker));
+            _brokers.put(port, holder);
         }
     }
 
