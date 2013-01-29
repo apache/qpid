@@ -62,7 +62,6 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.BrokerLauncher;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
@@ -130,16 +129,23 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_PERSITENT = "broker.persistent";
     public static final String PROFILE_USE_SSL = "profile.use_ssl";
 
+    public static final int DEFAULT_PORT_VALUE = 5672;
+    public static final int DEFAULT_SSL_PORT_VALUE = 5671;
+    public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
+    public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
+    public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
+    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
+
     // values
     protected static final String JAVA = "java";
     protected static final String CPP = "cpp";
 
     protected static final String QPID_HOME = "QPID_HOME";
 
-    public static final int DEFAULT_PORT = Integer.getInteger("test.port", ServerConfiguration.DEFAULT_PORT);
+    public static final int DEFAULT_PORT = Integer.getInteger("test.port", DEFAULT_PORT_VALUE);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
-    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT_REGISTRYSERVER);
-    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", ServerConfiguration.DEFAULT_SSL_PORT);
+    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
+    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
@@ -225,7 +231,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.PORT, actualPort);
             configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT, Port.PORT, getManagementPort(actualPort));
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET);
+            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
         }
         return configuration;
     }
@@ -361,7 +367,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         Set<Integer> ports = new HashSet<Integer>();
         int managementPort = getManagementPort(mainPort);
-        int connectorServerPort = managementPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
+        int connectorServerPort = managementPort + JMXPORT_CONNECTORSERVER_OFFSET;
 
         ports.add(mainPort);
         ports.add(managementPort);
@@ -439,9 +445,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             options.setConfigurationStoreType(_brokerStoreType);
             options.setConfigurationStoreLocation(testConfig);
-
-            options.addPort(port);
-            options.setJmxPortRegistryServer(getManagementPort(port));
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.

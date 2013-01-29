@@ -30,7 +30,6 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.server.BrokerLauncher.InitException;
 
 /**
  * Main entry point for AMQPD.
@@ -48,88 +47,6 @@ public class Main
 
     private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
             .withDescription("use given store type").withLongOpt("store-type").create("st");
-
-    @Deprecated
-    private static final Option OPTION_CONFIG_FILE =
-            OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
-                    .create("c");
-
-    private static final Option OPTION_PORT =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("listen on the specified port. Overrides any value in the config file")
-                    .withLongOpt("port").create("p");
-
-    private static final Option OPTION_SSLPORT =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("SSL port. Overrides any value in the config file")
-                    .withLongOpt("sslport").create("s");
-
-
-    private static final Option OPTION_EXCLUDE_1_0 =
-            OptionBuilder.withArgName("port").hasArg()
-                         .withDescription("when listening on the specified port do not accept AMQP1-0 connections. The specified port must be one specified on the command line")
-                         .withLongOpt("exclude-1-0").create();
-
-    private static final Option OPTION_EXCLUDE_0_10 =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("when listening on the specified port do not accept AMQP0-10 connections. The specified port must be one specified on the command line")
-                    .withLongOpt("exclude-0-10").create();
-
-    private static final Option OPTION_EXCLUDE_0_9_1 =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("when listening on the specified port do not accept AMQP0-9-1 connections. The specified port must be one specified on the command line")
-                    .withLongOpt("exclude-0-9-1").create();
-
-    private static final Option OPTION_EXCLUDE_0_9 =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("when listening on the specified port do not accept AMQP0-9 connections. The specified port must be one specified on the command line")
-                    .withLongOpt("exclude-0-9").create();
-
-    private static final Option OPTION_EXCLUDE_0_8 =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("when listening on the specified port do not accept AMQP0-8 connections. The specified port must be one specified on the command line")
-                    .withLongOpt("exclude-0-8").create();
-
-    private static final Option OPTION_INCLUDE_1_0 =
-        OptionBuilder.withArgName("port").hasArg()
-                .withDescription("accept AMQP1-0 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
-                     .withLongOpt("include-1-0").create();
-
-private static final Option OPTION_INCLUDE_0_10 =
-        OptionBuilder.withArgName("port").hasArg()
-                .withDescription("accept AMQP0-10 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
-                .withLongOpt("include-0-10").create();
-
-private static final Option OPTION_INCLUDE_0_9_1 =
-        OptionBuilder.withArgName("port").hasArg()
-                .withDescription("accept AMQP0-9-1 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
-                .withLongOpt("include-0-9-1").create();
-
-private static final Option OPTION_INCLUDE_0_9 =
-        OptionBuilder.withArgName("port").hasArg()
-                .withDescription("accept AMQP0-9 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
-                .withLongOpt("include-0-9").create();
-
-private static final Option OPTION_INCLUDE_0_8 =
-        OptionBuilder.withArgName("port").hasArg()
-                .withDescription("accept AMQP0-8 connections on this port, overriding configuration to the contrary. The specified port must be one specified on the command line")
-                .withLongOpt("include-0-8").create();
-
-
-    private static final Option OPTION_JMX_PORT_REGISTRY_SERVER =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("listen on the specified management (registry server) port. Overrides any value in the config file")
-                    .withLongOpt("jmxregistryport").create("m");
-
-    private static final Option OPTION_JMX_PORT_CONNECTOR_SERVER =
-            OptionBuilder.withArgName("port").hasArg()
-                    .withDescription("listen on the specified management (connector server) port. Overrides any value in the config file")
-                    .withLongOpt("jmxconnectorport").create();
-
-    private static final Option OPTION_BIND =
-            OptionBuilder.withArgName("address").hasArg()
-                    .withDescription("bind to the specified address. Overrides any value in the config file")
-                    .withLongOpt("bind").create("b");
 
     private static final Option OPTION_LOG_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg()
@@ -150,25 +67,8 @@ private static final Option OPTION_INCLUDE_0_8 =
         OPTIONS.addOption(OPTION_VERSION);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_PATH);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
-        OPTIONS.addOption(OPTION_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_WATCH);
-        OPTIONS.addOption(OPTION_PORT);
-        OPTIONS.addOption(OPTION_SSLPORT);
-        OPTIONS.addOption(OPTION_EXCLUDE_1_0);
-        OPTIONS.addOption(OPTION_EXCLUDE_0_10);
-        OPTIONS.addOption(OPTION_EXCLUDE_0_9_1);
-        OPTIONS.addOption(OPTION_EXCLUDE_0_9);
-        OPTIONS.addOption(OPTION_EXCLUDE_0_8);
-        OPTIONS.addOption(OPTION_INCLUDE_1_0);
-        OPTIONS.addOption(OPTION_INCLUDE_0_10);
-        OPTIONS.addOption(OPTION_INCLUDE_0_9_1);
-        OPTIONS.addOption(OPTION_INCLUDE_0_9);
-        OPTIONS.addOption(OPTION_INCLUDE_0_8);
-        OPTIONS.addOption(OPTION_BIND);
-
-        OPTIONS.addOption(OPTION_JMX_PORT_REGISTRY_SERVER);
-        OPTIONS.addOption(OPTION_JMX_PORT_CONNECTOR_SERVER);
     }
 
     protected CommandLine _commandLine;
@@ -261,12 +161,6 @@ private static final Option OPTION_INCLUDE_0_8 =
                 options.setConfigurationStoreType(configurationStoreType);
             }
 
-            String configFile = _commandLine.getOptionValue(OPTION_CONFIG_FILE.getOpt());
-            if(configFile != null)
-            {
-                options.setConfigFile(configFile);
-            }
-
             String logWatchConfig = _commandLine.getOptionValue(OPTION_LOG_WATCH.getOpt());
             if(logWatchConfig != null)
             {
@@ -277,52 +171,6 @@ private static final Option OPTION_INCLUDE_0_8 =
             if(logConfig != null)
             {
                 options.setLogConfigFile(logConfig);
-            }
-
-            String jmxPortRegistryServer = _commandLine.getOptionValue(OPTION_JMX_PORT_REGISTRY_SERVER.getOpt());
-            if(jmxPortRegistryServer != null)
-            {
-                options.setJmxPortRegistryServer(Integer.parseInt(jmxPortRegistryServer));
-            }
-
-            String jmxPortConnectorServer = _commandLine.getOptionValue(OPTION_JMX_PORT_CONNECTOR_SERVER.getLongOpt());
-            if(jmxPortConnectorServer != null)
-            {
-                options.setJmxPortConnectorServer(Integer.parseInt(jmxPortConnectorServer));
-            }
-
-            String bindAddr = _commandLine.getOptionValue(OPTION_BIND.getOpt());
-            if (bindAddr != null)
-            {
-                options.setBind(bindAddr);
-            }
-
-            String[] portStr = _commandLine.getOptionValues(OPTION_PORT.getOpt());
-            if(portStr != null)
-            {
-                parsePortArray(options, portStr, false);
-                for(ProtocolExclusion pe : ProtocolExclusion.values())
-                {
-                    parsePortArray(options, _commandLine.getOptionValues(pe.getExcludeName()), pe);
-                }
-                for(ProtocolInclusion pe : ProtocolInclusion.values())
-                {
-                    parseProtocolInclusions(options, _commandLine.getOptionValues(pe.getIncludeName()), pe);
-                }
-            }
-
-            String[] sslPortStr = _commandLine.getOptionValues(OPTION_SSLPORT.getOpt());
-            if(sslPortStr != null)
-            {
-                parsePortArray(options, sslPortStr, true);
-                for(ProtocolExclusion pe : ProtocolExclusion.values())
-                {
-                    parsePortArray(options, _commandLine.getOptionValues(pe.getExcludeName()), pe);
-                }
-                for(ProtocolInclusion pe : ProtocolInclusion.values())
-                {
-                    parseProtocolInclusions(options, _commandLine.getOptionValues(pe.getIncludeName()), pe);
-                }
             }
 
             setExceptionHandler();
@@ -410,68 +258,4 @@ private static final Option OPTION_INCLUDE_0_8 =
         System.exit(status);
     }
 
-    private static void parsePortArray(final BrokerOptions options,final Object[] ports,
-                                       final boolean ssl) throws InitException
-    {
-        if(ports != null)
-        {
-            for(int i = 0; i < ports.length; i++)
-            {
-                try
-                {
-                    if(ssl)
-                    {
-                        options.addSSLPort(Integer.parseInt(String.valueOf(ports[i])));
-                    }
-                    else
-                    {
-                        options.addPort(Integer.parseInt(String.valueOf(ports[i])));
-                    }
-                }
-                catch (NumberFormatException e)
-                {
-                    throw new InitException("Invalid port: " + ports[i], e);
-                }
-            }
-        }
-    }
-
-    private static void parsePortArray(final BrokerOptions options, final Object[] ports,
-                                       final ProtocolExclusion excludedProtocol) throws InitException
-    {
-        if(ports != null)
-        {
-            for(int i = 0; i < ports.length; i++)
-            {
-                try
-                {
-                    options.addExcludedPort(excludedProtocol, 
-                            Integer.parseInt(String.valueOf(ports[i])));
-                }
-                catch (NumberFormatException e)
-                {
-                    throw new InitException("Invalid port for exclusion: " + ports[i], e);
-                }
-            }
-        }
-    }
-
-    private static void parseProtocolInclusions(final BrokerOptions options, final Object[] ports,
-                                       final ProtocolInclusion includedProtocol) throws InitException
-    {
-        if(ports != null)
-        {
-            for(int i = 0; i < ports.length; i++)
-            {
-                try
-                {
-                    options.addIncludedPort(includedProtocol, Integer.parseInt(String.valueOf(ports[i])));
-                }
-                catch (NumberFormatException e)
-                {
-                    throw new InitException("Invalid port for inclusion: " + ports[i], e);
-                }
-            }
-        }
-    }
 }

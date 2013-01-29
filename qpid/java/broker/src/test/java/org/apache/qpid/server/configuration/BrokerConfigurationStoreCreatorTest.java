@@ -24,10 +24,8 @@ import java.io.File;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -95,12 +93,15 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
     public void testCreateXmlStore() throws Exception
     {
-        //TODO: Remove XML store
-        XMLConfiguration config = new XMLConfiguration();
-        config.save(_userStoreLocation);
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "xml", _options);
-        assertNotNull("Store was not created", store);
-        assertTrue("Unexpected store type", store instanceof XMLConfigurationEntryStore);
+        try
+        {
+            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "xml", _options);
+            fail("Store is not yet supported");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // pass
+        }
     }
 
 }

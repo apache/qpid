@@ -22,7 +22,6 @@ package org.apache.qpid.systest.management.jmx;
 
 
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
@@ -207,7 +206,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
             // We expect the RMI Registry port (the defined 'management port') to be
             // 100 lower than the JMX RMIConnector Server Port (the actual JMX server)
-            int jmxPort = mPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
+            int jmxPort = mPort + JMXPORT_CONNECTORSERVER_OFFSET;
             assertTrue("JMX RMIConnectorServer port not as expected(" + jmxPort + ").:" + getMessageString(log),
                        getMessageString(log).endsWith(String.valueOf(jmxPort)));
         }

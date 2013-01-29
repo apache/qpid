@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
@@ -107,19 +108,18 @@ public class BrokerLauncher
 
     private void startupImpl(final BrokerOptions options) throws Exception
     {
-        final String qpidHome = options.getQpidHome();
+        final String qpidHome = System.getProperty(BrokerProperties.PROPERTY_QPID_HOME);
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        //TODO: remove code below. A temporarily support for old configuration file option
         if (storeLocation == null)
         {
-            storeLocation = options.getConfigFile();
-        }
-
-        if (storeLocation == null)
-        {
-            storeLocation = new File(qpidHome, BrokerOptions.DEFAULT_CONFIG_FILE + "." + storeType).getAbsolutePath();
+            String qpidWork = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
+            if (qpidWork == null)
+            {
+                qpidWork = new File(System.getProperty("user.dir"), "work").getAbsolutePath();
+            }
+            storeLocation = new File(qpidWork, BrokerOptions.DEFAULT_CONFIG_FILE + "." + storeType).getAbsolutePath();
         }
 
         CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
@@ -171,7 +171,7 @@ public class BrokerLauncher
 
             if (qpidHome == null)
             {
-                error = error + "\nNote: " + BrokerOptions.QPID_HOME + " is not set.";
+                error = error + "\nNote: " + BrokerProperties.PROPERTY_QPID_HOME + " is not set.";
             }
 
             throw new InitException(error, null);

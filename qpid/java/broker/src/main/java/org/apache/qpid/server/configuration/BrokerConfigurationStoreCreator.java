@@ -21,7 +21,6 @@
 package org.apache.qpid.server.configuration;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.store.XMLConfigurationEntryStore;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class BrokerConfigurationStoreCreator
@@ -38,12 +37,6 @@ public class BrokerConfigurationStoreCreator
     public ConfigurationEntryStore createStore(String storeLocation, String storeType, BrokerOptions options)
     {
         ConfigurationEntryStore store = null;
-        if ("xml".equalsIgnoreCase(storeType))
-        {
-            store = new XMLConfigurationEntryStore(options);
-            store.open(storeLocation);
-            return store;
-        }
         QpidServiceLoader<ConfigurationStoreFactory> serviceLoader = new QpidServiceLoader<ConfigurationStoreFactory>();
         Iterable<ConfigurationStoreFactory> configurationStoreFactories = serviceLoader.instancesOf(ConfigurationStoreFactory.class);
         for (ConfigurationStoreFactory storeFactory : configurationStoreFactories)

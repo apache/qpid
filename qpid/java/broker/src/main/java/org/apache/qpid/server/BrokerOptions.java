@@ -20,70 +20,17 @@
  */
 package org.apache.qpid.server;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 public class BrokerOptions
 {
     public static final String DEFAULT_STORE_TYPE = "json";
-    public static final String DEFAULT_CONFIG_FILE = "etc/config";
+    public static final String DEFAULT_CONFIG_FILE = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
-    public static final String QPID_HOME = "QPID_HOME";
-    public static final String QPID_WORK = "QPID_WORK";
-    public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
 
-    private final Set<Integer> _ports = new HashSet<Integer>();
-    private final Set<Integer> _sslPorts = new HashSet<Integer>();
-    private final Map<ProtocolExclusion,Set<Integer>> _exclusionMap = new HashMap<ProtocolExclusion, Set<Integer>>();
-    private final Map<ProtocolInclusion,Set<Integer>> _inclusionMap = new HashMap<ProtocolInclusion, Set<Integer>>();
-
-    private String _configFile;
     private String _logConfigFile;
-    private String _bind;
-    private Integer _jmxPortRegistryServer;
-    private Integer _jmxPortConnectorServer;
-
     private Integer _logWatchFrequency = 0;
-    private String _qpidWorkFolder;
-    private String _qpidHomeFolder;
 
     private String _configurationStoreLocation;
     private String _configurationStoreType = DEFAULT_STORE_TYPE;
-
-    public void addPort(final int port)
-    {
-        _ports.add(port);
-    }
-
-    public void addSSLPort(final int sslPort)
-    {
-        _sslPorts.add(sslPort);
-    }
-
-    public Set<Integer> getPorts()
-    {
-        return Collections.unmodifiableSet(_ports);
-    }
-
-    public Set<Integer> getSSLPorts()
-    {
-        return Collections.unmodifiableSet(_sslPorts);
-    }
-
-    @Deprecated
-    public String getConfigFile()
-    {
-        return _configFile;
-    }
-
-    @Deprecated
-    public void setConfigFile(final String configFile)
-    {
-        _configFile = configFile;
-    }
 
     public String getLogConfigFile()
     {
@@ -93,57 +40,6 @@ public class BrokerOptions
     public void setLogConfigFile(final String logConfigFile)
     {
         _logConfigFile = logConfigFile;
-    }
-
-    public Integer getJmxPortRegistryServer()
-    {
-        return _jmxPortRegistryServer;
-    }
-
-    public void setJmxPortRegistryServer(final int jmxPortRegistryServer)
-    {
-        _jmxPortRegistryServer = jmxPortRegistryServer;
-    }
-
-    public Integer getJmxPortConnectorServer()
-    {
-        return _jmxPortConnectorServer;
-    }
-
-    public void setJmxPortConnectorServer(final int jmxPortConnectorServer)
-    {
-        _jmxPortConnectorServer = jmxPortConnectorServer;
-    }
-    public String getQpidHome()
-    {
-        return _qpidHomeFolder == null? System.getProperty(QPID_HOME): _qpidHomeFolder;
-    }
-
-    public Set<Integer> getExcludedPorts(final ProtocolExclusion excludeProtocol)
-    {
-        final Set<Integer> excludedPorts = _exclusionMap.get(excludeProtocol);
-        return excludedPorts == null ? Collections.<Integer>emptySet() : excludedPorts;
-    }
-
-    public void addExcludedPort(final ProtocolExclusion excludeProtocol, final int port)
-    {
-        if (!_exclusionMap.containsKey(excludeProtocol))
-        {
-            _exclusionMap.put(excludeProtocol, new HashSet<Integer>());
-        }
-
-        Set<Integer> ports = _exclusionMap.get(excludeProtocol);
-        ports.add(port);
-    }
-
-    public String getBind()
-    {
-        return _bind;
-    }
-
-    public void setBind(final String bind)
-    {
-        _bind = bind;
     }
 
     public int getLogWatchFrequency()
@@ -158,38 +54,6 @@ public class BrokerOptions
     public void setLogWatchFrequency(final int logWatchFrequency)
     {
         _logWatchFrequency = logWatchFrequency;
-    }
-
-    public Set<Integer> getIncludedPorts(final ProtocolInclusion includeProtocol)
-    {
-        final Set<Integer> includedPorts = _inclusionMap.get(includeProtocol);
-        return includedPorts == null ? Collections.<Integer>emptySet() : includedPorts;
-    }
-
-    public void addIncludedPort(final ProtocolInclusion includeProtocol, final int port)
-    {
-        if (!_inclusionMap.containsKey(includeProtocol))
-        {
-            _inclusionMap.put(includeProtocol, new HashSet<Integer>());
-        }
-
-        Set<Integer> ports = _inclusionMap.get(includeProtocol);
-        ports.add(port);
-    }
-
-    public String getQpidWork()
-    {
-        return _qpidWorkFolder;
-    }
-
-    public void setQpidWork(String qpidWorkFolder)
-    {
-        _qpidWorkFolder = qpidWorkFolder;
-    }
-
-    public void setQpidHome(String qpidHomeFolder)
-    {
-        _qpidHomeFolder = qpidHomeFolder;
     }
 
     public String getConfigurationStoreLocation()
