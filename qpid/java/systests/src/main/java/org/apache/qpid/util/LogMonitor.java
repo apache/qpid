@@ -30,8 +30,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility to simplify the monitoring of Log4j file output
@@ -160,6 +162,39 @@ public class LogMonitor
         return results;
     }
 
+    public Map<String, List<String>> findMatches(String... pattern) throws IOException
+    {
+
+        Map<String, List<String>> results= new HashMap<String, List<String>>();
+        for (String p : pattern)
+        {
+            results.put(p, new LinkedList<String>());
+        }
+        LineNumberReader reader = new LineNumberReader(new FileReader(_logfile));
+        try
+        {
+            while (reader.ready())
+            {
+                String line = reader.readLine();
+                if (reader.getLineNumber()  > _linesToSkip)
+                {
+                    for (String p : pattern)
+                    {
+                        if (line.contains(p))
+                        {
+                            results.get(p).add(line);
+                        }
+                    }
+                }
+            }
+        }
+        finally
+        {
+            reader.close();
+        }
+
+        return results;
+    }
     /**
      * Checks the log file for a given message to appear.  If the caller
      * has previously called {@link #markDiscardPoint()}, lines up until the discard

@@ -33,6 +33,7 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -50,6 +51,7 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
     private static final String VHOST_NAME1 = "vhost1";
     private static final String VHOST_NAME2 = "vhost2";
     private static final String VHOST_NAME3 = "vhost3";
+    private static long STATISTICS_REPORTING_PERIOD_IN_SECONDS = 10l;
 
     protected LogMonitor _monitor;
     protected static final String USER = "admin";
@@ -58,6 +60,7 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
     protected String _queueName = "statistics";
     protected Destination _queue;
     protected String _brokerUrl;
+    private long _startTestTime;
 
     @Override
     public void setUp() throws Exception
@@ -70,10 +73,11 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
         {
             TestBrokerConfiguration config = getBrokerConfiguration();
             config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
-            config.setBrokerAttribute(Broker.STATISTICS_REPORTING_PERIOD, 10);
+            config.setBrokerAttribute(Broker.STATISTICS_REPORTING_PERIOD, STATISTICS_REPORTING_PERIOD_IN_SECONDS);
         }
 
         _monitor = new LogMonitor(_outputFile);
+        _startTestTime = System.currentTimeMillis();
 
         super.setUp();
 
@@ -106,17 +110,26 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
         sendUsing(_conToVhost2, 20, 100);
         sendUsing(_conToVhost3, 15, 100);
 
-        Thread.sleep(10 * 1000); // 15s
+        Thread.sleep(STATISTICS_REPORTING_PERIOD_IN_SECONDS * 1000);
 
-        List<String> brokerStatsData = _monitor.findMatches("BRK-1008");
-        List<String> brokerStatsMessages = _monitor.findMatches("BRK-1009");
-        List<String> vhostStatsData = _monitor.findMatches("VHT-1003");
-        List<String> vhostStatsMessages = _monitor.findMatches("VHT-1004");
+        Map<String, List<String>> brokerStatsData = _monitor.findMatches("BRK-1008", "BRK-1009", "VHT-1003", "VHT-1004");
+        long endTestTime = System.currentTimeMillis();
 
-        assertEquals("Incorrect number of broker data stats log messages", 2, brokerStatsData.size());
-        assertEquals("Incorrect number of broker message stats log messages", 2, brokerStatsMessages.size());
-        assertEquals("Incorrect number of virtualhost data stats log messages", 6, vhostStatsData.size());
-        assertEquals("Incorrect number of virtualhost message stats log messages", 6, vhostStatsMessages.size());
+        int maxNumberOfReports = (int)((endTestTime - _startTestTime)/STATISTICS_REPORTING_PERIOD_IN_SECONDS);
+
+        int brk1008LinesNumber = brokerStatsData.get("BRK-1008").size();
+        int brk1009LinesNumber = brokerStatsData.get("BRK-1009").size();
+        int vht1003LinesNumber = brokerStatsData.get("VHT-1003").size();
+        int vht1004LinesNumber = brokerStatsData.get("VHT-1004").size();
+
+        assertTrue("Incorrect number of broker data stats log messages:" + brk1008LinesNumber, 2 <= brk1008LinesNumber
+                && brk1008LinesNumber <= maxNumberOfReports * 2);
+        assertTrue("Incorrect number of broker message stats log messages:" + brk1009LinesNumber, 2 <= brk1009LinesNumber
+                && brk1009LinesNumber <= maxNumberOfReports * 2);
+        assertTrue("Incorrect number of virtualhost data stats log messages:" + vht1003LinesNumber, 6 <= vht1003LinesNumber
+                && vht1003LinesNumber <= maxNumberOfReports * 6);
+        assertTrue("Incorrect number of virtualhost message stats log messages: " + vht1004LinesNumber, 6 <= vht1004LinesNumber
+                && vht1004LinesNumber <= maxNumberOfReports * 6);
     }
 
     /**
@@ -143,7 +156,7 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
 
     private void sendUsing(Connection con, int number, int size) throws Exception
     {
-        Session session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session = con.createSession(true, Session.SESSION_TRANSACTED);
         createQueue(session);
         MessageProducer producer = session.createProducer(_queue);
         String content = new String(new byte[size]);
@@ -152,6 +165,8 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
         {
             producer.send(msg);
         }
+        session.commit();
+        session.close();
     }
 
     private void createQueue(Session session) throws AMQException, JMSException
