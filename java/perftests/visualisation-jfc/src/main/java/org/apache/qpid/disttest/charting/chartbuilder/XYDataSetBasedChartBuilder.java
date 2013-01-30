@@ -29,6 +29,7 @@ import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.DefaultXYDataset;
 
@@ -61,11 +62,10 @@ public abstract class XYDataSetBasedChartBuilder extends BaseChartBuilder
             }
 
             @Override
-            public void addDataPointToSeries(SeriesDefinition seriesDefinition,
-                    Object[] row)
+            public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row)
             {
-                double x = Double.parseDouble(row[0].toString());
-                double y = Double.parseDouble(row[1].toString());
+                double x = row.dimensionAsDouble(0);
+                double y = row.dimensionAsDouble(1);
                 _xyPairs.add(new Double[] {x, y});
             }
 
@@ -75,6 +75,12 @@ public abstract class XYDataSetBasedChartBuilder extends BaseChartBuilder
             {
                 double[][] seriesData = listToSeriesDataArray();
                 dataset.addSeries(seriesDefinition.getSeriesLegend(), seriesData);
+            }
+
+            @Override
+            public int getNumberOfDimensions()
+            {
+                return 2;
             }
 
             private double[][] listToSeriesDataArray()

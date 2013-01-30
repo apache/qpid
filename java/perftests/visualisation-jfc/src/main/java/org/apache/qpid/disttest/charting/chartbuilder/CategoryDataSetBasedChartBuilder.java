@@ -27,6 +27,7 @@ import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.data.category.DefaultCategoryDataset;
@@ -52,11 +53,11 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
         _seriesBuilder.setSeriesBuilderCallback(new SeriesBuilderCallback()
         {
             @Override
-            public void addDataPointToSeries(SeriesDefinition seriesDefinition, Object[] row)
+            public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row)
             {
-                String x = String.valueOf(row[0]);
-                double y = Double.parseDouble(row[1].toString());
-                dataset.addValue( y, seriesDefinition.getSeriesLegend(), x);
+                String x = row.dimensionAsString(0);
+                double y = row.dimensionAsDouble(1);
+                dataset.addValue(y, seriesDefinition.getSeriesLegend(), x);
             }
 
             @Override
@@ -69,6 +70,12 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
             public void endSeries(SeriesDefinition seriesDefinition)
             {
                 // unused
+            }
+
+            @Override
+            public int getNumberOfDimensions()
+            {
+                return 2;
             }
 
         });

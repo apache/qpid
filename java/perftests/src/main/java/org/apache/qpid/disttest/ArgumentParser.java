@@ -34,10 +34,14 @@ public class ArgumentParser
                 throw new IllegalArgumentException("arguments must have format <name>=<value>: " + arg);
             }
 
-            if(initialValues.put(splitArg[0], splitArg[1]) == null)
+
+            String argumentKey = splitArg[0];
+            String argumentValue = splitArg[1];
+            if(!initialValues.containsKey(argumentKey))
             {
                 throw new IllegalArgumentException("not a valid configuration property: " + arg);
             }
+            initialValues.put(argumentKey, argumentValue);
         }
 
     }

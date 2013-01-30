@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.disttest.charting.seriesbuilder;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -28,18 +27,34 @@ import java.sql.Statement;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.qpid.disttest.charting.ChartingException;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class JdbcCsvSeriesBuilder implements SeriesBuilder
+/**
+ * A {@link SeriesBuilder} that uses JDBC to read series data
+ */
+public class JdbcSeriesBuilder implements SeriesBuilder
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSeriesBuilder.class);
 
-    static
-    {
-        registerCsvDriver();
-    }
+    public static final String DEFAULT_JDBC_DRIVER_NAME = "org.relique.jdbc.csv.CsvDriver";
 
+    /** the dot at the end denotes the current directory */
+    public static final String DEFAULT_JDBC_URL = "jdbc:relique:csv:.";
+
+    private final String _jdbcUrl;
     private SeriesBuilderCallback _callback;
+
+    public JdbcSeriesBuilder(String jdbcDriverClass, String jdbcUrl)
+    {
+        registerDriver(jdbcDriverClass);
+        _jdbcUrl = jdbcUrl;
+        LOGGER.info("Created: " + this);
+    }
 
     @Override
     public void setSeriesBuilderCallback(SeriesBuilderCallback callback)
@@ -63,9 +78,7 @@ public class JdbcCsvSeriesBuilder implements SeriesBuilder
         Statement stmt = null;
         try
         {
-            File seriesDir = getValidatedSeriesDirectory(seriesDefinition);
-
-            conn = DriverManager.getConnection("jdbc:relique:csv:" + seriesDir.getAbsolutePath());
+            conn = DriverManager.getConnection(_jdbcUrl);
 
             final String seriesStatement = seriesDefinition.getSeriesStatement();
 
@@ -81,7 +94,8 @@ public class JdbcCsvSeriesBuilder implements SeriesBuilder
                     row[i] = results.getObject(i+1);
                 }
 
-                _callback.addDataPointToSeries(seriesDefinition, row);
+                SeriesRow seriesRow = SeriesRow.createValidSeriesRow(_callback.getNumberOfDimensions(), row);
+                _callback.addDataPointToSeries(seriesDefinition, seriesRow);
             }
             _callback.endSeries(seriesDefinition);
         }
@@ -116,26 +130,22 @@ public class JdbcCsvSeriesBuilder implements SeriesBuilder
         }
     }
 
-    private File getValidatedSeriesDirectory(SeriesDefinition series)
-    {
-        File seriesDir = new File(series.getSeriesDirectory());
-        if (!seriesDir.isDirectory())
-        {
-            throw new ChartingException("seriesDirectory must be a directory : " + seriesDir);
-        }
-        return seriesDir;
-    }
-
-    private static void registerCsvDriver() throws ExceptionInInitializerError
+    private void registerDriver(String driverClassName) throws ExceptionInInitializerError
     {
         try
         {
-            Class.forName("org.relique.jdbc.csv.CsvDriver");
+            Class.forName(driverClassName);
+            LOGGER.info("Loaded JDBC driver class " + driverClassName);
         }
         catch (ClassNotFoundException e)
         {
-            throw new RuntimeException("Could not load CSV/JDBC driver", e);
+            throw new RuntimeException("Could not load JDBC driver " + driverClassName, e);
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("jdbcUrl", _jdbcUrl).toString();
+    }
 }

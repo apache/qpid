@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -14,16 +16,18 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
 
-# this file is used for running system tests of the performance test framework,
-# (i.e. not for running the performance tests themselves!)
+# Runs the visualisation tool against perftest CSV output assumed to be in the current directory
 
-java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+BASE_DIR=`dirname $0`
 
-# use QpidBrokerTestCase's default port
-connectionfactory.connectionfactory = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:15672'
+# Uncomment to read perftest data from a Derby database
+# JDBC_URL=jdbcUrl=jdbc:derby:perftestResultsDb
+# JDBC_DRIVER=jdbcDriverClass=org.apache.derby.jdbc.EmbeddedDriver
 
-destination.controllerqueue = direct://amq.direct//controllerqueue
-
-jdbcDriverClass=org.apache.derby.jdbc.EmbeddedDriver
-jdbcUrl=jdbc:derby:/tmp/tempDbDirectory/perftestResultsDb;create=true
+java -cp "${BASE_DIR}:${BASE_DIR}/../../build/lib/*" \
+  -Djava.awt.headless=true -Dlog4j.configuration=file:log4j.properties \
+  org.apache.qpid.disttest.charting.ChartingUtil \
+  chart-defs=chartdefs \
+  ${JDBC_DRIVER} ${JDBC_URL}
