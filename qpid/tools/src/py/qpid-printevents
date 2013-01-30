@@ -150,7 +150,9 @@ def main(argv=None):
   if options.ssl_certificate:
     conn_options['ssl_certfile'] = options.ssl_certificate
   if options.ssl_key:
-    conn_options['ssl_key'] = options.ssl_key
+    if not options.ssl_certificate:
+      p.error("missing '--ssl-certificate' (required by '--ssl-key')")
+    conn_options['ssl_keyfile'] = options.ssl_key
   if options.ha_admin:
     props['qpid.ha-admin'] = 1
   if options.heartbeats:
