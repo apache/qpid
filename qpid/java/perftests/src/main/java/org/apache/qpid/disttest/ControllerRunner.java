@@ -30,6 +30,7 @@ import org.apache.qpid.disttest.controller.Controller;
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.controller.config.ConfigReader;
+import org.apache.qpid.disttest.db.ResultsDbWriter;
 import org.apache.qpid.disttest.jms.ControllerJmsDelegate;
 import org.apache.qpid.disttest.results.aggregation.Aggregator;
 import org.slf4j.Logger;
@@ -42,22 +43,29 @@ public class ControllerRunner extends AbstractRunner
     public static final String TEST_CONFIG_PROP = "test-config";
     public static final String DISTRIBUTED_PROP = "distributed";
     public static final String OUTPUT_DIR_PROP = "outputdir";
+    public static final String WRITE_TO_DB = "writeToDb";
+    public static final String RUN_ID = "runId";
 
     private static final String TEST_CONFIG_DEFAULT = "perftests-config.json";
     private static final String DISTRIBUTED_DEFAULT = "false";
     private static final String OUTPUT_DIR_DEFAULT = ".";
+    public static final String WRITE_TO_DB_DEFAULT = "false";
 
     private final Aggregator _aggregator = new Aggregator();
 
     private final ConfigFileHelper _configFileHelper = new ConfigFileHelper();
 
-    private ResultsFileWriter _resuResultsFileWriter;
+    private ResultsFileWriter _resultsFileWriter;
+
+    private ResultsDbWriter _resultsDbWriter;
 
     public ControllerRunner()
     {
         getCliOptions().put(TEST_CONFIG_PROP, TEST_CONFIG_DEFAULT);
         getCliOptions().put(DISTRIBUTED_PROP, DISTRIBUTED_DEFAULT);
         getCliOptions().put(OUTPUT_DIR_PROP, OUTPUT_DIR_DEFAULT);
+        getCliOptions().put(WRITE_TO_DB, WRITE_TO_DB_DEFAULT);
+        getCliOptions().put(RUN_ID, null);
     }
 
     public static void main(String[] args) throws Exception
@@ -70,7 +78,8 @@ public class ControllerRunner extends AbstractRunner
     public void runController() throws Exception
     {
         Context context = getContext();
-        setUpResultsWriter();
+        setUpResultFilesWriter();
+        setUpResultsDbWriter();
 
         ControllerJmsDelegate jmsDelegate = new ControllerJmsDelegate(context);
 
@@ -84,11 +93,22 @@ public class ControllerRunner extends AbstractRunner
         }
     }
 
-    void setUpResultsWriter()
+    private void setUpResultsDbWriter()
+    {
+        String writeToDbStr = getCliOptions().get(WRITE_TO_DB);
+        if(Boolean.valueOf(writeToDbStr))
+        {
+            String runId = getCliOptions().get(RUN_ID);
+            _resultsDbWriter = new ResultsDbWriter(getContext(), runId);
+            _resultsDbWriter.createResultsTableIfNecessary();
+        }
+    }
+
+    void setUpResultFilesWriter()
     {
         String outputDirString = getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP);
         File outputDir = new File(outputDirString);
-        _resuResultsFileWriter = new ResultsFileWriter(outputDir);
+        _resultsFileWriter = new ResultsFileWriter(outputDir);
     }
 
     private void runTests(ControllerJmsDelegate jmsDelegate)
@@ -115,7 +135,7 @@ public class ControllerRunner extends AbstractRunner
                 results.add(testResult);
             }
 
-            _resuResultsFileWriter.writeResultsSummary(results);
+            _resultsFileWriter.writeResultsSummary(results);
         }
         catch(Exception e)
         {
@@ -135,7 +155,12 @@ public class ControllerRunner extends AbstractRunner
         ResultsForAllTests rawResultsForAllTests = controller.runAllTests();
         ResultsForAllTests resultsForAllTests = _aggregator.aggregateResults(rawResultsForAllTests);
 
-        _resuResultsFileWriter.writeResultsToFile(resultsForAllTests, testConfigFile);
+        _resultsFileWriter.writeResultsToFile(resultsForAllTests, testConfigFile);
+        if(_resultsDbWriter != null)
+        {
+            _resultsDbWriter.writeResults(resultsForAllTests);
+        }
+
         return resultsForAllTests;
     }
 

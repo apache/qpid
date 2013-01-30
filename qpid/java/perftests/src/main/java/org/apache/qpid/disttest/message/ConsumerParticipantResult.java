@@ -134,6 +134,7 @@ public class ConsumerParticipantResult extends ParticipantResult
         _messageLatencies = messageLatencies;
     }
 
+    @Override
     @OutputAttribute(attribute=ParticipantAttribute.MIN_LATENCY)
     public long getMinLatency()
     {
@@ -145,6 +146,7 @@ public class ConsumerParticipantResult extends ParticipantResult
         _minLatency = minLatency;
     }
 
+    @Override
     @OutputAttribute(attribute=ParticipantAttribute.MAX_LATENCY)
     public long getMaxLatency()
     {
@@ -156,6 +158,7 @@ public class ConsumerParticipantResult extends ParticipantResult
         _maxLatency = maxLatency;
     }
 
+    @Override
     @OutputAttribute(attribute=ParticipantAttribute.AVERAGE_LATENCY)
     public double getAverageLatency()
     {
@@ -167,6 +170,7 @@ public class ConsumerParticipantResult extends ParticipantResult
         _averageLatency = averageLatency;
     }
 
+    @Override
     @OutputAttribute(attribute=ParticipantAttribute.LATENCY_STANDARD_DEVIATION)
     public double getLatencyStandardDeviation()
     {

@@ -20,7 +20,7 @@ package org.apache.qpid.systest.disttest.endtoend;
 
 import static org.apache.qpid.disttest.AbstractRunner.JNDI_CONFIG_PROP;
 import static org.apache.qpid.disttest.ControllerRunner.OUTPUT_DIR_PROP;
-import static org.apache.qpid.disttest.ControllerRunner.TEST_CONFIG_PROP;
+import static org.apache.qpid.disttest.ControllerRunner.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +36,7 @@ public class EndToEndTest extends QpidBrokerTestCase
     private ControllerRunner _runner;
     private static final String TEST_CONFIG = "perftests/src/test/java/org/apache/qpid/systest/disttest/endtoend/endtoend.json";
     private static final String JNDI_CONFIG_FILE = "perftests/src/test/java/org/apache/qpid/systest/disttest/perftests.systests.properties";
+    private static final String RUN1 = "run1";
 
     public void testRunner() throws Exception
     {
@@ -44,6 +45,8 @@ public class EndToEndTest extends QpidBrokerTestCase
 
         final String[] args = new String[] {TEST_CONFIG_PROP + "=" + TEST_CONFIG,
                                             JNDI_CONFIG_PROP + "=" + JNDI_CONFIG_FILE,
+                                            WRITE_TO_DB + "=true",
+                                            RUN_ID + "=" + RUN1,
                                             OUTPUT_DIR_PROP  + "=" + csvOutputDir.getAbsolutePath()};
         _runner = new ControllerRunner();
         _runner.parseArgumentsIntoConfig(args);

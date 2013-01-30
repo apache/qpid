@@ -35,7 +35,6 @@ import javax.jms.MessageListener;
 
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
-import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.slf4j.Logger;
@@ -113,7 +112,7 @@ public class ConsumerParticipant implements Participant
                         getName(), numberOfMessagesReceived);
         }
 
-        ConsumerParticipantResult result = _resultFactory.createForConsumer(
+        ParticipantResult result = _resultFactory.createForConsumer(
                 getName(),
                 registeredClientName,
                 _command,

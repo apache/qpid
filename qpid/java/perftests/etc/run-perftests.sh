@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -14,16 +16,22 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
 
-# this file is used for running system tests of the performance test framework,
-# (i.e. not for running the performance tests themselves!)
+# Runs the perftests using a typical configuration.
 
-java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+BASE_DIR=`dirname $0`
+DURATION=${1:-5000}
+AMQP_VERSION=${2:-0-91}
 
-# use QpidBrokerTestCase's default port
-connectionfactory.connectionfactory = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:15672'
+echo Will run perftests using a maximum duration of ${DURATION}ms and AMQP protocol version ${AMQP_VERSION}.
+echo
 
-destination.controllerqueue = direct://amq.direct//controllerqueue
-
-jdbcDriverClass=org.apache.derby.jdbc.EmbeddedDriver
-jdbcUrl=jdbc:derby:/tmp/tempDbDirectory/perftestResultsDb;create=true
+java -cp "${BASE_DIR}:${BASE_DIR}/../../build/lib/*" \
+  -Dqpid.amqp.version=${AMQP_VERSION} -Dqpid.dest_syntax=BURL \
+  -Dqpid.disttest.duration=$DURATION \
+  org.apache.qpid.disttest.ControllerRunner \
+  jndi-config=${BASE_DIR}/perftests-jndi.properties \
+  test-config=${BASE_DIR}/testdefs \
+  distributed=false \
+  writeToDb=true
