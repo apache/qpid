@@ -159,8 +159,6 @@ public:
     virtual void notifyPendingWrite() = 0;
     virtual void queueWriteClose() = 0;
     virtual bool writeQueueEmpty() = 0;
-    virtual void startReading() = 0;
-    virtual void stopReading() = 0;
     virtual void requestCallback(RequestCallback) = 0;
     virtual BufferBase* getQueuedBuffer() = 0;
 

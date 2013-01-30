@@ -77,8 +77,6 @@ public:
     virtual void notifyPendingWrite();
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
-    virtual void startReading();
-    virtual void stopReading();
     virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
     virtual SecuritySettings getSecuritySettings(void);
