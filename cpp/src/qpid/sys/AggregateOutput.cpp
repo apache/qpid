@@ -32,8 +32,6 @@ void AggregateOutput::abort() { control.abort(); }
 
 void AggregateOutput::activateOutput() { control.activateOutput(); }
 
-void AggregateOutput::giveReadCredit(int32_t credit) { control.giveReadCredit(credit); }
-
 namespace {
 // Clear the busy flag and notify waiting threads in destructor.
 struct ScopedBusy {

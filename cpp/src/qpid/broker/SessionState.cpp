@@ -143,11 +143,6 @@ void SessionState::activateOutput() {
         getConnection().outputTasks.activateOutput();
 }
 
-void SessionState::giveReadCredit(int32_t credit) {
-    if (isAttached())
-        getConnection().outputTasks.giveReadCredit(credit);
-}
-
 ManagementObject::shared_ptr SessionState::GetManagementObject(void) const
 {
     return mgmtObject;
