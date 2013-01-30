@@ -268,8 +268,6 @@ public:
     virtual void notifyPendingWrite();
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
-    virtual void startReading();
-    virtual void stopReading();
     virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
     virtual SecuritySettings getSecuritySettings();
@@ -304,13 +302,6 @@ private:
      * thread processing this handle.
      */
     volatile bool writePending;
-    /**
-     * This records whether we've been reading is flow controlled:
-     * it's safe as a simple boolean as the only way to be stopped
-     * is in calls only allowed in the callback context, the only calls
-     * checking it are also in calls only allowed in callback context.
-     */
-    volatile bool readingStopped;
 };
 
 AsynchIO::AsynchIO(const Socket& s,
@@ -329,8 +320,7 @@ AsynchIO::AsynchIO(const Socket& s,
     idleCallback(iCb),
     socket(s),
     queuedClose(false),
-    writePending(false),
-    readingStopped(false) {
+    writePending(false) {
 
     s.setNonblocking();
 }
@@ -366,7 +356,7 @@ void AsynchIO::queueReadBuffer(BufferBase* buff) {
 
     bool queueWasEmpty = bufferQueue.empty();
     bufferQueue.push_back(buff);
-    if (queueWasEmpty && !readingStopped)
+    if (queueWasEmpty)
         DispatchHandle::rewatchRead();
 }
 
@@ -376,7 +366,7 @@ void AsynchIO::unread(BufferBase* buff) {
 
     bool queueWasEmpty = bufferQueue.empty();
     bufferQueue.push_front(buff);
-    if (queueWasEmpty && !readingStopped)
+    if (queueWasEmpty)
         DispatchHandle::rewatchRead();
 }
 
@@ -406,17 +396,6 @@ void AsynchIO::queueWriteClose() {
 
 bool AsynchIO::writeQueueEmpty() {
     return writeQueue.empty();
-}
-
-// This can happen outside the callback context
-void AsynchIO::startReading() {
-    readingStopped = false;
-    DispatchHandle::rewatchRead();
-}
-
-void AsynchIO::stopReading() {
-    readingStopped = true;
-    DispatchHandle::unwatchRead();
 }
 
 void AsynchIO::requestCallback(RequestCallback callback) {
@@ -451,11 +430,6 @@ AsynchIO::BufferBase* AsynchIO::getQueuedBuffer() {
  * to put it in and reading is not stopped by flow control.
  */
 void AsynchIO::readable(DispatchHandle& h) {
-    if (readingStopped) {
-        // We have been flow controlled.
-        QPID_PROBE1(asynchio_read_flowcontrolled, &h);
-        return;
-    }
     AbsTime readStartTime = AbsTime::now();
     size_t total = 0;
     int readCalls = 0;
@@ -477,12 +451,6 @@ void AsynchIO::readable(DispatchHandle& h) {
                 total += rc;
 
                 readCallback(*this, buff);
-                if (readingStopped) {
-                    // We have been flow controlled.
-                    QPID_PROBE4(asynchio_read_finished_flowcontrolled, &h, duration, total, readCalls);
-                    break;
-                }
-
                 if (rc != readCount) {
                     // If we didn't fill the read buffer then time to stop reading
                     QPID_PROBE4(asynchio_read_finished_done, &h, duration, total, readCalls);
