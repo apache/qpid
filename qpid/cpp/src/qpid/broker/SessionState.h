@@ -99,7 +99,6 @@ class SessionState : public qpid::SessionState,
     /** OutputControl **/
     void abort();
     void activateOutput();
-    void giveReadCredit(int32_t);
 
     void senderCompleted(const framing::SequenceSet& ranges);
 

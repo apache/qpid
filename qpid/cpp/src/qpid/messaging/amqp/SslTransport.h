@@ -49,7 +49,7 @@ class SslTransport : public Transport
     void activateOutput();
     void abort();
     void close();
-    void giveReadCredit(int32_t) {}
+
   private:
     qpid::sys::ssl::SslSocket socket;
     TransportContext& context;

@@ -119,7 +119,6 @@ size_t  Connection::encode(char* buffer, size_t size) {
 
 void Connection::abort() { output.abort(); }
 void Connection::activateOutput() { output.activateOutput(); }
-void Connection::giveReadCredit(int32_t credit) { output.giveReadCredit(credit); }
 
 void  Connection::close() {
     // No more frames can be pushed onto the queue.

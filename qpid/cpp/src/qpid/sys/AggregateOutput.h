@@ -59,7 +59,6 @@ class QPID_COMMON_CLASS_EXTERN AggregateOutput : public OutputTask, public Outpu
     // These may be called concurrently with any function.
     QPID_COMMON_EXTERN void abort();
     QPID_COMMON_EXTERN void activateOutput();
-    QPID_COMMON_EXTERN void giveReadCredit(int32_t);
     QPID_COMMON_EXTERN void addOutputTask(OutputTask* t);
 
     // These functions must not be called concurrently with each other.
