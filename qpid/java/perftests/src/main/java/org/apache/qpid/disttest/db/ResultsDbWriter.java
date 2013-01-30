@@ -32,8 +32,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.TimeZone;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -145,7 +147,7 @@ public class ResultsDbWriter
     private final Clock _clock;
 
     /**
-     * @param runId may be null, in which case a default value is chosen based on current time.
+     * @param runId may be null, in which case a default value is chosen based on current GMT time
      * @param context must contain environment entries {@value #DRIVER_NAME} and {@value #URL}.
      */
     public ResultsDbWriter(Context context, String runId)
@@ -167,7 +169,9 @@ public class ResultsDbWriter
         if(runId == null)
         {
             Date dateNow = new Date(_clock.currentTimeMillis());
-            return String.format("run %1$tF %1$tT.%tL", dateNow);
+            Calendar calNow = Calendar.getInstance(TimeZone.getTimeZone("GMT+00:00"));
+            calNow.setTime(dateNow);
+            return String.format("run %1$tF %1$tT.%tL", calNow);
         }
         else
         {
