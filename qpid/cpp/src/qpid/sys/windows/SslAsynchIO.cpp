@@ -209,18 +209,6 @@ bool SslAsynchIO::writeQueueEmpty() {
     return aio->writeQueueEmpty();
 }
 
-/*
- * Initiate a read operation. AsynchIO::readComplete() will be
- * called when the read is complete and data is available.
- */
-void SslAsynchIO::startReading() {
-    aio->startReading();
-}
-
-void SslAsynchIO::stopReading() {
-    aio->stopReading();
-}
-
 // Queue the specified callback for invocation from an I/O thread.
 void SslAsynchIO::requestCallback(RequestCallback callback) {
     aio->requestCallback(callback);
