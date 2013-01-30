@@ -35,6 +35,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Hashtable;
+import java.util.TimeZone;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -49,7 +50,6 @@ import org.apache.qpid.util.FileUtils;
 
 public class ResultsDbWriterTest extends TestCase
 {
-
     private static final long _dummyTimestamp = 1234;
 
     private File _tempDbDirectory;
@@ -96,8 +96,22 @@ public class ResultsDbWriterTest extends TestCase
 
     public void testDefaultRunId() throws Exception
     {
-        ResultsDbWriter resultsDbWriter = new ResultsDbWriter(getContext(), null, _clock);
-        assertEquals("run 1970-01-01 01:00:01.234", resultsDbWriter.getRunId());
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try
+        {
+            // set non-GMT timezone to make the test more rigorous.
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT-05:00"));
+            ResultsDbWriter resultsDbWriter = new ResultsDbWriter(getContext(), null, _clock);
+            String runId = resultsDbWriter.getRunId();
+            assertEquals(
+                    "Default run id '" + runId + "' should correspond to dummy timestamp " + _clock.currentTimeMillis(),
+                    "run 1970-01-01 00:00:01.234",
+                    runId);
+        }
+        finally
+        {
+            TimeZone.setDefault(defaultTimeZone);
+        }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
