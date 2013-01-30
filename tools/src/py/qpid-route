@@ -97,6 +97,7 @@ def OptionsAndArguments(argv):
 
     parser.add_option("--client-sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). Used when the client connects to the destination broker (not for authentication between the source and destination brokers - that is specified using the [mechanisms] argument to 'add route'). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+    parser.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
     parser.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
     opts, encArgs = parser.parse_args(args=argv)
 
@@ -140,6 +141,11 @@ def OptionsAndArguments(argv):
 
     if opts.ssl_certificate:
         config._conn_options['ssl_certfile'] = opts.ssl_certificate
+
+    if opts.ssl_key:
+        if not opts.ssl_certificate:
+            parser.error("missing '--ssl-certificate' (required by '--ssl-key')")
+        config._conn_options['ssl_keyfile'] = opts.ssl_key
 
     return args
 

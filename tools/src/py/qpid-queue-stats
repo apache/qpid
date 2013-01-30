@@ -127,6 +127,7 @@ def main(argv=None):
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
   p.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
   p.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+  p.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
 
   options, arguments = p.parse_args(args=argv)
 
@@ -135,6 +136,10 @@ def main(argv=None):
     conn_options['mechanisms'] = options.sasl_mechanism
   if options.ssl_certificate:
     conn_options['ssl_certfile'] = options.ssl_certificate
+  if options.ssl_key:
+    if not options.ssl_certificate:
+      p.error("missing '--ssl-certificate' (required by '--ssl-key')")
+    conn_options['ssl_keyfile'] = options.ssl_key
 
   host = options.broker_address
   filter = []
