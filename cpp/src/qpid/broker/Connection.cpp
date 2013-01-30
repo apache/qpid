@@ -481,7 +481,6 @@ void Connection::OutboundFrameTracker::close() { next->close(); }
 size_t Connection::OutboundFrameTracker::getBuffered() const { return next->getBuffered(); }
 void Connection::OutboundFrameTracker::abort() { next->abort(); }
 void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
-void Connection::OutboundFrameTracker::giveReadCredit(int32_t credit) { next->giveReadCredit(credit); }
 void Connection::OutboundFrameTracker::send(framing::AMQFrame& f)
 {
     next->send(f);

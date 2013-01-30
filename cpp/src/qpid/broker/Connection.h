@@ -199,7 +199,6 @@ class Connection : public sys::ConnectionInputHandler,
         size_t getBuffered() const;
         void abort();
         void activateOutput();
-        void giveReadCredit(int32_t credit);
         void send(framing::AMQFrame&);
         void wrap(sys::ConnectionOutputHandlerPtr&);
       private:
