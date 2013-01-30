@@ -28,6 +28,7 @@ import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
@@ -62,11 +63,11 @@ public class StatisticalBarCharBuilder extends BaseChartBuilder
         _seriesBuilder.setSeriesBuilderCallback(new SeriesBuilderCallback()
         {
             @Override
-            public void addDataPointToSeries(SeriesDefinition seriesDefinition, Object[] row)
+            public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row)
             {
-                String x = String.valueOf(row[0]);
-                double mean = Double.parseDouble(row[1].toString());
-                double stdDev = Double.parseDouble(row[2].toString());
+                String x = row.dimensionAsString(0);
+                double mean = row.dimensionAsDouble(1);
+                double stdDev = row.dimensionAsDouble(2);
                 dataset.add(mean, stdDev, seriesDefinition.getSeriesLegend(), x);
             }
 
@@ -80,6 +81,12 @@ public class StatisticalBarCharBuilder extends BaseChartBuilder
             public void endSeries(SeriesDefinition seriesDefinition)
             {
                 // unused
+            }
+
+            @Override
+            public int getNumberOfDimensions()
+            {
+                return 3;
             }
 
         });

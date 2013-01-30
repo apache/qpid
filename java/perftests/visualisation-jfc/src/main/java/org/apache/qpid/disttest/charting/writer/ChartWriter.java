@@ -153,5 +153,6 @@ public class ChartWriter
     public void setOutputDirectory(final File chartDirectory)
     {
         _chartDirectory = chartDirectory;
+        LOGGER.info("Set chart directory: {}", chartDirectory);
     }
 }

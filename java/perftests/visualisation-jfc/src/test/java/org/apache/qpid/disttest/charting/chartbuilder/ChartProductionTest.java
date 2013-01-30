@@ -31,6 +31,7 @@ import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.apache.qpid.disttest.charting.writer.ChartWriter;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.jfree.chart.JFreeChart;
@@ -143,11 +144,11 @@ public class ChartProductionTest extends TestCase
                         {
                             SeriesDefinition seriesDefinition = iterator.next();
                             _dataPointCallback.beginSeries(seriesDefinition);
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{1d, 1d, 0.5d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{2d, 2d, 0.4d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{4d, 4d, 0.3d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{5d, 5d, 0.2d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{6d, 3d, 0.1d});
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(1d, 1d, 0.5d));
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(2d, 2d, 0.4d));
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(4d, 4d, 0.3d));
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(5d, 5d, 0.2d));
+                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(6d, 3d, 0.1d));
                             _dataPointCallback.endSeries(seriesDefinition);
                         }
                     }
@@ -192,11 +193,11 @@ public class ChartProductionTest extends TestCase
             {
                 SeriesDefinition seriesDefinition = iterator.next();
                 _dataPointCallback.beginSeries(seriesDefinition);
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{1d, 1d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{2d, 2d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{4d, 4d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{5d, 5d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{6d, 3d});
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(1d, 1d));
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(2d, 2d));
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(4d, 4d));
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(5d, 5d));
+                _dataPointCallback.addDataPointToSeries(seriesDefinition, new SeriesRow(6d, 3d));
                 _dataPointCallback.endSeries(seriesDefinition);
             }
         }

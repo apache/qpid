@@ -25,8 +25,15 @@ import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 
 public interface SeriesBuilder
 {
+    /**
+     * Uses the supplied {@link SeriesDefinition}s to read the series data
+     * and pass it to the callback set up in {@link #setSeriesBuilderCallback(SeriesBuilderCallback)}.
+     */
     void build(List<SeriesDefinition> seriesDefinitions);
 
+    /**
+     * Stores the supplied callback so it can be used in {@link #build(List)}.
+     */
     void setSeriesBuilderCallback(SeriesBuilderCallback seriesBuilderCallback);
 
 }

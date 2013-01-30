@@ -21,6 +21,7 @@ package org.apache.qpid.disttest.charting.seriesbuilder;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -31,9 +32,9 @@ import java.util.Collections;
 import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
-import org.apache.qpid.disttest.charting.seriesbuilder.JdbcCsvSeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.JdbcSeriesBuilder;
 
-public class JdbcCsvSeriesBuilderTest extends TestCase
+public class JdbcSeriesBuilderTest extends TestCase
 {
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SELECT A, B FROM test";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";
@@ -41,7 +42,6 @@ public class JdbcCsvSeriesBuilderTest extends TestCase
     private static final Integer TEST_SERIES1_STROKE_WIDTH = 3;
 
     private SeriesBuilderCallback _seriesWalkerCallback = mock(SeriesBuilderCallback.class);
-    private JdbcCsvSeriesBuilder _seriesBuilder = new JdbcCsvSeriesBuilder();
 
     private File _testTempDir;
 
@@ -49,21 +49,27 @@ public class JdbcCsvSeriesBuilderTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _seriesBuilder.setSeriesBuilderCallback(_seriesWalkerCallback);
+        when(_seriesWalkerCallback.getNumberOfDimensions()).thenReturn(2);
         _testTempDir = createTestTemporaryDirectory();
+        createTestCsvIn(_testTempDir);
     }
 
     public void testBuildOneSeries() throws Exception
     {
-        createTestCsvIn(_testTempDir);
         SeriesDefinition seriesDefinition = createTestSeriesDefinition();
 
-        _seriesBuilder.build(Collections.singletonList(seriesDefinition));
+        JdbcSeriesBuilder seriesBuilder = new JdbcSeriesBuilder(
+                "org.relique.jdbc.csv.CsvDriver",
+                "jdbc:relique:csv:" + _testTempDir.getAbsolutePath());
+
+        seriesBuilder.setSeriesBuilderCallback(_seriesWalkerCallback);
+
+        seriesBuilder.build(Collections.singletonList(seriesDefinition));
 
         verify(_seriesWalkerCallback).beginSeries(seriesDefinition);
-        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new Object[]{"elephant", "2"});
-        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new Object[]{"lion", "3"});
-        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new Object[]{"tiger", "4"});
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new SeriesRow("elephant", "2"));
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new SeriesRow("lion", "3"));
+        verify(_seriesWalkerCallback).addDataPointToSeries(seriesDefinition, new SeriesRow("tiger", "4"));
         verify(_seriesWalkerCallback).endSeries(seriesDefinition);
     }
 
@@ -81,7 +87,12 @@ public class JdbcCsvSeriesBuilderTest extends TestCase
 
     private SeriesDefinition createTestSeriesDefinition()
     {
-        SeriesDefinition definition = new SeriesDefinition(TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, _testTempDir.getAbsolutePath(), TEST_SERIES1_COLOUR_NAME, TEST_SERIES1_STROKE_WIDTH);
+        SeriesDefinition definition = new SeriesDefinition(
+                TEST_SERIES_1_SELECT_STATEMENT,
+                TEST_SERIES_1_LEGEND,
+                _testTempDir.getAbsolutePath(),
+                TEST_SERIES1_COLOUR_NAME,
+                TEST_SERIES1_STROKE_WIDTH);
         return definition;
     }
 
