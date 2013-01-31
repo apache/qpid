@@ -61,6 +61,8 @@ class QueueGuard;
  *
  * Lifecycle: broker::Queue holds shared_ptrs to this as a consumer.
  *
+ * Lock Hierarchy: ReplicatingSubscription MUS NOT call QueueGuard with it's lock held
+ * QueueGuard MAY call ReplicatingSubscription with it's lock held.
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 {
