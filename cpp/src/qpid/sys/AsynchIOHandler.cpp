@@ -97,6 +97,7 @@ void AsynchIOHandler::abort() {
     if (!readError) {
         aio->requestCallback(boost::bind(&AsynchIOHandler::eof, this, _1));
     }
+    aio->queueWriteClose();
 }
 
 void AsynchIOHandler::activateOutput() {
