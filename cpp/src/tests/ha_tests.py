@@ -270,7 +270,6 @@ class ReplicationTests(HaBrokerTest):
     def test_qpid_config_replication(self):
         """Set up replication via qpid-config"""
         brokers = HaCluster(self,2)
-        brokers[0].wait_status("active")
         brokers[0].config_declare("q","all")
         brokers[0].connect().session().sender("q").send("foo")
         brokers[1].assert_browse_backup("q", ["foo"])
@@ -613,8 +612,6 @@ acl deny all all
         to new members of a cluster. """
         cluster = HaCluster(self, 2)
         s = cluster[0].connect().session()
-        cluster[0].wait_status("active")
-        cluster[1].wait_status("ready")
         # altex exchange: acts as alternate exchange
         s.sender("altex;{create:always,node:{type:topic,x-declare:{type:'fanout'}}}")
         # altq queue bound to altex, collect re-routed messages.
@@ -722,7 +719,6 @@ acl deny all all
         """Regression test for QPID-4285: on deleting a queue it gets stuck in a
         partially deleted state and causes replication errors."""
         cluster = HaCluster(self,2)
-        cluster[1].wait_status("ready")
         s = cluster[0].connect().session()
         s.receiver("q;{create:always}")
         cluster[1].wait_backup("q")
@@ -804,15 +800,14 @@ acl deny all all
         cluster[1].wait_queue("q1")
         cluster[0].kill()
         cluster[1].wait_queue("q1")    # Not timed out yet
-        cluster[1].wait_no_queue("q1") # Wait for timeout
-        cluster[1].wait_no_queue("q0")
+        cluster[1].wait_no_queue("q1", timeout=5) # Wait for timeout
+        cluster[1].wait_no_queue("q0", timeout=5) # Wait for timeout
 
     def test_alt_exchange_dup(self):
         """QPID-4349: if a queue has an alterante exchange and is deleted the
         messages appear twice on the alternate, they are rerouted once by the
         primary and again by the backup."""
         cluster = HaCluster(self,2)
-        cluster[0].wait_status("active")
 
         # Set up q with alternate exchange altex bound to altq.
         s = cluster[0].connect().session()
@@ -842,7 +837,7 @@ acl deny all all
         cluster = HaCluster(self, 2)
         s = cluster[0].connect().session()
         s.sender("keep;{create:always}") # Leave this queue in place.
-        for i in xrange(100):            # FIXME aconway 2012-10-23: ??? IS this an issue?
+        for i in xrange(1000):
             s.sender("deleteme%s;{create:always,delete:always}"%(i)).close()
         # It is possible for the backup to attempt to subscribe after the queue
         # is deleted. This is not an error, but is logged as an error on the primary.
