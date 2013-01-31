@@ -30,24 +30,13 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionHandler.h"
 #include "qpid/broker/ConnectionState.h"
-#include "qpid/broker/SessionHandler.h"
-#include "qmf/org/apache/qpid/broker/Connection.h"
-#include "qpid/Exception.h"
-#include "qpid/RefCounted.h"
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
-#include "qpid/framing/ProtocolVersion.h"
-#include "qpid/management/ManagementAgent.h"
-#include "qpid/management/Manageable.h"
-#include "qpid/ptr_map.h"
-#include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionInputHandler.h"
-#include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/SecuritySettings.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/RefCounted.h"
+#include "qpid/ptr_map.h"
+
+#include "qmf/org/apache/qpid/broker/Connection.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/bind.hpp>
@@ -56,13 +45,16 @@
 
 namespace qpid {
 namespace sys {
+class Timer;
 class TimerTask;
 }
 namespace broker {
 
 class Broker;
 class LinkRegistry;
+class Queue;
 class SecureConnection;
+class SessionHandler;
 struct ConnectionTimeoutTask;
 
 class Connection : public sys::ConnectionInputHandler,

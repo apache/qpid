@@ -25,6 +25,7 @@
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/Timer.h"
 

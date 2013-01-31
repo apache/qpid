@@ -32,6 +32,7 @@
 #include "qpid/framing/enum.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/amqp_0_10/Codecs.h"
