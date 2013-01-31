@@ -92,7 +92,6 @@ void Backup::stop(Mutex::ScopedLock&) {
     QPID_LOG(debug, logPrefix << "Leaving backup role.");
     if (link) link->close();
     if (replicator.get()) {
-        broker.getExchanges().destroy(replicator->getName());
         replicator->shutdown();
         replicator.reset();
     }
