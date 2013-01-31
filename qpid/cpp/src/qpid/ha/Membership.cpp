@@ -59,6 +59,7 @@ void Membership::add(const BrokerInfo& b) {
 
 void Membership::remove(const types::Uuid& id) {
     Mutex::ScopedLock l(lock);
+    if (id == self) return;     // Never remove myself
     BrokerInfo::Map::iterator i = brokers.find(id);
     if (i != brokers.end()) {
         brokers.erase(i);
@@ -73,7 +74,7 @@ bool Membership::contains(const types::Uuid& id) {
 
 void Membership::assign(const types::Variant::List& list) {
     Mutex::ScopedLock l(lock);
-    brokers.clear();
+    clear();
     for (types::Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
         BrokerInfo b(i->asMap());
         brokers[b.getSystemId()] = b;
