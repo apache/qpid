@@ -99,7 +99,8 @@ class HaBroker(Broker):
             args = args + ["--sasl-mechanism", cred.mechanism]
         self.qpid_ha_script.main_except(["", "-b", url]+args)
 
-    def promote(self): self.ready(); self.qpid_ha(["promote"])
+    def promote(self):
+        self.ready(); self.qpid_ha(["promote"])
     def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
     def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url])
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
@@ -208,8 +209,14 @@ class HaBroker(Broker):
 class HaCluster(object):
     _cluster_count = 0
 
-    def __init__(self, test, n, promote=True, **kwargs):
-        """Start a cluster of n brokers"""
+    def __init__(self, test, n, promote=True, wait=True, **kwargs):
+        """Start a cluster of n brokers.
+
+        @test: The test being run
+        @n: start n brokers
+        @promote: promote self[0] to primary
+        @wait: wait for primary active and backups ready. Ignored if promote=False
+        """
         self.test = test
         self.kwargs = kwargs
         self._brokers = []
@@ -218,7 +225,12 @@ class HaCluster(object):
         HaCluster._cluster_count += 1
         for i in xrange(n): self.start(False)
         self.update_urls()
-        if promote: self[0].promote()
+        if promote:
+            self[0].promote()
+            if wait:
+                self[0].wait_status("active")
+                for b in self[1:]: b.wait_status("ready")
+
 
     def next_name(self):
         name="cluster%s-%s"%(self.id, self.broker_id)
