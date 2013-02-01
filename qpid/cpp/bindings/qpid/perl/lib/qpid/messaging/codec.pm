@@ -17,6 +17,20 @@
 # under the License.
 #
 
-use qpid_messaging;
+package qpid::messaging;
+
+sub encode {
+    my $content = $_[0];
+    my $message = $_[1];
+
+    cqpid_perl::encode($content, $message->get_implementation());
+}
+
+sub decode_map {
+    my $message = $_[0];
+
+    return cqpid_perl::decodeMap($message->get_implementation());
+}
 
 1;
+
