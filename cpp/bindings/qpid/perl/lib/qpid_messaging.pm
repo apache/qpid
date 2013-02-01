@@ -17,6 +17,17 @@
 # under the License.
 #
 
-use qpid_messaging;
+use strict;
+use warnings;
+use cqpid_perl;
+
+use qpid::messaging::codec;
+use qpid::messaging::Address;
+use qpid::messaging::Duration;
+use qpid::messaging::Message;
+use qpid::messaging::Receiver;
+use qpid::messaging::Sender;
+use qpid::messaging::Session;
+use qpid::messaging::Connection;
 
 1;
