@@ -37,7 +37,7 @@ module Qpid
           connection = Qpid::Messaging::Connection.new :options => {:username => "foo"}
 
           connection.options.should include("username")
-        }.should_not raise_error
+        }.to_not raise_error
       end
 
       it "returns the underlying implementation" do
