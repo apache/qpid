@@ -51,18 +51,18 @@ module Qpid
 
       # Sets the address to which replies should be sent for the +Message+.
       #
-      # *NOTE:* The address must be an instance of Address.
-      #
       # ==== Options
       #
-      # * address - an instance of +Address+
+      # * address - an instance of +Address+, or an address URI
       #
       # ==== Examples
       #
       #   msg.reply_to = Qpid:Messaging::Address.new "my-responses"
+      #   msg.reply_to = "my-feed/responses"
       #
       def reply_to=(address)
-        raise ArgumentError, "Agument must be an Address" unless address.is_a? Qpid::Messaging::Address
+        address = Qpid::Messaging::Address.new "#{address}" if !address.is_a? Qpid::Messaging::Address
+
         @message_impl.setReplyTo address.address_impl
       end
 
