@@ -42,6 +42,8 @@ import org.slf4j.Logger;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
+
+
     enum PublishMode { ASYNC_PUBLISH_ALL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL };
 
     private final Logger _logger ;
@@ -291,7 +293,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         checkPreConditions();
         checkInitialDestination();
 
-
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, message, _deliveryMode, _messagePriority, _timeToLive, _mandatory, _immediate);
@@ -455,7 +456,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                 JMSException ex = new JMSException("Error validating destination");
                 ex.initCause(e);
                 ex.setLinkedException(e);
-                
+
                 throw ex;
             }
             amqDestination.setExchangeExistsChecked(true);
@@ -546,7 +547,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    private void checkPreConditions() throws javax.jms.IllegalStateException, JMSException
+    private void checkPreConditions() throws JMSException
     {
         checkNotClosed();
 
@@ -560,15 +561,16 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    private void checkInitialDestination()
+    private void checkInitialDestination() throws JMSException
     {
         if (_destination == null)
         {
             throw new UnsupportedOperationException("Destination is null");
         }
+        checkValidQueue();
     }
 
-    private void checkDestination(Destination suppliedDestination) throws InvalidDestinationException
+    private void checkDestination(Destination suppliedDestination) throws JMSException
     {
         if ((_destination != null) && (suppliedDestination != null))
         {
@@ -576,11 +578,52 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                     "This message producer was created with a Destination, therefore you cannot use an unidentified Destination");
         }
 
+        if(suppliedDestination instanceof AMQQueue)
+        {
+            AMQQueue destination = (AMQQueue) suppliedDestination;
+            checkValidQueue(destination);
+        }
         if (suppliedDestination == null)
         {
             throw new InvalidDestinationException("Supplied Destination was invalid");
         }
 
+    }
+
+    void checkValidQueue() throws JMSException
+    {
+        if(_destination instanceof AMQQueue)
+        {
+            checkValidQueue(_destination);
+        }
+    }
+    void checkValidQueue(AMQDestination destination) throws JMSException
+    {
+        if (!destination.isCheckedForQueueBinding() && validateQueueOnSend())
+        {
+            if (getSession().isStrictAMQP())
+            {
+                getLogger().warn("AMQP does not support destination validation before publish, ");
+                destination.setCheckedForQueueBinding(true);
+            }
+            else
+            {
+                if (isBound(destination))
+                {
+                    destination.setCheckedForQueueBinding(true);
+                }
+                else
+                {
+                    throw new InvalidDestinationException("Queue: " + destination.getName()
+                        + " is not a valid destination (no bindings on server");
+                }
+            }
+        }
+    }
+
+    private boolean validateQueueOnSend()
+    {
+        return _connection.validateQueueOnSend();
     }
 
     /**
