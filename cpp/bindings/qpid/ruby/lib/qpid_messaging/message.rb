@@ -283,14 +283,14 @@ module Qpid
 
       # Assigns a value to the named property.
       #
-      # *NOTE:* Both the key or the value may be a symbol, but they will
-      # both be converted to a +String+ for ease of transport.
-      #
       # ==== Options
       #
       # * name - the property name
       # * value - the property value
-      def []=(key, value); @message_impl.setProperty(key.to_s, value.to_s); end
+      def []=(key, value)
+        @message_impl.setProperty(key.to_s,
+                                  Qpid::Messaging.stringify(value))
+      end
 
       # Sets the content for the +Message+.
       #
@@ -309,18 +309,12 @@ module Qpid
       #
       def content=(content)
         content_type = nil
-        @content = content
+        @content = Qpid::Messaging.stringify(content)
         case @content
         when Hash
           content_type = "amqp/map"
-          new_content  = {}
-          content.each_pair{|key, value| new_content[key.to_s] = value.to_s}
-          @content = new_content
         when Array
-          new_content  = []
           content_type = "amqp/list"
-          content.each {|element| new_content << element.to_s}
-          @content = new_content
         end
         if content_type.nil?
           @message_impl.setContent @content

@@ -52,6 +52,35 @@ module Qpid
       message.content
     end
 
+    # Takes as input any type and converts anything that's a symbol
+    # into a string.
+    def self.stringify(value)
+      # set the default value
+      result = value
+
+      case value
+
+      when Symbol
+        result = value.to_s
+
+      when Hash
+        result = {}
+        value.each_pair do |key, value|
+          result[stringify(key)] = stringify(value)
+        end
+
+      when Array
+        result = []
+        value.each do |element|
+          result  << stringify(element)
+        end
+
+      end
+
+      return result
+
+    end
+
   end
 
 end
