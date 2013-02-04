@@ -20,18 +20,15 @@ package org.apache.qpid.test.utils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -49,13 +46,13 @@ import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -1130,6 +1127,22 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         return getConnection(GUEST_USERNAME, GUEST_PASSWORD);
     }
+
+    public Connection getConnectionWithOptions(Map<String, String> options)
+                throws URLSyntaxException, NamingException, JMSException
+    {
+        ConnectionURL curl = new AMQConnectionURL(getConnectionFactory().getConnectionURLString());
+        for(Map.Entry<String,String> entry : options.entrySet())
+        {
+            curl.setOption(entry.getKey(), entry.getValue());
+        }
+        curl = new AMQConnectionURL(curl.toString());
+
+        curl.setUsername(GUEST_USERNAME);
+        curl.setPassword(GUEST_PASSWORD);
+        return getConnection(curl);
+    }
+
 
     public Connection getConnection(ConnectionURL url) throws JMSException
     {
