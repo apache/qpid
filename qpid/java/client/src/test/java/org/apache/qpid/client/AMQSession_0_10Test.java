@@ -670,7 +670,6 @@ public class AMQSession_0_10Test extends QpidTestCase
             if (m instanceof ExchangeBound)
             {
                 ExchangeBoundResult struc = new ExchangeBoundResult();
-                struc.setQueueNotFound(true);
                 result.setValue(struc);
             }
             else if (m instanceof ExchangeQuery)

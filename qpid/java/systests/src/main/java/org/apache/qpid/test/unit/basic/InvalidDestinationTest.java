@@ -21,16 +21,23 @@
 
 package org.apache.qpid.test.unit.basic;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
+import java.util.Collections;
+import java.util.Map;
+import javax.jms.Connection;
 import javax.jms.InvalidDestinationException;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class InvalidDestinationTest extends QpidBrokerTestCase
 {
@@ -52,17 +59,22 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
 
     public void testInvalidDestination() throws Exception
     {
-        Queue invalidDestination = new AMQQueue("amq.direct","unknownQ");
-        AMQQueue validDestination = new AMQQueue("amq.direct","knownQ");
+
         QueueSession queueSession = _connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        Queue invalidDestination = queueSession.createQueue("unknownQ");
+
+        Queue validDestination = queueSession.createQueue(getTestQueueName());
 
         // This is the only easy way to create and bind a queue from the API :-(
         queueSession.createConsumer(validDestination);
+        QueueSender sender;
+        TextMessage msg= queueSession.createTextMessage("Hello");
 
-        QueueSender sender = queueSession.createSender(invalidDestination);
-        TextMessage msg = queueSession.createTextMessage("Hello");
         try
         {
+            sender = queueSession.createSender(invalidDestination);
+
             sender.send(msg);
             fail("Expected InvalidDestinationException");
         }
@@ -70,10 +82,8 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
         {
             // pass
         }
-        sender.close();
 
         sender = queueSession.createSender(null);
-        invalidDestination = new AMQQueue("amq.direct","unknownQ");
 
         try
         {
@@ -86,13 +96,77 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
         }
         sender.send(validDestination,msg);
         sender.close();
-        validDestination = new AMQQueue("amq.direct","knownQ");
         sender = queueSession.createSender(validDestination);
         sender.send(msg);
 
 
 
 
+    }
+
+
+
+    public void testInvalidDestinationOnMessageProducer() throws Exception
+    {
+        setTestSystemProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "true");
+        final AMQConnection connection = (AMQConnection) getConnection();
+        doInvalidDestinationOnMessageProducer(connection);
+
+    }
+
+
+    public void testInvalidDestinationOnMessageProducerURL() throws Exception
+    {
+        Map<String, String> options = Collections.singletonMap(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND, "true");
+        doInvalidDestinationOnMessageProducer(getConnectionWithOptions(options));
+
+    }
+
+    private void doInvalidDestinationOnMessageProducer(Connection connection) throws JMSException
+    {
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        Queue invalidDestination = session.createQueue("unknownQ");
+
+        Queue validDestination = session.createQueue("knownQ");
+
+        // This is the only easy way to create and bind a queue from the API :-(
+        session.createConsumer(validDestination);
+
+        MessageProducer sender;
+        TextMessage msg = session.createTextMessage("Hello");
+        try
+        {
+            sender = session.createProducer(invalidDestination);
+            sender.send(msg);
+            fail("Expected InvalidDestinationException");
+        }
+        catch (InvalidDestinationException ex)
+        {
+            // pass
+        }
+
+
+        sender = session.createProducer(null);
+        invalidDestination = new AMQQueue("amq.direct","unknownQ");
+
+        try
+        {
+            sender.send(invalidDestination,msg);
+            fail("Expected InvalidDestinationException");
+        }
+        catch (InvalidDestinationException ex)
+        {
+            // pass
+        }
+        sender.send(validDestination, msg);
+        sender.close();
+        sender = session.createProducer(validDestination);
+        sender.send(msg);
+
+        Topic topic = session.createTopic("randomTopic");
+        sender = session.createProducer(topic);
+        sender.send(msg);
     }
 
 

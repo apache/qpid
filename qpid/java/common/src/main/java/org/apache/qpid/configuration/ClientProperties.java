@@ -203,6 +203,7 @@ public class ClientProperties
      * producer/consumer creation when using BindingURLs.
      */
     public static final String QPID_DECLARE_EXCHANGES_PROP_NAME = "qpid.declare_exchanges";
+    public static final String VERIFY_QUEUE_ON_SEND = "qpid.verify_queue_on_send";
 
 
     private ClientProperties()

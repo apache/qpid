@@ -183,6 +183,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     // new amqp-0-10 list encoded format.
     private boolean _useLegacyStreamMessageFormat;
 
+    // When sending to a Queue destination for the first time, check that the queue is bound
+    private final boolean _validateQueueOnSend;
+
     //used to track the last failover time for
     //Address resolution purposes
     private volatile long _lastFailoverTime = 0;
@@ -309,6 +312,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _useLegacyStreamMessageFormat = System.getProperty(ClientProperties.USE_LEGACY_STREAM_MESSAGE_FORMAT) == null ?
                     true : Boolean.getBoolean(ClientProperties.USE_LEGACY_STREAM_MESSAGE_FORMAT);
         }
+
+        if(connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND) != null)
+        {
+            _validateQueueOnSend = Boolean.parseBoolean(
+                                connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND));
+        }
+        else
+        {
+            _validateQueueOnSend =
+                Boolean.parseBoolean(System.getProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "false"));
+        }
+
 
         String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
         if (_logger.isDebugEnabled())
@@ -1441,7 +1456,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _delegate.getProtocolVersion();
     }
-    
+
     public String getBrokerUUID()
     {
         if(getProtocolVersion().equals(ProtocolVersion.v0_10))
@@ -1564,5 +1579,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     void setHeartbeatListener(HeartbeatListener listener)
     {
         _delegate.setHeartbeatListener(listener);
+    }
+
+    public boolean validateQueueOnSend()
+    {
+        return _validateQueueOnSend;
     }
 }
