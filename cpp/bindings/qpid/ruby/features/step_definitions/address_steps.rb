@@ -17,6 +17,6 @@
 # under the License.
 #
 
-Given /^an Address with the uri "(.*?)"$/ do |address|
+Given /^an Address with the string "(.*?)"$/ do |address|
   @address = Qpid::Messaging::Address.new "#{address}"
 end

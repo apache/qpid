@@ -53,7 +53,7 @@ module Qpid
       #
       # ==== Options
       #
-      # * address - an instance of +Address+, or an address URI
+      # * address - an instance of +Address+, or an address string
       #
       # ==== Examples
       #

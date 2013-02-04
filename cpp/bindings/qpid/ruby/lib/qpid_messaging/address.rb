@@ -70,18 +70,18 @@ module Qpid
     #
     class Address
 
-      # Creates a new +Address+ object from an address URI.
+      # Creates a new +Address+ object from an address string.
       #
       # ==== Options
       #
-      # * uri - the address URI
+      # * address - the address string
       #
       # ==== Examples
       #
       #   addr = Qpid::Messaging::Address.new "my-queue;{create:always}"
       #
-      def initialize(uri, address_impl = nil)
-        @address_impl = address_impl || Cqpid::Address.new(uri)
+      def initialize(address, address_impl = nil)
+        @address_impl = address_impl || Cqpid::Address.new(address)
       end
 
       def address_impl # :nodoc:
