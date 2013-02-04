@@ -71,7 +71,7 @@ module Qpid
       def reply_to
         address_impl = @message_impl.getReplyTo
         # only return an address if a reply to was specified
-        Qpid::Messaging::Address.new(nil, nil, nil, nil, address_impl) if address_impl
+        Qpid::Messaging::Address.new(nil, address_impl) if address_impl
       end
 
       # Sets the subject for the +Message+.
