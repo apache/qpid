@@ -30,7 +30,7 @@ typedef struct {
 nx_alloc_config_t config = {3, 7, 10};
 
 ALLOC_DECLARE(object_t);
-ALLOC_DEFINE_CONFIG(object_t, &config);
+ALLOC_DEFINE_CONFIG(object_t, sizeof(object_t), &config);
 
 
 static char* check_stats(nx_alloc_stats_t *stats, uint64_t ah, uint64_t fh, uint64_t ht, uint64_t rt, uint64_t rg)

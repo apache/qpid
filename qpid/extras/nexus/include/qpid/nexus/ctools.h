@@ -37,11 +37,11 @@
 
 #define DEQ_LINKS(t) t *prev; t *next
 
-#define DEQ_INIT(d) do { d.head = 0; d.tail = 0; d.scratch = 0; d.size = 0; } while (0)
+#define DEQ_INIT(d) do { (d).head = 0; (d).tail = 0; (d).scratch = 0; (d).size = 0; } while (0)
 #define DEQ_ITEM_INIT(i) do { (i)->next = 0; (i)->prev = 0; } while(0)
-#define DEQ_HEAD(d) (d.head)
-#define DEQ_TAIL(d) (d.tail)
-#define DEQ_SIZE(d) (d.size)
+#define DEQ_HEAD(d) ((d).head)
+#define DEQ_TAIL(d) ((d).tail)
+#define DEQ_SIZE(d) ((d).size)
 #define DEQ_NEXT(i) (i)->next
 #define DEQ_PREV(i) (i)->prev
 
@@ -49,67 +49,67 @@
 do {                              \
     CT_ASSERT((i)->next == 0);    \
     CT_ASSERT((i)->prev == 0);    \
-    if (d.head) {                 \
-        (i)->next = d.head;       \
-        d.head->prev = i;         \
+    if ((d).head) {               \
+        (i)->next = (d).head;     \
+        (d).head->prev = i;       \
     } else {                      \
-        d.tail = i;               \
+        (d).tail = i;             \
         (i)->next = 0;            \
-        CT_ASSERT(d.size == 0);   \
+        CT_ASSERT((d).size == 0); \
     }                             \
     (i)->prev = 0;                \
-    d.head = i;                   \
-    d.size++;                     \
+    (d).head = i;                 \
+    (d).size++;                   \
 } while (0)
 
 #define DEQ_INSERT_TAIL(d,i)      \
 do {                              \
     CT_ASSERT((i)->next == 0);    \
     CT_ASSERT((i)->prev == 0);    \
-    if (d.tail) {                 \
-        (i)->prev = d.tail;       \
-        d.tail->next = i;         \
+    if ((d).tail) {               \
+        (i)->prev = (d).tail;     \
+        (d).tail->next = i;       \
     } else {                      \
-        d.head = i;               \
+        (d).head = i;             \
         (i)->prev = 0;            \
-        CT_ASSERT(d.size == 0);   \
+        CT_ASSERT((d).size == 0); \
     }                             \
     (i)->next = 0;                \
-    d.tail = i;                   \
-    d.size++;                     \
+    (d).tail = i;                 \
+    (d).size++;                   \
 } while (0)
 
-#define DEQ_REMOVE_HEAD(d)      \
-do {                            \
-    CT_ASSERT(d.head);          \
-    if (d.head) {               \
-        d.scratch = d.head;     \
-        d.head = d.head->next;  \
-        if (d.head == 0) {      \
-            d.tail = 0;         \
-            CT_ASSERT(d.size == 1); \
+#define DEQ_REMOVE_HEAD(d)        \
+do {                              \
+    CT_ASSERT((d).head);          \
+    if ((d).head) {               \
+        (d).scratch = (d).head;   \
+        (d).head = (d).head->next;  \
+        if ((d).head == 0) {      \
+            (d).tail = 0;         \
+            CT_ASSERT((d).size == 1); \
         } else                  \
-            d.head->prev = 0;   \
-        d.size--;               \
-        d.scratch->next = 0;    \
-        d.scratch->prev = 0;    \
+            (d).head->prev = 0; \
+        (d).size--;             \
+        (d).scratch->next = 0;  \
+        (d).scratch->prev = 0;  \
     }                           \
 } while (0)
 
 #define DEQ_REMOVE_TAIL(d)      \
 do {                            \
-    CT_ASSERT(d.tail);          \
-    if (d.tail) {               \
-        d.scratch = d.tail;     \
-        d.tail = d.tail->prev;  \
-        if (d.tail == 0) {      \
-            d.head = 0;         \
-            CT_ASSERT(d.size == 1); \
+    CT_ASSERT((d).tail);        \
+    if ((d).tail) {             \
+        (d).scratch = (d).tail; \
+        (d).tail = (d).tail->prev;  \
+        if ((d).tail == 0) {    \
+            (d).head = 0;       \
+            CT_ASSERT((d).size == 1); \
         } else                  \
-            d.tail->next = 0;   \
-        d.size--;               \
-        d.scratch->next = 0;    \
-        d.scratch->prev = 0;    \
+            (d).tail->next = 0; \
+        (d).size--;             \
+        (d).scratch->next = 0;  \
+        (d).scratch->prev = 0;  \
     }                           \
 } while (0)
 
@@ -120,11 +120,11 @@ do {                            \
     if ((a)->next)              \
         (a)->next->prev = (i);  \
     else                        \
-        d.tail = (i);           \
+        (d).tail = (i);         \
     (i)->next = (a)->next;      \
     (i)->prev = (a);            \
     (a)->next = (i);            \
-    d.size++;                   \
+    (d).size++;                 \
 } while (0)
 
 #define DEQ_REMOVE(d,i)                        \
@@ -132,15 +132,15 @@ do {                                           \
     if ((i)->next)                             \
         (i)->next->prev = (i)->prev;           \
     else                                       \
-        d.tail = (i)->prev;                    \
+        (d).tail = (i)->prev;                  \
     if ((i)->prev)                             \
         (i)->prev->next = (i)->next;           \
     else                                       \
-        d.head = (i)->next;                    \
-    d.size--;                                  \
+        (d).head = (i)->next;                  \
+    (d).size--;                                \
     (i)->next = 0;                             \
     (i)->prev = 0;                             \
-    CT_ASSERT(d.size || (!d.head && !d.tail)); \
+    CT_ASSERT((d).size || (!(d).head && !(d).tail)); \
 } while (0)
 
 #endif

@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <qpid/nexus/timer.h>
+#include "alloc_private.h"
 #include "timer_private.h"
 #include "test_case.h"
 #include <qpid/nexus/threading.h>
@@ -341,6 +342,7 @@ static char* test_big(void *context)
 int timer_tests(void)
 {
     int result = 0;
+    nx_alloc_initialize();
 
     fire_mask = 0;
     DEQ_INIT(pending_timers);

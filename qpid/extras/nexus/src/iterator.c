@@ -18,9 +18,9 @@
  */
 
 #include <qpid/nexus/iterator.h>
-#include <qpid/nexus/message.h>
 #include <qpid/nexus/ctools.h>
 #include <qpid/nexus/alloc.h>
+#include "message_private.h"
 #include <stdio.h>
 #include <string.h>
 

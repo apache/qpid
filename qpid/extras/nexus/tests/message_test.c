@@ -20,26 +20,18 @@
 #include "test_case.h"
 #include <stdio.h>
 #include <string.h>
-#include <qpid/nexus/message.h>
+#include "message_private.h"
 #include <qpid/nexus/iterator.h>
 #include <proton/message.h>
 
 
-static char* test_init(void *context)
-{
-    nx_allocator_initialize(nx_allocator_default_config());
-    nx_allocator_finalize();
-    return 0;
-}
-
-
 static char* test_send_to_messenger(void *context)
 {
-    nx_allocator_initialize(nx_allocator_default_config());
+    nx_message_t         *msg     = nx_allocate_message();
+    nx_message_content_t *content = MSG_CONTENT(msg);
 
-    nx_message_t *msg = nx_allocate_message();
     nx_message_compose_1(msg, "test_addr_0", 0);
-    nx_buffer_t *buf = DEQ_HEAD(msg->buffers);
+    nx_buffer_t *buf = DEQ_HEAD(content->buffers);
     if (buf == 0) return "Expected a buffer in the test message";
 
     pn_message_t *pn_msg = pn_message();
@@ -52,15 +44,12 @@ static char* test_send_to_messenger(void *context)
     pn_message_free(pn_msg);
     nx_free_message(msg);
 
-    nx_allocator_finalize();
     return 0;
 }
 
 
 static char* test_receive_from_messenger(void *context)
 {
-    nx_allocator_initialize(nx_allocator_default_config());
-
     pn_message_t *pn_msg = pn_message();
     pn_message_set_address(pn_msg, "test_addr_1");
 
@@ -70,12 +59,14 @@ static char* test_receive_from_messenger(void *context)
     if (result != 0) return "Error in pn_message_encode";
     nx_buffer_insert(buf, size);
 
-    nx_message_t *msg = nx_allocate_message();
-    DEQ_INSERT_TAIL(msg->buffers, buf);
+    nx_message_t         *msg     = nx_allocate_message();
+    nx_message_content_t *content = MSG_CONTENT(msg);
+
+    DEQ_INSERT_TAIL(content->buffers, buf);
     int valid = nx_message_check(msg, NX_DEPTH_ALL);
     if (!valid) return "nx_message_check returns 'invalid'";
 
-    nx_field_iterator_t *iter = nx_message_field_to(msg);
+    nx_field_iterator_t *iter = nx_message_field(msg, NX_FIELD_TO);
     if (iter == 0) return "Expected an iterator for the 'to' field";
 
     if (!nx_field_iterator_equal(iter, (unsigned char*) "test_addr_1"))
@@ -84,15 +75,12 @@ static char* test_receive_from_messenger(void *context)
     pn_message_free(pn_msg);
     nx_free_message(msg);
 
-    nx_allocator_finalize();
     return 0;
 }
 
 
 static char* test_insufficient_check_depth(void *context)
 {
-    nx_allocator_initialize(nx_allocator_default_config());
-
     pn_message_t *pn_msg = pn_message();
     pn_message_set_address(pn_msg, "test_addr_2");
 
@@ -102,17 +90,18 @@ static char* test_insufficient_check_depth(void *context)
     if (result != 0) return "Error in pn_message_encode";
     nx_buffer_insert(buf, size);
 
-    nx_message_t *msg = nx_allocate_message();
-    DEQ_INSERT_TAIL(msg->buffers, buf);
+    nx_message_t         *msg     = nx_allocate_message();
+    nx_message_content_t *content = MSG_CONTENT(msg);
+
+    DEQ_INSERT_TAIL(content->buffers, buf);
     int valid = nx_message_check(msg, NX_DEPTH_DELIVERY_ANNOTATIONS);
     if (!valid) return "nx_message_check returns 'invalid'";
 
-    nx_field_iterator_t *iter = nx_message_field_to(msg);
+    nx_field_iterator_t *iter = nx_message_field(msg, NX_FIELD_TO);
     if (iter) return "Expected no iterator for the 'to' field";
 
     nx_free_message(msg);
 
-    nx_allocator_finalize();
     return 0;
 }
 
@@ -121,7 +110,6 @@ int message_tests(void)
 {
     int result = 0;
 
-    TEST_CASE(test_init, 0);
     TEST_CASE(test_send_to_messenger, 0);
     TEST_CASE(test_receive_from_messenger, 0);
     TEST_CASE(test_insufficient_check_depth, 0);
