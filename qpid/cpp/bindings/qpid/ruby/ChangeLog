@@ -1,2 +1,3 @@
 Verison 0.22:
 	* Changed Qpid::Messaging::Address to use a URI on creation.
+	* Changed Qpid::Messaging::Message to allow a URI for reply_to.
