@@ -65,6 +65,7 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 set(server_SOURCES
     src/alloc.c
     src/auth.c
+    src/buffer.c
     src/container.c
     src/hash.c
     src/iterator.c

@@ -57,14 +57,14 @@ void nx_dealloc(nx_alloc_type_desc_t *desc, nx_alloc_pool_t **tpool, void *p);
     T *new_##T();        \
     void free_##T(T *p)
 
-#define ALLOC_DEFINE_CONFIG(T,C)                                    \
-    nx_alloc_type_desc_t __desc_##T = {#T, sizeof(T), C, 0, 0, 0};  \
+#define ALLOC_DEFINE_CONFIG(T,S,C)                                  \
+    nx_alloc_type_desc_t __desc_##T = {#T, S, C, 0, 0, 0};          \
     __thread nx_alloc_pool_t *__local_pool_##T = 0;                 \
     T *new_##T() { return (T*) nx_alloc(&__desc_##T, &__local_pool_##T); }  \
     void free_##T(T *p) { nx_dealloc(&__desc_##T, &__local_pool_##T, (void*) p); } \
     nx_alloc_stats_t *alloc_stats_##T() { return __desc_##T.stats; }
 
-#define ALLOC_DEFINE(T) ALLOC_DEFINE_CONFIG(T, 0)
+#define ALLOC_DEFINE(T) ALLOC_DEFINE_CONFIG(T, sizeof(T), 0)
 
 
 #endif

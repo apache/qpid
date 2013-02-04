@@ -399,10 +399,6 @@ void nx_container_initialize(void)
 {
     nx_log(module, LOG_TRACE, "Container Initializing");
 
-    // TODO - move allocator init to server?
-    const nx_allocator_config_t *alloc_config = nx_allocator_default_config();
-    nx_allocator_initialize(alloc_config);
-
     node_type_map = hash(6,  4, 1);  // 64 buckets, item batches of 4
     node_map      = hash(10, 32, 0); // 1K buckets, item batches of 32
     lock          = sys_mutex();
