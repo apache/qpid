@@ -23,19 +23,7 @@ module Qpid
 
     # Encodes the supplied content into the given message.
     def self.encode content, message, encoding = nil
-      prepared = content
-      case content
-      when Hash
-        prepared = {}
-        content.each_pair do |key,value|
-          prepared[key.to_s] = value.to_s
-        end
-        Cqpid::encode prepared, message.message_impl
-      when Array
-        prepared = []
-        content.each {|value| prepared << value.to_s}
-        Cqpid::encode prepared, message.message_impl
-      end
+      Cqpid::encode content, message.message_impl, encoding
     end
 
     # Decodes and returns the message's content.
