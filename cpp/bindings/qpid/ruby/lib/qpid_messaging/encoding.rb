@@ -40,13 +40,13 @@ module Qpid
 
     # Decodes and returns the message's content.
     def self.decode(message, content_type = nil)
-      content_type = message.content_type unless content_type
+      content_type = message.content_type if content_type.nil?
 
       case content_type
         when "amqp/map"
-          Cqpid.decodeMap message.message_impl
+          return Cqpid.decodeMap message.message_impl
         when "amqp/list"
-          Cqpid.decodeList message.message_impl
+          return Cqpid.decodeList message.message_impl
       end
 
       message.content
