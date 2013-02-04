@@ -1,0 +1,2 @@
+Verison 0.22:
+	* Changed Qpid::Messaging::Address to use a URI on creation.

@@ -21,5 +21,5 @@ Feature: Creating a sender
 
   Scenario: Using an Address object
     Given an open session
-    And an Address with the name "my-queue" and subject "my-subject" and option "create" set to "always"
+    And an Address with the uri "my-queue/my-subject;{create:always}"
     Then creating a sender with an Address succeeds

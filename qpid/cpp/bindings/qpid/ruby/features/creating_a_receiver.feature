@@ -25,5 +25,5 @@ Feature: Creating a receiver
 
   Scenario: Using an Address object
     Given an open session
-    And an Address with the name "create-receiver-test" and subject "foo" and option "create" set to "always" and "delete" set to "always"
+    And an Address with the uri "create-receiver-test;{create:always}"
     Then creating a receiver with an Address succeeds

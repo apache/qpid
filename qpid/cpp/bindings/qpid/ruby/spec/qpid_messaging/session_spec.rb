@@ -46,7 +46,7 @@ module Qpid
       end
 
       it "creates a Sender from an Address" do
-        address = Qpid::Messaging::Address.new "my-queu", "", :create => :always
+        address = Qpid::Messaging::Address.new "my-queue;{create:always}"
 
         @session_impl.should_receive(:createSender).
           with(address.address_impl).
