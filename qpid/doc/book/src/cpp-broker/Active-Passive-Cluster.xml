@@ -81,12 +81,12 @@ under the License.
 	  in <citetitle>Programming in Apache Qpid</citetitle>.
 	  </para>
 	</footnote>
-	<para>
-	  So if the primary crashes, all the <emphasis>acknowledged</emphasis> messages will
-	  be available on the backup that takes over as the new primary. The
-	  <emphasis>unacknowledged</emphasis> messages will be re-sent by the clients.  Thus
-	  no messages are lost.
-	</para>
+      </para>
+      <para>
+	  So if the primary crashes, all the <emphasis>acknowledged</emphasis>
+	  messages will be available on the backup that takes over as the new
+	  primary. The <emphasis>unacknowledged</emphasis> messages will be
+	  re-sent by the clients.  Thus no messages are lost.
       </para>
       <para>
 	Note that this means it is possible for messages to be
@@ -156,31 +156,33 @@ under the License.
     <section>
       <title>Limitations</title>
       <para>
-	There are a number of known limitations in the current preview implementation. These
-	will be fixed in the production versions.
+	There are a some known limitations in the current implementation. These
+	will be fixed in furture versions.
       </para>
       <itemizedlist>
 	<listitem>
-	  Transactional changes to queue state are not replicated atomically. If the primary crashes
-	  during a transaction, it is possible that the backup could contain only part of the
-	  changes introduced by a transaction.
+	  <para>
+	    Transactional changes to queue state are not replicated atomically. If
+	    the primary crashes during a transaction, it is possible that the
+	    backup could contain only part of the changes introduced by a
+	    transaction.
+	  </para>
 	</listitem>
 	<listitem>
-	  Configuration changes (creating or deleting queues, exchanges and bindings) are
-	  replicated asynchronously. Management tools used to make changes will consider
-	  the change complete when it is complete on the primary, it may not yet be
-	  replicated to all the backups.
+	  <para>
+	    Configuration changes (creating or deleting queues, exchanges and
+	    bindings) are replicated asynchronously. Management tools used to
+	    make changes will consider the change complete when it is complete
+	    on the primary, it may not yet be replicated to all the backups.
+	  </para>
 	</listitem>
 	<listitem>
-	  Deletions made immediately after a failure (before all the backups are ready)
-	  may be lost on a backup. Queues, exchange or bindings that were deleted on the
-	  primary could re-appear if that backup is promoted to primary on a subsequent
-	  failure.
-	</listitem>
-	<listitem>
-	  Federated links <emphasis>from</emphasis> the primary will be lost in fail over,
-	  they will not be re-connected to the new primary. Federation links
-	  <emphasis>to</emphasis> the primary will fail over.
+	  <para>
+	    Federated links <emphasis>from</emphasis> the primary will be lost
+	    in fail over, they will not be re-connected to the new
+	    primary. Federation links <emphasis>to</emphasis> the primary will
+	    fail over.
+	  </para>
 	</listitem>
       </itemizedlist>
     </section>
@@ -285,7 +287,6 @@ ssl_addr = "ssl:" host [":" port]'
 	  </row>
 	  <row>
 	    <entry><literal>ha-replicate </literal><replaceable>VALUE</replaceable></entry>
-	    <foo/>
 	    <entry>
 	      <para>
 		Specifies whether queues and exchanges are replicated by default.
@@ -388,7 +389,7 @@ ssl_addr = "ssl:" host [":" port]'
       clustered services using <command>cman</command> and
       <command>rgmanager</command>. It will show you how to configure an active-passive,
       hot-standby <command>qpidd</command> HA cluster with <command>rgmanager</command>.
-    </para> 
+    </para>
     <para>
       You must provide a <literal>cluster.conf</literal> file to configure
       <command>cman</command> and <command>rgmanager</command>.  Here is
@@ -545,15 +546,21 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       option. It has one of the following values:
       <itemizedlist>
 	<listitem>
-	  <firstterm>all</firstterm>: Replicate everything automatically: queues,
-	  exchanges, bindings and messages.
+	  <para>
+	    <firstterm>all</firstterm>: Replicate everything automatically: queues,
+	    exchanges, bindings and messages.
+	  </para>
 	</listitem>
 	<listitem>
-	  <firstterm>configuration</firstterm>: Replicate the existence of queues,
-	  exchange and bindings but don't replicate messages.
+	  <para>
+	    <firstterm>configuration</firstterm>: Replicate the existence of queues,
+	    exchange and bindings but don't replicate messages.
+	  </para>
 	</listitem>
 	<listitem>
-	  <firstterm>none</firstterm>: Don't replicate anything, this is the default.
+	  <para>
+	    <firstterm>none</firstterm>: Don't replicate anything, this is the default.
+	  </para>
 	</listitem>
       </itemizedlist>
     </para>
@@ -606,12 +613,17 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       each type of client). There are two possibilities
       <itemizedlist>
 	<listitem>
-	  The URL contains multiple addresses, one for each broker in the cluster.
+	  <para>
+	    The URL contains multiple addresses, one for each broker in the cluster.
+	  </para>
 	</listitem>
 	<listitem>
-	  The URL contains a single <firstterm>virtual IP address</firstterm>
-	  that is assigned to the primary broker by the resource manager.
-	  <footnote><para>Only if the resource manager supports virtual IP addresses</para></footnote>
+	  <para>
+	    The URL contains a single <firstterm>virtual IP address</firstterm>
+	    that is assigned to the primary broker by the resource manager.
+	    <footnote><para>Only if the resource manager supports virtual IP
+	    addresses</para></footnote>
+	  </para>
 	</listitem>
       </itemizedlist>
       In the first case, clients will repeatedly re-try each address in the URL
@@ -808,10 +820,10 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       To integrate with a different resource manager you must configure it to:
       <itemizedlist>
-	<listitem>Start a qpidd process on each node of the cluster.</listitem>
-	<listitem>Restart qpidd if it crashes.</listitem>
-	<listitem>Promote exactly one of the brokers to primary.</listitem>
-	<listitem>Detect a failure and promote a new primary.</listitem>
+	<listitem><para>Start a qpidd process on each node of the cluster.</para></listitem>
+	<listitem><para>Restart qpidd if it crashes.</para></listitem>
+	<listitem><para>Promote exactly one of the brokers to primary.</para></listitem>
+	<listitem><para>Detect a failure and promote a new primary.</para></listitem>
       </itemizedlist>
     </para>
     <para>
