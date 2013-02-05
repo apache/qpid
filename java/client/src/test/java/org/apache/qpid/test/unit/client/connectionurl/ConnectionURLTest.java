@@ -591,5 +591,36 @@ public class ConnectionURLTest extends TestCase
 
         assertFalse("value should be false", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_SSL)));
     }
+
+    /**
+     * Verify that when the {@value ConnectionURL#OPTIONS_VERIFY_QUEUE_ON_SEND} option is not
+     * specified, asking for the option returns null, such that this can later be used to
+     * verify it wasn't specified.
+     */
+    public void testDefaultVerifyQueueOnSend() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&foo='bar'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertNull("default ssl value should be null", connectionURL.getOption(ConnectionURL.OPTIONS_SSL));
+    }
+
+    /**
+     * Verify that when the {@value ConnectionURL#OPTIONS_VERIFY_QUEUE_ON_SEND} option is
+     * specified, asking for the option returns the value, such that this can later be used
+     * to verify what value it was specified as.
+     */
+    public void testOverridingVerifyQueueOnSend() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&verifyQueueOnSend='true'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertTrue("value should be true", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND)));
+
+        url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&verifyQueueOnSend='false'";
+        connectionURL = new AMQConnectionURL(url);
+
+        assertFalse("value should be false", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND)));
+    }
 }
 
