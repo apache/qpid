@@ -615,7 +615,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                 }
                 else
                 {
-                    throw new InvalidDestinationException("Queue: " + destination.getName()
+                    throw new InvalidDestinationException("Queue: " + destination.getQueueName()
                         + " is not a valid destination (no binding on server)");
                 }
             }
