@@ -590,20 +590,21 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     }
 
-    void checkValidQueue() throws JMSException
+    private void checkValidQueue() throws JMSException
     {
         if(_destination instanceof AMQQueue)
         {
-            checkValidQueue(_destination);
+            checkValidQueue((AMQQueue) _destination);
         }
     }
-    void checkValidQueue(AMQDestination destination) throws JMSException
+
+    private void checkValidQueue(AMQQueue destination) throws JMSException
     {
         if (!destination.isCheckedForQueueBinding() && validateQueueOnSend())
         {
             if (getSession().isStrictAMQP())
             {
-                getLogger().warn("AMQP does not support destination validation before publish, ");
+                getLogger().warn("AMQP does not support destination validation before publish");
                 destination.setCheckedForQueueBinding(true);
             }
             else
@@ -615,7 +616,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                 else
                 {
                     throw new InvalidDestinationException("Queue: " + destination.getName()
-                        + " is not a valid destination (no bindings on server");
+                        + " is not a valid destination (no binding on server)");
                 }
             }
         }

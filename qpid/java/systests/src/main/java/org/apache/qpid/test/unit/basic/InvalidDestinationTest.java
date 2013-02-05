@@ -55,11 +55,8 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
         super.tearDown();
     }
 
-
-
     public void testInvalidDestination() throws Exception
     {
-
         QueueSession queueSession = _connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
         Queue invalidDestination = queueSession.createQueue("unknownQ");
@@ -98,37 +95,39 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
         sender.close();
         sender = queueSession.createSender(validDestination);
         sender.send(msg);
-
-
-
-
     }
 
-
-
+    /**
+     * Tests that specifying the {@value ClientProperties#VERIFY_QUEUE_ON_SEND} system property
+     * results in an exception when sending to an invalid queue destination.
+     */
     public void testInvalidDestinationOnMessageProducer() throws Exception
     {
         setTestSystemProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "true");
         final AMQConnection connection = (AMQConnection) getConnection();
         doInvalidDestinationOnMessageProducer(connection);
-
     }
 
-
+    /**
+     * Tests that specifying the {@value ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND}
+     * connection URL option property results in an exception when sending to an
+     * invalid queue destination.
+     */
     public void testInvalidDestinationOnMessageProducerURL() throws Exception
     {
         Map<String, String> options = Collections.singletonMap(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND, "true");
         doInvalidDestinationOnMessageProducer(getConnectionWithOptions(options));
-
     }
 
     private void doInvalidDestinationOnMessageProducer(Connection connection) throws JMSException
     {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        Queue invalidDestination = session.createQueue("unknownQ");
+        String invalidQueueName = getTestQueueName() + "UnknownQ";
+        Queue invalidDestination = session.createQueue(invalidQueueName);
 
-        Queue validDestination = session.createQueue("knownQ");
+        String validQueueName = getTestQueueName() + "KnownQ";
+        Queue validDestination = session.createQueue(validQueueName);
 
         // This is the only easy way to create and bind a queue from the API :-(
         session.createConsumer(validDestination);
@@ -146,9 +145,8 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
             // pass
         }
 
-
         sender = session.createProducer(null);
-        invalidDestination = new AMQQueue("amq.direct","unknownQ");
+        invalidDestination = new AMQQueue("amq.direct",invalidQueueName);
 
         try
         {
@@ -164,15 +162,10 @@ public class InvalidDestinationTest extends QpidBrokerTestCase
         sender = session.createProducer(validDestination);
         sender.send(msg);
 
-        Topic topic = session.createTopic("randomTopic");
+        //Verify sending to an 'invalid' Topic doesn't throw an exception
+        String invalidTopic = getTestQueueName() + "UnknownT";
+        Topic topic = session.createTopic(invalidTopic);
         sender = session.createProducer(topic);
         sender.send(msg);
-    }
-
-
-    public static junit.framework.Test suite()
-    {
-
-        return new junit.framework.TestSuite(InvalidDestinationTest.class);
     }
 }

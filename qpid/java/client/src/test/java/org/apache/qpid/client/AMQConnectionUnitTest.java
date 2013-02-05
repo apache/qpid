@@ -20,17 +20,52 @@
  */
 package org.apache.qpid.client;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.AMQInvalidArgumentException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class AMQConnectionUnitTest extends TestCase
+import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class AMQConnectionUnitTest extends QpidTestCase
 {
     String _url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'";
+
+    public void testVerifyQueueOnSendDefault() throws Exception
+    {
+        MockAMQConnection connection = new MockAMQConnection(_url);
+        assertFalse(connection.validateQueueOnSend());
+    }
+
+    public void testVerifyQueueOnSendViaSystemProperty() throws Exception
+    {
+        setTestSystemProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "true");
+        MockAMQConnection connection = new MockAMQConnection(_url);
+        assertTrue(connection.validateQueueOnSend());
+
+        setTestSystemProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "false");
+        connection = new MockAMQConnection(_url);
+        assertFalse(connection.validateQueueOnSend());
+    }
+
+    public void testVerifyQueueOnSendViaURL() throws Exception
+    {
+        MockAMQConnection connection = new MockAMQConnection(_url + "&" +  ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND + "='true'");
+        assertTrue(connection.validateQueueOnSend());
+
+        connection = new MockAMQConnection(_url + "&" +  ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND + "='false'");
+        assertFalse(connection.validateQueueOnSend());
+    }
+
+    public void testVerifyQueueOnSendViaURLoverridesSystemProperty() throws Exception
+    {
+        setTestSystemProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "false");
+        MockAMQConnection connection = new MockAMQConnection(_url + "&" +  ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND + "='true'");
+        assertTrue(connection.validateQueueOnSend());
+    }
 
     public void testExceptionReceived()
     {
@@ -79,4 +114,5 @@ public class AMQConnectionUnitTest extends TestCase
         MockAMQConnection connection = new MockAMQConnection(_url + "&use_legacy_stream_msg_format='false'");
         assertFalse("Stream message encoding should be amqp/list",connection.isUseLegacyStreamMessageFormat());
     }
+
 }
