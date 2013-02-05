@@ -21,6 +21,7 @@
 #include "ProtocolRegistry.h"
 #include "qpid/Exception.h"
 #include "qpid/client/amqp0_10/ConnectionImpl.h"
+#include "qpid/client/LoadPlugins.h"
 #include <map>
 
 using qpid::types::Variant;
@@ -53,6 +54,7 @@ bool extract(const std::string& key, Variant& value, const Variant::Map& in, Var
 
 ConnectionImpl* ProtocolRegistry::create(const std::string& url, const Variant::Map& options)
 {
+    qpid::client::theModuleLoader();//ensure modules are loaded
     Variant name;
     Variant::Map stripped;
     if (extract("protocol", name, options, stripped)) {
