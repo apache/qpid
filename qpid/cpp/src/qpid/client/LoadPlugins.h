@@ -22,10 +22,12 @@
 #ifndef _LoadPlugins_
 #define _LoadPlugins_
 
+#include "qpid/client/ClientImportExport.h"
+
 namespace qpid {
 namespace client {
 
-void theModuleLoader();
+QPID_CLIENT_EXTERN void theModuleLoader();
 
 }}
 
