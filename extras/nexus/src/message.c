@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 
-ALLOC_DEFINE_CONFIG(nx_message_t, sizeof(nx_message_pvt_t), 0);
+ALLOC_DEFINE_CONFIG(nx_message_t, sizeof(nx_message_pvt_t), 0, 0);
 ALLOC_DEFINE(nx_message_content_t);
 
 
@@ -379,6 +379,62 @@ static void nx_end_list(nx_message_content_t *msg)
 }
 
 
+static nx_field_location_t *nx_message_field_location(nx_message_t *msg, nx_message_field_t field)
+{
+    nx_message_content_t *content = MSG_CONTENT(msg);
+
+    switch (field) {
+    case NX_FIELD_TO:
+        while (1) {
+            if (content->field_to.parsed)
+                return &content->field_to;
+
+            if (content->section_message_properties.parsed == 0)
+                break;
+
+            nx_buffer_t   *buffer = content->section_message_properties.buffer;
+            unsigned char *cursor = nx_buffer_base(buffer) + content->section_message_properties.offset;
+
+            int count = start_list(&cursor, &buffer);
+            int result;
+
+            if (count < 3)
+                break;
+
+            result = traverse_field(&cursor, &buffer, 0); // message_id
+            if (!result) return 0;
+            result = traverse_field(&cursor, &buffer, 0); // user_id
+            if (!result) return 0;
+            result = traverse_field(&cursor, &buffer, &content->field_to); // to
+            if (!result) return 0;
+        }
+        break;
+
+    case NX_FIELD_BODY:
+        while (1) {
+            if (content->body.parsed)
+                return &content->body;
+
+            if (content->section_body.parsed == 0)
+                break;
+
+            nx_buffer_t   *buffer = content->section_body.buffer;
+            unsigned char *cursor = nx_buffer_base(buffer) + content->section_body.offset;
+            int result;
+
+            result = traverse_field(&cursor, &buffer, &content->body);
+            if (!result) return 0;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+
 nx_message_t *nx_allocate_message()
 {
     nx_message_pvt_t *msg = (nx_message_pvt_t*) new_nx_message_t();
@@ -695,59 +751,69 @@ int nx_message_check(nx_message_t *in_msg, nx_message_depth_t depth)
 }
 
 
-nx_field_iterator_t *nx_message_field(nx_message_t *msg, nx_message_field_t field)
+nx_field_iterator_t *nx_message_field_iterator(nx_message_t *msg, nx_message_field_t field)
 {
-    nx_message_content_t *content = MSG_CONTENT(msg);
+    nx_field_location_t *loc = nx_message_field_location(msg, field);
+    if (!loc)
+        return 0;
 
-    switch (field) {
-    case NX_FIELD_TO:
-        while (1) {
-            if (content->field_to.parsed)
-                return nx_field_iterator_buffer(content->field_to.buffer, content->field_to.offset, content->field_to.length, ITER_VIEW_ALL);
+    return nx_field_iterator_buffer(loc->buffer, loc->offset, loc->length, ITER_VIEW_ALL);
+}
 
-            if (content->section_message_properties.parsed == 0)
-                break;
 
-            nx_buffer_t   *buffer = content->section_message_properties.buffer;
-            unsigned char *cursor = nx_buffer_base(buffer) + content->section_message_properties.offset;
+nx_iovec_t *nx_message_field_iovec(nx_message_t *msg, nx_message_field_t field)
+{
+    nx_field_location_t *loc = nx_message_field_location(msg, field);
+    if (!loc)
+        return 0;
 
-            int count = start_list(&cursor, &buffer);
-            int result;
+    //
+    // Count the number of buffers this field straddles
+    //
+    int          bufcnt    = 1;
+    nx_buffer_t *buf       = loc->buffer;
+    size_t       bufsize   = nx_buffer_size(buf) - loc->offset;
+    ssize_t      remaining = loc->length - bufsize;
 
-            if (count < 3)
-                break;
-
-            result = traverse_field(&cursor, &buffer, 0); // message_id
-            if (!result) return 0;
-            result = traverse_field(&cursor, &buffer, 0); // user_id
-            if (!result) return 0;
-            result = traverse_field(&cursor, &buffer, &content->field_to); // to
-            if (!result) return 0;
-        }
-        break;
-
-    case NX_FIELD_BODY:
-        while (1) {
-            if (content->body.parsed)
-                return nx_field_iterator_buffer(content->body.buffer, content->body.offset, content->body.length, ITER_VIEW_ALL);
-
-            if (content->section_body.parsed == 0)
-                break;
-
-            nx_buffer_t   *buffer = content->section_body.buffer;
-            unsigned char *cursor = nx_buffer_base(buffer) + content->section_body.offset;
-            int result;
-
-            result = traverse_field(&cursor, &buffer, &content->body);
-            if (!result) return 0;
-        }
-        break;
-
-    default:
-        break;
+    while (remaining > 0) {
+        bufcnt++;
+        buf = buf->next;
+        if (!buf)
+            return 0;
+        remaining -= nx_buffer_size(buf);
     }
 
-    return 0;
+    //
+    // Allocate an iovec object big enough to hold the number of buffers
+    //
+    nx_iovec_t *iov = nx_iovec(bufcnt);
+    if (!iov)
+        return 0;
+
+    //
+    // Build out the io vectors with pointers to the segments of the field in buffers
+    //
+    bufcnt     = 0;
+    buf        = loc->buffer;
+    bufsize    = nx_buffer_size(buf) - loc->offset;
+    void *base = nx_buffer_base(buf) + loc->offset;
+    remaining  = loc->length;
+
+    while (remaining > 0) {
+        nx_iovec_array(iov)[bufcnt].iov_base = base;
+        nx_iovec_array(iov)[bufcnt].iov_len  = bufsize;
+        bufcnt++;
+        remaining -= bufsize;
+        if (remaining > 0) {
+            buf     = buf->next;
+            base    = nx_buffer_base(buf);
+            bufsize = nx_buffer_size(buf);
+            if (bufsize > remaining)
+                bufsize = remaining;
+        }
+    }
+
+    return iov;
 }
 
 

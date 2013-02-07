@@ -20,16 +20,23 @@
 #include <qpid/nexus/buffer.h>
 #include <qpid/nexus/alloc.h>
 
-#ifndef NEXUS_BUFFER_SIZE
-#define NEXUS_BUFFER_SIZE 512
-#endif
+static size_t buffer_size = 512;
+static int    size_locked = 0;
 
 ALLOC_DECLARE(nx_buffer_t);
-ALLOC_DEFINE_CONFIG(nx_buffer_t, sizeof(nx_buffer_t) + NEXUS_BUFFER_SIZE, 0);
+ALLOC_DEFINE_CONFIG(nx_buffer_t, sizeof(nx_buffer_t), &buffer_size, 0);
+
+
+void nx_buffer_set_size(size_t size)
+{
+    assert(!size_locked);
+    buffer_size = size;
+}
 
 
 nx_buffer_t *nx_allocate_buffer(void)
 {
+    size_locked = 1;
     nx_buffer_t *buf = new_nx_buffer_t();
 
     DEQ_ITEM_INIT(buf);
@@ -58,7 +65,7 @@ unsigned char *nx_buffer_cursor(nx_buffer_t *buf)
 
 size_t nx_buffer_capacity(nx_buffer_t *buf)
 {
-    return NEXUS_BUFFER_SIZE - buf->size;
+    return buffer_size - buf->size;
 }
 
 
@@ -71,6 +78,6 @@ size_t nx_buffer_size(nx_buffer_t *buf)
 void nx_buffer_insert(nx_buffer_t *buf, size_t len)
 {
     buf->size += len;
-    assert(buf->size <= NEXUS_BUFFER_SIZE);
+    assert(buf->size <= buffer_size);
 }
 

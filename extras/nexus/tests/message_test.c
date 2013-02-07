@@ -66,7 +66,7 @@ static char* test_receive_from_messenger(void *context)
     int valid = nx_message_check(msg, NX_DEPTH_ALL);
     if (!valid) return "nx_message_check returns 'invalid'";
 
-    nx_field_iterator_t *iter = nx_message_field(msg, NX_FIELD_TO);
+    nx_field_iterator_t *iter = nx_message_field_iterator(msg, NX_FIELD_TO);
     if (iter == 0) return "Expected an iterator for the 'to' field";
 
     if (!nx_field_iterator_equal(iter, (unsigned char*) "test_addr_1"))
@@ -97,7 +97,7 @@ static char* test_insufficient_check_depth(void *context)
     int valid = nx_message_check(msg, NX_DEPTH_DELIVERY_ANNOTATIONS);
     if (!valid) return "nx_message_check returns 'invalid'";
 
-    nx_field_iterator_t *iter = nx_message_field(msg, NX_FIELD_TO);
+    nx_field_iterator_t *iter = nx_message_field_iterator(msg, NX_FIELD_TO);
     if (iter) return "Expected no iterator for the 'to' field";
 
     nx_free_message(msg);
