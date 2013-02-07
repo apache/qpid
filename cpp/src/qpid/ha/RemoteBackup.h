@@ -55,7 +55,7 @@ class RemoteBackup
     /** Note: isReady() can be true after construction
      *@param connected true if the backup is already connected.
      */
-    RemoteBackup(const BrokerInfo&, ReplicationTest, broker::Connection*);
+    RemoteBackup(const BrokerInfo&, broker::Connection*);
     ~RemoteBackup();
 
     /** Set all queues in the registry as catch-up queues.

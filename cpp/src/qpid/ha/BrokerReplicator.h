@@ -142,8 +142,8 @@ class BrokerReplicator : public broker::Exchange,
     void setMembership(const types::Variant::List&); // Set membership from list.
 
     std::string logPrefix;
-    std::string userId, remoteHost;
     ReplicationTest replicationTest;
+    std::string userId, remoteHost;
     HaBroker& haBroker;
     broker::Broker& broker;
     broker::ExchangeRegistry& exchanges;

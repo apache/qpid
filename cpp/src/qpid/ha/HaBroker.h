@@ -25,7 +25,6 @@
 #include "BrokerInfo.h"
 #include "Membership.h"
 #include "types.h"
-#include "ReplicationTest.h"
 #include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Mutex.h"
@@ -85,7 +84,6 @@ class HaBroker : public management::Manageable
     void shutdown(const std::string& message);
 
     BrokerStatus getStatus() const;
-    ReplicationTest getReplicationTest() const { return replicationTest; }
     boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
     BrokerInfo getBrokerInfo() const { return membership.getInfo(); }
@@ -108,7 +106,6 @@ class HaBroker : public management::Manageable
     mutable sys::Mutex lock;
     Url publicUrl, brokerUrl;
     std::vector<Url> knownBrokers;
-    ReplicationTest replicationTest;
 
     // Independently thread-safe member variables
     broker::Broker& broker;
