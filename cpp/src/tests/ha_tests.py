@@ -464,8 +464,10 @@ class ReplicationTests(HaBrokerTest):
     def test_replicate_default(self):
         """Make sure we don't replicate if ha-replicate is unspecified or none"""
         cluster1 = HaCluster(self, 2, ha_replicate=None)
+        cluster1[1].wait_status("ready")
         c1 = cluster1[0].connect().session().sender("q;{create:always}")
         cluster2 = HaCluster(self, 2, ha_replicate="none")
+        cluster2[1].wait_status("ready")
         cluster2[0].connect().session().sender("q;{create:always}")
         time.sleep(.1)               # Give replication a chance.
         try:

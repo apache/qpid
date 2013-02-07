@@ -245,14 +245,17 @@ void Primary::opened(broker::Connection& connection) {
                 backup->setCatchupQueues(haBroker.getBroker().getQueues(), false);
             }
             backups[info.getSystemId()] = backup;
+            i = backups.find(info.getSystemId());
         }
         else {
             QPID_LOG(info, logPrefix << "Known backup connected: " << info);
             i->second->setConnection(&connection);
-            checkReady(i, l);
         }
-        if (info.getStatus() == JOINING) info.setStatus(CATCHUP);
-        membership.add(info);
+        if (info.getStatus() == JOINING) {
+            info.setStatus(CATCHUP);
+            membership.add(info);
+        }
+        if (i != backups.end()) checkReady(i, l);
     }
     else
         QPID_LOG(debug, logPrefix << "Accepted client connection "
