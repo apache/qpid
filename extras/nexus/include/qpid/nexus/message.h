@@ -24,6 +24,7 @@
 #include <qpid/nexus/alloc.h>
 #include <qpid/nexus/iterator.h>
 #include <qpid/nexus/buffer.h>
+#include <qpid/nexus/iovec.h>
 
 // Callback for status change (confirmed persistent, loaded-in-memory, etc.)
 
@@ -108,7 +109,8 @@ nx_message_t *nx_message_receive(pn_delivery_t *delivery);
 void nx_message_send(nx_message_t *msg, pn_link_t *link);
 
 int nx_message_check(nx_message_t *msg, nx_message_depth_t depth);
-nx_field_iterator_t *nx_message_field(nx_message_t *msg, nx_message_field_t field);
+nx_field_iterator_t *nx_message_field_iterator(nx_message_t *msg, nx_message_field_t field);
+nx_iovec_t *nx_message_field_iovec(nx_message_t *msg, nx_message_field_t field);
 
 pn_delivery_t *nx_message_inbound_delivery(nx_message_t *qm);
 

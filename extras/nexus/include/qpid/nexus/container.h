@@ -29,6 +29,9 @@ typedef uint8_t nx_dist_mode_t;
 #define NX_DIST_MOVE 0x02
 #define NX_DIST_BOTH 0x03
 
+/**
+ * Node Lifetime Policy (see AMQP 3.5.9)
+ */
 typedef enum {
     NX_LIFE_PERMANENT,
     NX_LIFE_DELETE_CLOSE,
@@ -37,6 +40,10 @@ typedef enum {
     NX_LIFE_DELETE_NO_LINKS_MESSAGES
 } nx_lifetime_policy_t;
 
+
+/**
+ * Link Direction
+ */
 typedef enum {
     NX_INCOMING,
     NX_OUTGOING
