@@ -77,6 +77,7 @@ const QueueSettings::Aliases QueueSettings::aliases;
 QueueSettings::QueueSettings(bool d, bool a) :
     durable(d),
     autodelete(a),
+    declaredExclusive(false),
     priorities(0),
     defaultFairshare(0),
     shareGroups(false),

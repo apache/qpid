@@ -600,9 +600,11 @@ void BrokerReplicator::doEventMembersUpdate(Variant::Map& values) {
 void BrokerReplicator::doEventSubscribe(Variant::Map& values) {
     // Ignore queue replicator subscriptions.
     if (QueueReplicator::isReplicatorName(values[DEST].asString())) return;
-    QPID_LOG(debug, logPrefix << "Subscribe event: " << values[QNAME]);
     boost::shared_ptr<QueueReplicator> qr = findQueueReplicator(values[QNAME]);
-    if (qr) qr->setSubscribed();
+    if (qr) {
+        qr->setSubscribed();
+        QPID_LOG(debug, logPrefix << "Subscribe event: " << values[QNAME]);
+    }
 }
 
 namespace {
