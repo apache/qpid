@@ -784,6 +784,15 @@ void BrokerReplicator::deleteQueue(const std::string& name, bool purge) {
 
 void BrokerReplicator::deleteExchange(const std::string& name) {
     try {
+        boost::shared_ptr<broker::Exchange> exchange = exchanges.find(name);
+        if (!exchange) {
+            QPID_LOG(warning, logPrefix << "Cannot delete exchange, not found: " << name);
+            return;
+        }
+        if (exchange->inUseAsAlternate()) {
+            QPID_LOG(warning, "Cannot delete exchange, in use as alternate: " << name);
+            return;
+        }
         broker.deleteExchange(name, userId, remoteHost);
         QPID_LOG(debug, logPrefix << "Exchange deleted: " << name);
     } catch (const framing::NotFoundException&) {
