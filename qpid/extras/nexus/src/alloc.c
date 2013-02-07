@@ -19,6 +19,7 @@
 
 #include <qpid/nexus/alloc.h>
 #include <qpid/nexus/ctools.h>
+#include <qpid/nexus/log.h>
 #include <memory.h>
 #include <stdio.h>
 
@@ -45,9 +46,16 @@ static void nx_alloc_init(nx_alloc_type_desc_t *desc)
 {
     sys_mutex_lock(init_lock);
 
+    desc->total_size = desc->type_size;
+    if (desc->additional_size)
+        desc->total_size += *desc->additional_size;
+
+    nx_log("ALLOC", LOG_TRACE, "Initialized Allocator - type=%s type-size=%d total-size=%d",
+           desc->type_name, desc->type_size, desc->total_size);
+
     if (!desc->global_pool) {
         if (desc->config == 0)
-            desc->config = desc->type_size > 256 ?
+            desc->config = desc->total_size > 256 ?
                 &nx_alloc_default_config_big : &nx_alloc_default_config_small;
 
         assert (desc->config->local_free_list_max >= desc->config->transfer_batch_size);
@@ -121,7 +129,7 @@ void *nx_alloc(nx_alloc_type_desc_t *desc, nx_alloc_pool_t **tpool)
         // Allocate a full batch from the heap and put it on the thread list.
         //
         for (idx = 0; idx < desc->config->transfer_batch_size; idx++) {
-            item = (item_t*) malloc(sizeof(item_t) + desc->type_size);
+            item = (item_t*) malloc(sizeof(item_t) + desc->total_size);
             if (item == 0)
                 break;
             DEQ_ITEM_INIT(item);

@@ -32,6 +32,10 @@ struct nx_buffer_t {
 
 /**
  */
+void nx_buffer_set_size(size_t size);
+
+/**
+ */
 nx_buffer_t *nx_allocate_buffer(void);
 
 /**

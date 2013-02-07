@@ -68,6 +68,7 @@ set(server_SOURCES
     src/buffer.c
     src/container.c
     src/hash.c
+    src/iovec.c
     src/iterator.c
     src/log.c
     src/message.c
