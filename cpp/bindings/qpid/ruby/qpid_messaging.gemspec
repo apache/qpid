@@ -7,7 +7,7 @@ system "swig -ruby -c++ -I../../../include -I../../ -o ext/cqpid/cqpid.cpp ruby.
 
 Gem::Specification.new do |s|
   s.name        = "qpid_messaging"
-  s.version     = "0.20.1"
+  s.version     = "0.22.0"
   s.platform    = Gem::Platform::RUBY
   s.authors     = "Apache Qpid Project"
   s.email       = "dev@qpid.apache.org"
@@ -17,14 +17,11 @@ Gem::Specification.new do |s|
 
   s.extensions   = "ext/cqpid/extconf.rb"
   s.files        = Dir["LICENSE",
+                   "ChangeLog",
                    "README.rdoc",
                    "TODO",
                    "lib/**/*.rb",
-                   "test/**/*.rb",
-                   "examples/**/*.rb",
                    "ext/**/*",
-                   "features/**/*",
-                   "spec/**/*"
                 ]
   s.require_path = 'lib'
 end
