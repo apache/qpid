@@ -19,6 +19,7 @@
  *
  */
 #include "ReplicationTest.h"
+#include "qpid/log/Statement.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
@@ -28,53 +29,49 @@ namespace ha {
 
 using types::Variant;
 
-ReplicateLevel ReplicationTest::replicateLevel(const std::string& str) {
+ReplicateLevel ReplicationTest::getLevel(const std::string& str) {
     Enum<ReplicateLevel> rl(replicateDefault);
     if (!str.empty()) rl.parse(str);
     return rl.get();
 }
 
-ReplicateLevel ReplicationTest::replicateLevel(const framing::FieldTable& f) {
+ReplicateLevel ReplicationTest::getLevel(const framing::FieldTable& f) {
     if (f.isSet(QPID_REPLICATE))
-        return replicateLevel(f.getAsString(QPID_REPLICATE));
+        return getLevel(f.getAsString(QPID_REPLICATE));
     else
         return replicateDefault;
 }
 
-ReplicateLevel ReplicationTest::replicateLevel(const Variant::Map& m) {
+ReplicateLevel ReplicationTest::getLevel(const Variant::Map& m) {
     Variant::Map::const_iterator i = m.find(QPID_REPLICATE);
     if (i != m.end())
-        return replicateLevel(i->second.asString());
+        return getLevel(i->second.asString());
     else
         return replicateDefault;
 }
 
-namespace {
-const std::string AUTO_DELETE_TIMEOUT("qpid.auto_delete_timeout");
+ReplicateLevel ReplicationTest::getLevel(const broker::Queue& q) {
+    const Variant::Map& qmap(q.getSettings().original);
+    Variant::Map::const_iterator i = qmap.find(QPID_REPLICATE);
+    if (i != qmap.end())
+        return getLevel(i->second.asString());
+    else
+        return getLevel(q.getSettings().storeSettings);
 }
 
-bool ReplicationTest::isReplicated(
-    ReplicateLevel level, const Variant::Map& args, bool autodelete, bool exclusive)
-{
-    bool ignore = autodelete && exclusive && args.find(AUTO_DELETE_TIMEOUT) == args.end();
-    return !ignore && replicateLevel(args) >= level;
+ReplicateLevel ReplicationTest::getLevel(const broker::Exchange& ex) {
+    return getLevel(ex.getArgs());
 }
 
-bool ReplicationTest::isReplicated(
-    ReplicateLevel level, const framing::FieldTable& args, bool autodelete, bool exclusive)
+ReplicateLevel ReplicationTest::useLevel(const broker::Queue& q)
 {
-    bool ignore = autodelete && exclusive && !args.isSet(AUTO_DELETE_TIMEOUT);
-    return !ignore && replicateLevel(args) >= level;
+    bool ignore = q.isAutoDelete() && q.hasExclusiveOwner() &&
+        !q.getSettings().autoDeleteDelay;
+    return ignore ? ReplicationTest(NONE).getLevel(q) : getLevel(q);
 }
 
-bool ReplicationTest::isReplicated(ReplicateLevel level, const broker::Queue& q)
-{
-    return isReplicated(level, q.getSettings().storeSettings, q.isAutoDelete(), q.hasExclusiveOwner());
-}
-
-bool ReplicationTest::isReplicated(ReplicateLevel level, const broker::Exchange& ex)
-{
-    return replicateLevel(ex.getArgs()) >= level;
+ReplicateLevel ReplicationTest::useLevel(const broker::Exchange& ex) {
+    return ReplicationTest::getLevel(ex);
 }
 
 

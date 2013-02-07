@@ -34,15 +34,16 @@ using sys::Mutex;
 using boost::bind;
 
 RemoteBackup::RemoteBackup(
-    const BrokerInfo& info, ReplicationTest rt, broker::Connection* c
+    const BrokerInfo& info, broker::Connection* c
 ) : logPrefix("Primary: Remote backup "+info.getLogId()+": "),
-    brokerInfo(info), replicationTest(rt), connection(c), reportedReady(false)
+    brokerInfo(info), replicationTest(NONE), connection(c), reportedReady(false)
 {}
 
 void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGuards)
 {
-    QPID_LOG(debug, logPrefix << "Setting catch-up queues" << (createGuards ? " and guards" : ""));
     queues.eachQueue(boost::bind(&RemoteBackup::catchupQueue, this, _1, createGuards));
+    QPID_LOG(debug, logPrefix << "Set " << catchupQueues.size() << " catch-up queues"
+             << (createGuards ? " and guards" : ""));
 }
 
 RemoteBackup::~RemoteBackup() { cancel(); }
@@ -64,7 +65,7 @@ bool RemoteBackup::isReady() {
 }
 
 void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
-    if (replicationTest.isReplicated(ALL, *q)) {
+    if (replicationTest.getLevel(*q) == ALL) {
         QPID_LOG(debug, logPrefix << "Catch-up queue"
                  << (createGuard ? " and guard" : "") << ": " << q->getName());
         catchupQueues.insert(q);
@@ -105,7 +106,7 @@ void RemoteBackup::ready(const QueuePtr& q) {
 
 // Called via ConfigurationObserver::queueCreate and from catchupQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
-    if (replicationTest.isReplicated(ALL, *q))
+    if (replicationTest.getLevel(*q) == ALL)
         guards[q].reset(new QueueGuard(*q, brokerInfo));
 }
 

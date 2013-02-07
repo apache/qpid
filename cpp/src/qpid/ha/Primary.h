@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "BrokerInfo.h"
+#include "ReplicationTest.h"
 #include "Role.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
@@ -104,6 +105,8 @@ class Primary : public Role
     Membership& membership;
     std::string logPrefix;
     bool active;
+    ReplicationTest replicationTest;
+
     /**
      * Set of expected backups that must be ready before we declare ourselves
      * active. These are backups that were known and ready before the primary

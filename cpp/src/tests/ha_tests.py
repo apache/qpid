@@ -702,15 +702,17 @@ acl deny all all
         s.sender("e1;{create:always, node:{type:topic}}")
 
         # cluster[1] will be the backup, has extra queues/exchanges
+        xdecl = "x-declare:{arguments:{'qpid.replicate':'all'}}"
+        node = "node:{%s}"%(xdecl)
         s = cluster[1].connect_admin().session()
-        s.sender("q1;{create:always}")
-        s.sender("q2;{create:always}")
-        s.sender("e1;{create:always, node:{type:topic}}")
-        s.sender("e2;{create:always, node:{type:topic}}")
+        s.sender("q1;{create:always, %s}"%(node))
+        s.sender("q2;{create:always, %s}"%(node))
+        s.sender("e1;{create:always, node:{type:topic, %s}}"%(xdecl))
+        s.sender("e2;{create:always, node:{type:topic, %s}}"%(xdecl))
         for a in ["q1", "q2", "e1", "e2"]: cluster[1].wait_backup(a)
 
         cluster[0].promote()
-        # Verify the backup deletes the surpluis queue and exchange
+        # Verify the backup deletes the surplus queue and exchange
         cluster[1].wait_status("ready")
         s = cluster[1].connect_admin().session()
         self.assertRaises(NotFound, s.receiver, ("q2"));
@@ -868,12 +870,14 @@ acl deny all all
 
         # Simulate the race by re-creating the objects before promoting the new primary
         cluster.kill(0, False)
+        xdecl = "x-declare:{arguments:{'qpid.replicate':'all'}}"
+        node = "node:{%s}"%(xdecl)
         sn = cluster[1].connect_admin().session()
         sn.sender("qq;{delete:always}").close()
-        s = sn.sender("qq;{create:always}")
+        s = sn.sender("qq;{create:always, %s}"%(node))
         s.send("foo")
         sn.sender("xx;{delete:always}").close()
-        sn.sender("xx;{create:always,node:{type:topic}}")
+        sn.sender("xx;{create:always,node:{type:topic,%s}}"%(xdecl))
         cluster[1].promote()
         cluster[1].wait_status("active")
         # Verify we are not still using the old objects on cluster[2]
