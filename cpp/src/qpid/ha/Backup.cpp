@@ -89,6 +89,7 @@ void Backup::setBrokerUrl(const Url& brokers) {
 
 void Backup::stop(Mutex::ScopedLock&) {
     if (stopped) return;
+    stopped = true;
     QPID_LOG(debug, logPrefix << "Leaving backup role.");
     if (link) link->close();
     if (replicator.get()) {
