@@ -1,46 +1,41 @@
 = Qpid - Ruby language bindings for the Qpid messaging framework.
 
-Qpid is an cross-platform enterprise messaging system based on the open-source
+Qpid is a cross-platform enterprise messaging system based on the open-source
 AMQP protocol.
-
-Version :: 0.21.0
 
 = Links
 
 Documents :: http://qpid.apache.org/
 
-= Installation
+= Building The Gemfile
 
-You can install Qpid with the following command.
+== Prerequisites
 
-  $ gem install qpid_messaging
-
-== Building The Native Code
-
-The Qpid gem requires that you have available the Qpid libraries and
-development header files. To install them, please see:
+You need to have the Qpid client libraries installed along with the related
+development files (headers, etc). To install them, please see:
 
 http://cwiki.apache.org/qpid/developer-pages.html
 
-If you are building the gem within the Qpid development environment
-itself, you can specify the location of the Qpid headers and
-libraries with:
+== Gemfile Creation
 
-$ ruby extconfig.rb --with-qpid-lib=[path to libqpidclient.so, etc.]
-$ make
+Simply type:
 
-== Examples
+  $ gem build qpid_messaging.gemspec
 
-Take a look at the integration tests for examples on how to leverage
-the messaging capabilities of Qpid in your Ruby applications.
+This will produce a gemfile name qpid_messaging-${VERSION}.gem.
+
+== Installation
+
+You can install Qpid with the following command:
+
+  $ gem install qpid_messaging-${VERSION}.gem
 
 == License
 
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor licensing agreements.
 
-Author:: Darryl L. Pierce (mailto:dpierce@redhat.com)
-Copyright:: Copyright (c) 2011, Red Hat, Inc.
+Author:: Apache Qpid Project
 Homepage:: http://qpid.apache.org
 License:: Apache License 2.0 - http://www.apache.org/licenses/LICENSE-2.0.html
 
