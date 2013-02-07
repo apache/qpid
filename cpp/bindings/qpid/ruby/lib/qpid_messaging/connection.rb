@@ -119,23 +119,26 @@ module Qpid
         end
       end
 
-      # Returns a session for the specified session name.
+      # Returns a Session with the given name.
       #
-      # ==== Examples
+      # If no such Session exists then a MessagingException is raised.
+      # == Options
       #
+      # * +name+ - the session name
+      #
+      # == Examples
+      #
+      #   # retrieve a session named 'mysession' from the current connection
+      #   name = "my-session"
       #   begin
-      #     session = conn.session "mysession"
-      #   rescue SessionNameException => error
-      #      puts "No such session."
+      #     session = conn.session name
+      #   rescue MessagingException => error
+      #      puts "No such session: #{name}."
       #   end
       #
       def session name
-        begin
-          session_impl = @connection_impl.getSession name
-          Qpid::Messaging::Session.new self, session_impl if session_impl
-        rescue
-          raise Qpid::Messaging::SessionNameException.new "No such session: #{name}"
-        end
+        session_impl = @connection_impl.getSession name
+        Qpid::Messaging::Session.new self, session_impl if session_impl
       end
 
       # Returns the username used to authenticate with the connection.

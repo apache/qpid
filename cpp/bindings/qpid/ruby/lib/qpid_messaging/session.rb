@@ -27,8 +27,6 @@ module Qpid
       def initialize(connection, session) # :nodoc:
         @connection   = connection
         @session_impl = session
-        @senders      = Hash.new
-        @receivers    = Hash.new
       end
 
       def session_impl # :nodoc:
@@ -63,15 +61,12 @@ module Qpid
         sender_impl = @session_impl.createSender(_address)
         sender_name = sender_impl.getName
 
-        @senders[sender_name] = Qpid::Messaging::Sender.new(self, sender_impl)
-
-        @senders[sender_name]
+        Qpid::Messaging::Sender.new(self, sender_impl)
       end
 
       # Retrieves the +Sender+ with the specified name.
       #
-      # The +Sender+ must have been previously created using
-      # the +create_sender+ method.
+      # Raises an exception when no such Sender exists.
       #
       # ==== Arguments
       #
@@ -82,9 +77,7 @@ module Qpid
       #   sender = session.sender "my-queue"
       #
       def sender(name)
-        raise Qpid::Messaging::KeyError, "No such sender: #{name}" unless @senders.has_key? name
-
-        @senders[name]
+        Qpid::Messaging::Sender.new self, @session_impl.getSender(name)
       end
 
       # Creates a new endpoint for receiving messages.
@@ -111,17 +104,11 @@ module Qpid
           receiver_impl = @session_impl.createReceiver(address)
         end
 
-        receiver_name = receiver_impl.getName
-
-        @receivers[receiver_name] = Qpid::Messaging::Receiver.new self, receiver_impl
-
-        @receivers[receiver_name]
+        Qpid::Messaging::Receiver.new self, receiver_impl
       end
 
-      # Retrieves the +Receiver+ with the specified name.
-      #
-      # The +Receiver+ must have been previously created using
-      # the +create_receiver+ method.
+      # Retrieves the +Receiver+ with the specified name, or nil if no such
+      # Receiver exists.
       #
       # ==== Arguments
       #
@@ -132,9 +119,7 @@ module Qpid
       #   receiver = session.receiver "my-queue"
       #
       def receiver(name)
-        raise Qpid::Messaging::KeyError, "No such receiver: #{name}" unless @receivers.has_key? name
-
-        @receivers[name]
+        Qpid::Messaging::Receiver.new self, @session_impl.getReceiver(name)
       end
 
       # Closes the +Session+ and all associated +Sender+ and +Receiver+ instances.
