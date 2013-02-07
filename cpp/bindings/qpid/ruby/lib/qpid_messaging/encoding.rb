@@ -22,12 +22,12 @@ module Qpid
   module Messaging
 
     # Encodes the supplied content into the given message.
-    def self.encode content, message, encoding = nil
+    def self.encode content, message, encoding = nil # :nodoc:
       Cqpid::encode content, message.message_impl, encoding
     end
 
     # Decodes and returns the message's content.
-    def self.decode(message, content_type = nil)
+    def self.decode(message, content_type = nil) # :nodoc:
       content_type = message.content_type if content_type.nil?
 
       case content_type
@@ -42,7 +42,7 @@ module Qpid
 
     # Takes as input any type and converts anything that's a symbol
     # into a string.
-    def self.stringify(value)
+    def self.stringify(value) # :nodoc:
       # set the default value
       result = value
 
