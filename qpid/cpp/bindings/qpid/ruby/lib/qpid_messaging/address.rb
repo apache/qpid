@@ -24,12 +24,16 @@ module Qpid
     # Address represents an address to which messages can be sent or from
     # which they can be received.
     #
-    # An Address can be described using the following pattern:
+    # == The +Address+ String
+    #
+    # An +Address+ can be described using the following pattern:
     #
     # <address> [ / <subject> ] ; [ { <key> : <value> , ... } ]
     #
     # where *address* is a simple name and *subject* is a subject or subject
     # pattern.
+    #
+    # === Options
     #
     # The options, enclosed in curly braces, are key:value pairs delimited by
     # a comma. The values can be nested maps also enclosed in curly braces.
@@ -40,44 +44,45 @@ module Qpid
     #
     # The following are the list of supported options:
     #
-    # [:create]
+    # [create]
     #   Indicates if the address should be created; values are *always*,
     #   *never*, *sender* or *reciever*.
     #
-    # [:assert]
+    # [assert]
     #   Indicates whether or not to assert any specified node properties;
     #   values are *always*, *never*, *sender* or *receiver*.
     #
-    # [:delete]
+    # [delete]
     #   Indicates whether or not to delete the addressed node when a sender
     #   or receiver is cancelled; values are *always*, *never*, *sender* or
     #   *receiver*.
     #
-    # [:node]
+    # [node]
     #   A nested map describing properties for the addressed node. Properties
     #   are *type* (*topic* or *queue*), *durable* (a boolean), *x-declare*
     #   (a nested map of amqp 0.10-specific options) and *x-bindings*. (nested
     #   list which specifies a queue, exchange or a binding key and arguments.
     #
-    # [:link]
+    # [link]
     #   A nested map through which properties of the link can be specified;
     #   properties are *durable*, *reliability*, *x-declare*, *x-subscribe*
     #   and *x-bindings*.
     #
-    # [:mode]
+    # [mode]
     #   (*For receivers only*) indicates whether the receiver should consume
     #   or browse messages; values are *consume* (the default) and *browse*.
-    #
     class Address
 
-      # Creates a new +Address+ object from an address string.
+      # Creates a new +Address+ from an address string.
       #
-      # ==== Options
+      # ==== Attributes
       #
-      # * address - the address string
+      # * +address+ - the address string
       #
       # ==== Examples
       #
+      #   # create a new address for a queue named "my-queue" that will
+      #   # be created if it doesn't already exist
       #   addr = Qpid::Messaging::Address.new "my-queue;{create:always}"
       #
       def initialize(address, address_impl = nil)
@@ -92,7 +97,10 @@ module Qpid
       #
       # ==== Examples
       #
-      #   puts "The address name is #{addr.name}."
+      #    # display the name of the address
+      #    addr = Qpid::Messaging::Address.new "foo;{create:always}"
+      #    # outputs the word 'foo'
+      #    puts addr.name
       #
       def name; @address_impl.getName; end
 
@@ -100,6 +108,9 @@ module Qpid
       #
       # ==== Examples
       #
+      #   # create a new address with the name "my-queue"
+      #   addr = Qpid::Messaging::Address.new "my-queue/my-subject;{create:always}"
+      #   # changes the name to "my-new-queue"
       #   addr.name = "my-new-queue"
       #
       def name=(name); @address_impl.setName name; end
@@ -108,7 +119,8 @@ module Qpid
       #
       # ==== Examples
       #
-      #   puts "The subject is #{addr.subject}."
+      #   # creates a new address with the subject "bar"
+      #   addr = Qpid::Messaging::Address.new "my-queue/bar;{create:always}"
       #
       def subject; @address_impl.getSubject; end
 
@@ -116,30 +128,40 @@ module Qpid
       #
       # ==== Examples
       #
-      #   addr.subject = "testing"
+      #   # creates an address with the subject "example"
+      #   addr = Qpid::Messaging::Address.new "my-queue/example;{create:always}"
+      #   # changes the subject to "test"
+      #   addr.subject = "test"
       #
       def subject=(subject); @address_impl.setSubject(subject); end
 
       # Returns the type for the +Address+.
-      #
-      # ==== Examples
-      #
-      #   puts "The address is a #{address.address_type}."
-      #
-      #---
+      #--
       # We cannot use "type" since that clashes with the Ruby object.type
       # identifier.
+      #++
       def address_type; @address_impl.getType; end
 
       # Sets the type for the +Address+.
       #
       # The type of the address determines how +Sender+ and +Receiver+ objects
-      # are constructed for it. If no type is specified then it will be
-      # determined by querying the broker.
+      # are constructed for it. It also affects how a reply-to address is
+      # encoded.
       #
-      # ===== Options
+      # If no type is specified then it will be determined by querying the
+      # broker. Explicitly setting the type prevents this.
       #
-      # * type - the address type
+      # Values are either *queue* or *topic*.
+      #
+      # ==== Options
+      #
+      # * +type+ - the address type
+      #
+      # ==== Examples
+      #
+      #   # creates an queue address
+      #   addr = Qpid::Messaging::Address.new "my-queue;{create:always}"
+      #   addr.address_type = "queue"
       #
       def address_type=(type); @address_impl.setType(type); end
 
@@ -153,6 +175,7 @@ module Qpid
       # ==== Examples
       #
       #   addr.options = :create => :always
+      #   addr.options = :create => :always, :delete => :always
       #
       def options=(options = {}); @address_impl.setOptions(convert_options(options)); end
 

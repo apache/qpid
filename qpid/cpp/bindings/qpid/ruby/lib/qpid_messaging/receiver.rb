@@ -21,17 +21,26 @@ module Qpid
 
   module Messaging
 
-    # Receiver is the entity through which messages are received.
+    # +Receiver+ is the entity through which messages are received.
     #
-    # An instance of Receiver can only be created using an active (not
-    # previously closed) Session.
+    # An instance of +Receiver+ can only be created using an active (i.e., not
+    # previously closed) Session. See Qpid::Messaging::Session.create_receiver
+    # for more details.
     #
     # ==== Example
     #
+    #   # create a connection and a session
     #   conn     = Qpid::Messaging::Connection.new :url => "mybroker:5762"
     #   conn.open
     #   session  = conn.create_session
-    #   receiver = session.create_receiver "my-sender-queue"
+    #
+    #   # create a receiver that listens on the "updates" topic of "alerts"
+    #   receiver = session.create_receiver "alerts/updates"t
+    #
+    #   # wait for an incoming message and process it
+    #   incoming = receiver.get Qpid::Messaging::Duration::FOREVER
+    #   process(incoming)
+    #
     class Receiver
 
       def initialize(session, receiver_impl) # :nodoc:
@@ -46,27 +55,24 @@ module Qpid
       # Retrieves a message from the local queue, or waits for up to
       # the duration specified for one to become available.
       #
-      # If a block is given, then it will be invaked after the next message
-      # is received or the call times out, passing in the message or nil
-      # respectively.
+      # If no message is received within the specified time then a
+      # MessagingException is raised.
       #
       # ==== Options
-      # * duration - the timeout to wait (def. Duration::FOREVER)
+      #
+      # * duration - the timeout to wait
       #
       # ==== Examples
       #
-      #   msg = rcvr.get # Uses the default timeout of forever
-      #
-      #   msg = rcvr.get Qpid::Messaging::Duration::IMMEDIATE # returns a message or exits immediately
-      #
-      #   # passes in a block to handle the received message
-      #   rcvr.get Qpid::Messaging::Duration::SECOND do |message|
-      #     if message.nil?
-      #       puts "No message was received."
-      #     else
-      #       puts "Received this message: #{message.content}"
-      #     end
+      #   # retrieves a message, also handles exceptions raised on no messages
+      #   begin
+      #     # checks for a message, returning immediately
+      #     msg = recv.get Qpid::Messaging::Duration::IMMEDIATE
+      #     puts "Received this message: #{message.content}"
+      #   rescue
+      #     puts "No messages available.
       #   end
+      #
       def get(duration = Qpid::Messaging::Duration::FOREVER)
         message_impl = @receiver_impl.get duration.duration_impl
         create_message_wrapper message_impl unless message_impl.nil?
@@ -75,33 +81,35 @@ module Qpid
       # Retrieves a message from the receiver's subscription, or waits
       # for up to the duration specified for one to become available.
       #
-      # If a block is given, then it will be invaked after the next message
-      # is received or the call times out, passing in the message or nil
-      # respectively.
+      # If no message is fetched within the specified time then a
+      # MessagingException is raised.
       #
       # ==== Options
+      #
       # * duration - the timeout to wait (def. Duration::FOREVER)
       #
       # ==== Examples
       #
-      #   msg = rcvr.fetch # Uses the default timeout of forever
-      #
-      #   msg = rcvr.fetch Qpid::Messaging::Duration::IMMEDIATE # returns a message or exits immediately
-      #
-      #   # passes in a block to handle the received message
-      #   rcvr.fetch Qpid::Messaging::Duration::SECOND do |message|
-      #     if message.nil?
-      #       puts "No message was received."
-      #     else
-      #       puts "Received this message: #{message.content}"
-      #     end
+      #   # retrieves a message, also handles exceptions raised on no messages
+      #   begin
+      #     # checks for a message, times out after one second
+      #     msg = recv.fetch Qpid::Messaging::Duration::SECOND
+      #     puts "Fetched this message: #{message.content}"
+      #   rescue
+      #     puts "No messages available.
       #   end
+      #
       def fetch(duration = Qpid::Messaging::Duration::FOREVER)
         message_impl = @receiver_impl.fetch duration.duration_impl
         create_message_wrapper message_impl unless message_impl.nil?
       end
 
-      # Sets the capacity for this +Receiver+.
+      # Sets the capacity.
+      #
+      # The capacity of a +Receiver+ is the number of Messages that can be
+      # pre-fetched from the broker and held locally. If capacity is 0 then
+      # messages will never be pre-fetched and all messages must instead be
+      # retrieved using #fetch.
       #
       # ==== Options
       #
@@ -109,63 +117,50 @@ module Qpid
       #
       # ==== Examples
       #
-      #   receiver.capacity = 50 # sets the incoming capacity to 50 messages
+      #   # create a receiver and give it a capacity of 50
+      #   recv = session.create_receiver "alerts/minor"
+      #   recv.capacity = 50
       #
       def capacity=(capacity); @receiver_impl.setCapacity capacity; end
 
       # Returns the capacity.
-      #
-      #
-      # The capacity is the numnber of incoming messages that can be held
-      # locally before being fetched.
-      #
-      # ==== Examples
-      #
-      #   puts "The receiver can hold #{rcv.capacity} messages."
-      #
       def capacity; @receiver_impl.getCapacity; end
 
-      # Returns the number of slots for receiving messages.
+      # Returns the number of messages locally held.
       #
-      # This differs from +capacity+ in that it is the available slots in
-      # the capacity for holding incoming messages, where available <= capacity.
+      # The available is always 0 <= available <= capacity.
+      #
+      # If the #capacity is set to 0 then available will always be 0.
       #
       # ==== Examples
       #
-      #   puts "You can receive #{rcv.available} messages before blocking."
+      #   # output the number of messages waiting while processing
+      #   loop do
+      #     puts "There are #{recv.available} messages pending..."
+      #     # wait forever (the default) for the next message
+      #     msg = recv.get
+      #     # process the message
+      #     dispatch_message msg
+      #   end
       #
       def available; @receiver_impl.getAvailable; end
 
       # Returns the number of messages that have been received and acknowledged
       # but whose acknowledgements have not been confirmed by the sender.
-      #
-      # ==== Examples
-      #
-      #   puts "You have #{rcv.unsettled} messages to be confirmed."
-      #
       def unsettled; @receiver_impl.getUnsettled; end
 
       # Closes this +Receiver+.
       #
-      # This does not affect the +Session+.
+      # This does not affect the owning Session or Connection.
       def close; @receiver_impl.close; end
 
-      # Returns whether the receiver is closed.
-      #
-      # ==== Examples
-      #
-      #   recv.close unless recv.closed?
-      #
+      # Returns whether the +Receiver+ is closed.
       def closed?; @receiver_impl.isClosed; end
 
       # Returns the name of this +Receiver+.
-      #
-      # ==== Examples
-      #
-      #   puts "Receiver: #{recv.name}"
       def name; @receiver_impl.getName; end
 
-      # Returns the Session for this +Receiver+.
+      # Returns the owning Session for this +Receiver+.
       def session; @session; end
 
       private
