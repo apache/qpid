@@ -43,6 +43,7 @@ struct QueueSettings
 
     bool durable;
     bool autodelete;
+    bool declaredExclusive;
 
     //basic queue types:
     std::string lvqKey;
