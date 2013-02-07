@@ -21,7 +21,11 @@ module Qpid
 
   module Messaging
 
-    # A Session represents a distinct conversation between end points.
+    # A +Session+ represents a distinct conversation between end points. They are
+    # created from an active (i.e., not closed) Connection.
+    #
+    # A +Session+ is used to acknowledge individual or all messages that have
+    # passed through it
     class Session
 
       def initialize(connection, session) # :nodoc:
@@ -33,24 +37,19 @@ module Qpid
         @session_impl
       end
 
-      # Returns the +Connection+ associated with this session.
+      # Returns the Connection associated with this session.
       def connection
         @connection
       end
 
       # Creates a new endpoint for sending messages.
       #
-      # The +address+ can either be an instance +Address+ or else a
-      # string that describes an address endpoint.
+      # The address can either be an instance Address or else an
+      # address string.
       #
       # ==== Arguments
       #
-      # * +address+ The end point address.
-      #
-      # ==== Examples
-      #
-      #   sender = session.create_sender "my-queue;{create:always}"
-      #
+      # * +address+ - the end point address.
       def create_sender(address)
         _address = address
 
@@ -64,35 +63,25 @@ module Qpid
         Qpid::Messaging::Sender.new(self, sender_impl)
       end
 
-      # Retrieves the +Sender+ with the specified name.
+      # Retrieves the Sender with the specified name.
       #
-      # Raises an exception when no such Sender exists.
+      # Raises an exception if no such Sender exists.
       #
       # ==== Arguments
       #
-      # * +name+ The +Sender+ name.
-      #
-      # ==== Examples
-      #
-      #   sender = session.sender "my-queue"
-      #
+      # * +name+ - the name of the Sender
       def sender(name)
         Qpid::Messaging::Sender.new self, @session_impl.getSender(name)
       end
 
       # Creates a new endpoint for receiving messages.
       #
-      # The +address+ can either be an instance +Address+ or else a
-      # string that describes an address endpoint.
+      # The +address+ can either be an instance Address or else an
+      # address string.
       #
       # ==== Arguments
       #
-      # * +address+ The end point address.
-      #
-      # ==== Examples
-      #
-      #   receiver = session.create_receiver "my-queue"
-      #
+      # * +address+ - the end point address.
       def create_receiver(address)
         result        = nil
         receiver_impl = nil
@@ -112,20 +101,16 @@ module Qpid
       #
       # ==== Arguments
       #
-      # * +name+ The +Receiver+ name.
-      #
-      # ==== Examples
-      #
-      #   receiver = session.receiver "my-queue"
-      #
+      # * +name+ - the name of the Receiver
       def receiver(name)
         Qpid::Messaging::Receiver.new self, @session_impl.getReceiver(name)
       end
 
       # Closes the +Session+ and all associated +Sender+ and +Receiver+ instances.
       #
-      # NOTE: All +Session+ instances for a +Connection+ are closed when the
-      # +Connection+ is closed.
+      # *NOTE:* All +Session+ instances for a Connection are closed when the
+      # Connection is closed. But closing a +Session+ does not affect the
+      # owning Connection.
       def close; @session_impl.close; end
 
       # Commits any pending transactions for a transactional session.
@@ -139,21 +124,30 @@ module Qpid
       #
       # ==== Arguments
       #
-      # * :message - if specified, then only the +Message+ specified is acknowledged
-      # * :sync - if true then the call will block until processed by the server (def. false)
+      # * +options+ - the set of options
+      #
+      # ==== Options
+      #
+      # * :message - if specified, then only that Message is acknowledged
+      # * :sync - if true, the call will block until processed by the server
       #
       # ==== Examples
       #
-      #   session.acknowledge                     # acknowledges all received messages
-      #   session.acknowledge :message => message # acknowledge one message
-      #   session.acknowledge :sync => true       # blocks until the call completes
+      #   # acknowledge all received messages
+      #   session.acknowledge
+      #
+      #   # acknowledge a single message
+      #   session.acknowledge :message => message
+      #
+      #   # acknowledge all messages, wait until the call finishes
+      #   session.acknowledge :sync => true
       #
       #--
       # TODO: Add an optional block to be used for blocking calls.
       #++
-      def acknowledge(args = {})
-        sync = args[:sync] || false
-        message = args[:message] if args[:message]
+      def acknowledge(options = {})
+        sync = options[:sync] || false
+        message = options[:message] if options[:message]
 
         unless message.nil?
           @session_impl.acknowledge message.message_impl, sync
@@ -178,7 +172,11 @@ module Qpid
       #
       # ==== Arguments
       #
-      # * :block - if true then the call blocks until the server acknowledges it (def. false)
+      # * +options+ - the list of options
+      #
+      # ==== Options
+      #
+      # * +:block+ - if true, the call blocks until the server acknowledges it
       #
       #--
       # TODO: Add an optional block to be used for blocking calls.
@@ -189,26 +187,43 @@ module Qpid
       end
 
       # Returns the total number of receivable messages, and messages already
-      # received, by +Receiver+ instances associated with this +Session+.
+      # received, by Receiver instances associated with this +Session+.
       def receivable; @session_impl.getReceivable; end
 
-      # Returns the number of messages that have been acknowledged by this session
-      # whose acknowledgements have not been confirmed as processed by the server.
+      # Returns the number of messages that have been acknowledged by this
+      # +Session+ whose acknowledgements have not been confirmed as processed
+      # by the server.
       def unsettled_acks; @session_impl.getUnsettledAcks; end
 
-      # Fetches the +Receiver+ for the next message.
+      # Fetches the next Receiver with a message pending. Waits the specified
+      # number of milliseconds before timing out.
+      #
+      # For a Receiver to be returned, it must have a capacity > 0 and have
+      # Messages locally queued.
+      #
+      # If no Receiver is found within the time out period, then a MessageError
+      # is raised.
       #
       # ==== Arguments
       #
-      # * timeout - time to wait for a +Receiver+ before timing out
+      # * +timeout+ - the duration
       #
       # ==== Examples
       #
-      #   recv = session.next_receiver # wait forever for the next +Receiver+
-      #   # execute a block on the next receiver
-      #   session.next_receiver do |recv|
-      #     msg = recv.get
-      #     puts "Received message: #{msg.content}"
+      #   loop do
+      #
+      #     begin
+      #       # wait a maximum of one minute for the next receiver to be ready
+      #       recv = session.next_receiver Qpid::Messaging::Duration::MINUTE
+      #
+      #       # get and dispatch the message
+      #       msg = recv.get
+      #       dispatch_message msg
+      #
+      #     rescue
+      #       puts "No receivers were returned"
+      #     end
+      #
       #   end
       def next_receiver(timeout = Qpid::Messaging::Duration::FOREVER, &block)
         receiver_impl = @session_impl.nextReceiver(timeout.duration_impl)
@@ -222,10 +237,6 @@ module Qpid
       end
 
       # Returns true if there were exceptions on this session.
-      #
-      # ==== Examples
-      #
-      #   puts "There were session errors." if @session.errors?
       def errors?; @session_impl.hasError; end
 
       # If the +Session+ has been rendered invalid due to some exception,
@@ -235,6 +246,7 @@ module Qpid
       #
       # ==== Examples
       #
+      #   # show any errors that occurred during the Session
       #   if @session.errors?
       #     begin
       #       @session.errors

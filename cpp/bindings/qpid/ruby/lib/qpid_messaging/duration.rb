@@ -23,19 +23,21 @@ module Qpid
 
     # A Duration represents a period of time in milliseconds
     #
-    # It defines the following named values as symbols:
+    # == Named Durations
     #
-    # [:FOREVER]
+    # The following named +Durations+ are available as symbols:
+    #
+    # [FOREVER]
     #   The maximum integer value for the platform. Effectively this will wait
     #   forever.
     #
-    # [:IMMEDIATE]
+    # [IMMEDIATE]
     #   An alias for 0 milliseconds.
     #
-    # [:SECOND]
+    # [SECOND]
     #   An alias for 1,000 milliseconds.
     #
-    # [:MINUTE]
+    # [MINUTE]
     #   And alias for 60,000 millisecons.
     #
     class Duration
@@ -44,12 +46,13 @@ module Qpid
       #
       # ==== Options
       #
-      # * length - The duration in milliseconds.
+      # * +length+ - The duration in +milliseconds+.
       #
       # ==== Examples
       #
-      #   # Wait up to 10 seconds for an incoming message
-      #   receiver.get Qpid::Messaging::Duration.new 10000
+      #   # creates a duration of 15 seconds
+      #   # REMEMBER: Duration deals in milliseconds
+      #   delay = Qpid::Messaging::Duration.new 15000
       #
       def initialize length
         @duration_impl = Cqpid::Duration.new length
@@ -59,26 +62,42 @@ module Qpid
         @duration_impl
       end
 
-      # Returns the period of time in milliseconds
+      # Returns the period of time in +milliseconds+.
       #
       # ==== Examples
       #
-      #   duration = Qpid::Messaging::Duration.new :length => 5000
-      #   puts "Waiting #{duration.milliseconds} ms for a message."
-      #   msg = receiver.fetch duration
+      #   # doubling growth in waiting for messages in a loop
+      #   do loop
+      #     set the base duration waiting length
+      #     timeout = Qpid::Messaging::Duration::SECOND
+      #     msg = nil
+      #     # loop until we receive a message
+      #     while msg.nil?
+      #       puts "Waiting #{timeout.milliseconds}ms"
+      #       msg = recv.get timeout
+      #       # if nothing was received, double the duration
+      #       if msg.nil?
+      #         # double out timeout
+      #         timeout = timeout * 2
+      #       else
+      #         # do something with the message
+      #         puts "Received: #{msg.content}"
+      #       end
+      #     end
+      #   end
       #
       def milliseconds
         @duration_impl.getMilliseconds
       end
 
-      # Returns a new Duration with a period of time that is a multiple
-      # of the original Duration.
+      # Multiplies the duration of the +Duration+ and returns a new instance.
       #
       # Raises exceptions on a negative factor. Returns
       # Qpid::Messaging::Duration::IMMEDIATE when the factor is 0.
       #
       # ==== Examples
       #
+      #   # return a duration that is 2 minutes (120,000 ms)
       #   twominutes = Qpid::Messaging::Duration::MINUTE * 2
       #
       def *(factor)
