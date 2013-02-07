@@ -48,22 +48,24 @@ class ReplicationTest
     ReplicationTest(ReplicateLevel replicateDefault_) :
         replicateDefault(replicateDefault_) {}
 
-    // Return the simple replication level, accounting for defaults.
-    ReplicateLevel replicateLevel(const std::string& str);
-    ReplicateLevel replicateLevel(const framing::FieldTable& f);
-    ReplicateLevel replicateLevel(const types::Variant::Map& m);
+    // Get the replication level set on an object, or default if not set.
+    ReplicateLevel getLevel(const std::string& str);
+    ReplicateLevel getLevel(const framing::FieldTable& f);
+    ReplicateLevel getLevel(const types::Variant::Map& m);
+    ReplicateLevel getLevel(const broker::Queue&);
+    ReplicateLevel getLevel(const broker::Exchange&);
 
-    // Return true if replication for a queue is enabled at level or higher,
-    // taking account of default level and queue settings.
-    bool isReplicated(ReplicateLevel level,
-                      const types::Variant::Map& args, bool autodelete, bool exclusive);
-    bool isReplicated(ReplicateLevel level,
-                      const framing::FieldTable& args, bool autodelete, bool exclusive);
-    bool isReplicated(ReplicateLevel level, const broker::Queue&);
-    bool isReplicated(ReplicateLevel level, const broker::Exchange&);
+    // Calculate level for objects that may not have replication set,
+    // including auto-delete/exclusive settings.
+    ReplicateLevel useLevel(const types::Variant::Map& args, bool autodelete, bool exclusive);
+    ReplicateLevel useLevel(const framing::FieldTable& args, bool autodelete, bool exclusive);
+    ReplicateLevel useLevel(const broker::Queue&);
+    ReplicateLevel useLevel(const broker::Exchange&);
+
   private:
     ReplicateLevel replicateDefault;
 };
+
 }} // namespace qpid::ha
 
 #endif  /*!QPID_HA_REPLICATIONTEST_H*/
