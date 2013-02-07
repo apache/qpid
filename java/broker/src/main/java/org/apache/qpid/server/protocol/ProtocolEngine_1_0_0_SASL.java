@@ -165,8 +165,9 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(ApplicationRegistry.getInstance()
                 .getSubjectCreator(getLocalAddress())));
-        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
         _conn.setRemoteAddress(getRemoteAddress());
+        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
+
 
 
         _conn.setFrameOutputHandler(this);
@@ -374,10 +375,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                  FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
              }
 
-
              _frameWriter.setValue(amqFrame);
-
-
 
              ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
 

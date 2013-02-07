@@ -149,9 +149,9 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(_appRegistry.getSubjectCreator(
                 getLocalAddress())));
+        _conn.setRemoteAddress(_network.getRemoteAddress());
         _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
-        _conn.setRemoteAddress(_network.getRemoteAddress());
 
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
         _frameHandler = new FrameHandler(_conn);
