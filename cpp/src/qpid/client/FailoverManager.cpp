@@ -34,6 +34,9 @@ using qpid::sys::Duration;
 FailoverManager::FailoverManager(const ConnectionSettings& s, 
                                  ReconnectionStrategy* rs) : settings(s), strategy(rs), state(IDLE) {}
 
+FailoverManager::~FailoverManager()
+{}
+
 void FailoverManager::execute(Command& c)
 {
     bool retry = false;
