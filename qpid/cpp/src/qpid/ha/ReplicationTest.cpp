@@ -65,9 +65,7 @@ ReplicateLevel ReplicationTest::getLevel(const broker::Exchange& ex) {
 
 ReplicateLevel ReplicationTest::useLevel(const broker::Queue& q)
 {
-    bool ignore = q.isAutoDelete() && q.getSettings().declaredExclusive &&
-        !q.getSettings().autoDeleteDelay;
-    return ignore ? ReplicationTest(NONE).getLevel(q) : getLevel(q);
+    return q.getSettings().isTemporary ? ReplicationTest(NONE).getLevel(q) : getLevel(q);
 }
 
 ReplicateLevel ReplicationTest::useLevel(const broker::Exchange& ex) {

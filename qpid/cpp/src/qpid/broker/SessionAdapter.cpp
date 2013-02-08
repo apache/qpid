@@ -294,7 +294,8 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
         } catch (const qpid::types::Exception& e) {
             throw InvalidArgumentException(e.what());
         }
-        settings.declaredExclusive = exclusive;
+        // Identify queues that won't survive a failover.
+        settings.isTemporary = exclusive && autoDelete && !settings.autoDeleteDelay;
 
         std::pair<Queue::shared_ptr, bool> queue_created =
             getBroker().createQueue(name, settings,
