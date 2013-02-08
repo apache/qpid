@@ -87,6 +87,7 @@ class QPID_CLIENT_CLASS_EXTERN FailoverManager
      * attempted
      */
     QPID_CLIENT_EXTERN FailoverManager(const ConnectionSettings& settings, ReconnectionStrategy* strategy = 0);
+	QPID_CLIENT_EXTERN ~FailoverManager();
     /**
      * Return the current connection if open or attept to reconnect to
      * the specified list of urls. If no list is specified the list of
