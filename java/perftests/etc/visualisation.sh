@@ -28,6 +28,8 @@ BASE_DIR=`dirname $0`
 
 java -cp "${BASE_DIR}:${BASE_DIR}/../../build/lib/*" \
   -Djava.awt.headless=true -Dlog4j.configuration=file:log4j.properties \
+  -DcsvCurrentDir=. \
+  -DcsvBaselineDir=. \
   org.apache.qpid.disttest.charting.ChartingUtil \
   chart-defs=chartdefs \
   ${JDBC_DRIVER} ${JDBC_URL}
