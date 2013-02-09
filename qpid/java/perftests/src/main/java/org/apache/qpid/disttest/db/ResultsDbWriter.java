@@ -25,7 +25,6 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.TEST_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
 
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -203,8 +202,7 @@ public class ResultsDbWriter
                         + " missing from context environment: " + environment);
             }
 
-            @SuppressWarnings("unchecked")
-            Class<? extends Driver> driverClass = (Class<? extends Driver>) Class.forName(driverName);
+            Class.forName(driverName);
 
             Object url = environment.get(URL);
             if(url == null)
@@ -410,6 +408,10 @@ public class ResultsDbWriter
 
             statement.execute();
             connection.commit();
+        }
+        catch(SQLException e)
+        {
+            _logger.error("Couldn't write " + participantResult, e);
         }
         finally
         {

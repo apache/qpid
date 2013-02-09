@@ -19,6 +19,9 @@
  */
 package org.apache.qpid.disttest.charting.definition;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 public class SeriesDefinition
 {
     private final String _seriesStatement;
@@ -59,5 +62,14 @@ public class SeriesDefinition
     public Integer getStrokeWidth()
     {
         return _seriesStrokeWidth;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            .append("seriesLegend", _seriesLegend)
+            .append("seriesStatement", _seriesStatement)
+            .append("seriesDirectory", _seriesDirectory).toString();
     }
 }

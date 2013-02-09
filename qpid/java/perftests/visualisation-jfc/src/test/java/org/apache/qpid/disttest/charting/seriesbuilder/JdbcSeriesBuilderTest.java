@@ -58,9 +58,7 @@ public class JdbcSeriesBuilderTest extends TestCase
     {
         SeriesDefinition seriesDefinition = createTestSeriesDefinition();
 
-        JdbcSeriesBuilder seriesBuilder = new JdbcSeriesBuilder(
-                "org.relique.jdbc.csv.CsvDriver",
-                "jdbc:relique:csv:" + _testTempDir.getAbsolutePath());
+        JdbcSeriesBuilder seriesBuilder = new JdbcSeriesBuilder("org.relique.jdbc.csv.CsvDriver", null);
 
         seriesBuilder.setSeriesBuilderCallback(_seriesWalkerCallback);
 
