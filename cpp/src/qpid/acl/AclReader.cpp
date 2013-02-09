@@ -24,6 +24,7 @@
 #include <sstream>
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
+#include <boost/lexical_cast.hpp>
 
 #include <iomanip> // degug
 #include <iostream> // debug
@@ -95,7 +96,7 @@ namespace acl {
                 << cnt << " " << (*i)->toString());
 
             if (!foundmode && (*i)->actionAll && (*i)->names.size() == 1
-                && (*((*i)->names.begin())).compare("*") == 0) {
+                && (*((*i)->names.begin())).compare(AclData::ACL_KEYWORD_WILDCARD) == 0) {
                     d->decisionMode = (*i)->res;
                     QPID_LOG(debug, "ACL: FoundMode "
                         << AclHelper::getAclResultStr(d->decisionMode));
@@ -105,9 +106,9 @@ namespace acl {
 
                 // Record which properties have the user substitution string
                 for (pmCitr pItr=rule.props.begin(); pItr!=rule.props.end(); pItr++) {
-                    if ((pItr->second.find(AclData::USER_SUBSTITUTION_KEYWORD, 0)       != std::string::npos) ||
-                        (pItr->second.find(AclData::DOMAIN_SUBSTITUTION_KEYWORD, 0)     != std::string::npos) ||
-                        (pItr->second.find(AclData::USERDOMAIN_SUBSTITUTION_KEYWORD, 0) != std::string::npos)) {
+                    if ((pItr->second.find(AclData::ACL_KEYWORD_USER_SUBST, 0)       != std::string::npos) ||
+                        (pItr->second.find(AclData::ACL_KEYWORD_DOMAIN_SUBST, 0)     != std::string::npos) ||
+                        (pItr->second.find(AclData::ACL_KEYWORD_USERDOMAIN_SUBST, 0) != std::string::npos)) {
                         rule.ruleHasUserSub[pItr->first] = true;
                     }
                 }
@@ -167,7 +168,7 @@ namespace acl {
                         // add users and Rule to object set
                         bool allNames = false;
                         // check to see if names.begin is '*'
-                        if ((*(*i)->names.begin()).compare("*") == 0)
+                        if ((*(*i)->names.begin()).compare(AclData::ACL_KEYWORD_WILDCARD) == 0)
                             allNames = true;
 
                         for (nsCitr itr  = (allNames ? names.begin() : (*i)->names.begin());
@@ -199,7 +200,7 @@ namespace acl {
                         objstr << AclHelper::getObjectTypeStr((ObjectType) ocnt) << ",";
                 }
 
-                bool allNames = ((*(*i)->names.begin()).compare("*") == 0);
+                bool allNames = ((*(*i)->names.begin()).compare(AclData::ACL_KEYWORD_WILDCARD) == 0);
                 std::ostringstream userstr;
                 for (nsCitr itr  = (allNames ? names.begin() : (*i)->names.begin());
                             itr != (allNames ? names.end()   : (*i)->names.end());
@@ -218,12 +219,15 @@ namespace acl {
                     << "}" );
             }
         }
+
+        // connection quota
+        d->setConnQuotaRuleSettings(connQuotaRulesExist, connQuota);
     }
 
 
     void AclReader::aclRule::processName(const std::string& name, const groupMap& groups) {
-        if (name.compare("all") == 0) {
-            names.insert("*");
+        if (name.compare(AclData::ACL_KEYWORD_ALL) == 0) {
+            names.insert(AclData::ACL_KEYWORD_WILDCARD);
         } else {
             gmCitr itr = groups.find(name);
             if (itr == groups.end()) {
@@ -234,9 +238,13 @@ namespace acl {
         }
     }
 
-    AclReader::AclReader() : lineNumber(0), contFlag(false), validationMap(new AclHelper::objectMap) {
+    AclReader::AclReader(uint16_t theCliMaxConnPerUser) : lineNumber(0), contFlag(false),
+        validationMap(new AclHelper::objectMap),
+        cliMaxConnPerUser (theCliMaxConnPerUser),
+        connQuotaRulesExist(false),
+        connQuota(new AclData::quotaRuleSet) {
         AclHelper::loadValidationMap(validationMap);
-        names.insert("*");
+        names.insert(AclData::ACL_KEYWORD_WILDCARD);
     }
 
     AclReader::~AclReader() {}
@@ -254,6 +262,11 @@ namespace acl {
             errorStream << "Unable to open ACL file \"" << fn << "\": eof=" << (ifs.eof()?"T":"F") << "; fail=" << (ifs.fail()?"T":"F") << "; bad=" << (ifs.bad()?"T":"F");
             return -1;
         }
+        // Propagate nonzero per-user max connection setting from CLI
+        if (cliMaxConnPerUser > 0) {
+            (*connQuota)[AclData::ACL_KEYWORD_ACL] = cliMaxConnPerUser;
+        }
+        // Loop to process the Acl file
         try {
             bool err = false;
             while (ifs.good()) {
@@ -282,6 +295,7 @@ namespace acl {
         }
         printNames();
         printRules();
+        printConnectionQuotas();
         loadDecisionData(d);
 
         return 0;
@@ -292,7 +306,7 @@ namespace acl {
         std::vector<std::string> toks;
 
         // Check for continuation
-        char* contCharPtr = std::strrchr(line, '\\');
+        char* contCharPtr = std::strrchr(line, AclData::ACL_SYMBOL_LINE_CONTINUATION);
         bool cont = contCharPtr != 0;
         if (cont) *contCharPtr = 0;
 
@@ -303,10 +317,12 @@ namespace acl {
             return false;
         }
 
-        if (numToks && (toks[0].compare("group") == 0 || contFlag)) {
+        if (numToks && (toks[0].compare(AclData::ACL_KEYWORD_GROUP) == 0 || contFlag)) {
             ret = processGroupLine(toks, cont);
-        } else if (numToks && toks[0].compare("acl") == 0) {
+        } else if (numToks && toks[0].compare(AclData::ACL_KEYWORD_ACL) == 0) {
             ret = processAclLine(toks);
+        } else if (numToks && toks[0].compare(AclData::ACL_KEYWORD_QUOTA) == 0) {
+            ret = processQuotaLine(toks);
         } else {
             // Check for whitespace only line, ignore these
             bool ws = true;
@@ -317,7 +333,10 @@ namespace acl {
                 ret = true;
             } else {
                 errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
-                    << ", Non-continuation line must start with \"group\" or \"acl\".";
+                    << ", Non-continuation line must start with \""
+                    << AclData::ACL_KEYWORD_GROUP << "\", \""
+                    << AclData::ACL_KEYWORD_ACL << "\". or \""
+                    << AclData::ACL_KEYWORD_QUOTA << "\".";
                 ret = false;
             }
         }
@@ -336,6 +355,102 @@ namespace acl {
         }
         return cnt;
     }
+
+
+    // Process 'quota' rule lines
+    // Return true if the line is successfully processed without errors
+    bool AclReader::processQuotaLine(tokList& toks) {
+        const unsigned toksSize = toks.size();
+        const unsigned minimumSize = 3;
+        if (toksSize < minimumSize) {
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                << ", Insufficient tokens for quota definition.";
+            return false;
+        }
+
+        if (toks[1].compare(AclData::ACL_KEYWORD_QUOTA_CONNECTIONS) == 0) {
+            return processQuotaConnLine(toks);
+        } else {
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                << ", Quota type \"" << toks[1] << "\" unrecognized.";
+            return false;
+        }
+    }
+
+
+    // Process 'quota connections' rule lines
+    // Return true if the line is successfully processed without errors
+    bool AclReader::processQuotaConnLine(tokList& toks) {
+        const unsigned toksSize = toks.size();
+
+        uint16_t nConns(0);
+        try {
+            nConns = boost::lexical_cast<uint16_t>(toks[2]);
+        } catch(const boost::bad_lexical_cast&) {
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                << ", Connection quota value \"" << toks[2]
+                << "\" cannot be converted to a 16-bit unsigned integer.";
+            return false;
+        }
+
+        // limit check the connection setting
+        if (nConns > AclData::getConnectMaxSpec())
+        {
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                << ", Connection quota value \"" << toks[2]
+                << "\" exceeds maximum configuration setting of "
+                << AclData::getConnectMaxSpec();
+            return false;
+        }
+
+        // Apply the connection count to all names in rule
+        for (unsigned idx = 3; idx < toksSize; idx++) {
+            if (groups.find(toks[idx]) == groups.end()) {
+                // This is the name of an individual, not a group
+                (*connQuota)[toks[idx]] = nConns;
+            } else {
+                if (!processQuotaConnGroup(toks[idx], nConns))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+
+    // Process 'quota connections' group expansion
+    // Return true if the quota is applied to all members of the group
+    bool AclReader::processQuotaConnGroup(const std::string& theGroup, uint16_t theQuota) {
+        gmCitr citr = groups.find(theGroup);
+
+        if (citr == groups.end()) {
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                << ", Failed to expand group \"" << theGroup << "\".";
+            return false;
+        }
+
+        for (nsCitr gni=citr->second->begin(); gni!=citr->second->end(); gni++) {
+            if (groups.find(*gni) == groups.end()) {
+                (*connQuota)[*gni] = theQuota;
+            } else {
+                if (!processQuotaConnGroup(*gni, theQuota))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+
+    void AclReader::printConnectionQuotas() const {
+        QPID_LOG(debug, "ACL: connection quota: " << (*connQuota).size() << " rules found:");
+        int cnt = 1;
+        for (AclData::quotaRuleSetItr itr=(*connQuota).begin();
+                                      itr != (*connQuota).end();
+                                      ++itr,++cnt) {
+            QPID_LOG(debug, "ACL: quota " << cnt << " : " << (*itr).second
+                << " connections for " << (*itr).first)
+        }
+    }
+
 
     // Return true if the line is successfully processed without errors
     // If cont is true, then groupName must be set to the continuation group name
@@ -462,8 +577,8 @@ namespace acl {
             return false;
         }
 
-        bool actionAllFlag = toks[3].compare("all") == 0;
-        bool userAllFlag   = toks[2].compare("all") == 0;
+        bool actionAllFlag = toks[3].compare(AclData::ACL_KEYWORD_ALL) == 0;
+        bool userAllFlag   = toks[2].compare(AclData::ACL_KEYWORD_ALL) == 0;
         Action action;
         if (actionAllFlag) {
 
@@ -492,7 +607,7 @@ namespace acl {
         }
 
         if (toksSize >= 5) { // object name-value pair
-            if (toks[4].compare("all") == 0) {
+            if (toks[4].compare(AclData::ACL_KEYWORD_ALL) == 0) {
                 rule->setObjectTypeAll();
             } else {
                 try {
@@ -526,7 +641,7 @@ namespace acl {
             }
         }
         // Check if name (toks[2]) is group; if not, add as name of individual
-        if (toks[2].compare("all") != 0) {
+        if (toks[2].compare(AclData::ACL_KEYWORD_ALL) != 0) {
             if (groups.find(toks[2]) == groups.end()) {
                 addName(toks[2]);
             }

@@ -28,6 +28,7 @@
 #include <sstream>
 #include <memory>
 #include "qpid/acl/AclData.h"
+#include "qpid/acl/Acl.h"
 #include "qpid/broker/AclModule.h"
 
 namespace qpid {
@@ -96,7 +97,7 @@ class AclReader {
     std::ostringstream      errorStream;
 
   public:
-    AclReader();
+    AclReader(uint16_t cliMaxConnPerUser);
     virtual ~AclReader();
     int read(const std::string& fn, boost::shared_ptr<AclData> d); // return=0 for success
     std::string getError();
@@ -116,8 +117,17 @@ class AclReader {
     void printRules() const; // debug aid
     bool isValidUserName(const std::string& name);
 
+    bool processQuotaLine(tokList& toks);
+    bool processQuotaConnLine(tokList& toks);
+    bool processQuotaConnGroup(const std::string&, uint16_t);
+    void printConnectionQuotas() const;
+
     static bool isValidGroupName(const std::string& name);
     static nvPair splitNameValuePair(const std::string& nvpString);
+
+    const uint16_t cliMaxConnPerUser;
+    bool connQuotaRulesExist;
+    boost::shared_ptr<AclData::quotaRuleSet> connQuota;
 };
 
 }} // namespace qpid::acl

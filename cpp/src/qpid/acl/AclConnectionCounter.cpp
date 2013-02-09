@@ -85,32 +85,32 @@ bool ConnectionCounter::limitApproveLH(
 //
 // countConnectionLH
 //
-// Increment the name's count in map and return a comparison against the limit.
-// called with dataLock already taken
+// Increment the name's count in map and return an optional comparison
+//  against a connection limit.
+// Called with dataLock already taken.
 //
 bool ConnectionCounter::countConnectionLH(
     connectCountsMap_t& theMap,
     const std::string& theName,
     uint16_t theLimit,
-    bool emitLog) {
+    bool emitLog,
+    bool enforceLimit) {
 
     bool result(true);
     uint16_t count(0);
-    if (theLimit > 0) {
-        connectCountsMap_t::iterator eRef = theMap.find(theName);
-        if (eRef != theMap.end()) {
-            count = (uint16_t)(*eRef).second + 1;
-            (*eRef).second = count;
-            result = count <= theLimit;
-        } else {
-            theMap[theName] = count = 1;
-        }
-        if (emitLog) {
-            QPID_LOG(trace, "ACL ConnectionApprover user=" << theName
-                << " limit=" << theLimit
-                << " curValue=" << count
-                << " result=" << (result ? "allow" : "deny"));
-        }
+    connectCountsMap_t::iterator eRef = theMap.find(theName);
+    if (eRef != theMap.end()) {
+        count = (uint16_t)(*eRef).second + 1;
+        (*eRef).second = count;
+        result = (enforceLimit ? count <= theLimit : true);
+    } else {
+        theMap[theName] = count = 1;
+    }
+    if (emitLog) {
+        QPID_LOG(trace, "ACL ConnectionApprover user=" << theName
+            << " limit=" << theLimit
+            << " curValue=" << count
+            << " result=" << (result ? "allow" : "deny"));
     }
     return result;
 }
@@ -123,23 +123,21 @@ bool ConnectionCounter::countConnectionLH(
 // called with dataLock already taken
 //
 void ConnectionCounter::releaseLH(
-    connectCountsMap_t& theMap, const std::string& theName, uint16_t theLimit) {
+    connectCountsMap_t& theMap, const std::string& theName) {
 
-    if (theLimit > 0) {
-        connectCountsMap_t::iterator eRef = theMap.find(theName);
-        if (eRef != theMap.end()) {
-            uint16_t count = (uint16_t) (*eRef).second;
-            assert (count > 0);
-            if (1 == count) {
-                theMap.erase (eRef);
-            } else {
-                (*eRef).second = count - 1;
-            }
+    connectCountsMap_t::iterator eRef = theMap.find(theName);
+    if (eRef != theMap.end()) {
+        uint16_t count = (uint16_t) (*eRef).second;
+        assert (count > 0);
+        if (1 == count) {
+            theMap.erase (eRef);
         } else {
-            // User had no connections.
-            QPID_LOG(notice, "ACL ConnectionCounter Connection for '" << theName
-                << "' not found in connection count pool");
+            (*eRef).second = count - 1;
         }
+    } else {
+        // User had no connections.
+        QPID_LOG(notice, "ACL ConnectionCounter Connection for '" << theName
+            << "' not found in connection count pool");
     }
 }
 
@@ -161,7 +159,7 @@ void ConnectionCounter::connection(broker::Connection& connection) {
     connectProgressMap[connection.getMgmtId()] = C_CREATED;
 
     // Count the connection from this host.
-    (void) countConnectionLH(connectByHostMap, hostName, hostLimit, false);
+    (void) countConnectionLH(connectByHostMap, hostName, hostLimit, false, false);
 }
 
 
@@ -180,8 +178,7 @@ void ConnectionCounter::closed(broker::Connection& connection) {
             // Normal case: connection was created and opened.
             // Decrement user in-use counts
             releaseLH(connectByNameMap,
-                      connection.getUserId(),
-                      nameLimit);
+                      connection.getUserId());
         } else {
             // Connection was created but not opened.
             // Don't decrement user count.
@@ -189,8 +186,7 @@ void ConnectionCounter::closed(broker::Connection& connection) {
 
         // Decrement host in-use count.
         releaseLH(connectByHostMap,
-                  getClientHost(connection.getMgmtId()),
-                  hostLimit);
+                  getClientHost(connection.getMgmtId()));
 
         // destroy connection progress indicator
         connectProgressMap.erase(eRef);
@@ -211,7 +207,10 @@ void ConnectionCounter::closed(broker::Connection& connection) {
 //  check total connections, connections from IP, connections by user and
 //  disallow if over any limit
 //
-bool ConnectionCounter::approveConnection(const broker::Connection& connection)
+bool ConnectionCounter::approveConnection(
+        const broker::Connection& connection,
+        bool enforcingConnectionQuotas,
+        uint16_t connectionUserQuota )
 {
     const std::string& hostName(getClientHost(connection.getMgmtId()));
     const std::string& userName(              connection.getUserId());
@@ -220,7 +219,7 @@ bool ConnectionCounter::approveConnection(const broker::Connection& connection)
 
     // Bump state from CREATED to OPENED
     (void) countConnectionLH(connectProgressMap, connection.getMgmtId(),
-                             C_OPENED, false);
+                             C_OPENED, false, false);
 
     // Approve total connections
     bool okTotal  = true;
@@ -235,7 +234,9 @@ bool ConnectionCounter::approveConnection(const broker::Connection& connection)
     bool okByIP   = limitApproveLH(connectByHostMap, hostName, hostLimit, true);
 
     // Count and Approve the connection by the user
-    bool okByUser = countConnectionLH(connectByNameMap, userName, nameLimit, true);
+    bool okByUser = countConnectionLH(connectByNameMap, userName,
+                                      connectionUserQuota, true,
+                                      enforcingConnectionQuotas);
 
     // Emit separate log for each disapproval
     if (!okTotal) {
@@ -252,7 +253,7 @@ bool ConnectionCounter::approveConnection(const broker::Connection& connection)
     }
     if (!okByUser) {
         QPID_LOG(error, "Client max per-user connection count limit of "
-                 << nameLimit << " exceeded by '"
+                 << connectionUserQuota << " exceeded by '"
                  << connection.getMgmtId() << "', user: '"
                  << userName << "'. Connection refused.");
     }
