@@ -35,24 +35,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link SeriesBuilder} that uses JDBC to read series data
+ * A {@link SeriesBuilder} that uses JDBC to read series data.
+ * The actual JDBC URL used is determined by my {@link JdbcUrlGenerator}.
  */
 public class JdbcSeriesBuilder implements SeriesBuilder
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSeriesBuilder.class);
 
-    public static final String DEFAULT_JDBC_DRIVER_NAME = "org.relique.jdbc.csv.CsvDriver";
-
-    /** the dot at the end denotes the current directory */
-    public static final String DEFAULT_JDBC_URL = "jdbc:relique:csv:.";
-
-    private final String _jdbcUrl;
     private SeriesBuilderCallback _callback;
 
-    public JdbcSeriesBuilder(String jdbcDriverClass, String jdbcUrl)
+    private final JdbcUrlGenerator _jdbcUrlGenerator;
+
+    /**
+     * @param providedJdbcUrl the JDBC URL. Provide null if the value should be
+     * inferred by {@link #_jdbcUrlGenerator}.
+     */
+    public JdbcSeriesBuilder(String jdbcDriverClass, String providedJdbcUrl)
     {
         registerDriver(jdbcDriverClass);
-        _jdbcUrl = jdbcUrl;
+        _jdbcUrlGenerator = new JdbcUrlGenerator(providedJdbcUrl);
         LOGGER.info("Created: " + this);
     }
 
@@ -78,7 +79,8 @@ public class JdbcSeriesBuilder implements SeriesBuilder
         Statement stmt = null;
         try
         {
-            conn = DriverManager.getConnection(_jdbcUrl);
+            String jdbcUrl = _jdbcUrlGenerator.getJdbcUrl(seriesDefinition);
+            conn = DriverManager.getConnection(jdbcUrl);
 
             final String seriesStatement = seriesDefinition.getSeriesStatement();
 
@@ -146,6 +148,8 @@ public class JdbcSeriesBuilder implements SeriesBuilder
     @Override
     public String toString()
     {
-        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("jdbcUrl", _jdbcUrl).toString();
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            .append("jdbcUrlGenerator", _jdbcUrlGenerator)
+            .toString();
     }
 }

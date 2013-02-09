@@ -31,6 +31,7 @@ import org.apache.qpid.disttest.charting.chartbuilder.ChartBuilderFactory;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator;
 import org.apache.qpid.disttest.charting.seriesbuilder.JdbcSeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.JdbcUrlGenerator;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.apache.qpid.disttest.charting.writer.ChartWriter;
 import org.jfree.chart.JFreeChart;
@@ -69,11 +70,11 @@ public class ChartingUtil
 
     /** the class name of the JDBC driver to use for reading the chart data */
     public static final String JDBC_DRIVER_NAME_PROP = "jdbcDriverClass";
-    public static final String JDBC_DRIVER_NAME_DEFAULT = JdbcSeriesBuilder.DEFAULT_JDBC_DRIVER_NAME;
+    public static final String JDBC_DRIVER_NAME_DEFAULT = JdbcUrlGenerator.DEFAULT_JDBC_DRIVER_NAME;
 
     /** the JDBC URL of the data to be charted */
     public static final String JDBC_URL_PROP = "jdbcUrl";
-    public static final String JDBC_URL_DEFAULT = JdbcSeriesBuilder.DEFAULT_JDBC_URL;
+    public static final String JDBC_URL_DEFAULT = null;
 
 
     private Map<String,String> _cliOptions = new HashMap<String, String>();
