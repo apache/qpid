@@ -77,12 +77,12 @@ private:
     bool countConnectionLH(connectCountsMap_t& theMap,
                            const std::string& theName,
                            uint16_t theLimit,
-                           bool emitLog);
+                           bool emitLog,
+                           bool enforceLimit);
 
     /** Release a connection */
     void releaseLH(connectCountsMap_t& theMap,
-                   const std::string& theName,
-                   uint16_t theLimit);
+                   const std::string& theName);
 
 public:
     ConnectionCounter(Acl& acl, uint16_t nl, uint16_t hl, uint16_t tl);
@@ -93,7 +93,9 @@ public:
     void     closed(broker::Connection& connection);
 
     // Connection counting
-    bool approveConnection(const broker::Connection& conn);
+    bool approveConnection(const broker::Connection& conn,
+                           bool enforcingConnectionQuotas,
+                           uint16_t connectionLimit );
 };
 
 }} // namespace qpid::ha
