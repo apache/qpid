@@ -24,8 +24,8 @@
 # This script configures a qpid\cpp developer build environment under Windows
 # to enable working with cpp\bindings\qpid\dotnet binding source code.
 #
-# * Supports multiple versions of Visual Studio (VS2008, VS2010) as CMake
-#   generator.
+# * Supports multiple versions of Visual Studio (VS2008, VS2010, VS2012) 
+#   as CMake generator.
 #
 # * Supports 32-bit and/or 64-bit development platforms.
 #
@@ -148,10 +148,11 @@ $global:txtWH   = 'Write-Host'
 #############################
 # Visual Studio version selection dialog items and choice
 #
-[array]$global:VsVersionCmakeChoiceList = "Visual Studio 2010", "Visual Studio 2008"
+[array]$global:VsVersionCmakeChoiceList = "Visual Studio 2012", "Visual Studio 2010", "Visual Studio 2008"
 $global:vsVersion = ''
 $global:cmakeGenerator = ''
 $global:vsSubdir = ''
+$global:cmakeCompiler = ''
 
 #############################
 # Select-Folder
@@ -352,18 +353,26 @@ ECHO Environment set for $slnName $studioVersion $vsPlatform $nBits-bit developm
 function Return-DropDown {
     if ($DropDown.SelectedItem -ne $null) {
         $global:vsVersion = $DropDown.SelectedItem.ToString()
-        if ($global:vsVersion -eq 'Visual Studio 2010') {
-            $global:cmakeGenerator = "Visual Studio 10"
-            $global:vsSubdir = "msvc10"
+        if ($global:vsVersion -eq 'Visual Studio 2012') {
+            $global:cmakeGenerator = "Visual Studio 11"
+            $global:vsSubdir = "msvc11"
+			$global:cmakeCompiler = "-vc110"
         } else {
-            if ($global:vsVersion -eq 'Visual Studio 2008') {
-                $global:cmakeGenerator = "Visual Studio 9 2008"
-                $global:vsSubdir = "msvc9"
-            } else {
-                Write-Host "Visual Studio must be 2008 or 2010"
-                exit
-            }
-        }
+			if ($global:vsVersion -eq 'Visual Studio 2010') {
+				$global:cmakeGenerator = "Visual Studio 10"
+				$global:vsSubdir = "msvc10"
+				$global:cmakeCompiler = "-vc100"
+			} else {
+				if ($global:vsVersion -eq 'Visual Studio 2008') {
+					$global:cmakeGenerator = "Visual Studio 9 2008"
+					$global:vsSubdir = "msvc9"
+					$global:cmakeCompiler = "-vc90"
+				} else {
+					Write-Host "Visual Studio must be 2008, 2010, or 2012"
+					exit
+				}
+			}
+		}
         $Form.Close()
         Write-Host "Selected generator: $global:cmakeGenerator"
     }
@@ -496,7 +505,7 @@ if ($make32) {
     $env:BOOST_ROOT = "$boost32"
     cd "$build32"
     Write-Host "Running 32-bit CMake in $build32 ..."
-    CMake -G "$global:cmakeGenerator" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x86" $cppDir
+    CMake -G "$global:cmakeGenerator" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x86" "-DBoost_COMPILER=$global:cmakeCompiler" $cppDir
 } else {
     Write-Host "Skipped 32-bit CMake."
 }
@@ -508,7 +517,7 @@ if ($make64) {
     $env:BOOST_ROOT = "$boost64"
     cd "$build64"
     Write-Host "Running 64-bit CMake in $build64"
-    CMake -G "$global:cmakeGenerator Win64" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x64" $cppDir
+    CMake -G "$global:cmakeGenerator Win64" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x64" "-DBoost_COMPILER=$global:cmakeCompiler" $cppDir
 } else {
     Write-Host "Skipped 64-bit CMake."
 }
