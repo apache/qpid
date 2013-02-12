@@ -259,6 +259,13 @@ my $map = qpid::messaging::decode_map($message);
 ok ($map->{name} eq "With\x00null",
     "Nulls embedded in map values work.");
 
+# Unicode strings shouldn't be broken
+$content = { id => 1234, name => "Euro=\x{20AC}" };
+qpid::messaging::encode($content, $message);
+$map = qpid::messaging::decode_map($message);
+ok ($map->{name} eq "Euro=\x{20AC}",
+    "Unicode strings encoded correctly.");
+
 # content size
 # content size is correct
 my $content_size = int(rand(256));

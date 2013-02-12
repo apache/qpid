@@ -49,7 +49,11 @@
             else if (SvPOK(value)) {
                 STRLEN len;
                 char *ptr = SvPV(value, len);
-                return qpid::types::Variant(std::string(ptr, len));
+                qpid::types::Variant v =  qpid::types::Variant(std::string(ptr,len));
+                if (SvUTF8(value)) {
+                    v.setEncoding("utf8");
+                }
+                return v;
             }
         }
         return qpid::types::Variant();
@@ -98,6 +102,9 @@
             case qpid::types::VAR_STRING : {
                 const std::string val(v->asString());
                 result = newSVpvn(val.c_str(), val.size());
+                if( v->getEncoding() == "utf8" ) {
+                    SvUTF8_on(result);
+                }
                 break;
             }
             case qpid::types::VAR_MAP : {
