@@ -49,29 +49,12 @@ struct Handler {
      * Functor<F>(f) will copy f.
      * Functor<F&>(f) will only take a reference to x.
      */
-    template <class F> class Functor : public Handler<T> {
-      public:
-        Functor(F f, Handler<T>* next=0) : Handler<T>(next), functor(f) {}
-        void handle(T t) { functor(t); }
-      private:
-        F functor;
-    };
+    template <class F> class Functor;
 
     /** Adapt a member function of X as a Handler.
      * Only holds a reference to its target, not a copy.
      */
-    template <class X, void (X::*F)(T)>
-    class MemFunRef : public Handler<T> {
-      public:
-        MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(&x) {}
-        void handle(T t) { (target->*F)(t); }
-
-        /** Allow calling with -> syntax */
-        MemFunRef* operator->() { return this; }
-
-      private:
-        X* target;
-    };
+    template <class X, void (X::*F)(T)> class MemFunRef;
 
     /** Interface for a handler that implements a
      * pair of in/out handle operations.
@@ -94,7 +77,29 @@ struct Handler {
     };
 };
 
+template <class T>
+template <class F>
+class Handler<T>::Functor : public Handler<T> {
+  public:
+    Functor(F f, Handler<T>* next=0) : Handler<T>(next), functor(f) {}
+    void handle(T t) { functor(t); }
+  private:
+    F functor;
+};
 
+template <class T>
+template <class X, void (X::*F)(T)>
+class Handler<T>::MemFunRef : public Handler<T> {
+  public:
+    MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(&x) {}
+    void handle(T t) { (target->*F)(t); }
+
+    /** Allow calling with -> syntax */
+    MemFunRef* operator->() { return this; }
+
+  private:
+    X* target;
+};
 
 }}
 #endif  /*!QPID_FRAMING_HANDLER_H*/
