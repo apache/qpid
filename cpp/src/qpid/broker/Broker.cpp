@@ -48,6 +48,8 @@
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetLogLevel.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerSetLogLevel.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerGetLogHiresTimestamp.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerSetLogHiresTimestamp.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerSetTimestampConfig.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetTimestampConfig.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
@@ -558,7 +560,22 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
           status = setTimestampConfig(a.i_receive, getManagementExecutionContext());
           break;
         }
-   default:
+
+    case _qmf::Broker::METHOD_GETLOGHIRESTIMESTAMP:
+    {
+        dynamic_cast<_qmf::ArgsBrokerGetLogHiresTimestamp&>(args).o_logHires = getLogHiresTimestamp();
+        QPID_LOG (debug, "Broker::getLogHiresTimestamp()");
+        status = Manageable::STATUS_OK;
+        break;
+    }
+    case _qmf::Broker::METHOD_SETLOGHIRESTIMESTAMP:
+    {
+        setLogHiresTimestamp(dynamic_cast<_qmf::ArgsBrokerSetLogHiresTimestamp&>(args).i_logHires);
+        QPID_LOG (debug, "Broker::setLogHiresTimestamp()");
+        status = Manageable::STATUS_OK;
+        break;
+    }
+    default:
         QPID_LOG (debug, "Broker ManagementMethod not implemented: id=" << methodId << "]");
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
@@ -981,6 +998,18 @@ std::string Broker::getLogLevel()
     }
     return level;
 }
+
+void Broker::setLogHiresTimestamp(bool enabled)
+{
+    QPID_LOG(notice, "Changing log hires timestamp to " << enabled);
+    qpid::log::Logger::instance().setHiresTimestamp(enabled);
+}
+
+bool Broker::getLogHiresTimestamp()
+{
+    return qpid::log::Logger::instance().getHiresTimestamp();
+}
+
 
 boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string& name) const {
     ProtocolFactoryMap::const_iterator i

@@ -130,6 +130,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     void setStore ();
     void setLogLevel(const std::string& level);
     std::string getLogLevel();
+    void setLogHiresTimestamp(bool enabled);
+    bool getLogHiresTimestamp();
     void createObject(const std::string& type, const std::string& name,
                       const qpid::types::Variant::Map& properties, bool strict, const ConnectionState* context);
     void deleteObject(const std::string& type, const std::string& name,
