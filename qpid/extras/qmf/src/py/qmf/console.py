@@ -2432,10 +2432,13 @@ class Broker(Thread):
         if sys.version_info[:2] < (2, 6):  # 2.6+ uses openssl - it's ok
           force_blocking = True
           sock.setblocking(1)
+        certfile = None
         if 'ssl_certfile' in self.connectArgs:
-          connSock = ssl(sock, certfile=self.connectArgs['ssl_certfile'])
-        else:
-          connSock = ssl(sock)
+          certfile = self.connectArgs['ssl_certfile']
+        keyfile = None
+        if 'ssl_keyfile' in self.connectArgs:
+          keyfile = self.connectArgs['ssl_keyfile']
+        connSock = ssl(sock, certfile=certfile, keyfile=keyfile)
       else:
         connSock = sock
       self.conn = Connection(connSock, username=self.authUser, password=self.authPass,
