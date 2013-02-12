@@ -177,4 +177,20 @@ void Logger::reconfigure(const std::vector<std::string>& selectors) {
 
 void Logger::setPrefix(const std::string& p) { prefix = p; }
 
+
+bool Logger::getHiresTimestamp()
+{
+    return flags & HIRES;
+}
+
+
+void Logger::setHiresTimestamp(bool setting)
+{
+    ScopedLock l(lock);
+    if (setting)
+        flags |= HIRES;
+    else
+        flags &= ~HIRES;
+}
+
 }} // namespace qpid::log

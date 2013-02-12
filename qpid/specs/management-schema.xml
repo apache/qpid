@@ -154,7 +154,7 @@
       <arg name="level"     dir="O" type="sstr"/>
     </method>
 
-    <method name="getTimestampConfig" desc="Get the message timestamping configuration">
+   <method name="getTimestampConfig" desc="Get the message timestamping configuration">
       <arg name="receive" dir="O" type="bool"  desc="True if received messages are timestamped."/>
     </method>
 
@@ -179,6 +179,14 @@
       <arg name="type" dir="I" type="sstr" desc="The type of object to query."/>
       <arg name="name" dir="I" type="sstr" desc="The name of the object to query"/>
       <arg name="results" dir="O" type="map"  desc="A snapshot of the object's state."/>
+    </method>
+
+    <method name="getLogHiresTimestamp" desc="Get the high resolution timestamp in logs">
+      <arg name="logHires" dir="O" type="bool"  desc="True if high resolution timestamp in logs is enabled."/>
+    </method>
+
+    <method name="setLogHiresTimestamp" desc="Set the high resolution timestamp in logs">
+      <arg name="logHires" dir="I" type="bool"  desc="True to enable enable high resolution timestamp in logs."/>
     </method>
 
 

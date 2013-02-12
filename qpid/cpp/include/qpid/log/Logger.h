@@ -95,6 +95,11 @@ class QPID_COMMON_CLASS_EXTERN Logger : private boost::noncopyable {
     /** Get the options used to configure the logger. */
     QPID_COMMON_INLINE_EXTERN const Options& getOptions() const { return options; }
 
+    /** Get the hires timestamp setting */
+    QPID_COMMON_EXTERN bool getHiresTimestamp();
+
+    /** Set the hires timestamp setting */
+    QPID_COMMON_EXTERN void setHiresTimestamp(bool setting);
 
   private:
     typedef boost::ptr_vector<Output> Outputs;
