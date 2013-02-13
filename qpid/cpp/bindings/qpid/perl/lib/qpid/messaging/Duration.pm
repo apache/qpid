@@ -17,7 +17,50 @@
 # under the License.
 #
 
+=pod
+
+=head1 NAME
+
+qpid::messaging::Duration
+
+=head1 DESCRIPTION
+
+A B<qpid::messaging::Duration> represents a period of time in milliseconds.
+
+=head1 NAMED DURATIONS
+
+The following named durations are available as constants
+
+=over
+
+=item B<FOREVER>
+
+The maximum wait time, equal to the maximum integer value for the platform.
+Effective this will wait forever.
+
+=item B<IMMEDIATE>
+
+An alias for 0 milliseconds.
+
+=item B<SECOND>
+
+An alias for 1,000 milliseconds.
+
+=item B<MINUTE>
+
+An alias for 60,000 milliseconds.
+
+=back
+
+=cut
+
 package qpid::messaging::Duration;
+
+=pod
+
+=head1 OPERATORS
+
+=cut
 
 use overload (
     "*" =>  \&multiply,
@@ -25,6 +68,27 @@ use overload (
     "!=" => \&unequalify,
     );
 
+=pod
+
+=over
+
+=item $doubled = $duration * $factor
+
+=item $doubled = $duration * 2
+
+Multiplies the duration and returns a new instance.
+
+=over
+
+=item $factor
+
+A factor for multiplying the duration.
+
+=back
+
+=back
+
+=cut
 sub multiply {
     my ($self) = @_;
     my $factor = $_[1];
@@ -54,6 +118,29 @@ sub unequalify {
     return ($self->get_milliseconds() != $that->get_milliseconds()) ? 1 : 0;
 }
 
+=pod
+
+=head1 CONSTRUCTOR
+
+Creates a new instance.
+
+=over
+
+=item duration = new qpid::messaging::Duration( time  )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * time
+
+The duration in B<milliseconds>.
+
+=back
+
+=cut
 sub new {
     my ($class) = @_;
     my $duration = $_[1];
@@ -73,6 +160,26 @@ sub new {
     return $self;
 }
 
+=pod
+
+=head1 ATTRIBUTES
+
+=cut
+
+
+=pod
+
+=head2 MILLISECONDS
+
+The length of time is measured in milliseconds.
+
+=over
+
+=item time = $duration->get_milliseconds
+
+=back
+
+=cut
 sub get_milliseconds {
     my ($self) = @_;
     my $impl = $self->{_impl};

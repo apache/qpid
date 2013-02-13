@@ -17,7 +17,54 @@
 # under the License.
 #
 
+=pod
+
+=head1 NAME
+
+qpid::messaging::Connection
+
+=head1 DESCRIPTION
+
+A B<qpid::messaging::Connection> represents a network connection to a remote
+endpoint.
+
+=cut
+
 package qpid::messaging::Connection;
+
+=pod
+
+=head1 CONSTRUCTOR
+
+=over
+
+=item $conn = new qpid::messaging::Connection
+
+=item $conn = new qpid::messaging::Connection( url )
+
+=item $conn = new qpid::messaging::Connection( url, options )
+
+Creates a connection object. Raises a C<MessagingError> if an invalid
+connection option is used.
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * url
+
+The URL for the broker. See B<qpid::messaging::Address> for more on
+ address strings
+
+=item * options
+
+The connection options.
+
+=back
+
+=cut
 
 sub new {
     my ($class) = @_;
@@ -31,6 +78,31 @@ sub new {
     return $self;
 }
 
+=pod
+
+=head1 ACTIONS
+
+=cut
+
+
+=pod
+
+=head2 OPENING AND CLOSING CONNECTIONS
+
+=cut
+
+
+=pod
+
+=over
+
+=item $conn->open
+
+Establishes the connection to the broker.
+
+=back
+
+=cut
 sub open {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -48,6 +120,17 @@ sub open {
     $impl->open() unless $impl->isOpen()
 }
 
+=pod
+
+=over
+
+=item $conn->is_open
+
+Reports whether the connection is open.
+
+=back
+
+=cut
 sub is_open {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -59,6 +142,17 @@ sub is_open {
     }
 }
 
+=pod
+
+=over
+
+=item $conn->close
+
+Closes the connection.
+
+=back
+
+=cut
 sub close {
     my ($self) = @_;
 
@@ -70,6 +164,36 @@ sub close {
     }
 }
 
+=pod
+
+=head2 SESSIONS
+
+=cut
+
+
+=pod
+
+=over
+
+=item $session = $conn->create_session
+
+=item $conn->create_session( name )
+
+Creates a new session.
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * name
+
+Specifies a name for the session.
+
+=back
+
+=cut
 sub create_session {
     my ($self) = @_;
 
@@ -82,6 +206,29 @@ sub create_session {
     return new qpid::messaging::Session($session, $self);
 }
 
+=pod
+
+=over
+
+=item $session = $conn->create_transactional_session
+
+=item $session = $conn->create_transaction_session( name )
+
+Creates a transactional session.
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * name
+
+Specifies a name for the session.
+
+=back
+
+=cut
 sub create_transactional_session {
     my ($self) = @_;
 
@@ -94,6 +241,25 @@ sub create_transactional_session {
     return new qpid::messaging::Session($session, $self);
 }
 
+=pod
+
+=over
+
+=item $session = $conn->get_session( name )
+
+Returns the session with the specified name.
+
+=over
+
+=item $name
+
+The name given to the session when it was created.
+
+=back
+
+=back
+
+=cut
 sub get_session {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -101,6 +267,20 @@ sub get_session {
     return $impl->getSession($_[1]);
 }
 
+=pod
+
+=over
+
+=item $uname = $conn->get_authenticated_username
+
+Returns the username user to authenticate with the broker.
+
+If the conneciton did not use authentication credentials, then the
+username returned is "anonymous".
+
+=back
+
+=cut
 sub get_authenticated_username {
     my ($self) = @_;
     my $impl = $self->{_impl};

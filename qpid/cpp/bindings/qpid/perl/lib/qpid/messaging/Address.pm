@@ -17,6 +17,69 @@
 # under the License.
 #
 
+=pod
+
+=head1 NAME
+
+qpid::messaging::Address
+
+=head1 DESCRIPTION
+
+An B<Address> represents an address to which messages can be sent or
+from which they can be received.
+
+=head2 THE ADDRESS STRING
+
+An address can be described suing the following pattern:
+
+E<lt>addressE<gt> [ / E<lt>subjectE<gt> ]= ; [ { E<lt>keyE<gt> : E<lt>valueE<gt> , ... } ]
+
+where B<address> is a simple name and B<subject> is a subject or subject
+pattern.
+
+=head3 ADDRESS OPTIONS
+
+The options, encluded in curly braces, are key:value pairs delimited by a comma.
+The values can be nested maps also enclosed in curly braces. Or they can be
+lists of values, where they are contained within square brackets but still comma
+delimited, such as:
+
+  [value1,value2,value3]
+
+The following are the list of supported options:
+
+=over
+
+=item B<create>
+
+Indicates if the address should be created; values are B<always>, B<never>,
+B<sender> or B<receiver>
+
+=item B<assert>
+
+Indicates whether or not to assert any specified node properties; values are
+B<always>, B<never>, B<sender> or B<receiver>
+
+=item B<delete>
+
+Indicates whether or not to delete the addressed node when a sender or receiver
+is cancelled; values are B<always>, B<never>, B<sender> or B<receiver>
+
+=item B<node>
+
+A nested map describing properties for the addressed node. Properties are
+B<type> (B<topic> or B<queue>), B<durable> (a boolean), B<x-declare> (a nested
+map of AMQP 0.10-specific options) and B<x-bindings> (a nested list which
+specifies a queue, exchange or a binding key and arguments).
+
+=item B<link>
+
+=item B<mode>
+
+=back
+
+=cut
+
 package qpid::messaging::Address;
 
 use overload (
@@ -44,6 +107,29 @@ sub str {
     return $self->get_implementation()->str();
 }
 
+=pod
+
+=head1 CONSTRUCTOR
+
+Creates an B<Address>
+
+=over
+
+=item $address = new qpid::messaging::Address( addr )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * addr
+
+The address string.
+
+=back
+
+=cut
 sub new {
     my ($class) = @_;
     my ($self) = {};
@@ -77,6 +163,37 @@ sub get_implementation {
     return $self->{_impl};
 }
 
+=pod
+
+=head1 ATTRIBUTES
+
+=cut
+
+=pod
+
+=head2 NAME
+
+The name portion of the address.
+
+=over
+
+=item $address->set_name( name )
+
+=item $name = $address->get_name
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * name
+
+See the address string explanation.
+
+=back
+
+=cut
 sub set_name {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -91,6 +208,31 @@ sub get_name {
     return $impl->getName();
 }
 
+=pod
+
+=head2 SUBJECT
+
+The subject portion of the address.
+
+=over
+
+=item $address->set_subject( subject )
+
+=item $subject = $address->get_subject
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * subject
+
+See the address string explanation.
+
+=back
+
+=cut
 sub set_subject {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -105,6 +247,31 @@ sub get_subject {
     return $impl->getSubject;
 }
 
+=pod
+
+=head2 OPTIONS
+
+The address options.
+
+=over
+
+=item $address->set_options( options )
+
+=item @opts = $address->get_options
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * options
+
+The set of name:value pairs for the address. See the address string explanation.
+
+=back
+
+=cut
 sub set_options {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -122,6 +289,35 @@ sub get_options {
     return $impl->getOptions;
 }
 
+=pod
+
+=head2 TYPE
+
+The type of the address determines how B<Sender> and B<Receiver> objects are
+constructed for it. It also affects how a b<reply-to> address is encoded.
+
+If no type is specified then it willb e determined by querying the broker.
+Explicitly setting the type prevents this.
+
+=over
+
+=item $address->set_type( type )
+
+=item $type = $address->get_type
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * type
+
+Values can be either B<queue> or B<type>.
+
+=back
+
+=cut
 sub set_type {
     my ($self) = @_;
     my $impl = $self->{_impl};
