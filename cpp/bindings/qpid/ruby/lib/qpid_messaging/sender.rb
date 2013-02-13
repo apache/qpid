@@ -21,7 +21,7 @@ module Qpid
 
   module Messaging
 
-    # +Sender+ is the entity through which messages sent.
+    # +Sender+ is the entity through which messages are sent.
     #
     # An instance of +Sender+ can only be created using an active (not previously
     # closed) Session. See Qpid::Messaging::Session.create_sender for more details.
