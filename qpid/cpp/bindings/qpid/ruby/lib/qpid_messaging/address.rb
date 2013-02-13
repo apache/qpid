@@ -60,8 +60,8 @@ module Qpid
     # [node]
     #   A nested map describing properties for the addressed node. Properties
     #   are *type* (*topic* or *queue*), *durable* (a boolean), *x-declare*
-    #   (a nested map of amqp 0.10-specific options) and *x-bindings*. (nested
-    #   list which specifies a queue, exchange or a binding key and arguments.
+    #   (a nested map of amqp 0.10-specific options) and *x-bindings* (nested
+    #   list which specifies a queue, exchange or a binding key and arguments).
     #
     # [link]
     #   A nested map through which properties of the link can be specified;

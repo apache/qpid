@@ -89,7 +89,7 @@ module Qpid
 
       # Sets the content type for the +Message+.
       #
-      # This should be set by the sending applicaton and indicates to the
+      # This should be set by the sending application and indicates to the
       # recipients of the message how to interpret or decode the content.
       #
       # By default, only dictionaries and maps are automatically given a content
@@ -154,10 +154,10 @@ module Qpid
       # Sets the correlation id of the +Message+.
       #
       # The correlation id can be used as part of a protocol for message
-      # exchange patterns; e.g., a requestion-response pattern might require
+      # exchange patterns; e.g., a request-response pattern might require
       # the correlation id of the request and the response to match, or it
       # might use the message id of the request as the correlation id on
-      # the response
+      # the response.
       #
       # *NOTE:* If the id is not a +String+ then the id is setup using
       # the object's string representation.
@@ -191,6 +191,9 @@ module Qpid
 
       # Sets the time-to-live in milliseconds.
       #
+      # This can be used by the messaging infrastructure to discard messages
+      # that are no longer of relevance.
+      #
       # ==== Options
       #
       # * +duration+ - the number of milliseconds
@@ -210,7 +213,7 @@ module Qpid
       #
       # This is a hint to the messaging infrastructure that the message
       # should be persisted or otherwise stored. This helps to ensure
-      # that th emessage is not lost during to failures or a shutdown.
+      # that the message is not lost due to failures or a shutdown.
       #
       # ==== Options
       #
