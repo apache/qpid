@@ -17,8 +17,46 @@
 # under the License.
 #
 
+=pod
+
+=head1 NAME
+
+qpid::messaging::Message
+
+=head1 DESCRIPTION
+
+A B<qpid::messaging::Message> a routable piece of information.
+
+=cut
+
 package qpid::messaging::Message;
 
+
+=pod
+
+=head1 CONSTRUCTOR
+
+Creates a B<Message>.
+
+=over
+
+=item $msg = new qpid::messaging::Message
+
+=item $msg = new qpid::messaging::Message( $content )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * $content
+
+The message's content.
+
+=back
+
+=cut
 sub new {
     my ($class) = @_;
     my $content = $_[1] if (@_ > 1);
@@ -44,6 +82,41 @@ sub get_implementation {
     return $self->{_impl};
 }
 
+
+=pod
+
+=head1 ATTRIBUTES
+
+=cut
+
+=pod
+
+=head2 REPLY TO ADDRESS
+
+The reply-to address tells a receiver where to send any responses.
+
+=over
+
+=item $msg->set_reply_to( "#reqly-queue;{create:always}" )
+
+=item $msg->set_reply_to( address )
+
+=item $address = $msg->get_reply_to
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * address
+
+The address. Can be either an instance of B<qpid::messaging::Address> or else an
+address string.
+
+=back
+
+=cut
 sub set_reply_to {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -65,6 +138,21 @@ sub get_reply_to {
     return new qpid::messaging::Address($impl->getReplyTo());
 }
 
+=pod
+
+=head2 SUBJECT
+
+=over
+
+=item $msg->set_subject( "responses" )
+
+=item $msg->set_subject( subject )
+
+=item $subject = $msg->get_subject
+
+=back
+
+=cut
 sub set_subject {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -79,6 +167,35 @@ sub get_subject {
     return $impl->getSubject;
 }
 
+=pod
+
+=head2 CONTENT TYPE
+
+This should be set by the sending application and indicates to the
+recipients of the message how to interpret or decide the content.
+
+By default, only dictionaries and maps are automatically given a content
+type. If this content type is replaced then retrieving the content will
+not behave correctly.
+
+=over
+
+=item $msg->set_content_type( content_type )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * content_type
+
+The content type. For a list this would be C<amqp/list> and for a hash it is
+C<amqp/map>.
+
+=back
+
+=cut
 sub set_content_type {
     my ($self) = @_;
     my $type = $_[1];
@@ -94,6 +211,22 @@ sub get_content_type {
     return $impl->getContentType;
 }
 
+=pod
+
+=head2 MESSAGE ID
+
+A message id must be a UUID type. A non-UUID value will be converted
+to a zero UUID, thouygh a blank ID will be left untouched.
+
+=over
+
+=item $msg->set_message_id( id )
+
+=item $id = $msg->get_message_id
+
+=back
+
+=cut
 sub set_message_id {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -111,6 +244,25 @@ sub get_message_id {
     return $impl->getMessageId;
 }
 
+=pod
+
+=head2 USER ID
+
+The user id should, in general, be the user-id which was used when
+authenticating the connection itself, as the messaging infrastructure
+will verify this.
+
+See B<qpid::messaging::Address#authenticated_username>.
+
+=over
+
+=item $msg->set_user_id( id )
+
+=item $id = $msg->get_user_id
+
+=back
+
+=cut
 sub set_user_id {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -125,6 +277,27 @@ sub get_user_id {
     return $impl->getUserId;
 }
 
+=pod
+
+=head2 CORRELATION ID
+
+The correlation id can be used as part of a protocol for message exchange
+patterns; e.g., a request-response pattern might require the correlation id
+of the request and hte response to match, or it might use the message id of
+the request as the correlation id on the response.
+
+B<NOTE:> If the id is not a string then the id is setup using the object's
+string representation.
+
+=over
+
+=item $msg->set_correlation_id( id )
+
+=item $id = $msg->get_correlation_id
+
+=back
+
+=cut
 sub set_correlation_id {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -139,6 +312,26 @@ sub get_correlation_id {
     return $impl->getCorrelationId;
 }
 
+=pod
+
+=head2 PRIORITY
+
+The priority may be used by the messaging infrastructure to prioritize
+delivery of messages with higher priority.
+
+B<NOTE:> If the priority is not an integer type then it is set using the
+object's integer represtation. If the integer value is greater than an
+8-bit value then only 8-bits are used.
+
+=over
+
+=item $msg->set_priority( priority )
+
+=item $priority = $msg->get_priority
+
+=back
+
+=cut
 sub set_priority {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -159,6 +352,36 @@ sub get_priority {
     return $impl->getPriority;
 }
 
+=pod
+
+=head2 TIME TO LIVE
+
+This can be used by the messaging infrastructure to discard messages
+that are no longer of relevance.
+
+=over
+
+=item $msg->set_ttl( ttl )
+
+=item $ttl = $msg->get_ttl
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * ttl
+
+A B<qpid::messaging::Duration> instance. If it is not, then a new instance
+is created using the integer value for the argument.
+
+A B<negative> value is treated as the equipment of
+B<qpid::messaging::Duration::FOREVER>.
+
+=back
+
+=cut
 sub set_ttl {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -187,6 +410,23 @@ sub get_ttl {
     return new qpid::messaging::Duration($impl->getTtl);
 }
 
+=pod
+
+=head2 DURABILITY
+
+The durability of a B<Message> is a hint to the messaging infrastructure that
+the message should be persisted or otherwise stored. This helps to ensure that
+the message is not lost due to failures or a shutdown.
+
+=over
+
+=item $msg->set_durable( 1 )
+
+=item $durable = $msg->get_durable
+
+=back
+
+=cut
 sub set_durable {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -204,6 +444,23 @@ sub get_durable {
     return $impl->getDurable;
 }
 
+=pod
+
+=head2 REDELIVERED
+
+This is a hint to the messaging infrastructure that if de-duplication is
+required, that this message should be examined to determine if it is a
+duplicate.
+
+=over
+
+=item $msg->set_redelivered( 1 )
+
+=item $redelivered = $msg->get_redelivered
+
+=back
+
+=cut
 sub set_redelivered {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -221,6 +478,37 @@ sub get_redelivered {
     return $impl->getRedelivered;
 }
 
+=pod
+
+=head2 PROPERTIES
+
+Named properties for the message are name/value pairs.
+
+=over
+
+=item $msg->set_property(  name,  value )
+
+=item $value = $msg->get_property( name )
+
+=item @props = $msg->get_properties
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * name
+
+The property name.
+
+=item * value
+
+The property value.
+
+=back
+
+=cut
 sub set_property {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -237,6 +525,30 @@ sub get_properties {
     return $impl->getProperties;
 }
 
+=pod
+
+=head2 CONTENT
+
+The message content.
+
+=begin _private
+
+TODO: Need to make the content automatically encode and decode for
+hashes and lists.
+
+=end _private
+
+=over
+
+=item $msg->set_content( content )
+
+=item $content = $msg->get_content
+
+=item $length = $msg->get_content_size
+
+=back
+
+=cut
 sub set_content {
     my ($self) = @_;
     my $content = $_[1];
