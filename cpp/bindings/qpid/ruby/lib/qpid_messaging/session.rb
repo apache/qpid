@@ -129,7 +129,7 @@ module Qpid
       # ==== Options
       #
       # * :message - if specified, then only that Message is acknowledged
-      # * :sync - if true, the call will block until processed by the server
+      # * :sync - if true, the call will block until processed by the broker
       #
       # ==== Examples
       #
@@ -168,7 +168,7 @@ module Qpid
       # NOTE: A message connot be released once it has been acknowled.
       def release(message); @session_impl.release message.message_impl; end
 
-      # Requests synchronization with the server.
+      # Requests synchronization with the broker.
       #
       # ==== Arguments
       #
@@ -176,7 +176,7 @@ module Qpid
       #
       # ==== Options
       #
-      # * +:block+ - if true, the call blocks until the server acknowledges it
+      # * +:block+ - if true, the call blocks until the broker acknowledges it
       #
       #--
       # TODO: Add an optional block to be used for blocking calls.
@@ -192,7 +192,7 @@ module Qpid
 
       # Returns the number of messages that have been acknowledged by this
       # +Session+ whose acknowledgements have not been confirmed as processed
-      # by the server.
+      # by the broker.
       def unsettled_acks; @session_impl.getUnsettledAcks; end
 
       # Fetches the next Receiver with a message pending. Waits the specified

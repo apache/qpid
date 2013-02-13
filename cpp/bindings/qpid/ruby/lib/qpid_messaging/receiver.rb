@@ -35,7 +35,7 @@ module Qpid
     #   session  = conn.create_session
     #
     #   # create a receiver that listens on the "updates" topic of "alerts"
-    #   receiver = session.create_receiver "alerts/updates"t
+    #   receiver = session.create_receiver "alerts/updates"
     #
     #   # wait for an incoming message and process it
     #   incoming = receiver.get Qpid::Messaging::Duration::FOREVER
