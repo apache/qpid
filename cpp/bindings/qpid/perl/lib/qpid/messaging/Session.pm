@@ -17,6 +17,20 @@
 # under the License.
 #
 
+=pod
+
+=head1 NAME
+
+qpid::messaging::Session
+
+=head1 DESCRIPTION
+
+A B<qpid::messaging::Session> represents a distinct conversation between end
+points. They are created from an active (i.e, not closed) B<Connection>.
+
+A session is used to acknowledge individual or all messages that have
+passed through it, as well as for creating senders and receivers for conversing.
+=cut
 package qpid::messaging::Session;
 
 sub new {
@@ -33,6 +47,24 @@ sub new {
     return $self;
 }
 
+=pod
+
+=head1 ACTIONS
+
+=cut
+
+
+=pod
+
+=head2 CLOSING THE SESSION
+
+=over
+
+=item $session->close
+
+=back
+
+=cut
 sub close {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -40,6 +72,21 @@ sub close {
     $impl->close;
 }
 
+=pod
+
+=head2 TRANSACTIONS
+
+Transactions can be rolled back or committed.
+
+=over
+
+=item $session->commit
+
+=item $session->rollback
+
+=back
+
+=cut
 sub commit {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -54,7 +101,30 @@ sub rollback {
     $impl->rollback;
 }
 
-# TODO how to handle acknowledging a specific message
+=pod
+
+=head2 MESSAGE DISPOSITIONS
+
+=cut
+
+
+=pod
+
+=over
+
+=item $session->acknowledge( msg )
+
+Acknowledges that a specific message that has been received.
+
+=back
+
+=begin _private
+
+TODO: How to handle acknowledging a specific message?
+
+=end _private
+
+=cut
 sub acknowledge {
     my ($self) = @_;
     my $sync = $_[1] || 0;
@@ -64,9 +134,17 @@ sub acknowledge {
     $impl->acknowledge($sync);
 }
 
-sub acknowledge_up_to {
-}
+=pod
 
+=over
+
+=item $session->reject( msg )
+
+Rejects the specified message. A reject message will not be redelivered.
+
+=back
+
+=cut
 sub reject {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -74,6 +152,18 @@ sub reject {
     $impl->reject($_[1]);
 }
 
+=pod
+
+=over
+
+=item $session->release( msg )
+
+Releases the specified message, which allows the broker to attempt to
+redeliver it.
+
+=back
+
+=cut
 sub release {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -81,6 +171,29 @@ sub release {
     $impl->release($_[1]);
 }
 
+=pod
+
+=over
+
+=item $session->sync
+
+=item $session->sync( block )
+
+Requests synchronization with the broker.
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * block
+
+If true, then the call blocks until the process completes.
+
+=back
+
+=cut
 sub sync {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -92,29 +205,34 @@ sub sync {
     }
 }
 
-sub get_receivable {
-    my ($self) = @_;
-    my $impl = $self->{_impl};
+=pod
 
-    return $impl->getReceivable;
-}
+=head2 SENDERS AND RECEIVERS
 
-sub get_unsettled_acks {
-    my ($self) = @_;
-    my $impl = $self->{_impl};
+=cut
 
-    return $impl->getUnsettledAcks;
-}
 
-sub get_next_receiver {
-    my ($self) = @_;
-    my $impl = $self->{_impl};
+=pod
 
-    my $timeout = $_[1] || qpid::messaging::Duration::FOREVER;
+=over
 
-    return $impl->getNextReceiver($timeout);
-}
+=item $sender = $session->create_sender( address )
 
+Creates a new sender.
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * address
+
+The sender address. See B<qpid::messaging::Address> for more details
+
+=back
+
+=cut
 sub create_sender {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -130,20 +248,27 @@ sub create_sender {
     return new qpid::messaging::Sender($send_impl, $self);
 }
 
-sub create_receiver {
-    my ($self) = @_;
-    my $impl = $self->{_impl};
+=pod
 
-    my $address = $_[1];
+=over
 
-    if (ref($address) eq "qpid::messaging::Address") {
-        $address = $address->get_implementation();
-    }
-    my $recv_impl = $impl->createReceiver($address);
+=item $sender = $session->get_session( name )
 
-    return new qpid::messaging::Receiver($recv_impl, $self);
-}
+=back
 
+=head3 ARGUMENTS
+
+=over
+
+=item * name
+
+The name of the sender.
+
+Raises an exception when no sender with that name exists.
+
+=back
+
+=cut
 sub get_sender {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -158,6 +283,58 @@ sub get_sender {
     return $sender;
 }
 
+=pod
+
+=over
+
+=item $receiver = $session->create_receiver( address )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * address
+
+The receiver address. see B<qpid::messaging::Address> for more details.
+
+=back
+
+=cut
+sub create_receiver {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+
+    my $address = $_[1];
+
+    if (ref($address) eq "qpid::messaging::Address") {
+        $address = $address->get_implementation();
+    }
+    my $recv_impl = $impl->createReceiver($address);
+
+    return new qpid::messaging::Receiver($recv_impl, $self);
+}
+
+=pod
+
+=over
+
+=item $receiver = $session->get_receiver( name )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * name
+
+The name of the receiver.
+
+=back
+
+=cut
 sub get_receiver {
     my ($self) = @_;
     my $impl = $self->{_impl};
@@ -172,6 +349,107 @@ sub get_receiver {
     return $receiver;
 }
 
+=pod
+
+=head1 ATTRIBUTES
+
+=cut
+
+
+=pod
+
+=head2 RECEIVABLE
+
+The total number of receivable messages, and messages already received,
+by receivers associated with this session.
+
+=over
+
+=item $session->get_receivable
+
+=back
+
+=cut
+sub get_receivable {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+
+    return $impl->getReceivable;
+}
+
+=pod
+
+=head2 UNSETTLED ACKNOWLEDGEMENTS
+
+The number of messages that have been acknowledged by this session whose
+acknowledgements have not been confirmed as processed by the broker.
+
+=over
+
+=item $session->get_unsettled_acks
+
+=back
+
+=cut
+sub get_unsettled_acks {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+
+    return $impl->getUnsettledAcks;
+}
+
+=pod
+
+=head2 NEXT RECEIVER
+
+The next receiver is the one, created by this session, that has any pending
+local messages.
+
+If no receivers are found within the timeout then a B<MessagingException> is
+raised.
+
+=over
+
+=item $session->get_next_receiver
+
+=item $session->get_next_receiver( timeout )
+
+=back
+
+=head3 ARGUMENTS
+
+=over
+
+=item * timeout
+
+The period of time to wait for a receiver to be found. If no period of time is
+specified then the default is to wait B<forever>.
+
+=back
+
+=cut
+sub get_next_receiver {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+
+    my $timeout = $_[1] || qpid::messaging::Duration::FOREVER;
+
+    return $impl->getNextReceiver($timeout);
+}
+
+=pod
+
+=head2 CONNECTION
+
+=over
+
+=item $conn = $session->get_connection
+
+Returns the owning connection for the session.
+
+=back
+
+=cut
 sub get_connection {
     my ($self) = @_;
 
