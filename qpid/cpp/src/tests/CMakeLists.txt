@@ -98,63 +98,74 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # when running the tests. If you want to build a subset of the tests run
 # ccmake and set unit_tests_to_build to the set you want to build.
 
-set(unit_tests_to_build
-    exception_test
-    RefCounted
-    SessionState
-    logging
-    AsyncCompletion
-    Url
-    Uuid
-    Shlib
-    FieldValue
-    FieldTable
+set(all_unit_tests
+    AccumulatedAckTest
     Array
-    QueueOptionsTest
+    AsyncCompletion
+    AtomicValue
+    ClientMessage
+    ClientMessageTest
+    ClientSessionTest
+    ConsoleTest
+    DeliveryRecordTest
+    DtxWorkRecordTest
+    exception_test
+    ExchangeTest
+    FieldTable
+    FieldValue
+    FrameDecoder
+    FramingTest
+    HeadersExchangeTest
+    HeaderTest
     InlineAllocator
     InlineVector
-    ClientSessionTest
-    MessagingSessionTests
-    SequenceSet
-    StringUtils
-    RangeSet
-    AtomicValue
-    QueueTest
-    AccumulatedAckTest
-    DtxWorkRecordTest
-    DeliveryRecordTest
-    ExchangeTest
-    HeadersExchangeTest
+    logging
+    ManagementTest
+    MessageReplayTracker
     MessageTest
+    MessagingSessionTests
+    PollableCondition
+    ProxyTest
     QueueDepth
-    QueueRegistryTest
-    QueuePolicyTest
     QueueFlowLimitTest
-    FramingTest
-    HeaderTest
+    QueueOptionsTest
+    QueuePolicyTest
+    QueueRegistryTest
+    QueueTest
+    RangeSet
+    RefCounted
+    RetryList
     SequenceNumberTest
+    SequenceSet
+    SessionState
+    Shlib
+    StringUtils
+    SystemInfo
     TimerTest
     TopicExchangeTest
     TxBufferTest
-    ManagementTest
-    MessageReplayTracker
-    ConsoleTest
-    ProxyTest
-    RetryList
-    FrameDecoder
-    ClientMessageTest
-    PollableCondition
+    Url
+    Uuid
     Variant
-    ClientMessage
-    SystemInfo
     ${xml_tests}
+   )
+
+set(unit_tests_to_build
+    ""
     CACHE STRING "Which unit tests to build"
    )
 
 mark_as_advanced(unit_tests_to_build)
 
+# If no unit_test specifically set then use all unit tests
+if (unit_tests_to_build)
+set(actual_unit_tests ${unit_tests_to_build})
+else()
+set(actual_unit_tests ${all_unit_tests})
+endif()
+
 add_executable (unit_test unit_test
-                ${unit_tests_to_build} ${platform_test_additions})
+                ${actual_unit_tests} ${platform_test_additions})
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidmessaging qpidbroker qmfconsole)
