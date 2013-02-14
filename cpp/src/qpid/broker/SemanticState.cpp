@@ -390,7 +390,7 @@ bool SemanticStateConsumerImpl::accept(const Message& msg)
     // remain on queue's listener list for possible smaller messages
     // in future.
     //
-    blocked = !(filter(msg) && checkCredit(msg));
+    blocked = !checkCredit(msg);
     return !blocked;
 }
 
