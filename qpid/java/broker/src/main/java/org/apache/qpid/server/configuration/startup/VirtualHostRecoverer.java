@@ -45,7 +45,7 @@ public class VirtualHostRecoverer implements ConfiguredObjectRecoverer<VirtualHo
     {
         Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
 
-        return new VirtualHostAdapter(entry.getId(), entry.getAttributes(),broker, _brokerStatisticsGatherer);
+        return new VirtualHostAdapter(entry.getId(), entry.getAttributes(), broker, _brokerStatisticsGatherer, broker.getTaskExecutor());
     }
 
 }

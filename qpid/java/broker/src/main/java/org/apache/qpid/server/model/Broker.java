@@ -29,6 +29,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -190,4 +191,6 @@ public interface Broker extends ConfiguredObject
     KeyStore getDefaultKeyStore();
 
     TrustStore getDefaultTrustStore();
+
+    TaskExecutor getTaskExecutor();
 }

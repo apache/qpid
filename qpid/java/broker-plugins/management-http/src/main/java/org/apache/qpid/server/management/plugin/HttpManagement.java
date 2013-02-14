@@ -136,7 +136,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
     public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker.getTaskExecutor());
         _broker = broker;
         addParent(Broker.class, broker);
     }

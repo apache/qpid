@@ -31,6 +31,10 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.updater.ChangeStateTask;
+import org.apache.qpid.server.configuration.updater.CreateChildTask;
+import org.apache.qpid.server.configuration.updater.SetAttributeTask;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 abstract class AbstractAdapter implements ConfiguredObject
 {
@@ -42,9 +46,11 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     private final UUID _id;
     private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
+    private final TaskExecutor _taskExecutor;
 
-    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes)
+    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, TaskExecutor taskExecutor)
     {
+        _taskExecutor = taskExecutor;
         _id = id;
         if (attributes != null)
         {
@@ -63,14 +69,9 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
-    protected AbstractAdapter(UUID id)
+    protected AbstractAdapter(UUID id, TaskExecutor taskExecutor)
     {
-        this(id, null, null);
-    }
-
-    protected AbstractAdapter(UUID id, Map<String, Object> defaults)
-    {
-        this(id, defaults, null);
+        this(id, null, null, taskExecutor);
     }
 
     public final UUID getId()
@@ -87,9 +88,16 @@ abstract class AbstractAdapter implements ConfiguredObject
     public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-        if (setState(currentState, desiredState))
+        if (_taskExecutor.isTaskExecutorThread())
         {
-            notifyStateChanged(currentState, desiredState);
+            if (setState(currentState, desiredState))
+            {
+                notifyStateChanged(currentState, desiredState);
+            }
+        }
+        else
+        {
+            _taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
         }
         return getActualState();
     }
@@ -137,7 +145,6 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
-
     protected void childAdded(ConfiguredObject child)
     {
         synchronized (_changeListeners)
@@ -149,7 +156,6 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
-
     protected void childRemoved(ConfiguredObject child)
     {
         synchronized (_changeListeners)
@@ -160,7 +166,6 @@ abstract class AbstractAdapter implements ConfiguredObject
             }
         }
     }
-
 
     private final Object getDefaultAttribute(String name)
     {
@@ -197,6 +202,19 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        if (_taskExecutor.isTaskExecutorThread())
+        {
+            return changeAttribute(name, expected, desired);
+        }
+        else
+        {
+            _taskExecutor.submitAndWait(new SetAttributeTask(this, name, expected, desired));
+            return getAttribute(name);
+        }
+    }
+
+    protected Object changeAttribute(final String name, final Object expected, final Object desired)
     {
         synchronized (_attributes)
         {
@@ -251,4 +269,35 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         return getClass().getSimpleName() + " [id=" + _id + "]";
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if (_taskExecutor.isTaskExecutorThread())
+        {
+            C child = addChild(childClass, attributes, otherParents);
+            if (child != null)
+            {
+                childAdded(child);
+            }
+            return child;
+        }
+        else
+        {
+            return (C)_taskExecutor.submitAndWait(new CreateChildTask(this, childClass, attributes, otherParents));
+        }
+    }
+
+    protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    protected TaskExecutor getTaskExecutor()
+    {
+        return _taskExecutor;
+    }
+
 }

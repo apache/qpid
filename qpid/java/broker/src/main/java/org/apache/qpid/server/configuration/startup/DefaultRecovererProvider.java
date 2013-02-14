@@ -34,6 +34,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.PluginFactory;
@@ -52,9 +53,10 @@ public class DefaultRecovererProvider implements RecovererProvider
     private final PortFactory _portFactory;
     private final QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader;
     private final QpidServiceLoader<PluginFactory> _pluginFactoryServiceLoader;
+    private final TaskExecutor _taskExecutor;
 
     public DefaultRecovererProvider(StatisticsGatherer brokerStatisticsGatherer, VirtualHostRegistry virtualHostRegistry,
-            LogRecorder logRecorder, RootMessageLogger rootMessageLogger)
+            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor)
     {
         _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
         _portFactory = new PortFactory();
@@ -64,6 +66,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         _rootMessageLogger = rootMessageLogger;
         _groupManagerServiceLoader = new QpidServiceLoader<GroupManagerFactory>();
         _pluginFactoryServiceLoader = new QpidServiceLoader<PluginFactory>();
+        _taskExecutor = taskExecutor;
     }
 
     @Override
@@ -72,7 +75,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         if (Broker.class.getSimpleName().equals(type))
         {
             return new BrokerRecoverer(_authenticationProviderFactory, _portFactory, _brokerStatisticsGatherer, _virtualHostRegistry,
-                    _logRecorder, _rootMessageLogger);
+                    _logRecorder, _rootMessageLogger, _taskExecutor);
         }
         else if(VirtualHost.class.getSimpleName().equals(type))
         {

@@ -33,6 +33,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.TestAuthenticationManagerFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -53,9 +54,9 @@ import java.util.UUID;
  */
 public class BrokerShutdownTest extends QpidTestCase
 {
-
     private Provider[] _defaultProviders;
     private Broker _broker;
+    private TaskExecutor _taskExecutor;
 
     @Override
     public void setUp() throws Exception
@@ -65,11 +66,31 @@ public class BrokerShutdownTest extends QpidTestCase
 
         super.setUp();
 
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+
         // Startup the new broker and register the new providers
         _broker = startBroker();
     }
 
-    private Broker startBroker()
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            if (_taskExecutor != null)
+            {
+                _taskExecutor.stopImmediately();
+            }
+        }
+
+    }
+
+    private Broker startBroker() throws Exception
     {
         // test store with only broker and authentication provider entries
         ConfigurationEntryStore store = new ConfigurationEntryStore()
@@ -122,8 +143,9 @@ public class BrokerShutdownTest extends QpidTestCase
         RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
 
         // recover the broker from the store
-        RecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger);
+        RecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger, _taskExecutor);
         ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer = provider.getRecoverer(Broker.class.getSimpleName());
+
         Broker broker = (Broker) brokerRecoverer.create(provider, store.getRootEntry());
 
         // start broker

@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.adapter.PortAdapter;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
@@ -54,9 +55,9 @@ public class AmqpPortAdapter extends PortAdapter
     private final Broker _broker;
     private IncomingNetworkTransport _transport;
 
-    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaultAttributes)
+    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaultAttributes, TaskExecutor taskExecutor)
     {
-        super(id, broker, attributes, defaultAttributes);
+        super(id, broker, attributes, defaultAttributes, taskExecutor);
         _broker = broker;
     }
 

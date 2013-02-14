@@ -60,6 +60,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -104,9 +105,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private StatisticsGatherer _brokerStatisticsGatherer;
 
-    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer)
+    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
-        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         validateAttributes();
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
@@ -472,7 +473,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == Exchange.class)
         {
@@ -572,7 +573,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             if(!_connectionAdapters.containsKey(connection))
             {
-                adapter = new ConnectionAdapter(connection);
+                adapter = new ConnectionAdapter(connection, getTaskExecutor());
                 _connectionAdapters.put(connection, adapter);
 
             }
@@ -844,13 +845,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             return _virtualHost.getConfiguration().getMaximumMessageCount();
         }
         return super.getAttribute(name);
-    }
-
-    @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO - Implement
     }
 
     @Override

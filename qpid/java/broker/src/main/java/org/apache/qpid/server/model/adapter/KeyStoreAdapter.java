@@ -35,7 +35,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
         super(id, broker, attributes);
         if (attributes.get(CERTIFICATE_ALIAS) != null)
         {
-            setAttribute(CERTIFICATE_ALIAS, null, attributes.get(CERTIFICATE_ALIAS));
+            changeAttribute(CERTIFICATE_ALIAS, null, attributes.get(CERTIFICATE_ALIAS));
         }
     }
 

@@ -56,7 +56,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
-        super(exchange.getId());
+        super(exchange.getId(), virtualHostAdapter.getTaskExecutor());
         _statistics = new ExchangeStatistics();
         _vhost = virtualHostAdapter;
         _exchange = exchange;
@@ -256,7 +256,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == org.apache.qpid.server.model.Binding.class)
         {
@@ -365,13 +365,6 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
             return _exchange.getType().getName().asString();
         }
         return super.getAttribute(name);
-    }
-
-    @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO - Implement
     }
 
     @Override

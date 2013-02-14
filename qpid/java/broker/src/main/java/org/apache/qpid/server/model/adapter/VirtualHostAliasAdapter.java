@@ -43,7 +43,7 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
 
     public VirtualHostAliasAdapter(VirtualHostAdapter virtualHostAdapter, Port port)
     {
-        super(UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()));
+        super(UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()), virtualHostAdapter.getTaskExecutor());
         _vhost = virtualHostAdapter;
         _port = port;
     }

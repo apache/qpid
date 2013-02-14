@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Plugin;
@@ -35,9 +36,9 @@ import org.apache.qpid.server.model.Statistics;
 public abstract class AbstractPluginAdapter extends AbstractAdapter implements Plugin
 {
 
-    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes)
+    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, TaskExecutor taskExecutor)
     {
-        super(id, defaults, attributes);
+        super(id, defaults, attributes, taskExecutor);
     }
 
     @Override

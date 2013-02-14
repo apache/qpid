@@ -52,6 +52,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -72,7 +73,7 @@ public class BrokerRecovererTest extends TestCase
         super.setUp();
 
         _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(PortFactory.class), mock(StatisticsGatherer.class),
-                mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class));
+                mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
 

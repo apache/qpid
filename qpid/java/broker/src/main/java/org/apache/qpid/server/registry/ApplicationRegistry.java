@@ -47,6 +47,7 @@ import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -75,6 +76,7 @@ public class ApplicationRegistry implements IApplicationRegistry
     private LogRecorder _logRecorder;
 
     private ConfigurationEntryStore _store;
+    private TaskExecutor _taskExecutor;
 
     protected void setRootMessageLogger(RootMessageLogger rootMessageLogger)
     {
@@ -107,7 +109,10 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             logStartupMessages(CurrentActor.get());
 
-            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger);
+            _taskExecutor = new TaskExecutor();
+            _taskExecutor.start();
+
+            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor);
             ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
@@ -250,6 +255,11 @@ public class ApplicationRegistry implements IApplicationRegistry
             //Shutdown virtualhosts
             close(_virtualHostRegistry);
 
+            if (_taskExecutor != null)
+            {
+                _taskExecutor.stop();
+            }
+
             CurrentActor.get().message(BrokerMessages.STOPPED());
 
             _logRecorder.closeLogRecorder();
@@ -257,6 +267,10 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
         finally
         {
+            if (_taskExecutor != null)
+            {
+                _taskExecutor.stopImmediately();
+            }
             CurrentActor.remove();
         }
         _store = null;

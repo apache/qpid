@@ -53,6 +53,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
@@ -166,9 +167,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            PortFactory portFactory)
+            PortFactory portFactory, TaskExecutor taskExecutor)
     {
-        super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
@@ -301,16 +302,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             throws AccessControlException, IllegalArgumentException
     {
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
-                _statisticsGatherer);
-
-        synchronized (_vhostAdapters)
-        {
-            _vhostAdapters.put(virtualHostAdapter.getName(), virtualHostAdapter);
-        }
-
-        virtualHostAdapter.setState(State.INITIALISING, State.ACTIVE);
-        childAdded(virtualHostAdapter);
-
+                _statisticsGatherer, getTaskExecutor());
+        addVirtualHost(virtualHostAdapter);
+        virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
         return virtualHostAdapter;
     }
 
@@ -416,7 +410,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     //TODO: ACL
     @SuppressWarnings("unchecked")
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == VirtualHost.class)
         {
@@ -436,7 +430,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    public void addPort(Port port)
+    private void addPort(Port port)
     {
         synchronized (_portAdapters)
         {
@@ -454,7 +448,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     {
         Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
         addPort(port);
-        childAdded(port);
         return port;
     }
 
@@ -465,14 +458,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
         AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes, groupPrincipalAccessor);
         addAuthenticationProvider(authenticationProvider);
-        childAdded(authenticationProvider);
         return authenticationProvider;
     }
 
     /**
      * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
      */
-    public void addAuthenticationProvider(AuthenticationProvider authenticationProvider)
+    private void addAuthenticationProvider(AuthenticationProvider authenticationProvider)
     {
         String name = authenticationProvider.getName();
         synchronized (_authenticationProviders)
@@ -486,7 +478,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         authenticationProvider.addChangeListener(this);
     }
 
-    public void addGroupProvider(GroupProvider groupProvider)
+    private void addGroupProvider(GroupProvider groupProvider)
     {
         synchronized (_groupProviders)
         {
@@ -505,7 +497,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         throw new UnsupportedOperationException("Not implemented yet!");
     }
 
-    public void addKeyStore(KeyStore keyStore)
+    private void addKeyStore(KeyStore keyStore)
     {
         synchronized (_keyStores)
         {
@@ -523,7 +515,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         throw new UnsupportedOperationException("Not implemented yet!");
     }
 
-    public void addTrustStore(TrustStore trustStore)
+    private void addTrustStore(TrustStore trustStore)
     {
         synchronized (_trustStores)
         {
@@ -624,13 +616,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return super.getAttribute(name);
     }
 
-    @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO - Implement.
-    }
-
     private boolean deletePort(Port portAdapter)
     {
         Port removedPort = null;
@@ -651,7 +636,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return removedAuthenticationProvider != null;
     }
 
-    public void addVirtualHost(VirtualHost virtualHost)
+    private void addVirtualHost(VirtualHost virtualHost)
     {
         synchronized (_vhostAdapters)
         {
@@ -774,7 +759,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         // no-op
     }
 
-    public void addPlugin(ConfiguredObject plugin)
+    private void addPlugin(ConfiguredObject plugin)
     {
         synchronized(_plugins)
         {
@@ -909,4 +894,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return _trustStores.get(_defaultTrustStoreId);
     }
 
+    @Override
+    public TaskExecutor getTaskExecutor()
+    {
+        return super.getTaskExecutor();
+    }
 }

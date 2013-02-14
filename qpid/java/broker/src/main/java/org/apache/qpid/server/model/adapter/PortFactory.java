@@ -105,7 +105,7 @@ public class PortFactory
             defaults.put(Port.NEED_CLIENT_AUTH, DEFAULT_AMQP_NEED_CLIENT_AUTH);
             defaults.put(Port.RECEIVE_BUFFER_SIZE, DEFAULT_AMQP_RECEIVE_BUFFER_SIZE);
             defaults.put(Port.SEND_BUFFER_SIZE, DEFAULT_AMQP_SEND_BUFFER_SIZE);
-            port = new AmqpPortAdapter(id, broker, attributes, defaults);
+            port = new AmqpPortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
         }
         else
         {
@@ -117,7 +117,7 @@ public class PortFactory
             }
             Protocol protocol = protocols.iterator().next();
             defaults.put(Port.NAME, portValue + "-" + protocol.name());
-            port = new PortAdapter(id, broker, attributes, defaults);
+            port = new PortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
         }
         return port;
     }

@@ -95,7 +95,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 
     public JMXManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker.getTaskExecutor());
         _broker = broker;
         addParent(Broker.class, broker);
     }

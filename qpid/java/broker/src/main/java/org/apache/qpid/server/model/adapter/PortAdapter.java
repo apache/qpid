@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 public class PortAdapter extends AbstractAdapter implements Port
 {
@@ -53,9 +54,9 @@ public class PortAdapter extends AbstractAdapter implements Port
      * protocols on the same port we need to introduce a special entity like
      * PortAceptor which will be responsible for port binding/unbinding
      */
-    public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults)
+    public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults, TaskExecutor taskExecutor)
     {
-        super(id, defaults, attributes);
+        super(id, defaults, attributes, taskExecutor);
         _broker = broker;
 
         addParent(Broker.class, broker);
@@ -259,13 +260,6 @@ public class PortAdapter extends AbstractAdapter implements Port
     public Collection<String> getAttributeNames()
     {
         return AVAILABLE_ATTRIBUTES;
-    }
-
-    @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);
     }
 
     @Override

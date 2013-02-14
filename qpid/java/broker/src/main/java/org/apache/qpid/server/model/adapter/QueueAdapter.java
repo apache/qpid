@@ -80,7 +80,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
 
     public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
     {
-        super(queue.getId());
+        super(queue.getId(), virtualHostAdapter.getTaskExecutor());
         _vhost = virtualHostAdapter;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
 
@@ -207,7 +207,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
     }
 
     @Override
-    public Object setAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    public Object changeAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         try
         {
@@ -306,7 +306,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
                 return desired;
             }
 
-            return super.setAttribute(name, expected, desired);
+            return super.changeAttribute(name, expected, desired);
         }
         finally
         {
@@ -510,7 +510,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
 
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == org.apache.qpid.server.model.Binding.class)
         {

@@ -42,7 +42,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
 
     protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id);
+        super(id, broker.getTaskExecutor());
         addParent(Broker.class, broker);
         _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
         _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);
@@ -185,14 +185,14 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
 
     private void setMandatoryAttribute(String name, Map<String, Object> attributeValues)
     {
-        setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
+        changeAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
     }
 
     private void setOptionalAttribute(String name, Map<String, Object> attributeValues)
     {
         if (attributeValues.get(name) != null)
         {
-            setAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
+            changeAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
         }
     }
 }

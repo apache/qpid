@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -67,7 +68,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes)
     {
-        super(id, null, attributes);
+        super(id, null, attributes, broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
         _type = authManager instanceof PrincipalDatabaseAuthenticationManager? PrincipalDatabaseAuthenticationManager.class.getSimpleName() : AuthenticationManager.class.getSimpleName() ;
@@ -198,15 +199,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass,
-                                                      Map<String, Object> attributes,
-                                                      ConfiguredObject... otherParents)
-    {
-        throw new IllegalArgumentException("This authentication provider does not support" +
-                                           " creating children of type: " + childClass);
-    }
-
-    @Override
     public boolean setState(State currentState, State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
@@ -249,6 +241,14 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes)
         {
             super(id, broker,authManager, attributes);
+        }
+
+        @Override
+        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+                                                          Map<String, Object> attributes,
+                                                          ConfiguredObject... otherParents)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -330,7 +330,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
 
         @Override
-        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+        public <C extends ConfiguredObject> C addChild(Class<C> childClass,
                                                           Map<String, Object> attributes,
                                                           ConfiguredObject... otherParents)
         {
@@ -343,7 +343,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 if(createUser(username, password,null))
                 {
                     @SuppressWarnings("unchecked")
-                    C pricipalAdapter = (C) new PrincipalAdapter(p);
+                    C pricipalAdapter = (C) new PrincipalAdapter(p, getTaskExecutor());
                     return pricipalAdapter;
                 }
                 else
@@ -353,7 +353,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 }
             }
 
-            return super.createChild(childClass, attributes, otherParents);
+            return super.addChild(childClass, attributes, otherParents);
         }
 
         @Override
@@ -365,7 +365,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 Collection<User> principals = new ArrayList<User>(users.size());
                 for(Principal user : users)
                 {
-                    principals.add(new PrincipalAdapter(user));
+                    principals.add(new PrincipalAdapter(user, getTaskExecutor()));
                 }
                 @SuppressWarnings("unchecked")
                 Collection<C> unmodifiablePrincipals = (Collection<C>) Collections.unmodifiableCollection(principals);
@@ -382,9 +382,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             private final Principal _user;
 
 
-            public PrincipalAdapter(Principal user)
+            public PrincipalAdapter(Principal user, TaskExecutor taskExecutor)
             {
-                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()));
+                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()), taskExecutor);
                 _user = user;
 
             }
@@ -505,16 +505,14 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
 
             @Override
-            public Object setAttribute(String name, Object expected, Object desired)
+            public Object changeAttribute(String name, Object expected, Object desired)
                     throws IllegalStateException, AccessControlException, IllegalArgumentException
             {
                 if(name.equals(PASSWORD))
                 {
                     setPassword((String)desired);
                 }
-                return super.setAttribute(name,
-                                          expected,
-                                          desired);
+                return super.changeAttribute(name, expected, desired);
             }
 
             @Override

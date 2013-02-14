@@ -16,6 +16,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -28,10 +29,11 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final RootMessageLogger _rootMessageLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final PortFactory _portFactory;
+    private final TaskExecutor _taskExecutor;
 
     public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
             StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder,
-            RootMessageLogger rootMessageLogger)
+            RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor)
     {
         _portFactory = portFactory;
         _authenticationProviderFactory = authenticationProviderFactory;
@@ -39,13 +41,14 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
         _rootMessageLogger = rootMessageLogger;
+        _taskExecutor = taskExecutor;
     }
 
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory);
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor);
         Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
         for (String type : childEntries.keySet())
         {
