@@ -27,5 +27,5 @@ set(router_SOURCES
 add_executable(nexus-router ${router_SOURCES})
 target_link_libraries(nexus-router qpid-nexus ${proton_lib})
 
-install(TARGETS nexus-router)
+install(TARGETS nexus-router RUNTIME DESTINATION bin)
 
