@@ -63,6 +63,7 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 ## Build the Multi-Threaded Server Library
 ##
 set(server_SOURCES
+#    src/agent.c
     src/alloc.c
     src/auth.c
     src/buffer.c
@@ -73,6 +74,7 @@ set(server_SOURCES
     src/log.c
     src/message.c
     src/posix/threading.c
+    src/router_node.c
     src/server.c
     src/timer.c
     src/work_queue.c
@@ -93,4 +95,5 @@ install(FILES ${headers} DESTINATION ${INCLUDE_INSTALL_DIR}/qpid/nexus)
 ##
 ## Build Tests
 ##
+add_subdirectory(router)
 add_subdirectory(tests)
