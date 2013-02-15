@@ -28,6 +28,7 @@
 <!-- Oracle javadoc -->
 <!ENTITY oracleJdkDocUrl "http://oracle.com/javase/6/docs/api/">
 <!ENTITY oracleJeeDocUrl "http://docs.oracle.com/javaee/6/api/">
+<!ENTITY oracleKeytool "http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html">
 
 <!-- Oracle BDB JE-->
 <!ENTITY oracleJeDownloadUrl "http://www.oracle.com/technetwork/products/berkeleydb/downloads/index.html?ssSourceSiteId=ocomen">
