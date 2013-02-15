@@ -78,7 +78,7 @@ eval {
         my $redelivered = ($message->get_redelivered) ? "redelivered=True, " : "";
         print "Message(" . $redelivered . "properties=" . printProperties($message->get_properties()) . ", content='";        
         if ($message->get_content_type() eq "amqp/map") {
-            my $content = qpid::messaging::decode_map($message);
+            my $content = $message->get_content();
             map{ print "\n$_ => $content->{$_}"; } keys %{$content};
         }
         else {
