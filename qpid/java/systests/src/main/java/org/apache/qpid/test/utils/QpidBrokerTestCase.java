@@ -23,6 +23,7 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,7 +66,10 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.MessageStoreCreator;
+import org.apache.qpid.server.store.MessageStoreFactory;
 import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
@@ -104,6 +108,8 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     private static final String DEFAULT_INITIAL_CONTEXT = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
 
+    private static Map<String, String> supportedStoresClassToTypeMapping = new HashMap<String, String>();
+
     static
     {
         String initialContext = System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
@@ -111,6 +117,13 @@ public class QpidBrokerTestCase extends QpidTestCase
         if (initialContext == null || initialContext.length() == 0)
         {
             System.setProperty(Context.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
+        }
+
+        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
+        Collection<MessageStoreFactory> factories = messageStoreCreator.getFactories();
+        for (MessageStoreFactory messageStoreFactory : factories)
+        {
+            supportedStoresClassToTypeMapping.put(messageStoreFactory.createMessageStore().getClass().getName(), messageStoreFactory.getType());
         }
     }
 
@@ -619,14 +632,16 @@ public class QpidBrokerTestCase extends QpidTestCase
         return configLocation.getAbsolutePath().replace(workingDirectory.getAbsolutePath(), "").substring(1);
     }
 
-    protected String saveTestConfiguration(int port, TestBrokerConfiguration testConfiguration) throws ConfigurationException
+    protected String saveTestConfiguration(int port, TestBrokerConfiguration testConfiguration)
     {
-        // Specify the test config file
         String testConfig = getTestConfigFile(port);
         String relative = getPathRelativeToWorkingDirectory(testConfig);
-        _logger.info("Saving test broker configuration at: " + testConfig);
-
-        testConfiguration.save(new File(testConfig));
+        if (!testConfiguration.isSaved())
+        {
+            _logger.info("Saving test broker configuration at: " + testConfig);
+            testConfiguration.save(new File(testConfig));
+            testConfiguration.setSaved(true);
+        }
         return relative;
     }
 
@@ -1361,6 +1376,16 @@ public class QpidBrokerTestCase extends QpidTestCase
     public void setTestVirtualhosts(XMLConfiguration testVirtualhosts)
     {
         _testVirtualhosts = testVirtualhosts;
+    }
+
+    public String getTestProfileMessageStoreType()
+    {
+        final String storeClass = getTestProfileMessageStoreClassName();
+        if (storeClass == null)
+        {
+            return MemoryMessageStore.TYPE;
+        }
+        return supportedStoresClassToTypeMapping.get(storeClass);
     }
 
 }

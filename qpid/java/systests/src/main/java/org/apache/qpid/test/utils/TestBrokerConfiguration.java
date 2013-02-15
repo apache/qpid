@@ -55,6 +55,7 @@ public class TestBrokerConfiguration
     public static final String ENTRY_NAME_ANONYMOUS_PROVIDER = "anonymous";
 
     private JsonConfigurationEntryStore _store;
+    private boolean _saved;
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
@@ -214,4 +215,15 @@ public class TestBrokerConfiguration
         _store.save(newEntry);
         return true;
     }
+
+    public boolean isSaved()
+    {
+        return _saved;
+    }
+
+    public void setSaved(boolean saved)
+    {
+        _saved = saved;
+    }
+
 }

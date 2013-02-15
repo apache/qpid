@@ -406,7 +406,28 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     public State getActualState()
     {
-        return getDesiredState();
+        if (_virtualHost == null)
+        {
+            return State.INITIALISING;
+        }
+        else
+        {
+            org.apache.qpid.server.virtualhost.State implementationState = _virtualHost.getState();
+            switch(implementationState)
+            {
+            case INITIALISING:
+                return State.INITIALISING;
+            case ACTIVE:
+                return State.ACTIVE;
+            case PASSIVE:
+                return State.QUIESCED;
+            case STOPPED:
+                return State.STOPPED;
+            default:
+                // unexpected state
+                return null;
+            }
+        }
     }
 
     public boolean isDurable()
@@ -929,6 +950,15 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 {
                     _broker.getVirtualHostRegistry().unregisterVirtualHost(_virtualHost);
                 }
+            }
+            return true;
+        }
+        else if (desiredState == State.DELETED)
+        {
+            //TODO: add ACL check to authorize the operation
+            if (_virtualHost != null && _virtualHost.getState() == org.apache.qpid.server.virtualhost.State.ACTIVE)
+            {
+                setDesiredState(currentState, State.STOPPED);
             }
             return true;
         }

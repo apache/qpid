@@ -207,47 +207,47 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
     }
 
     @Override
-    public Object changeAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    public boolean changeAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         try
         {
             if(ALERT_REPEAT_GAP.equals(name))
             {
                 _queue.setMinimumAlertRepeatGap((Long)desired);
-                return desired;
+                return true;
             }
             else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
             {
                 _queue.setMaximumMessageAge((Long)desired);
-                return desired;
+                return true;
             }
             else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
             {
                 _queue.setMaximumMessageSize((Long)desired);
-                return desired;
+                return true;
             }
             else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
             {
                 _queue.setMaximumQueueDepth((Long)desired);
-                return desired;
+                return true;
             }
             else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
             {
                 _queue.setMaximumMessageCount((Long)desired);
-                return desired;
+                return true;
             }
             else if(ALTERNATE_EXCHANGE.equals(name))
             {
                 // In future we may want to accept a UUID as an alternative way to identifying the exchange
                 ExchangeAdapter alternateExchange = (ExchangeAdapter) desired;
                 _queue.setAlternateExchange(alternateExchange == null ? null : alternateExchange.getExchange());
-                return desired;
+                return true;
             }
             else if(EXCLUSIVE.equals(name))
             {
                 Boolean exclusiveFlag = (Boolean) desired;
                 _queue.setExclusive(exclusiveFlag);
-                return desired;
+                return true;
             }
             else if(MESSAGE_GROUP_KEY.equals(name))
             {
@@ -268,7 +268,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
             {
                 _queue.setMaximumDeliveryCount((Integer)desired);
-                return desired;
+                return true;
             }
             else if(NO_LOCAL.equals(name))
             {
@@ -281,12 +281,12 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
             {
                 _queue.setCapacity((Long)desired);
-                return desired;
+                return true;
             }
             else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
             {
                 _queue.setFlowResumeCapacity((Long)desired);
-                return desired;
+                return true;
             }
             else if(QUEUE_FLOW_STOPPED.equals(name))
             {
@@ -303,7 +303,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             else if (DESCRIPTION.equals(name))
             {
                 _queue.setDescription((String) desired);
-                return desired;
+                return true;
             }
 
             return super.changeAttribute(name, expected, desired);

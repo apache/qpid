@@ -505,12 +505,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
 
             @Override
-            public Object changeAttribute(String name, Object expected, Object desired)
+            public boolean changeAttribute(String name, Object expected, Object desired)
                     throws IllegalStateException, AccessControlException, IllegalArgumentException
             {
                 if(name.equals(PASSWORD))
                 {
                     setPassword((String)desired);
+                    return true;
                 }
                 return super.changeAttribute(name, expected, desired);
             }

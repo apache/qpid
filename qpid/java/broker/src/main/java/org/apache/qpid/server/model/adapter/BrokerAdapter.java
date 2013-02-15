@@ -308,11 +308,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return virtualHostAdapter;
     }
 
-    private boolean deleteVirtualHost(final VirtualHost vhost)
-        throws AccessControlException, IllegalStateException
+    private boolean deleteVirtualHost(final VirtualHost vhost) throws AccessControlException, IllegalStateException
     {
-        //TODO implement deleteVirtualHost
-        throw new UnsupportedOperationException("Not yet implemented");
+        synchronized (_vhostAdapters)
+        {
+            _vhostAdapters.remove(vhost);
+        }
+        vhost.removeChangeListener(this);
+        return true;
     }
 
     public String getName()
@@ -755,6 +758,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     @Override
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
         // no-op
     }

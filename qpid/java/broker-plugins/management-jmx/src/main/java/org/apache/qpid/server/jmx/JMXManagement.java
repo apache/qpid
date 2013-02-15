@@ -290,6 +290,12 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         }
     }
 
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+    {
+        // no-op
+    }
+
     private void createAdditionalMBeansFromProviders(ConfiguredObject child, AMQManagedObject mbean) throws JMException
     {
         _children.put(child, mbean);

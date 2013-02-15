@@ -519,4 +519,10 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return array;
     }
 
+    @Override
+    public String toString()
+    {
+        return "JsonConfigurationEntryStore [_storeFile=" + _storeFile + ", _rootId=" + _rootId + ", _initialStoreLocation="
+                + _initialStoreLocation + "]";
+    }
 }

@@ -254,4 +254,10 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
         _managerMBean.unregister();
     }
 
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+    {
+        // no-op
+    }
+
 }

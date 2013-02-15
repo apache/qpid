@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,5 +57,10 @@ public class MessageStoreCreator
             throw new IllegalConfigurationException("Unknown store type: " + storeType);
         }
         return factory.createMessageStore();
+    }
+
+    public Collection<MessageStoreFactory> getFactories()
+    {
+        return Collections.unmodifiableCollection(_factories.values());
     }
 }

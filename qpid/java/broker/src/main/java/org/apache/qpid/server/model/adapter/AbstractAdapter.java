@@ -24,6 +24,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -111,7 +112,8 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         synchronized (_changeListeners)
         {
-            for(ConfigurationChangeListener listener : _changeListeners)
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
             {
                 listener.stateChanged(this, currentState, desiredState);
             }
@@ -149,7 +151,8 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         synchronized (_changeListeners)
         {
-            for(ConfigurationChangeListener listener : _changeListeners)
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
             {
                 listener.childAdded(this, child);
             }
@@ -160,9 +163,22 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         synchronized (_changeListeners)
         {
-            for(ConfigurationChangeListener listener : _changeListeners)
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
             {
                 listener.childRemoved(this, child);
+            }
+        }
+    }
+
+    protected void attributeSet(String attrinuteName, Object oldAttributeValue, Object newAttributeValue)
+    {
+        synchronized (_changeListeners)
+        {
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
+            {
+                listener.attributeSet(this, attrinuteName, oldAttributeValue, newAttributeValue);
             }
         }
     }
@@ -205,16 +221,19 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         if (_taskExecutor.isTaskExecutorThread())
         {
-            return changeAttribute(name, expected, desired);
+            if (changeAttribute(name, expected, desired))
+            {
+                attributeSet(name, expected, desired);
+            }
         }
         else
         {
             _taskExecutor.submitAndWait(new SetAttributeTask(this, name, expected, desired));
-            return getAttribute(name);
         }
+        return getAttribute(name);
     }
 
-    protected Object changeAttribute(final String name, final Object expected, final Object desired)
+    protected boolean changeAttribute(final String name, final Object expected, final Object desired)
     {
         synchronized (_attributes)
         {
@@ -223,11 +242,11 @@ abstract class AbstractAdapter implements ConfiguredObject
                || (currentValue != null && currentValue.equals(expected)))
             {
                 _attributes.put(name, desired);
-                return desired;
+                return true;
             }
             else
             {
-                return currentValue;
+                return false;
             }
         }
     }

@@ -16,6 +16,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -47,8 +48,10 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
+        StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
                 _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor);
+        broker.addChangeListener(storeChangeListener);
         Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
         for (String type : childEntries.keySet())
         {
@@ -66,6 +69,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
                     throw new IllegalConfigurationException("Cannot create configured object for the entry " + childEntry);
                 }
                 broker.recoverChild(object);
+                object.addChangeListener(storeChangeListener);
             }
         }
         wireUpConfiguredObjects(broker, entry.getAttributes());
