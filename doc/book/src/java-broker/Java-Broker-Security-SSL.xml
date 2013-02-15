@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -61,6 +65,16 @@
             the configured SSL port(s) or will also bind the non-SSL port(s). Setting sslOnly to true will
             disable the non-SSL ports.
         </para>
+
+        <important>
+            <para>
+                The password of the certificate used by the Broker <emphasis role="bold">must</emphasis>
+                match the password of the keystore itself. This is a restriction of the Qpid Broker
+                implementation.  If using the <ulink url="&oracleKeytool;">keytool</ulink> utility,
+                note that this means the argument to the <option>-keypass</option> option must match
+                the <option>-storepass</option> option.
+            </para>
+        </important>
     </section>
 
     <section role="h2" id="SSL-Truststore-ClientCertificate">
