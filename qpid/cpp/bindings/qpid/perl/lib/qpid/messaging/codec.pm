@@ -22,14 +22,31 @@ package qpid::messaging;
 sub encode {
     my $content = $_[0];
     my $message = $_[1];
+    my $impl = $message->get_implementation();
 
-    cqpid_perl::encode($content, $message->get_implementation());
+    if(UNIVERSAL::isa($content, "HASH")) {
+        cqpid_perl::encode($content, $impl, "amqp/map");
+    } elsif(UNIVERSAL::isa($content, "ARRAY")) {
+        cqpid_perl::encode($content, $impl, "amqp/list");
+    } else {
+        $message->get_implementation()->setContent($content);
+    }
 }
 
-sub decode_map {
-    my $message = $_[0];
+sub decode {
+    my $message      = $_[0];
+    my $impl         = $message->get_implementation();
+    my $content_type = $impl->getContentType();
 
-    return cqpid_perl::decodeMap($message->get_implementation());
+    if($content_type eq "amqp/map") {
+        $result = cqpid_perl::decodeMap($impl);
+    } elsif($content_type eq "amqp/list") {
+        $result = cqpid_perl::decodeList($impl);
+    } else {
+        $result = $impl->getContent();
+    }
+
+    return $result;
 }
 
 1;

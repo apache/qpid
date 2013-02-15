@@ -255,7 +255,6 @@ ok ($message->get_content() eq $content,
 $content = { id => 1234, name => "With\x00null" };
 qpid::messaging::encode($content, $message);
 my $map = qpid::messaging::decode_map($message);
-
 ok ($map->{name} eq "With\x00null",
     "Nulls embedded in map values work.");
 
@@ -265,6 +264,18 @@ qpid::messaging::encode($content, $message);
 $map = qpid::messaging::decode_map($message);
 ok ($map->{name} eq "Euro=\x{20AC}",
     "Unicode strings encoded correctly.");
+
+# Setting the content as a hash automatically encodes it
+($content) = {"id" => "1234", "name" => "qpid"};
+$message->set_content($content);
+ok ($message->get_content_type() eq "amqp/map",
+    "Hashes are automatically encoded correctly");
+
+# Setting the content as a list automatically encodes it
+my @acontent = (1, 2, 3, 4);
+$message->set_content(\@acontent);
+ok ($message->get_content_type() eq "amqp/list",
+    "Lists are automatically encoded correctly");
 
 # content size
 # content size is correct
