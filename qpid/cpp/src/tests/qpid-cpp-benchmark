@@ -18,7 +18,7 @@
 # under the License.
 #
 
-import optparse, time, qpid.messaging, re
+import optparse, time, qpid.messaging, re, os
 from threading import Thread
 from subprocess import Popen, PIPE, STDOUT
 
@@ -77,6 +77,10 @@ op.add_option("--no-delete", default=False, action="store_true",
               help="Don't delete the test queues.")
 op.add_option("--fill-drain", default=False, action="store_true",
               help="First fill the queues, then drain them")
+op.add_option("--qpid-send-path", default="", type="str", metavar="PATH",
+              help="path to qpid-send binary")
+op.add_option("--qpid-receive-path", default="", type="str", metavar="PATH",
+              help="path to qpid-receive binary")
 
 single_quote_re = re.compile("'")
 def posix_quote(string):
@@ -115,7 +119,7 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
     messages = msg_total/opts.receivers;
     if (index < msg_total%opts.receivers): messages += 1
     if (messages == 0): return None
-    command = ["qpid-receive",
+    command = [os.path.join(opts.qpid_receive_path, "qpid-receive"),
                "-b", broker,
                "-a", address,
                "-m", str(messages),
@@ -138,7 +142,7 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
 
 def start_send(queue, opts, broker, host):
     address="%s;{%s}"%(queue,",".join(opts.send_option + ["create:always"]))
-    command = ["qpid-send",
+    command = [os.path.join(opts.qpid_send_path, "qpid-send"),
                "-b", broker,
                "-a", address,
                "--messages", str(opts.messages),
