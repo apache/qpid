@@ -41,7 +41,7 @@ eval {
                     percent => sprintf("%.2f", 0.99),
                     colours => [ qw (red green white) ],
                    };
-    qpid::messaging::encode($content, $message);
+    $message->set_content($content);
     $sender->send($message, 1);
 
     $connection->close();

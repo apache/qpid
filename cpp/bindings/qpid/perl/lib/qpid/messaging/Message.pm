@@ -556,14 +556,22 @@ sub set_content {
 
     die "Content must be provided" if !defined($content);
 
-    $impl->setContent($content);
+    $self->{_content} = $content;
+
+    qpid::messaging::encode($content, $self);
 }
 
 sub get_content {
     my ($self) = @_;
     my $impl = $self->{_impl};
+    $content = $self->{_content} || undef;
 
-    return $impl->getContent();
+    if(!defined($content)) {
+        $content = qpid::messaging::decode($self);
+        $self->{_content} = $content;
+    }
+
+    return $content;
 }
 
 sub get_content_size {
