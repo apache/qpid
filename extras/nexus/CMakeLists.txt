@@ -63,7 +63,7 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 ## Build the Multi-Threaded Server Library
 ##
 set(server_SOURCES
-#    src/agent.c
+    src/agent.c
     src/alloc.c
     src/auth.c
     src/buffer.c
