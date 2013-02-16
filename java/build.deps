@@ -81,7 +81,7 @@ broker-plugins.libs=${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
 
-perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all}
+perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all} ${derby-db}
 
 management-common.libs=
 
@@ -115,7 +115,7 @@ bdbstore-jmx.test.libs=${test.libs}
 jfreechart.jar=lib/jfree/jfreechart-1.0.13.jar
 jcommon.jar=lib/jfree/jcommon-1.0.16.jar
 csvjdbc.jar=lib/csvjdbc/csvjdbc-1.0.8.jar
-perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar}
+perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar} ${derby-db}
 perftests-visualisation-jfc.test.libs=${test.libs}
 
 # Libraries used only within the build
