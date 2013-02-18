@@ -30,7 +30,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.auth.manager.TestAuthenticationManagerFactory;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -49,7 +48,6 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _configXml = new XMLConfiguration();
-        _configXml.addProperty("security." + TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER, "");
         _configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
         _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
         _virtualHostRegistry = new VirtualHostRegistry();

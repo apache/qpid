@@ -35,14 +35,17 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.TestAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
 
+import java.io.File;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -110,8 +113,10 @@ public class BrokerShutdownTest extends QpidTestCase
             {
                 if (_authenticationProviderId.equals(id))
                 {
-                    Map<String, Object> attributes = Collections.<String, Object> singletonMap(AuthenticationManagerFactory.ATTRIBUTE_TYPE,
-                            TestAuthenticationManagerFactory.TEST_AUTH_MANAGER_MARKER);
+                    File file = TestFileUtils.createTempFile(BrokerShutdownTest.this, ".db.users");
+                    Map<String, Object> attributes = new HashMap<String, Object>();
+                    attributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+                    attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
                     return new ConfigurationEntry(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(), attributes,
                             Collections.<UUID> emptySet(), this);
                 }
