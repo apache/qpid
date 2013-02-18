@@ -68,14 +68,14 @@ set (QPIDD_CONF_FILE ${QPIDD_CONF_PATH} CACHE STRING
      "Name of the Qpid broker configuration file")
 
 install(FILES  LICENSE NOTICE  DESTINATION ${QPID_INSTALL_DOCDIR})
-install(FILES  bindings/swig_perl_typemaps.i
+install(FILES  include/qpid/qpid.i
+               bindings/swig_perl_typemaps.i
                bindings/swig_python_typemaps.i
                bindings/swig_ruby_typemaps.i
-               DESTINATION ${QPID_INSTALL_DATADIR})
-install(FILES  include/qpid/qpid.i
-               include/qmf/qmfengine.i
+               DESTINATION ${QPID_INSTALL_DATADIR}/qpid)
+install(FILES  include/qmf/qmfengine.i
                include/qmf/qmf2.i
-        DESTINATION ${QPID_INSTALL_INCLUDEDIR})
+        DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf)
 
 if (WIN32)
    set (CMAKE_DEBUG_POSTFIX "d")
