@@ -1793,8 +1793,9 @@ public class DerbyMessageStore implements MessageStore
         public ByteBuffer getContent(int offsetInMessage, int size)
         {
             ByteBuffer buf = ByteBuffer.allocate(size);
-            getContent(offsetInMessage, buf);
+            int length = getContent(offsetInMessage, buf);
             buf.position(0);
+            buf.limit(length);
             return  buf;
         }
 

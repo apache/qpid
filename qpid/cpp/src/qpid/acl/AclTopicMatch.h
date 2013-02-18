@@ -30,7 +30,7 @@ namespace qpid {
 namespace broker {
 
 // Class for executing topic exchange routing key matching rules in
-// Acl code the allows or denies users publishing to an exchange.
+// Acl code. Allows or denies users publishing to an exchange.
 class TopicExchange::TopicExchangeTester {
 
 class boundNode;

@@ -61,7 +61,9 @@ class Command:
         if opts.ssl_certificate:
             conn_options['ssl_certfile'] = opts.ssl_certificate
         if opts.ssl_key:
-            conn_options['ssl_key'] = opts.ssl_key
+            if not opts.ssl_certificate:
+                self.op.error("missing '--ssl-certificate' (required by '--ssl-key')")
+            conn_options['ssl_keyfile'] = opts.ssl_key
         conn_options['client_properties'] = {'qpid.ha-admin' : 1}
 
         connection = Connection.establish(opts.broker, **conn_options)

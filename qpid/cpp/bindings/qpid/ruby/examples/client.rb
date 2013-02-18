@@ -29,9 +29,7 @@ if __FILE__ == $0
   connection.open
   session = connection.create_session
   sender = session.create_sender "service_queue"
-  response_queue = Qpid::Messaging::Address.new("#response-queue", "",
-                                                :create => :always,
-                                                :delete => :always)
+  response_queue = Qpid::Messaging::Address.new("#response-queue;{create:always}")
   receiver = session.create_receiver response_queue
 
   ["Twas brillig, and the slithy toves",

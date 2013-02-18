@@ -87,17 +87,17 @@ eval {
     if (@entries) {
         my $content = {};
         setEntries($content);
-        qpid::messaging::encode($content, $message);
+        $message->set_content($content);
     }
     elsif ($content) {
-        $message->setContent($content);
-        $message->setContentType("text/plain");
+        $message->set_content($content);
+        $message->set_content_type("text/plain");
     }
 
     my $receiver;
     if ($replyto) {
         my $responseQueue = new qpid::messaging::Address($replyto);
-        $receiver = $session->createReceiver($responseQueue);
+        $receiver = $session->create_receiver($responseQueue);
         $message->setReplyTo($responseQueue);
     }
 
@@ -115,7 +115,7 @@ eval {
 
         if ($receiver) {
             my $response = $receiver->fetch();
-            print "$i -> " . $response->getContent() . "\n";
+            print "$i -> " . $response->get_content() . "\n";
         }
 
         my $now = localtime;

@@ -36,13 +36,26 @@ module Qpid
       end
 
       it "can set the reply to address" do
-        address = Qpid::Messaging::Address.new "my-queue", ""
+        address = Qpid::Messaging::Address.new "my-queue;{create:always}"
 
         @message.reply_to = address
 
         reply_to = @message.reply_to
 
         reply_to.name.should == address.name
+      end
+
+      it "can set the reply to from an address string" do
+        name = "my-queue"
+        subject = "responses"
+        address = "#{name}/#{subject}"
+
+        @message.reply_to = address
+
+        reply_to = @message.reply_to
+
+        reply_to.name.should == name
+        reply_to.subject.should == subject
       end
 
       it "should store the content when created" do

@@ -61,7 +61,9 @@ class QueueReplicator;
  * exchanges and bindings to replicate the primary.
  * It also creates QueueReplicators for newly replicated queues.
  *
- * THREAD UNSAFE: Only called in Link connection thread, no need for locking.
+ * THREAD UNSAFE:
+ * All members except shutdown are only called in the Link's connection thread context.
+ * shutdown() does not use any mutable state.
  *
  */
 class BrokerReplicator : public broker::Exchange,
@@ -96,7 +98,7 @@ class BrokerReplicator : public broker::Exchange,
     class ErrorListener;
     class ConnectionObserver;
 
-    void initializeBridge(broker::Bridge&, broker::SessionHandler&);
+    void connected(broker::Bridge&, broker::SessionHandler&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
@@ -134,13 +136,14 @@ class BrokerReplicator : public broker::Exchange,
     void deleteExchange(const std::string& name);
 
     void autoDeleteCheck(boost::shared_ptr<broker::Exchange>);
+
     void disconnected();
 
     void setMembership(const types::Variant::List&); // Set membership from list.
 
     std::string logPrefix;
-    std::string userId, remoteHost;
     ReplicationTest replicationTest;
+    std::string userId, remoteHost;
     HaBroker& haBroker;
     broker::Broker& broker;
     broker::ExchangeRegistry& exchanges;
@@ -155,6 +158,7 @@ class BrokerReplicator : public broker::Exchange,
     EventDispatchMap dispatch;
     std::auto_ptr<UpdateTracker> queueTracker;
     std::auto_ptr<UpdateTracker> exchangeTracker;
+    boost::shared_ptr<ConnectionObserver> connectionObserver;
 };
 }} // namespace qpid::broker
 

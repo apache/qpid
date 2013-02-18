@@ -89,10 +89,10 @@ void Backup::setBrokerUrl(const Url& brokers) {
 
 void Backup::stop(Mutex::ScopedLock&) {
     if (stopped) return;
+    stopped = true;
     QPID_LOG(debug, logPrefix << "Leaving backup role.");
     if (link) link->close();
     if (replicator.get()) {
-        broker.getExchanges().destroy(replicator->getName());
         replicator->shutdown();
         replicator.reset();
     }
@@ -132,6 +132,7 @@ Role* Backup::promote() {
       default:
         assert(0);              // Not a valid state for the Backup role..
     }
+    return 0; 			// Keep compiler happy
 }
 
 Backup::~Backup() {

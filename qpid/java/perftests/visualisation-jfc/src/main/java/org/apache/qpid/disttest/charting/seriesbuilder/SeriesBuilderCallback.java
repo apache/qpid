@@ -24,7 +24,8 @@ import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 public interface SeriesBuilderCallback
 {
     public void beginSeries(SeriesDefinition seriesDefinition);
-    public void addDataPointToSeries(SeriesDefinition seriesDefinition, Object[] row);
-    public void endSeries(SeriesDefinition seriesDefinition);
 
+    public int getNumberOfDimensions();
+    public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row);
+    public void endSeries(SeriesDefinition seriesDefinition);
 }

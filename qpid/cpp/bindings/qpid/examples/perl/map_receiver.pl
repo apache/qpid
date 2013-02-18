@@ -33,8 +33,8 @@ eval {
     $connection->open();
     my $session  = $connection->create_session();
     my $receiver = $session->create_receiver($address);
-
-    my $content = qpid::messaging::decode_map($receiver->fetch());
+    my $message  = $receiver->fetch();
+    my $content = $message->get_content();
 
     print Dumper($content);
 

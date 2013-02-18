@@ -161,12 +161,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         Container container = new Container(_broker.getId().toString());
 
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(getLocalAddress())));
         VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
-        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(getLocalAddress())));
         _conn.setRemoteAddress(getRemoteAddress());
-
-
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
         _conn.setSaslFrameOutput(this);
 
@@ -372,10 +370,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                  FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
              }
 
-
              _frameWriter.setValue(amqFrame);
-
-
 
              ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
 

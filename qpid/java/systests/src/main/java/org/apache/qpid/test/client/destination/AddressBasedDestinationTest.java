@@ -1148,7 +1148,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         MessageConsumer cons = ssn.createConsumer(ssn.createTopic("ADDR:amq.topic/test"));
         MessageProducer prod = ssn.createProducer(null);
         
-        Queue queue = ssn.createQueue("ADDR:amq.topic/test");
+        Topic queue = ssn.createTopic("ADDR:amq.topic/test");
         prod.send(queue,ssn.createTextMessage("A"));
         
         Message msg = cons.receive(1000);

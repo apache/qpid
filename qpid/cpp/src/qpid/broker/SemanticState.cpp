@@ -37,6 +37,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/IsInSequenceSet.h"
 #include "qpid/log/Statement.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/ptr_map.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/FedOps.h"
@@ -389,7 +390,7 @@ bool SemanticStateConsumerImpl::accept(const Message& msg)
     // remain on queue's listener list for possible smaller messages
     // in future.
     //
-    blocked = !(filter(msg) && checkCredit(msg));
+    blocked = !checkCredit(msg);
     return !blocked;
 }
 

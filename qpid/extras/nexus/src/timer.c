@@ -21,15 +21,17 @@
 #include "server_private.h"
 #include <qpid/nexus/ctools.h>
 #include <qpid/nexus/threading.h>
+#include <qpid/nexus/alloc.h>
 #include <assert.h>
 #include <stdio.h>
 
 static sys_mutex_t     *lock;
-static nx_timer_list_t  free_list;
 static nx_timer_list_t  idle_timers;
 static nx_timer_list_t  scheduled_timers;
 static long             time_base;
 
+ALLOC_DECLARE(nx_timer_t);
+ALLOC_DEFINE(nx_timer_t);
 
 //=========================================================================
 // Private static functions
@@ -67,27 +69,21 @@ static void nx_timer_cancel_LH(nx_timer_t *timer)
 
 nx_timer_t *nx_timer(nx_timer_cb_t cb, void* context)
 {
-    nx_timer_t *timer;
+    nx_timer_t *timer = new_nx_timer_t();
+    if (!timer)
+        return 0;
+
+    DEQ_ITEM_INIT(timer);
+
+    timer->handler    = cb;
+    timer->context    = context;
+    timer->delta_time = 0;
+    timer->state      = TIMER_IDLE;
 
     sys_mutex_lock(lock);
-
-    timer = DEQ_HEAD(free_list);
-    if (timer) {
-        DEQ_REMOVE_HEAD(free_list);
-    } else {
-        timer = NEW(nx_timer_t);
-        DEQ_ITEM_INIT(timer);
-    }
-
-    if (timer) {
-        timer->handler    = cb;
-        timer->context    = context;
-        timer->delta_time = 0;
-        timer->state      = TIMER_IDLE;
-        DEQ_INSERT_TAIL(idle_timers, timer);
-    }
-
+    DEQ_INSERT_TAIL(idle_timers, timer);
     sys_mutex_unlock(lock);
+
     return timer;
 }
 
@@ -97,9 +93,10 @@ void nx_timer_free(nx_timer_t *timer)
     sys_mutex_lock(lock);
     nx_timer_cancel_LH(timer);
     DEQ_REMOVE(idle_timers, timer);
-    DEQ_INSERT_TAIL(free_list, timer);
-    timer->state = TIMER_FREE;
     sys_mutex_unlock(lock);
+
+    timer->state = TIMER_FREE;
+    free_nx_timer_t(timer);
 }
 
 
@@ -180,7 +177,6 @@ void nx_timer_cancel(nx_timer_t *timer)
 void nx_timer_initialize(sys_mutex_t *server_lock)
 {
     lock = server_lock;
-    DEQ_INIT(free_list);
     DEQ_INIT(idle_timers);
     DEQ_INIT(scheduled_timers);
     time_base = 0;

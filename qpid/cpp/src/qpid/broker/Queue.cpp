@@ -366,7 +366,8 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
     while (true) {
         //TODO: reduce lock scope
         Mutex::ScopedLock locker(messageLock);
-        Message* msg = messages->next(*c);
+        QueueCursor cursor = c->getCursor(); // Save current position.
+        Message* msg = messages->next(*c);   // Advances c.
         if (msg) {
             if (msg->hasExpired()) {
                 QPID_LOG(debug, "Message expired from queue '" << name << "'");
@@ -405,6 +406,7 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
                 } else {
                     //message(s) are available but consumer hasn't got enough credit
                     QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
+                    c->setCursor(cursor); // Restore cursor, will try again with credit
                     if (c->preAcquires()) {
                         //let someone else try
                         listeners.populate(set);

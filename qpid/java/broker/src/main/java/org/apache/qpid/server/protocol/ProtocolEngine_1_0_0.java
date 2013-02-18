@@ -146,12 +146,13 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
         Container container = new Container(_broker.getId().toString());
 
+        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(
                 getLocalAddress())));
-        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+        _conn.setRemoteAddress(_network.getRemoteAddress());
         _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
-        _conn.setRemoteAddress(_network.getRemoteAddress());
 
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
         _frameHandler = new FrameHandler(_conn);

@@ -22,5 +22,242 @@
 
 <section id="Java-Broker-Configuring-And-Managing-REST-API">
 <title>REST API</title>
+    <section id="Java-Broker-Configuring-And-Managing-REST-API-Overview">
+        <title>REST API Overview</title>
+        <para>This section provides an overview of REST management API.</para>
+        <para>If web management is enabled (see <xref linkend="Java-Broker-Configuring-And-Managing-Config-Files-Web-Management"/>) 
+            the REST API can be used to monitor and manage the broker instance.</para>
+        <para>The Qpid broker REST services support traditional REST model which uses the GET method requests to retrieve 
+            the information about broker configured objects, DELETE method requests to delete the configured object,
+            PUT to create the configured object and POST to update the configured objects.</para>
+        <para>The table below lists the available REST services with brief description how they can be used.</para>
 
+       <table>
+          <title>Rest services</title>
+          <tgroup cols="6">
+          <thead>
+            <row>
+              <entry>Rest service URL</entry>
+              <entry>Description</entry>
+              <entry>GET</entry>
+              <entry>PUT</entry>
+              <entry>POST</entry>
+              <entry>DELETE</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><para>/rest/broker</para></entry>
+              <entry><para>Rest service to manage broker instance</para></entry>
+              <entry><para>Retrieves the details of broker configuration</para></entry>
+              <entry><para>Not implemented yet</para></entry>
+              <entry><para>Not implemented yet</para></entry>
+              <entry><para>Not implemented yet</para></entry>
+            </row>
+            <row>
+              <entry><para>/rest/authenticationprovider</para>
+                  <para>/rest/authenticationprovider/&lt;authentication provider name&gt;</para>
+              </entry>
+              <entry>Rest service to manage authentication providers on the broker</entry>
+              <entry>Retrieves the details about authentication providers</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry><para>/rest/user</para>
+                  <para>/rest/user/&lt;authentication provider name&gt;/&lt;user name&gt;</para>
+              </entry>
+              <entry>Rest service to manage user account</entry>
+              <entry>Retrieves the details about user account</entry>
+              <entry>Creates user account</entry>
+              <entry>Updates user password</entry>
+              <entry>Deletes user account</entry>
+            </row>
+            <row>
+              <entry><para>/rest/groupprovider</para>
+                  <para>/rest/groupprovider/&lt;group provider name&gt;</para>
+              </entry>
+              <entry>Rest service to manage group providers</entry>
+              <entry>Retrieves the details about group provider(s)</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry><para>/rest/group</para>
+                  <para>/rest/group/&lt;group provider name&gt;/&lt;group name&gt;</para>
+              </entry>
+              <entry>Rest service to manage user group</entry>
+              <entry>Retrieves the details about user group</entry>
+              <entry>Creates group</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes group</entry>
+            </row>
+            <row>
+              <entry><para>/rest/groupmember</para>
+                  <para>/rest/groupmember/&lt;group provider name &gt;/&lt;group name&gt;/&lt;user name&gt;</para>
+              </entry>
+              <entry>Rest service to manage group member(s)</entry>
+              <entry>Retrieves the details about group member(s)</entry>
+              <entry>Add user to group</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes user from group</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/port</para>
+                    <para>/rest/port/&lt;port name&gt;</para>
+              </entry>
+              <entry>Rest service to manage broker ports(s)</entry>
+              <entry>Retrieves the details about the broker port(s)</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/port</para>
+                    <para>/rest/port/&lt;port name&gt;</para>
+              </entry>
+              <entry>Rest service to manage broker ports(s)</entry>
+              <entry>Retrieves the details about the broker port(s)</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/queue</para>
+                    <para>/rest/queue/&lt;virtual host name&gt;/&gt;queue name&gt;</para>
+              </entry>
+              <entry>Rest service to manage queue(s)</entry>
+              <entry>Retrieves the details about the queue(s)</entry>
+              <entry>Creates queue</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes queue</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/exchange</para>
+                    <para>/rest/exchange/&lt;virtual host name&gt;/&lt;exchange name&gt;</para>
+              </entry>
+              <entry>Rest service to manage exchange(s)</entry>
+              <entry>Retrieves the details about the exchange(s)</entry>
+              <entry>Creates exchange</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes exchange</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/binding</para>
+                    <para>/rest/binding/&lt;virtual host name&gt;/&lt;exchange name&gt;/&lt;queue name&gt;/&lt;binding name&gt;</para>
+              </entry>
+              <entry>Rest service to manage binding(s)</entry>
+              <entry>Retrieves the details about the binding(s)</entry>
+              <entry>Binds a queue to an exchange</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes binding</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/connection</para>
+                    <para>/rest/connection/&lt;virtual host name&gt;/&lt;connection name&gt;</para>
+              </entry>
+              <entry>Rest service to manage connection(s)</entry>
+              <entry>Retrieves the details about the connection(s)</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/session</para>
+                    <para>/rest/session/&lt;virtual host name&gt;/&lt;connection name&gt;/&lt;session name&gt;</para>
+              </entry>
+              <entry>Rest service to manage session(s)</entry>
+              <entry>Retrieves the details about the session(s)</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/message/*</para>
+              </entry>
+              <entry>Rest service to manage messages(s)</entry>
+              <entry>Retrieves the details about the messages(s)</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Copies, moves messages</entry>
+              <entry>Deletes messages</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/message-content/*</para>
+              </entry>
+              <entry>Rest service to retrieve message content</entry>
+              <entry>Retrieves the message content</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/logrecords</para>
+              </entry>
+              <entry>Rest service to retrieve broker logs</entry>
+              <entry>Retrieves the broker logs</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/sasl</para>
+              </entry>
+              <entry>Sasl authentication</entry>
+              <entry>Retrieves user current authentication status and broker supported SASL mechanisms</entry>
+              <entry>Authenticates user using supported SASL mechanisms</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/logout</para>
+              </entry>
+              <entry>Log outs</entry>
+              <entry>Log outs user</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
+          </tbody>
+          </tgroup>
+        </table>
+        <para>Rest URL are hierarchical. It is permitted to replace rest URL elements with an "asterisks" in GET requests to denote
+        all object of a particular type. Additionally, trailing object type in the URL hierarchy can be omitted.
+        In this case GET request will return all of the object underneath of the current object.</para>
+        <para>For example, for binding URL http://localhost:8080/rest/binding/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;
+        replacing of <emphasis>&lt;exchange&gt;</emphasis> with "asterisks" (http://localhost:8080/rest/binding/&lt;vhost&gt;/*/&lt;queue&gt;/&lt;binding&gt;)
+        will result in the GET response containing the list of bindings for all of the exchanges in the virtual host having the given name and given queue.
+        If <emphasis>&lt;binding&gt;</emphasis> and <emphasis>&lt;queue&gt;</emphasis> are omitted in binding REST URL
+        (http://localhost:8080/rest/binding/&lt;vhostname&gt;/&lt;exchangename&gt;) the GET request will result in returning 
+        all bindings for all queues for the given exchange in the virtual host.
+        </para> 
+        <example>
+        <title>Examples of queue creation using curl:</title>
+            <programlisting><![CDATA[
+#create a durable queue
+curl -X PUT  -d '{"durable":true}' http://localhost:8080/rest/queue/<vhostname>/<queuename>
+#create a durable priority queue
+curl -X PUT  -d '{"durable":true,"type":"priority"}' http://localhost:8080/rest/queue/<vhostname>/<queuename>
+            ]]></programlisting>
+        </example><example>
+        <title>Example of binding a queue to an exchange using curl</title>
+            <programlisting><![CDATA[
+curl  -X PUT  -d '{}' http://localhost:8080/rest/binding/<vhostname>/<exchangename>/<queue-name>/<binding-name>
+            ]]></programlisting>
+        </example>
+        <para>Qpid broker web management console calls rest interfaces internally to manage the broker.</para>
+    </section>
 </section>

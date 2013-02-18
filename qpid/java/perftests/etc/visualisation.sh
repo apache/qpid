@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,15 +18,18 @@
 # under the License.
 #
 
-module Qpid #:nodoc:
+# Runs the visualisation tool against perftest CSV output assumed to be in the current directory
 
-  module Version
+BASE_DIR=`dirname $0`
 
-    NUMBERS = [MAJOR = 0,
-               MINOR = 17,
-               BUILD = 0]
-  end
+# Uncomment to read perftest data from a Derby database
+# JDBC_URL=jdbcUrl=jdbc:derby:perftestResultsDb
+# JDBC_DRIVER=jdbcDriverClass=org.apache.derby.jdbc.EmbeddedDriver
 
-  VERSION = Version::NUMBERS.join('.')
-
-end
+java -cp "${BASE_DIR}:${BASE_DIR}/../../build/lib/*" \
+  -Djava.awt.headless=true -Dlog4j.configuration=file:log4j.properties \
+  -DcsvCurrentDir=. \
+  -DcsvBaselineDir=. \
+  org.apache.qpid.disttest.charting.ChartingUtil \
+  chart-defs=chartdefs \
+  ${JDBC_DRIVER} ${JDBC_URL}

@@ -298,7 +298,7 @@ system_tests = qpid-client-test quick_perftest quick_topictest run_header_test q
 TESTS += start_broker $(system_tests) python_tests stop_broker \
   run_ha_tests run_federation_tests run_federation_sys_tests \
   run_acl_tests run_cli_tests dynamic_log_level_test \
-  run_queue_flow_limit_tests ipv6_test
+  dynamic_log_hires_timestamp run_queue_flow_limit_tests ipv6_test
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -325,6 +325,7 @@ EXTRA_DIST +=								\
   ring_queue_test							\
   run_ring_queue_test							\
   dynamic_log_level_test						\
+  dynamic_log_hires_timestamp                                           \
   qpid-ctrl								\
   CMakeLists.txt							\
   windows/DisableWin32ErrorWindows.cpp					\

@@ -45,7 +45,6 @@ class ConnectionOutputHandlerPtr : public ConnectionOutputHandler
     size_t getBuffered() const { return next->getBuffered(); }
     void abort() { next->abort(); }
     void activateOutput() { next->activateOutput(); }
-    void giveReadCredit(int32_t credit) { next->giveReadCredit(credit); }
     void send(framing::AMQFrame& f) { next->send(f); }
 
   private:

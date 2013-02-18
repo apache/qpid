@@ -19,8 +19,7 @@
  * under the License.
  */
 
-
-typedef struct nx_buffer_t nx_buffer_t;
+#include <qpid/nexus/buffer.h>
 
 /**
  * The field iterator is used to access fields within a buffer chain.

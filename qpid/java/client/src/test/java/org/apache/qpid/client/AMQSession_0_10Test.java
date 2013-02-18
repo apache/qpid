@@ -597,7 +597,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         connection.setSessionFactory(new SessionFactory()
         {
 
-            public Session newSession(Connection conn, Binary name, long expiry)
+            public Session newSession(Connection conn, Binary name, long expiry, boolean isNoReplay)
             {
                 return new MockSession(conn, new SessionDelegate(), name, expiry, throwException);
             }
@@ -670,7 +670,6 @@ public class AMQSession_0_10Test extends QpidTestCase
             if (m instanceof ExchangeBound)
             {
                 ExchangeBoundResult struc = new ExchangeBoundResult();
-                struc.setQueueNotFound(true);
                 result.setValue(struc);
             }
             else if (m instanceof ExchangeQuery)

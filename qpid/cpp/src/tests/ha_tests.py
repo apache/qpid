@@ -270,7 +270,6 @@ class ReplicationTests(HaBrokerTest):
     def test_qpid_config_replication(self):
         """Set up replication via qpid-config"""
         brokers = HaCluster(self,2)
-        brokers[0].wait_status("active")
         brokers[0].config_declare("q","all")
         brokers[0].connect().session().sender("q").send("foo")
         brokers[1].assert_browse_backup("q", ["foo"])
@@ -465,8 +464,10 @@ class ReplicationTests(HaBrokerTest):
     def test_replicate_default(self):
         """Make sure we don't replicate if ha-replicate is unspecified or none"""
         cluster1 = HaCluster(self, 2, ha_replicate=None)
+        cluster1[1].wait_status("ready")
         c1 = cluster1[0].connect().session().sender("q;{create:always}")
         cluster2 = HaCluster(self, 2, ha_replicate="none")
+        cluster2[1].wait_status("ready")
         cluster2[0].connect().session().sender("q;{create:always}")
         time.sleep(.1)               # Give replication a chance.
         try:
@@ -613,8 +614,6 @@ acl deny all all
         to new members of a cluster. """
         cluster = HaCluster(self, 2)
         s = cluster[0].connect().session()
-        cluster[0].wait_status("active")
-        cluster[1].wait_status("ready")
         # altex exchange: acts as alternate exchange
         s.sender("altex;{create:always,node:{type:topic,x-declare:{type:'fanout'}}}")
         # altq queue bound to altex, collect re-routed messages.
@@ -703,15 +702,17 @@ acl deny all all
         s.sender("e1;{create:always, node:{type:topic}}")
 
         # cluster[1] will be the backup, has extra queues/exchanges
+        xdecl = "x-declare:{arguments:{'qpid.replicate':'all'}}"
+        node = "node:{%s}"%(xdecl)
         s = cluster[1].connect_admin().session()
-        s.sender("q1;{create:always}")
-        s.sender("q2;{create:always}")
-        s.sender("e1;{create:always, node:{type:topic}}")
-        s.sender("e2;{create:always, node:{type:topic}}")
+        s.sender("q1;{create:always, %s}"%(node))
+        s.sender("q2;{create:always, %s}"%(node))
+        s.sender("e1;{create:always, node:{type:topic, %s}}"%(xdecl))
+        s.sender("e2;{create:always, node:{type:topic, %s}}"%(xdecl))
         for a in ["q1", "q2", "e1", "e2"]: cluster[1].wait_backup(a)
 
         cluster[0].promote()
-        # Verify the backup deletes the surpluis queue and exchange
+        # Verify the backup deletes the surplus queue and exchange
         cluster[1].wait_status("ready")
         s = cluster[1].connect_admin().session()
         self.assertRaises(NotFound, s.receiver, ("q2"));
@@ -722,7 +723,6 @@ acl deny all all
         """Regression test for QPID-4285: on deleting a queue it gets stuck in a
         partially deleted state and causes replication errors."""
         cluster = HaCluster(self,2)
-        cluster[1].wait_status("ready")
         s = cluster[0].connect().session()
         s.receiver("q;{create:always}")
         cluster[1].wait_backup("q")
@@ -804,15 +804,14 @@ acl deny all all
         cluster[1].wait_queue("q1")
         cluster[0].kill()
         cluster[1].wait_queue("q1")    # Not timed out yet
-        cluster[1].wait_no_queue("q1") # Wait for timeout
-        cluster[1].wait_no_queue("q0")
+        cluster[1].wait_no_queue("q1", timeout=5) # Wait for timeout
+        cluster[1].wait_no_queue("q0", timeout=5) # Wait for timeout
 
     def test_alt_exchange_dup(self):
         """QPID-4349: if a queue has an alterante exchange and is deleted the
         messages appear twice on the alternate, they are rerouted once by the
         primary and again by the backup."""
         cluster = HaCluster(self,2)
-        cluster[0].wait_status("active")
 
         # Set up q with alternate exchange altex bound to altq.
         s = cluster[0].connect().session()
@@ -842,7 +841,7 @@ acl deny all all
         cluster = HaCluster(self, 2)
         s = cluster[0].connect().session()
         s.sender("keep;{create:always}") # Leave this queue in place.
-        for i in xrange(100):            # FIXME aconway 2012-10-23: ??? IS this an issue?
+        for i in xrange(1000):
             s.sender("deleteme%s;{create:always,delete:always}"%(i)).close()
         # It is possible for the backup to attempt to subscribe after the queue
         # is deleted. This is not an error, but is logged as an error on the primary.
@@ -871,12 +870,14 @@ acl deny all all
 
         # Simulate the race by re-creating the objects before promoting the new primary
         cluster.kill(0, False)
+        xdecl = "x-declare:{arguments:{'qpid.replicate':'all'}}"
+        node = "node:{%s}"%(xdecl)
         sn = cluster[1].connect_admin().session()
         sn.sender("qq;{delete:always}").close()
-        s = sn.sender("qq;{create:always}")
+        s = sn.sender("qq;{create:always, %s}"%(node))
         s.send("foo")
         sn.sender("xx;{delete:always}").close()
-        sn.sender("xx;{create:always,node:{type:topic}}")
+        sn.sender("xx;{create:always,node:{type:topic,%s}}"%(xdecl))
         cluster[1].promote()
         cluster[1].wait_status("active")
         # Verify we are not still using the old objects on cluster[2]

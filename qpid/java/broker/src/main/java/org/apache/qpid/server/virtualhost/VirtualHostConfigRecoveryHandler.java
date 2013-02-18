@@ -41,8 +41,10 @@ import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.protocol.v1_0.Message_1_0;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -75,7 +77,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     private final VirtualHost _virtualHost;
 
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
-    private final Map<Long, AbstractServerMessageImpl> _recoveredMessages = new HashMap<Long, AbstractServerMessageImpl>();
+    private final Map<Long, ServerMessage> _recoveredMessages = new HashMap<Long, ServerMessage>();
     private final Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
 
     private MessageStoreLogSubject _logSubject;
@@ -167,7 +169,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void message(StoredMessage message)
     {
-        AbstractServerMessageImpl serverMessage;
+        ServerMessage serverMessage;
         switch(message.getMetaData().getType())
         {
             case META_DATA_0_8:
@@ -175,6 +177,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 break;
             case META_DATA_0_10:
                 serverMessage = new MessageTransferMessage(message, null);
+                break;
+            case META_DATA_1_0:
+                serverMessage = new Message_1_0(message);
                 break;
             default:
                 throw new RuntimeException("Unknown message type retrieved from store " + message.getMetaData().getClass());
@@ -206,12 +211,13 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             if(queue != null)
             {
                 final long messageId = record.getMessage().getMessageNumber();
-                final AbstractServerMessageImpl message = _recoveredMessages.get(messageId);
+                final ServerMessage message = _recoveredMessages.get(messageId);
                 _unusedMessages.remove(messageId);
 
                 if(message != null)
                 {
-                    message.incrementReference();
+                    final MessageReference ref = message.newReference();
+
 
                     branch.enqueue(queue,message);
 
@@ -224,7 +230,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                             {
 
                                 queue.enqueue(message, true, null);
-                                message.decrementReference();
+                                ref.release();
                             }
                             catch (AMQException e)
                             {
@@ -236,7 +242,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
                         public void onRollback()
                         {
-                            message.decrementReference();
+                            ref.release();
                         }
                     });
                 }
@@ -265,7 +271,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             if(queue != null)
             {
                 final long messageId = record.getMessage().getMessageNumber();
-                final AbstractServerMessageImpl message = _recoveredMessages.get(messageId);
+                final ServerMessage message = _recoveredMessages.get(messageId);
                 _unusedMessages.remove(messageId);
 
                 if(message != null)

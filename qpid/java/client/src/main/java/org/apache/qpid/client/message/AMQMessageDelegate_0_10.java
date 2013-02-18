@@ -91,6 +91,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
     private MessageProperties _messageProps;
     private DeliveryProperties _deliveryProps;
+    private String _messageID;
 
     protected AMQMessageDelegate_0_10()
     {
@@ -171,8 +172,12 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
     public String getJMSMessageID() throws JMSException
     {
-        UUID id = _messageProps.getMessageId();
-        return id == null ? null : "ID:" + id;
+        if (_messageID == null && _messageProps.getMessageId() != null)
+        {
+            UUID id = _messageProps.getMessageId();
+            _messageID = "ID:" + id;
+        }
+        return _messageID;
     }
 
     public void setJMSMessageID(String messageId) throws JMSException
@@ -185,14 +190,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             if(messageId.startsWith("ID:"))
             {
-                try
-                {
-                    _messageProps.setMessageId(UUID.fromString(messageId.substring(3)));
-                }
-                catch(IllegalArgumentException ex)
-                {
-                    throw new JMSException("MessageId '"+messageId+"' is not of the correct format, it must be ID: followed by a UUID");
-                }
+                _messageID = messageId;
             }
             else
             {
@@ -201,6 +199,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
     }
 
+    /* Used by the internal implementation */
     public void setJMSMessageID(UUID messageId) throws JMSException
     {
         if(messageId == null)

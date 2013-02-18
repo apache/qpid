@@ -54,6 +54,9 @@ class ReplicatingSubscription;
  * THREAD SAFE: Concurrent calls:
  *  - enqueued() via QueueObserver in arbitrary connection threads.
  *  - attach(), cancel(), complete() from ReplicatingSubscription in subscription thread.
+ *
+ * Lock Hierarchy: ReplicatingSubscription MUS NOT call QueueGuard with it's lock held
+ * QueueGuard MAY call ReplicatingSubscription with it's lock held.
  */
 class QueueGuard {
   public:
@@ -104,18 +107,20 @@ class QueueGuard {
 
   private:
     class QueueObserver;
+    typedef std::map<framing::SequenceNumber,
+                     boost::intrusive_ptr<broker::AsyncCompletion> > Delayed;
+
+    void complete(framing::SequenceNumber, sys::Mutex::ScopedLock &);
+    void complete(Delayed::iterator, sys::Mutex::ScopedLock &);
 
     sys::Mutex lock;
     bool cancelled;
     std::string logPrefix;
     broker::Queue& queue;
-    typedef std::map<framing::SequenceNumber, boost::intrusive_ptr<broker::AsyncCompletion> > Delayed;
     Delayed delayed;
     ReplicatingSubscription* subscription;
     boost::shared_ptr<QueueObserver> observer;
     QueueRange range;
-
-    void completeRange(Delayed::iterator begin, Delayed::iterator end);
 };
 }} // namespace qpid::ha
 

@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,17 +18,20 @@
 # under the License.
 #
 
-module Qpid
+# Runs the perftests using a typical configuration.
 
-  module Messaging
+BASE_DIR=`dirname $0`
+DURATION=${1:-5000}
+AMQP_VERSION=${2:-0-91}
 
-    class KeyError < RuntimeError; end
+echo Will run perftests using a maximum duration of ${DURATION}ms and AMQP protocol version ${AMQP_VERSION}.
+echo
 
-    class SessionNameException < Exception
-      def initialize(msg); super(msg); end
-    end
-
-  end
-
-end
-
+java -cp "${BASE_DIR}:${BASE_DIR}/../../build/lib/*" \
+  -Dqpid.amqp.version=${AMQP_VERSION} -Dqpid.dest_syntax=BURL \
+  -Dqpid.disttest.duration=$DURATION \
+  org.apache.qpid.disttest.ControllerRunner \
+  jndi-config=${BASE_DIR}/perftests-jndi.properties \
+  test-config=${BASE_DIR}/testdefs \
+  distributed=false \
+  writeToDb=true

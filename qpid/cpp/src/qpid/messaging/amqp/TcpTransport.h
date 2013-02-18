@@ -49,7 +49,6 @@ class TcpTransport : public Transport
     void activateOutput();
     void abort();
     void close();
-    void giveReadCredit(int32_t) {}
 
   private:
     boost::scoped_ptr<qpid::sys::Socket> socket;

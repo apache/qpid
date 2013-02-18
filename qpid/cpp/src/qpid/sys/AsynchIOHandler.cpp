@@ -59,8 +59,7 @@ AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory
     reads(0),
     readError(false),
     isClient(isClient0),
-    nodict(nodict0),
-    readCredit(InfiniteCredit)
+    nodict(nodict0)
 {}
 
 AsynchIOHandler::~AsynchIOHandler() {
@@ -98,25 +97,11 @@ void AsynchIOHandler::abort() {
     if (!readError) {
         aio->requestCallback(boost::bind(&AsynchIOHandler::eof, this, _1));
     }
+    aio->queueWriteClose();
 }
 
 void AsynchIOHandler::activateOutput() {
     aio->notifyPendingWrite();
-}
-
-// Input side
-void AsynchIOHandler::giveReadCredit(int32_t credit) {
-    // Check whether we started in the don't about credit state
-    if (readCredit.boolCompareAndSwap(InfiniteCredit, credit))
-        return;
-    // TODO In theory should be able to use an atomic operation before taking the lock
-    // but in practice there seems to be an unexplained race in that case
-    ScopedLock<Mutex> l(creditLock);
-    if (readCredit.fetchAndAdd(credit) != 0)
-        return;
-    assert(readCredit.get() >= 0);
-    if (readCredit.get() != 0)
-        aio->startReading();
 }
 
 namespace {
@@ -131,26 +116,6 @@ namespace {
 void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (readError) {
         return;
-    }
-
-    // Check here for read credit
-    if (readCredit.get() != InfiniteCredit) {
-        if (readCredit.get() == 0) {
-            // FIXME aconway 2009-10-01:  Workaround to avoid "false wakeups".
-            // readbuff is sometimes called with no credit.
-            // This should be fixed somewhere else to avoid such calls.
-            aio->unread(buff);
-            return;
-        }
-        // TODO In theory should be able to use an atomic operation before taking the lock
-        // but in practice there seems to be an unexplained race in that case
-        ScopedLock<Mutex> l(creditLock);
-        if (--readCredit == 0) {
-            assert(readCredit.get() >= 0);
-            if (readCredit.get() == 0) {
-                aio->stopReading();
-            }
-        }
     }
 
     ++reads;

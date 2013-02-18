@@ -26,7 +26,7 @@ module Qpid
     describe Address do
 
       before(:each) do
-        @address = Qpid::Messaging::Address.new "my-name", "my-subject", :create => :always
+        @address = Qpid::Messaging::Address.new "my-name/my-subject;{create:always}"
       end
 
       it "stores the name, subject and options when created" do
@@ -72,7 +72,7 @@ module Qpid
       end
 
       it "can return a string representation" do
-        address = Qpid::Messaging::Address.new "foo", "bar", :create => :always, :link => :durable
+        address = Qpid::Messaging::Address.new "foo/bar:{create:always,link:durable}"
         result = address.to_s
 
         result.should =~ /foo\/bar/

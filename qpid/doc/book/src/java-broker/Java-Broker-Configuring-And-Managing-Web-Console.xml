@@ -21,6 +21,15 @@
 -->
 
 <section id="Java-Broker-Configuring-And-Managing-Web-Console">
-<title>Web Console</title>
-
+    <title>Web Console</title>
+    <para>If web management is enabled (see <xref linkend="Java-Broker-Configuring-And-Managing-Config-Files-Web-Management"/>) the web management console can be accessed from web browser using URL http(s)://&lt;hostname&gt;:&lt;port&gt;/management, where</para>
+    <itemizedlist>
+        <listitem><para><emphasis>hostname</emphasis> is the broker host</para></listitem>
+        <listitem><para><emphasis>port</emphasis> is the broker port(either http or https)</para></listitem>
+    </itemizedlist>
+    <para>The page like following is displayed on navigation to the management URL.</para>
+    <figure>
+      <title>Web management Console</title>
+      <graphic fileref="images/Management-Web-Console.png"/>
+    </figure>
 </section>

@@ -1,4 +1,4 @@
-#
+#--
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,41 +15,58 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
+#++
 
 module Qpid
 
   module Messaging
 
     # Encodes the supplied content into the given message.
-    def self.encode content, message, encoding = nil
-      prepared = content
-      case content
-      when Hash
-        prepared = {}
-        content.each_pair do |key,value|
-          prepared[key.to_s] = value.to_s
-        end
-        Cqpid::encode prepared, message.message_impl
-      when Array
-        prepared = []
-        content.each {|value| prepared << value.to_s}
-        Cqpid::encode prepared, message.message_impl
-      end
+    def self.encode content, message, encoding = nil # :nodoc:
+      Cqpid::encode content, message.message_impl, encoding
     end
 
     # Decodes and returns the message's content.
-    def self.decode(message, content_type = nil)
-      content_type = message.content_type unless content_type
+    def self.decode(message, content_type = nil) # :nodoc:
+      content_type = message.content_type if content_type.nil?
 
       case content_type
         when "amqp/map"
-          Cqpid.decodeMap message.message_impl
+          return Cqpid.decodeMap message.message_impl
         when "amqp/list"
-          Cqpid.decodeList message.message_impl
+          return Cqpid.decodeList message.message_impl
       end
 
       message.content
+    end
+
+    # Takes as input any type and converts anything that's a symbol
+    # into a string.
+    def self.stringify(value) # :nodoc:
+      # set the default value
+      result = value
+
+      case value
+
+      when Symbol
+        result = value.to_s
+
+      when Hash
+        result = {}
+        value.each_pair do |key, value|
+          result[stringify(key)] = stringify(value)
+        end
+
+      when Array
+        result = []
+        value.each do |element|
+          result  << stringify(element)
+        end
+
+      end
+
+      return result
+
     end
 
   end

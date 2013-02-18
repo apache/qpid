@@ -29,6 +29,7 @@
 #include "qpid/framing/TypeFilter.h"
 #include "qpid/framing/SendContent.h"
 #include "qpid/log/Statement.h"
+#include "boost/lexical_cast.hpp"
 
 using namespace qpid::framing;
 
@@ -51,7 +52,12 @@ std::string MessageTransfer::getAnnotationAsString(const std::string& key) const
 {
     const qpid::framing::MessageProperties* mp = getProperties<qpid::framing::MessageProperties>();
     if (mp && mp->hasApplicationHeaders()) {
-        return mp->getApplicationHeaders().getAsString(key);
+        FieldTable::ValuePtr value = mp->getApplicationHeaders().get(key);
+        if (value) {
+            if (value->convertsTo<std::string>()) return value->get<std::string>();
+            else if (value->convertsTo<int>()) return boost::lexical_cast<std::string>(value->get<int>());
+        }
+        return std::string();
     } else {
         return std::string();
     }

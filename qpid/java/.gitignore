@@ -18,3 +18,4 @@
 #
 *.swp
 eclipse-projects/*
+derby.log

@@ -61,7 +61,6 @@ using boost::dynamic_pointer_cast;
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : systemId(b.getSystem()->getSystemId().data()),
       settings(s),
-      replicationTest(s.replicateDefault.get()),
       broker(b),
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),

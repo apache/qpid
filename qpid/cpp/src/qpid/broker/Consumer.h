@@ -86,6 +86,8 @@ class Consumer : public QueueCursor {
      */
     virtual bool isCounted() { return true; }
 
+    QueueCursor getCursor() const { return *this; }
+    void setCursor(const QueueCursor& qc) { static_cast<QueueCursor&>(*this) = qc; }
   protected:
     //framing::SequenceNumber position;
 

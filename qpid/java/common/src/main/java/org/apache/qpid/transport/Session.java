@@ -131,19 +131,31 @@ public class Session extends SessionInvoker
     private final Object stateLock = new Object();
 
     private final AtomicBoolean _failoverRequired = new AtomicBoolean(false);
+    private boolean _isNoReplay = false;
 
     protected Session(Connection connection, Binary name, long expiry)
     {
         this(connection, new SessionDelegate(), name, expiry);
     }
 
+    protected Session(Connection connection, Binary name, long expiry, boolean noReplay)
+    {
+        this(connection, new SessionDelegate(), name, expiry, noReplay);
+    }
+
     protected Session(Connection connection, SessionDelegate delegate, Binary name, long expiry)
+    {
+        this(connection, delegate, name, expiry,false);
+    }
+
+    protected Session(Connection connection, SessionDelegate delegate, Binary name, long expiry, boolean noReplay)
     {
         this.connection = connection;
         this.delegate = delegate;
         this.name = name;
         this.expiry = expiry;
         this.closing = false;
+        this._isNoReplay = noReplay;
         initReceiver();
     }
 
@@ -281,6 +293,7 @@ public class Session extends SessionInvoker
     void resume()
     {
         _failoverRequired.set(false);
+
         synchronized (commandsLock)
         {
             attach();
@@ -739,7 +752,7 @@ public class Session extends SessionInvoker
                     sessionCommandPoint(0, 0);
                 }
 
-                boolean replayTransfer = !closing && !transacted &&
+                boolean replayTransfer = !_isNoReplay && !closing && !transacted &&
                                          m instanceof MessageTransfer &&
                                          ! m.isUnreliable();
 
