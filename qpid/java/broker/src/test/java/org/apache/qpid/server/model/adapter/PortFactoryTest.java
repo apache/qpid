@@ -38,7 +38,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.transport.AmqpPortAdapter;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class PortFactoryTest extends QpidTestCase

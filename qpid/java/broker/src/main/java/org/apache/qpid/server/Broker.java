@@ -41,9 +41,9 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 
-public class BrokerLauncher
+public class Broker
 {
-    private static final Logger LOGGER = Logger.getLogger(BrokerLauncher.class);
+    private static final Logger LOGGER = Logger.getLogger(Broker.class);
 
     private volatile Thread _shutdownHookThread;
     private volatile IApplicationRegistry _applicationRegistry;
@@ -314,7 +314,7 @@ public class BrokerLauncher
         public void run()
         {
             LOGGER.debug("Shutdown hook running");
-            BrokerLauncher.this.shutdown();
+            Broker.this.shutdown();
         }
     }
 

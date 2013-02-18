@@ -249,7 +249,7 @@ public class Main
 
     protected void startBroker(final BrokerOptions options) throws Exception
     {
-        BrokerLauncher broker = new BrokerLauncher();
+        Broker broker = new Broker();
         broker.startup(options);
     }
 

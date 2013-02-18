@@ -36,7 +36,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.transport.AmqpPortAdapter;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public class PortFactory
