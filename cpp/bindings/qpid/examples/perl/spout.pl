@@ -25,63 +25,65 @@ use Getopt::Long;
 use Pod::Usage;
 use Time::Local;
 
-my $url = "127.0.0.1";
+my $url     = "127.0.0.1";
 my $timeout = 0;
 my $count   = 1;
 my $id      = "";
 my $replyto = "";
 my @properties;
 my @entries;
-my $content = "";
+my $content           = "";
 my $connectionOptions = "";
-my $address = "amq.direct";
+my $address           = "amq.direct";
 my $help;
 
 my $result = GetOptions(
-    "broker|b=s"           => \ $url,
-    "timeout|t=i"          => \ $timeout,
-    "count|c=i"            => \ $count,
-    "id|i=s"               => \ $id,
-    "replyto=s"            => \ $replyto,
-    "property|p=s@"        => \ @properties,
-    "map|m=s@"             => \ @entries,
-    "content=s"            => \ $content,
-    "connection-options=s" => \ $connectionOptions,
-    "help|h"               => \ $help
-    ) || pod2usage(-verbose => 0);
+    "broker|b=s"           => \$url,
+    "timeout|t=i"          => \$timeout,
+    "count|c=i"            => \$count,
+    "id|i=s"               => \$id,
+    "replyto=s"            => \$replyto,
+    "property|p=s@"        => \@properties,
+    "map|m=s@"             => \@entries,
+    "content=s"            => \$content,
+    "connection-options=s" => \$connectionOptions,
+    "help|h"               => \$help
+) || pod2usage( -verbose => 0 );
 
-pod2usage(-verbose => 1) if $help;
+pod2usage( -verbose => 1 ) if $help;
 
-if ($#ARGV ge 0) {
-    $address = $ARGV[0]
+if ( $#ARGV ge 0 ) {
+    $address = $ARGV[0];
 }
 
 sub setEntries {
     my ($content) = @_;
 
     foreach (@entries) {
-        my ($name, $value) = split("=", $_);
+        my ( $name, $value ) = split( "=", $_ );
         $content->{$name} = $value;
     }
 }
-
 
 sub setProperties {
     my ($message) = @_;
 
     foreach (@properties) {
-        my ($name, $value) = split("=", $_);
-        $message->setProperty($name, $value);
+        my ( $name, $value ) = split( "=", $_ );
+        $message->setProperty( $name, $value );
     }
 }
 
-my $connection = new qpid::messaging::Connection($url, $connectionOptions);
+# create a connection object
+my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
 
 eval {
+    # open the connection, create a session and then a sender
     $connection->open();
-    my $session  = $connection->create_session();
-    my $sender = $session->create_sender($address);
+    my $session = $connection->create_session();
+    my $sender  = $session->create_sender($address);
 
+    # create a message to be sent
     my $message = new qpid::messaging::Message();
     setProperties($message) if (@properties);
     if (@entries) {
@@ -94,43 +96,48 @@ eval {
         $message->set_content_type("text/plain");
     }
 
+    # if a reply-to address was supplied, then create a receiver from the
+    # session and wait for a response to be sent
     my $receiver;
     if ($replyto) {
         my $responseQueue = new qpid::messaging::Address($replyto);
         $receiver = $session->create_receiver($responseQueue);
-        $message->setReplyTo($responseQueue);
+        $message->set_reply_to($responseQueue);
     }
 
     my $start = localtime;
-    my @s = split(/[:\s]/, $start);
-    my $s = "$s[3]$s[4]$s[5]";
-    my $n = $s;
+    my @s     = split( /[:\s]/, $start );
+    my $s     = "$s[3]$s[4]$s[5]";
+    my $n     = $s;
 
-    for (my $i = 0;
-        ($i < $count || $count == 0) and
-        ($timeout == 0 || abs($n - $s) < $timeout);
-        $i++) {
+    for (
+        my $i = 0 ;
+        ( $i < $count || $count == 0 )
+          and ( $timeout == 0 || abs( $n - $s ) < $timeout ) ;
+        $i++
+      )
+    {
 
         $sender->send($message);
 
         if ($receiver) {
+            print "Waiting for a response.\n";
             my $response = $receiver->fetch();
             print "$i -> " . $response->get_content() . "\n";
         }
 
         my $now = localtime;
-        my @n = split(/[:\s]/, $now);
-        my $n = "$n[3]$n[4]$n[5]";
+        my @n   = split( /[:\s]/, $now );
+        my $n   = "$n[3]$n[4]$n[5]";
     }
     $session->sync();
     $connection->close();
 };
 
 if ($@) {
-  $connection->close();
-  die $@;
+    $connection->close();
+    die $@;
 }
-
 
 __END__
 
@@ -148,7 +155,7 @@ spout - Send messages to the specified address
   -t VALUE, --timeout VALUE    exit after the specified time
   -c VALUE, --count VALUE      stop after count messageshave been sent, zero disables
   -i VALUE, --id VALUE         use the supplied id instead of generating one
-  --reply-to VALUE             specify reply-to value
+  --replyto VALUE              specify reply-to value
   -P VALUE, --property VALUE   specify message property
   -M VALUE, --map VALUE        specify entry for map content
   --content VALUE              specify textual content

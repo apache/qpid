@@ -43,15 +43,17 @@ x-bindings: [{ exchange: xml-exchange, key: weather, arguments: { xquery:" $quer
 }}
 END
 
-
-my $connection = new qpid::messaging::Connection($broker, $connectionOptions);
+# create a connection object
+my $connection = new qpid::messaging::Connection( $broker, $connectionOptions );
 
 eval {
+    # open the connection, then create from it a session
+    # from the session, create a receiver to handle incoming messages
     $connection->open();
     my $session = $connection->create_session();
-
     my $receiver = $session->create_receiver($address);
 
+    # create a message and set its contentn
     my $message = new qpid::messaging::Message();
 
     my $content = <<END;
@@ -64,12 +66,17 @@ eval {
 END
 
     $message->set_content($content);
+
+    # create a sender for the xml-exchange/weater topic
+    # then send the message
     my $sender = $session->create_sender('xml-exchange/weather');
     $sender->send($message);
 
+    # wait for the response and then output it to the screen
     my $response = $receiver->fetch();
     print $response->get_content() . "\n";
 
+    # close the connection
     $connection->close();
 };
 

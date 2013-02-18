@@ -23,27 +23,37 @@ use Data::Dumper;
 
 use qpid;
 
-my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $address           = ( @ARGV > 1 ) ? $ARGV[1] : "message_queue; {create: always}";
+my $url     = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
+my $address = ( @ARGV > 1 ) ? $ARGV[1] : "message_queue; {create: always}";
 my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[2] : "";
 
-my $connection = new qpid::messaging::Connection($url, $connectionOptions);
+# create a new connection object
+my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
 
 eval {
-    $connection->open();
 
+    # open the connection and create a session
+    $connection->open();
     my $session = $connection->create_session();
+
+    # create a sender and connect it to the supplied address string
     my $sender  = $session->create_sender($address);
 
+    # create a message and set the content to be a map of values
     my $message = new qpid::messaging::Message();
-    my $content = { id   => 987654321,
-                    name => "Widget",
-                    percent => sprintf("%.2f", 0.99),
-                    colours => [ qw (red green white) ],
-                   };
+    my $content = {
+        id      => 987654321,
+        name    => "Widget",
+        percent => sprintf( "%.2f", 0.99 ),
+        colours => [qw (red green white)],
+    };
     $message->set_content($content);
-    $sender->send($message, 1);
 
+    # send the message
+    $sender->send( $message, 1 );
+
+    # close the connection and session
+    $session->close();
     $connection->close();
 };
 
