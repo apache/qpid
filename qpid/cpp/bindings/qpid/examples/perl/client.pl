@@ -22,45 +22,57 @@ use warnings;
 
 use qpid;
 
-my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : "";
+my $url               = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
+my $connectionOptions = ( @ARGV > 1 )  ? $ARGV[1] : "";
 
-
-my $connection = new qpid::messaging::Connection($url, $connectionOptions);
+# creates a new connection instance
+my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
 
 eval {
-$connection->open();
-my $session = $connection->create_session();
+    # open the connection and create a session for interacting with it
+    $connection->open();
 
-my $sender = $session->create_sender("service_queue");
+    my $session = $connection->create_session();
+    my $sender  = $session->create_sender("service_queue");
 
-#create temp queue & receiver...
-my $responseQueue = new qpid::messaging::Address("#response-queue; {create:always, delete:always}");
-my $receiver = $session->create_receiver($responseQueue);
+    # create an address and receiver for incoming messages
+    # the queue will be created always, and will be deleted
+    # when the receive disconnects
+    my $responseQueue = new qpid::messaging::Address(
+        "#response-queue; {create:always, delete:always}");
+    my $receiver = $session->create_receiver($responseQueue);
 
-#Now send some messages...
+    # Now send some messages...
 
-my @s = (
-      "Twas brillig, and the slithy toves",
-      "Did gire and gymble in the wabe.",
-      "All mimsy were the borogroves,",
-      "And the mome raths outgrabe."
-     );
+    my @s = (
+        "Twas brillig, and the slithy toves",
+        "Did gire and gymble in the wabe.",
+        "All mimsy were the borogroves,",
+        "And the mome raths outgrabe."
+    );
 
-my $request = new qpid::messaging::Message();
-$request->set_reply_to($responseQueue);
-for (my $i=0; $i<4; $i++) {
-    $request->set_content($s[$i]);
-    $sender->send($request);
-    my $response = $receiver->fetch();
-    print $request->get_content() . " -> " . $response->get_content() . "\n";
-}
+    # create the message object, and set a reply-to address
+    # so that the server knows where to send responses
+    # the message object will be reused to send each line
+    my $request = new qpid::messaging::Message();
+    $request->set_reply_to($responseQueue);
+    for ( my $i = 0 ; $i < 4 ; $i++ ) {
+        $request->set_content( $s[$i] );
+        $sender->send($request);
 
-$connection->close();
+        # wait for the response to the last line sent
+        # the message will be taken directly from the
+        # broker's queue rather than waiting for it
+        # to be queued locally
+        my $response = $receiver->fetch();
+        print $request->get_content() . " -> "
+          . $response->get_content() . "\n";
+    }
+
+    # close the connection
+    $connection->close();
 };
 
 if ($@) {
     die $@;
 }
-
-
