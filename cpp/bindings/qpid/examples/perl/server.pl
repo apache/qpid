@@ -22,42 +22,62 @@ use warnings;
 
 use qpid;
 
-my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : "";
+my $url               = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
+my $connectionOptions = ( @ARGV > 1 )  ? $ARGV[1] : "";
 
-
-my $connection = new qpid::messaging::Connection($url, $connectionOptions);
+# create a connection object
+my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
 
 eval {
+
+    # connect to the broker and create a session
     $connection->open();
     my $session = $connection->create_session();
 
+    # create a receiver for accepting incoming messages
     my $receiver = $session->create_receiver("service_queue; {create: always}");
 
+    # go into an infinite loop to receive messages and process them
     while (1) {
-        my $request = $receiver->fetch();
-        my $address = $request->get_reply_to();
 
+        # wait for the next message to be processed
+        my $request = $receiver->fetch();
+
+
+        # get the address for sending replies
+        # if no address was supplised then we can't really respond, so
+        # only process when one is present
+        my $address = $request->get_reply_to();
         if ($address) {
+
+            # a temporary sender for sending to the response queue
             my $sender = $session->create_sender($address);
-            my $s = $request->get_content();
+            my $s      = $request->get_content();
             $s = uc($s);
+
+            # create the response message and send it
             my $response = new qpid::messaging::Message($s);
             $sender->send($response);
-            print "Processed request: " . $request->get_content() . " -> " . $response->get_content() . "\n";
+            print "Processed request: "
+              . $request->get_content() . " -> "
+              . $response->get_content() . "\n";
+
+            # acknowledge the message since it was processed
             $session->acknowledge();
         }
         else {
-            print "Error: no reply address specified for request: " . $request->get_content() . "\n";
+            print "Error: no reply address specified for request: "
+              . $request->get_content() . "\n";
             $session->reject($request);
         }
     }
 
-$connection->close();
+    # close connections to clean up
+    $session->close();
+    $connection->close();
 };
 
 if ($@) {
     die $@;
 }
-
 
