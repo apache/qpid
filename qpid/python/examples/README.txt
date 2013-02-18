@@ -14,6 +14,11 @@ api/spout                  -- A simple messaging client that sends
                               messages to the target specified on the
                               command line.
 
+api/send                   -- Sends messages to a specified queue.
+
+api/receive                -- Receives messages from a specified queue.
+                              Use with the send example above.
+
 api/server                 -- An example server that process incoming
                               messages and sends replies.
 
