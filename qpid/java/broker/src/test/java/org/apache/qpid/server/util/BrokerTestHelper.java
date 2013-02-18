@@ -36,7 +36,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
@@ -206,20 +205,5 @@ public class BrokerTestHelper
         return queue;
     }
 
-    public static String getTestProfileBrokerConfigurationStoreClassName()
-    {
-        final String storeClass = System.getProperty(BROKER_STORE_CLASS_NAME_KEY);
-        return storeClass != null ? storeClass : JSON_BROKER_STORE_CLASS_NAME;
-    }
-
-    @SuppressWarnings("rawtypes")
-    public static ConfigurationEntryStore createTestProfileBrokerConfigurationStore(String storeLocation) throws Exception
-    {
-        String className = getTestProfileBrokerConfigurationStoreClassName();
-        Class classObject = Class.forName(className);
-        ConfigurationEntryStore store = (ConfigurationEntryStore)classObject.newInstance();
-        store.open(storeLocation);
-        return store;
-    }
 
 }
