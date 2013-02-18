@@ -33,7 +33,6 @@ import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -42,7 +41,7 @@ public class DefaultRecovererProviderTest extends TestCase
     public void testGetRecoverer()
     {
         String[] supportedTypes = {Broker.class.getSimpleName(),
-        		VirtualHost.class.getSimpleName(), AuthenticationProvider.class.getSimpleName(),
+                VirtualHost.class.getSimpleName(), AuthenticationProvider.class.getSimpleName(),
                 GroupProvider.class.getSimpleName(), Plugin.class.getSimpleName(), Port.class.getSimpleName()};
 
         // mocking the required object

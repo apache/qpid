@@ -34,7 +34,7 @@ public interface ConfiguredObject
     /**
      * Get the universally unique identifier for the object
      *
-     * @return the object's id
+     * @return the objects id
      */
     UUID getId();
 
@@ -203,14 +203,12 @@ public interface ConfiguredObject
     /**
      * Return the value for the given attribute name. The actual attribute value
      * is returned if the configured object has such attribute set. If not, the
-     * value is looked in parent hierarchy from bottom to top. If no parent has
-     * an attribute set than the value is looked in the object default attributes.
+     * value is looked default attributes.
      *
      * @param name
      *            the name of the attribute
      * @return the value of the attribute at the object (or null if the
-     *         attribute value is set neither on object itself, no object
-     *         parents, no in defaults)
+     *         attribute value is set neither on object itself no in defaults)
      */
     Object getAttribute(String name);
 
@@ -247,7 +245,7 @@ public interface ConfiguredObject
     /**
      * Return children of the ConfiguredObject of the given class
      *
-     * @param clazz the class of the children to return.
+     * @param clazz the class of the children to return
      * @return the children
      *
      * @throws NullPointerException if the supplied class null

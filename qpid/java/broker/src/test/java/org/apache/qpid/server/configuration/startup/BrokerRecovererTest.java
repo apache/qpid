@@ -396,7 +396,7 @@ public class BrokerRecovererTest extends TestCase
                         return null;
                     }
                 };
-              
+
                 return recovever;
             }
         };

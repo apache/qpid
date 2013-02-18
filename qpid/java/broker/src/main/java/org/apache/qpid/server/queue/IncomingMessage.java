@@ -45,7 +45,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     /** Used for debugging purposes. */
     private static final Logger _logger = Logger.getLogger(IncomingMessage.class);
- 
+
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
 

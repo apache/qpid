@@ -227,5 +227,4 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
             }
         }
     }
-
 }
