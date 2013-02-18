@@ -19,7 +19,7 @@
 
 %module cqmf2
 %include "std_string.i"
-%include "swig_python_typemaps.i"
+%include "qpid/swig_python_typemaps.i"
 
 /* Define the general-purpose exception handling */
 %exception {

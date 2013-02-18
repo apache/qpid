@@ -19,7 +19,7 @@
 
 %module cqpid
 %include "std_string.i"
-%include "swig_python_typemaps.i"
+%include "qpid/swig_python_typemaps.i"
 
 /* Needed for get/setPriority methods.  Surprising SWIG 1.3.40 doesn't
  * convert uint8_t by default. */
