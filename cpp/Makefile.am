@@ -26,7 +26,7 @@ EXTRA_DIST = \
   LICENSE NOTICE README.txt SSL RELEASE_NOTES DESIGN \
   INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
   packaging/NSIS QPID_VERSION.txt bindings/CMakeLists.txt \
-  bindings/swig_python_typemaps.i bindings/swig_ruby_typemaps.i bindings/swig_perl_typemaps.i \
+  include/qpid/swig_python_typemaps.i include/qpid/swig_ruby_typemaps.i include/qpid/swig_perl_typemaps.i \
   include/qpid/qpid.i include/qmf/qmfengine.i include/qmf/qmf2.i
 
 SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings/qpid bindings/qmf2
