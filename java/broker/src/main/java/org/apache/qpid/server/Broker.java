@@ -309,6 +309,15 @@ public class Broker
         AMQShortString.clearLocalCache();
     }
 
+    public org.apache.qpid.server.model.Broker getBroker()
+    {
+        if (_applicationRegistry == null)
+        {
+            return null;
+        }
+        return _applicationRegistry.getBroker();
+    }
+
     private class ShutdownService implements Runnable
     {
         public void run()
