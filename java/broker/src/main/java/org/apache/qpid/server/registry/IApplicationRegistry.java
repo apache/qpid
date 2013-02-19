@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.registry;
 
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
 public interface IApplicationRegistry extends StatisticsGatherer
@@ -36,4 +37,5 @@ public interface IApplicationRegistry extends StatisticsGatherer
      */
     void close();
 
+    Broker getBroker();
 }
