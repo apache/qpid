@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
 
 public abstract class AbstractRootMessageLogger implements RootMessageLogger
 {
@@ -33,9 +32,9 @@ public abstract class AbstractRootMessageLogger implements RootMessageLogger
 
     }
     
-    public AbstractRootMessageLogger(ServerConfiguration config)
+    public AbstractRootMessageLogger(boolean statusUpdatesEnabled)
     {
-        _enabled = config.getStatusUpdatesEnabled();
+        _enabled = statusUpdatesEnabled;
     }
     
     public boolean isEnabled()

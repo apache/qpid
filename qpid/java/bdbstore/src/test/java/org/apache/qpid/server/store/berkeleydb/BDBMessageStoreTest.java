@@ -225,7 +225,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         messageStore.close();
 
         AbstractBDBMessageStore newStore = new BDBMessageStore();
-        newStore.configure("", _config.subset("store"));
+        newStore.configure("", getConfig().subset("store"));
 
         newStore.startWithNoRecover();
 

@@ -36,4 +36,5 @@ public interface ConfigurationChangeListener
 
     void childRemoved(ConfiguredObject object, ConfiguredObject child);
 
+    void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue);
 }

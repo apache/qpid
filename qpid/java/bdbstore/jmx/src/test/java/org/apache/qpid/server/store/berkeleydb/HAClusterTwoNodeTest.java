@@ -57,7 +57,6 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 
         assertTrue(isJavaBroker());
         assertTrue(isBrokerStorePersistent());
-        _jmxUtils.setUp();
 
         super.setUp();
     }
@@ -87,11 +86,11 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 
         String storeConfigKeyPrefix = _clusterCreator.getStoreConfigKeyPrefix();
 
-        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).name", ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT);
-        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).value", "2 s");
+        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).name", ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT);
+        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).value", "2 s");
 
-        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
-        setConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).value", "0");
+        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
+        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).value", "0");
 
         _clusterCreator.configureClusterNodes();
         _clusterCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);

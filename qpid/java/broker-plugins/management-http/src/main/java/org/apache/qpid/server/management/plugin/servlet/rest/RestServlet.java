@@ -47,29 +47,29 @@ public class RestServlet extends AbstractServlet
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
-    private volatile boolean initializationRequired = false;
-
     private final ConfiguredObjectToMapConverter _objectConverter = new ConfiguredObjectToMapConverter();
+    private final boolean _hierarchyInitializationRequired;
 
     public RestServlet()
     {
         super();
-        initializationRequired = true;
+        _hierarchyInitializationRequired = true;
     }
 
-    public RestServlet(Broker broker, Class<? extends ConfiguredObject>... hierarchy)
+    public RestServlet(Class<? extends ConfiguredObject>... hierarchy)
     {
-        super(broker);
+        super();
         _hierarchy = hierarchy;
+        _hierarchyInitializationRequired = false;
     }
 
     @Override
     public void init() throws ServletException
     {
-        if (initializationRequired)
+        super.init();
+        if (_hierarchyInitializationRequired)
         {
             doInitialization();
-            initializationRequired = false;
         }
     }
 

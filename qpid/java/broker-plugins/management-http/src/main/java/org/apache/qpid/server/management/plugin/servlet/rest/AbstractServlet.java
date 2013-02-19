@@ -28,6 +28,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -40,9 +42,9 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.HttpManagementActor;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -53,25 +55,38 @@ public abstract class AbstractServlet extends HttpServlet
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractServlet.class);
 
+    /**
+     * Servlet context attribute holding a reference to a broker instance
+     */
+    public static final String ATTR_BROKER = "Qpid.broker";
+
+    /**
+     * Servlet context attribute holding a reference to plugin configuration
+     */
+    public static final String ATTR_MANAGEMENT = "Qpid.management";
+
     private static final String ATTR_LOGIN_LOGOUT_REPORTER = "AbstractServlet.loginLogoutReporter";
     private static final String ATTR_SUBJECT = "AbstractServlet.subject";
     private static final String ATTR_LOG_ACTOR = "AbstractServlet.logActor";
 
-    private final Broker _broker;
-
+    private Broker _broker;
     private RootMessageLogger _rootLogger;
+    private HttpManagement _httpManagement;
 
     protected AbstractServlet()
     {
         super();
-        _broker = ApplicationRegistry.getInstance().getBroker();
-        _rootLogger = ApplicationRegistry.getInstance().getRootMessageLogger();
     }
 
-    protected AbstractServlet(Broker broker)
+    @Override
+    public void init() throws ServletException
     {
-        _broker = broker;
-        _rootLogger = ApplicationRegistry.getInstance().getRootMessageLogger();
+        ServletConfig servletConfig = getServletConfig();
+        ServletContext servletContext = servletConfig.getServletContext();
+        _broker = (Broker)servletContext.getAttribute(ATTR_BROKER);
+        _rootLogger = _broker.getRootMessageLogger();
+        _httpManagement = (HttpManagement)servletContext.getAttribute(ATTR_MANAGEMENT);
+        super.init();
     }
 
     @Override
@@ -263,7 +278,7 @@ public abstract class AbstractServlet extends HttpServlet
             return subject;
         }
 
-        SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
+        SubjectCreator subjectCreator = getSubjectCreator(request);
         subject = authenticate(request, subjectCreator);
         if (subject != null)
         {
@@ -293,7 +308,7 @@ public abstract class AbstractServlet extends HttpServlet
                     @Override
                     public Void run() throws Exception
                     {
-                        boolean allowed = ApplicationRegistry.getInstance().getSecurityManager().accessManagement();
+                        boolean allowed = getSecurityManager().accessManagement();
                         if (!allowed)
                         {
                             throw new AccessControlException("User is not authorised for management");
@@ -382,8 +397,8 @@ public abstract class AbstractServlet extends HttpServlet
 
     private boolean isBasicAuthSupported(HttpServletRequest req)
     {
-        return req.isSecure()  ? ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementBasicAuth()
-                               : ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementBasicAuth();
+        return req.isSecure()  ? _httpManagement.isHttpsBasicAuthenticationEnabled()
+                : _httpManagement.isHttpBasicAuthenticationEnabled();
     }
 
     private HttpManagementActor getLogActorAndCacheInSession(HttpServletRequest req)
@@ -441,5 +456,18 @@ public abstract class AbstractServlet extends HttpServlet
         return new HttpManagementActor(_rootLogger, request.getRemoteAddr(), request.getRemotePort());
     }
 
+    protected HttpManagement getManagement()
+    {
+        return _httpManagement;
+    }
 
+    protected SecurityManager getSecurityManager()
+    {
+        return _broker.getSecurityManager();
+    }
+
+    protected SubjectCreator getSubjectCreator(HttpServletRequest request)
+    {
+        return _broker.getSubjectCreator(getSocketAddress(request));
+    }
 }

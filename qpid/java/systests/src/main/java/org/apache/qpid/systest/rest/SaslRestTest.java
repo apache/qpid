@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,10 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
+import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.tools.security.Passwd;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -422,9 +427,9 @@ public class SaslRestTest extends QpidRestTestCase
         }
 
         // configure broker to use Base64MD5PasswordFilePrincipalDatabase
-        setConfigurationProperty("security.pd-auth-manager.principal-database.class",
-                "org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase");
-        setConfigurationProperty("security.pd-auth-manager.principal-database.attributes.attribute.value", passwordFile.getAbsolutePath());
-        setConfigurationProperty("management.http.sasl-auth", "true");
+        Map<String, Object> newAttributes = new HashMap<String, Object>();
+        newAttributes.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, passwordFile.getAbsolutePath());
+        newAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
     }
 }

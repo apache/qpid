@@ -53,8 +53,8 @@ public class StatisticsTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
-        createTestVirtualHost(TEST_VIRTUALHOST1);
-        createTestVirtualHost(TEST_VIRTUALHOST2);
+        createTestVirtualHost(0, TEST_VIRTUALHOST1);
+        createTestVirtualHost(0, TEST_VIRTUALHOST2);
 
         _jmxUtils = new JMXTestUtils(this, TEST_USER, TEST_PASSWORD);
         _jmxUtils.setUp();

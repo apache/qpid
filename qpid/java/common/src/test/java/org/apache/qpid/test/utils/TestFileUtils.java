@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.io.FileOutputStream;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.util.FileUtils;
@@ -109,5 +111,43 @@ public class TestFileUtils
         }
         dst.deleteOnExit();
         return dst;
+    }
+
+    /**
+     * Creates a temporary file for given test with given suffix in file name.
+     * The given content is stored in the file using UTF-8 encoding.
+     */
+    public static File createTempFile(TestCase testcase, String suffix, String content)
+    {
+        File file = createTempFile(testcase, suffix);
+        if (content != null)
+        {
+            FileOutputStream fos =  null;
+            try
+            {
+                fos = new FileOutputStream(file);
+                fos.write(content.getBytes("UTF-8"));
+                fos.flush();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Cannot add the content into temp file " + file.getAbsolutePath(), e);
+            }
+            finally
+            {
+                if (fos != null)
+                {
+                    try
+                    {
+                        fos.close();
+                    }
+                    catch (IOException e)
+                    {
+                        throw new RuntimeException("Cannot close output stream into temp file " + file.getAbsolutePath(), e);
+                    }
+                }
+            }
+        }
+        return file;
     }
 }

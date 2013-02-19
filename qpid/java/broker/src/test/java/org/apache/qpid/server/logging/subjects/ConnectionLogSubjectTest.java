@@ -20,17 +20,34 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.util.BrokerTestHelper;
+
 /**
  * Validate ConnectionLogSubjects are logged as expected
  */
 public class ConnectionLogSubjectTest extends AbstractTestLogSubject
 {
 
+    private InternalTestProtocolSession _session;
+
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _subject = new ConnectionLogSubject(getSession());
+        _session = BrokerTestHelper.createSession("test");
+        _subject = new ConnectionLogSubject(_session);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_session != null)
+        {
+            _session.getVirtualHost().close();
+        }
+        super.tearDown();
     }
 
     /**
@@ -40,7 +57,12 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
      */
     protected void validateLogStatement(String message)
     {
-        verifyConnection(getSession().getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
+        verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
+    }
+
+    public InternalTestProtocolSession getSession()
+    {
+        return _session;
     }
 
 }

@@ -22,7 +22,7 @@ package org.apache.qpid.server.security.auth.rmi;
 
 import java.net.SocketAddress;
 
-import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -42,13 +42,13 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
                         "Please ensure you are using an up to date management console to connect.";
 
-    private final IApplicationRegistry _appRegistry;
-    private final SocketAddress _socketAddress;
+    private final Broker _broker;
+    private final SocketAddress _address;
 
-    public RMIPasswordAuthenticator(IApplicationRegistry appRegistry, SocketAddress socketAddress)
+    public RMIPasswordAuthenticator(Broker broker, SocketAddress address)
     {
-        _appRegistry = appRegistry;
-        _socketAddress = socketAddress;
+        _broker = broker;
+        _address = address;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
@@ -94,10 +94,10 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        SubjectCreator subjectCreator = _appRegistry.getSubjectCreator(_socketAddress);
+        SubjectCreator subjectCreator = _broker.getSubjectCreator(_address);
         if (subjectCreator == null)
         {
-            throw new SecurityException("Can't get subject creator for " + _socketAddress);
+            throw new SecurityException("Can't get subject creator for " + _address);
         }
 
         final SubjectAuthenticationResult result = subjectCreator.authenticate(username, password);
@@ -121,7 +121,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         SecurityManager.setThreadSubject(authenticatedSubject);
         try
         {
-            if (!_appRegistry.getSecurityManager().accessManagement())
+            if (!_broker.getSecurityManager().accessManagement())
             {
                 throw new SecurityException(USER_NOT_AUTHORISED_FOR_MANAGEMENT);
             }

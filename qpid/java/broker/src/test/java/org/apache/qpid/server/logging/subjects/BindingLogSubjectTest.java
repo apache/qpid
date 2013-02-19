@@ -24,7 +24,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -38,19 +38,28 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
     private Exchange _exchange;
     private VirtualHost _testVhost;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
-                getVirtualHost("test");
-        // Configure items for subjectCreation
+        _testVhost = BrokerTestHelper.createVirtualHost("test");
         _routingKey = new AMQShortString("RoutingKey");
         _exchange = _testVhost.getExchangeRegistry().getDefaultExchange();
         _queue = new MockAMQQueue("BindingLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
         _subject = new BindingLogSubject(String.valueOf(_routingKey), _exchange, _queue);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_testVhost != null)
+        {
+            _testVhost.close();
+        }
+        super.tearDown();
     }
 
     /**

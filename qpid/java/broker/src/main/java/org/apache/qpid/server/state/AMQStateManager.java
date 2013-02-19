@@ -31,11 +31,10 @@ import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -48,32 +47,29 @@ public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
 
-    private final VirtualHostRegistry _virtualHostRegistry;
+    private final Broker _broker;
     private final AMQProtocolSession _protocolSession;
     /** The current state */
     private AMQState _currentState;
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
-    public AMQStateManager(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
+    public AMQStateManager(Broker broker, AMQProtocolSession protocolSession)
     {
-
-        _virtualHostRegistry = virtualHostRegistry;
+        _broker = broker;
         _protocolSession = protocolSession;
         _currentState = AMQState.CONNECTION_NOT_STARTED;
 
     }
 
     /**
-     * Get the ApplicationRegistry associated with this AMQStateManager
+     * Get the Broker instance
      *
-     * returns the application registry associated with the VirtualHostRegistry of the AMQStateManager
-     *
-     * @return the ApplicationRegistry
+     * @return the Broker
      */
-    public IApplicationRegistry getApplicationRegistry()
+    public Broker getBroker()
     {
-        return _virtualHostRegistry.getApplicationRegistry();
+        return _broker;
     }
 
     public AMQState getCurrentState()
@@ -149,7 +145,7 @@ public class AMQStateManager implements AMQMethodListener
 
     public VirtualHostRegistry getVirtualHostRegistry()
     {
-        return _virtualHostRegistry;
+        return _broker.getVirtualHostRegistry();
     }
 
     public AMQProtocolSession getProtocolSession()
@@ -161,6 +157,6 @@ public class AMQStateManager implements AMQMethodListener
     
     public SubjectCreator getSubjectCreator()
     {
-        return getApplicationRegistry().getSubjectCreator(getProtocolSession().getLocalAddress());
+        return _broker.getSubjectCreator(getProtocolSession().getLocalAddress());
     }
 }

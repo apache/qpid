@@ -52,6 +52,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -60,10 +61,10 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -72,7 +73,6 @@ import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -112,7 +112,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private volatile boolean _closed;
 
     // maximum number of channels this session should have
-    private long _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
+    private long _maxNoOfChannels;
 
     /* AMQP Version for this session */
     private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
@@ -152,18 +152,21 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private final Lock _receivedLock;
     private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
+    private final Broker _broker;
 
 
-    public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkConnection network, final long connectionId)
+    public AMQProtocolEngine(Broker broker, NetworkConnection network, final long connectionId)
     {
+        _broker = broker;
+        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT);
         _receivedLock = new ReentrantLock();
-        _stateManager = new AMQStateManager(virtualHostRegistry, this);
+        _stateManager = new AMQStateManager(broker, this);
         _codecFactory = new AMQCodecFactory(true, this);
 
         setNetworkConnection(network);
         _connectionID = connectionId;
 
-        _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
+        _actor = new AMQPConnectionActor(this, _broker.getRootMessageLogger());
 
         _logSubject = new ConnectionLogSubject(this);
 
@@ -370,7 +373,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             // This sets the protocol version (and hence framing classes) for this session.
             setProtocolVersion(pv);
 
-            String mechanisms = ApplicationRegistry.getInstance().getSubjectCreator(getLocalAddress()).getMechanisms();
+            String mechanisms = _broker.getSubjectCreator(getLocalAddress()).getMechanisms();
 
             String locales = "en_US";
 
@@ -761,7 +764,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         if (delay > 0)
         {
             _network.setMaxWriteIdle(delay);
-            _network.setMaxReadIdle((int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
+            _network.setMaxReadIdle(BrokerProperties.DEFAULT_HEART_BEAT_TIMEOUT_FACTOR * delay);
         }
     }
 

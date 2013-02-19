@@ -26,7 +26,7 @@ import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -69,7 +69,7 @@ public class FileGroupManagerTest extends QpidTestCase
             _manager = new FileGroupManager(filePath);
             fail("expected exception was not thrown");
         }
-        catch(ConfigurationException ce)
+        catch(IllegalConfigurationException ce)
         {
             assertNotNull(ce.getCause());
             assertTrue(ce.getCause() instanceof FileNotFoundException);

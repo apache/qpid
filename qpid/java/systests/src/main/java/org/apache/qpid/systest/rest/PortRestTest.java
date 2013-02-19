@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class PortRestTest extends QpidRestTestCase
 {
@@ -32,22 +33,24 @@ public class PortRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("/rest/port/");
         assertNotNull("Port data cannot be null", ports);
-        assertEquals("Unexpected number of ports", 2, ports.size());
-        int[] expectedPorts = { getPort(), getRestTestHelper().getHttpPort() };
-        for (int port : expectedPorts)
-        {
-            String portName = "0.0.0.0:" + port;
-            Map<String, Object> portData = getRestTestHelper().find(Port.NAME, portName, ports);
-            assertNotNull("Port " + portName + " is not found", portData);
-            Asserts.assertPortAttributes(portData);
-        }
+        assertEquals("Unexpected number of ports", 4, ports.size());
+
+        String httpPortName = TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT;
+        Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
+        assertNotNull("Http port " + httpPortName + " is not found", portData);
+        Asserts.assertPortAttributes(portData);
+
+        String amqpPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> amqpPortData = getRestTestHelper().find(Port.NAME, amqpPortName, ports);
+        assertNotNull("Amqp port " + amqpPortName + " is not found", amqpPortData);
+        Asserts.assertPortAttributes(amqpPortData);
     }
 
     public void testGetPort() throws Exception
     {
         List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("/rest/port/");
         assertNotNull("Ports data cannot be null", ports);
-        assertEquals("Unexpected number of ports", 2, ports.size());
+        assertEquals("Unexpected number of ports", 4, ports.size());
         for (Map<String, Object> portMap : ports)
         {
             String portName = (String) portMap.get(Port.NAME);

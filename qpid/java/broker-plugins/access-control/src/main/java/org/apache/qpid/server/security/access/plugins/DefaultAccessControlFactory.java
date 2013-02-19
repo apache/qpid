@@ -20,28 +20,40 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
+import java.io.File;
+import java.util.Map;
+
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.security.AccessControl;
 
 public class DefaultAccessControlFactory implements AccessControlFactory
 {
-    public AccessControl createInstance(Configuration securityConfiguration)
-    {
-        String aclConfiguration = securityConfiguration.getString("acl");
-        if(aclConfiguration == null)
-        {
-            return null;
-        }
+    public static final String ATTRIBUTE_ACL_FILE = "aclFile";
 
-        try
+    public AccessControl createInstance(Map<String, Object> aclConfiguration)
+    {
+        if (aclConfiguration != null)
         {
-            return new DefaultAccessControl(aclConfiguration);
+            Object aclFile = aclConfiguration.get(ATTRIBUTE_ACL_FILE);
+            if (aclFile != null)
+            {
+                if (aclFile instanceof String)
+                {
+                    String aclPath = (String) aclFile;
+                    if (!new File(aclPath).exists())
+                    {
+                        throw new IllegalConfigurationException("ACL file '" + aclPath + "' is not found");
+                    }
+                    return new DefaultAccessControl(aclPath);
+                }
+                else
+                {
+                    throw new IllegalConfigurationException("Expected '" + ATTRIBUTE_ACL_FILE + "' attribute value of type String but was " + aclFile.getClass()
+                            + ": " + aclFile);
+                }
+            }
         }
-        catch (ConfigurationException e)
-        {
-            throw new RuntimeException("caught exception during instance creation", e);
-        }
+        return null;
     }
 }

@@ -30,8 +30,9 @@ import org.apache.qpid.framing.ConnectionSecureOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
@@ -58,6 +59,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
 
     public void methodReceived(AMQStateManager stateManager, ConnectionSecureOkBody body, int channelId) throws AMQException
     {
+        Broker broker = stateManager.getBroker();
         AMQProtocolSession session = stateManager.getProtocolSession();
 
         SubjectCreator subjectCreator = stateManager.getSubjectCreator();
@@ -96,9 +98,9 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
                 ConnectionTuneBody tuneBody =
-                        methodRegistry.createConnectionTuneBody(ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount(),
-                                                                ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
-                                                                ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
+                        methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT),
+                                                                BrokerProperties.DEFAULT_FRAME_SIZE,
+                                                                (Integer)broker.getAttribute(Broker.HEART_BEAT_DELAY));
                 session.writeFrame(tuneBody.generateFrame(0));
                 session.setAuthorizedSubject(authResult.getSubject());
                 disposeSaslServer(session);

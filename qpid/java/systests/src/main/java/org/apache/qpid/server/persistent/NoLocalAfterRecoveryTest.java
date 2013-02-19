@@ -39,7 +39,7 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
  */
 public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase
 {
-    protected final String MY_TOPIC_SUBSCRIPTION_NAME = this.getName();
+    protected final String MY_TOPIC_SUBSCRIPTION_NAME = getTestQueueName();
     protected static final int SEND_COUNT = 10;
 
     public void testNoLocalNotQueued() throws Exception

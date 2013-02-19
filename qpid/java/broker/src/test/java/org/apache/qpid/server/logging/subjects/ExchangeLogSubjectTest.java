@@ -21,7 +21,7 @@
 package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 
@@ -33,15 +33,25 @@ public class ExchangeLogSubjectTest extends AbstractTestLogSubject
     private Exchange _exchange;
     private VirtualHost _testVhost;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
-                getVirtualHost("test");
+        _testVhost = BrokerTestHelper.createVirtualHost("test");
 
         _exchange = _testVhost.getExchangeRegistry().getDefaultExchange();
         _subject = new ExchangeLogSubject(_exchange,_testVhost);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_testVhost != null)
+        {
+            _testVhost.close();
+        }
+        super.tearDown();
     }
 
     /**

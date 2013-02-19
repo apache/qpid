@@ -315,7 +315,7 @@ public abstract class AbstractConfiguration
         }
     }
 
-    public String escapeTagName(String name)
+    public static String escapeTagName(String name)
     {
         return name.replaceAll("\\.", "\\.\\.");
     }

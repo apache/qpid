@@ -27,6 +27,7 @@ import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPrepare
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_WITH_DLQ_NAME;
 
 import java.io.File;
+import java.io.InputStream;
 
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
@@ -111,10 +112,24 @@ public abstract class AbstractUpgradeTestCase extends QpidTestCase
 
     private File copyStore(String storeDirectoryName) throws Exception
     {
-        String src = getClass().getClassLoader().getResource("upgrade/" + storeDirectoryName).toURI().getPath();
         File storeLocation = new File(new File(TMP_FOLDER), "test-store");
         deleteDirectoryIfExists(storeLocation);
-        FileUtils.copyRecursive(new File(src), new File(TMP_FOLDER));
+        storeLocation.mkdirs();
+        int index = 0;
+        String prefix = "0000000";
+        String extension = ".jdb";
+        InputStream is = null;
+        do
+        {
+            String fileName = prefix + index + extension;
+            is = getClass().getClassLoader().getResourceAsStream("upgrade/" + storeDirectoryName + "/test-store/" + fileName);
+            if (is != null)
+            {
+                FileUtils.copy(is, new File(storeLocation, fileName));
+            }
+            index++;
+        }
+        while (is != null);
         return storeLocation;
     }
 

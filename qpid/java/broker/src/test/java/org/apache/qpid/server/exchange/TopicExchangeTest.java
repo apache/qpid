@@ -31,36 +31,49 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TopicExchangeTest extends InternalBrokerBaseCase
+public class TopicExchangeTest extends QpidTestCase
 {
 
     private TopicExchange _exchange;
-
     private VirtualHost _vhost;
     private MessageStore _store;
-
-    private InternalTestProtocolSession _protocolSession;
 
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
         _exchange = new TopicExchange();
-        _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
+        _vhost = BrokerTestHelper.createVirtualHost(getName());
         _store = new MemoryMessageStore();
-        _protocolSession = new InternalTestProtocolSession(_vhost);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_vhost != null)
+            {
+                _vhost.close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     public void testNoRoute() throws AMQException

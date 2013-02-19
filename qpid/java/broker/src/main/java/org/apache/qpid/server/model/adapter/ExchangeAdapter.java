@@ -35,14 +35,13 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apache.qpid.server.exchange.Exchange.BindingListener
@@ -57,7 +56,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
-        super(exchange.getId());
+        super(exchange.getId(), virtualHostAdapter.getTaskExecutor());
         _statistics = new ExchangeStatistics();
         _vhost = virtualHostAdapter;
         _exchange = exchange;
@@ -113,8 +112,8 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
             throws AccessControlException, IllegalStateException
     {
         attributes = new HashMap<String, Object>(attributes);
-        String bindingKey = getStringAttribute(org.apache.qpid.server.model.Binding.NAME, attributes, "");
-        Map<String, Object> bindingArgs = getMapAttribute(org.apache.qpid.server.model.Binding.ARGUMENTS, attributes, Collections.EMPTY_MAP);
+        String bindingKey = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Binding.NAME, attributes, "");
+        Map<String, Object> bindingArgs = MapValueConverter.getMapAttribute(org.apache.qpid.server.model.Binding.ARGUMENTS, attributes, Collections.<String,Object>emptyMap());
 
         attributes.remove(org.apache.qpid.server.model.Binding.NAME);
         attributes.remove(org.apache.qpid.server.model.Binding.ARGUMENTS);
@@ -257,7 +256,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == org.apache.qpid.server.model.Binding.class)
         {
@@ -369,28 +368,20 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     }
 
     @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO - Implement
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         return AVAILABLE_ATTRIBUTES;
     }
 
     @Override
-    public State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
-            AccessControlException
+    protected boolean setState(State currentState, State desiredState)
     {
         if (desiredState == State.DELETED)
         {
             delete();
-            return State.DELETED;
+            return true;
         }
-        return super.setDesiredState(currentState, desiredState);
+        return false;
     }
 
     private class ExchangeStatistics implements Statistics

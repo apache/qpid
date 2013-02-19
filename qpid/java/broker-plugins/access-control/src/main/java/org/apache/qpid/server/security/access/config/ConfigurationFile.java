@@ -22,7 +22,7 @@ package org.apache.qpid.server.security.access.config;
 
 import java.io.File;
 
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 
 public interface ConfigurationFile
 {
@@ -33,19 +33,17 @@ public interface ConfigurationFile
     
     /**
      * Load this configuration file's contents into a {@link RuleSet}.
-     * 
-     * @throws ConfigurationException if the configuration file has errors.
+     * @throws IllegalConfigurationException if the configuration file has errors.
      * @throws IllegalArgumentException if individual tokens cannot be parsed.
      */
-    RuleSet load() throws ConfigurationException;
+    RuleSet load() throws IllegalConfigurationException;
     
     /**
      * Reload this configuration file's contents.
-     * 
-     * @throws ConfigurationException if the configuration file has errors.
+     * @throws IllegalConfigurationException if the configuration file has errors.
      * @throws IllegalArgumentException if individual tokens cannot be parsed.
      */
-    RuleSet reload() throws ConfigurationException;
+    RuleSet reload() throws IllegalConfigurationException;
         
     RuleSet getConfiguration();
     

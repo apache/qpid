@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 /**
@@ -49,7 +49,7 @@ public class FileGroupManager implements GroupManager
     private final FileGroupDatabase _groupDatabase;
 
 
-    public FileGroupManager(String groupFile) throws ConfigurationException
+    public FileGroupManager(String groupFile)
     {
         _groupDatabase = new FileGroupDatabase();
         try
@@ -58,7 +58,7 @@ public class FileGroupManager implements GroupManager
         }
         catch (IOException e)
         {
-            throw new ConfigurationException("Unable to set group file " + groupFile, e);
+            throw new IllegalConfigurationException("Unable to set group file " + groupFile, e);
         }
     }
 

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -30,14 +30,24 @@ public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
 {
     private VirtualHost _testVhost;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
-                getVirtualHost("test");
+        _testVhost = BrokerTestHelper.createVirtualHost("test");
 
         _subject = new MessageStoreLogSubject(_testVhost, _testVhost.getMessageStore().getClass().getSimpleName());
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_testVhost != null)
+        {
+            _testVhost.close();
+        }
+        super.tearDown();
     }
 
     /**

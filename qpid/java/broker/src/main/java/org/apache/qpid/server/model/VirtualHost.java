@@ -21,6 +21,9 @@
 package org.apache.qpid.server.model;
 
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.MessageStore;
+
 import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,12 +67,12 @@ public interface VirtualHost extends ConfiguredObject
     String MAXIMUM_DELIVERY_ATTEMPTS            = "maximumDeliveryAttempts";
     String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queueFlowControlSizeBytes";
     String QUEUE_FLOW_RESUME_SIZE_BYTES         = "queueFlowResumeSizeBytes";
-    String STORE_CONFIGURATION                  = "storeConfiguration";
     String STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "storeTransactionIdleTimeoutClose";
     String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
     String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
     String STORE_TYPE                           = "storeType";
+    String STORE_PATH                           = "storePath";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String CREATED                              = "created";
@@ -80,6 +83,8 @@ public interface VirtualHost extends ConfiguredObject
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
     String UPDATED                              = "updated";
+    String CONFIG_PATH                          = "configPath";
+
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -100,7 +105,7 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_FLOW_CONTROL_SIZE_BYTES,
                             QUEUE_FLOW_RESUME_SIZE_BYTES,
                             STORE_TYPE,
-                            STORE_CONFIGURATION,
+                            STORE_PATH,
                             STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
                             STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                             STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
@@ -109,7 +114,8 @@ public interface VirtualHost extends ConfiguredObject
                             ALERT_THRESHOLD_MESSAGE_AGE,
                             ALERT_THRESHOLD_MESSAGE_SIZE,
                             ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
+                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                            CONFIG_PATH));
 
 
 
@@ -147,4 +153,12 @@ public interface VirtualHost extends ConfiguredObject
     }
 
     void executeTransaction(TransactionalOperation op);
+
+    /**
+     * A temporary hack to expose host security manager.
+     * TODO We need to add and implement an authorization provider configured object instead
+     */
+    SecurityManager getSecurityManager();
+
+    MessageStore getMessageStore();
 }

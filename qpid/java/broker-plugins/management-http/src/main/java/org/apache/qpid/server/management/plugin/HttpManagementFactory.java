@@ -18,37 +18,24 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.ManagementFactory;
+import java.util.Map;
+import java.util.UUID;
 
-public class HttpManagementFactory implements ManagementFactory
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.plugin.PluginFactory;
+
+public class HttpManagementFactory implements PluginFactory
 {
-    private static final Logger LOGGER = Logger.getLogger(HttpManagementFactory.class);
 
     @Override
-    public HttpManagement createInstance(ServerConfiguration configuration, Broker broker)
+    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
-
-        if (!configuration.getHTTPManagementEnabled() && !configuration.getHTTPSManagementEnabled())
+        if (!HttpManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
         {
-            LOGGER.info("HttpManagement is disabled");
             return null;
         }
 
-        try
-        {
-            return new HttpManagement(
-                    broker,
-                    configuration.getManagementKeyStorePath(),
-                    configuration.getManagementKeyStorePassword(),
-                    configuration.getHTTPManagementSessionTimeout());
-        }
-        catch (ConfigurationException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new HttpManagement(id, broker, attributes);
     }
 }

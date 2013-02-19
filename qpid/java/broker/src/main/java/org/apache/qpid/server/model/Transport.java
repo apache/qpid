@@ -20,8 +20,32 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.EnumSet;
+
 public enum Transport
 {
     TCP,
-    SSL
+    SSL;
+
+    public static Transport valueOfObject(Object transportObject)
+    {
+        Transport transport;
+        if (transportObject instanceof Transport)
+        {
+            transport = (Transport) transportObject;
+        }
+        else
+        {
+            try
+            {
+                transport = Transport.valueOf(String.valueOf(transportObject));
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("Can't convert '" + transportObject
+                        + "' to one of the supported transports: " + EnumSet.allOf(Transport.class), e);
+            }
+        }
+        return transport;
+    }
 }

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.failover;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -33,16 +32,12 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestUtils;
-import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.FileUtils;
 
 public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements ConnectionListener
@@ -90,10 +85,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
             }
             _brokerPorts[i] = port;
 
-            XMLConfiguration testConfiguration = new XMLConfiguration();
-            testConfiguration.addProperty("management.enabled", "false");
-
-            XMLConfiguration testVirtualhosts = new XMLConfiguration();
+            createBrokerConfiguration(port);
             String host = null;
             if (i == 1 || i == _brokerPorts.length - 1)
             {
@@ -103,13 +95,9 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
             {
                 host = NON_FAILOVER_VIRTUAL_HOST;
             }
-            testVirtualhosts.addProperty("virtualhost.name", host);
-            testVirtualhosts.addProperty("virtualhost." + host + ".store.class", getTestProfileMessageStoreClassName());
-            testVirtualhosts.addProperty(
-                    "virtualhost." + host + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, "${QPID_WORK}/"
-                            + host);
+            createTestVirtualHost(port, host);
 
-            startBroker(port, testConfiguration, testVirtualhosts);
+            startBroker(port);
             revertSystemProperties();
         }
 
@@ -119,6 +107,11 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
         ((AMQConnection) _connection).setConnectionListener(this);
         _failoverComplete = new CountDownLatch(1);
         _failoverStarted = new CountDownLatch(1);
+    }
+
+    public void startBroker() throws Exception
+    {
+        // noop, prevent the broker startup in super.setUp()
     }
 
     private String generateUrlString(int numBrokers)
@@ -163,10 +156,6 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
         }
     }
 
-    public void startBroker() throws Exception
-    {
-        // noop, stop starting broker in super.tearDown()
-    }
 
     public void testFailoverOnBrokerKill() throws Exception
     {

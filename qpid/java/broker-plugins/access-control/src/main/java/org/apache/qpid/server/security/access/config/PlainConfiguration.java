@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
@@ -73,7 +73,7 @@ public class PlainConfiguration extends AbstractConfiguration
     }
 
     @Override
-    public RuleSet load() throws ConfigurationException
+    public RuleSet load()
     {
         RuleSet ruleSet = super.load();
 
@@ -127,7 +127,7 @@ public class PlainConfiguration extends AbstractConfiguration
                         stack.removeElementAt(0);
                         if (stack.isEmpty())
                         {
-                            throw new ConfigurationException(String.format(NOT_ENOUGH_TOKENS_MSG, getLine()));
+                            throw new IllegalConfigurationException(String.format(NOT_ENOUGH_TOKENS_MSG, getLine()));
                         }
 
                         // check for and parse optional initial number for ACL lines
@@ -148,7 +148,7 @@ public class PlainConfiguration extends AbstractConfiguration
                         {
                             if(StringUtils.equalsIgnoreCase("GROUP", first))
                             {
-                                throw new ConfigurationException(String.format("GROUP keyword not supported. Groups should defined via a Group Provider, not in the ACL file.", getLine()));
+                                throw new IllegalConfigurationException(String.format("GROUP keyword not supported. Groups should defined via a Group Provider, not in the ACL file.", getLine()));
                             }
                             else if (StringUtils.equalsIgnoreCase(CONFIG, first))
                             {
@@ -156,12 +156,12 @@ public class PlainConfiguration extends AbstractConfiguration
                             }
                             else
                             {
-                                throw new ConfigurationException(String.format(UNRECOGNISED_INITIAL_MSG, first, getLine()));
+                                throw new IllegalConfigurationException(String.format(UNRECOGNISED_INITIAL_MSG, first, getLine()));
                             }
                         }
                         else
                         {
-                            throw new ConfigurationException(String.format(NUMBER_NOT_ALLOWED_MSG, first, getLine()));
+                            throw new IllegalConfigurationException(String.format(NUMBER_NOT_ALLOWED_MSG, first, getLine()));
                         }
 
                         // reset stack, start next line
@@ -183,7 +183,7 @@ public class PlainConfiguration extends AbstractConfiguration
                             }
 
                             // invalid location for continuation character (add one to line beacuse we ate the EOL)
-                            throw new ConfigurationException(String.format(PREMATURE_CONTINUATION_MSG, getLine() + 1));
+                            throw new IllegalConfigurationException(String.format(PREMATURE_CONTINUATION_MSG, getLine() + 1));
                         }
                         else if (_st.ttype == '\'' || _st.ttype == '"')
                         {
@@ -198,20 +198,20 @@ public class PlainConfiguration extends AbstractConfiguration
 
             if (!stack.isEmpty())
             {
-                throw new ConfigurationException(String.format(PREMATURE_EOF_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PREMATURE_EOF_MSG, getLine()));
             }
         }
         catch (IllegalArgumentException iae)
         {
-            throw new ConfigurationException(String.format(PARSE_TOKEN_FAILED_MSG, getLine()), iae);
+            throw new IllegalConfigurationException(String.format(PARSE_TOKEN_FAILED_MSG, getLine()), iae);
         }
         catch (FileNotFoundException fnfe)
         {
-            throw new ConfigurationException(String.format(CONFIG_NOT_FOUND_MSG, file.getName()), fnfe);
+            throw new IllegalConfigurationException(String.format(CONFIG_NOT_FOUND_MSG, file.getName()), fnfe);
         }
         catch (IOException ioe)
         {
-            throw new ConfigurationException(String.format(CANNOT_LOAD_MSG, file.getName()), ioe);
+            throw new IllegalConfigurationException(String.format(CANNOT_LOAD_MSG, file.getName()), ioe);
         }
         finally
         {
@@ -223,7 +223,7 @@ public class PlainConfiguration extends AbstractConfiguration
                 }
                 catch (IOException e)
                 {
-                    throw new ConfigurationException(String.format(CANNOT_CLOSE_MSG, file.getName()), e);
+                    throw new IllegalConfigurationException(String.format(CANNOT_CLOSE_MSG, file.getName()), e);
                 }
             }
         }
@@ -232,11 +232,11 @@ public class PlainConfiguration extends AbstractConfiguration
         return ruleSet;
     }
 
-    private void parseAcl(Integer number, List<String> args) throws ConfigurationException
+    private void parseAcl(Integer number, List<String> args)
     {
         if (args.size() < 3)
         {
-            throw new ConfigurationException(String.format(NOT_ENOUGH_ACL_MSG, getLine()));
+            throw new IllegalConfigurationException(String.format(NOT_ENOUGH_ACL_MSG, getLine()));
         }
 
         Permission permission = Permission.parse(args.get(0));
@@ -245,7 +245,7 @@ public class PlainConfiguration extends AbstractConfiguration
 
         if (number != null && !getConfiguration().isValidNumber(number))
         {
-            throw new ConfigurationException(String.format(BAD_ACL_RULE_NUMBER_MSG, getLine()));
+            throw new IllegalConfigurationException(String.format(BAD_ACL_RULE_NUMBER_MSG, getLine()));
         }
 
         if (args.size() == 3)
@@ -261,11 +261,11 @@ public class PlainConfiguration extends AbstractConfiguration
         }
     }
 
-    private void parseConfig(List<String> args) throws ConfigurationException
+    private void parseConfig(List<String> args)
     {
         if (args.size() < 3)
         {
-            throw new ConfigurationException(String.format(NOT_ENOUGH_CONFIG_MSG, getLine()));
+            throw new IllegalConfigurationException(String.format(NOT_ENOUGH_CONFIG_MSG, getLine()));
         }
 
         Map<String, Boolean> properties = toPluginProperties(args);
@@ -273,7 +273,7 @@ public class PlainConfiguration extends AbstractConfiguration
         getConfiguration().configure(properties);
     }
 
-    private AclRulePredicates toRulePredicates(List<String> args) throws ConfigurationException
+    private AclRulePredicates toRulePredicates(List<String> args)
     {
         AclRulePredicates predicates = new AclRulePredicates();
         Iterator<String> i = args.iterator();
@@ -282,15 +282,15 @@ public class PlainConfiguration extends AbstractConfiguration
             String key = i.next();
             if (!i.hasNext())
             {
-                throw new ConfigurationException(String.format(PROPERTY_KEY_ONLY_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PROPERTY_KEY_ONLY_MSG, getLine()));
             }
             if (!"=".equals(i.next()))
             {
-                throw new ConfigurationException(String.format(PROPERTY_NO_EQUALS_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PROPERTY_NO_EQUALS_MSG, getLine()));
             }
             if (!i.hasNext())
             {
-                throw new ConfigurationException(String.format(PROPERTY_NO_VALUE_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PROPERTY_NO_VALUE_MSG, getLine()));
             }
             String value = i.next();
 
@@ -300,7 +300,7 @@ public class PlainConfiguration extends AbstractConfiguration
     }
 
     /** Converts a {@link List} of "name", "=", "value" tokens into a {@link Map}. */
-    protected Map<String, Boolean> toPluginProperties(List<String> args) throws ConfigurationException
+    protected Map<String, Boolean> toPluginProperties(List<String> args)
     {
         Map<String, Boolean> properties = new HashMap<String, Boolean>();
         Iterator<String> i = args.iterator();
@@ -309,15 +309,15 @@ public class PlainConfiguration extends AbstractConfiguration
             String key = i.next().toLowerCase();
             if (!i.hasNext())
             {
-                throw new ConfigurationException(String.format(PROPERTY_KEY_ONLY_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PROPERTY_KEY_ONLY_MSG, getLine()));
             }
             if (!"=".equals(i.next()))
             {
-                throw new ConfigurationException(String.format(PROPERTY_NO_EQUALS_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PROPERTY_NO_EQUALS_MSG, getLine()));
             }
             if (!i.hasNext())
             {
-                throw new ConfigurationException(String.format(PROPERTY_NO_VALUE_MSG, getLine()));
+                throw new IllegalConfigurationException(String.format(PROPERTY_NO_VALUE_MSG, getLine()));
             }
 
             // parse property value and save

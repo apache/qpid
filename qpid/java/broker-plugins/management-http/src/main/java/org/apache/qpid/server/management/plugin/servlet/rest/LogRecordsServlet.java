@@ -26,8 +26,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -35,12 +33,7 @@ public class LogRecordsServlet extends AbstractServlet
 {
     public LogRecordsServlet()
     {
-        super(ApplicationRegistry.getInstance().getBroker());
-    }
-
-    public LogRecordsServlet(Broker broker)
-    {
-        super(broker);
+        super();
     }
 
     @Override
@@ -53,10 +46,10 @@ public class LogRecordsServlet extends AbstractServlet
         response.setHeader("Pragma","no-cache");
         response.setDateHeader ("Expires", 0);
 
-        ApplicationRegistry applicationRegistry = (ApplicationRegistry) ApplicationRegistry.getInstance();
         List<Map<String,Object>> logRecords = new ArrayList<Map<String, Object>>();
 
-        for(LogRecorder.Record record : applicationRegistry.getLogRecorder())
+        LogRecorder logRecorder = getBroker().getLogRecorder();
+        for(LogRecorder.Record record : logRecorder)
         {
             logRecords.add(logRecordToObject(record));
         }

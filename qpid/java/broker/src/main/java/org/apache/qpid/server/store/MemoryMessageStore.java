@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 public class MemoryMessageStore extends NullMessageStore
 {
+    public static final String TYPE = "Memory";
     private final AtomicLong _messageId = new AtomicLong(1);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
 
@@ -138,6 +139,6 @@ public class MemoryMessageStore extends NullMessageStore
     @Override
     public String getStoreType()
     {
-        return "Memory";
+        return TYPE;
     }
 }
