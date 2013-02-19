@@ -24,4 +24,7 @@ public interface TestSSLConstants
     String KEYSTORE_PASSWORD = "password";
     String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
     String TRUSTSTORE_PASSWORD = "password";
+
+    String BROKER_KEYSTORE = "test-profiles/test_resources/ssl/java_broker_keystore.jks";
+    String BROKER_KEYSTORE_PASSWORD = "password";
 }

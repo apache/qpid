@@ -30,6 +30,7 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
+
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +55,9 @@ public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
         //debug level logging often makes this test pass artificially, turn the level down to info.
         setSystemProperty("amqj.server.logging.level", "INFO");
         _receivedLatch = new CountDownLatch(MESSAGE_COUNT * NUM_PRODUCERS);
-        setConfigurationProperty("management.enabled", "true");
+
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         super.setUp();
         _queueName = getTestQueueName();
         _failMsg = null;

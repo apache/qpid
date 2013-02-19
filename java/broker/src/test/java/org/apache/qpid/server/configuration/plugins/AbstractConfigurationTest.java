@@ -24,7 +24,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ import java.util.List;
  * Test that verifies that given a Configuration a ConfigurationPlugin can
  * process and validate that data.
  */
-public class AbstractConfigurationTest extends InternalBrokerBaseCase
+public class AbstractConfigurationTest extends QpidTestCase
 {
     private static final double DOUBLE = 3.14;
     private static final long POSITIVE_LONG = 1000;

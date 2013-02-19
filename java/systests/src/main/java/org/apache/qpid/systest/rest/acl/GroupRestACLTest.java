@@ -28,8 +28,11 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class GroupRestACLTest extends QpidRestTestCase
 {
@@ -49,12 +52,16 @@ public class GroupRestACLTest extends QpidRestTestCase
     public void setUp() throws Exception
     {
         _groupFile = createTemporaryGroupFile();
-
-        setConfigurationProperty("management.http.basic-auth", "true");
-        setConfigurationProperty("security.file-group-manager.attributes.attribute.name", "groupFile");
-        setConfigurationProperty("security.file-group-manager.attributes.attribute.value", _groupFile.getAbsolutePath());
+        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
 
         //DONT call super.setUp(), the tests will start the broker after configuring it
+    }
+
+    @Override
+    protected void customizeConfiguration() throws ConfigurationException, IOException
+    {
+        super.customizeConfiguration();
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpBasicAuthenticationEnabled", true);
     }
 
     @Override

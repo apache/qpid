@@ -28,8 +28,11 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
@@ -49,14 +52,18 @@ public class UserRestACLTest extends QpidRestTestCase
     public void setUp() throws Exception
     {
         _groupFile = createTemporaryGroupFile();
-
-        setConfigurationProperty("management.http.basic-auth", "true");
-        setConfigurationProperty("security.file-group-manager.attributes.attribute.name", "groupFile");
-        setConfigurationProperty("security.file-group-manager.attributes.attribute.value", _groupFile.getAbsolutePath());
+        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
 
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER, OTHER_USER);
 
         //DONT call super.setUp(), the tests will start the broker after configuring it
+    }
+
+    @Override
+    protected void customizeConfiguration() throws ConfigurationException, IOException
+    {
+        super.customizeConfiguration();
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpBasicAuthenticationEnabled", true);
     }
 
     @Override
@@ -163,7 +170,8 @@ public class UserRestACLTest extends QpidRestTestCase
     private void checkPassword(String username, String password, boolean passwordExpectedToBeCorrect) throws IOException
     {
         getRestTestHelper().setUsernameAndPassword(username, password);
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/user/PrincipalDatabaseAuthenticationManager/", "GET");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/", "GET");
 
         boolean passwordIsCorrect = connection.getResponseCode() == HttpServletResponse.SC_OK;
 
@@ -174,14 +182,14 @@ public class UserRestACLTest extends QpidRestTestCase
 
     private void assertUserDoesNotExist(String newUser) throws JsonParseException, JsonMappingException, IOException
     {
-        String path = "/rest/user/PrincipalDatabaseAuthenticationManager/" + newUser;
+        String path = "/rest/user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + newUser;
         List<Map<String, Object>> userDetailsList = getRestTestHelper().getJsonAsList(path);
         assertTrue(userDetailsList.isEmpty());
     }
 
     private void assertUserExists(String username) throws IOException
     {
-        String path = "/rest/user/PrincipalDatabaseAuthenticationManager/" + username;
+        String path = "/rest/user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username;
         Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(path);
 
         assertEquals(

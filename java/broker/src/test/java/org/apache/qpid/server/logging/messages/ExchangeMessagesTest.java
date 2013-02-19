@@ -21,7 +21,7 @@
 package org.apache.qpid.server.logging.messages;
 
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
 
@@ -30,12 +30,9 @@ import java.util.List;
  */
 public class ExchangeMessagesTest extends AbstractTestMessages
 {
-    public void testExchangeCreated_Transient()
+    public void testExchangeCreated_Transient() throws Exception
     {
-        // Get the Default Exchange on the Test Vhost for testing
-        Exchange exchange = ApplicationRegistry.getInstance().
-                getVirtualHostRegistry().getVirtualHost("test").
-                getExchangeRegistry().getDefaultExchange();
+        Exchange exchange = BrokerTestHelper.createExchange("test");
 
         String type = exchange.getTypeShortString().toString();
         String name = exchange.getNameShortString().toString();
@@ -48,12 +45,9 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "EXH-1001", expected);
     }
 
-    public void testExchangeCreated_Persistent()
+    public void testExchangeCreated_Persistent() throws Exception
     {
-        // Get the Default Exchange on the Test Vhost for testing
-        Exchange exchange = ApplicationRegistry.getInstance().
-                getVirtualHostRegistry().getVirtualHost("test").
-                getExchangeRegistry().getDefaultExchange();
+        Exchange exchange = BrokerTestHelper.createExchange("test");
 
         String type = exchange.getTypeShortString().toString();
         String name = exchange.getNameShortString().toString();
@@ -76,12 +70,9 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "EXH-1002", expected);
     }
 
-    public void testExchangeDiscardedMessage()
+    public void testExchangeDiscardedMessage() throws Exception
     {
-        // Get the Default Exchange on the Test Vhost for testing
-        final Exchange exchange = ApplicationRegistry.getInstance().
-                getVirtualHostRegistry().getVirtualHost("test").
-                getExchangeRegistry().getDefaultExchange();
+        Exchange exchange = BrokerTestHelper.createExchange("test");
 
         final String name = exchange.getNameShortString().toString();
         final String routingKey = "routingKey";

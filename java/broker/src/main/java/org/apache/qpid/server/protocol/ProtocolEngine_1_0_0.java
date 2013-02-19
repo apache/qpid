@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,10 +38,10 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -55,7 +54,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
     private long _writtenBytes;
     private long _lastReadTime;
     private long _lastWriteTime;
-    private final IApplicationRegistry _appRegistry;
+    private final Broker _broker;
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _conn;
     private final long _connectionId;
@@ -99,9 +98,9 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
 
 
-    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry, long id)
+    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver, final Broker broker, long id)
     {
-        _appRegistry = appRegistry;
+        _broker = broker;
         _connectionId = id;
         if(networkDriver != null)
         {
@@ -145,12 +144,14 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         _network = network;
         _sender = sender;
 
-        Container container = new Container(_appRegistry.getBrokerId().toString());
+        Container container = new Container(_broker.getId().toString());
 
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_appRegistry.getSubjectCreator(
+        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(
                 getLocalAddress())));
         _conn.setRemoteAddress(_network.getRemoteAddress());
-        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
 
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());

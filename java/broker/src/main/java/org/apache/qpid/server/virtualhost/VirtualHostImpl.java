@@ -55,13 +55,14 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 
@@ -79,7 +80,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final ScheduledThreadPoolExecutor _houseKeepingTasks;
 
-    private final IApplicationRegistry _appRegistry;
+    private final VirtualHostRegistry _virtualHostRegistry;
+
+    private final StatisticsGatherer _brokerStatisticsGatherer;
 
     private final SecurityManager _securityManager;
 
@@ -106,7 +109,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
     private boolean _blocked;
 
-    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
+    public VirtualHostImpl(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer brokerStatisticsGatherer, SecurityManager parentSecurityManager, VirtualHostConfiguration hostConfig) throws Exception
     {
         if (hostConfig == null)
         {
@@ -118,7 +121,8 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             throw new IllegalArgumentException("Illegal name (" + hostConfig.getName() + ") for virtualhost.");
         }
 
-        _appRegistry = appRegistry;
+        _virtualHostRegistry = virtualHostRegistry;
+        _brokerStatisticsGatherer = brokerStatisticsGatherer;
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
@@ -127,7 +131,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(_appRegistry.getSecurityManager(), _vhostConfig.getConfig());
+        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"));
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
@@ -142,7 +146,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _bindingFactory = new BindingFactory(this);
 
-        _messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
+        _messageStore = initialiseMessageStore(hostConfig);
 
         configureMessageStore(hostConfig);
 
@@ -266,19 +270,34 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         if (!(o instanceof MessageStore))
         {
-            throw new ClassCastException("Message store factory class must implement " + MessageStore.class +
+            throw new ClassCastException("Message store class must implement " + MessageStore.class +
                                         ". Class " + clazz + " does not.");
         }
 
         final MessageStore messageStore = (MessageStore) o;
-        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, clazz.getSimpleName());
+        return messageStore;
+    }
+
+    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    {
+        String storeType = hostConfig.getConfig().getString("store.type");
+        MessageStore  messageStore = null;
+        if (storeType == null)
+        {
+            messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
+        }
+        else
+        {
+            messageStore = new MessageStoreCreator().createMessageStore(storeType);
+        }
+
+        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore.getClass().getSimpleName());
         OperationalLoggingListener.listen(messageStore, storeLogSubject);
 
         messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
         messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
         messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
         messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
-
         return messageStore;
     }
 
@@ -461,14 +480,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
 
-    public UUID getBrokerId()
+    public VirtualHostRegistry getVirtualHostRegistry()
     {
-        return _appRegistry.getBrokerId();
-    }
-
-    public IApplicationRegistry getApplicationRegistry()
-    {
-        return _appRegistry;
+        return _virtualHostRegistry;
     }
 
     public BindingFactory getBindingFactory()
@@ -480,14 +494,14 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     {
         _messagesDelivered.registerEvent(1L);
         _dataDelivered.registerEvent(messageSize);
-        _appRegistry.registerMessageDelivered(messageSize);
+        _brokerStatisticsGatherer.registerMessageDelivered(messageSize);
     }
 
     public void registerMessageReceived(long messageSize, long timestamp)
     {
         _messagesReceived.registerEvent(1L, timestamp);
         _dataReceived.registerEvent(messageSize, timestamp);
-        _appRegistry.registerMessageReceived(messageSize, timestamp);
+        _brokerStatisticsGatherer.registerMessageReceived(messageSize, timestamp);
     }
 
     public StatisticsCounter getMessageReceiptStatistics()

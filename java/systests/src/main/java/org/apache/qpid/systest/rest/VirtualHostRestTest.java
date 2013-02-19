@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.systest.rest;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -29,11 +30,15 @@ import java.util.Map;
 import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 
@@ -96,6 +101,72 @@ public class VirtualHostRestTest extends QpidRestTestCase
                 .get(VIRTUALHOST_CONNECTIONS_ATTRIBUTE);
         assertEquals("Unexpected number of connections", 1, connections.size());
         Asserts.assertConnection(connections.get(0), _connection);
+    }
+
+    public void testPutCreateVirtualHostUsingStoreType() throws Exception
+    {
+        String hostName = getTestName();
+        String storeType = getTestProfileMessageStoreType();
+        String storeLocation = createHost(hostName, storeType, null);
+        try
+        {
+            // make sure that the host is saved in the broker store
+            restartBroker();
+            Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostName);
+            Asserts.assertVirtualHost(hostName, hostDetails);
+            assertEquals("Unexpected store type", storeType, hostDetails.get(VirtualHost.STORE_TYPE));
+
+            assertNewVirtualHost(hostDetails);
+        }
+        finally
+        {
+            if (storeLocation != null)
+            {
+                FileUtils.delete(new File(storeLocation), true);
+            }
+        }
+    }
+
+    public void testPutCreateVirtualHostUsingConfigPath() throws Exception
+    {
+        String hostName = getTestName();
+        File configFile = TestFileUtils.createTempFile(this, hostName + "-config.xml");
+        String configPath = configFile.getAbsolutePath();
+        String storeLocation = getStoreLocation(hostName);
+        createAndSaveVirtualHostConfiguration(hostName, configFile, storeLocation);
+        createHost(hostName, null, configPath);
+        try
+        {
+            // make sure that the host is saved in the broker store
+            restartBroker();
+            Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostName);
+            Asserts.assertVirtualHost(hostName, hostDetails);
+            assertEquals("Unexpected config path", configPath, hostDetails.get(VirtualHost.CONFIG_PATH));
+
+            assertNewVirtualHost(hostDetails);
+        }
+        finally
+        {
+            if (storeLocation != null)
+            {
+                FileUtils.delete(new File(storeLocation), true);
+            }
+            configFile.delete();
+        }
+    }
+
+    public void testDeleteHost() throws Exception
+    {
+        String hostToDelete = TEST3_VIRTUALHOST;
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/virtualhost/" + hostToDelete, "DELETE");
+        connection.connect();
+        assertEquals("Unexpected response code", 200, connection.getResponseCode());
+
+        // make sure that changes are saved in the broker store
+        restartBroker();
+
+        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/virtualhost/" + hostToDelete);
+        assertEquals("Host should be deleted", 0, hosts.size());
     }
 
     public void testPutCreateQueue() throws Exception
@@ -429,6 +500,77 @@ public class VirtualHostRestTest extends QpidRestTestCase
         int responseCode = connection.getResponseCode();
         connection.disconnect();
         return responseCode;
+    }
+
+    private String createHost(String hostName, String storeType, String configPath) throws IOException, JsonGenerationException,
+            JsonMappingException
+    {
+        String storePath = getStoreLocation(hostName);
+        int responseCode = tryCreateVirtualHost(hostName, storeType, storePath, configPath);
+        assertEquals("Unexpected response code", 201, responseCode);
+        return storePath;
+    }
+
+    private String getStoreLocation(String hostName)
+    {
+        return new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
+    }
+
+    private int tryCreateVirtualHost(String hostName, String storeType, String storePath, String configPath) throws IOException,
+            JsonGenerationException, JsonMappingException
+    {
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/virtualhost/" + hostName, "PUT");
+
+        Map<String, Object> hostData = new HashMap<String, Object>();
+        hostData.put(VirtualHost.NAME, hostName);
+        if (storeType == null)
+        {
+            hostData.put(VirtualHost.CONFIG_PATH, configPath);
+        }
+        else
+        {
+            hostData.put(VirtualHost.STORE_PATH, storePath);
+            hostData.put(VirtualHost.STORE_TYPE, storeType);
+        }
+
+        getRestTestHelper().writeJsonRequest(connection, hostData);
+        int responseCode = connection.getResponseCode();
+        connection.disconnect();
+        return responseCode;
+    }
+
+    private XMLConfiguration createAndSaveVirtualHostConfiguration(String hostName, File configFile, String storeLocation)
+            throws ConfigurationException
+    {
+        XMLConfiguration testConfiguration = new XMLConfiguration();
+        testConfiguration.setProperty("virtualhosts.virtualhost." + hostName + ".store.class",
+                getTestProfileMessageStoreClassName());
+        testConfiguration.setProperty("virtualhosts.virtualhost." + hostName + ".store.environment-path", storeLocation);
+        testConfiguration.save(configFile);
+        return testConfiguration;
+    }
+
+    private void assertNewVirtualHost(Map<String, Object> hostDetails)
+    {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> statistics = (Map<String, Object>) hostDetails.get(Asserts.STATISTICS_ATTRIBUTE);
+        assertEquals("Unexpected number of exchanges in statistics", EXPECTED_EXCHANGES.length,
+                statistics.get(VirtualHost.EXCHANGE_COUNT));
+        assertEquals("Unexpected number of queues in statistics", 0, statistics.get(VirtualHost.QUEUE_COUNT));
+        assertEquals("Unexpected number of connections in statistics", 0, statistics.get(VirtualHost.CONNECTION_COUNT));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_EXCHANGES_ATTRIBUTE);
+        assertEquals("Unexpected number of exchanges", EXPECTED_EXCHANGES.length, exchanges.size());
+        RestTestHelper restTestHelper = getRestTestHelper();
+        Asserts.assertDurableExchange("amq.fanout", "fanout", restTestHelper.find(Exchange.NAME, "amq.fanout", exchanges));
+        Asserts.assertDurableExchange("amq.topic", "topic", restTestHelper.find(Exchange.NAME, "amq.topic", exchanges));
+        Asserts.assertDurableExchange("amq.direct", "direct", restTestHelper.find(Exchange.NAME, "amq.direct", exchanges));
+        Asserts.assertDurableExchange("amq.match", "headers", restTestHelper.find(Exchange.NAME, "amq.match", exchanges));
+        Asserts.assertDurableExchange("<<default>>", "direct", restTestHelper.find(Exchange.NAME, "<<default>>", exchanges));
+
+        assertNull("Unexpected queues", hostDetails.get(VIRTUALHOST_QUEUES_ATTRIBUTE));
+        assertNull("Unexpected connections", hostDetails.get(VIRTUALHOST_CONNECTIONS_ATTRIBUTE));
     }
 
 }

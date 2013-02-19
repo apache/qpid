@@ -22,7 +22,7 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -39,13 +39,22 @@ public class QueueLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
-                getVirtualHost("test");
+        _testVhost = BrokerTestHelper.createVirtualHost("test");
 
         _queue = new MockAMQQueue("QueueLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
         _subject = new QueueLogSubject(_queue);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_testVhost != null)
+        {
+            _testVhost.close();
+        }
+        super.tearDown();
     }
 
     /**

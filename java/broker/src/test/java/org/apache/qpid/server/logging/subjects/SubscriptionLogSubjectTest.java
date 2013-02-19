@@ -23,12 +23,13 @@ package org.apache.qpid.server.logging.subjects;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -42,29 +43,40 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
     private int _channelID = 1;
     private Subscription _subscription;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
-                getVirtualHost("test");
+        InternalTestProtocolSession session = BrokerTestHelper.createSession();
+        _testVhost = session.getVirtualHost();
 
         _queue = new MockAMQQueue("SubscriptionLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
-        AMQChannel channel = new AMQChannel(getSession(), _channelID, getSession().getVirtualHost().getMessageStore());
+        AMQChannel channel = new AMQChannel(session, _channelID, _testVhost.getMessageStore());
 
-        getSession().addChannel(channel);
+        session.addChannel(channel);
 
         SubscriptionFactory factory = new SubscriptionFactoryImpl();
 
-        _subscription = factory.createSubscription(_channelID, getSession(), new AMQShortString("cTag"),
+        _subscription = factory.createSubscription(_channelID, session, new AMQShortString("cTag"),
                                                    false, null, false,
                                                    new LimitlessCreditManager());
 
         _subscription.setQueue(_queue, false);
 
         _subject = new SubscriptionLogSubject(_subscription);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_testVhost != null)
+        {
+            _testVhost.close();
+        }
+        super.tearDown();
     }
 
     /**

@@ -24,12 +24,18 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.updater.ChangeStateTask;
+import org.apache.qpid.server.configuration.updater.CreateChildTask;
+import org.apache.qpid.server.configuration.updater.SetAttributeTask;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 abstract class AbstractAdapter implements ConfiguredObject
 {
@@ -40,118 +46,33 @@ abstract class AbstractAdapter implements ConfiguredObject
             new ArrayList<ConfigurationChangeListener>();
 
     private final UUID _id;
+    private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
+    private final TaskExecutor _taskExecutor;
 
-    protected AbstractAdapter(UUID id)
+    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, TaskExecutor taskExecutor)
     {
+        _taskExecutor = taskExecutor;
         _id = id;
-    }
-
-    static String getStringAttribute(String name, Map<String,Object> attributes, String defaultVal)
-    {
-        final Object value = attributes.get(name);
-        return value == null ? defaultVal : String.valueOf(value);
-    }
-
-    static Map getMapAttribute(String name, Map<String,Object> attributes, Map defaultVal)
-    {
-        final Object value = attributes.get(name);
-        if(value == null)
+        if (attributes != null)
         {
-            return defaultVal;
+            Collection<String> names = getAttributeNames();
+            for (String name : names)
+            {
+                if (attributes.containsKey(name))
+                {
+                    _attributes.put(name, attributes.get(name));
+                }
+            }
         }
-        else if(value instanceof Map)
+        if (defaults != null)
         {
-            return (Map) value;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Map");
+            _defaultAttributes.putAll(defaults);
         }
     }
 
-
-    static <E extends Enum> E getEnumAttribute(Class<E> clazz, String name, Map<String,Object> attributes, E defaultVal)
+    protected AbstractAdapter(UUID id, TaskExecutor taskExecutor)
     {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultVal;
-        }
-        else if(clazz.isInstance(obj))
-        {
-            return (E) obj;
-        }
-        else if(obj instanceof String)
-        {
-            return (E) Enum.valueOf(clazz, (String)obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type " + clazz.getSimpleName());
-        }
-    }
-
-    static Boolean getBooleanAttribute(String name, Map<String,Object> attributes, Boolean defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Boolean)
-        {
-            return (Boolean) obj;
-        }
-        else if(obj instanceof String)
-        {
-            return Boolean.parseBoolean((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Boolean");
-        }
-    }
-
-    static Integer getIntegerAttribute(String name, Map<String,Object> attributes, Integer defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Number)
-        {
-            return ((Number) obj).intValue();
-        }
-        else if(obj instanceof String)
-        {
-            return Integer.valueOf((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Integer");
-        }
-    }
-
-    static Long getLongAttribute(String name, Map<String,Object> attributes, Long defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Number)
-        {
-            return ((Number) obj).longValue();
-        }
-        else if(obj instanceof String)
-        {
-            return Long.valueOf((String) obj);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Long");
-        }
+        this(id, null, null, taskExecutor);
     }
 
     public final UUID getId()
@@ -164,10 +85,39 @@ abstract class AbstractAdapter implements ConfiguredObject
         return null;  //TODO
     }
 
-    public State setDesiredState(final State currentState, final State desiredState)
+    @Override
+    public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-        return null;  //TODO
+        if (_taskExecutor.isTaskExecutorThread())
+        {
+            if (setState(currentState, desiredState))
+            {
+                notifyStateChanged(currentState, desiredState);
+            }
+        }
+        else
+        {
+            _taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
+        }
+        return getActualState();
+    }
+
+    /**
+     * @return true when the state has been successfully updated to desiredState or false otherwise
+     */
+    protected abstract boolean setState(State currentState, State desiredState);
+
+    protected void notifyStateChanged(final State currentState, final State desiredState)
+    {
+        synchronized (_changeListeners)
+        {
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
+            {
+                listener.stateChanged(this, currentState, desiredState);
+            }
+        }
     }
 
     public void addChangeListener(final ConfigurationChangeListener listener)
@@ -176,7 +126,7 @@ abstract class AbstractAdapter implements ConfiguredObject
         {
             throw new NullPointerException("Cannot add a null listener");
         }
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             if(!_changeListeners.contains(listener))
             {
@@ -191,39 +141,76 @@ abstract class AbstractAdapter implements ConfiguredObject
         {
             throw new NullPointerException("Cannot remove a null listener");
         }
-        synchronized (this)
+        synchronized (_changeListeners)
         {
             return _changeListeners.remove(listener);
         }
     }
 
-
     protected void childAdded(ConfiguredObject child)
     {
-        synchronized (this)
+        synchronized (_changeListeners)
         {
-            for(ConfigurationChangeListener listener : _changeListeners)
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
             {
                 listener.childAdded(this, child);
             }
         }
     }
 
-
     protected void childRemoved(ConfiguredObject child)
     {
-        synchronized (this)
+        synchronized (_changeListeners)
         {
-            for(ConfigurationChangeListener listener : _changeListeners)
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
             {
                 listener.childRemoved(this, child);
             }
         }
     }
 
-    public Object getAttribute(final String name)
+    protected void attributeSet(String attrinuteName, Object oldAttributeValue, Object newAttributeValue)
     {
-        synchronized (this)
+        synchronized (_changeListeners)
+        {
+            List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
+            for(ConfigurationChangeListener listener : copy)
+            {
+                listener.attributeSet(this, attrinuteName, oldAttributeValue, newAttributeValue);
+            }
+        }
+    }
+
+    private final Object getDefaultAttribute(String name)
+    {
+        return _defaultAttributes.get(name);
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        Object value = getActualAttribute(name);
+        if (value == null)
+        {
+            value = getDefaultAttribute(name);
+        }
+        return value;
+    }
+
+    @Override
+    public final Map<String, Object> getActualAttributes()
+    {
+        synchronized (_attributes)
+        {
+            return new HashMap<String, Object>(_attributes);
+        }
+    }
+
+    private Object getActualAttribute(final String name)
+    {
+        synchronized (_attributes)
         {
             return _attributes.get(name);
         }
@@ -232,25 +219,41 @@ abstract class AbstractAdapter implements ConfiguredObject
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        synchronized (this)
+        if (_taskExecutor.isTaskExecutorThread())
         {
-            Object currentValue = _attributes.get(name);
+            if (changeAttribute(name, expected, desired))
+            {
+                attributeSet(name, expected, desired);
+            }
+        }
+        else
+        {
+            _taskExecutor.submitAndWait(new SetAttributeTask(this, name, expected, desired));
+        }
+        return getAttribute(name);
+    }
+
+    protected boolean changeAttribute(final String name, final Object expected, final Object desired)
+    {
+        synchronized (_attributes)
+        {
+            Object currentValue = getAttribute(name);
             if((currentValue == null && expected == null)
                || (currentValue != null && currentValue.equals(expected)))
             {
                 _attributes.put(name, desired);
-                return desired;
+                return true;
             }
             else
             {
-                return currentValue;
+                return false;
             }
         }
     }
 
     public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
     {
-        synchronized (this)
+        synchronized (_parents)
         {
             return (T) _parents.get(clazz);
         }
@@ -258,7 +261,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected <T extends ConfiguredObject> void addParent(Class<T> clazz, T parent)
     {
-        synchronized (this)
+        synchronized (_parents)
         {
             _parents.put(clazz, parent);
         }
@@ -278,6 +281,42 @@ abstract class AbstractAdapter implements ConfiguredObject
         {
             return new ArrayList<String>(_attributes.keySet());
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " [id=" + _id + "]";
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if (_taskExecutor.isTaskExecutorThread())
+        {
+            C child = addChild(childClass, attributes, otherParents);
+            if (child != null)
+            {
+                childAdded(child);
+            }
+            return child;
+        }
+        else
+        {
+            return (C)_taskExecutor.submitAndWait(new CreateChildTask(this, childClass, attributes, otherParents));
+        }
+    }
+
+    protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    protected TaskExecutor getTaskExecutor()
+    {
+        return _taskExecutor;
     }
 
 }

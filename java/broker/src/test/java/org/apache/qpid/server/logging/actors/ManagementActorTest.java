@@ -35,10 +35,10 @@ public class ManagementActorTest extends BaseActorTestCase
     private String _threadName;
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
-        _amqpActor = new ManagementActor(_rootLogger);
+        super.setUp();
+        setAmqpActor(new ManagementActor(getRootLogger()));
 
         // Set the thread name to be the same as a RMI JMX Connection would use
         _threadName = Thread.currentThread().getName();
@@ -57,14 +57,14 @@ public class ManagementActorTest extends BaseActorTestCase
      *
      * The test sends a message then verifies that it entered the logs.
      *
-     * The log message should be fully repalaced (no '{n}' values) and should
+     * The log message should be fully replaced (no '{n}' values) and should
      * not contain any channel identification.
      */
     public void testConnection()
     {
-        final String message = sendTestLogMessage(_amqpActor);
+        final String message = sendTestLogMessage(getAmqpActor());
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 
@@ -101,14 +101,14 @@ public class ManagementActorTest extends BaseActorTestCase
         {
             public String run()
             {
-                return sendTestLogMessage(_amqpActor);
+                return sendTestLogMessage(getAmqpActor());
             }
         });
 
         // Verify that the log message was created
         assertNotNull("Test log message is not created!", message);
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         // Verify that at least one log message was added to log
         assertEquals("Message log size not as expected.", 1, logs.size());
@@ -130,8 +130,8 @@ public class ManagementActorTest extends BaseActorTestCase
     public void testGetLogMessageWithoutSubjectButWithActorPrincipal()
     {
         String principalName = "my_principal";
-        _amqpActor = new ManagementActor(_rootLogger, principalName);
-        String message = _amqpActor.getLogMessage();
+        setAmqpActor(new ManagementActor(getRootLogger(), principalName));
+        String message = getAmqpActor().getLogMessage();
         assertEquals("Unexpected log message", "[mng:" + principalName + "(" + IP + ")] ", message);
     }
 
@@ -149,7 +149,7 @@ public class ManagementActorTest extends BaseActorTestCase
         assertLogMessageInRMIThreadWithPrincipal("RMI TCP Connection(1)-" + IP, "my_principal");
 
         Thread.currentThread().setName("RMI TCP Connection(2)-" + IP );
-        String message = _amqpActor.getLogMessage();
+        String message = getAmqpActor().getLogMessage();
         assertEquals("Unexpected log message", "[mng:N/A(" + IP + ")] ", message);
 
         assertLogMessageWithoutPrincipal("TEST");
@@ -158,14 +158,14 @@ public class ManagementActorTest extends BaseActorTestCase
     private void assertLogMessageInRMIThreadWithoutPrincipal(String threadName)
     {
         Thread.currentThread().setName(threadName );
-        String message = _amqpActor.getLogMessage();
+        String message = getAmqpActor().getLogMessage();
         assertEquals("Unexpected log message", "[mng:N/A(" + IP + ")] ", message);
     }
 
     private void assertLogMessageWithoutPrincipal(String threadName)
     {
         Thread.currentThread().setName(threadName );
-        String message = _amqpActor.getLogMessage();
+        String message = getAmqpActor().getLogMessage();
         assertEquals("Unexpected log message", "[" + threadName +"] ", message);
     }
 
@@ -177,7 +177,7 @@ public class ManagementActorTest extends BaseActorTestCase
         {
             public String run()
             {
-                return _amqpActor.getLogMessage();
+                return getAmqpActor().getLogMessage();
             }
         });
 

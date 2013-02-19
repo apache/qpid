@@ -17,14 +17,7 @@
  */
 package org.apache.qpid.test.utils;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import java.io.File;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Generates the command to start a broker by substituting the tokens
@@ -35,73 +28,25 @@ import java.util.List;
  */
 public class BrokerCommandHelper
 {
-    private static final Logger _logger = Logger.getLogger(BrokerCommandHelper.class);
-
-    /** use a LinkedList so we can call remove(int) */
-    private final LinkedList<String> _brokerCommandTemplateAsList;
+    private String _brokerCommandTemplate;
 
     public BrokerCommandHelper(String brokerCommandTemplate)
     {
-        _brokerCommandTemplateAsList = new LinkedList(Arrays.asList(brokerCommandTemplate.split("\\s+")));
+        _brokerCommandTemplate = brokerCommandTemplate;
     }
 
-    public List<String> getBrokerCommand(
-        int port, int sslPort, int managementPort,
-        File configFile, File logConfigFile,
-        String protocolIncludesList, String protocolExcludesList)
+    public String getBrokerCommand( int port, String storePath, String storeType, File logConfigFile)
     {
-        List<String> substitutedCommands = new ArrayList<String>();
-
-        // Replace the tokens in two passes.
-        // The first pass is for protocol include/exclude lists, each of which needs to be
-        // split into separate entries in the final list.
-        // The second pass is for the remaining options, which include file paths that
-        // are quoted in case they contain whitespace.
-
-        for (String commandPart : _brokerCommandTemplateAsList)
-        {
-            String substitutedCommandPart = commandPart
-                    .replace("@EXCLUDES", protocolExcludesList)
-                    .replace("@INCLUDES", protocolIncludesList);
-
-            String[] splitCommandPart = StringUtils.split(substitutedCommandPart);
-            substitutedCommands.addAll(Arrays.asList(splitCommandPart));
-        }
-
-        int i = 0;
-        for (String commandPart : substitutedCommands)
-        {
-            String substitutedCommandPart = commandPart
+        return _brokerCommandTemplate
                     .replace("@PORT", "" + port)
-                    .replace("@SSL_PORT", "" + sslPort)
-                    .replace("@MPORT", "" + managementPort)
-                    .replace("@CONFIG_FILE", '"' + configFile.getPath() + '"')
+                    .replace("@STORE_PATH", storePath)
+                    .replace("@STORE_TYPE", storeType)
                     .replace("@LOG_CONFIG_FILE", '"' + logConfigFile.getAbsolutePath() + '"');
-
-            substitutedCommands.set(i, substitutedCommandPart);
-            i++;
-        }
-
-        return substitutedCommands;
-    }
-
-    private int getBrokerCommandLogOptionIndex()
-    {
-        String logOption = "-l";
-
-        int logOptionIndex = _brokerCommandTemplateAsList.indexOf(logOption);
-        if(logOptionIndex == -1)
-        {
-            throw new RuntimeException("Could not find option " + logOption + " in " + _brokerCommandTemplateAsList);
-        }
-        return logOptionIndex;
     }
 
     public void removeBrokerCommandLog4JFile()
     {
-        int logOptionIndex = getBrokerCommandLogOptionIndex();
-        _brokerCommandTemplateAsList.remove(logOptionIndex); // removes the "-l" entry
-        _brokerCommandTemplateAsList.remove(logOptionIndex); // removes log file name that followed the -l
-        _logger.info("Removed broker command log4j config file");
+        int logArgumentPosition = _brokerCommandTemplate.indexOf("-l");
+        _brokerCommandTemplate = _brokerCommandTemplate.substring(0, logArgumentPosition - 1);
     }
 }

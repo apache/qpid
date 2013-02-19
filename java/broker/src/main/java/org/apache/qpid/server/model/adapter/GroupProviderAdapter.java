@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -37,33 +38,27 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.group.GroupManager;
+import org.apache.qpid.server.security.SecurityManager;
 
 public class GroupProviderAdapter extends AbstractAdapter implements
         GroupProvider
 {
     private final GroupManager _groupManager;
-
-    protected GroupProviderAdapter(GroupManager groupManager)
+    private final Broker _broker;
+    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker)
     {
-        super(UUIDGenerator.generateRandomUUID());
+        super(id, broker.getTaskExecutor());
 
         if (groupManager == null)
         {
             throw new IllegalArgumentException("GroupManager must not be null");
         }
         _groupManager = groupManager;
-    }
-
-    public static GroupProviderAdapter createGroupProviderAdapter(
-            BrokerAdapter brokerAdapter, GroupManager groupManager)
-    {
-        final GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(
-                groupManager);
-        groupProviderAdapter.addParent(Broker.class, brokerAdapter);
-        return groupProviderAdapter;
+        _broker = broker;
+       addParent(Broker.class, broker);
     }
 
     @Override
@@ -180,7 +175,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass,
             Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if (childClass == Group.class)
@@ -190,7 +185,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             if (getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName))
             {
                 _groupManager.createGroup(groupName);
-                return (C) new GroupAdapter(groupName);
+                return (C) new GroupAdapter(groupName, getTaskExecutor());
             }
             else
             {
@@ -214,7 +209,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             Collection<Group> principals = new ArrayList<Group>(groups.size());
             for (Principal group : groups)
             {
-                principals.add(new GroupAdapter(group.getName()));
+                principals.add(new GroupAdapter(group.getName(), getTaskExecutor()));
             }
             return (Collection<C>) Collections
                     .unmodifiableCollection(principals);
@@ -225,19 +220,18 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
     }
 
-    private org.apache.qpid.server.security.SecurityManager getSecurityManager()
+    private SecurityManager getSecurityManager()
     {
-        return ApplicationRegistry.getInstance().getSecurityManager();
+        return _broker.getSecurityManager();
     }
 
     private class GroupAdapter extends AbstractAdapter implements Group
     {
         private final String _group;
 
-        public GroupAdapter(String group)
+        public GroupAdapter(String group, TaskExecutor taskExecutor)
         {
-            super(UUIDGenerator.generateGroupUUID(
-                    GroupProviderAdapter.this.getName(), group));
+            super(UUIDGenerator.generateGroupUUID(GroupProviderAdapter.this.getName(), group), taskExecutor);
             _group = group;
 
         }
@@ -319,7 +313,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                 Collection<GroupMember> members = new ArrayList<GroupMember>();
                 for (Principal principal : usersInGroup)
                 {
-                    members.add(new GroupMemberAdapter(principal.getName()));
+                    members.add(new GroupMemberAdapter(principal.getName(), getTaskExecutor()));
                 }
                 return (Collection<C>) Collections
                         .unmodifiableCollection(members);
@@ -332,7 +326,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
 
         @Override
-        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+        public <C extends ConfiguredObject> C addChild(Class<C> childClass,
                 Map<String, Object> attributes,
                 ConfiguredObject... otherParents)
         {
@@ -343,7 +337,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                 if (getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group))
                 {
                     _groupManager.addUserToGroup(memberName, _group);
-                    return (C) new GroupMemberAdapter(memberName);
+                    return (C) new GroupMemberAdapter(memberName, getTaskExecutor());
                 }
                 else
                 {
@@ -378,15 +372,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
 
         @Override
-        public Object setAttribute(String name, Object expected, Object desired)
-                throws IllegalStateException, AccessControlException,
-                IllegalArgumentException
-        {
-            return super.setAttribute(name, expected, desired);
-        }
-
-        @Override
-        public State setDesiredState(State currentState, State desiredState)
+        protected boolean setState(State currentState, State desiredState)
                 throws IllegalStateTransitionException, AccessControlException
         {
             if (desiredState == State.DELETED)
@@ -394,16 +380,15 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                 if (getSecurityManager().authoriseGroupOperation(Operation.DELETE, _group))
                 {
                     _groupManager.removeGroup(_group);
-                    return State.DELETED;
+                    return true;
                 }
                 else
                 {
-                    throw new AccessControlException("Do not have permission" +
-                    " to delete group");
+                    throw new AccessControlException("Do not have permission to delete group");
                 }
             }
 
-            return super.setDesiredState(currentState, desiredState);
+            return false;
         }
 
         private class GroupMemberAdapter extends AbstractAdapter implements
@@ -411,12 +396,9 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         {
             private String _memberName;
 
-            public GroupMemberAdapter(String memberName)
+            public GroupMemberAdapter(String memberName, TaskExecutor taskExecutor)
             {
-                super(UUIDGenerator
-                        .generateGroupMemberUUID(
-                                GroupProviderAdapter.this.getName(), _group,
-                                memberName));
+                super(UUIDGenerator.generateGroupMemberUUID(GroupProviderAdapter.this.getName(), _group, memberName), taskExecutor);
                 _memberName = memberName;
             }
 
@@ -522,7 +504,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             }
 
             @Override
-            public State setDesiredState(State currentState, State desiredState)
+            protected boolean setState(State currentState, State desiredState)
                     throws IllegalStateTransitionException,
                     AccessControlException
             {
@@ -531,18 +513,38 @@ public class GroupProviderAdapter extends AbstractAdapter implements
                     if (getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group))
                     {
                         _groupManager.removeUserFromGroup(_memberName, _group);
-                        return State.DELETED;
+                        return true;
                     }
                     else
                     {
-                        throw new AccessControlException("Do not have permission" +
-                        " to remove group member");
+                        throw new AccessControlException("Do not have permission to remove group member");
                     }
                 }
-                
-                return super.setDesiredState(currentState, desiredState);
+                return false;
             }
 
         }
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        if (desiredState == State.ACTIVE)
+        {
+            return true;
+        }
+        else if (desiredState == State.STOPPED)
+        {
+            return true;
+        }
+        // TODO: DELETE state is ignored for now
+        // in case if we need to delete group provider, then we need AuthenticationProvider to be a change listener of it
+        // in order to remove deleted group provider from its group provider list
+        return false;
+    }
+
+    public Set<Principal> getGroupPrincipalsForUser(String username)
+    {
+        return _groupManager.getGroupPrincipalsForUser(username);
     }
 }

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
 
@@ -37,15 +38,15 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
+        super.setUp();
 
         MockSubscription mockSubscription = new MockSubscription();
 
-        mockSubscription.setQueue(getQueue(), false);
+        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), getSession().getVirtualHost()), false);
 
-        _amqpActor = new SubscriptionActor(_rootLogger, mockSubscription);
+        setAmqpActor(new SubscriptionActor(getRootLogger(), mockSubscription));
     }
 
     /**
@@ -58,9 +59,9 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
      */
     public void testSubscription()
     {
-        final String message = sendTestLogMessage(_amqpActor);
+        final String message = sendTestLogMessage(getAmqpActor());
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 

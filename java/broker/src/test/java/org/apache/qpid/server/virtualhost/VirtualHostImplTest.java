@@ -20,15 +20,21 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
+import static org.mockito.Mockito.mock;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.io.BufferedWriter;
@@ -38,15 +44,31 @@ import java.io.IOException;
 
 public class VirtualHostImplTest extends QpidTestCase
 {
-    private ServerConfiguration _configuration;
-    private ApplicationRegistry _registry;
+    private VirtualHostRegistry _virtualHostRegistry;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+    }
 
     @Override
     public void tearDown() throws Exception
     {
-        super.tearDown();
+        try
+        {
+            if (_virtualHostRegistry != null)
+            {
+                _virtualHostRegistry.close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
 
-        ApplicationRegistry.remove();
     }
 
     /**
@@ -74,17 +96,23 @@ public class VirtualHostImplTest extends QpidTestCase
      */
     public void testSpecifyingCustomBindingForDefaultExchangeThrowsException() throws Exception
     {
-        File config = writeConfigFile(getName(), getName(), null, false, new String[]{"custom-binding"});
+        final String queueName = getName();
+        final String customBinding = "custom-binding";
+        File config = writeConfigFile(queueName, queueName, null, false, new String[]{customBinding});
 
         try
         {
-            createVirtualHost(getName(), config);
+            createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
         catch (RuntimeException e)
         {
+            assertNotNull(e.getCause());
+
             assertEquals(ConfigurationException.class, e.getCause().getClass());
-            //expected
+
+            Throwable configException = e.getCause();
+            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, configException.getMessage());
         }
     }
 
@@ -94,6 +122,14 @@ public class VirtualHostImplTest extends QpidTestCase
         VirtualHost vhost = createVirtualHost(getName(), config);
         assertNotNull(vhost);
         assertEquals(State.ACTIVE, vhost.getState());
+    }
+
+    public void testVirtualHostHavingStoreSetAsTypeBecomesActive() throws Exception
+    {
+        String virtualHostName = getName();
+        VirtualHost host = createVirtualHostUsingStoreType(virtualHostName);
+        assertNotNull(host);
+        assertEquals(State.ACTIVE, host.getState());
     }
 
     public void testVirtualHostBecomesStoppedOnClose() throws Exception
@@ -107,22 +143,39 @@ public class VirtualHostImplTest extends QpidTestCase
         assertEquals(0, vhost.getHouseKeepingActiveCount());
     }
 
+    public void testVirtualHostHavingStoreSetAsTypeBecomesStoppedOnClose() throws Exception
+    {
+        String virtualHostName = getName();
+        VirtualHost host = createVirtualHostUsingStoreType(virtualHostName);
+        assertNotNull(host);
+        assertEquals(State.ACTIVE, host.getState());
+        host.close();
+        assertEquals(State.STOPPED, host.getState());
+        assertEquals(0, host.getHouseKeepingActiveCount());
+    }
+
     /**
      * Tests that specifying an unknown exchange to bind the queue to results in failure to create the vhost
      */
     public void testSpecifyingUnknownExchangeThrowsException() throws Exception
     {
-        File config = writeConfigFile(getName(), getName(), "made-up-exchange", true, new String[0]);
+        final String queueName = getName();
+        final String exchangeName = "made-up-exchange";
+        File config = writeConfigFile(queueName, queueName, exchangeName, true, new String[0]);
 
         try
         {
-            createVirtualHost(getName(), config);
+            createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
         catch (RuntimeException e)
         {
+            assertNotNull(e.getCause());
+
             assertEquals(ConfigurationException.class, e.getCause().getClass());
-            //expected
+
+            Throwable configException = e.getCause();
+            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, configException.getMessage());
         }
     }
 
@@ -154,12 +207,14 @@ public class VirtualHostImplTest extends QpidTestCase
 
     private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
     {
-        _configuration = new ServerConfiguration(new XMLConfiguration(config));
+        Broker broker = BrokerTestHelper.createBrokerMock();
+        _virtualHostRegistry = broker.getVirtualHostRegistry();
 
-        _registry = new TestApplicationRegistry(_configuration);
-        ApplicationRegistry.initialise(_registry);
+        VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
+        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(null), configuration);
+        _virtualHostRegistry.registerVirtualHost(host);
 
-        return _registry.getVirtualHostRegistry().getVirtualHost(vhostName);
+        return host;
     }
 
     /**
@@ -184,7 +239,6 @@ public class VirtualHostImplTest extends QpidTestCase
             BufferedWriter writer = new BufferedWriter(fstream);
 
             //extra outer tag to please Commons Configuration
-            writer.write("<configuration>");
 
             writer.write("<virtualhosts>");
             writer.write("  <default>" + vhostName + "</default>");
@@ -222,8 +276,6 @@ public class VirtualHostImplTest extends QpidTestCase
             writer.write("  </virtualhost>");
             writer.write("</virtualhosts>");
 
-            writer.write("</configuration>");
-
             writer.flush();
             writer.close();
         }
@@ -233,5 +285,18 @@ public class VirtualHostImplTest extends QpidTestCase
         }
 
         return tmpFile;
+    }
+
+    private VirtualHost createVirtualHostUsingStoreType(String virtualHostName) throws ConfigurationException, Exception
+    {
+        Broker broker = BrokerTestHelper.createBrokerMock();
+        _virtualHostRegistry = broker.getVirtualHostRegistry();
+
+        Configuration config = new PropertiesConfiguration();
+        config.setProperty("store.type", MemoryMessageStore.TYPE);
+        VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
+        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(null), configuration);
+        _virtualHostRegistry.registerVirtualHost(host);
+        return host;
     }
 }

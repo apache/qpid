@@ -41,11 +41,6 @@ public class StructureServlet extends AbstractServlet
         super();
     }
 
-    public StructureServlet(Broker broker)
-    {
-        super(broker);
-    }
-
     @Override
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {

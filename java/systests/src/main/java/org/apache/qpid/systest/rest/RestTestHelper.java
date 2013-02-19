@@ -51,8 +51,10 @@ import junit.framework.Assert;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -292,6 +294,7 @@ public class RestTestHelper
 
     public void assertNumberOfGroupMembers(Map<String, Object> data, int expectedNumberOfGroupMembers)
     {
+        @SuppressWarnings("unchecked")
         List<Map<String, Object>> groups = (List<Map<String, Object>>) data.get("groupmembers");
         if (groups == null)
         {
@@ -327,7 +330,8 @@ public class RestTestHelper
 
     public void createOrUpdateUser(String username, String password, int responseCode) throws IOException
     {
-        HttpURLConnection connection = openManagementConnection("/rest/user/PrincipalDatabaseAuthenticationManager/" + username, "PUT");
+        HttpURLConnection connection = openManagementConnection("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username, "PUT");
 
         Map<String, Object> data = new HashMap<String, Object>();
         data.put("password", password);
@@ -355,14 +359,16 @@ public class RestTestHelper
 
     public void removeUserById(String id) throws IOException
     {
-        HttpURLConnection connection = openManagementConnection("/rest/user/PrincipalDatabaseAuthenticationManager?id=" + id, "DELETE");
+        HttpURLConnection connection = openManagementConnection("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "?id=" + id, "DELETE");
         Assert.assertEquals("Unexpected response code", HttpServletResponse.SC_OK, connection.getResponseCode());
         connection.disconnect();
     }
 
     public void removeUser(String username, int responseCode) throws IOException
     {
-        HttpURLConnection connection = openManagementConnection("/rest/user/PrincipalDatabaseAuthenticationManager/" + username, "DELETE");
+        HttpURLConnection connection = openManagementConnection("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username, "DELETE");
         Assert.assertEquals("Unexpected response code", responseCode, connection.getResponseCode());
         connection.disconnect();
     }
@@ -374,6 +380,7 @@ public class RestTestHelper
 
     public void assertNumberOfGroups(Map<String, Object> data, int expectedNumberOfGroups)
     {
+        @SuppressWarnings("unchecked")
         List<Map<String, Object>> groups = (List<Map<String, Object>>) data.get("groups");
         if (groups == null)
         {
@@ -400,8 +407,8 @@ public class RestTestHelper
     {
         _passwdFile = createTemporaryPasswdFile(users);
 
-        testCase.setConfigurationProperty("security.pd-auth-manager.principal-database.attributes.attribute.name", "passwordFile");
-        testCase.setConfigurationProperty("security.pd-auth-manager.principal-database.attributes.attribute.value", _passwdFile.getAbsolutePath());
+        testCase.getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER,
+                AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _passwdFile.getAbsolutePath());
     }
 
     public void tearDown()

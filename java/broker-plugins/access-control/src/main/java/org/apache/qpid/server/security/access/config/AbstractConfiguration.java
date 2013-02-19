@@ -22,8 +22,6 @@ package org.apache.qpid.server.security.access.config;
 
 import java.io.File;
 
-import org.apache.commons.configuration.ConfigurationException;
-
 public abstract class AbstractConfiguration implements ConfigurationFile
 {
     private File _file;
@@ -39,7 +37,7 @@ public abstract class AbstractConfiguration implements ConfigurationFile
         return _file;
     }
     
-    public RuleSet load() throws ConfigurationException
+    public RuleSet load()
     {
         _config = new RuleSet();
         return _config;

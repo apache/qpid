@@ -34,7 +34,8 @@ public class BindingRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding");
         assertNotNull("Bindings cannot be null", bindings);
-        assertTrue("Unexpected number of bindings", bindings.size() >= EXPECTED_VIRTUALHOSTS.length * EXPECTED_QUEUES.length);
+        assertTrue("Unexpected number of bindings: " + bindings.size(),
+                bindings.size() >= EXPECTED_VIRTUALHOSTS.length * EXPECTED_QUEUES.length);
         for (Map<String, Object> binding : bindings)
         {
             Asserts.assertBinding((String) binding.get(Binding.NAME), (String) binding.get(Binding.EXCHANGE), binding);

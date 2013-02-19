@@ -19,10 +19,11 @@
 broker.version=v0_8
 broker.language=java
 broker.type=spawned
-broker.command=build/bin/qpid-server -p @PORT -m @MPORT @EXCLUDES @INCLUDES -c @CONFIG_FILE -l @LOG_CONFIG_FILE
+broker.command=build/bin/qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE
 broker.ready=BRK-1004
 broker.stopped=Exception
-broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT --exclude-1-0 @PORT --exclude-1-0 @SSL_PORT --exclude-0-9-1 @PORT --exclude-0-9-1 @SSL_PORT --exclude-0-9 @PORT --exclude-0-9 @SSL_PORT
+qpid.broker_default_amqp_protocol_excludes=AMQP_1_0,AMQP_0_10,AMQP_0_9_1,AMQP_0_9
+broker.virtualhosts-config=${QPID_HOME}/etc/virtualhosts-systests.xml
 #
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards
 #

@@ -23,7 +23,6 @@ package org.apache.qpid.server.logging;
 
 import junit.framework.AssertionFailedError;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,7 +67,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         
         try
         {
-            List<String> vhosts = Arrays.asList(getServerConfig().getVirtualHosts());
+            List<String> vhosts = Arrays.asList("test");
 
             assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
@@ -110,23 +109,17 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
 
         // Wait for the correct VHT message to arrive.                                 
         waitForMessage(VHT_PREFIX + "1002");
-        
+
         // Validate each vhost logs a closure
         List<String> results = findMatches(VHT_PREFIX + "1002");
-        
+
         try
         {
-            // Load VirtualHost list from file. 
-            ServerConfiguration configuration = new ServerConfiguration(_configFile);
-            configuration.initialise();
-            List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
-
-            assertEquals("Each vhost did not close their store.", vhosts.size(), results.size());
+            assertEquals("Each vhost did not close their store.", 1, results.size());
         }
         catch (AssertionFailedError afe)
         {
             dumpLogs(results, _monitor);
-
             throw afe;
         }
     }

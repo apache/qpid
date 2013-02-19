@@ -37,6 +37,7 @@ import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
@@ -49,7 +50,7 @@ public class Asserts
     {
         assertNotNull("Virtualhost " + virtualHostName + " data are not found", virtualHost);
         assertAttributesPresent(virtualHost, VirtualHost.AVAILABLE_ATTRIBUTES, VirtualHost.TIME_TO_LIVE,
-                VirtualHost.CREATED, VirtualHost.UPDATED, VirtualHost.SUPPORTED_QUEUE_TYPES, VirtualHost.STORE_CONFIGURATION);
+                VirtualHost.CREATED, VirtualHost.UPDATED, VirtualHost.SUPPORTED_QUEUE_TYPES, VirtualHost.STORE_PATH, VirtualHost.CONFIG_PATH);
 
         assertEquals("Unexpected value of attribute " + VirtualHost.NAME, virtualHostName, virtualHost.get(VirtualHost.NAME));
         assertNotNull("Unexpected value of attribute " + VirtualHost.ID, virtualHost.get(VirtualHost.ID));
@@ -180,7 +181,6 @@ public class Asserts
 
     public static void assertPortAttributes(Map<String, Object> port)
     {
-        assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED);
 
         assertNotNull("Unexpected value of attribute " + Port.ID, port.get(Port.ID));
         assertEquals("Unexpected value of attribute " + Port.DURABLE, Boolean.FALSE, port.get(Port.DURABLE));
@@ -188,9 +188,30 @@ public class Asserts
                 port.get(Broker.LIFETIME_POLICY));
         assertEquals("Unexpected value of attribute " + Port.STATE, State.ACTIVE.name(), port.get(Port.STATE));
         assertEquals("Unexpected value of attribute " + Port.TIME_TO_LIVE, 0, port.get(Port.TIME_TO_LIVE));
-        assertNotNull("Unexpected value of attribute " + Port.BINDING_ADDRESS, port.get(Port.BINDING_ADDRESS));
-        assertNotNull("Unexpected value of attribute " + Port.PROTOCOLS, port.get(Port.PROTOCOLS));
-        assertNotNull("Unexpected value of attribute " + Port.NAME, port.get(Port.NAME));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> protocols = (Collection<String>) port.get(Port.PROTOCOLS);
+        assertNotNull("Unexpected value of attribute " + Port.PROTOCOLS, protocols);
+        boolean isAMQPPort = false;
+        for (String protocolName : protocols)
+        {
+            if (Protocol.valueOf(protocolName).isAMQP())
+            {
+                isAMQPPort = true;
+                break;
+            }
+        }
+        if (isAMQPPort)
+        {
+            assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_MANAGER);
+            assertNotNull("Unexpected value of attribute " + Port.BINDING_ADDRESS, port.get(Port.BINDING_ADDRESS));
+        }
+        else
+        {
+            assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_MANAGER,
+                    Port.BINDING_ADDRESS, Port.TCP_NO_DELAY, Port.SEND_BUFFER_SIZE, Port.RECEIVE_BUFFER_SIZE,
+                    Port.NEED_CLIENT_AUTH, Port.WANT_CLIENT_AUTH);
+        }
 
         @SuppressWarnings("unchecked")
         Collection<String> transports = (Collection<String>) port.get(Port.TRANSPORTS);

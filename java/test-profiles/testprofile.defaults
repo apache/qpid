@@ -20,7 +20,7 @@ java.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFac
 java.naming.provider.url=${test.profiles}/test-provider.properties
 
 broker.ready=Listening on TCP
-broker.config=build/etc/config-systests.xml
+broker.config=build/etc/config-systests.json
 messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
 broker.protocol.excludes=
 broker.persistent=false
@@ -45,6 +45,8 @@ log4j.debug=false
 # Keep in sync
 test.port=15672
 test.mport=18999
+test.cport=19099
+test.hport=18080
 #Note : Management will start open second port on: mport + 100 : 19099 
 test.port.ssl=15671
 test.port.alt=25672
@@ -60,5 +62,7 @@ haltonerror=no
 exclude.modules=none
 
 profile.clustered=false
+broker.config-store-type=json
+broker.virtualhosts-config="${QPID_HOME}/etc/virtualhosts-systests.xml"
 
 

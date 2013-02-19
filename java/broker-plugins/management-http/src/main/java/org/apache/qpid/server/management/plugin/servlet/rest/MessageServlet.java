@@ -34,13 +34,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.subscription.Subscription;
@@ -54,11 +51,6 @@ public class MessageServlet extends AbstractServlet
     public MessageServlet()
     {
         super();
-    }
-
-    public MessageServlet(Broker broker)
-    {
-        super(broker);
     }
 
     @Override
@@ -422,7 +414,7 @@ public class MessageServlet extends AbstractServlet
             // FIXME: added temporary authorization check until we introduce management layer
             // and review current ACL rules to have common rules for all management interfaces
             String methodName = isMoveTransaction? "moveMessages":"copyMessages";
-            if (isQueueUpdateMethodAuthorized(methodName, vhost.getName()))
+            if (isQueueUpdateMethodAuthorized(methodName, vhost))
             {
                 final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
                 final List messageIds = new ArrayList((List) providedObject.get("messages"));
@@ -466,7 +458,7 @@ public class MessageServlet extends AbstractServlet
 
         // FIXME: added temporary authorization check until we introduce management layer
         // and review current ACL rules to have common rules for all management interfaces
-        if (isQueueUpdateMethodAuthorized("deleteMessages", vhost.getName()))
+        if (isQueueUpdateMethodAuthorized("deleteMessages", vhost))
         {
             vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
             response.setStatus(HttpServletResponse.SC_OK);
@@ -478,25 +470,10 @@ public class MessageServlet extends AbstractServlet
 
     }
 
-    private boolean isQueueUpdateMethodAuthorized(String methodName, String virtualHost)
+    private boolean isQueueUpdateMethodAuthorized(String methodName, VirtualHost host)
     {
-        SecurityManager securityManager = getSecurityManager(virtualHost);
+        SecurityManager securityManager = host.getSecurityManager();
         return securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName);
-    }
-
-    private SecurityManager getSecurityManager(String virtualHost)
-    {
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        SecurityManager security;
-        if (virtualHost == null)
-        {
-            security = appRegistry.getSecurityManager();
-        }
-        else
-        {
-            security = appRegistry.getVirtualHostRegistry().getVirtualHost(virtualHost).getSecurityManager();
-        }
-        return security;
     }
 
 }

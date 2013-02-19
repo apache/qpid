@@ -23,6 +23,9 @@ package org.apache.qpid.systest.rest;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
+
 public class StructureRestTest extends QpidRestTestCase
 {
 
@@ -30,7 +33,7 @@ public class StructureRestTest extends QpidRestTestCase
     {
         Map<String, Object> structure = getRestTestHelper().getJsonAsMap("/rest/structure");
         assertNotNull("Structure data cannot be null", structure);
-        assertNode(structure, "Broker");
+        assertNode(structure, "QpidBroker");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) structure.get("virtualhosts");
@@ -38,7 +41,7 @@ public class StructureRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) structure.get("ports");
-        assertEquals("Unexpected number of ports", 2, ports.size());
+        assertEquals("Unexpected number of ports", 4, ports.size());
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> providers = (List<Map<String, Object>>) structure.get("authenticationproviders");
@@ -89,22 +92,18 @@ public class StructureRestTest extends QpidRestTestCase
                     }
                 }
             }
-
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> aliases = (List<Map<String, Object>>) host.get("virtualhostaliases");
-            assertNotNull("Host " + hostName + " aliaces are not found ", aliases);
-            assertEquals("Unexpected aliaces size", 1, aliases.size());
-            assertNode(aliases.get(0), hostName);
         }
 
-        int[] expectedPorts = { getPort(), getRestTestHelper().getHttpPort() };
-        for (int port : expectedPorts)
-        {
-            String portName = "0.0.0.0:" + port;
-            Map<String, Object> portData = getRestTestHelper().find("name", portName, ports);
-            assertNotNull("Port " + portName + " is not found ", portData);
-            assertNode(portData, portName);
-        }
+
+        String httpPortName = TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT;
+        Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
+        assertNotNull("Http Port " + httpPortName + " is not found", portData);
+        assertNode(portData, httpPortName);
+
+        String amqpPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> amqpPortData = getRestTestHelper().find(Port.NAME, amqpPortName, ports);
+        assertNotNull("Amqp port " + amqpPortName + " is not found", amqpPortData);
+        assertNode(amqpPortData, amqpPortName);
     }
 
     private void assertNode(Map<String, Object> node, String name)

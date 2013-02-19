@@ -105,7 +105,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
     }});
 
-    public static final String BDB_HA_STORE_TYPE = "BDB-HA";
+    public static final String TYPE = "BDB-HA";
 
     private String _groupName;
     private String _nodeName;
@@ -602,6 +602,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     @Override
     public String getStoreType()
     {
-        return BDB_HA_STORE_TYPE;
+        return TYPE;
     }
 }

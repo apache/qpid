@@ -38,6 +38,7 @@ import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -50,9 +51,9 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             new HashMap<AMQSessionModel, SessionAdapter>();
     private final Statistics _statistics;
 
-    public ConnectionAdapter(final AMQConnectionModel conn)
+    public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
     {
-        super(UUIDGenerator.generateRandomUUID());
+        super(UUIDGenerator.generateRandomUUID(), taskExecutor);
         _connection = conn;
         _statistics = new ConnectionStatisticsAdapter(conn);
     }
@@ -74,7 +75,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             {
                 if(!_sessionAdapters.containsKey(session))
                 {
-                    _sessionAdapters.put(session, new SessionAdapter(session));
+                    _sessionAdapters.put(session, new SessionAdapter(session, getTaskExecutor()));
                 }
             }
             return new ArrayList<Session>(_sessionAdapters.values());
@@ -199,52 +200,6 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
     }
 
     @Override
-    public Object setAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        if(name.equals(CLIENT_ID))
-        {
-
-        }
-        else if(name.equals(CLIENT_VERSION))
-        {
-
-        }
-        else if(name.equals(INCOMING))
-        {
-
-        }
-        else if(name.equals(LOCAL_ADDRESS))
-        {
-
-        }
-        else if(name.equals(PRINCIPAL))
-        {
-
-        }
-        else if(name.equals(PROPERTIES))
-        {
-
-        }
-        else if(name.equals(REMOTE_ADDRESS))
-        {
-
-        }
-        else if(name.equals(REMOTE_PROCESS_NAME))
-        {
-
-        }
-        else if(name.equals(REMOTE_PROCESS_PID))
-        {
-
-        }
-        else if(name.equals(SESSION_COUNT_LIMIT))
-        {
-
-        }
-        return super.setAttribute(name, expected, desired);
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         final HashSet<String> attrNames = new HashSet<String>(super.getAttributeNames());
@@ -270,7 +225,8 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         }
     }
 
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    @Override
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == Session.class)
         {
@@ -309,5 +265,12 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             }
             return super.getStatistic(name);
         }
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO: add state management
+        return false;
     }
 }

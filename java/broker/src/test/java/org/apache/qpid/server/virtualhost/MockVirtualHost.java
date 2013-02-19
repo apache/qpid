@@ -28,14 +28,12 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
-import java.util.Map;
 import java.util.UUID;
 
 public class MockVirtualHost implements VirtualHost
@@ -52,7 +50,8 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public IApplicationRegistry getApplicationRegistry()
+    @Override
+    public VirtualHostRegistry getVirtualHostRegistry()
     {
         return null;
     }
@@ -63,11 +62,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public BindingFactory getBindingFactory()
-    {
-        return null;
-    }
-
-    public UUID getBrokerId()
     {
         return null;
     }

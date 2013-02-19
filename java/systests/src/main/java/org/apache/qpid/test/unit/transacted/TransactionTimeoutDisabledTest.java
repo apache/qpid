@@ -29,7 +29,7 @@ public class TransactionTimeoutDisabledTest extends TransactionTimeoutTestCase
     protected void configure() throws Exception
     {
         // Setup housekeeping every second
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
 
         // No transaction timeout configuration.
     }

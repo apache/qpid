@@ -28,13 +28,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.UUID;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -54,35 +54,36 @@ public class ServerConnectionDelegate extends ServerDelegate
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerConnectionDelegate.class);
 
+    private final Broker _broker;
     private final String _localFQDN;
-    private final IApplicationRegistry _appRegistry;
     private int _maxNoOfChannels;
     private Map<String,Object> _clientProperties;
     private final SubjectCreator _subjectCreator;
 
-    public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN, SubjectCreator subjectCreator)
+    public ServerConnectionDelegate(Broker broker, String localFQDN, SubjectCreator subjectCreator)
     {
-        this(createConnectionProperties(appRegistry), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN, subjectCreator);
+        this(createConnectionProperties(broker), Collections.singletonList((Object)"en_US"), broker, localFQDN, subjectCreator);
     }
 
     private ServerConnectionDelegate(Map<String, Object> properties,
                                     List<Object> locales,
-                                    IApplicationRegistry appRegistry,
+                                    Broker broker,
                                     String localFQDN,
                                     SubjectCreator subjectCreator)
     {
         super(properties, parseToList(subjectCreator.getMechanisms()), locales);
 
-        _appRegistry = appRegistry;
+        _broker = broker;
         _localFQDN = localFQDN;
-        _maxNoOfChannels = appRegistry.getConfiguration().getMaxChannelCount();
+        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT);
         _subjectCreator = subjectCreator;
     }
 
-    private static List<String> getFeatures(IApplicationRegistry appRegistry)
+    private static List<String> getFeatures(Broker broker)
     {
+        String brokerDisabledFeatures = System.getProperty(BrokerProperties.PROPERTY_DISABLED_FEATURES);
         final List<String> features = new ArrayList<String>();
-        if (!appRegistry.getConfiguration().getDisabledFeatures().contains(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR))
+        if (brokerDisabledFeatures == null || !brokerDisabledFeatures.contains(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR))
         {
             features.add(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
         }
@@ -90,12 +91,12 @@ public class ServerConnectionDelegate extends ServerDelegate
         return Collections.unmodifiableList(features);
     }
 
-    private static Map<String, Object> createConnectionProperties(final IApplicationRegistry applicationRegistry)
+    private static Map<String, Object> createConnectionProperties(final Broker broker)
     {
         final Map<String,Object> map = new HashMap<String,Object>(2);
         // Federation tag is used by the client to identify the broker instance
-        map.put(ServerPropertyNames.FEDERATION_TAG, applicationRegistry.getBrokerId().toString());
-        final List<String> features = getFeatures(applicationRegistry);
+        map.put(ServerPropertyNames.FEDERATION_TAG, broker.getId().toString());
+        final List<String> features = getFeatures(broker);
         if (features != null && features.size() > 0)
         {
             map.put(ServerPropertyNames.QPID_FEATURES, features);
@@ -179,7 +180,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             vhostName = "";
         }
-        vhost = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhostName);
+        vhost = _broker.getVirtualHostRegistry().getVirtualHost(vhostName);
 
         SecurityManager.setThreadSubject(sconn.getAuthorizedSubject());
 

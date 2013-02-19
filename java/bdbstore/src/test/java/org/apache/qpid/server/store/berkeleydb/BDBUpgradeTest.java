@@ -31,6 +31,7 @@ import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPrepare
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.TOPIC_NAME;
 
 import java.io.File;
+import java.io.InputStream;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
@@ -84,15 +85,13 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         {
             FileUtils.delete(directory, true);
         }
+        directory.mkdirs();
 
         // copy store files
-        String src = getClass().getClassLoader().getResource("upgrade/bdbstore-v4/test-store").toURI().getPath();
-        FileUtils.copyRecursive(new File(src), new File(_storeLocation));
+        InputStream src = getClass().getClassLoader().getResourceAsStream("upgrade/bdbstore-v4/test-store/00000000.jdb");
+        FileUtils.copy(src, new File(_storeLocation, "00000000.jdb"));
 
-        //override the broker config used and then start the broker with the updated store
-        _configFile = new File("build/etc/config-systests-bdb.xml");
-        setConfigurationProperty("management.enabled", "true");
-
+        getBrokerConfiguration().addJmxManagementConfiguration();
         super.setUp();
     }
 

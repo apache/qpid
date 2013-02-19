@@ -39,6 +39,16 @@ public interface Port extends ConfiguredObject
     String PORT                                 = "port";
     String PROTOCOLS                            = "protocols";
     String TRANSPORTS                           = "transports";
+    String TCP_NO_DELAY                         = "tcpNoDelay";
+    String SEND_BUFFER_SIZE                     = "sendBufferSize";
+    String RECEIVE_BUFFER_SIZE                  = "receiveBufferSize";
+    String NEED_CLIENT_AUTH                     = "needClientAuth";
+    String WANT_CLIENT_AUTH                     = "wantClientAuth";
+
+    /**
+     * TODO: rename it to AUTHENTICATION_MANAGER_ID or introduce relationships
+     */
+    String AUTHENTICATION_MANAGER               = "authenticationManager";
 
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
@@ -55,7 +65,13 @@ public interface Port extends ConfiguredObject
                             BINDING_ADDRESS,
                             PORT,
                             PROTOCOLS,
-                            TRANSPORTS
+                            TRANSPORTS,
+                            TCP_NO_DELAY,
+                            SEND_BUFFER_SIZE,
+                            RECEIVE_BUFFER_SIZE,
+                            NEED_CLIENT_AUTH,
+                            WANT_CLIENT_AUTH,
+                            AUTHENTICATION_MANAGER
                                  ));
 
 
@@ -88,4 +104,8 @@ public interface Port extends ConfiguredObject
     //children
     Collection<VirtualHostAlias> getVirtualHostBindings();
     Collection<Connection> getConnections();
+
+    AuthenticationProvider getAuthenticationProvider();
+
+    void setAuthenticationProvider(AuthenticationProvider authenticationProvider);
 }

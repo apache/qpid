@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Assembler;
@@ -32,7 +31,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.UUID;
+
 
 public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine
 {
@@ -42,19 +41,17 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _readBytes;
     private long _writtenBytes;
     private ServerConnection _connection;
-    private final IApplicationRegistry _appRegistry;
+
     private long _createTime = System.currentTimeMillis();
     private long _lastReadTime;
     private long _lastWriteTime;
 
     public ProtocolEngine_0_10(ServerConnection conn,
-                               NetworkConnection network,
-                               final IApplicationRegistry appRegistry)
+                               NetworkConnection network)
     {
         super(new Assembler(conn));
         _connection = conn;
 
-        _appRegistry = appRegistry;
 
         if(network != null)
         {

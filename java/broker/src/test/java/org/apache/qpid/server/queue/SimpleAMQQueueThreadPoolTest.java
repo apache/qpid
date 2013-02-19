@@ -20,20 +20,33 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class SimpleAMQQueueThreadPoolTest extends InternalBrokerBaseCase
+public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
 {
 
-    public void test() throws AMQException
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
+    }
+
+    public void test() throws Exception
     {
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
-        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        VirtualHost test = BrokerTestHelper.createVirtualHost("test");
 
         try
         {
@@ -50,7 +63,7 @@ public class SimpleAMQQueueThreadPoolTest extends InternalBrokerBaseCase
         }
         finally
         {
-            ApplicationRegistry.remove();
+            test.close();
         }
     }
 }

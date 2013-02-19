@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestTest extends QpidRestTestCase
 {
@@ -61,18 +62,17 @@ public class BrokerRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) brokerDetails.get(BROKER_PORTS_ATTRIBUTE);
-        assertEquals("Unexpected number of ports", 2, ports.size());
+        assertEquals("Unexpected number of ports", 4, ports.size());
 
         for (Map<String, Object> port : ports)
         {
             Asserts.assertPortAttributes(port);
         }
 
-        String bindingAddress = (String)ports.get(0).get(Port.BINDING_ADDRESS);
+        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, ports);
+        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, ports);
 
-        Map<String, Object> amqpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getPort(), ports);
-        Map<String, Object> httpPort = getRestTestHelper().find(Port.NAME, bindingAddress + ":" + getRestTestHelper().getHttpPort(), ports);
-
+        assertEquals("Unexpected binding address", "*", amqpPort.get(Port.BINDING_ADDRESS));
         assertNotNull("Cannot find AMQP port", amqpPort);
         assertNotNull("Cannot find HTTP port", httpPort);
 
@@ -90,7 +90,9 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES,
                 Broker.BYTES_RETAINED, Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES,
-                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED);
+                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE,
+                Broker.KEY_STORE_PATH, Broker.KEY_STORE_PASSWORD, Broker.KEY_STORE_CERT_ALIAS,
+                Broker.TRUST_STORE_PATH, Broker.TRUST_STORE_PASSWORD, Broker.GROUP_FILE);
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));
@@ -105,7 +107,7 @@ public class BrokerRestTest extends QpidRestTestCase
         assertEquals("Unexpected value of attribute " + Broker.DURABLE, Boolean.TRUE, brokerDetails.get(Broker.DURABLE));
         assertEquals("Unexpected value of attribute " + Broker.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                 brokerDetails.get(Broker.LIFETIME_POLICY));
-        assertEquals("Unexpected value of attribute " + Broker.NAME, "Broker", brokerDetails.get(Broker.NAME));
+        assertEquals("Unexpected value of attribute " + Broker.NAME, "QpidBroker", brokerDetails.get(Broker.NAME));
         assertEquals("Unexpected value of attribute " + Broker.STATE, State.ACTIVE.name(), brokerDetails.get(Broker.STATE));
 
         assertNotNull("Unexpected value of attribute " + Broker.ID, brokerDetails.get(Broker.ID));

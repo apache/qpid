@@ -50,8 +50,6 @@ import java.util.TreeMap;
  */
 public class PrincipalDatabaseAuthenticationManager implements AuthenticationManager
 {
-    public static final String PD_CLASS = "pd.class";
-    public static final String PD_PASSWORD_FILE = "pd.passwordFile";
 
     private static final Logger _logger = Logger.getLogger(PrincipalDatabaseAuthenticationManager.class);
 

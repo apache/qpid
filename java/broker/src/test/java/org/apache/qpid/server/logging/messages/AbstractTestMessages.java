@@ -29,11 +29,12 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.List;
 
-public abstract class AbstractTestMessages extends InternalBrokerBaseCase
+public abstract class AbstractTestMessages extends QpidTestCase
 {
     protected Configuration _config = new PropertiesConfiguration();
     protected LogMessage _logMessage = null;
@@ -49,6 +50,14 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
         _logger = new UnitTestMessageLogger();
 
         _actor = new TestLogActor(_logger);
+        BrokerTestHelper.setUp();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
     }
 
     protected List<Object> performLog()

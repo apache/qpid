@@ -63,8 +63,7 @@ public class JMSDestinationTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
-        //Ensure JMX management is enabled for MovedToQueue test 
-        setConfigurationProperty("management.enabled", "true");
+        getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
 

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.User;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class UserRestTest extends QpidRestTestCase
 {
@@ -56,8 +57,8 @@ public class UserRestTest extends QpidRestTestCase
             assertNotNull("Attribute " + User.ID, user.get(User.ID));
             String userName = (String) user.get(User.NAME);
             assertNotNull("Attribute " + User.NAME, userName);
-            Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/PrincipalDatabaseAuthenticationManager/"
-                    + userName);
+            Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/"
+                    + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
             assertUser(userDetails);
             assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
         }
@@ -68,8 +69,8 @@ public class UserRestTest extends QpidRestTestCase
         String userName = getTestName();
         getRestTestHelper().createOrUpdateUser(userName, "newPassword");
 
-        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/PrincipalDatabaseAuthenticationManager/"
-                + userName);
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         assertUser(userDetails);
         assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
     }
@@ -79,13 +80,14 @@ public class UserRestTest extends QpidRestTestCase
         String userName = getTestName();
         getRestTestHelper().createOrUpdateUser(userName, "newPassword");
 
-        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/PrincipalDatabaseAuthenticationManager/"
-                + userName);
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         String id = (String) userDetails.get(User.ID);
 
         getRestTestHelper().removeUserById(id);
 
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/user/PrincipalDatabaseAuthenticationManager/" + userName);
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         assertEquals("User should be deleted", 0, users.size());
     }
 

@@ -31,7 +31,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -44,7 +43,6 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTIO
 public class Connection_1_0 implements ConnectionEventListener
 {
 
-    private IApplicationRegistry _appRegistry;
     private VirtualHost _vhost;
     private final ConnectionEndpoint _conn;
     private final long _connectionId;
@@ -62,10 +60,9 @@ public class Connection_1_0 implements ConnectionEventListener
 
 
 
-    public Connection_1_0(IApplicationRegistry appRegistry, ConnectionEndpoint conn, long connectionId)
+    public Connection_1_0(VirtualHost virtualHost, ConnectionEndpoint conn, long connectionId)
     {
-        _appRegistry = appRegistry;
-        _vhost = _appRegistry.getVirtualHostRegistry().getDefaultVirtualHost();
+        _vhost = virtualHost;
         _conn = conn;
         _connectionId = connectionId;
         _vhost.getConnectionRegistry().registerConnection(_model);
@@ -74,7 +71,7 @@ public class Connection_1_0 implements ConnectionEventListener
 
     public void remoteSessionCreation(SessionEndpoint endpoint)
     {
-        Session_1_0 session = new Session_1_0(_vhost, _appRegistry, this);
+        Session_1_0 session = new Session_1_0(_vhost, this);
         _sessions.add(session);
         endpoint.setSessionEventListener(session);
     }

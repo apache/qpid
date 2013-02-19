@@ -25,8 +25,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
@@ -48,6 +47,7 @@ import java.util.Random;
 
 public class SaslServlet extends AbstractServlet
 {
+
     private static final Logger LOGGER = Logger.getLogger(SaslServlet.class);
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -57,15 +57,9 @@ public class SaslServlet extends AbstractServlet
     private static final String ATTR_EXPIRY = "SaslServlet.Expiry";
     private static final long SASL_EXCHANGE_EXPIRY = 1000L;
 
-
     public SaslServlet()
     {
         super();
-    }
-
-    public SaslServlet(Broker broker)
-    {
-        super(broker);
     }
 
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws
@@ -82,7 +76,7 @@ public class SaslServlet extends AbstractServlet
         HttpSession session = request.getSession();
         getRandom(session);
 
-        SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
+        SubjectCreator subjectCreator = getSubjectCreator(request);
         String[] mechanisms = subjectCreator.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
 
@@ -140,7 +134,7 @@ public class SaslServlet extends AbstractServlet
             String id = request.getParameter("id");
             String saslResponse = request.getParameter("response");
 
-            SubjectCreator subjectCreator = ApplicationRegistry.getInstance().getSubjectCreator(getSocketAddress(request));
+            SubjectCreator subjectCreator = getSubjectCreator(request);
 
             if(mechanism != null)
             {
@@ -202,13 +196,14 @@ public class SaslServlet extends AbstractServlet
     private void checkSaslAuthEnabled(HttpServletRequest request)
     {
         boolean saslAuthEnabled;
+        HttpManagement management = getManagement();
         if (request.isSecure())
         {
-            saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPSManagementSaslAuthEnabled();
+            saslAuthEnabled = management.isHttpsSaslAuthenticationEnabled();
         }
         else
         {
-            saslAuthEnabled = ApplicationRegistry.getInstance().getConfiguration().getHTTPManagementSaslAuthEnabled();
+            saslAuthEnabled = management.isHttpSaslAuthenticationEnabled();
         }
 
         if (!saslAuthEnabled)

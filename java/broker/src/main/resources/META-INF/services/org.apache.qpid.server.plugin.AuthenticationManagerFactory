@@ -17,7 +17,8 @@
 # under the License.
 #
 org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory
+org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory
 org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory
 org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManagerFactory
-org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthManagerFactory
+org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory
 org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManagerFactory

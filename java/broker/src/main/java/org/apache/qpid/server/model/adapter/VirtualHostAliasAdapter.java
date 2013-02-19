@@ -43,7 +43,7 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
 
     public VirtualHostAliasAdapter(VirtualHostAdapter virtualHostAdapter, Port port)
     {
-        super(UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()));
+        super(UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()), virtualHostAdapter.getTaskExecutor());
         _vhost = virtualHostAdapter;
         _port = port;
     }
@@ -139,5 +139,12 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO: state is not supported at the moment
+        return false;
     }
 }

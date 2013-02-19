@@ -28,8 +28,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
@@ -39,7 +37,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
@@ -47,16 +44,15 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,17 +60,17 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class SimpleAMQQueueTest extends InternalBrokerBaseCase
+public class SimpleAMQQueueTest extends QpidTestCase
 {
 
-    protected SimpleAMQQueue _queue;
-    protected VirtualHost _virtualHost;
-    protected AMQShortString _qname = new AMQShortString("qname");
-    protected AMQShortString _owner = new AMQShortString("owner");
-    protected AMQShortString _routingKey = new AMQShortString("routing key");
-    protected DirectExchange _exchange;
-    protected MockSubscription _subscription = new MockSubscription();
-    protected FieldTable _arguments = null;
+    private SimpleAMQQueue _queue;
+    private VirtualHost _virtualHost;
+    private AMQShortString _qname = new AMQShortString("qname");
+    private AMQShortString _owner = new AMQShortString("owner");
+    private AMQShortString _routingKey = new AMQShortString("routing key");
+    private DirectExchange _exchange;
+    private MockSubscription _subscription = new MockSubscription();
+    private FieldTable _arguments = null;
 
     private MessagePublishInfo info = new MessagePublishInfo()
     {
@@ -108,25 +104,29 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        //Create Application Registry for test
-        ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
+        BrokerTestHelper.setUp();
 
-        PropertiesConfiguration env = new PropertiesConfiguration();
-        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(getClass().getName(), env);
-        vhostConfig.setMessageStoreClass(TestableMemoryMessageStore.class.getName());
-        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), vhostConfig);
-        applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
+        _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
+                false, false, _virtualHost, FieldTable.convertToMap(_arguments));
 
-        _exchange = (DirectExchange)_virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        _exchange = (DirectExchange) _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        _queue.stop();
-        super.tearDown();
+        try
+        {
+            _queue.stop();
+            _virtualHost.close();
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     public void testCreateQueue() throws AMQException
@@ -1267,6 +1267,26 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
             assertTrue("Consumer did not recieve msg: "
                     + msg.getMessage().getMessageNumber(), delivered.contains(msg));
         }
+    }
+
+    public SimpleAMQQueue getQueue()
+    {
+        return _queue;
+    }
+
+    public MockSubscription getSubscription()
+    {
+        return _subscription;
+    }
+
+    public FieldTable getArguments()
+    {
+        return _arguments;
+    }
+
+    public void setArguments(FieldTable arguments)
+    {
+        _arguments = arguments;
     }
 
     public class TestMessage extends AMQMessage

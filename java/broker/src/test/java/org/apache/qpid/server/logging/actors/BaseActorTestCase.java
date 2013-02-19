@@ -20,39 +20,39 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class BaseActorTestCase extends InternalBrokerBaseCase
+public class BaseActorTestCase extends QpidTestCase
 {
-    protected LogActor _amqpActor;
-    protected UnitTestMessageLogger _rawLogger;
-    protected RootMessageLogger _rootLogger;
+    private boolean _statusUpdatesEnabled = true;
+    private LogActor _amqpActor;
+    private UnitTestMessageLogger _rawLogger;
+    private RootMessageLogger _rootLogger;
 
     @Override
-    public void configure()
+    public void setUp() throws Exception
     {
-        getConfiguration().getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
-    }
-
-    @Override
-    public void createBroker() throws Exception
-    {
-        super.createBroker();
-
-        _rawLogger = new UnitTestMessageLogger(getConfiguration());
+        super.setUp();
+        CurrentActor.removeAll();
+        CurrentActor.setDefault(null);
+        _rawLogger = new UnitTestMessageLogger(_statusUpdatesEnabled);
         _rootLogger = _rawLogger;
     }
 
+    @Override
     public void tearDown() throws Exception
     {
-        _rawLogger.clearLogMessages();
-
+        if(_rawLogger != null)
+        {
+            _rawLogger.clearLogMessages();
+        }
+        CurrentActor.removeAll();
+        CurrentActor.setDefault(null);
         super.tearDown();
     }
 
@@ -85,6 +85,36 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
                 return "test.hierarchy";
             }
         });
+    }
+
+    public boolean isStatusUpdatesEnabled()
+    {
+        return _statusUpdatesEnabled;
+    }
+
+    public void setStatusUpdatesEnabled(boolean statusUpdatesEnabled)
+    {
+        _statusUpdatesEnabled = statusUpdatesEnabled;
+    }
+
+    public LogActor getAmqpActor()
+    {
+        return _amqpActor;
+    }
+
+    public void setAmqpActor(LogActor amqpActor)
+    {
+        _amqpActor = amqpActor;
+    }
+
+    public UnitTestMessageLogger getRawLogger()
+    {
+        return _rawLogger;
+    }
+
+    public RootMessageLogger getRootLogger()
+    {
+        return _rootLogger;
     }
 
 }

@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -40,11 +39,6 @@ public class MessageContentServlet extends AbstractServlet
     public MessageContentServlet()
     {
         super();
-    }
-
-    public MessageContentServlet(Broker broker)
-    {
-        super(broker);
     }
 
     @Override

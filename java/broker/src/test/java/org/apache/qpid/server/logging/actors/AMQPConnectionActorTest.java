@@ -38,16 +38,9 @@ import java.util.List;
 public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 {
     @Override
-    public void configure()
+    public void setUp()
     {
-        // Prevent defaulting Logging to ON
-    }
-
-
-    @Override
-    public void createBroker()
-    {
-        //Prevent auto-broker startup
+        //Prevent logger creation
     }
 
     /**
@@ -60,13 +53,11 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
      */
     public void testConnection() throws Exception
     {
-        getConfigXml().setProperty("status-updates", "ON");
-
-        super.createBroker();
+        super.setUp();
 
         final String message = sendLogMessage();
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 
@@ -90,14 +81,13 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 
     public void testConnectionLoggingOff() throws Exception, AMQException
     {
-        getConfigXml().setProperty("status-updates", "OFF");
+        setStatusUpdatesEnabled(false);
 
-        // Start the broker now.
-        super.createBroker();
+        super.setUp();
 
         sendLogMessage();
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 0, logs.size());
 
@@ -107,7 +97,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
     {
         final String message = "test logging";
 
-        _amqpActor.message(new LogSubject()
+        getAmqpActor().message(new LogSubject()
         {
             public String toLogString()
             {

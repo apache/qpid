@@ -18,27 +18,30 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.ManagementFactory;
+import java.util.Map;
+import java.util.UUID;
 
-public class JMXManagementFactory implements ManagementFactory
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.plugin.PluginFactory;
+
+public class JMXManagementFactory implements PluginFactory
 {
-    private static final Logger _logger = Logger.getLogger(JMXManagementFactory.class);
+    private static final Logger LOGGER = Logger.getLogger(JMXManagementFactory.class);
 
     @Override
-    public JMXManagement createInstance(ServerConfiguration serverConfiguration, Broker broker)
+    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
-        if (serverConfiguration.getJMXManagementEnabled())
+        if (JMXManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
         {
-            return new JMXManagement(serverConfiguration, broker);
+            return new JMXManagement(id, broker, attributes);
         }
         else
         {
-            if(_logger.isDebugEnabled())
+            if (LOGGER.isDebugEnabled())
             {
-                _logger.debug("Skipping registration of JMX plugin as JMX Management disabled in config.");
+                LOGGER.debug("Skipping registration of JMX plugin as JMX Management disabled in config.");
             }
             return null;
         }
