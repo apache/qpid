@@ -86,7 +86,7 @@
         <emphasis>&lt;registryServer>7999&lt;/registryServer&gt;</emphasis>   <co id="java-broker-example-jmx-management-1"/>
         <emphasis>&lt;connectorServer>7998&lt;/connectorServer&gt;</emphasis> <co id="java-broker-example-jmx-management-2"/>
     &lt;/jmxport&gt;
-&lt;management&gt;
+&lt;/management&gt;
 ...
 &lt;/broker&gt;</programlisting>
         </example>
@@ -118,7 +118,7 @@
         &lt;keyStorePassword&gt;password&lt;/keyStorePassword&gt;      <co id="java-broker-example-management-keystore-2"/>
     &lt;/ssl&gt;
 ...
-&lt;management&gt;
+&lt;/management&gt;
 ...
 &lt;/broker&gt;</programlisting>
         </example>
@@ -145,7 +145,7 @@
 ...
     &lt;http&gt;
         &lt;enabled&gt;true&lt;/enabled&gt;                       <co id="java-broker-example-management-web-0"/>
-        &lt;port&gt;9090&lt;/keyStorePath&gt;                     <co id="java-broker-example-management-web-1"/>
+        &lt;port&gt;9090&lt;/port&gt;                             <co id="java-broker-example-management-web-1"/>
         &lt;basic-auth&gt;false&lt;/basic-auth&gt;                <co id="java-broker-example-management-web-2"/>
         &lt;sasl-auth&gt;true&lt;/sasl-auth&gt;                   <co id="java-broker-example-management-web-3"/>
         &lt;session-timeout&gt;600&lt;/session-timeout&gt;        <co id="java-broker-example-management-web-4"/>
@@ -153,12 +153,12 @@
 
     &lt;https&gt;
         &lt;enabled&gt;true&lt;/enabled&gt;                       <co id="java-broker-example-management-web-5"/>
-        &lt;port&gt;9443&lt;/keyStorePath&gt;                     <co id="java-broker-example-management-web-6"/>
+        &lt;port&gt;9443&lt;/port&gt;                             <co id="java-broker-example-management-web-6"/>
         &lt;sasl-auth&gt;true&lt;/sasl-auth&gt;                   <co id="java-broker-example-management-web-7"/>
         &lt;basic-auth&gt;true&lt;/basic-auth&gt;                 <co id="java-broker-example-management-web-8"/>
     &lt;/https&gt;
 ...
-&lt;management&gt;
+&lt;/management&gt;
 ...
 &lt;/broker&gt;</programlisting>
         </example>
