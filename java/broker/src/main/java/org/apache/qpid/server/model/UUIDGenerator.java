@@ -87,4 +87,9 @@ public class UUIDGenerator
     {
         return createUUID(GroupMember.class.getName(), groupProviderName, groupName, groupMemberName);
     }
+
+    public static UUID generateBrokerChildUUID(String type, String childName)
+    {
+        return createUUID(type, childName);
+    }
 }

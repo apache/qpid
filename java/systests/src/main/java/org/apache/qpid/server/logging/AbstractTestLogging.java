@@ -20,12 +20,7 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.commons.configuration.ConfigurationException;
-
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
@@ -47,8 +42,6 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     public static final String TEST_LOG_PREFIX = "MESSAGE";
     protected LogMonitor _monitor;
 
-    private InternalBrokerBaseCase _configLoader;
-
     @Override
     public void setUp() throws Exception
     {
@@ -56,32 +49,6 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         
         super.setUp();
         _monitor = new LogMonitor(_outputFile);
-    }
-
-    protected ServerConfiguration getServerConfig() throws ConfigurationException
-    {
-        ServerConfiguration _serverConfiguration;
-        if (isExternalBroker())
-        {
-            _serverConfiguration = new ServerConfiguration(_configFile)
-            {
-                @Override
-                public void initialise() throws ConfigurationException
-                {
-                    //Overriding initialise to only setup the vhosts and not
-                    //perform the ConfigurationPlugin setup, removing need for
-                    //an ApplicationRegistry to be loaded.
-                    setupVirtualHosts(getConfig());
-                }
-            };
-            _serverConfiguration.initialise();
-        }
-        else
-        {
-            _serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
-        }
-
-        return _serverConfiguration;
     }
 
     protected void setLogMessagePrefix()
@@ -94,10 +61,6 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     public void tearDown() throws Exception
     {
         _monitor.close();
-        if (isExternalBroker() && _configLoader != null)
-        {
-            _configLoader.tearDown();
-        }
         super.tearDown();
     }
 
@@ -159,7 +122,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     }
 
     protected String fromMessage(String log)
-    {
+    {;
         int startSubject = log.indexOf("]") + 1;
         int start = log.indexOf("]", startSubject) + 1;
 

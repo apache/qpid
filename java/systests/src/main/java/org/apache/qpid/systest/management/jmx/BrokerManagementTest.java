@@ -107,6 +107,8 @@ public class BrokerManagementTest extends QpidBrokerTestCase
     {
         String defaultExchangeName = ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString();
 
+        ManagedExchange defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
+        assertNotNull("Exchange should exist", defaultExchange);
         try
         {
             _managedBroker.unregisterExchange(defaultExchangeName);
@@ -117,7 +119,7 @@ public class BrokerManagementTest extends QpidBrokerTestCase
             // PASS
             assertEquals("'<<default>>' is a reserved exchange and can't be deleted", e.getMessage());
         }
-        final ManagedExchange defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
+        defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
         assertNotNull("Exchange should exist", defaultExchange);
     }
 

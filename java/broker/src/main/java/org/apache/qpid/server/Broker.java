@@ -23,37 +23,30 @@ package org.apache.qpid.server;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.*;
-import javax.net.ssl.SSLContext;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.transport.QpidAcceptor;
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
-import org.apache.qpid.transport.network.Transport;
-
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 
 public class Broker
 {
     private static final Logger LOGGER = Logger.getLogger(Broker.class);
 
     private volatile Thread _shutdownHookThread;
+    private volatile IApplicationRegistry _applicationRegistry;
 
     protected static class InitException extends RuntimeException
     {
@@ -75,7 +68,10 @@ public class Broker
         {
             try
             {
-                ApplicationRegistry.remove();
+                if (_applicationRegistry != null)
+                {
+                    _applicationRegistry.close();
+                }
             }
             finally
             {
@@ -112,259 +108,48 @@ public class Broker
 
     private void startupImpl(final BrokerOptions options) throws Exception
     {
-        final String qpidHome = options.getQpidHome();
-        final File configFile = getConfigFile(options.getConfigFile(),
-                                    BrokerOptions.DEFAULT_CONFIG_FILE, qpidHome, true);
+        final String qpidHome = System.getProperty(BrokerProperties.PROPERTY_QPID_HOME);
+        String storeLocation = options.getConfigurationStoreLocation();
+        String storeType = options.getConfigurationStoreType();
 
-        CurrentActor.get().message(BrokerMessages.CONFIG(configFile.getAbsolutePath()));
+        if (storeLocation == null)
+        {
+            String qpidWork = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
+            if (qpidWork == null)
+            {
+                qpidWork = new File(System.getProperty("user.dir"), "work").getAbsolutePath();
+            }
+            storeLocation = new File(qpidWork, BrokerOptions.DEFAULT_CONFIG_FILE + "." + storeType).getAbsolutePath();
+        }
 
-        File logConfigFile = getConfigFile(options.getLogConfigFile(),
-                                    BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
+        CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
 
+        File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
-        ServerConfiguration serverConfig = new ServerConfiguration(configFile);
-        ApplicationRegistry config = new ApplicationRegistry(serverConfig);
-        if (options.getQpidWork() != null)
-        {
-            serverConfig.setQpidWork(options.getQpidWork());
-        }
-        if (options.getQpidHome() != null)
-        {
-            serverConfig.setQpidHome(options.getQpidHome());
-        }
-        updateManagementPorts(serverConfig, options.getJmxPortRegistryServer(), options.getJmxPortConnectorServer());
+        BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
+        ConfigurationEntryStore store =  storeCreator.createStore(storeLocation, storeType, options);
 
-        ApplicationRegistry.initialise(config);
-
-        // We have already loaded the BrokerMessages class by this point so we
-        // need to refresh the locale setting incase we had a different value in
-        // the configuration.
-        BrokerMessages.reload();
-
-        // AR.initialise() sets and removes its own actor so we now need to set the actor
-        // for the remainder of the startup, and the default actor if the stack is empty
-        CurrentActor.set(new BrokerActor(config.getCompositeStartupMessageLogger()));
-        CurrentActor.setDefault(new BrokerActor(config.getRootMessageLogger()));
-        GenericActor.setDefaultMessageLogger(config.getRootMessageLogger());
-
+        _applicationRegistry = new ApplicationRegistry(store);
         try
         {
-            Set<Integer> ports = new HashSet<Integer>(options.getPorts());
-            if(ports.isEmpty())
-            {
-                parsePortList(ports, serverConfig.getPorts());
-            }
-
-            Set<Integer> sslPorts = new HashSet<Integer>(options.getSSLPorts());
-            if(sslPorts.isEmpty())
-            {
-                parsePortList(sslPorts, serverConfig.getSSLPorts());
-            }
-
-            //1-0 excludes and includes
-            Set<Integer> exclude_1_0 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v1_0));
-            if(exclude_1_0.isEmpty())
-            {
-                parsePortList(exclude_1_0, serverConfig.getPortExclude10());
-            }
-
-            Set<Integer> include_1_0 = new HashSet<Integer>(options.getIncludedPorts(ProtocolInclusion.v1_0));
-            if(include_1_0.isEmpty())
-            {
-                parsePortList(include_1_0, serverConfig.getPortInclude10());
-            }
-
-            //0-10 excludes and includes
-            Set<Integer> exclude_0_10 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v0_10));
-            if(exclude_0_10.isEmpty())
-            {
-                parsePortList(exclude_0_10, serverConfig.getPortExclude010());
-            }
-
-            Set<Integer> include_0_10 = new HashSet<Integer>(options.getIncludedPorts(ProtocolInclusion.v0_10));
-            if(include_0_10.isEmpty())
-            {
-                parsePortList(include_0_10, serverConfig.getPortInclude010());
-            }
-
-            //0-9-1 excludes and includes
-            Set<Integer> exclude_0_9_1 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v0_9_1));
-            if(exclude_0_9_1.isEmpty())
-            {
-                parsePortList(exclude_0_9_1, serverConfig.getPortExclude091());
-            }
-
-            Set<Integer> include_0_9_1 = new HashSet<Integer>(options.getIncludedPorts(ProtocolInclusion.v0_9_1));
-            if(include_0_9_1.isEmpty())
-            {
-                parsePortList(include_0_9_1, serverConfig.getPortInclude091());
-            }
-
-            //0-9 excludes and includes
-            Set<Integer> exclude_0_9 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v0_9));
-            if(exclude_0_9.isEmpty())
-            {
-                parsePortList(exclude_0_9, serverConfig.getPortExclude09());
-            }
-
-            Set<Integer> include_0_9 = new HashSet<Integer>(options.getIncludedPorts(ProtocolInclusion.v0_9));
-            if(include_0_9.isEmpty())
-            {
-                parsePortList(include_0_9, serverConfig.getPortInclude09());
-            }
-
-            //0-8 excludes and includes
-            Set<Integer> exclude_0_8 = new HashSet<Integer>(options.getExcludedPorts(ProtocolExclusion.v0_8));
-            if(exclude_0_8.isEmpty())
-            {
-                parsePortList(exclude_0_8, serverConfig.getPortExclude08());
-            }
-
-            Set<Integer> include_0_8 = new HashSet<Integer>(options.getIncludedPorts(ProtocolInclusion.v0_8));
-            if(include_0_8.isEmpty())
-            {
-                parsePortList(include_0_8, serverConfig.getPortInclude08());
-            }
-
-            String bindAddr = options.getBind();
-            if (bindAddr == null)
-            {
-                bindAddr = serverConfig.getBind();
-            }
-
-            InetAddress bindAddress;
-            if (bindAddr.equals(WILDCARD_ADDRESS))
-            {
-                bindAddress = null;
-            }
-            else
-            {
-                bindAddress = InetAddress.getByName(bindAddr);
-            }
-
-            final AmqpProtocolVersion defaultSupportedProtocolReply = serverConfig.getDefaultSupportedProtocolReply();
-
-            if (!serverConfig.getSSLOnly())
-            {
-                for(int port : ports)
-                {
-                    final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, port);
-
-                    final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(port, exclude_1_0, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8,
-                                                         include_1_0, include_0_10, include_0_9_1, include_0_9, include_0_8,serverConfig);
-
-                    final NetworkTransportConfiguration settings =
-                                    new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
-
-                    final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
-                    final MultiVersionProtocolEngineFactory protocolEngineFactory =
-                                    new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
-
-                    transport.accept(settings, protocolEngineFactory, null);
-
-                    ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
-                                    new QpidAcceptor(transport,QpidAcceptor.Transport.TCP, supported));
-                    CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
-                }
-            }
-
-            if (serverConfig.getEnableSSL())
-            {
-                final String keystorePath = serverConfig.getConnectorKeyStorePath();
-                final String keystorePassword = serverConfig.getConnectorKeyStorePassword();
-                final String keystoreType = serverConfig.getConnectorKeyStoreType();
-                final String keyManagerFactoryAlgorithm = serverConfig.getConnectorKeyManagerFactoryAlgorithm();
-                final SSLContext sslContext;
-                if(serverConfig.getConnectorTrustStorePath()!=null)
-                {
-                    sslContext = SSLContextFactory.buildClientContext(serverConfig.getConnectorTrustStorePath(),
-                                                                      serverConfig.getConnectorTrustStorePassword(),
-                                                                      serverConfig.getConnectorTrustStoreType(),
-                                                                      serverConfig.getConnectorTrustManagerFactoryAlgorithm(),
-                                                                      keystorePath,
-                                                                      keystorePassword, keystoreType, keyManagerFactoryAlgorithm,
-                                                                      serverConfig.getCertAlias());
-                }
-                else
-                {
-                    sslContext = SSLContextFactory.buildServerContext(keystorePath, keystorePassword, keystoreType, keyManagerFactoryAlgorithm);
-                }
-
-                for(int sslPort : sslPorts)
-                {
-                    final InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, sslPort);
-
-                    final Set<AmqpProtocolVersion> supported =
-                                    getSupportedVersions(sslPort, exclude_1_0, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8,
-                                                         include_1_0, include_0_10, include_0_9_1, include_0_9, include_0_8, serverConfig);
-                    final NetworkTransportConfiguration settings =
-                        new ServerNetworkTransportConfiguration(serverConfig, inetSocketAddress, Transport.TCP);
-
-                    final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
-                    final MultiVersionProtocolEngineFactory protocolEngineFactory =
-                                    new MultiVersionProtocolEngineFactory(supported, defaultSupportedProtocolReply);
-
-                    transport.accept(settings, protocolEngineFactory, sslContext);
-
-                    ApplicationRegistry.getInstance().addAcceptor(inetSocketAddress,
-                            new QpidAcceptor(transport,QpidAcceptor.Transport.SSL, supported));
-                    CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", sslPort));
-                }
-            }
-
-            CurrentActor.get().message(BrokerMessages.READY());
+            _applicationRegistry.initialise();
         }
-        finally
+        catch(Exception e)
         {
-            // Startup is complete so remove the AR initialised Startup actor
-            CurrentActor.remove();
+            try
+            {
+                _applicationRegistry.close();
+            }
+            catch(Exception ce)
+            {
+                LOGGER.debug("An error occured when closing the registry following initialization failure", ce);
+            }
+            throw e;
         }
+
     }
 
-    private static Set<AmqpProtocolVersion> getSupportedVersions(final int port,
-                                                                 final Set<Integer> exclude_1_0,
-                                                                 final Set<Integer> exclude_0_10,
-                                                                 final Set<Integer> exclude_0_9_1,
-                                                                 final Set<Integer> exclude_0_9,
-                                                                 final Set<Integer> exclude_0_8,
-                                                                 final Set<Integer> include_1_0,
-                                                                 final Set<Integer> include_0_10,
-                                                                 final Set<Integer> include_0_9_1,
-                                                                 final Set<Integer> include_0_9,
-                                                                 final Set<Integer> include_0_8,
-                                                                 final ServerConfiguration serverConfig)
-    {
-        final EnumSet<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
-
-        if((exclude_1_0.contains(port) || !serverConfig.isAmqp10enabled()) && !include_1_0.contains(port))
-        {
-            supported.remove(AmqpProtocolVersion.v1_0_0);
-        }
-
-        if((exclude_0_10.contains(port) || !serverConfig.isAmqp010enabled()) && !include_0_10.contains(port))
-        {
-            supported.remove(AmqpProtocolVersion.v0_10);
-        }
-
-        if((exclude_0_9_1.contains(port) || !serverConfig.isAmqp091enabled()) && !include_0_9_1.contains(port))
-        {
-            supported.remove(AmqpProtocolVersion.v0_9_1);
-        }
-
-        if((exclude_0_9.contains(port) || !serverConfig.isAmqp09enabled()) && !include_0_9.contains(port))
-        {
-            supported.remove(AmqpProtocolVersion.v0_9);
-        }
-
-        if((exclude_0_8.contains(port) || !serverConfig.isAmqp08enabled()) && !include_0_8.contains(port))
-        {
-            supported.remove(AmqpProtocolVersion.v0_8);
-        }
-
-        return supported;
-    }
 
     private File getConfigFile(final String fileName,
                                final String defaultFileName,
@@ -386,7 +171,7 @@ public class Broker
 
             if (qpidHome == null)
             {
-                error = error + "\nNote: " + BrokerOptions.QPID_HOME + " is not set.";
+                error = error + "\nNote: " + BrokerProperties.PROPERTY_QPID_HOME + " is not set.";
             }
 
             throw new InitException(error, null);
@@ -409,37 +194,6 @@ public class Broker
                 {
                     throw new InitException("Invalid port: " + o, e);
                 }
-            }
-        }
-    }
-
-    /**
-     * Update the configuration data with the management port.
-     * @param configuration
-     * @param registryServerPort The string from the command line
-     */
-    private void updateManagementPorts(ServerConfiguration configuration, Integer registryServerPort, Integer connectorServerPort)
-    {
-        if (registryServerPort != null)
-        {
-            try
-            {
-                configuration.setJMXPortRegistryServer(registryServerPort);
-            }
-            catch (NumberFormatException e)
-            {
-                throw new InitException("Invalid management (registry server) port: " + registryServerPort, null);
-            }
-        }
-        if (connectorServerPort != null)
-        {
-            try
-            {
-                configuration.setJMXPortConnectorServer(connectorServerPort);
-            }
-            catch (NumberFormatException e)
-            {
-                throw new InitException("Invalid management (connector server) port: " + connectorServerPort, null);
             }
         }
     }
@@ -545,6 +299,15 @@ public class Broker
             LOGGER.debug("Skipping shutdown hook removal as there either isnt one, or we are it.");
         }
     }
+    /**
+     * Workaround that prevents AMQShortStrings cache from being left in the thread local. This is important
+     * when embedding the Broker in containers where the starting thread may not belong to Qpid.
+     * The long term solution here is to stop our use of AMQShortString outside the AMQP transport layer.
+     */
+    private void clearAMQShortStringCache()
+    {
+        AMQShortString.clearLocalCache();
+    }
 
     private class ShutdownService implements Runnable
     {
@@ -555,13 +318,4 @@ public class Broker
         }
     }
 
-    /**
-     * Workaround that prevents AMQShortStrings cache from being left in the thread local. This is important
-     * when embedding the Broker in containers where the starting thread may not belong to Qpid.
-     * The long term solution here is to stop our use of AMQShortString outside the AMQP transport layer.
-     */
-    private void clearAMQShortStringCache()
-    {
-        AMQShortString.clearLocalCache();
-    }
 }

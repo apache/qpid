@@ -30,13 +30,13 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQQueueFactory
@@ -426,9 +426,7 @@ public class AMQQueueFactory
      */
     protected static String getDeadLetterQueueName(String name)
     {
-        ServerConfiguration serverConfig = ApplicationRegistry.getInstance().getConfiguration();
-        String dlQueueName = name + serverConfig.getDeadLetterQueueSuffix();
-        return dlQueueName;
+        return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, DEFAULT_DLQ_NAME_SUFFIX);
     }
 
     /**
@@ -440,9 +438,7 @@ public class AMQQueueFactory
      */
     protected static String getDeadLetterExchangeName(String name)
     {
-        ServerConfiguration serverConfig = ApplicationRegistry.getInstance().getConfiguration();
-        String dlExchangeName = name + serverConfig.getDeadLetterExchangeSuffix();
-        return dlExchangeName;
+        return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
     }
 
     private static Map<String, Object> createQueueArgumentsFromConfig(QueueConfiguration config)

@@ -18,23 +18,25 @@
  */
 package org.apache.qpid.server.security.group;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.test.utils.TestFileUtils;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.test.utils.TestFileUtils;
 
 public class FileGroupManagerFactoryTest extends TestCase
 {
 
     private FileGroupManagerFactory _factory = new FileGroupManagerFactory();
-    private Configuration _configuration = new XMLConfiguration();
+    private Map<String, Object> _configuration = new HashMap<String, Object>();
     private String _emptyButValidGroupFile = TestFileUtils.createTempFile(this).getAbsolutePath();
 
     public void testInstanceCreated() throws Exception
     {
-        _configuration.setProperty("file-group-manager.attributes.attribute.name", "groupFile");
-        _configuration.setProperty("file-group-manager.attributes.attribute.value", _emptyButValidGroupFile);
+        _configuration.put(GroupProvider.TYPE, FileGroupManagerFactory.FILE_GROUP_MANAGER_TYPE);
+        _configuration.put(FileGroupManagerFactory.FILE, _emptyButValidGroupFile);
 
         GroupManager manager = _factory.createInstance(_configuration);
         assertNotNull(manager);
@@ -49,32 +51,17 @@ public class FileGroupManagerFactoryTest extends TestCase
 
     public void testReturnsNullWhenConfigNotForThisPlugin() throws Exception
     {
-        _configuration.setProperty("other-group-manager", "config");
+        _configuration.put(GroupProvider.TYPE, "other-group-manager");
 
         GroupManager manager = _factory.createInstance(_configuration);
         assertNull(manager);
     }
 
-    public void testRejectsConfigThatHasUnexpectedAttributeName() throws Exception
-    {
-        _configuration.setProperty("file-group-manager.attributes.attribute.name", "unexpected");
-        _configuration.setProperty("file-group-manager.attributes.attribute.value", _emptyButValidGroupFile);
-
-        try
-        {
-            _factory.createInstance(_configuration);
-            fail("Exception not thrown");
-        }
-        catch (RuntimeException re)
-        {
-            // PASS
-        }
-    }
 
     public void testRejectsConfigThatIsMissingAttributeValue() throws Exception
     {
-        _configuration.setProperty("file-group-manager.attributes.attribute.name", "groupFile");
-        _configuration.setProperty("file-group-manager.attributes.attribute.value", null);
+        _configuration.put(GroupProvider.TYPE, FileGroupManagerFactory.FILE_GROUP_MANAGER_TYPE);
+        _configuration.put(FileGroupManagerFactory.FILE, null);
 
         try
         {

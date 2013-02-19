@@ -48,15 +48,17 @@
   <property name="module.api"          location="${build.api}/${module}/"/>
   <property name="module.test.api"     location="${build.test.api}/${module}"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
-  <property name="module.test.resources" location="${module.build}/test/resources"/>
+  <property name="module.test.resources" location="src/test/resources"/>
   <property name="module.results"      location="${build.results}/${module}"/>
   <property name="module.failed"       location="${module.results}/FAILED"/>
   <property name="module.src"          location="src/main/java"/>
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
+
+  <property name="module.src.resources" location="src/main/resources"/>
+  <property name="module.src.resources.metainf" location="${module.src.resources}/META-INF"/>
   <property name="module.resources.dir" location="resources/"/>
-  <property name="module.src.resources.metainf" location="src/main/resources/META-INF"/>
   <property name="module.metainf"      location="${module.build}/META-INF"/>
 
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
@@ -86,6 +88,8 @@
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
+  <available property="module.src.resources.exists" file="${module.src.resources}"/>
+  <available property="module.test.src.resources.exists" file="${module.test.resources}"/>
   <available property="module.src.resources.metainf.exists" file="${module.src.resources.metainf}"/>
   <available property="module.resources.dir.exists" file="${module.resources.dir}"/>
 
@@ -197,7 +201,6 @@
     <path refid="module.runtime.class.path"/>
     <pathelement path="${module.test.depends.jars.path}"/>
     <path refid="module.test.libs"/>
-    <pathelement path="${module.test.resources}"/>
   </path>
 
   <!-- used to run the tests -->
@@ -206,7 +209,6 @@
     <path refid="module.runtime.class.path"/>
     <pathelement path="${module.test.depends.jars.path}"/>
     <path refid="module.test.libs"/>
-    <pathelement path="${module.test.resources}"/>
   </path>
 
   <property name="javac.deprecation" value="off"/>
@@ -331,6 +333,13 @@
 
   <target name="precompile-tests" if="module.test.src.exists"/>
 
+  <target name="copy-test-resources" if="module.test.src.resources.exists">
+      <echo message="Copying test resources from ${module.test.resources} to ${module.test.classes}..."/>
+      <copy todir="${module.test.classes}" failonerror="true">
+        <fileset dir="${module.test.resources}"/>
+      </copy>
+  </target>
+
   <target name="compile-tests" depends="compile,precompile-tests" if="module.test.src.exists"
           description="compilte unit tests">
     <javac target="${java.target}" source="${java.source}"
@@ -391,6 +400,7 @@
     <propertyref prefix="profile"/>
     <propertyref prefix="javax.net.ssl"/>
     <propertyref prefix="broker"/>
+    <propertyref prefix="qpid"/>
 
     <propertyref name="amqj.logging.level"/>
     <propertyref name="amqj.server.logging.level"/>
@@ -404,11 +414,8 @@
     <propertyref name="java.naming.factory.initial"/>
     <propertyref name="java.naming.provider.url"/>
     <propertyref name="messagestore.class.name" />
-    <propertyref name="qpid.amqp.version"/>
     <propertyref name="max_prefetch"/>
-    <propertyref name="qpid.dest_syntax"/>
 
-    <propertyref name="test.output"/>
     <propertyref name="QPID_HOME"/>
     <propertyref name="QPID_WORK"/>
     <propertyref name="example.plugin.target"/>
@@ -498,13 +505,13 @@
 
   <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild,copy-broker-plugin-jars" description="compile and copy resources into build tree"/>
 
-  <target name="jar.manifest" depends="compile,copy-files-to-module-metainf" if="module.manifest">
+  <target name="jar.manifest" depends="compile,copy-resources,copy-files-to-module-metainf" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}">
        <metainf dir="${module.metainf}" />
     </jar>
   </target>
 
-  <target name="jar.nomanifest" depends="compile,copy-files-to-module-metainf" unless="module.manifest">
+  <target name="jar.nomanifest" depends="compile,copy-resources,copy-files-to-module-metainf" unless="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}">
        <metainf dir="${module.metainf}" />
     </jar>
@@ -522,6 +529,13 @@
     </copy>
   </target>
 
+  <target name="copy-resources" if="module.src.resources.exists">
+      <echo message="Copying resources from ${module.src.resources} to ${module.classes}..."/>
+      <copy todir="${module.classes}" failonerror="true">
+        <fileset dir="${module.src.resources}" excludes="META-INF/**"/>
+      </copy>
+  </target>
+
   <target name="copy-module-resources-metainf" if="module.resources.dir.exists">
     <copy todir="${module.metainf}" failonerror="false" overwrite="true">
         <fileset dir="${module.resources.dir}"/>
@@ -536,7 +550,7 @@
 
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
 
-  <target name="jar-tests" depends="compile-tests" description="create unit test jar">
+  <target name="jar-tests" depends="compile-tests, copy-test-resources" description="create unit test jar">
     <jar destfile="${module.test.jar}" basedir="${module.test.classes}"/>
   </target>
 

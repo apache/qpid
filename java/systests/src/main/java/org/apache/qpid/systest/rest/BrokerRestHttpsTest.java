@@ -24,10 +24,16 @@ import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestHttpsTest extends QpidRestTestCase
 {
@@ -43,11 +49,12 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
     @Override
     protected void customizeConfiguration() throws ConfigurationException, IOException
     {
+        super.customizeConfiguration();
         getRestTestHelper().setUseSsl(true);
-        setConfigurationProperty("management.enabled", "true");
-        setConfigurationProperty("management.http.enabled", "false");
-        setConfigurationProperty("management.https.enabled", "true");
-        setConfigurationProperty("management.https.port", Integer.toString(getRestTestHelper().getHttpPort()));
+        Map<String, Object> newAttributes = new HashMap<String, Object>();
+        newAttributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.HTTPS));
+        newAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT,newAttributes);
     }
 
     public void testGetWithHttps() throws Exception
@@ -55,6 +62,8 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
         Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
 
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES, Broker.BYTES_RETAINED,
-                Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED);
+                Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED,
+                Broker.ACL_FILE, Broker.KEY_STORE_CERT_ALIAS, Broker.TRUST_STORE_PATH, Broker.TRUST_STORE_PASSWORD,
+                Broker.GROUP_FILE);
     }
 }

@@ -53,23 +53,54 @@ import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
+public class AbstractHeadersExchangeTestBase extends QpidTestCase
 {
     private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTestBase.class);
 
     private final HeadersExchange exchange = new HeadersExchange();
-    protected final Set<TestQueue> queues = new HashSet<TestQueue>();
-
+    private final Set<TestQueue> queues = new HashSet<TestQueue>();
+    private VirtualHost _virtualHost;
     private int count;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+        _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_virtualHost != null)
+            {
+                _virtualHost.close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
+    }
 
     public void testDoNothing()
     {
         // this is here only to make junit under Eclipse happy
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
     }
 
     protected TestQueue bindDefault(String... bindings) throws AMQException
@@ -92,7 +123,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
     private TestQueue bind(String key, String queueName, Map<String,Object> args) throws AMQException
     {
-        TestQueue queue = new TestQueue(new AMQShortString(queueName));
+        TestQueue queue = new TestQueue(new AMQShortString(queueName), _virtualHost);
         queues.add(queue);
         exchange.onBind(new Binding(null, key, queue, exchange, args));
         return queue;
@@ -273,10 +304,10 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             return getNameShortString().toString();
         }
 
-        public TestQueue(AMQShortString name) throws AMQException
+        public TestQueue(AMQShortString name, VirtualHost host) throws AMQException
         {
-            super(UUIDGenerator.generateRandomUUID(), name, false, new AMQShortString("test"), true, false,ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"), Collections.EMPTY_MAP);
-            ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry().registerQueue(this);
+            super(UUIDGenerator.generateRandomUUID(), name, false, new AMQShortString("test"), true, false, host, Collections.EMPTY_MAP);
+            host.getQueueRegistry().registerQueue(this);
         }
 
 

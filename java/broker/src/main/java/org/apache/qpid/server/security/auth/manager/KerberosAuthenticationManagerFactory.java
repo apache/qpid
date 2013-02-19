@@ -19,19 +19,21 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class KerberosAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-    @Override
-    public AuthenticationManager createInstance(Configuration configuration)
-    {
-        if (configuration.subset("kerberos-auth-manager").isEmpty())
-        {
-            return null;
-        }
+    public static final String PROVIDER_TYPE = KerberosAuthenticationManager.class.getSimpleName();
 
-        return new KerberosAuthenticationManager();
+    @Override
+    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    {
+        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
+        {
+            return new KerberosAuthenticationManager();
+        }
+        return null;
     }
 }

@@ -19,20 +19,22 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class ExternalAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-    @Override
-    public AuthenticationManager createInstance(Configuration configuration)
-    {
-        if (configuration.subset("external-auth-manager").isEmpty())
-        {
-            return null;
-        }
+    public static final String PROVIDER_TYPE = ExternalAuthenticationManager.class.getSimpleName();
 
-        return new ExternalAuthenticationManager();
+    @Override
+    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    {
+        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
+        {
+            return new ExternalAuthenticationManager();
+        }
+        return null;
     }
 
 }

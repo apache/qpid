@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+
 public interface AuthenticationProvider extends ConfiguredObject
 {
 
@@ -52,4 +55,15 @@ public interface AuthenticationProvider extends ConfiguredObject
                                   TYPE));
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();
+
+    String getName();
+
+    /**
+     * A temporary method to create SubjectCreator.
+     *
+     * TODO: move all the functionality from SubjectCreator into AuthenticationProvider
+     */
+    SubjectCreator getSubjectCreator();
+
+    void setGroupAccessor(GroupPrincipalAccessor groupPrincipalAccessor);
 }

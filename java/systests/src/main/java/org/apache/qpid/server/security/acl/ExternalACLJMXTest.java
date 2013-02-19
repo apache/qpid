@@ -43,8 +43,8 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     @Override
     public void setUp() throws Exception
     {
-        createTestVirtualHost(TEST_VHOST);
-        createTestVirtualHost(TEST2_VHOST);
+        createTestVirtualHost(0, TEST_VHOST);
+        createTestVirtualHost(0, TEST2_VHOST);
 
         _jmx = new JMXTestUtils(this);
         _jmx.setUp();

@@ -18,8 +18,6 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.framing.AMQShortString;
@@ -122,21 +120,21 @@ public class SecurityManager
     /*
      * Used by the VirtualHost to allow deferring to the broker level security plugins if required.
      */
-    public SecurityManager(SecurityManager parent, Configuration config) throws ConfigurationException
+    public SecurityManager(SecurityManager parent, String aclFile)
     {
-        this(config);
+        this(aclFile);
 
         // our global plugins are the parent's host plugins
         _globalPlugins = parent._hostPlugins;
     }
 
-    public SecurityManager(Configuration config) throws ConfigurationException
+    public SecurityManager(String aclFile)
     {
-        Configuration securityConfig = config.subset("security");
-
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("aclFile", aclFile);
         for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
         {
-            AccessControl accessControl = provider.createInstance(securityConfig);
+            AccessControl accessControl = provider.createInstance(attributes);
             if(accessControl != null)
             {
                 addHostPlugin(accessControl);

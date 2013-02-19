@@ -20,21 +20,30 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
+import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class ExternalAuthenticationTest extends QpidBrokerTestCase
 {
-    private static final String EXTERNAL_AUTH_MANAGER = ExternalAuthenticationManager.class.getSimpleName();
-    private static final String KEYSTORE = "test-profiles/test_resources/ssl/java_client_keystore.jks";
-    private static final String KEYSTORE_PASSWORD = "password";
-    private static final String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
-    private static final String TRUSTSTORE_PASSWORD = "password";
-
     @Override
     protected void setUp() throws Exception
     {
@@ -48,9 +57,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerOnSSLPort() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        setConfigurationProperty("security.port-mappings.port-mapping.port", String.valueOf(QpidBrokerTestCase.DEFAULT_SSL_PORT));
-        setConfigurationProperty("security.port-mappings.port-mapping.auth-manager", EXTERNAL_AUTH_MANAGER);
-        setConfigurationProperty("security.default-auth-manager", PrincipalDatabaseAuthenticationManager.class.getSimpleName());
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_MANAGER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientKeystoreProperties();
@@ -83,7 +90,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerAsDefault() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        setConfigurationProperty("security.default-auth-manager", EXTERNAL_AUTH_MANAGER);
+        getBrokerConfiguration().setBrokerAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientKeystoreProperties();
@@ -116,7 +123,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerWithoutClientKeyStore() throws Exception
     {
         setCommonBrokerSSLProperties(false);
-        setConfigurationProperty("security.default-auth-manager", EXTERNAL_AUTH_MANAGER);
+        getBrokerConfiguration().setBrokerAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientTrustoreProperties();
@@ -148,12 +155,18 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
     private void setCommonBrokerSSLProperties(boolean needClientAuth) throws ConfigurationException
     {
-        setConfigurationProperty("connector.ssl.enabled", "true");
-        setConfigurationProperty("connector.ssl.sslOnly", "false");
-        setConfigurationProperty("connector.ssl.trustStorePath", TRUSTSTORE);
-        setConfigurationProperty("connector.ssl.trustStorePassword", TRUSTSTORE_PASSWORD);
-        setConfigurationProperty("connector.ssl.needClientAuth", String.valueOf(needClientAuth));
-        setConfigurationProperty("security.external-auth-manager", "");
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
+        sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+        sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
+        sslPortAttributes.put(Port.NEED_CLIENT_AUTH, String.valueOf(needClientAuth));
+        sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+        config.addPortConfiguration(sslPortAttributes);
+
+        Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
+        externalAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
+        externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        config.addAuthenticationProviderConfiguration(externalAuthProviderAttributes);
     }
 
     private void setClientKeystoreProperties()

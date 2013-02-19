@@ -45,7 +45,7 @@ public class DefaultAccessControl implements AccessControl
 
     private RuleSet _ruleSet;
 
-    public DefaultAccessControl(String fileName) throws ConfigurationException
+    public DefaultAccessControl(String fileName)
     {
         if (_logger.isDebugEnabled())
         {

@@ -21,12 +21,16 @@
 package org.apache.qpid.systest.management.jmx;
 
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.AbstractTestLogging;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.test.utils.TestSSLConstants;
 import org.apache.qpid.util.LogMonitor;
 
-import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -202,7 +206,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
             // We expect the RMI Registry port (the defined 'management port') to be
             // 100 lower than the JMX RMIConnector Server Port (the actual JMX server)
-            int jmxPort = mPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
+            int jmxPort = mPort + JMXPORT_CONNECTORSERVER_OFFSET;
             assertTrue("JMX RMIConnectorServer port not as expected(" + jmxPort + ").:" + getMessageString(log),
                        getMessageString(log).endsWith(String.valueOf(jmxPort)));
         }
@@ -245,7 +249,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
             // Validate the keystore path is as expected
             assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
-                       getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getName()));
+                       getMessageString(log).endsWith(TestSSLConstants.BROKER_KEYSTORE));
         }
     }
 
@@ -266,6 +270,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
     {
         if (isJavaBroker())
         {
+            setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
             startBrokerAndCreateMonitor(true, false);
 
             final JMXTestUtils jmxUtils = new JMXTestUtils(this);
@@ -301,13 +306,20 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
     private void startBrokerAndCreateMonitor(boolean managementEnabled, boolean useManagementSSL) throws Exception
     {
-        //Ensure management is on
-        setConfigurationProperty("management.enabled", String.valueOf(managementEnabled));
+        TestBrokerConfiguration config = getBrokerConfiguration();
+
+        if (managementEnabled)
+        {
+            config.addJmxManagementConfiguration();
+        }
 
         if(useManagementSSL)
         {
             // This test requires we have an ssl connection
-            setConfigurationProperty("management.ssl.enabled", "true");
+            config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+
+            setSystemProperty("javax.net.ssl.keyStore", "test-profiles/test_resources/ssl/java_broker_keystore.jks");
+            setSystemProperty("javax.net.ssl.keyStorePassword", "password");
         }
 
         startBroker();

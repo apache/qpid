@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.security.sasl.SaslException;
@@ -40,10 +39,10 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -54,7 +53,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
        private long _lastReadTime;
        private long _lastWriteTime;
-       private final IApplicationRegistry _appRegistry;
+       private final Broker _broker;
        private long _createTime = System.currentTimeMillis();
        private ConnectionEndpoint _conn;
        private long _connectionId;
@@ -113,12 +112,11 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
        private State _state = State.A;
 
 
-    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry,
+    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker broker,
                                      long id)
     {
         _connectionId = id;
-        _appRegistry = appRegistry;
-
+        _broker = broker;
         if(networkDriver != null)
         {
             setNetworkConnection(networkDriver, networkDriver.getSender());
@@ -161,15 +159,12 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _network = network;
         _sender = sender;
 
-        Container container = new Container(_appRegistry.getBrokerId().toString());
+        Container container = new Container(_broker.getId().toString());
 
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(ApplicationRegistry.getInstance()
-                .getSubjectCreator(getLocalAddress())));
+        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(getLocalAddress())));
         _conn.setRemoteAddress(getRemoteAddress());
-        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
-
-
-
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
         _conn.setSaslFrameOutput(this);
 

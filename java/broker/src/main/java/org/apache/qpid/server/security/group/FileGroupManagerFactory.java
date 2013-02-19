@@ -18,48 +18,34 @@
  */
 package org.apache.qpid.server.security.group;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
+import static org.apache.qpid.server.util.MapValueConverter.getStringAttribute;
+
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
 
 public class FileGroupManagerFactory implements GroupManagerFactory
 {
-    private static final String GROUP_FILE_MARKER = "groupFile";
-    private static final String FILE_ATTRIBUTE_VALUE = "file-group-manager.attributes.attribute.value";
-    private static final String FILE_ATTRIBUTE_NAME = "file-group-manager.attributes.attribute.name";
+    static final String FILE_GROUP_MANAGER_TYPE = "file-group-manager";
+    static final String FILE = "file";
 
     @Override
-    public GroupManager createInstance(Configuration configuration)
+    public GroupManager createInstance(Map<String, Object> attributes)
     {
-        if(configuration.subset("file-group-manager").isEmpty())
+        if(!FILE_GROUP_MANAGER_TYPE.equals(getStringAttribute(GroupProvider.TYPE, attributes, null)))
         {
             return null;
         }
 
-        String groupFileArgumentName = configuration.getString(FILE_ATTRIBUTE_NAME);
-        String groupFile = configuration.getString(FILE_ATTRIBUTE_VALUE);
-
-        if (!GROUP_FILE_MARKER.equals(groupFileArgumentName))
+        String groupFile =  getStringAttribute(FILE, attributes, null);
+        if (StringUtils.isBlank(groupFile))
         {
-            throw new RuntimeException("Config for file-group-manager found but " + FILE_ATTRIBUTE_NAME
-                    + " has no value or " + groupFileArgumentName
-                    + " does not equal " + GROUP_FILE_MARKER);
+            throw new IllegalConfigurationException("Path to file containing groups is not specified!");
         }
-
-        if (groupFile == null)
-        {
-            throw new RuntimeException("Config for file-group-manager found but " +  FILE_ATTRIBUTE_VALUE + " has no value."
-                    + " Filename expected.");
-        }
-
-        try
-        {
-            return new FileGroupManager(groupFile);
-        }
-        catch (ConfigurationException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new FileGroupManager(groupFile);
     }
 
 }

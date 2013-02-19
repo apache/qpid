@@ -19,64 +19,42 @@
 package org.apache.qpid.server.management.plugin;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementFactoryTest extends QpidTestCase
 {
-    private static final String KEY_STORE_PASSWORD = "keyStorePassword";
-    private static final String KEY_STORE_PATH = "keyStorePath";
     private static final int SESSION_TIMEOUT = 3600;
 
-    private HttpManagementFactory _managementFactory = new HttpManagementFactory();
-    private ServerConfiguration _configuration = mock(ServerConfiguration.class);
+    private PluginFactory _pluginFactory = new HttpManagementFactory();
+    private Map<String, Object> _attributes = new HashMap<String, Object>();
     private Broker _broker = mock(Broker.class);
+    private UUID _id = UUID.randomUUID();
 
-    public void testNoHttpManagementConfigured() throws Exception
+    public void testCreateInstanceReturnsNullWhenPluginTypeMissing() throws Exception
     {
-        ManagementPlugin management = _managementFactory.createInstance(_configuration, _broker);
-        assertNull(management);
+        assertNull(_pluginFactory.createInstance(_id, _attributes, _broker));
+    }
+    public void testCreateInstanceReturnsNullWhenPluginTypeNotHttp()
+    {
+        _attributes.put(PluginFactory.PLUGIN_TYPE, "notHttp");
+        assertNull(_pluginFactory.createInstance(_id, _attributes, _broker));
     }
 
-    public void testHttpTransportConfigured() throws Exception
+    public void testCreateInstance() throws Exception
     {
-        when(_configuration.getHTTPManagementEnabled()).thenReturn(true);
-        when(_configuration.getHTTPSManagementEnabled()).thenReturn(false);
+        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_TYPE);
+        _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
 
-        when(_configuration.getManagementKeyStorePassword()).thenReturn(null);
-        when(_configuration.getManagementKeyStorePath()).thenReturn(null);
+        HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
 
-        when(_configuration.getHTTPManagementSessionTimeout()).thenReturn(SESSION_TIMEOUT);
-
-        HttpManagement management = _managementFactory.createInstance(_configuration, _broker);
-
-        assertNotNull(management);
         assertEquals(_broker, management.getBroker());
-        assertNull(management.getKeyStorePassword());
-        assertNull(management.getKeyStorePath());
-        assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());
-
-    }
-
-    public void testHttpsTransportConfigured() throws Exception
-    {
-        when(_configuration.getHTTPManagementEnabled()).thenReturn(false);
-        when(_configuration.getHTTPSManagementEnabled()).thenReturn(true);
-
-        when(_configuration.getManagementKeyStorePassword()).thenReturn(KEY_STORE_PASSWORD);
-        when(_configuration.getManagementKeyStorePath()).thenReturn(KEY_STORE_PATH);
-
-        when(_configuration.getHTTPManagementSessionTimeout()).thenReturn(SESSION_TIMEOUT);
-
-        HttpManagement management = _managementFactory.createInstance(_configuration, _broker);
-
-        assertNotNull(management);
-        assertEquals(_broker, management.getBroker());
-        assertEquals(KEY_STORE_PASSWORD, management.getKeyStorePassword());
-        assertEquals(KEY_STORE_PATH, management.getKeyStorePath());
         assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());
     }
 

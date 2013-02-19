@@ -42,8 +42,8 @@ public class AlertingTest extends AbstractTestLogging
     {
         _numMessages = 50;
 
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", String.valueOf(ALERT_LOG_WAIT_PERIOD));
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", String.valueOf(_numMessages));
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", String.valueOf(ALERT_LOG_WAIT_PERIOD));
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", String.valueOf(_numMessages));
 
         // Then we do the normal setup stuff like starting the broker, getting a connection etc.
         super.setUp();
@@ -141,7 +141,7 @@ public class AlertingTest extends AbstractTestLogging
         _monitor.markDiscardPoint();
 
         // Change max message count to 5, start broker and make sure that that's triggered at the right time
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", "5");
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", "5");
 
         startBroker();
 

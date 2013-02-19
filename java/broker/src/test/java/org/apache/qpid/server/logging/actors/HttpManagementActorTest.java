@@ -34,10 +34,10 @@ public class HttpManagementActorTest extends BaseActorTestCase
     private static final String SUFFIX = "(" + IP + ":" + PORT + ")] ";
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
-        _amqpActor = new HttpManagementActor(_rootLogger, IP, PORT);
+        super.setUp();
+        setAmqpActor(new HttpManagementActor(getRootLogger(), IP, PORT));
     }
 
     public void testSubjectPrincipalNameAppearance()
@@ -48,13 +48,13 @@ public class HttpManagementActorTest extends BaseActorTestCase
         {
             public String run()
             {
-                return sendTestLogMessage(_amqpActor);
+                return sendTestLogMessage(getAmqpActor());
             }
         });
 
         assertNotNull("Test log message is not created!", message);
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
         assertEquals("Message log size not as expected.", 1, logs.size());
 
         String logMessage = logs.get(0).toString();
@@ -74,7 +74,7 @@ public class HttpManagementActorTest extends BaseActorTestCase
 
     private void assertLogMessageWithoutPrincipal()
     {
-        String message = _amqpActor.getLogMessage();
+        String message = getAmqpActor().getLogMessage();
         assertEquals("Unexpected log message", "[mng:" + AbstractManagementActor.UNKNOWN_PRINCIPAL + SUFFIX, message);
     }
 
@@ -85,7 +85,7 @@ public class HttpManagementActorTest extends BaseActorTestCase
         {
             public String run()
             {
-                return _amqpActor.getLogMessage();
+                return getAmqpActor().getLogMessage();
             }
         });
 

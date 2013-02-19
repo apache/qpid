@@ -20,56 +20,44 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 
-
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
-import javax.management.Notification;
-import javax.management.NotificationFilterSupport;
-import javax.management.NotificationListener;
 import javax.management.ObjectName;
-import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.rmi.RMIConnection;
 import javax.management.remote.rmi.RMIConnectorServer;
-import javax.management.remote.rmi.RMIJRMPServerImpl;
-import javax.management.remote.rmi.RMIServerImpl;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
-import javax.security.auth.Subject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no
@@ -82,34 +70,32 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private static final String OPERATIONAL_LOGGING_NAME = "JMX";
 
     private final MBeanServer _mbeanServer;
+
     private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
-    private boolean _useCustomSocketFactory;
 
-    private final int _jmxPortRegistryServer;
-    private final int _jmxPortConnectorServer;
+    private final Broker _broker;
+    private final Port _registryPort;
+    private final Port _connectorPort;
 
-    private final ServerConfiguration _serverConfiguration;
-
-    public JMXManagedObjectRegistry(ServerConfiguration serverConfiguration) throws AMQException
+     public JMXManagedObjectRegistry(
+            Broker broker,
+            Port connectorPort, Port registryPort,
+            JMXManagement jmxManagement)
     {
-        _log.info("Initialising managed object registry using platform MBean server");
+        _broker = broker;
+        _registryPort = registryPort;
+        _connectorPort = connectorPort;
 
-        _serverConfiguration = serverConfiguration;
-
-        // Retrieve the config parameters
-        _useCustomSocketFactory = _serverConfiguration.getUseCustomRMISocketFactory();
-        boolean platformServer = _serverConfiguration.getPlatformMbeanserver();
+        boolean usePlatformServer = (Boolean)jmxManagement.getAttribute(JMXManagement.USE_PLATFORM_MBEAN_SERVER);
 
         _mbeanServer =
-                platformServer ? ManagementFactory.getPlatformMBeanServer()
+                usePlatformServer ? ManagementFactory.getPlatformMBeanServer()
                 : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
+     }
 
-        _jmxPortRegistryServer = _serverConfiguration.getJMXPortRegistryServer();
-        _jmxPortConnectorServer = _serverConfiguration.getJMXConnectorServerPort();
-    }
-
-    public void start() throws IOException, ConfigurationException
+    @Override
+    public void start() throws IOException
     {
         CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
@@ -117,59 +103,31 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         if (areOutOfTheBoxJMXOptionsSet())
         {
             CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
-            return;
         }
+        else
+        {
+            startRegistryAndConnector();
+        }
+    }
 
-        //Socket factories for the RMIConnectorServer, either default or SLL depending on configuration
+    private void startRegistryAndConnector() throws IOException
+    {
+        //Socket factories for the RMIConnectorServer, either default or SSL depending on configuration
         RMIClientSocketFactory csf;
         RMIServerSocketFactory ssf;
 
-        //check ssl enabled option in config, default to true if option is not set
-        boolean sslEnabled = _serverConfiguration.getManagementSSLEnabled();
+        //check ssl enabled option on connector port (note we don't provide ssl for registry server at
+        //moment).
+        boolean connectorSslEnabled = _connectorPort.getTransports().contains(Transport.SSL);
 
-        if (sslEnabled)
+        if (connectorSslEnabled)
         {
-            //set the SSL related system properties used by the SSL RMI socket factories to the values
-            //given in the configuration file
-            String keyStorePath = _serverConfiguration.getManagementKeyStorePath();
+            String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+            String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
 
-            //check the keystore path value is valid
-            if (keyStorePath == null)
-            {
-                throw new ConfigurationException("JMX management SSL keystore path not defined, " +
-                                                 "unable to start SSL protected JMX ConnectorServer");
-            }
-            else
-            {
-                //ensure the system property is set (for use by SslRMIClientSocketFactory and SslRMIServerSocketFactory)
-                System.setProperty("javax.net.ssl.keyStore", keyStorePath);
+            validateKeyStoreProperties(keyStorePath, keyStorePassword);
 
-                //check the file is usable
-                File ksf = new File(keyStorePath);
-
-                if (!ksf.exists())
-                {
-                    throw new FileNotFoundException("Cannot find JMX management SSL keystore file: " + ksf);
-                }
-                if (!ksf.canRead())
-                {
-                    throw new FileNotFoundException("Cannot read JMX management SSL keystore file: "
-                                                    + ksf +  ". Check permissions.");
-                }
-
-                CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(ksf.getAbsolutePath()));
-            }
-
-            if (_serverConfiguration.getManagementKeyStorePassword() == null)
-            {
-                throw new ConfigurationException("JMX management SSL keystore password not defined, " +
-                                                 "unable to start requested SSL protected JMX server");
-            }
-            else
-            {
-               System.setProperty("javax.net.ssl.keyStorePassword",
-                       _serverConfiguration.getManagementKeyStorePassword());
-            }
+            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStorePath));
 
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
@@ -182,29 +140,23 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             ssf = null;
         }
 
+        int jmxPortRegistryServer = _registryPort.getPort();
+        int jmxPortConnectorServer = _connectorPort.getPort();
+
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(ApplicationRegistry.getInstance(), new InetSocketAddress(_jmxPortRegistryServer));
-        HashMap<String,Object> env = new HashMap<String,Object>();
-        env.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
+        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer));
+        HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
+        connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
+
+        System.setProperty("java.rmi.server.randomIDs", "true");
+        boolean useCustomSocketFactory = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, Boolean.TRUE.toString()));
 
         /*
          * Start a RMI registry on the management port, to hold the JMX RMI ConnectorServer stub.
          * Using custom socket factory to prevent anyone (including us unfortunately) binding to the registry using RMI.
          * As a result, only binds made using the object reference will succeed, thus securing it from external change.
          */
-        System.setProperty("java.rmi.server.randomIDs", "true");
-        if(_useCustomSocketFactory)
-        {
-            _log.debug("Using custom RMIServerSocketFactory");
-            _rmiRegistry = LocateRegistry.createRegistry(_jmxPortRegistryServer, null, new CustomRMIServerSocketFactory());
-        }
-        else
-        {
-            _log.debug("Using default RMIServerSocketFactory");
-            _rmiRegistry = LocateRegistry.createRegistry(_jmxPortRegistryServer, null, null);
-        }
-
-        CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", _jmxPortRegistryServer));
+        _rmiRegistry = createRmiRegistry(jmxPortRegistryServer, useCustomSocketFactory);
 
         /*
          * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls
@@ -212,57 +164,16 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
          * locked it from any RMI based modifications, including our own. Instead, we will manually bind
          * the RMIConnectorServer stub to the registry using its object reference, which will still succeed.
          *
-         * The registry is exported on the defined management port 'port'. We will export the RMIConnectorServer
-         * on 'port +1'. Use of these two well-defined ports will ease any navigation through firewall's.
+         * The registry is exported on the defined management port 'port'.
          */
-        final Map<String, String> connectionIdUsernameMap = new ConcurrentHashMap<String, String>();
-        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(_jmxPortConnectorServer, csf, ssf, env)
-        {
+        final UsernameCachingRMIJRMPServer usernameCachingRmiServer = new UsernameCachingRMIJRMPServer(jmxPortConnectorServer, csf, ssf, connectorEnv);
 
-            /**
-             * Override makeClient so we can cache the username of the client in a Map keyed by connectionId.
-             * ConnectionId is guaranteed to be unique per client connection, according to the JMX spec.
-             * An instance of NotificationListener (mapCleanupListener) will be responsible for removing these Map
-             * entries.
-             *
-             * @see javax.management.remote.rmi.RMIJRMPServerImpl#makeClient(String, javax.security.auth.Subject)
-             */
-            @Override
-            protected RMIConnection makeClient(String connectionId, Subject subject) throws IOException
-            {
-                final RMIConnection makeClient = super.makeClient(connectionId, subject);
-                final AuthenticatedPrincipal authenticatedPrincipalFromSubject = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
-                connectionIdUsernameMap.put(connectionId, authenticatedPrincipalFromSubject.getName());
-                return makeClient;
-            }
-        };
-
-        // Create a Listener responsible for removing the map entries add by the #makeClient entry above.
-        final NotificationListener mapCleanupListener = new NotificationListener()
-        {
-
-            public void handleNotification(Notification notification, Object handback)
-            {
-                final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();
-                connectionIdUsernameMap.remove(connectionId);
-            }
-        };
-
-        String localHost;
-        try
-        {
-            localHost = InetAddress.getLocalHost().getHostName();
-        }
-        catch(UnknownHostException ex)
-        {
-            localHost="127.0.0.1";
-        }
-        final String hostname = localHost;
+        final String localHostName = getLocalhost();
         final JMXServiceURL externalUrl = new JMXServiceURL(
-                "service:jmx:rmi://"+hostname+":"+(_jmxPortConnectorServer)+"/jndi/rmi://"+hostname+":"+_jmxPortRegistryServer+"/jmxrmi");
+                "service:jmx:rmi://"+localHostName+":"+(jmxPortConnectorServer)+"/jndi/rmi://"+localHostName+":"+jmxPortRegistryServer+"/jmxrmi");
 
-        final JMXServiceURL internalUrl = new JMXServiceURL("rmi", hostname, _jmxPortConnectorServer);
-        _cs = new RMIConnectorServer(internalUrl, env, rmiConnectorServerStub, _mbeanServer)
+        final JMXServiceURL internalUrl = new JMXServiceURL("rmi", localHostName, jmxPortConnectorServer);
+        _cs = new RMIConnectorServer(internalUrl, connectorEnv, usernameCachingRmiServer, _mbeanServer)
         {
             @Override
             public synchronized void start() throws IOException
@@ -270,7 +181,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 try
                 {
                     //manually bind the connector server to the registry at key 'jmxrmi', like the out-of-the-box agent
-                    _rmiRegistry.bind("jmxrmi", rmiConnectorServerStub);
+                    _rmiRegistry.bind("jmxrmi", usernameCachingRmiServer);
                 }
                 catch (AlreadyBoundException abe)
                 {
@@ -298,7 +209,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 }
                 catch (NotBoundException nbe)
                 {
-                    // TODO consider if we want to keep new logging
                     _log.error("Failed to unbind jmxrmi", nbe);
                     //ignore
                 }
@@ -313,95 +223,98 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 //must return our pre-crafted url that includes the full details, inc JNDI details
                 return externalUrl;
             }
-
         };
 
-
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
-        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
+        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance(_broker);
         _cs.setMBeanServerForwarder(mbsf);
 
+        // Install a ManagementLogonLogoffReporter so we can report as users logon/logoff
+        ManagementLogonLogoffReporter jmxManagementUserLogonLogoffReporter = new ManagementLogonLogoffReporter(_broker.getRootMessageLogger(), usernameCachingRmiServer);
+        _cs.addNotificationListener(jmxManagementUserLogonLogoffReporter, jmxManagementUserLogonLogoffReporter, null);
 
-        // Get the handler that is used by the above MBInvocationHandler Proxy.
-        // which is the MBeanInvocationHandlerImpl and so also a NotificationListener.
-        final NotificationListener invocationHandler = (NotificationListener) Proxy.getInvocationHandler(mbsf);
-
-        // Install a notification listener on OPENED, CLOSED, and FAILED,
-        // passing the map of connection-ids to usernames as hand-back data.
-        final NotificationFilterSupport invocationHandlerFilter = new NotificationFilterSupport();
-        invocationHandlerFilter.enableType(JMXConnectionNotification.OPENED);
-        invocationHandlerFilter.enableType(JMXConnectionNotification.CLOSED);
-        invocationHandlerFilter.enableType(JMXConnectionNotification.FAILED);
-        _cs.addNotificationListener(invocationHandler, invocationHandlerFilter, connectionIdUsernameMap);
-
-        // Install a second notification listener on CLOSED AND FAILED only to remove the entry from the
-        // Map.  Here we rely on the fact that JMX will call the listeners in the order in which they are
-        // installed.
-        final NotificationFilterSupport mapCleanupHandlerFilter = new NotificationFilterSupport();
-        mapCleanupHandlerFilter.enableType(JMXConnectionNotification.CLOSED);
-        mapCleanupHandlerFilter.enableType(JMXConnectionNotification.FAILED);
-        _cs.addNotificationListener(mapCleanupListener, mapCleanupHandlerFilter, null);
+        // Install the usernameCachingRmiServer as a listener so it may cleanup as clients disconnect
+        _cs.addNotificationListener(usernameCachingRmiServer, usernameCachingRmiServer, null);
 
         _cs.start();
 
-        String connectorServer = (sslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
-        CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, _jmxPortConnectorServer));
-
+        String connectorServer = (connectorSslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
+        CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, jmxPortConnectorServer));
         CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
-    /*
-     * Custom RMIServerSocketFactory class, used to prevent updates to the RMI registry.
-     * Supplied to the registry at creation, this will prevent RMI-based operations on the
-     * registry such as attempting to bind a new object, thereby securing it from tampering.
-     * This is accomplished by always returning null when attempting to determine the address
-     * of the caller, thus ensuring the registry will refuse the attempt. Calls to bind etc
-     * made using the object reference will not be affected and continue to operate normally.
-     */
-
-    private static class CustomRMIServerSocketFactory implements RMIServerSocketFactory
+    private Registry createRmiRegistry(int jmxPortRegistryServer, boolean useCustomRmiRegistry)
+            throws RemoteException
     {
-
-        public ServerSocket createServerSocket(int port) throws IOException
+        Registry rmiRegistry;
+        if(useCustomRmiRegistry)
         {
-            return new NoLocalAddressServerSocket(port);
+            _log.debug("Using custom RMIServerSocketFactory");
+            rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, new CustomRMIServerSocketFactory());
+        }
+        else
+        {
+            _log.debug("Using default RMIServerSocketFactory");
+            rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, null);
         }
 
-        private static class NoLocalAddressServerSocket extends ServerSocket
-        {
-            NoLocalAddressServerSocket(int port) throws IOException
-            {
-                super(port);
-            }
+        CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));
+        return rmiRegistry;
+    }
 
-            @Override
-            public Socket accept() throws IOException
-            {
-                Socket s = new NoLocalAddressSocket();
-                super.implAccept(s);
-                return s;
-            }
+    private void validateKeyStoreProperties(String keyStorePath, String keyStorePassword) throws FileNotFoundException
+    {
+        if (keyStorePath == null)
+        {
+            throw new IllegalConfigurationException("JVM system property 'javax.net.ssl.keyStore' is not set, "
+                    + "unable to start requested SSL protected JMX connector");
+        }
+        if (keyStorePassword == null)
+        {
+            throw new IllegalConfigurationException( "JVM system property 'javax.net.ssl.keyStorePassword' is not set, "
+                    + "unable to start requested SSL protected JMX connector");
         }
 
-        private static class NoLocalAddressSocket extends Socket
+        File ksf = new File(keyStorePath);
+        if (!ksf.exists())
         {
-            @Override
-            public InetAddress getInetAddress()
-            {
-                return null;
-            }
+            throw new FileNotFoundException("Cannot find JMX management SSL keystore file: " + ksf);
+        }
+        if (!ksf.canRead())
+        {
+            throw new FileNotFoundException("Cannot read JMX management SSL keystore file: "
+                                            + ksf +  ". Check permissions.");
         }
     }
 
-
+    @Override
     public void registerObject(ManagedObject managedObject) throws JMException
     {
         _mbeanServer.registerMBean(managedObject, managedObject.getObjectName());
     }
 
+    @Override
     public void unregisterObject(ManagedObject managedObject) throws JMException
     {
         _mbeanServer.unregisterMBean(managedObject.getObjectName());
+    }
+
+    @Override
+    public void close()
+    {
+        _log.debug("close() called");
+
+        closeConnectorAndRegistryServers();
+
+        unregisterAllMbeans();
+
+        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
+    }
+
+    private void closeConnectorAndRegistryServers()
+    {
+        closeConnectorServer();
+        closeRegistryServer();
     }
 
     // checks if the system properties are set which enable the JVM's out-of-the-box JMXAgent.
@@ -420,29 +333,26 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         return false;
     }
 
-    //Stops the JMXConnectorServer and RMIRegistry, then unregisters any remaining MBeans from the MBeanServer
-    public void close()
+    private String getLocalhost()
     {
-        _log.debug("close() called");
-
-        if (_cs != null)
+        String localHost;
+        try
         {
-            // Stopping the JMX ConnectorServer
-            try
-            {
-                CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("JMX RMIConnectorServer", _cs.getAddress().getPort()));
-                _cs.stop();
-            }
-            catch (IOException e)
-            {
-                _log.error("Exception while closing the JMX ConnectorServer: ",  e);
-            }
+            localHost = InetAddress.getLocalHost().getHostName();
         }
+        catch(UnknownHostException ex)
+        {
+            localHost="127.0.0.1";
+        }
+        return localHost;
+    }
 
+    private void closeRegistryServer()
+    {
         if (_rmiRegistry != null)
         {
             // Stopping the RMI registry
-            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _jmxPortRegistryServer));
+            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _registryPort.getPort()));
             try
             {
                 boolean success = UnicastRemoteObject.unexportObject(_rmiRegistry, false);
@@ -455,8 +365,36 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             {
                 _log.error("Exception while closing the RMI Registry: ", e);
             }
+            finally
+            {
+                _rmiRegistry = null;
+            }
         }
+    }
 
+    private void closeConnectorServer()
+    {
+        if (_cs != null)
+        {
+            // Stopping the JMX ConnectorServer
+            try
+            {
+                CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("JMX RMIConnectorServer", _cs.getAddress().getPort()));
+                _cs.stop();
+            }
+            catch (IOException e)
+            {
+                _log.error("Exception while closing the JMX ConnectorServer: ",  e);
+            }
+            finally
+            {
+                _cs = null;
+            }
+        }
+    }
+
+    private void unregisterAllMbeans()
+    {
         //ObjectName query to gather all Qpid related MBeans
         ObjectName mbeanNameQuery = null;
         try
@@ -479,8 +417,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _log.error("Exception unregistering MBean '"+ name +"': " + e.getMessage());
             }
         }
-
-        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
 }

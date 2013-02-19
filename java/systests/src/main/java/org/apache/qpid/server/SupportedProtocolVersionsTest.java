@@ -23,13 +23,17 @@ package org.apache.qpid.server;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.adapter.PortFactoryTest;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * Tests to validate it is possible to disable support for particular protocol
  * versions entirely, rather than selectively excluding them on particular ports,
  * and it is possible to configure the reply to an unsupported protocol initiation.
+ *<p>
+ * Protocol exclusion/inclusion are unit tested as part of {@link PortFactoryTest}
  */
 public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
 {
@@ -41,8 +45,8 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
     private void clearProtocolSupportManipulations()
     {
         //Remove the QBTC provided protocol manipulations, giving only the protocols which default to enabled
-        setTestSystemProperty(QpidBrokerTestCase.BROKER_PROTOCOL_EXCLUDES, null);
-        setTestSystemProperty(QpidBrokerTestCase.BROKER_PROTOCOL_INCLUDES, null);
+        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
+        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
     }
 
     /**
@@ -87,8 +91,8 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         clearProtocolSupportManipulations();
 
         //disable 0-10 and 1-0 support
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP10ENABLED, "false");
+        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES,
+                Protocol.AMQP_1_0 + "," + Protocol.AMQP_0_10);
 
         super.setUp();
 
@@ -100,52 +104,14 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         connection.close();
     }
 
-    public void testDisabling091and010and10() throws Exception
-    {
-        clearProtocolSupportManipulations();
-
-        //disable 0-91 and 0-10 and 1-0 support
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP10ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP091ENABLED, "false");
-
-        super.setUp();
-
-        //Verify initially requesting a 0-10 connection now negotiates a 0-9
-        //connection as the broker should reply with its highest supported protocol
-        setTestClientSystemProperty(ClientProperties.AMQP_VERSION, "0-10");
-        AMQConnection connection = (AMQConnection) getConnection();
-        assertEquals("Unexpected protocol version in use", ProtocolVersion.v0_9, connection.getProtocolVersion());
-        connection.close();
-    }
-
-    public void testDisabling09and091and010and10() throws Exception
-    {
-        clearProtocolSupportManipulations();
-
-        //disable 0-9, 0-91, 0-10 and 1-0 support
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP09ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP091ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP10ENABLED, "false");
-
-        super.setUp();
-
-        //Verify initially requesting a 0-10 connection now negotiates a 0-8
-        //connection as the broker should reply with its highest supported protocol
-        setTestClientSystemProperty(ClientProperties.AMQP_VERSION, "0-10");
-        AMQConnection connection = (AMQConnection) getConnection();
-        assertEquals("Unexpected protocol version in use", ProtocolVersion.v8_0, connection.getProtocolVersion());
-        connection.close();
-    }
-
     public void testConfiguringReplyingToUnsupported010ProtocolInitiationWith09insteadOf091() throws Exception
     {
         clearProtocolSupportManipulations();
 
         //disable 0-10 support, and set the default unsupported protocol initiation reply to 0-9
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP_SUPPORTED_REPLY, "v0_9");
+        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES,
+                Protocol.AMQP_1_0 + "," + Protocol.AMQP_0_10);
+        setSystemProperty(BrokerProperties.PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY, "v0_9");
 
         super.setUp();
 
@@ -164,71 +130,5 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         connection.close();
     }
 
-    public void testProtocolInclusionThroughQBTCSystemPropertiesOverridesProtocolExclusion() throws Exception
-    {
-        testProtocolInclusionOverridesProtocolExclusion(false);
-    }
-
-    public void testProtocolInclusionThroughConfigOverridesProtocolExclusion() throws Exception
-    {
-        testProtocolInclusionOverridesProtocolExclusion(true);
-    }
-
-    private void testProtocolInclusionOverridesProtocolExclusion(boolean useConfig) throws Exception
-    {
-        clearProtocolSupportManipulations();
-
-        //selectively exclude 0-10 and 1-0 on the test port
-        setTestSystemProperty(QpidBrokerTestCase.BROKER_PROTOCOL_EXCLUDES,"--exclude-0-10 @PORT --exclude-1-0 @PORT");
-
-        super.setUp();
-
-        //Verify initially requesting a 0-10 connection negotiates a 0-9-1 connection
-        setTestClientSystemProperty(ClientProperties.AMQP_VERSION, "0-10");
-        AMQConnection connection = (AMQConnection) getConnection();
-        assertEquals("Unexpected protocol version in use", ProtocolVersion.v0_91, connection.getProtocolVersion());
-        connection.close();
-
-        stopBroker();
-
-        if(useConfig)
-        {
-            //selectively include 0-10 support again on the test port through config
-            setConfigurationProperty(ServerConfiguration.CONNECTOR_INCLUDE_010, String.valueOf(getPort()));
-        }
-        else
-        {
-            //selectively include 0-10 support again on the test port through QBTC sys props
-            setTestSystemProperty(QpidBrokerTestCase.BROKER_PROTOCOL_INCLUDES,"--include-0-10 @PORT");
-        }
-
-        startBroker();
-
-        //Verify requesting a 0-10 connection now returns one
-        setTestClientSystemProperty(ClientProperties.AMQP_VERSION, "0-10");
-        connection = (AMQConnection) getConnection();
-        assertEquals("Unexpected protocol version in use", ProtocolVersion.v0_10, connection.getProtocolVersion());
-        connection.close();
-    }
-
-    public void testProtocolInclusionOverridesProtocolDisabling() throws Exception
-    {
-        clearProtocolSupportManipulations();
-
-        //disable 0-10 and 1-0
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP010ENABLED, "false");
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_AMQP10ENABLED, "false");
-
-        //selectively include 0-10 support again on the test port
-        setConfigurationProperty(ServerConfiguration.CONNECTOR_INCLUDE_010, String.valueOf(getPort()));
-
-        super.setUp();
-
-        //Verify initially requesting a 0-10 connection still works
-        setTestClientSystemProperty(ClientProperties.AMQP_VERSION, "0-10");
-        AMQConnection connection = (AMQConnection) getConnection();
-        assertEquals("Unexpected protocol version in use", ProtocolVersion.v0_10, connection.getProtocolVersion());
-        connection.close();
-    }
 
 }

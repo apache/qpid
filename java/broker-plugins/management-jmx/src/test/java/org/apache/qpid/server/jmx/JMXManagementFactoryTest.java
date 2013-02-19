@@ -19,33 +19,42 @@
 package org.apache.qpid.server.jmx;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class JMXManagementFactoryTest extends QpidTestCase
 {
     private final JMXManagementFactory _jmxManagementFactory = new JMXManagementFactory();
-    private final ServerConfiguration _serverConfiguration = mock(ServerConfiguration.class);
+    private final Map<String, Object> _attributes = new HashMap<String, Object>();
     private final Broker _broker = mock(Broker.class);
+    private UUID _id = UUID.randomUUID();
 
     public void testJMXConfigured() throws Exception
     {
-        when(_serverConfiguration.getJMXManagementEnabled()).thenReturn(true);
+        _attributes.put(PluginFactory.PLUGIN_TYPE, JMXManagement.PLUGIN_TYPE);
 
-        JMXManagement jmxManagement = _jmxManagementFactory.createInstance(_serverConfiguration, _broker);
+        JMXManagement jmxManagement = (JMXManagement) _jmxManagementFactory.createInstance(_id, _attributes, _broker);
 
         assertNotNull(jmxManagement);
+        assertEquals("Unexpected plugin type", JMXManagement.PLUGIN_TYPE, jmxManagement.getAttribute(JMXManagementFactory.PLUGIN_TYPE));
+        assertEquals("Unexpected default mbean platform", JMXManagement.DEFAULT_USE_PLATFORM_MBEAN_SERVER, jmxManagement.getAttribute(JMXManagement.USE_PLATFORM_MBEAN_SERVER));
+        assertEquals("Unexpected default name", JMXManagement.DEFAULT_NAME, jmxManagement.getAttribute(JMXManagement.NAME));
     }
 
-    public void testJMXNotConfigured() throws Exception
+    public void testCreateInstanceReturnsNullWhenPluginTypeMissing()
     {
-        when(_serverConfiguration.getJMXManagementEnabled()).thenReturn(false);
+        assertNull(_jmxManagementFactory.createInstance(_id, _attributes, _broker));
+    }
 
-        JMXManagement jmxManagement = _jmxManagementFactory.createInstance(_serverConfiguration, _broker);
-
-        assertNull(jmxManagement);
+    public void testCreateInstanceReturnsNullWhenPluginTypeNotJmx()
+    {
+        _attributes.put(PluginFactory.PLUGIN_TYPE, "notJmx");
+        assertNull(_jmxManagementFactory.createInstance(_id, _attributes, _broker));
     }
 }

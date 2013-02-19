@@ -18,10 +18,11 @@
  */
 package org.apache.qpid.server.plugin;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
 import org.apache.qpid.server.security.AccessControl;
 
 public interface AccessControlFactory
 {
-    AccessControl createInstance(Configuration securityConfig);
+    AccessControl createInstance(Map<String, Object> attributes);
 }

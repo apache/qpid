@@ -18,12 +18,14 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Binary;
 
-public class ServerSessionTest extends InternalBrokerBaseCase
+public class ServerSessionTest extends QpidTestCase
 {
 
     private VirtualHost _virtualHost;
@@ -32,7 +34,26 @@ public class ServerSessionTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
+        BrokerTestHelper.setUp();
+        _virtualHost = BrokerTestHelper.createVirtualHost(getName());
+        GenericActor.setDefaultMessageLogger(CurrentActor.get().getRootMessageLogger());
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_virtualHost != null)
+            {
+                _virtualHost.close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     public void testCompareTo() throws Exception

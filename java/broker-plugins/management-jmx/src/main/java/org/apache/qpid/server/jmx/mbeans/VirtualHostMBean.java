@@ -65,7 +65,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
         _managerMBean = new VirtualHostManagerMBean(this);
     }
 
-    private void initQueues() throws JMException
+    private void initQueues()
     {
         synchronized (_children)
         {
@@ -73,13 +73,20 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
             {
                 if(!_children.containsKey(queue))
                 {
-                    _children.put(queue, new QueueMBean(queue, this));
+                    try
+                    {
+                        _children.put(queue, new QueueMBean(queue, this));
+                    }
+                    catch(Exception e)
+                    {
+                        LOGGER.error("Cannot create queue mbean for queue " + queue.getName(), e);
+                    }
                 }
             }
         }
     }
 
-    private void initExchanges() throws JMException
+    private void initExchanges()
     {
         synchronized (_children)
         {
@@ -87,13 +94,20 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
             {
                 if(!_children.containsKey(exchange))
                 {
-                    _children.put(exchange, new ExchangeMBean(exchange, this));
+                    try
+                    {
+                        _children.put(exchange, new ExchangeMBean(exchange, this));
+                    }
+                    catch(Exception e)
+                    {
+                        LOGGER.error("Cannot create exchange mbean for exchange " + exchange.getName(), e);
+                    }
                 }
             }
         }
     }
 
-    private void initConnections() throws JMException
+    private void initConnections()
     {
         synchronized (_children)
         {
@@ -101,7 +115,14 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
             {
                 if(!_children.containsKey(conn))
                 {
-                    _children.put(conn, new ConnectionMBean(conn, this));
+                    try
+                    {
+                        _children.put(conn, new ConnectionMBean(conn, this));
+                    }
+                    catch(Exception e)
+                    {
+                        LOGGER.error("Cannot create connection mbean for connection " + conn.getName(), e);
+                    }
                 }
             }
         }
@@ -119,7 +140,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 
     public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
-        // ignore
+        // no-op
     }
 
     public void childAdded(ConfiguredObject object, ConfiguredObject child)
@@ -208,4 +229,35 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 
         return queues;
     }
+
+    @Override
+    public void unregister() throws JMException
+    {
+        synchronized (_children)
+        {
+            for (AMQManagedObject mbean : _children.values())
+            {
+                if(mbean != null)
+                {
+                    try
+                    {
+                        mbean.unregister();
+                    }
+                    catch(JMException e)
+                    {
+                        LOGGER.error("Failed to remove mbean for child : " + mbean, e);
+                    }
+                }
+            }
+            _children.clear();
+        }
+        _managerMBean.unregister();
+    }
+
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+    {
+        // no-op
+    }
+
 }

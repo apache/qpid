@@ -19,9 +19,11 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 public interface GroupProvider extends ConfiguredObject
 {
@@ -48,4 +50,6 @@ public interface GroupProvider extends ConfiguredObject
                                   CREATED,
                                   UPDATED,
                                   TYPE));
+
+    Set<Principal> getGroupPrincipalsForUser(String username);
 }

@@ -23,12 +23,20 @@ package org.apache.qpid.server.logging;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.util.LogMonitor;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Broker Test Suite
@@ -47,6 +55,8 @@ import java.util.List;
  */
 public class BrokerLoggingTest extends AbstractTestLogging
 {
+    private static final String BROKER_MESSAGE_LOG_REG_EXP = ".*\\[\\w*\\] (BRK\\-\\d*) .*";
+    private static final Pattern BROKER_MESSAGE_LOG_PATTERN = Pattern.compile(BROKER_MESSAGE_LOG_REG_EXP);
     private static final String BRK_LOG_PREFIX = "BRK-";
 
     public void setUp() throws Exception
@@ -95,7 +105,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             _monitor = new LogMonitor(_outputFile);
 
 
-            String configFilePath = _configFile.toString();
+            String configFilePath = getConfigPath();
 
             // Ensure we wait for TESTID to be logged
             waitAndFindMatches(TESTID);
@@ -118,8 +128,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
                              1, results.size());
 
                 //3
-                assertTrue("Config file details not correctly logged",
-                           log.endsWith(configFilePath));
+                assertTrue("Config file details not correctly logged, got "
+                        + log + " but expected it to end with " + configFilePath,
+                        log.endsWith(configFilePath));
             }
             catch (AssertionFailedError afe)
             {
@@ -128,6 +139,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 throw afe;
             }
         }
+    }
+
+    private String getConfigPath()
+    {
+        return getPathRelativeToWorkingDirectory(getTestConfigFile(DEFAULT_PORT));
     }
 
     /**
@@ -242,6 +258,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
         // This logging startup code only occurs when you run a Java broker
         if (isJavaBroker() && isExternalBroker())
         {
+            String customLog4j = getBrokerCommandLog4JFile().getAbsolutePath();
+
             String TESTID = "BRK-1007";
 
             startBroker();
@@ -290,10 +308,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //3
                     String messageString = getMessageString(log);
-                    String customLog4j = getBrokerCommandLog4JFile().getAbsolutePath();
-                    assertTrue("Log4j file details not correctly logged. Message '" + messageString
-                             + "' should contain '" + customLog4j + "'",
-                               messageString.contains(customLog4j));
+                    assertTrue("Log4j file details not correctly logged. Message '"
+                            + messageString + "' should contain '" +customLog4j + "'",
+                            messageString.endsWith(customLog4j));
 
                     validation = true;
                 }
@@ -441,10 +458,13 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 {
                     String log = getLog(rawLog);
 
+                    // using custom method to get id as getMessageId() fails to correctly identify id
+                    // because of using brackets for protocols
+                    String id = getBrokerLogId(log);
                     // Ensure we do not have a BRK-1002 message
-                    if (!getMessageID(log).equals(TESTID))
+                    if (!id.equals(TESTID))
                     {
-                        if (getMessageID(log).equals("BRK-1001"))
+                        if (id.equals("BRK-1001"))
                         {
                             foundBRK1001 = true;
                         }
@@ -454,7 +474,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertTrue("BRK-1001 not logged before this message", foundBRK1001);
 
                     //1
-                    validateMessageID(TESTID, log);
+                    assertEquals("Incorrect message", TESTID, id);
 
                     //2
                     //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
@@ -464,7 +484,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //3
                     String message = getMessageString(log);
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP port " + getPort()));
+                               message.endsWith("Listening on [TCP] port " + getPort()));
 
                     validation = true;
                 }
@@ -478,6 +498,16 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 throw afe;
             }
         }
+    }
+
+    private String getBrokerLogId(String log)
+    {
+        Matcher m = BROKER_MESSAGE_LOG_PATTERN.matcher(log);
+        if (m.matches())
+        {
+            return m.group(1);
+        }
+        return getMessageID(log);
     }
 
     /**
@@ -497,8 +527,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
      * 1. The BRK ID is correct
      * 2. This occurs after the BRK-1001 startup message
      * 3. With SSL enabled in the configuration two BRK-1002 will be printed (order is not specified)
-     * 1. One showing values TCP / 5672
-     * 2. One showing values TCP/SSL / 5672
+     * 1. One showing values [TCP] 5672
+     * 2. One showing values [SSL] 5671
      *
      * @throws Exception caused by broker startup
      */
@@ -511,12 +541,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             String TESTID = "BRK-1002";
 
             // Enable SSL on the connection
-            setConfigurationProperty("connector.ssl.enabled", "true");
-            setConfigurationProperty("connector.ssl.sslOnly", "false");
-            setConfigurationProperty("connector.ssl.keyStorePath", getConfigurationStringProperty("management.ssl.keyStorePath"));
-            setConfigurationProperty("connector.ssl.keyStorePassword", getConfigurationStringProperty("management.ssl.keyStorePassword"));
-
-            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.ssl.port"));
+            Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
+            sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
+            sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 
             startBroker();
 
@@ -544,10 +573,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 {
                     String log = getLog(rawLog);
 
+                    String id = getBrokerLogId(log);
                     // Ensure we do not have a BRK-1002 message
-                    if (!getMessageID(log).equals(TESTID))
+                    if (!id.equals(TESTID))
                     {
-                        if (getMessageID(log).equals("BRK-1001"))
+                        if (id.equals("BRK-1001"))
                         {
                             foundBRK1001 = true;
                         }
@@ -557,7 +587,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertTrue("BRK-1001 not logged before this message", foundBRK1001);
 
                     //1
-                    validateMessageID(TESTID, log);
+                    assertEquals("Incorrect message", TESTID, id);
 
                     //2
                     //There will be 4 copies of the startup message (two via SystemOut, and two via Log4J)
@@ -569,16 +599,16 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //Check the first
                     String message = getMessageString(getLog(listenMessages .get(0)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP port " + getPort()));
+                               message.endsWith("Listening on [TCP] port " + getPort()));
 
                     // Check the third, ssl listen.
                     message = getMessageString(getLog(listenMessages .get(2)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP/SSL port " + sslPort));
+                               message.endsWith("Listening on [SSL] port " + DEFAULT_SSL_PORT));
 
                     //4 Test ports open
                     testSocketOpen(getPort());
-                    testSocketOpen(sslPort);
+                    testSocketOpen(DEFAULT_SSL_PORT);
 
                     validation = true;
                 }
@@ -802,11 +832,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             String TESTID = "BRK-1003";
 
             // Enable SSL on the connection
-            setConfigurationProperty("connector.ssl.enabled", "true");
-            setConfigurationProperty("connector.ssl.keyStorePath", getConfigurationStringProperty("management.ssl.keyStorePath"));
-            setConfigurationProperty("connector.ssl.keyStorePassword", getConfigurationStringProperty("management.ssl.keyStorePassword"));
-
-            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.ssl.port"));
+            Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
+            sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
+            sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 
             startBroker();
 
@@ -847,13 +877,13 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 // Check second, ssl, listen.
                 message = getMessageString(getLog(listenMessages.get(1)));
                 assertTrue("Expected shutdown log not correct" + message,
-                           message.endsWith("TCP/SSL port " + sslPort));
+                           message.endsWith("TCP/SSL port " + DEFAULT_SSL_PORT));
 
                 //4
                 //Test Port closed
                 checkSocketClosed(getPort());
                 //Test SSL Port closed
-                checkSocketClosed(sslPort);
+                checkSocketClosed(DEFAULT_SSL_PORT);
             }
             catch (AssertionFailedError afe)
             {
@@ -998,4 +1028,5 @@ public class BrokerLoggingTest extends AbstractTestLogging
                  + ". Due to:" + e.getMessage());
         }
     }
+
 }

@@ -19,20 +19,22 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
+
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class AnonymousAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-    @Override
-    public AuthenticationManager createInstance(Configuration configuration)
-    {
-        if (configuration.subset("anonymous-auth-manager").isEmpty())
-        {
-            return null;
-        }
+    public static final String PROVIDER_TYPE = AnonymousAuthenticationManager.class.getSimpleName();
 
-        return new AnonymousAuthenticationManager();
+    @Override
+    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    {
+        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
+        {
+            return new AnonymousAuthenticationManager();
+        }
+        return null;
     }
 
 }

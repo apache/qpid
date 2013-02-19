@@ -36,7 +36,6 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InboundMessage;
@@ -45,8 +44,6 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -58,7 +55,6 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_F
 public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSubject
 {
     private static final Symbol LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
-    private IApplicationRegistry _appRegistry;
     private VirtualHost _vhost;
     private AutoCommitTransaction _transaction;
 
@@ -68,9 +64,8 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     private UUID _id = UUID.randomUUID();
 
 
-    public Session_1_0(VirtualHost vhost, IApplicationRegistry appRegistry, final Connection_1_0 connection)
+    public Session_1_0(VirtualHost vhost, final Connection_1_0 connection)
     {
-        _appRegistry = appRegistry;
         _vhost = vhost;
         _transaction = new AutoCommitTransaction(vhost.getMessageStore());
         _connection = connection;

@@ -43,6 +43,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -67,7 +68,7 @@ public class HATestClusterCreator
     private final Map<Integer, Integer> _brokerPortToBdbPortMap = new HashMap<Integer, Integer>();
     private final Map<Integer, BrokerConfigHolder> _brokerConfigurations = new TreeMap<Integer, BrokerConfigHolder>();
     private final String _virtualHostName;
-    private final String _storeConfigKeyPrefix;
+    private final String _vhostStoreConfigKeyPrefix;
 
     private final String _ipAddressOfBroker;
     private final String _groupName ;
@@ -82,7 +83,7 @@ public class HATestClusterCreator
         _groupName = "group" + _testcase.getName();
         _ipAddressOfBroker = getIpAddressOfBrokerHost();
         _numberOfNodes = numberOfNodes;
-        _storeConfigKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".store.";
+        _vhostStoreConfigKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".store.";
         _bdbHelperPort = 0;
     }
 
@@ -102,7 +103,9 @@ public class HATestClusterCreator
             }
 
             configureClusterNode(brokerPort, bdbPort);
-            collectConfig(brokerPort, _testcase.getTestConfiguration(), _testcase.getTestVirtualhosts());
+            TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
+            brokerConfiguration.addJmxManagementConfiguration();
+            collectConfig(brokerPort, brokerConfiguration, _testcase.getTestVirtualhosts());
 
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
         }
@@ -127,7 +130,7 @@ public class HATestClusterCreator
      */
     private String getConfigKey(String configKeySuffix)
     {
-        final String configKey = StringUtils.substringAfter(_storeConfigKeyPrefix + configKeySuffix, "virtualhosts.");
+        final String configKey = StringUtils.substringAfter(_vhostStoreConfigKeyPrefix + configKeySuffix, "virtualhosts.");
         return configKey;
     }
 
@@ -135,7 +138,6 @@ public class HATestClusterCreator
     {
         final BrokerConfigHolder brokerConfigHolder = _brokerConfigurations.get(brokerPortNumber);
 
-        _testcase.setTestConfiguration(brokerConfigHolder.getTestConfiguration());
         _testcase.setTestVirtualhosts(brokerConfigHolder.getTestVirtualhosts());
 
         _testcase.startBroker(brokerPortNumber);
@@ -348,12 +350,12 @@ public class HATestClusterCreator
     {
         final String nodeName = getNodeNameForNodeAt(bdbPort);
 
-        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "class", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore");
+        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "class", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore");
 
-        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.groupName", _groupName);
-        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.nodeName", nodeName);
-        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.nodeHostPort", getNodeHostPortForNodeAt(bdbPort));
-        _testcase.setConfigurationProperty(_storeConfigKeyPrefix + "highAvailability.helperHostPort", getHelperHostPort());
+        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.groupName", _groupName);
+        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.nodeName", nodeName);
+        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.nodeHostPort", getNodeHostPortForNodeAt(bdbPort));
+        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.helperHostPort", getHelperHostPort());
     }
 
     public String getIpAddressOfBrokerHost()
@@ -369,24 +371,24 @@ public class HATestClusterCreator
         }
     }
 
-    private void collectConfig(final int brokerPortNumber, XMLConfiguration testConfiguration, XMLConfiguration testVirtualhosts)
+    private void collectConfig(final int brokerPortNumber, TestBrokerConfiguration testConfiguration, XMLConfiguration testVirtualhosts)
     {
-        _brokerConfigurations.put(brokerPortNumber, new BrokerConfigHolder((XMLConfiguration) testConfiguration.clone(),
+        _brokerConfigurations.put(brokerPortNumber, new BrokerConfigHolder(testConfiguration,
                                                                     (XMLConfiguration) testVirtualhosts.clone()));
     }
 
     public class BrokerConfigHolder
     {
-        private final XMLConfiguration _testConfiguration;
+        private final TestBrokerConfiguration _testConfiguration;
         private final XMLConfiguration _testVirtualhosts;
 
-        public BrokerConfigHolder(XMLConfiguration testConfiguration, XMLConfiguration testVirtualhosts)
+        public BrokerConfigHolder(TestBrokerConfiguration testConfiguration, XMLConfiguration testVirtualhosts)
         {
             _testConfiguration = testConfiguration;
             _testVirtualhosts = testVirtualhosts;
         }
 
-        public XMLConfiguration getTestConfiguration()
+        public TestBrokerConfiguration getTestConfiguration()
         {
             return _testConfiguration;
         }
@@ -416,7 +418,7 @@ public class HATestClusterCreator
 
     public String getStoreConfigKeyPrefix()
     {
-        return _storeConfigKeyPrefix;
+        return _vhostStoreConfigKeyPrefix;
     }
 
 

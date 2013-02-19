@@ -19,27 +19,30 @@
 package org.apache.qpid.server.security.group;
 
 import java.security.Principal;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.adapter.GroupProviderAdapter;
 
 
 public class GroupPrincipalAccessor
 {
-    private final List<GroupManager> _groupManagerList;
+    private final Collection<GroupProvider> _groupProviders;
 
-    public GroupPrincipalAccessor(List<GroupManager> groupManagerList)
+    public GroupPrincipalAccessor(Collection<GroupProvider> groupProviders)
     {
-        _groupManagerList = groupManagerList;
+        _groupProviders = groupProviders;
     }
 
     public Set<Principal> getGroupPrincipals(String username)
     {
         Set<Principal> principals = new HashSet<Principal>();
-        for (GroupManager groupManager : _groupManagerList)
+        for (GroupProvider groupProvider : _groupProviders)
         {
-            Set<Principal> groups = groupManager.getGroupPrincipalsForUser(username);
+            Set<Principal> groups = groupProvider.getGroupPrincipalsForUser(username);
             if (groups != null)
             {
                 principals.addAll(groups);

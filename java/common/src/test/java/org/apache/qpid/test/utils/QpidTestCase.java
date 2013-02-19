@@ -116,12 +116,7 @@ public class QpidTestCase extends TestCase
     
     public QpidTestCase()
     {
-        this("QpidTestCase");
-    }
-
-    public QpidTestCase(String name)
-    {
-        super(name);
+        super();
     }
 
     public void run(TestResult testResult)

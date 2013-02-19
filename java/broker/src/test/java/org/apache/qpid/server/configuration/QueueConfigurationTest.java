@@ -20,25 +20,31 @@
  */
 package org.apache.qpid.server.configuration;
 
+import static org.mockito.Mockito.when;
+
 import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class QueueConfigurationTest extends TestCase
 {
-
     private VirtualHostConfiguration _emptyConf;
     private PropertiesConfiguration _env;
     private VirtualHostConfiguration _fullHostConf;
+    private Broker _broker;
 
+    @Override
     public void setUp() throws Exception
     {
+        super.setUp();
+        BrokerTestHelper.setUp();
+        _broker = BrokerTestHelper.createBrokerMock();
         _env = new PropertiesConfiguration();
-        _emptyConf = new VirtualHostConfiguration("test", _env);
+        _emptyConf = new VirtualHostConfiguration("test", _env, _broker);
 
         PropertiesConfiguration fullEnv = new PropertiesConfiguration();
         fullEnv.setProperty("queues.maximumMessageAge", 1);
@@ -49,35 +55,41 @@ public class QueueConfigurationTest extends TestCase
         fullEnv.setProperty("queues.deadLetterQueues", true);
         fullEnv.setProperty("queues.maximumDeliveryCount", 5);
 
-        _fullHostConf = new VirtualHostConfiguration("test", fullEnv);
+        _fullHostConf = new VirtualHostConfiguration("test", fullEnv, _broker);
 
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        BrokerTestHelper.tearDown();
+        super.tearDown();
     }
 
     public void testMaxDeliveryCount() throws Exception
     {
-        try
-        {
-            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
-            ApplicationRegistry.initialise(registry);
+        // broker MAXIMUM_DELIVERY_ATTEMPTS attribute is not set
+        when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(null);
 
-            // Check default value
-            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-            assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
+        // Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
 
-            // Check explicit value
-            VirtualHostConfiguration vhostConfig = overrideConfiguration("maximumDeliveryCount", 7);
-            qConf = new QueueConfiguration("test", vhostConfig);
-            assertEquals("Unexpected host configuration for max delivery count", 7, qConf.getMaxDeliveryCount());
+        // set broker MAXIMUM_DELIVERY_ATTEMPTS attribute to 2
+        when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(2);
 
-            // Check inherited value
-            qConf = new QueueConfiguration("test",  _fullHostConf);
-            assertEquals("Unexpected queue configuration for max delivery count", 5, qConf.getMaxDeliveryCount());
+        // Check that queue inherits the MAXIMUM_DELIVERY_ATTEMPTS value from broker
+        qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals("Unexpected default server configuration for max delivery count ", 2, qConf.getMaxDeliveryCount());
 
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        // Check explicit value
+        VirtualHostConfiguration vhostConfig = overrideConfiguration("maximumDeliveryCount", 7);
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals("Unexpected host configuration for max delivery count", 7, qConf.getMaxDeliveryCount());
+
+        // Check inherited value
+        qConf = new QueueConfiguration("test",  _fullHostConf);
+        assertEquals("Unexpected queue configuration for max delivery count", 5, qConf.getMaxDeliveryCount());
     }
 
     /**
@@ -87,28 +99,28 @@ public class QueueConfigurationTest extends TestCase
      */
     public void testIsDeadLetterQueueEnabled() throws Exception
     {
-        try
-        {
-            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
-            ApplicationRegistry.initialise(registry);
+        // enable dead letter queues broker wide
+        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
 
-            // Check default value
-            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-            assertFalse("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+        // Check that queue inherits the broker setting
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
 
-            // Check explicit value
-            VirtualHostConfiguration vhostConfig = overrideConfiguration("deadLetterQueues", true);
-            qConf = new QueueConfiguration("test", vhostConfig);
-            assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+        // broker DEAD_LETTER_QUEUE_ENABLED is not set
+        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(null);
 
-            // Check inherited value
-            qConf = new QueueConfiguration("test", _fullHostConf);
-            assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        // Check that queue dead letter queue is not enabled
+        qConf = new QueueConfiguration("test", _emptyConf);
+        assertFalse("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+
+        // Check explicit value
+        VirtualHostConfiguration vhostConfig = overrideConfiguration("deadLetterQueues", true);
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
+
+        // Check inherited value
+        qConf = new QueueConfiguration("test", _fullHostConf);
+        assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
     }
 
     public void testGetMaximumMessageAge() throws ConfigurationException
@@ -178,27 +190,28 @@ public class QueueConfigurationTest extends TestCase
 
     public void testGetMinimumAlertRepeatGap() throws Exception
     {
-        try
-        {
-            ApplicationRegistry registry = new TestApplicationRegistry(new ServerConfiguration(_env));
-            ApplicationRegistry.initialise(registry);
-            // Check default value
-            QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-            assertEquals(ServerConfiguration.DEFAULT_MINIMUM_ALERT_REPEAT_GAP, qConf.getMinimumAlertRepeatGap());
+        // set broker attribute ALERT_REPEAT_GAP to 10
+        when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(10);
 
-            // Check explicit value
-            VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
-            qConf = new QueueConfiguration("test", vhostConfig);
-            assertEquals(2, qConf.getMinimumAlertRepeatGap());
+        // check that broker level setting is available on queue configuration
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals(10, qConf.getMinimumAlertRepeatGap());
 
-            // Check inherited value
-            qConf = new QueueConfiguration("test", _fullHostConf);
-            assertEquals(1, qConf.getMinimumAlertRepeatGap());
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        // remove configuration for ALERT_REPEAT_GAP on broker level
+        when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(null);
+
+        // Check default value
+        qConf = new QueueConfiguration("test", _emptyConf);
+        assertEquals(0, qConf.getMinimumAlertRepeatGap());
+
+        // Check explicit value
+        VirtualHostConfiguration vhostConfig = overrideConfiguration("minimumAlertRepeatGap", 2);
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals(2, qConf.getMinimumAlertRepeatGap());
+
+        // Check inherited value
+        qConf = new QueueConfiguration("test", _fullHostConf);
+        assertEquals(1, qConf.getMinimumAlertRepeatGap());
     }
 
     public void testSortQueueConfiguration() throws ConfigurationException
@@ -235,6 +248,6 @@ public class QueueConfigurationTest extends TestCase
         config.addConfiguration(_fullHostConf.getConfig());
         config.addConfiguration(queueConfig);
 
-        return new VirtualHostConfiguration("test", config);
+        return new VirtualHostConfiguration("test", config, _broker);
     }
 }
