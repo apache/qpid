@@ -69,9 +69,9 @@ set (QPIDD_CONF_FILE ${QPIDD_CONF_PATH} CACHE STRING
 
 install(FILES  LICENSE NOTICE  DESTINATION ${QPID_INSTALL_DOCDIR})
 install(FILES  include/qpid/qpid.i
-               bindings/swig_perl_typemaps.i
-               bindings/swig_python_typemaps.i
-               bindings/swig_ruby_typemaps.i
+               include/qpid/swig_perl_typemaps.i
+               include/qpid/swig_python_typemaps.i
+               include/qpid/swig_ruby_typemaps.i
                DESTINATION ${QPID_INSTALL_DATADIR}/qpid)
 install(FILES  include/qmf/qmfengine.i
                include/qmf/qmf2.i
