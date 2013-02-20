@@ -48,6 +48,12 @@ public class Main
     private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
             .withDescription("use given store type").withLongOpt("store-type").create("st");
 
+    private static final Option OPTION_INITIAL_CONFIGURATION_STORE_PATH = OptionBuilder.withArgName("path").hasArg()
+            .withDescription("pass the location of initial store to use to create a user store").withLongOpt("initial-store-path").create("isp");
+
+    private static final Option OPTION_INITIAL_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
+            .withDescription("the type of initial store").withLongOpt("initial-store-type").create("ist");
+
     private static final Option OPTION_LOG_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg()
                     .withDescription("use the specified log4j xml configuration file. By "
@@ -69,6 +75,8 @@ public class Main
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
         OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_WATCH);
+        OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_STORE_PATH);
+        OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_STORE_TYPE);
     }
 
     protected CommandLine _commandLine;
@@ -171,6 +179,17 @@ public class Main
             if(logConfig != null)
             {
                 options.setLogConfigFile(logConfig);
+            }
+
+            String initialConfigurationStore = _commandLine.getOptionValue(OPTION_INITIAL_CONFIGURATION_STORE_PATH.getOpt());
+            if (initialConfigurationStore != null)
+            {
+                options.setInitialConfigurationStoreLocation(initialConfigurationStore);
+            }
+            String initailConfigurationStoreType = _commandLine.getOptionValue(OPTION_INITIAL_CONFIGURATION_STORE_TYPE.getOpt());
+            if (initailConfigurationStoreType != null)
+            {
+                options.setInitialConfigurationStoreType(initailConfigurationStoreType);
             }
 
             setExceptionHandler();
