@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
@@ -95,51 +96,23 @@ public class BrokerShutdownTest extends QpidTestCase
 
     private Broker startBroker() throws Exception
     {
-        // test store with only broker and authentication provider entries
-        ConfigurationEntryStore store = new ConfigurationEntryStore()
-        {
-            private UUID _brokerId = UUID.randomUUID();
-            private UUID _authenticationProviderId = UUID.randomUUID();
+        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        UUID brokerId = UUID.randomUUID();
+        UUID authenticationProviderId = UUID.randomUUID();
 
-            @Override
-            public ConfigurationEntry getRootEntry()
-            {
-                return new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), Collections.<String, Object> emptyMap(),
-                        Collections.singleton(_authenticationProviderId), this);
-            }
+        ConfigurationEntry root = new ConfigurationEntry(brokerId, Broker.class.getSimpleName(), Collections.<String, Object> emptyMap(),
+                Collections.singleton(authenticationProviderId), store);
 
-            @Override
-            public ConfigurationEntry getEntry(UUID id)
-            {
-                if (_authenticationProviderId.equals(id))
-                {
-                    File file = TestFileUtils.createTempFile(BrokerShutdownTest.this, ".db.users");
-                    Map<String, Object> attributes = new HashMap<String, Object>();
-                    attributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-                    attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
-                    return new ConfigurationEntry(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(), attributes,
-                            Collections.<UUID> emptySet(), this);
-                }
-                return null;
-            }
+        File file = TestFileUtils.createTempFile(BrokerShutdownTest.this, ".db.users");
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
+        ConfigurationEntry authenticationProviderEntry = new ConfigurationEntry(authenticationProviderId, AuthenticationProvider.class.getSimpleName(), attributes,
+                Collections.<UUID> emptySet(), store);
 
-            @Override
-            public void save(ConfigurationEntry... entries)
-            {
-            }
-
-            @Override
-            public UUID[] remove(UUID... entryIds)
-            {
-                return null;
-            }
-
-            @Override
-            public void open(String storeLocation)
-            {
-            }
-
-        };
+        when(store.getRootEntry()).thenReturn(root);
+        when(store.getEntry(brokerId)).thenReturn(root);
+        when(store.getEntry(authenticationProviderId)).thenReturn(authenticationProviderEntry);
 
         // mocking the required object
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);

@@ -38,20 +38,26 @@ public class MainTest extends QpidTestCase
         assertEquals(null, options.getConfigurationStoreLocation());
         assertEquals(null, options.getLogConfigFile());
         assertEquals(0, options.getLogWatchFrequency());
+        assertEquals("json", options.getInitialConfigurationStoreType());
+        assertEquals(null, options.getInitialConfigurationStoreLocation());
     }
 
     public void testConfigurationStoreLocation()
     {
         BrokerOptions options = startDummyMain("-sp abcd/config.xml");
-
         assertEquals("abcd/config.xml", options.getConfigurationStoreLocation());
+
+        options = startDummyMain("-store-path abcd/config2.xml");
+        assertEquals("abcd/config2.xml", options.getConfigurationStoreLocation());
     }
 
     public void testConfigurationStoreType()
     {
         BrokerOptions options = startDummyMain("-st dby");
-
         assertEquals("dby", options.getConfigurationStoreType());
+
+        options = startDummyMain("-store-type bdb");
+        assertEquals("bdb", options.getConfigurationStoreType());
     }
 
     public void testLogConfig()
@@ -82,6 +88,25 @@ public class MainTest extends QpidTestCase
 
         assertNotNull("Command line not parsed correctly", main.getCommandLine());
         assertTrue("Parsed command line didnt pick up help option", main.getCommandLine().hasOption("h"));
+    }
+
+    public void testInitailConfigurationStoreLocation()
+    {
+        BrokerOptions options = startDummyMain("-isp abcd/config.xml");
+        assertEquals("abcd/config.xml", options.getInitialConfigurationStoreLocation());
+
+        options = startDummyMain("-initial-store-path abcd/config.xml");
+        assertEquals("abcd/config.xml", options.getInitialConfigurationStoreLocation());
+    }
+
+    public void testInitialConfigurationStoreType()
+    {
+        BrokerOptions options = startDummyMain("-ist dby");
+        assertEquals("dby", options.getInitialConfigurationStoreType());
+
+        options = startDummyMain("-initial-store-type bdb");
+        assertEquals("bdb", options.getInitialConfigurationStoreType());
+
     }
 
     private BrokerOptions startDummyMain(String commandLine)

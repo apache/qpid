@@ -32,6 +32,9 @@ public class BrokerOptions
     private String _configurationStoreLocation;
     private String _configurationStoreType = DEFAULT_STORE_TYPE;
 
+    private String _initialConfigurationStoreLocation;
+    private String _initialConfigurationStoreType = DEFAULT_STORE_TYPE;
+
     public String getLogConfigFile()
     {
         return _logConfigFile;
@@ -74,6 +77,26 @@ public class BrokerOptions
     public void setConfigurationStoreType(String cofigurationStoreType)
     {
         _configurationStoreType = cofigurationStoreType;
+    }
+
+    public void setInitialConfigurationStoreLocation(String initialConfigurationStore)
+    {
+        _initialConfigurationStoreLocation = initialConfigurationStore;
+    }
+
+    public void setInitialConfigurationStoreType(String initialConfigurationStoreType)
+    {
+        _initialConfigurationStoreType = initialConfigurationStoreType;
+    }
+
+    public String getInitialConfigurationStoreLocation()
+    {
+        return _initialConfigurationStoreLocation;
+    }
+
+    public String getInitialConfigurationStoreType()
+    {
+        return _initialConfigurationStoreType;
     }
 
 }

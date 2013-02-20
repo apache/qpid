@@ -21,7 +21,6 @@
 package org.apache.qpid.test.utils;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,16 +60,7 @@ public class TestBrokerConfiguration
     {
         // TODO: add support for DERBY store
         _store = new JsonConfigurationEntryStore();
-
-        try
-        {
-            // load the initial store data into our store
-            _store.load(new File(intialStoreLocation).toURI().toURL());
-        }
-        catch (MalformedURLException e)
-        {
-            // ignore
-        }
+        _store.open(JsonConfigurationEntryStore.IN_MEMORY, intialStoreLocation);
     }
 
     public boolean setBrokerAttribute(String name, Object value)
@@ -100,7 +90,7 @@ public class TestBrokerConfiguration
 
     public boolean save(File configFile)
     {
-        _store.saveTo(configFile);
+        _store.copyTo(configFile.getAbsolutePath());
         return true;
     }
 
