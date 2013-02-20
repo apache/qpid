@@ -128,7 +128,8 @@ public class Broker
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
-        ConfigurationEntryStore store =  storeCreator.createStore(storeLocation, storeType, options);
+        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType,
+                options.getInitialConfigurationStoreLocation(), options.getInitialConfigurationStoreLocation());
 
         _applicationRegistry = new ApplicationRegistry(store);
         try

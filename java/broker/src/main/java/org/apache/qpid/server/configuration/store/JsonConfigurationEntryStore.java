@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,7 +22,6 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -40,6 +40,9 @@ import org.codehaus.jackson.node.ArrayNode;
 
 public class JsonConfigurationEntryStore implements ConfigurationEntryStore
 {
+    public static final String STORE_TYPE = "json";
+    public static final String IN_MEMORY = ":memory:";
+
     private static final String DEFAULT_BROKER_NAME = "Broker";
     private static final String ID = "id";
     private static final String TYPE = "@type";
@@ -48,17 +51,10 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
     private Map<UUID, ConfigurationEntry> _entries;
     private File _storeFile;
     private UUID _rootId;
-    private String _initialStoreLocation;
     private Map<String, Class<? extends ConfiguredObject>> _relationshipClasses;
 
     public JsonConfigurationEntryStore()
     {
-        this(BrokerConfigurationStoreCreator.INITIAL_STORE_LOCATION);
-    }
-
-    public JsonConfigurationEntryStore(String initialStore)
-    {
-        _initialStoreLocation = initialStore;
         _objectMapper = new ObjectMapper();
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -66,68 +62,80 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         _relationshipClasses = buildRelationshipClassMap();
     }
 
-    private Map<String, Class<? extends ConfiguredObject>> buildRelationshipClassMap()
-    {
-        Map<String, Class<? extends ConfiguredObject>> relationships = new HashMap<String, Class<? extends ConfiguredObject>>();
-
-        Collection<Class<? extends ConfiguredObject>> children = Model.getInstance().getChildTypes(Broker.class);
-        for (Class<? extends ConfiguredObject> childClass : children)
-        {
-            String name = childClass.getSimpleName().toLowerCase();
-            String relationshipName = name + (name.endsWith("s") ? "es" : "s");
-            relationships.put(relationshipName, childClass);
-        }
-       return relationships;
-    }
-
-    public void load(URL storeURL)
-    {
-        if (_rootId != null)
-        {
-            throw new IllegalStateException("Cannot load the store from");
-        }
-        JsonNode node = load(storeURL, _objectMapper);
-        ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
-        _rootId = brokerEntry.getId();
-    }
-
     @Override
     public void open(String storeLocation)
     {
-        _storeFile = new File(storeLocation);
-        if (!_storeFile.exists() || _storeFile.length() == 0)
+        if (_rootId != null)
         {
-            copyInitialStore();
+            throw new IllegalConfigurationException("The store has been opened alread");
         }
-
-        load(fileToURL(_storeFile));
+        if (!IN_MEMORY.equals(storeLocation))
+        {
+            _storeFile = new File(storeLocation);
+        }
+        createOrLoadStore();
     }
 
-    private void copyInitialStore()
+    @Override
+    public void open(String storeLocation, String initialStoreLocation)
     {
-        InputStream in = null;
-        try
+        if (_rootId != null)
         {
-            in = JsonConfigurationEntryStore.class.getClassLoader().getResourceAsStream(_initialStoreLocation);
-            FileUtils.copy(in, _storeFile);
+            throw new IllegalConfigurationException("The store has been opened already");
         }
-        catch (IOException e)
+        if (!IN_MEMORY.equals(storeLocation))
         {
-            throw new IllegalConfigurationException("Cannot create store file by copying initial store", e);
-        }
-        finally
-        {
-            if (in != null)
+            _storeFile = new File(storeLocation);
+            if ((!_storeFile.exists() || _storeFile.length() == 0) && initialStoreLocation != null)
             {
-                try
-                {
-                    in.close();
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalConfigurationException("Cannot close initial store input stream", e);
-                }
+                copyInitialStoreFile(initialStoreLocation);
             }
+            createOrLoadStore();
+        }
+        else
+        {
+            if (initialStoreLocation == null)
+            {
+                createRootEntryIfNotExists();
+            }
+            else
+            {
+                load(toURL(initialStoreLocation));
+            }
+        }
+    }
+
+    @Override
+    public void open(String storeLocation, ConfigurationEntryStore initialStore)
+    {
+        if (_rootId != null)
+        {
+            throw new IllegalConfigurationException("The store has been opened already");
+        }
+        boolean copyStore = false;
+        if (IN_MEMORY.equals(storeLocation))
+        {
+            copyStore = initialStore != null;
+        }
+        else
+        {
+            _storeFile = new File(storeLocation);
+            if ((!_storeFile.exists() || _storeFile.length() == 0) && initialStore != null)
+            {
+                createStoreFileIfNotExist(_storeFile);
+                copyStore = true;
+            }
+        }
+        if (copyStore)
+        {
+            ConfigurationEntry rootEntry = initialStore.getRootEntry();
+            _rootId = rootEntry.getId();
+            copyEntry(rootEntry.getId(), initialStore);
+            saveAsTree();
+        }
+        else
+        {
+            createOrLoadStore();
         }
     }
 
@@ -201,9 +209,131 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return _entries.get(id);
     }
 
-    public void saveTo(File file)
+    @Override
+    public void copyTo(String copyLocation)
     {
+        if (_rootId == null)
+        {
+            throw new IllegalConfigurationException("The store has not been opened");
+        }
+        File file = new File(copyLocation);
+        if (!file.exists())
+        {
+            createStoreFileIfNotExist(file);
+        }
         saveAsTree(_rootId, _entries, _objectMapper, file);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "JsonConfigurationEntryStore [_storeFile=" + _storeFile + ", _rootId=" + _rootId + "]";
+    }
+
+    private Map<String, Class<? extends ConfiguredObject>> buildRelationshipClassMap()
+    {
+        Map<String, Class<? extends ConfiguredObject>> relationships = new HashMap<String, Class<? extends ConfiguredObject>>();
+
+        Collection<Class<? extends ConfiguredObject>> children = Model.getInstance().getChildTypes(Broker.class);
+        for (Class<? extends ConfiguredObject> childClass : children)
+        {
+            String name = childClass.getSimpleName().toLowerCase();
+            String relationshipName = name + (name.endsWith("s") ? "es" : "s");
+            relationships.put(relationshipName, childClass);
+        }
+        return relationships;
+    }
+
+    private void createOrLoadStore()
+    {
+        if (_storeFile != null)
+        {
+            if (!_storeFile.exists() || _storeFile.length() == 0)
+            {
+                createStoreFileIfNotExist(_storeFile);
+            }
+            else
+            {
+                load(fileToURL(_storeFile));
+            }
+        }
+
+        createRootEntryIfNotExists();
+    }
+
+    private void createRootEntryIfNotExists()
+    {
+        if (_rootId == null)
+        {
+            // create a root entry for an empty store
+            ConfigurationEntry brokerEntry = new ConfigurationEntry(UUIDGenerator.generateRandomUUID(),
+                    Broker.class.getSimpleName(), Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), this);
+            _rootId = brokerEntry.getId();
+            _entries.put(_rootId, brokerEntry);
+        }
+    }
+
+    private void load(URL url)
+    {
+        InputStream is = null;
+        try
+        {
+            is = url.openStream();
+            JsonNode node = loadJsonNodes(is, _objectMapper);
+            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
+            _rootId = brokerEntry.getId();
+        }
+        catch (IOException e)
+        {
+           throw new IllegalConfigurationException("Cannot load store from: " + url, e);
+        }
+        finally
+        {
+            if (is != null)
+            {
+                if (is != null)
+                {
+                    try
+                    {
+                        is.close();
+                    }
+                    catch (IOException e)
+                    {
+                        throw new IllegalConfigurationException("Cannot close input stream for: " + url, e);
+                    }
+                }
+            }
+        }
+    }
+
+    private void copyInitialStoreFile(String initialStoreLocation)
+    {
+        createStoreFileIfNotExist(_storeFile);
+        URL initialStoreURL = toURL(initialStoreLocation);
+        InputStream in =  null;
+        try
+        {
+            in = initialStoreURL.openStream();
+            FileUtils.copy(in, _storeFile);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot create store file " + _storeFile + " by copying initial store from " + initialStoreLocation , e);
+        }
+        finally
+        {
+            if (in != null)
+            {
+                try
+                {
+                    in.close();
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot close initial store input stream: " + initialStoreLocation , e);
+                }
+            }
+        }
     }
 
     private URL fileToURL(File storeFile)
@@ -278,7 +408,7 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         Map<String, Object> attributes = entry.getAttributes();
         if (attributes != null)
         {
-            tree.putAll( attributes);
+            tree.putAll(attributes);
         }
         tree.put(ID, entry.getId());
         tree.put(TYPE, entry.getType());
@@ -307,20 +437,20 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return tree;
     }
 
-    private JsonNode load(URL url, ObjectMapper mapper)
+    private JsonNode loadJsonNodes(InputStream is, ObjectMapper mapper)
     {
         JsonNode root = null;
         try
         {
-            root = mapper.readTree(url);
+            root = mapper.readTree(is);
         }
         catch (JsonProcessingException e)
         {
-            throw new IllegalConfigurationException("Cannot parse json from '" + url + "'", e);
+            throw new IllegalConfigurationException("Cannot parse json", e);
         }
         catch (IOException e)
         {
-            throw new IllegalConfigurationException("Cannot read from '" + url + "'", e);
+            throw new IllegalConfigurationException("Cannot read json", e);
         }
         return root;
     }
@@ -519,10 +649,63 @@ public class JsonConfigurationEntryStore implements ConfigurationEntryStore
         return array;
     }
 
-    @Override
-    public String toString()
+    /*
+     * Initial store location can be URL or absolute path
+     */
+    private URL toURL(String location)
     {
-        return "JsonConfigurationEntryStore [_storeFile=" + _storeFile + ", _rootId=" + _rootId + ", _initialStoreLocation="
-                + _initialStoreLocation + "]";
+        URL url = null;
+        try
+        {
+            url = new URL(location);
+        }
+        catch (MalformedURLException e)
+        {
+            File locationFile = new File(location);
+            url = fileToURL(locationFile);
+        }
+        return url;
+    }
+
+    private void createStoreFileIfNotExist(File file)
+    {
+        File parent = file.getParentFile();
+        if (!parent.exists())
+        {
+            if (!parent.mkdirs())
+            {
+                throw new IllegalConfigurationException("Cannot create folders " + parent);
+            }
+        }
+        try
+        {
+            file.createNewFile();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot create file " + file, e);
+        }
+    }
+
+    private void copyEntry(UUID entryId, ConfigurationEntryStore initialStore)
+    {
+        ConfigurationEntry entry = initialStore.getEntry(entryId);
+        if (entry != null)
+        {
+            if (_entries.containsKey(entryId))
+            {
+                throw new IllegalConfigurationException("Duplicate id is found: " + entryId
+                        + "! The following configuration entries have the same id: " + _entries.get(entryId) + ", " + entry);
+            }
+            _entries.put(entryId, entry);
+            Set<UUID> children = entry.getChildrenIds();
+            if (children != null)
+            {
+                for (UUID uuid : children)
+                {
+                    copyEntry(uuid, initialStore);
+                }
+            }
+        }
     }
 }

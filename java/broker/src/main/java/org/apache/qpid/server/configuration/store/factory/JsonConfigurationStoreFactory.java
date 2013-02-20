@@ -26,8 +26,6 @@ import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 
 public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
 {
-    private static final String STORE_TYPE = "json";
-
     @Override
     public ConfigurationEntryStore createStore()
     {
@@ -37,7 +35,7 @@ public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
     @Override
     public String getStoreType()
     {
-        return STORE_TYPE;
+        return JsonConfigurationEntryStore.STORE_TYPE;
     }
 
 }
