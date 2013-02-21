@@ -1,0 +1,119 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "test_case.h"
+#include <stdio.h>
+#include <string.h>
+#include "message_private.h"
+#include <qpid/dispatch/iterator.h>
+#include <proton/message.h>
+
+
+static char* test_send_to_messenger(void *context)
+{
+    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_content_t *content = MSG_CONTENT(msg);
+
+    dx_message_compose_1(msg, "test_addr_0", 0);
+    dx_buffer_t *buf = DEQ_HEAD(content->buffers);
+    if (buf == 0) return "Expected a buffer in the test message";
+
+    pn_message_t *pn_msg = pn_message();
+    int result = pn_message_decode(pn_msg, (const char*) dx_buffer_base(buf), dx_buffer_size(buf));
+    if (result != 0) return "Error in pn_message_decode";
+
+    if (strcmp(pn_message_get_address(pn_msg), "test_addr_0") != 0)
+        return "Address mismatch in received message";
+
+    pn_message_free(pn_msg);
+    dx_free_message(msg);
+
+    return 0;
+}
+
+
+static char* test_receive_from_messenger(void *context)
+{
+    pn_message_t *pn_msg = pn_message();
+    pn_message_set_address(pn_msg, "test_addr_1");
+
+    dx_buffer_t *buf  = dx_allocate_buffer();
+    size_t       size = dx_buffer_capacity(buf);
+    int result = pn_message_encode(pn_msg, (char*) dx_buffer_cursor(buf), &size);
+    if (result != 0) return "Error in pn_message_encode";
+    dx_buffer_insert(buf, size);
+
+    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_content_t *content = MSG_CONTENT(msg);
+
+    DEQ_INSERT_TAIL(content->buffers, buf);
+    int valid = dx_message_check(msg, DX_DEPTH_ALL);
+    if (!valid) return "dx_message_check returns 'invalid'";
+
+    dx_field_iterator_t *iter = dx_message_field_iterator(msg, DX_FIELD_TO);
+    if (iter == 0) return "Expected an iterator for the 'to' field";
+
+    if (!dx_field_iterator_equal(iter, (unsigned char*) "test_addr_1"))
+        return "Mismatched 'to' field contents";
+
+    pn_message_free(pn_msg);
+    dx_free_message(msg);
+
+    return 0;
+}
+
+
+static char* test_insufficient_check_depth(void *context)
+{
+    pn_message_t *pn_msg = pn_message();
+    pn_message_set_address(pn_msg, "test_addr_2");
+
+    dx_buffer_t *buf  = dx_allocate_buffer();
+    size_t       size = dx_buffer_capacity(buf);
+    int result = pn_message_encode(pn_msg, (char*) dx_buffer_cursor(buf), &size);
+    if (result != 0) return "Error in pn_message_encode";
+    dx_buffer_insert(buf, size);
+
+    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_content_t *content = MSG_CONTENT(msg);
+
+    DEQ_INSERT_TAIL(content->buffers, buf);
+    int valid = dx_message_check(msg, DX_DEPTH_DELIVERY_ANNOTATIONS);
+    if (!valid) return "dx_message_check returns 'invalid'";
+
+    dx_field_iterator_t *iter = dx_message_field_iterator(msg, DX_FIELD_TO);
+    if (iter) return "Expected no iterator for the 'to' field";
+
+    dx_free_message(msg);
+
+    return 0;
+}
+
+
+int message_tests(void)
+{
+    int result = 0;
+
+    TEST_CASE(test_send_to_messenger, 0);
+    TEST_CASE(test_receive_from_messenger, 0);
+    TEST_CASE(test_insufficient_check_depth, 0);
+
+    return result;
+}
+
