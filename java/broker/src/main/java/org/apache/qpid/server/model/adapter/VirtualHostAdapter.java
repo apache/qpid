@@ -88,6 +88,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         put(STORE_PATH, String.class);
         put(STORE_TYPE, String.class);
         put(CONFIG_PATH, String.class);
+        put(STATE, State.class);
     }});
 
     private org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
@@ -404,11 +405,17 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         throw new IllegalStateException();
     }
 
+    @Override
     public State getActualState()
     {
         if (_virtualHost == null)
         {
-            return State.INITIALISING;
+            State state = (State)super.getAttribute(STATE);
+            if (state == null)
+            {
+                return State.INITIALISING;
+            }
+            return state;
         }
         else
         {
@@ -757,7 +764,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         else if(STATE.equals(name))
         {
-            return State.ACTIVE;
+            return getActualState();
         }
         else if(DURABLE.equals(name))
         {

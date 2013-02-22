@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -197,17 +196,8 @@ public class ConfigurationEntry
     @Override
     public String toString()
     {
-        return "ConfigurationEntry [_id=" + _id + ", _type=" + _type + ", _attributes=" + _attributes + ", _childrenIds="
+        return "ConfigurationEntry [id=" + _id + ", type=" + _type + ", attributes=" + _attributes + ", childrenIds="
                 + _childrenIds + "]";
     }
 
-    public Object setAttribute(String name, Object value)
-    {
-        return _attributes.put(name, value);
-    }
-
-    public ConfigurationEntry clone()
-    {
-        return new ConfigurationEntry(_id, _type, new HashMap<String, Object>(_attributes), new HashSet<UUID>(_childrenIds), _store);
-    }
 }

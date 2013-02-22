@@ -694,6 +694,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             Collection<? extends ConfiguredObject> adapters = configuredObjectMap.values();
             for (ConfiguredObject configuredObject : adapters)
             {
+                if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getActualState()))
+                {
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug(configuredObject + " cannot be activated as it is " +State.QUIESCED);
+                    }
+                    continue;
+                }
                 try
                 {
                     configuredObject.setDesiredState(currentState, desiredState);
