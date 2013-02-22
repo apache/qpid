@@ -33,6 +33,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
+import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -130,6 +131,11 @@ public class Broker
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
         ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType,
                 options.getInitialConfigurationStoreLocation(), options.getInitialConfigurationStoreLocation());
+
+        if (options.isManagementMode())
+        {
+            store = new ManagementModeStoreHandler(store, options);
+        }
 
         _applicationRegistry = new ApplicationRegistry(store);
         try

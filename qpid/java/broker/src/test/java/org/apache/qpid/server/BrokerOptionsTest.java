@@ -102,4 +102,49 @@ public class BrokerOptionsTest extends QpidTestCase
         _options.setInitialConfigurationStoreLocation(testConfigFile);
         assertEquals(testConfigFile, _options.getInitialConfigurationStoreLocation());
     }
+
+    public void testDefaultManagementMode()
+    {
+        assertEquals(false, _options.isManagementMode());
+    }
+
+    public void testOverriddenDefaultManagementMode()
+    {
+        _options.setManagementMode(true);
+        assertEquals(true, _options.isManagementMode());
+    }
+
+    public void testDefaultManagementModeRmiPort()
+    {
+        assertEquals(0, _options.getManagementModeRmiPort());
+    }
+
+    public void testOverriddenDefaultManagementModeRmiPort()
+    {
+        _options.setManagementModeRmiPort(5555);
+        assertEquals(5555, _options.getManagementModeRmiPort());
+    }
+
+    public void testDefaultManagementModeConnectorPort()
+    {
+        assertEquals(0, _options.getManagementModeConnectorPort());
+    }
+
+    public void testOverriddenDefaultManagementModeConnectorPort()
+    {
+        _options.setManagementModeConnectorPort(5555);
+        assertEquals(5555, _options.getManagementModeConnectorPort());
+    }
+
+    public void testDefaultManagementModeHttpPort()
+    {
+        assertEquals(0, _options.getManagementModeHttpPort());
+    }
+
+    public void testOverriddenDefaultManagementModeHttpPort()
+    {
+        _options.setManagementModeHttpPort(5555);
+        assertEquals(5555, _options.getManagementModeHttpPort());
+    }
+
 }

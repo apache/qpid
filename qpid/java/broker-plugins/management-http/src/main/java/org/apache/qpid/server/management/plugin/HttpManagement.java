@@ -222,6 +222,10 @@ public class HttpManagement extends AbstractPluginAdapter
         Server server = new Server();
         for (Port port : ports)
         {
+            if (State.QUIESCED.equals(port.getActualState()))
+            {
+                continue;
+            }
             final Collection<Protocol> protocols = port.getProtocols();
             Connector connector = null;
 

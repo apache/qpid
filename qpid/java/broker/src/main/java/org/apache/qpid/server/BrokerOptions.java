@@ -35,6 +35,11 @@ public class BrokerOptions
     private String _initialConfigurationStoreLocation;
     private String _initialConfigurationStoreType = DEFAULT_STORE_TYPE;
 
+    private boolean _managementMode;
+    private int _managementModeRmiPort;
+    private int _managementModeConnectorPort;
+    private int _managementModeHttpPort;
+
     public String getLogConfigFile()
     {
         return _logConfigFile;
@@ -99,4 +104,43 @@ public class BrokerOptions
         return _initialConfigurationStoreType;
     }
 
+    public boolean isManagementMode()
+    {
+        return _managementMode;
+    }
+
+    public void setManagementMode(boolean managementMode)
+    {
+        _managementMode = managementMode;
+    }
+
+    public int getManagementModeRmiPort()
+    {
+        return _managementModeRmiPort;
+    }
+
+    public void setManagementModeRmiPort(int managementModeRmiPort)
+    {
+        _managementModeRmiPort = managementModeRmiPort;
+    }
+
+    public int getManagementModeConnectorPort()
+    {
+        return _managementModeConnectorPort;
+    }
+
+    public void setManagementModeConnectorPort(int managementModeConnectorPort)
+    {
+        _managementModeConnectorPort = managementModeConnectorPort;
+    }
+
+    public int getManagementModeHttpPort()
+    {
+        return _managementModeHttpPort;
+    }
+
+    public void setManagementModeHttpPort(int managementModeHttpPort)
+    {
+        _managementModeHttpPort = managementModeHttpPort;
+    }
 }

@@ -155,7 +155,12 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public State getActualState()
     {
-        return State.ACTIVE;
+        State state = (State)super.getAttribute(STATE);
+        if (state == null)
+        {
+            return State.ACTIVE;
+        }
+        return state;
     }
 
     @Override

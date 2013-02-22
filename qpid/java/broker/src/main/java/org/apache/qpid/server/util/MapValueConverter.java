@@ -116,6 +116,24 @@ public class MapValueConverter
         return getEnumAttribute(clazz, name, attributes, null);
     }
 
+    @SuppressWarnings({ "unchecked" })
+    public static <T extends Enum<T>> T toEnum(String name, Object rawValue, Class<T> enumType)
+    {
+        if (enumType.isInstance(rawValue))
+        {
+            return (T) rawValue;
+        }
+        else if (rawValue instanceof String)
+        {
+            return (T) Enum.valueOf(enumType, (String) rawValue);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type "
+                    + enumType.getSimpleName());
+        }
+    }
+
     public static Boolean getBooleanAttribute(String name, Map<String,Object> attributes, Boolean defaultValue)
     {
         Object obj = attributes.get(name);
@@ -296,6 +314,7 @@ public class MapValueConverter
         return set;
     }
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> convert(Map<String, Object> configurationAttributes, Map<String, Class<?>> attributeTypes)
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -323,6 +342,12 @@ public class MapValueConverter
                 {
                     value = toString(rawValue);
                 }
+                else if (Enum.class.isAssignableFrom(classObject))
+                {
+                    @SuppressWarnings("rawtypes")
+                    Class<Enum> enumType = (Class<Enum>)classObject;
+                    value = toEnum(attributeName, rawValue, enumType);
+                }
                 else
                 {
                     throw new IllegalArgumentException("Cannot convert '" + rawValue + "' into " + classObject);
@@ -332,4 +357,5 @@ public class MapValueConverter
         }
         return attributes;
     }
+
 }
