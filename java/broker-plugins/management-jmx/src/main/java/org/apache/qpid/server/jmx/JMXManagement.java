@@ -134,6 +134,11 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         Collection<Port> ports = _broker.getPorts();
         for (Port port : ports)
         {
+            if (State.QUIESCED.equals(port.getActualState()))
+            {
+                continue;
+            }
+
             if(isRegistryPort(port))
             {
                 registryPort = port;

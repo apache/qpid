@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -178,6 +179,12 @@ public class PortFactory
         {
             String binding = MapValueConverter.getStringAttribute(Port.BINDING_ADDRESS, objectAttributes);
             attributes.put(Port.BINDING_ADDRESS, binding);
+        }
+
+        if (objectAttributes.containsKey(Port.STATE))
+        {
+            State state = MapValueConverter.getEnumAttribute(State.class, Port.STATE, objectAttributes);
+            attributes.put(Port.STATE, state);
         }
         return attributes;
     }

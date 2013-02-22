@@ -65,6 +65,15 @@ public class Main
                     .withDescription("monitor the log file configuration file for changes. Units are seconds. "
                                      + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
 
+    private static final Option OPTION_MANAGEMENT_MODE = OptionBuilder.withDescription("start broker in a management mode")
+            .withLongOpt("management-mode").create("mm");
+    private static final Option OPTION_RMI_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override jmx rmi port in management mode").withLongOpt("jmxregistryport").create("rmi");
+    private static final Option OPTION_CONNECTOR_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override jmx connector port in management mode").withLongOpt("jmxconnectorport").create("jmxrmi");
+    private static final Option OPTION_HTTP_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override web management port in management mode").withLongOpt("httpport").create("http");
+
     private static final Options OPTIONS = new Options();
 
     static
@@ -77,6 +86,10 @@ public class Main
         OPTIONS.addOption(OPTION_LOG_WATCH);
         OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_STORE_PATH);
         OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_STORE_TYPE);
+        OPTIONS.addOption(OPTION_MANAGEMENT_MODE);
+        OPTIONS.addOption(OPTION_RMI_PORT);
+        OPTIONS.addOption(OPTION_CONNECTOR_PORT);
+        OPTIONS.addOption(OPTION_HTTP_PORT);
     }
 
     protected CommandLine _commandLine;
@@ -192,6 +205,26 @@ public class Main
                 options.setInitialConfigurationStoreType(initailConfigurationStoreType);
             }
 
+            boolean managmentMode = _commandLine.hasOption(OPTION_MANAGEMENT_MODE.getOpt());
+            if (managmentMode)
+            {
+                options.setManagementMode(true);
+                String rmiPort = _commandLine.getOptionValue(OPTION_RMI_PORT.getOpt());
+                if (rmiPort != null)
+                {
+                    options.setManagementModeRmiPort(Integer.parseInt(rmiPort));
+                }
+                String connectorPort = _commandLine.getOptionValue(OPTION_CONNECTOR_PORT.getOpt());
+                if (connectorPort != null)
+                {
+                    options.setManagementModeConnectorPort(Integer.parseInt(connectorPort));
+                }
+                String httpPort = _commandLine.getOptionValue(OPTION_HTTP_PORT.getOpt());
+                if (httpPort != null)
+                {
+                    options.setManagementModeHttpPort(Integer.parseInt(httpPort));
+                }
+            }
             setExceptionHandler();
 
             startBroker(options);

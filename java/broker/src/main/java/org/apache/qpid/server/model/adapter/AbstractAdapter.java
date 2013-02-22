@@ -286,7 +286,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + " [id=" + _id + "]";
+        return getClass().getSimpleName() + " [id=" + _id + ", name=" + getName() + "]";
     }
 
     @SuppressWarnings("unchecked")
