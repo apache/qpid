@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
-import java.awt.Color;
 import java.awt.Font;
-import java.awt.Stroke;
 
-import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.apache.qpid.disttest.charting.seriesbuilder.DatasetHolder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
-import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -42,33 +39,27 @@ import org.jfree.data.general.Dataset;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 
-public class StatisticalBarCharBuilder extends BaseChartBuilder
+public class StatisticalBarChartBuilder extends BaseChartBuilder
 {
-    private final SeriesBuilder _seriesBuilder;
-
-    public StatisticalBarCharBuilder(SeriesBuilder seriesBuilder)
+    public StatisticalBarChartBuilder(SeriesBuilder seriesBuilder)
     {
-        _seriesBuilder = seriesBuilder;
+        super(seriesBuilder);
     }
 
     @Override
-    public JFreeChart buildChart(ChartingDefinition chartingDefinition)
+    protected DatasetHolder newDatasetHolder()
     {
-        String title = chartingDefinition.getChartTitle();
-        String xAxisTitle = chartingDefinition.getXAxisTitle();
-        String yAxisTitle = chartingDefinition.getYAxisTitle();
-
-        final DefaultStatisticalCategoryDataset dataset = new DefaultStatisticalCategoryDataset();
-
-        _seriesBuilder.setSeriesBuilderCallback(new SeriesBuilderCallback()
+        return new DatasetHolder()
         {
+            private final DefaultStatisticalCategoryDataset _dataset = new DefaultStatisticalCategoryDataset();
+
             @Override
             public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row)
             {
                 String x = row.dimensionAsString(0);
                 double mean = row.dimensionAsDouble(1);
                 double stdDev = row.dimensionAsDouble(2);
-                dataset.add(mean, stdDev, seriesDefinition.getSeriesLegend(), x);
+                _dataset.add(mean, stdDev, seriesDefinition.getSeriesLegend(), x);
             }
 
             @Override
@@ -89,32 +80,18 @@ public class StatisticalBarCharBuilder extends BaseChartBuilder
                 return 3;
             }
 
-        });
-
-        _seriesBuilder.build(chartingDefinition.getSeries());
-
-        final JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle, dataset, PLOT_ORIENTATION, SHOW_LEGEND,
-                SHOW_TOOL_TIPS, SHOW_URLS);
-
-        chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
-
-        addCommonChartAttributes(chart, chartingDefinition);
-        addSeriesAttributes(chart, chartingDefinition.getSeries(), new SeriesStrokeAndPaintApplier()
-        {
             @Override
-            public void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart)
+            public Dataset getPopulatedDataset()
             {
-                targetChart.getCategoryPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
+                return _dataset;
             }
+        };
+    }
 
-            @Override
-            public void setSeriesPaint(int seriesIndex, Color colour, JFreeChart targetChart)
-            {
-                targetChart.getCategoryPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
-            }
-        });
-
-        return chart;
+    @Override
+    protected SeriesStrokeAndPaintApplier newStrokeAndPaintApplier()
+    {
+        return new CategoryStrokeAndPaintApplier();
     }
 
     @Override
@@ -128,6 +105,9 @@ public class StatisticalBarCharBuilder extends BaseChartBuilder
         CategoryPlot plot = new CategoryPlot((StatisticalCategoryDataset) dataset, xAxis, yAxis, renderer);
 
         JFreeChart chart = new JFreeChart(title, new Font("Arial", Font.PLAIN, 10), plot, true);
+
+        chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
+
         return chart;
     }
 

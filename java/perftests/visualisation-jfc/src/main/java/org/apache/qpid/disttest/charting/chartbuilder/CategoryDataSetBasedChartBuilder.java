@@ -20,44 +20,36 @@
 package org.apache.qpid.disttest.charting.chartbuilder;
 
 
-import java.awt.Color;
-import java.awt.Stroke;
-
-import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
-import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
+import org.apache.qpid.disttest.charting.seriesbuilder.DatasetHolder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryLabelPositions;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.general.Dataset;
 
 public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
 {
-    private final SeriesBuilder _seriesBuilder;
-
     public CategoryDataSetBasedChartBuilder(SeriesBuilder seriesBuilder)
     {
-        _seriesBuilder = seriesBuilder;
+        super(seriesBuilder);
     }
 
     @Override
-    public JFreeChart buildChart(ChartingDefinition chartingDefinition)
+    protected DatasetHolder newDatasetHolder()
     {
-        String title = chartingDefinition.getChartTitle();
-        String xAxisTitle = chartingDefinition.getXAxisTitle();
-        String yAxisTitle = chartingDefinition.getYAxisTitle();
-
-        final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-        _seriesBuilder.setSeriesBuilderCallback(new SeriesBuilderCallback()
+        return new DatasetHolder()
         {
+            final private DefaultCategoryDataset _dataset = new DefaultCategoryDataset();
+
             @Override
             public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row)
             {
                 String x = row.dimensionAsString(0);
                 double y = row.dimensionAsDouble(1);
-                dataset.addValue(y, seriesDefinition.getSeriesLegend(), x);
+                _dataset.addValue(y, seriesDefinition.getSeriesLegend(), x);
             }
 
             @Override
@@ -78,31 +70,27 @@ public abstract class CategoryDataSetBasedChartBuilder extends BaseChartBuilder
                 return 2;
             }
 
-        });
+            @Override
+            public Dataset getPopulatedDataset()
+            {
+                return _dataset;
+            }
+        };
+    }
 
-        _seriesBuilder.build(chartingDefinition.getSeries());
+    @Override
+    protected SeriesStrokeAndPaintApplier newStrokeAndPaintApplier()
+    {
+        return new CategoryStrokeAndPaintApplier();
+    }
 
-        final JFreeChart chart = createChartImpl(title, xAxisTitle, yAxisTitle,
-                dataset, PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
-
+    @Override
+    protected final JFreeChart createChartImpl(String title, String xAxisTitle, String yAxisTitle, Dataset dataset, PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips, boolean showUrls)
+    {
+        JFreeChart chart = createCategoryChart(title, xAxisTitle, yAxisTitle, dataset, plotOrientation, showLegend, showToolTips, showUrls);
         chart.getCategoryPlot().getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
-
-        addCommonChartAttributes(chart, chartingDefinition);
-        addSeriesAttributes(chart, chartingDefinition.getSeries(), new SeriesStrokeAndPaintApplier()
-        {
-            @Override
-            public void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart)
-            {
-                targetChart.getCategoryPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
-            }
-
-            @Override
-            public void setSeriesPaint(int seriesIndex, Color colour, JFreeChart targetChart)
-            {
-                targetChart.getCategoryPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
-            }
-        });
-
         return chart;
     }
+
+    protected abstract JFreeChart createCategoryChart(String title, String xAxisTitle, String yAxisTitle, Dataset dataset, PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips, boolean showUrls);
 }

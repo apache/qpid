@@ -20,12 +20,18 @@
 package org.apache.qpid.disttest.charting.seriesbuilder;
 
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.jfree.data.general.Dataset;
 
-public interface SeriesBuilderCallback
+/**
+ * Accepts data in the form of {@link SeriesDefinition}s and {@link SeriesRow}s,
+ * and returns it as a {@link Dataset} for use by a JFreeChart chart.
+ */
+public interface DatasetHolder
 {
-    public void beginSeries(SeriesDefinition seriesDefinition);
+    int getNumberOfDimensions();
+    void beginSeries(SeriesDefinition seriesDefinition);
+    void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row);
+    void endSeries(SeriesDefinition seriesDefinition);
 
-    public int getNumberOfDimensions();
-    public void addDataPointToSeries(SeriesDefinition seriesDefinition, SeriesRow row);
-    public void endSeries(SeriesDefinition seriesDefinition);
+    Dataset getPopulatedDataset();
 }

@@ -19,6 +19,7 @@
 package org.apache.qpid.disttest.charting.seriesbuilder;
 
 import java.util.Arrays;
+import java.util.Date;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -61,6 +62,11 @@ public class SeriesRow
     public double dimensionAsDouble(int dimension)
     {
         return Double.parseDouble(dimensionAsString(dimension));
+    }
+
+    public Date dimensionAsDate(int dimension)
+    {
+        return (Date) dimension(dimension);
     }
 
     @Override

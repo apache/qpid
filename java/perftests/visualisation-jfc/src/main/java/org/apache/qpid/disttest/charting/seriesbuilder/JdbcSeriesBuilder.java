@@ -31,6 +31,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.qpid.disttest.charting.ChartingException;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.jfree.data.general.Dataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,7 @@ public class JdbcSeriesBuilder implements SeriesBuilder
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSeriesBuilder.class);
 
-    private SeriesBuilderCallback _callback;
+    private DatasetHolder _datasetHolder;
 
     private final JdbcUrlGenerator _jdbcUrlGenerator;
 
@@ -58,19 +59,20 @@ public class JdbcSeriesBuilder implements SeriesBuilder
     }
 
     @Override
-    public void setSeriesBuilderCallback(SeriesBuilderCallback callback)
+    public void setDatasetHolder(DatasetHolder callback)
     {
-        this._callback = callback;
+        _datasetHolder = callback;
     }
 
     @Override
-    public void build(List<SeriesDefinition> seriesDefinitions)
+    public Dataset build(List<SeriesDefinition> seriesDefinitions)
     {
         for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator.hasNext();)
         {
             SeriesDefinition series = iterator.next();
             buildDataSetForSingleSeries(series);
         }
+        return _datasetHolder.getPopulatedDataset();
     }
 
     private void buildDataSetForSingleSeries(SeriesDefinition seriesDefinition)
@@ -87,7 +89,7 @@ public class JdbcSeriesBuilder implements SeriesBuilder
             stmt = conn.createStatement();
             ResultSet results = stmt.executeQuery(seriesStatement);
             int columnCount = results.getMetaData().getColumnCount();
-            _callback.beginSeries(seriesDefinition);
+            _datasetHolder.beginSeries(seriesDefinition);
             while (results.next())
             {
                 Object[] row = new Object[columnCount];
@@ -96,10 +98,10 @@ public class JdbcSeriesBuilder implements SeriesBuilder
                     row[i] = results.getObject(i+1);
                 }
 
-                SeriesRow seriesRow = SeriesRow.createValidSeriesRow(_callback.getNumberOfDimensions(), row);
-                _callback.addDataPointToSeries(seriesDefinition, seriesRow);
+                SeriesRow seriesRow = SeriesRow.createValidSeriesRow(_datasetHolder.getNumberOfDimensions(), row);
+                _datasetHolder.addDataPointToSeries(seriesDefinition, seriesRow);
             }
-            _callback.endSeries(seriesDefinition);
+            _datasetHolder.endSeries(seriesDefinition);
         }
         catch (SQLException e)
         {
