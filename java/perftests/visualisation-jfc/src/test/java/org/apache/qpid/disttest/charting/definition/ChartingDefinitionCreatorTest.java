@@ -96,7 +96,7 @@ public class ChartingDefinitionCreatorTest extends TestCase
         String stemOnly = testDefFile.getName().replaceFirst("\\.chartdef", "");
         assertEquals(stemOnly, definition1.getChartStemName());
 
-        final List<SeriesDefinition> seriesDefinitions = definition1.getSeries();
+        final List<SeriesDefinition> seriesDefinitions = definition1.getSeriesDefinitions();
         assertEquals(1, seriesDefinitions.size());
         SeriesDefinition seriesDefinition = seriesDefinitions.get(0);
         assertEquals(TEST_SERIES_SELECT_STATEMENT, seriesDefinition.getSeriesStatement());

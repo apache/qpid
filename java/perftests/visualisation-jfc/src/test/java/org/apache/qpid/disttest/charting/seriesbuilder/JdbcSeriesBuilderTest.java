@@ -41,7 +41,7 @@ public class JdbcSeriesBuilderTest extends TestCase
     private static final String TEST_SERIES1_COLOUR_NAME = "blue";
     private static final Integer TEST_SERIES1_STROKE_WIDTH = 3;
 
-    private SeriesBuilderCallback _seriesWalkerCallback = mock(SeriesBuilderCallback.class);
+    private DatasetHolder _seriesWalkerCallback = mock(DatasetHolder.class);
 
     private File _testTempDir;
 
@@ -60,7 +60,7 @@ public class JdbcSeriesBuilderTest extends TestCase
 
         JdbcSeriesBuilder seriesBuilder = new JdbcSeriesBuilder("org.relique.jdbc.csv.CsvDriver", null);
 
-        seriesBuilder.setSeriesBuilderCallback(_seriesWalkerCallback);
+        seriesBuilder.setDatasetHolder(_seriesWalkerCallback);
 
         seriesBuilder.build(Collections.singletonList(seriesDefinition));
 

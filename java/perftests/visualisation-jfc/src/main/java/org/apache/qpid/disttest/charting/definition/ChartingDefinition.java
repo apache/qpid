@@ -89,7 +89,7 @@ public class ChartingDefinition
         return _chartType;
     }
 
-    public List<SeriesDefinition> getSeries()
+    public List<SeriesDefinition> getSeriesDefinitions()
     {
         return Collections.unmodifiableList(_seriesDefinitions);
     }

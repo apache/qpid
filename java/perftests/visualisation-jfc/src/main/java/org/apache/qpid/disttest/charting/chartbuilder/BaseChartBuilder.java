@@ -19,13 +19,13 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
-import java.util.List;
 
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
-import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.apache.qpid.disttest.charting.seriesbuilder.DatasetHolder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.title.ShortTextTitle;
@@ -33,50 +33,67 @@ import org.jfree.data.general.Dataset;
 
 public abstract class BaseChartBuilder implements ChartBuilder
 {
-    private static final GradientPaint BLUE_GRADIENT = new GradientPaint(0, 0, Color.white, 0, 1000, Color.blue);
+    static final GradientPaint BLUE_GRADIENT = new GradientPaint(0, 0, Color.white, 0, 1000, Color.blue);
 
-    public void addCommonChartAttributes(JFreeChart chart, ChartingDefinition chartingDefinition)
+    private SeriesPainter _seriesPainter = new SeriesPainter();
+
+    private final SeriesBuilder _seriesBuilder;
+
+    protected BaseChartBuilder(SeriesBuilder seriesBuilder)
     {
+        _seriesBuilder = seriesBuilder;
+    }
+
+    @Override
+    public JFreeChart buildChart(ChartingDefinition chartingDefinition)
+    {
+        _seriesBuilder.setDatasetHolder(newDatasetHolder());
+        Dataset dataset = _seriesBuilder.build(chartingDefinition.getSeriesDefinitions());
+
+        JFreeChart chart = createChart(chartingDefinition, dataset);
+        return chart;
+    }
+
+
+    /**
+     * return a holder of an empty dataset suitable for use with the chart type
+     * returned by {@link #createChartImpl(String, String, String, Dataset, PlotOrientation, boolean, boolean, boolean)}.
+     */
+    protected abstract DatasetHolder newDatasetHolder();
+
+    /**
+     * Create a chart with the supplied parameters.
+     *
+     * For ease of implementation, the signature is intentionally similar
+     * to {@link ChartFactory}'s factory methods.
+     */
+    protected abstract JFreeChart createChartImpl(
+            String title, String xAxisTitle, String yAxisTitle,
+            final Dataset dataset,
+            PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips, boolean showUrls);
+
+    /**
+     * Create a {@link SeriesStrokeAndPaintApplier} that will be used to format a chart
+     */
+    protected abstract SeriesStrokeAndPaintApplier newStrokeAndPaintApplier();
+
+
+    private JFreeChart createChart(ChartingDefinition chartingDefinition, final Dataset dataset)
+    {
+        String title = chartingDefinition.getChartTitle();
+        String xAxisTitle = chartingDefinition.getXAxisTitle();
+        String yAxisTitle = chartingDefinition.getYAxisTitle();
+
+        final JFreeChart chart = createChartImpl(
+                title, xAxisTitle, yAxisTitle,
+                dataset,
+                PLOT_ORIENTATION, SHOW_LEGEND, SHOW_TOOL_TIPS, SHOW_URLS);
+
         addSubtitle(chart, chartingDefinition);
-        setBackgroundColour(chart);
-    }
+        chart.setBackgroundPaint(BLUE_GRADIENT);
+        _seriesPainter.applySeriesAppearance(chart, chartingDefinition.getSeriesDefinitions(), newStrokeAndPaintApplier());
 
-    protected void addSeriesAttributes(JFreeChart targetChart, List<SeriesDefinition> series, SeriesStrokeAndPaintApplier strokeAndPaintApplier)
-    {
-        for (int i = 0; i < series.size(); i++)
-        {
-            SeriesDefinition seriesDefinition = series.get(i);
-            if (seriesDefinition.getSeriesColourName() != null)
-            {
-                strokeAndPaintApplier.setSeriesPaint(i, ColorFactory.toColour(seriesDefinition.getSeriesColourName()), targetChart);
-            }
-            if (seriesDefinition.getStrokeWidth() != null)
-            {
-                // Negative width used to signify dashed
-                boolean dashed = seriesDefinition.getStrokeWidth() < 0;
-                float width = Math.abs(seriesDefinition.getStrokeWidth());
-                BasicStroke stroke = buildStrokeOfWidth(width, dashed);
-                strokeAndPaintApplier.setSeriesStroke(i, stroke, targetChart);
-            }
-        }
-    }
-
-    public abstract JFreeChart createChartImpl(String title, String xAxisTitle,
-            String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation, boolean showLegend, boolean showToolTips,
-            boolean showUrls);
-
-    private BasicStroke buildStrokeOfWidth(float width, boolean dashed)
-    {
-        final BasicStroke stroke;
-        if (dashed)
-        {
-            stroke = new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, new float[] {5.0f, 3.0f}, 0.0f);
-        }
-        else
-        {
-            stroke = new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-        }
-        return stroke;
+        return chart;
     }
 
     private void addSubtitle(JFreeChart chart, ChartingDefinition chartingDefinition)
@@ -87,9 +104,9 @@ public abstract class BaseChartBuilder implements ChartBuilder
         }
     }
 
-    private void setBackgroundColour(JFreeChart chart)
+    void setSeriesPainter(SeriesPainter seriesPainter)
     {
-        chart.setBackgroundPaint(BLUE_GRADIENT);
+        _seriesPainter = seriesPainter;
     }
 
 }
