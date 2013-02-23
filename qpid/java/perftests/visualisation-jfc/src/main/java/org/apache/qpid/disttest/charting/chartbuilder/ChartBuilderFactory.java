@@ -39,8 +39,10 @@ public class ChartBuilderFactory
             return new BarChart3DBuilder(seriesBuilder);
         case XYLINE:
             return new XYLineChartBuilder(seriesBuilder);
+        case TIMELINE:
+            return new TimeSeriesLineChartBuilder(seriesBuilder);
         case STATISTICAL_BAR:
-            return new StatisticalBarCharBuilder(seriesBuilder);
+            return new StatisticalBarChartBuilder(seriesBuilder);
         default:
             throw new IllegalArgumentException("Unknown chart type " + chartType);
         }

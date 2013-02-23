@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,9 +18,24 @@
  * under the License.
  *
  */
-package org.apache.qpid.disttest.charting;
+package org.apache.qpid.disttest.charting.chartbuilder;
 
-public enum ChartType
+import java.awt.Color;
+import java.awt.Stroke;
+
+import org.jfree.chart.JFreeChart;
+
+class CategoryStrokeAndPaintApplier implements SeriesStrokeAndPaintApplier
 {
-    LINE, LINE3D, BAR, BAR3D, XYLINE, TIMELINE, STATISTICAL_BAR
+    @Override
+    public void setSeriesStroke(int seriesIndex, Stroke stroke, JFreeChart targetChart)
+    {
+        targetChart.getCategoryPlot().getRenderer().setSeriesStroke(seriesIndex, stroke);
+    }
+
+    @Override
+    public void setSeriesPaint(int seriesIndex, Color colour, JFreeChart targetChart)
+    {
+        targetChart.getCategoryPlot().getRenderer().setSeriesPaint(seriesIndex, colour);
+    }
 }

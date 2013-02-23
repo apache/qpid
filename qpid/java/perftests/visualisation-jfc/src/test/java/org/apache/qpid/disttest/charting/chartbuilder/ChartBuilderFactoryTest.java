@@ -59,4 +59,10 @@ public class ChartBuilderFactoryTest extends TestCase
         ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, _seriesBuilder);
         assertTrue(builder instanceof XYLineChartBuilder);
     }
+
+    public void testTimeSeriesLineChart()
+    {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.TIMELINE, _seriesBuilder);
+        assertTrue(builder instanceof TimeSeriesLineChartBuilder);
+    }
 }
