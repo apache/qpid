@@ -88,8 +88,13 @@ class StatusCmd(Command):
         Command.__init__(self, "status", "Print HA status")
         self.op.add_option(
             "--expect", type="string", metavar="<status>",
-            help="Don't print status but return 0 if it matches <status>, 1 otherwise")
+            help="Don't print status. Return 0 if it matches <status>, 1 otherwise")
+        self.op.add_option(
+            "--is-primary", action="store_true", default=False,
+            help="Don't print status. Return 0 if the broker is primary, 1 otherwise")
     def do_execute(self, qmf_broker, ha_broker, opts, args):
+        if opts.is_primary:
+            if not ha_broker.status in ["active", "recovering"]: raise ExitStatus(1)
         if opts.expect:
             if opts.expect != ha_broker.status: raise ExitStatus(1)
         else:
