@@ -35,9 +35,12 @@ using boost::bind;
 
 RemoteBackup::RemoteBackup(
     const BrokerInfo& info, broker::Connection* c
-) : logPrefix("Primary: Remote backup "+info.getLogId()+": "),
-    brokerInfo(info), replicationTest(NONE), connection(c), reportedReady(false)
-{}
+) : brokerInfo(info), replicationTest(NONE), connection(c), reportedReady(false)
+{
+    std::ostringstream oss;
+    oss << "Primary: Remote backup " << info << ": ";
+    logPrefix = oss.str();
+}
 
 void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGuards)
 {
@@ -100,8 +103,12 @@ std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
 
 void RemoteBackup::ready(const QueuePtr& q) {
     catchupQueues.erase(q);
-    QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() << ", "
-             << catchupQueues.size() << " remain to catch up");
+    if (catchupQueues.size()) {
+        QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() << ", "
+                 << catchupQueues.size() << " remain to catch up");
+    }
+    else
+        QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() );
 }
 
 // Called via ConfigurationObserver::queueCreate and from catchupQueue

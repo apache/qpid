@@ -53,7 +53,6 @@ class BrokerInfo
     std::string getHostName() const { return hostName; }
     BrokerStatus getStatus() const { return status; }
     uint16_t getPort() const { return port; }
-    std::string getLogId() const { return logId; }
 
     void setStatus(BrokerStatus s)  { status = s; }
 
@@ -67,8 +66,6 @@ class BrokerInfo
     bool operator<(const BrokerInfo x) const { return systemId < x.systemId; }
 
   private:
-    void updateLogId();
-    std::string logId;
     std::string hostName;
     uint16_t port;
     types::Uuid systemId;

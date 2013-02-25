@@ -53,7 +53,7 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
     : cancelled(false), queue(q), subscription(0)
 {
     std::ostringstream os;
-    os << "Primary guard " << queue.getName() << "@" << info.getLogId() << ": ";
+    os << "Primary guard " << queue.getName() << "@" << info << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
     queue.addObserver(observer);

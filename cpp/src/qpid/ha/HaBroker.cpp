@@ -70,7 +70,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     // otherwise there's a window for a client to connect before we get to
     // initialize()
     if (settings.cluster) {
-        QPID_LOG(debug, role->getLogPrefix() << "Rejecting client connections.");
+        QPID_LOG(debug, "Broker startup, rejecting client connections.");
         shared_ptr<broker::ConnectionObserver> excluder(new BackupConnectionExcluder);
         observer->setObserver(excluder, "Backup: ");
         broker.getConnectionObservers().add(observer);
@@ -93,7 +93,7 @@ void HaBroker::initialize() {
             broker.getPort(broker::Broker::TCP_TRANSPORT)
         )
     );
-    QPID_LOG(notice, role->getLogPrefix() << "Initializing: " << membership.getInfo());
+    QPID_LOG(notice, "Initializing: " << membership.getInfo());
 
     // Set up the management object.
     ManagementAgent* ma = broker.getManagementAgent();
