@@ -57,7 +57,7 @@ if [[ !(-x $QPID_HA) ]]; then
 fi
 
 status() {
-    if $QPID_HA -b localhost:$QPID_PORT status --expect=primary ; then
+    if $QPID_HA -b localhost:$QPID_PORT status --is-primary ; then
 	echo "qpidd is primary"
     else
 	echo "qpidd is not primary"
