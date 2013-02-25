@@ -138,7 +138,7 @@ ReplicatingSubscription::ReplicatingSubscription(
 
         // Set a log prefix message that identifies the remote broker.
         ostringstream os;
-        os << "Primary " << queue->getName() << "@" << info.getLogId() << ": ";
+        os << "Primary " << queue->getName() << "@" << info << ": ";
         logPrefix = os.str();
 
         // NOTE: Once the guard is attached we can have concurrent

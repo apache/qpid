@@ -48,15 +48,7 @@ BrokerInfo::BrokerInfo() : port(0), status(JOINING) {}
 BrokerInfo::BrokerInfo(const types::Uuid& id, BrokerStatus s,
                        const std::string& host, uint16_t port_) :
     hostName(host), port(port_), systemId(id), status(s)
-{
-    updateLogId();
-}
-
-void BrokerInfo::updateLogId() {
-    std::ostringstream o;
-    o << hostName << ":" << port;
-    logId = o.str();
-}
+{}
 
 FieldTable BrokerInfo::asFieldTable() const {
     Variant::Map m = asMap();
@@ -94,7 +86,6 @@ void BrokerInfo::assign(const Variant::Map& m) {
     hostName = get(m, HOST_NAME).asString();
     port = get(m, PORT).asUint16();
     status = BrokerStatus(get(m, STATUS).asUint8());
-    updateLogId();
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
