@@ -885,6 +885,21 @@ acl deny all all
         cluster[2].wait_address("xx")
         self.assertEqual(cluster[2].agent().getExchange("xx").values["bindingCount"], 0)
 
+    def test_redeclare_exchange(self):
+        """Ensure that re-declaring an exchange is an HA no-op"""
+        cluster = HaCluster(self, 2)
+        ps = cluster[0].connect().session()
+        ps.sender("ex1;{create:always,node:{type:topic,x-declare:{arguments:{'qpid.replicate':all}, type:'fanout'}}}")
+        ps.sender("ex2;{create:always,node:{type:topic,x-declare:{arguments:{'qpid.replicate':all}, type:'fanout', alternate-exchange:'ex1'}}}")
+        cluster[1].wait_backup("ex1")
+        cluster[1].wait_backup("ex2")
+
+        # Use old API to re-declare the exchange
+        old_conn = cluster[0].connect_old()
+        old_sess = old_conn.session(str(qpid.datatypes.uuid4()))
+        old_sess.exchange_declare(exchange='ex1', type='fanout')
+        cluster[1].wait_backup("ex1")
+
 def fairshare(msgs, limit, levels):
     """
     Generator to return prioritised messages in expected order for a given fairshare limit

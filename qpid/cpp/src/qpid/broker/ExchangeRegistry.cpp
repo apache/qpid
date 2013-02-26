@@ -97,7 +97,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(
                     durable,
                     false,
                     ManagementAgent::toMap(result.first->getArgs()),
-                    "created"));
+                    result.second ? "created" : "existing"));
         }
     }
     return result;
