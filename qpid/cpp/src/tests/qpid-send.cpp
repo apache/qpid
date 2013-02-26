@@ -200,7 +200,7 @@ struct Options : public qpid::Options
         std::string name;
         std::string value;
         if (nameval(property, name, value)) {
-            message.getProperties()[name] = value;
+            message.getProperties()[name].parse(value);
         } else {
             message.getProperties()[name] = Variant();
         }
