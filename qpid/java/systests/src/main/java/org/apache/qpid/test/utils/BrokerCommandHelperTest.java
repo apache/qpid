@@ -30,21 +30,32 @@ public class BrokerCommandHelperTest extends QpidTestCase
     @Override
     public void setUp()
     {
-        when(logConfigFile.getAbsolutePath()).thenReturn("logConfigFile");
+        when(logConfigFile.getAbsolutePath()).thenReturn("log Config File");
     }
 
     public void testGetBrokerCommand()
     {
-        String brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", logConfigFile);
-        assertEquals("Unexpected broker command", "qpid -p 1 -sp configFile -st json -l \"logConfigFile\"", brokerCommand);
+        String[] brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", logConfigFile);
+
+        String[] expected = { "qpid", "-p", "1", "-sp", "configFile", "-st", "json", "-l", "\"log Config File\"" };
+        assertEquals("Unexpected broker command", 9, brokerCommand.length);
+        for (int i = 0; i < expected.length; i++)
+        {
+            assertEquals("Unexpected command part value at " + i,expected[i], brokerCommand[i] );
+        }
     }
 
     public void testRemoveBrokerCommandLog4JFile()
     {
         _brokerCommandHelper.removeBrokerCommandLog4JFile();
-        String brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", logConfigFile);
+        String[] brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", logConfigFile);
 
-        assertEquals("The broker command list should not contain a log4j config option",
-                     "qpid -p 1 -sp configFile -st json", brokerCommand );
+        String[] expected = { "qpid", "-p", "1", "-sp", "configFile", "-st", "json" };
+        assertEquals("Unexpected broker command", 7, brokerCommand.length);
+        for (int i = 0; i < expected.length; i++)
+        {
+            assertEquals("Unexpected command part value at " + i,expected[i], brokerCommand[i] );
+        }
     }
+
 }

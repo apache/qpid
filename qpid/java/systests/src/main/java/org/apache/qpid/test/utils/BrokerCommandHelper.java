@@ -18,6 +18,9 @@
 package org.apache.qpid.test.utils;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Generates the command to start a broker by substituting the tokens
@@ -28,25 +31,49 @@ import java.io.File;
  */
 public class BrokerCommandHelper
 {
-    private String _brokerCommandTemplate;
+    private final List<String> _brokerCommandTemplateAsList;
 
     public BrokerCommandHelper(String brokerCommandTemplate)
     {
-        _brokerCommandTemplate = brokerCommandTemplate;
+        _brokerCommandTemplateAsList = new LinkedList<String>(Arrays.asList(brokerCommandTemplate.split("\\s+")));
     }
 
-    public String getBrokerCommand( int port, String storePath, String storeType, File logConfigFile)
+    public String[] getBrokerCommand( int port, String storePath, String storeType, File logConfigFile)
     {
-        return _brokerCommandTemplate
+        String[] command = new String[_brokerCommandTemplateAsList.size()];
+        int i=0;
+        for (String commandPart : _brokerCommandTemplateAsList)
+        {
+            command[i] = commandPart
                     .replace("@PORT", "" + port)
                     .replace("@STORE_PATH", storePath)
                     .replace("@STORE_TYPE", storeType)
                     .replace("@LOG_CONFIG_FILE", '"' + logConfigFile.getAbsolutePath() + '"');
+            i++;
+        }
+        return command;
     }
+
+    private int getBrokerCommandLogOptionIndex(String logOption)
+    {
+        int logOptionIndex = _brokerCommandTemplateAsList.indexOf(logOption);
+        if(logOptionIndex == -1)
+        {
+            throw new RuntimeException("Could not find option " + logOption + " in " + _brokerCommandTemplateAsList);
+        }
+        return logOptionIndex;
+    }
+
 
     public void removeBrokerCommandLog4JFile()
     {
-        int logArgumentPosition = _brokerCommandTemplate.indexOf("-l");
-        _brokerCommandTemplate = _brokerCommandTemplate.substring(0, logArgumentPosition - 1);
+        String logOption = "-l";
+        int logOptionIndex = getBrokerCommandLogOptionIndex(logOption);
+        if (logOptionIndex + 1 >=  _brokerCommandTemplateAsList.size())
+        {
+            throw new RuntimeException("Could not find log config location");
+        }
+        _brokerCommandTemplateAsList.remove(logOptionIndex);
+        _brokerCommandTemplateAsList.remove(logOptionIndex);
     }
 }

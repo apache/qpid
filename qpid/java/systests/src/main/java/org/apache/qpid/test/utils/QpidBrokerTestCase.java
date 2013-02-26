@@ -473,9 +473,9 @@ public class QpidBrokerTestCase extends QpidTestCase
             // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
             final String qpidWork = getQpidWork(_brokerType, port);
 
-            String cmd = _brokerCommandHelper.getBrokerCommand(port, testConfig, _brokerStoreType, _logConfigFile);
-            _logger.info("Starting spawn broker using command: " + cmd);
-            ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
+            String[] cmd = _brokerCommandHelper.getBrokerCommand(port, testConfig, _brokerStoreType, _logConfigFile);
+            _logger.info("Starting spawn broker using command: " + StringUtils.join(cmd, ' '));
+            ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
             Map<String, String> processEnv = pb.environment();
             String qpidHome = System.getProperty(QPID_HOME);

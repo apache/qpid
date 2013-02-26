@@ -187,7 +187,10 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         }
         new Shutdown(_objectRegistry);
         new ServerInformationMBean(_objectRegistry, _broker);
-        new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
+        if (LoggingManagementFacade.getCurrentInstance() != null)
+        {
+            new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
+        }
         _objectRegistry.start();
     }
 
