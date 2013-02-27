@@ -22,11 +22,10 @@ package org.apache.qpid.disttest.controller.config;
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.CreateProducerCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ProducerConfigTest extends TestCase
+public class ProducerConfigTest extends QpidTestCase
 {
     public void testProducerHasZeroArgConstructorForGson()
     {

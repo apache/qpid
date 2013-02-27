@@ -23,13 +23,12 @@ import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.client.property.PropertyValue;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 
-public class ConfigReaderTest extends TestCase
+public class ConfigReaderTest extends QpidTestCase
 {
     private Config _config;
 

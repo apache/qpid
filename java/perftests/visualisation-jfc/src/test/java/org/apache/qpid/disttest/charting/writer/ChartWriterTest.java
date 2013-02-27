@@ -23,22 +23,20 @@ package org.apache.qpid.disttest.charting.writer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.Scanner;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.general.DefaultPieDataset;
 
-public class ChartWriterTest extends TestCase
+public class ChartWriterTest extends QpidTestCase
 {
     private JFreeChart _chart1;
     private JFreeChart _chart2;

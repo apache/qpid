@@ -7,15 +7,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.TimeSeriesDataItem;
 
-public class TimeSeriesBuilderCallbackTest extends TestCase
+public class TimeSeriesBuilderCallbackTest extends QpidTestCase
 {
     private static final String SERIES_LEGEND = "mySeriesLegend";
 

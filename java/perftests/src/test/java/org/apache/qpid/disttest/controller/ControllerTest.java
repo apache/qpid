@@ -31,8 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.controller.config.TestInstance;
@@ -42,10 +40,11 @@ import org.apache.qpid.disttest.message.RegisterClientCommand;
 import org.apache.qpid.disttest.message.Response;
 import org.apache.qpid.disttest.message.StopClientCommand;
 import org.apache.qpid.disttest.results.aggregation.ITestResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class ControllerTest extends TestCase
+public class ControllerTest extends QpidTestCase
 {
     private static final String CLIENT1_REGISTERED_NAME = "client-uid1";
 

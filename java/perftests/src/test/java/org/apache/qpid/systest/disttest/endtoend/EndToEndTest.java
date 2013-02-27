@@ -20,7 +20,9 @@ package org.apache.qpid.systest.disttest.endtoend;
 
 import static org.apache.qpid.disttest.AbstractRunner.JNDI_CONFIG_PROP;
 import static org.apache.qpid.disttest.ControllerRunner.OUTPUT_DIR_PROP;
-import static org.apache.qpid.disttest.ControllerRunner.*;
+import static org.apache.qpid.disttest.ControllerRunner.RUN_ID;
+import static org.apache.qpid.disttest.ControllerRunner.TEST_CONFIG_PROP;
+import static org.apache.qpid.disttest.ControllerRunner.WRITE_TO_DB;
 
 import java.io.File;
 import java.io.IOException;

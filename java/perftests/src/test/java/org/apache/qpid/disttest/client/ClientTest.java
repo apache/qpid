@@ -29,17 +29,16 @@ import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.Response;
 import org.apache.qpid.disttest.message.StopClientCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-public class ClientTest extends TestCase
+public class ClientTest extends QpidTestCase
 {
     private Client _client;
     private ClientJmsDelegate _delegate;

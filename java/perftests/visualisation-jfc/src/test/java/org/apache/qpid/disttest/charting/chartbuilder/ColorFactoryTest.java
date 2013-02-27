@@ -21,11 +21,9 @@ package org.apache.qpid.disttest.charting.chartbuilder;
 
 import java.awt.Color;
 
-import org.apache.qpid.disttest.charting.chartbuilder.ColorFactory;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class ColorFactoryTest extends TestCase
+public class ColorFactoryTest extends QpidTestCase
 {
     public void testBlue()
     {

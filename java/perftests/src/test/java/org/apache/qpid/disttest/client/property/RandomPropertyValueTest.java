@@ -18,11 +18,9 @@
  */
 package org.apache.qpid.disttest.client.property;
 
-import org.apache.qpid.disttest.client.property.RandomPropertyValue;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class RandomPropertyValueTest extends TestCase
+public class RandomPropertyValueTest extends QpidTestCase
 {
     private RandomPropertyValue _generator;
 

@@ -31,15 +31,14 @@ import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.Session;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.InOrder;
 
-public class ProducerParticipantTest extends TestCase
+public class ProducerParticipantTest extends QpidTestCase
 {
     private ProducerParticipant _producer;
 

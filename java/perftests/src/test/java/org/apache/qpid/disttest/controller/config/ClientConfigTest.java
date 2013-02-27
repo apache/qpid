@@ -29,16 +29,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.client.property.PropertyValue;
 import org.apache.qpid.disttest.client.property.SimplePropertyValue;
 import org.apache.qpid.disttest.controller.CommandForClient;
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.CreateMessageProviderCommand;
 import org.apache.qpid.disttest.message.NoOpCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ClientConfigTest extends TestCase
+public class ClientConfigTest extends QpidTestCase
 {
     private static final String CLIENT1 = "client1";
 

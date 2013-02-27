@@ -33,14 +33,13 @@ import javax.jms.Message;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.client.property.ListPropertyValue;
 import org.apache.qpid.disttest.client.property.PropertyValue;
 import org.apache.qpid.disttest.client.property.SimplePropertyValue;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class MessageProviderTest extends TestCase
+public class MessageProviderTest extends QpidTestCase
 {
     private Session _session;
     private TextMessage _message;

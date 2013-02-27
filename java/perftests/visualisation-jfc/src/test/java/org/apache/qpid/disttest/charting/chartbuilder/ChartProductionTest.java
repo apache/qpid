@@ -28,8 +28,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.charting.ChartType;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
@@ -37,6 +35,7 @@ import org.apache.qpid.disttest.charting.seriesbuilder.DatasetHolder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.apache.qpid.disttest.charting.writer.ChartWriter;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
@@ -48,7 +47,7 @@ import org.jfree.data.general.Dataset;
  * verify the generated output, set the system property {@link #RETAIN_TEST_CHARTS}
  * to prevent the automatic deletion of the test chart directory.
  */
-public class ChartProductionTest extends TestCase
+public class ChartProductionTest extends QpidTestCase
 {
     private static final String TEST_CHARTTITLE = "TEST_CHARTTITLE";
     private static final String TEST_CHARTSUBTITLE = "TEST_CHARTSUBTITLE";

@@ -24,9 +24,9 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ConfigTest extends TestCase
+public class ConfigTest extends QpidTestCase
 {
     public void testGetTestsForTestWithIteratingMessageSizes()
     {
