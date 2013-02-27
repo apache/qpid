@@ -40,6 +40,16 @@ class ACLFile:
 
 class ACLTests(TestBase010):
 
+    # For connection limit tests this function 
+    #  throws if the connection won't start
+    #  returns a connection that the caller can close if he likes.
+    def get_connection(self, user, passwd):
+        socket = connect(self.broker.host, self.broker.port)
+        connection = Connection (sock=socket, username=user, password=passwd,
+                                 mechanism="PLAIN")
+        connection.start()
+        return connection
+
     def get_session(self, user, passwd):
         socket = connect(self.broker.host, self.broker.port)
         connection = Connection (sock=socket, username=user, password=passwd,
@@ -2087,8 +2097,8 @@ class ACLTests(TestBase010):
         Test ACL control connection limits
         """
         aclf = self.get_acl_file()
-        aclf.write('quota connections 2 alice bob\n')
-        aclf.write('quota connections 0 evildude\n')
+        aclf.write('quota connections 2 aliceCL@QPID bobCL@QPID\n')
+        aclf.write('quota connections 0 evildude@QPID\n')
         aclf.write('acl allow all all')
         aclf.close()
 
@@ -2098,43 +2108,43 @@ class ACLTests(TestBase010):
 
         # By username should be able to connect twice per user
         try:
-            sessiona1 = self.get_session('alice','alice')
-            sessiona2 = self.get_session('alice','alice')
+            conna1 = self.get_connection('aliceCL','aliceCL')
+            conna2 = self.get_connection('aliceCL','aliceCL')
         except Exception, e:
-            self.fail("Could not create two connections for user alice: " + str(e))
+            self.fail("Could not create two connections for user aliceCL: " + str(e))
 
         # Third session should fail
         try:
-            sessiona3 = self.get_session('alice','alice')
-            self.fail("Should not be able to create third connection for user alice")
+            conna3 = self.get_connection('aliceCL','aliceCL')
+            self.fail("Should not be able to create third connection for user aliceCL")
         except Exception, e:
             result = None
 
         # Disconnecting should allow another session.
-        sessiona1.close()
+        conna1.close()
         try:
-            sessiona3 = self.get_session('alice','alice')
+            conna3 = self.get_connection('aliceCL','aliceCL')
         except Exception, e:
-            self.fail("Could not recreate second connection for user alice: " + str(e))
+            self.fail("Could not recreate second connection for user aliceCL: " + str(e))
 
         # By username should be able to connect twice per user
         try:
-            sessionb1 = self.get_session('bob','bob')
-            sessionb2 = self.get_session('bob','bob')
+            connb1 = self.get_connection('bobCL','bobCL')
+            connb2 = self.get_connection('bobCL','bobCL')
         except Exception, e:
-            self.fail("Could not create two connections for user bob: " + str(e))
+            self.fail("Could not create two connections for user bobCL: " + str(e))
 
         # Third session should fail
         try:
-            sessionb3 = self.get_session('bob','bob')
-            self.fail("Should not be able to create third connection for user bob")
+            connb3 = self.get_connection('bobCL','bobCL')
+            self.fail("Should not be able to create third connection for user bobCL")
         except Exception, e:
             result = None
 
 
         # User with quota of 0 is denied
         try:
-            sessione1 = self.get_session('evildude','evildude')
+            conne1 = self.get_connection('evildude','evildude')
             self.fail("Should not be able to create a connection for user evildude")
         except Exception, e:
             result = None
@@ -2142,16 +2152,16 @@ class ACLTests(TestBase010):
 
         # User not named in quotas is denied
         try:
-            sessionc1 = self.get_session('charlie','charlie')
+            connc1 = self.get_connection('charlie','charlie')
             self.fail("Should not be able to create a connection for user charlie")
         except Exception, e:
             result = None
 
-        # Clean up the sessions
-        sessiona2.close()
-        sessiona3.close()
-        sessionb1.close()
-        sessionb2.close()
+        # Clean up the connections
+        conna2.close()
+        conna3.close()
+        connb1.close()
+        connb2.close()
 
 
 
@@ -2160,7 +2170,7 @@ class ACLTests(TestBase010):
         Test ACL control connection limits
         """
         aclf = self.get_acl_file()
-        aclf.write('quota connections 2 alice bob\n')
+        aclf.write('quota connections 2 aliceUA@QPID bobUA@QPID\n')
         aclf.write('quota connections 1 all\n')
         aclf.write('acl allow all all')
         aclf.close()
@@ -2171,51 +2181,51 @@ class ACLTests(TestBase010):
 
         # By username should be able to connect twice per user
         try:
-            sessiona1 = self.get_session('alice','alice')
-            sessiona2 = self.get_session('alice','alice')
+            connectiona1 = self.get_connection('aliceUA','alice')
+            connectiona2 = self.get_connection('aliceUA','alice')
         except Exception, e:
             self.fail("Could not create two connections for user alice: " + str(e))
 
-        # Third session should fail
+        # Third connection should fail
         try:
-            sessiona3 = self.get_session('alice','alice')
+            connectiona3 = self.get_connection('aliceUA','alice')
             self.fail("Should not be able to create third connection for user alice")
         except Exception, e:
             result = None
 
         # By username should be able to connect twice per user
         try:
-            sessionb1 = self.get_session('bob','bob')
-            sessionb2 = self.get_session('bob','bob')
+            connectionb1 = self.get_connection('bobUA','bob')
+            connectionb2 = self.get_connection('bobUA','bob')
         except Exception, e:
             self.fail("Could not create two connections for user bob: " + str(e))
 
-        # Third session should fail
+        # Third connection should fail
         try:
-            sessionb3 = self.get_session('bob','bob')
+            connectionb3 = self.get_connection('bobUA','bob')
             self.fail("Should not be able to create third connection for user bob")
         except Exception, e:
             result = None
 
         # User not named in quotas gets 'all' quota
         try:
-            sessionc1 = self.get_session('charlie','charlie')
+            connectionc1 = self.get_connection('charlieUA','charlie')
         except Exception, e:
             self.fail("Could not create one connection for user charlie: " + str(e))
 
-        # Next session should fail
+        # Next connection should fail
         try:
-            sessionc2 = self.get_session('charlie','charlie')
+            connectionc2 = self.get_connection('charlieUA','charlie')
             self.fail("Should not be able to create second connection for user charlie")
         except Exception, e:
             result = None
 
-        # Clean up the sessions
-        sessiona1.close()
-        sessiona2.close()
-        sessionb1.close()
-        sessionb2.close()
-        sessionc1.close()
+        # Clean up the connections
+        connectiona1.close()
+        connectiona2.close()
+        connectionb1.close()
+        connectionb2.close()
+        connectionc1.close()
 
 
     def test_connection_limits_by_group(self):
@@ -2223,11 +2233,11 @@ class ACLTests(TestBase010):
         Test ACL control connection limits
         """
         aclf = self.get_acl_file()
-        aclf.write('group stooges moe@QPID larry@QPID curly@QPID\n')
-        aclf.write('quota connections 2 alice bob\n')
-        aclf.write('quota connections 2 stooges charlie\n')
+        aclf.write('group stooges moeGR@QPID larryGR@QPID curlyGR@QPID\n')
+        aclf.write('quota connections 2 aliceGR@QPID bobGR@QPID\n')
+        aclf.write('quota connections 2 stooges charlieGR@QPID\n')
         aclf.write('# user and groups may be overwritten. Should use last value\n')
-        aclf.write('quota connections 3 bob stooges\n')
+        aclf.write('quota connections 3 bobGR@QPID stooges\n')
         aclf.write('acl allow all all')
         aclf.close()
 
@@ -2237,64 +2247,64 @@ class ACLTests(TestBase010):
 
         # Alice gets 2
         try:
-            sessiona1 = self.get_session('alice','alice')
-            sessiona2 = self.get_session('alice','alice')
+            connectiona1 = self.get_connection('aliceGR','alice')
+            connectiona2 = self.get_connection('aliceGR','alice')
         except Exception, e:
             self.fail("Could not create two connections for user alice: " + str(e))
 
-        # Third session should fail
+        # Third connection should fail
         try:
-            sessiona3 = self.get_session('alice','alice')
+            connectiona3 = self.get_connection('aliceGR','alice')
             self.fail("Should not be able to create third connection for user alice")
         except Exception, e:
             result = None
 
         # Bob gets 3
         try:
-            sessionb1 = self.get_session('bob','bob')
-            sessionb2 = self.get_session('bob','bob')
-            sessionb3 = self.get_session('bob','bob')
+            connectionb1 = self.get_connection('bobGR','bob')
+            connectionb2 = self.get_connection('bobGR','bob')
+            connectionb3 = self.get_connection('bobGR','bob')
         except Exception, e:
             self.fail("Could not create three connections for user bob: " + str(e))
 
-        # Fourth session should fail
+        # Fourth connection should fail
         try:
-            sessionb4 = self.get_session('bob','bob')
+            connectionb4 = self.get_connection('bobGR','bob')
             self.fail("Should not be able to create fourth connection for user bob")
         except Exception, e:
             result = None
 
         # Moe gets 3
         try:
-            sessionm1 = self.get_session('moe','moe')
-            sessionm2 = self.get_session('moe','moe')
-            sessionm3 = self.get_session('moe','moe')
+            connectionm1 = self.get_connection('moeGR','moe')
+            connectionm2 = self.get_connection('moeGR','moe')
+            connectionm3 = self.get_connection('moeGR','moe')
         except Exception, e:
             self.fail("Could not create three connections for user moe: " + str(e))
 
-        # Fourth session should fail
+        # Fourth connection should fail
         try:
-            sessionb4 = self.get_session('moe','moe')
+            connectionb4 = self.get_connection('moeGR','moe')
             self.fail("Should not be able to create fourth connection for user ,pe")
         except Exception, e:
             result = None
 
         # User not named in quotas is denied
         try:
-            sessions1 = self.get_session('shemp','shemp')
+            connections1 = self.get_connection('shempGR','shemp')
             self.fail("Should not be able to create a connection for user shemp")
         except Exception, e:
             result = None
 
-        # Clean up the sessions
-        sessiona1.close()
-        sessiona2.close()
-        sessionb1.close()
-        sessionb2.close()
-        sessionb3.close()
-        sessionm1.close()
-        sessionm2.close()
-        sessionm3.close()
+        # Clean up the connections
+        connectiona1.close()
+        connectiona2.close()
+        connectionb1.close()
+        connectionb2.close()
+        connectionb3.close()
+        connectionm1.close()
+        connectionm2.close()
+        connectionm3.close()
 
 
     def test_connection_limits_by_ip_address(self):
