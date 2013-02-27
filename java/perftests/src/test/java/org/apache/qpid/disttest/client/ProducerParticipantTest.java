@@ -132,7 +132,7 @@ public class ProducerParticipantTest extends QpidTestCase
 
     public void testSendMessagesForDuration() throws Exception
     {
-        final long duration = 100;
+        final long duration = 1000;
         _command.setMaximumDuration(duration);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);

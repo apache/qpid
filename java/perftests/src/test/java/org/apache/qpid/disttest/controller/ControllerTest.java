@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.disttest.controller;
 
+import static org.apache.qpid.systest.disttest.SystemTestConstants.COMMAND_RESPONSE_TIMEOUT;
+import static org.apache.qpid.systest.disttest.SystemTestConstants.REGISTRATION_TIMEOUT;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
@@ -47,9 +49,6 @@ import org.mockito.stubbing.Answer;
 public class ControllerTest extends QpidTestCase
 {
     private static final String CLIENT1_REGISTERED_NAME = "client-uid1";
-
-    private static final long COMMAND_RESPONSE_TIMEOUT = 1000;
-    private static final long REGISTRATION_TIMEOUT = 1000;
 
     private Controller _controller;
     private ControllerJmsDelegate _respondingJmsDelegate;
