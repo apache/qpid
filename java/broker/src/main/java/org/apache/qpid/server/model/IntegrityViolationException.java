@@ -20,20 +20,18 @@
  */
 package org.apache.qpid.server.model;
 
-public interface ConfigurationChangeListener
+public class IntegrityViolationException extends RuntimeException
 {
-    /**
-     * Inform the listener that the passed object has changed state
-     *
-     * @param object the object whose state has changed
-     * @param oldState the state prior to the change
-     * @param newState the state after the change
-     */
-    void stateChanged(ConfiguredObject object, State oldState, State newState);
+    private static final long serialVersionUID = 1L;
 
-    void childAdded(ConfiguredObject object, ConfiguredObject child);
+    public IntegrityViolationException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 
-    void childRemoved(ConfiguredObject object, ConfiguredObject child);
+    public IntegrityViolationException(String message)
+    {
+        super(message);
+    }
 
-    void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue);
 }

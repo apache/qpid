@@ -72,6 +72,7 @@ define(["dojo/_base/xhr",
            {
                this.controller = controller;
                this.name = query(".name", node)[0];
+               this.type = query(".type", node)[0];
                /*this.state = dom.byId("state");
                this.durable = dom.byId("durable");
                this.lifetimePolicy = dom.byId("lifetimePolicy");
@@ -89,7 +90,7 @@ define(["dojo/_base/xhr",
 
                              that.updateHeader();
 
-                             require(["qpid/management/authenticationprovider/"+that.authProviderData.type],
+                             require(["qpid/management/authenticationprovider/"+that.authProviderData.category],
                                  function(SpecificProvider) {
                                  that.details = new SpecificProvider(node, authProviderObj, controller);
                                  that.details.update();
@@ -102,6 +103,7 @@ define(["dojo/_base/xhr",
            AuthProviderUpdater.prototype.updateHeader = function()
            {
                this.name.innerHTML = this.authProviderData[ "name" ];
+               this.type.innerHTML = this.authProviderData[ "authenticationProviderType" ];
     /*           this.state.innerHTML = this.brokerData[ "state" ];
                this.durable.innerHTML = this.brokerData[ "durable" ];
                this.lifetimePolicy.innerHTML = this.brokerData[ "lifetimePolicy" ];

@@ -422,7 +422,7 @@ public class RestTestHelper
         }
     }
 
-    private File createTemporaryPasswdFile(String[] users) throws IOException
+    File createTemporaryPasswdFile(String[] users) throws IOException
     {
         BufferedWriter writer = null;
         try
@@ -448,5 +448,18 @@ public class RestTestHelper
                 writer.close();
             }
         }
+    }
+
+    public int submitRequest(String url, String method, Map<String, Object> attributes) throws IOException,
+            JsonGenerationException, JsonMappingException
+    {
+        HttpURLConnection connection = openManagementConnection(url, method);
+        if (attributes != null)
+        {
+            writeJsonRequest(connection, attributes);
+        }
+        int responseCode = connection.getResponseCode();
+        connection.disconnect();
+        return responseCode;
     }
 }

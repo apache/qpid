@@ -257,4 +257,6 @@ public interface ConfiguredObject
     <C extends ConfiguredObject> C createChild(Class<C> childClass,
                                                Map<String, Object> attributes,
                                                ConfiguredObject... otherParents);
+
+    void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
 }

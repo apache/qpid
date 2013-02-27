@@ -38,13 +38,18 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -59,19 +64,19 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 {
     private static final Logger LOGGER = Logger.getLogger(AuthenticationProviderAdapter.class);
 
-    private final T _authManager;
+    protected T _authManager;
     protected final Broker _broker;
 
     private GroupPrincipalAccessor _groupAccessor;
 
-    private Object _type;
+    protected String _category;
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes)
     {
         super(id, null, attributes, broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
-        _type = authManager instanceof PrincipalDatabaseAuthenticationManager? PrincipalDatabaseAuthenticationManager.class.getSimpleName() : AuthenticationManager.class.getSimpleName() ;
+        _category = authManager instanceof PrincipalDatabaseAuthenticationManager? PrincipalDatabaseAuthenticationManager.class.getSimpleName() : AuthenticationManager.class.getSimpleName() ;
         addParent(Broker.class, broker);
     }
 
@@ -157,9 +162,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public Object getAttribute(String name)
     {
-        if(TYPE.equals(name))
+        if(CATEGORY.equals(name))
         {
-            return _type;
+            return _category;
         }
         else if(CREATED.equals(name))
         {
@@ -204,6 +209,22 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     {
         if(desiredState == State.DELETED)
         {
+            String providerName = getName();
+
+            // verify that provider is not in use
+            if (providerName.equals(_broker.getAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER)))
+            {
+                throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set as default and cannot be deleted");
+            }
+            Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
+            for (Port port : ports)
+            {
+                if (providerName.equals(port.getAttribute(Port.AUTHENTICATION_MANAGER)))
+                {
+                    throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
+                }
+            }
+
             return true;
         }
         else if(desiredState == State.ACTIVE)
@@ -234,6 +255,21 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         _groupAccessor = groupAccessor;
     }
 
+    public AuthenticationManager createAuthenticationManager(Map<String, Object> attributes)
+    {
+        QpidServiceLoader<AuthenticationManagerFactory> loader = new QpidServiceLoader<AuthenticationManagerFactory>();
+        Iterable<AuthenticationManagerFactory> factories = loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class);
+        for (AuthenticationManagerFactory factory : factories)
+        {
+            AuthenticationManager manager = factory.createInstance(attributes);
+            if (manager != null)
+            {
+                return manager;
+            }
+        }
+        return null;
+    }
+
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
 
@@ -250,6 +286,23 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        protected void changeAttributes(Map<String, Object> attributes)
+        {
+            AuthenticationManager manager = createAuthenticationManager(attributes);
+            if (manager == null)
+            {
+                throw new IllegalConfigurationException("Cannot create authentication manager from " + attributes);
+            }
+            if (manager instanceof PrincipalDatabaseAuthenticationManager)
+            {
+                throw new IllegalConfigurationException("Cannot change the category of the authentication provider");
+            }
+            _authManager = manager;
+            super.changeAttributes(attributes);
+        }
+
     }
 
     public static class PrincipalDatabaseAuthenticationManagerAdapter
@@ -377,10 +430,25 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
         }
 
+        @Override
+        protected void changeAttributes(Map<String, Object> attributes)
+        {
+            AuthenticationManager manager = createAuthenticationManager(attributes);
+            if (manager == null)
+            {
+                throw new IllegalConfigurationException("Cannot create authentication manager from " + attributes);
+            }
+            if (!(manager instanceof PrincipalDatabaseAuthenticationManager))
+            {
+                throw new IllegalConfigurationException("Cannot change the category of the authentication provider");
+            }
+            _authManager = (PrincipalDatabaseAuthenticationManager)manager;
+            super.changeAttributes(attributes);
+        }
+
         private class PrincipalAdapter extends AbstractAdapter implements User
         {
             private final Principal _user;
-
 
             public PrincipalAdapter(Principal user, TaskExecutor taskExecutor)
             {

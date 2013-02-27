@@ -418,11 +418,15 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void startBroker(int port) throws Exception
     {
-        int actualPort = getPort(port);
-        TestBrokerConfiguration configuration = getBrokerConfiguration(actualPort);
-        startBroker(actualPort, configuration, _testVirtualhosts);
+        startBroker(port, false);
     }
 
+    public void startBroker(int port, boolean managementMode) throws Exception
+    {
+        int actualPort = getPort(port);
+        TestBrokerConfiguration configuration = getBrokerConfiguration(actualPort);
+        startBroker(actualPort, configuration, _testVirtualhosts, managementMode);
+    }
 
     protected File getBrokerCommandLog4JFile()
     {
@@ -436,6 +440,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     public void startBroker(int port, TestBrokerConfiguration testConfiguration, XMLConfiguration virtualHosts) throws Exception
+    {
+        startBroker(port, testConfiguration, virtualHosts, false);
+    }
+
+    public void startBroker(int port, TestBrokerConfiguration testConfiguration, XMLConfiguration virtualHosts, boolean managementMode) throws Exception
     {
         port = getPort(port);
         String testConfig = saveTestConfiguration(port, testConfiguration);
@@ -457,6 +466,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             options.setConfigurationStoreType(_brokerStoreType);
             options.setConfigurationStoreLocation(testConfig);
+            options.setManagementMode(managementMode);
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.
@@ -474,6 +484,13 @@ public class QpidBrokerTestCase extends QpidTestCase
             final String qpidWork = getQpidWork(_brokerType, port);
 
             String[] cmd = _brokerCommandHelper.getBrokerCommand(port, testConfig, _brokerStoreType, _logConfigFile);
+            if (managementMode)
+            {
+                String[] newCmd = new String[cmd.length + 1];
+                System.arraycopy(cmd, 0, newCmd, 0, cmd.length);
+                newCmd[cmd.length] = "-mm";
+                cmd = newCmd;
+            }
             _logger.info("Starting spawn broker using command: " + StringUtils.join(cmd, ' '));
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);

@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -78,10 +77,8 @@ public class PortFactory
         _defaultProtocols = Collections.unmodifiableCollection(defaultProtocols);
     }
 
-    public Port createPort(UUID id, Broker broker, Map<String, Object> objectAttributes)
+    public Port createPort(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        Map<String, Object> attributes = retrieveAttributes(objectAttributes);
-
         final Port port;
         Map<String, Object> defaults = new HashMap<String, Object>();
         defaults.put(Port.TRANSPORTS, Collections.singleton(DEFAULT_TRANSPORT));
@@ -90,7 +87,8 @@ public class PortFactory
         {
             throw new IllegalConfigurationException("Port attribute is not specified for port: " + attributes);
         }
-        if (isAmqpProtocol(attributes))
+        Set<Protocol> protocols = MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, attributes, Protocol.class);
+        if (isAmqpProtocol(protocols, attributes))
         {
             Object binding = attributes.get(Port.BINDING_ADDRESS);
             if (binding == null)
@@ -109,8 +107,6 @@ public class PortFactory
         }
         else
         {
-            @SuppressWarnings("unchecked")
-            Collection<Protocol> protocols = (Collection<Protocol>)attributes.get(Port.PROTOCOLS);
             if (protocols.size() > 1)
             {
                 throw new IllegalConfigurationException("Only one protocol can be used on non AMQP port");
@@ -122,77 +118,8 @@ public class PortFactory
         return port;
     }
 
-    private Map<String, Object> retrieveAttributes(Map<String, Object> objectAttributes)
+    private boolean isAmqpProtocol(Set<Protocol> protocols, Map<String, Object> portAttributes)
     {
-        Map<String, Object> attributes = new HashMap<String, Object>(objectAttributes);
-
-        if (objectAttributes.containsKey(Port.PROTOCOLS))
-        {
-            final Set<Protocol> protocolSet = MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, objectAttributes, Protocol.class);
-            attributes.put(Port.PROTOCOLS, protocolSet);
-        }
-
-        if (objectAttributes.containsKey(Port.TRANSPORTS))
-        {
-            final Set<Transport> transportSet = MapValueConverter.getEnumSetAttribute(Port.TRANSPORTS, objectAttributes,
-                    Transport.class);
-            attributes.put(Port.TRANSPORTS, transportSet);
-        }
-
-        if (objectAttributes.containsKey(Port.PORT))
-        {
-            Integer port = MapValueConverter.getIntegerAttribute(Port.PORT, objectAttributes);
-            attributes.put(Port.PORT, port);
-        }
-
-        if (objectAttributes.containsKey(Port.TCP_NO_DELAY))
-        {
-            boolean tcpNoDelay = MapValueConverter.getBooleanAttribute(Port.TCP_NO_DELAY, objectAttributes);
-            attributes.put(Port.TCP_NO_DELAY, tcpNoDelay);
-        }
-
-        if (objectAttributes.containsKey(Port.RECEIVE_BUFFER_SIZE))
-        {
-            int receiveBufferSize = MapValueConverter.getIntegerAttribute(Port.RECEIVE_BUFFER_SIZE, objectAttributes);
-            attributes.put(Port.RECEIVE_BUFFER_SIZE, receiveBufferSize);
-        }
-
-        if (objectAttributes.containsKey(Port.SEND_BUFFER_SIZE))
-        {
-            int sendBufferSize = MapValueConverter.getIntegerAttribute(Port.SEND_BUFFER_SIZE, objectAttributes);
-            attributes.put(Port.SEND_BUFFER_SIZE, sendBufferSize);
-        }
-
-        if (objectAttributes.containsKey(Port.NEED_CLIENT_AUTH))
-        {
-            boolean needClientAuth = MapValueConverter.getBooleanAttribute(Port.NEED_CLIENT_AUTH, objectAttributes);
-            attributes.put(Port.NEED_CLIENT_AUTH, needClientAuth);
-        }
-
-        if (objectAttributes.containsKey(Port.WANT_CLIENT_AUTH))
-        {
-            boolean wantClientAuth = MapValueConverter.getBooleanAttribute(Port.WANT_CLIENT_AUTH, objectAttributes);
-            attributes.put(Port.WANT_CLIENT_AUTH, wantClientAuth);
-        }
-
-        if (objectAttributes.containsKey(Port.BINDING_ADDRESS))
-        {
-            String binding = MapValueConverter.getStringAttribute(Port.BINDING_ADDRESS, objectAttributes);
-            attributes.put(Port.BINDING_ADDRESS, binding);
-        }
-
-        if (objectAttributes.containsKey(Port.STATE))
-        {
-            State state = MapValueConverter.getEnumAttribute(State.class, Port.STATE, objectAttributes);
-            attributes.put(Port.STATE, state);
-        }
-        return attributes;
-    }
-
-    private boolean isAmqpProtocol(Map<String, Object> portAttributes)
-    {
-        @SuppressWarnings("unchecked")
-        Set<Protocol> protocols = (Set<Protocol>) portAttributes.get(Port.PROTOCOLS);
         if (protocols == null || protocols.isEmpty())
         {
             // defaulting to AMQP if protocol is not specified
@@ -208,7 +135,7 @@ public class PortFactory
         if (protocolTypes.size() > 1)
         {
             throw new IllegalConfigurationException("Found different protocol types '" + protocolTypes
-                    + "' on port configuration: " + portAttributes);
+                    + "' for port configuration: " + portAttributes);
         }
 
         return protocolTypes.contains(ProtocolType.AMQP);

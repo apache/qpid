@@ -22,6 +22,7 @@
 package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,7 +83,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     }};
 
     @SuppressWarnings("serial")
-    private static final Map<String, Class<?>> ATTRIBUTE_TYPES = new HashMap<String, Class<?>>(){{
+    private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>(){{
         put(USE_PLATFORM_MBEAN_SERVER, Boolean.class);
         put(NAME, String.class);
         put(PluginFactory.PLUGIN_TYPE, String.class);

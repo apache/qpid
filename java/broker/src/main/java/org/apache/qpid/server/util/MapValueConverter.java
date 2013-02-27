@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.Collection;
+import java.lang.reflect.Array;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -264,98 +266,123 @@ public class MapValueConverter
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <T extends Enum<T>> Set<T> getEnumSetAttribute(String name, Map<String, Object> attributes, Class<T> clazz)
     {
         Object obj = attributes.get(name);
-        Object[] items = null;
         if (obj == null)
         {
             return null;
         }
-        else if (obj instanceof Collection)
-        {
-            Collection<?> data = (Collection<?>) obj;
-            items = data.toArray(new Object[data.size()]);
-        }
-        else if (obj instanceof String[])
-        {
-            items = (String[]) obj;
-        }
-        else if (obj instanceof Object[])
-        {
-            items = (Object[]) obj;
-        }
         else
         {
-            throw new IllegalArgumentException("Value for attribute " + name + "[" + obj
-                    + "] cannot be converted into set of enum of " + clazz);
+            return toSet(obj, clazz, name);
         }
-        Set<T> set = new HashSet<T>();
-        for (int i = 0; i < items.length; i++)
-        {
-            T item = null;
-            Object value = items[i];
-            if (value instanceof String)
-            {
-                item = (T) Enum.valueOf(clazz, (String) value);
-            }
-            else if (clazz.isInstance(value))
-            {
-                item = (T) value;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert " + value + " from [" + obj + "] into enum of " + clazz
-                        + " for attribute " + name);
-            }
-            set.add(item);
-        }
-        return set;
     }
 
-    @SuppressWarnings("unchecked")
-    public static Map<String, Object> convert(Map<String, Object> configurationAttributes, Map<String, Class<?>> attributeTypes)
+    public static Map<String, Object> convert(Map<String, Object> configurationAttributes, Map<String, Type> attributeTypes)
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        for (Map.Entry<String, Class<?>> attributeEntry : attributeTypes.entrySet())
+        for (Map.Entry<String, Type> attributeEntry : attributeTypes.entrySet())
         {
             String attributeName = attributeEntry.getKey();
             if (configurationAttributes.containsKey(attributeName))
             {
-                Class<?> classObject = attributeEntry.getValue();
+                Type typeObject = attributeEntry.getValue();
                 Object rawValue = configurationAttributes.get(attributeName);
                 Object value = null;
-                if (classObject == Long.class || classObject == long.class)
+                if (typeObject instanceof Class)
                 {
-                    value = toLong(attributeName, rawValue);
+                    Class<?> classObject = (Class<?>)typeObject;
+                    value =  convert(rawValue, classObject, attributeName);
                 }
-                else if (classObject == Integer.class || classObject == int.class)
+                else if (typeObject instanceof ParameterizedType)
                 {
-                    value = toInteger(attributeName, rawValue);
-                }
-                else if (classObject == Boolean.class || classObject == boolean.class)
-                {
-                    value = toBoolean(attributeName, rawValue);
-                }
-                else if (classObject == String.class)
-                {
-                    value = toString(rawValue);
-                }
-                else if (Enum.class.isAssignableFrom(classObject))
-                {
-                    @SuppressWarnings("rawtypes")
-                    Class<Enum> enumType = (Class<Enum>)classObject;
-                    value = toEnum(attributeName, rawValue, enumType);
+                    ParameterizedType parameterizedType= (ParameterizedType)typeObject;
+                    Type type = parameterizedType.getRawType();
+                    if (type == Set.class)
+                    {
+                        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                        if (actualTypeArguments.length != 1)
+                        {
+                            throw new IllegalArgumentException("Set type argument is not specified");
+                        }
+                        Class<?> classObject = (Class<?>)actualTypeArguments[0];
+                        value = toSet(rawValue, classObject, attributeName);
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("Convertion into " + parameterizedType + " is not yet supported");
+                    }
                 }
                 else
                 {
-                    throw new IllegalArgumentException("Cannot convert '" + rawValue + "' into " + classObject);
+                    throw new IllegalArgumentException("Convertion into " + typeObject + " is not yet supported");
                 }
                 attributes.put(attributeName, value);
             }
         }
         return attributes;
+    }
+
+    public static <T> Set<T> toSet(Object rawValue, Class<T> setItemClass, String attributeName)
+    {
+        HashSet<T> set = new HashSet<T>();
+        if (rawValue instanceof Iterable)
+        {
+             Iterable<?> iterable = (Iterable<?>)rawValue;
+            for (Object object : iterable)
+            {
+                T converted = convert(object, setItemClass, attributeName);
+                set.add(converted);
+            }
+        }
+        else if (rawValue.getClass().isArray())
+        {
+            int length = Array.getLength(rawValue);
+            for (int i = 0; i < length; i ++)
+            {
+                Object arrayElement = Array.get(rawValue, i);
+                T converted = convert(arrayElement, setItemClass, attributeName);
+                set.add(converted);
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException("Cannot convert '" + rawValue.getClass() + "' into Set<" + setItemClass.getSimpleName() + "> for attribute " + attributeName);
+        }
+        return set;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static <T> T convert(Object rawValue, Class<T> classObject, String attributeName)
+    {
+        Object value;
+        if (classObject == Long.class || classObject == long.class)
+        {
+            value = toLong(attributeName, rawValue);
+        }
+        else if (classObject == Integer.class || classObject == int.class)
+        {
+            value = toInteger(attributeName, rawValue);
+        }
+        else if (classObject == Boolean.class || classObject == boolean.class)
+        {
+            value = toBoolean(attributeName, rawValue);
+        }
+        else if (classObject == String.class)
+        {
+            value = toString(rawValue);
+        }
+        else if (Enum.class.isAssignableFrom(classObject))
+        {
+            value = toEnum(attributeName, rawValue, (Class<Enum>) classObject);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Cannot convert '" + rawValue + "' of type '" + rawValue.getClass()
+                    + "' into type " + classObject + " for attribute " + attributeName);
+        }
+        return (T) value;
     }
 
 }
