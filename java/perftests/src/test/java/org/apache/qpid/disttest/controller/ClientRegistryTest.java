@@ -21,11 +21,10 @@ package org.apache.qpid.disttest.controller;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ClientRegistryTest extends TestCase
+public class ClientRegistryTest extends QpidTestCase
 {
     private static final String CLIENT1_REGISTERED_NAME = "CLIENT1_REGISTERED_NAME";
     private static final String CLIENT2_REGISTERED_NAME = "CLIENT2_REGISTERED_NAME";

@@ -23,9 +23,9 @@ package org.apache.qpid.disttest.results.aggregation;
 import java.util.Arrays;
 import java.util.Collection;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class SeriesStatisticsTest extends TestCase
+public class SeriesStatisticsTest extends QpidTestCase
 {
     public static Collection<Long> SERIES = Arrays.asList(new Long[] { 2l, 4l, 4l, 4l, 5l, 5l, 7l, 9l, 5l });
 

@@ -24,11 +24,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AggregatorTest extends TestCase
+public class AggregatorTest extends QpidTestCase
 {
     private Aggregator _aggregator = new Aggregator();
     private TestResultAggregator _testResultAggregator = mock(TestResultAggregator.class);

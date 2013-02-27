@@ -24,11 +24,9 @@ import java.util.Date;
 import javax.jms.Session;
 
 import org.apache.qpid.disttest.message.ParticipantResult;
-import org.apache.qpid.disttest.results.aggregation.ParticipantResultAggregator;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class ParticipantResultAggregatorTest extends TestCase
+public class ParticipantResultAggregatorTest extends QpidTestCase
 {
     private ParticipantResultAggregator _aggregator = new ParticipantResultAggregator(ParticipantResult.class, AGGREGATED_RESULT_NAME);
 

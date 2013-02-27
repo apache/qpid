@@ -21,13 +21,9 @@ package org.apache.qpid.disttest.client.property;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import org.apache.qpid.disttest.client.property.ListPropertyValue;
-import org.apache.qpid.disttest.client.property.PropertyValue;
-import org.apache.qpid.disttest.client.property.SimplePropertyValue;
-
-public class ListPropertyValueTest extends TestCase
+public class ListPropertyValueTest extends QpidTestCase
 {
     private ListPropertyValue _generator;
     private List<PropertyValue> _items;

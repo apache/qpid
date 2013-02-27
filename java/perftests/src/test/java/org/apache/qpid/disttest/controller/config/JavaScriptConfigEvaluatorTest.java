@@ -25,13 +25,12 @@ import static org.apache.commons.beanutils.PropertyUtils.getProperty;
 import java.util.List;
 import java.util.TreeMap;
 
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
-
-import junit.framework.TestCase;
 
 import com.google.gson.Gson;
 
-public class JavaScriptConfigEvaluatorTest extends TestCase
+public class JavaScriptConfigEvaluatorTest extends QpidTestCase
 {
     public void testEvaluateJavaScript() throws Exception
     {

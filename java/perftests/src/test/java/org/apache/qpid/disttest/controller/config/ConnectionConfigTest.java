@@ -27,13 +27,12 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.CreateConnectionCommand;
 import org.apache.qpid.disttest.message.NoOpCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ConnectionConfigTest extends TestCase
+public class ConnectionConfigTest extends QpidTestCase
 {
     private static final String CONNECTION_FACTORY_NAME = "ConnectionFactoryName";
     private static final String CONNECTION_NAME = "ConnectionName";

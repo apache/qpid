@@ -18,12 +18,11 @@
  */
 package org.apache.qpid.disttest.jms;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.CommandType;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class JmsMessageAdaptorTest extends TestCase
+public class JmsMessageAdaptorTest extends QpidTestCase
 {
 
     public void testCheckAllCommandTypes()

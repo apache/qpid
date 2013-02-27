@@ -25,9 +25,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ParticipatingClientsTest extends TestCase
+public class ParticipatingClientsTest extends QpidTestCase
 {
     private static final String CLIENT1_CONFIGURED_NAME = "CLIENT1_CONFIGURED_NAME";
     private static final String CLIENT2_CONFIGURED_NAME = "CLIENT2_CONFIGURED_NAME";

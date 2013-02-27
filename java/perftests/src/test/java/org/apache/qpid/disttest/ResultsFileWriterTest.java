@@ -24,15 +24,14 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.results.aggregation.TestResultAggregator;
 import org.apache.qpid.disttest.results.formatting.CSVFormatter;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 
-public class ResultsFileWriterTest extends TestCase
+public class ResultsFileWriterTest extends QpidTestCase
 {
     private CSVFormatter _csvFormater = mock(CSVFormatter.class);
     private TestResultAggregator _testResultAggregator = mock(TestResultAggregator.class);

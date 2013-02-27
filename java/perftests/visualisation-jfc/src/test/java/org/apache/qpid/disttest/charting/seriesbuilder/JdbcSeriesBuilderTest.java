@@ -29,12 +29,10 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Collections;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
-import org.apache.qpid.disttest.charting.seriesbuilder.JdbcSeriesBuilder;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class JdbcSeriesBuilderTest extends TestCase
+public class JdbcSeriesBuilderTest extends QpidTestCase
 {
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SELECT A, B FROM test";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";

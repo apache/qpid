@@ -40,15 +40,14 @@ import java.util.TimeZone;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.db.ResultsDbWriter.Clock;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.results.ResultsTestFixture;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
-public class ResultsDbWriterTest extends TestCase
+public class ResultsDbWriterTest extends QpidTestCase
 {
     private static final long _dummyTimestamp = 1234;
 

@@ -19,10 +19,36 @@
  */
 package org.apache.qpid.disttest.db;
 
-import static org.apache.qpid.disttest.message.ParticipantAttribute.*;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.ACKNOWLEDGE_MODE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.AVERAGE_LATENCY;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.DELIVERY_MODE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.ERROR_MESSAGE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_BROWSING_SUBSCRIPTION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_DURABLE_SUBSCRIPTION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_NO_LOCAL;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SELECTOR;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_SYNCHRONOUS_CONSUMER;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.IS_TOPIC;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.ITERATION_NUMBER;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.LATENCY_STANDARD_DEVIATION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.MAXIMUM_DURATION;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.MAX_LATENCY;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.MIN_LATENCY;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.NUMBER_OF_MESSAGES_PROCESSED;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PARTICIPANT_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PRIORITY;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PRODUCER_INTERVAL;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PRODUCER_START_DELAY;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TEST_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TIME_TAKEN;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TIME_TO_LIVE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_NUMBER_OF_CONSUMERS;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_NUMBER_OF_PRODUCERS;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.TOTAL_PAYLOAD_PROCESSED;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -19,18 +19,18 @@
  */
 package org.apache.qpid.disttest.charting.definition;
 
+import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_COLOUR_NAME_FORMAT;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_DIRECTORY_KEY_FORMAT;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_LEGEND_KEY_FORMAT;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_STATEMENT_KEY_FORMAT;
-import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_COLOUR_NAME_FORMAT;
 import static org.apache.qpid.disttest.charting.definition.SeriesDefinitionCreator.SERIES_STROKE_WIDTH_FORMAT;
 
 import java.util.List;
 import java.util.Properties;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class SeriesDefinitionCreatorTest extends TestCase
+public class SeriesDefinitionCreatorTest extends QpidTestCase
 {
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SERIES_1_SELECT_STATEMENT";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";
