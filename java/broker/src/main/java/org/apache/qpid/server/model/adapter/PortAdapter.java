@@ -21,12 +21,15 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -41,10 +44,27 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ParameterizedTypeImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 public class PortAdapter extends AbstractAdapter implements Port
 {
+    @SuppressWarnings("serial")
+    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
+        put(NAME, String.class);
+        put(PROTOCOLS, new ParameterizedTypeImpl(Set.class, Protocol.class));
+        put(TRANSPORTS, new ParameterizedTypeImpl(Set.class, Transport.class));
+        put(PORT, Integer.class);
+        put(TCP_NO_DELAY, Boolean.class);
+        put(RECEIVE_BUFFER_SIZE, Integer.class);
+        put(SEND_BUFFER_SIZE, Integer.class);
+        put(NEED_CLIENT_AUTH, Boolean.class);
+        put(WANT_CLIENT_AUTH, Boolean.class);
+        put(BINDING_ADDRESS, String.class);
+        put(STATE, State.class);
+        put(AUTHENTICATION_MANAGER, String.class);
+    }});
 
     private final Broker _broker;
     private AuthenticationProvider _authenticationProvider;
@@ -56,11 +76,9 @@ public class PortAdapter extends AbstractAdapter implements Port
      */
     public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults, TaskExecutor taskExecutor)
     {
-        super(id, defaults, attributes, taskExecutor);
+        super(id, defaults, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _broker = broker;
-
         addParent(Broker.class, broker);
-
     }
 
     @Override
@@ -308,4 +326,9 @@ public class PortAdapter extends AbstractAdapter implements Port
         _authenticationProvider = authenticationProvider;
     }
 
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+    }
 }

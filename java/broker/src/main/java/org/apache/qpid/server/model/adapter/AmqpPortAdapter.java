@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
@@ -189,6 +190,16 @@ public class AmqpPortAdapter extends PortAdapter
         return null;
     }
 
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        if (_transport != null)
+        {
+            throw new IllegalStateException("Port " + getAttribute(PORT)
+                    + " is already opened. Start broker in management mode to change a port");
+        }
+        super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+    }
 
     class ServerNetworkTransportConfiguration implements NetworkTransportConfiguration
     {

@@ -29,10 +29,12 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -122,6 +124,18 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
         if (object instanceof Broker)
         {
             return Broker.class;
+        }
+        else if (object instanceof VirtualHost)
+        {
+            return VirtualHost.class;
+        }
+        else if (object instanceof Port)
+        {
+            return Port.class;
+        }
+        else if (object instanceof AuthenticationProvider)
+        {
+            return AuthenticationProvider.class;
         }
         return getConfiguredObjectTypeFromImplementedInterfaces(object.getClass());
     }

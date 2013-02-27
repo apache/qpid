@@ -169,6 +169,112 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Host should be deleted", 0, hosts.size());
     }
 
+    public void testDeleteDefaultHostFails() throws Exception
+    {
+        String hostToDelete = TEST1_VIRTUALHOST;
+        int response = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostToDelete, "DELETE", null);
+        assertEquals("Unexpected response code", 409, response);
+
+        restartBroker();
+
+        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/virtualhost/" + hostToDelete);
+        assertEquals("Host should be deleted", 1, hosts.size());
+    }
+
+    public void testUpdateActiveHostFails() throws Exception
+    {
+        String hostToUpdate = TEST3_VIRTUALHOST;
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
+        Asserts.assertVirtualHost(hostToUpdate, hostDetails);
+        String configPath = (String)hostDetails.get(VirtualHost.CONFIG_PATH);
+        assertNotNull("Unexpected host configuration", configPath);
+
+        String storeType = getTestProfileMessageStoreType();
+        String storeLocation = getStoreLocation(hostToUpdate);
+        Map<String, Object> newAttributes = new HashMap<String, Object>();
+        newAttributes.put(VirtualHost.NAME, hostToUpdate);
+        newAttributes.put(VirtualHost.STORE_TYPE, storeType);
+        newAttributes.put(VirtualHost.STORE_PATH, storeLocation);
+
+        int response = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostToUpdate, "PUT", newAttributes);
+        assertEquals("Unexpected response code", 409, response);
+
+        restartBroker();
+
+        hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
+        Asserts.assertVirtualHost(hostToUpdate, hostDetails);
+        assertEquals("Unexpected config path", configPath, hostDetails.get(VirtualHost.CONFIG_PATH));
+    }
+
+    public void testUpdateInManagementMode() throws Exception
+    {
+        String hostToUpdate = TEST3_VIRTUALHOST;
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
+        Asserts.assertVirtualHost(hostToUpdate, hostDetails);
+        String configPath = (String)hostDetails.get(VirtualHost.CONFIG_PATH);
+        String storeType = (String)hostDetails.get(VirtualHost.STORE_TYPE);
+        assertNotNull("Unexpected host configuration", configPath);
+        assertNotNull("Unexpected store type", storeType);
+
+        String queueName = getTestQueueName();
+        if (isBrokerStorePersistent())
+        {
+            String storePath = (String)hostDetails.get(VirtualHost.STORE_PATH);
+            assertNotNull("Unexpected store path", storePath);
+
+            // add a durable queue to the host
+            // in order to test whether host store is copied into a new location
+            Map<String, Object> queueData = new HashMap<String, Object>();
+            queueData.put(Queue.NAME, queueName);
+            queueData.put(Queue.DURABLE, Boolean.TRUE);
+            int response = getRestTestHelper().submitRequest("/rest/queue/" + hostToUpdate + "/" + queueName, "PUT", queueData);
+            assertEquals("Unexpected response code for queue creation", 201, response);
+        }
+
+        // stop broker as it is running not in management mode
+        stopBroker(0);
+
+        // start broker in management mode
+        startBroker(0, true);
+
+        String newStoreType = getTestProfileMessageStoreType();
+        String newStorePath = getStoreLocation(hostToUpdate);
+        Map<String, Object> newAttributes = new HashMap<String, Object>();
+        newAttributes.put(VirtualHost.NAME, hostToUpdate);
+        newAttributes.put(VirtualHost.STORE_TYPE, newStoreType);
+        newAttributes.put(VirtualHost.STORE_PATH, newStorePath);
+        newAttributes.put(VirtualHost.CONFIG_PATH, null);
+
+        try
+        {
+            int response = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostToUpdate, "PUT", newAttributes);
+            assertEquals("Unexpected response code for virtual host update", 200, response);
+
+            restartBroker();
+
+            hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
+            Asserts.assertVirtualHost(hostToUpdate, hostDetails);
+            assertEquals("Unexpected config type", newStoreType, hostDetails.get(VirtualHost.STORE_TYPE));
+
+            if (isBrokerStorePersistent())
+            {
+                assertEquals("Unexpected config path", newStorePath, hostDetails.get(VirtualHost.STORE_PATH));
+
+                // the virtual host store should be copied into a new location
+                // check existence of the queue
+                List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/" + hostToUpdate + "/" + queueName);
+                assertEquals("Queue is not found. Looks like message store was not copied", 1, queues.size());
+            }
+        }
+        finally
+        {
+            if (newStorePath != null)
+            {
+                FileUtils.delete(new File(newStorePath), true);
+            }
+        }
+    }
+
     public void testPutCreateQueue() throws Exception
     {
         String queueName = getTestQueueName();
@@ -519,7 +625,6 @@ public class VirtualHostRestTest extends QpidRestTestCase
     private int tryCreateVirtualHost(String hostName, String storeType, String storePath, String configPath) throws IOException,
             JsonGenerationException, JsonMappingException
     {
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/virtualhost/" + hostName, "PUT");
 
         Map<String, Object> hostData = new HashMap<String, Object>();
         hostData.put(VirtualHost.NAME, hostName);
@@ -533,10 +638,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
             hostData.put(VirtualHost.STORE_TYPE, storeType);
         }
 
-        getRestTestHelper().writeJsonRequest(connection, hostData);
-        int responseCode = connection.getResponseCode();
-        connection.disconnect();
-        return responseCode;
+        return getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
     }
 
     private XMLConfiguration createAndSaveVirtualHostConfiguration(String hostName, File configFile, String storeLocation)

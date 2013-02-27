@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -50,6 +52,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -76,14 +79,17 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.util.FileUtils;
 
 public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
                                                                   QueueRegistry.RegistryChangeListener,
                                                                   IConnectionRegistry.RegistryChangeListener
 {
 
+    private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
+
     @SuppressWarnings("serial")
-    public static final Map<String, Class<?>> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Class<?>>(){{
+    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
         put(STORE_PATH, String.class);
         put(STORE_TYPE, String.class);
@@ -124,26 +130,25 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
 
         String configurationFile = (String) getAttribute(CONFIG_PATH);
-        String storePath = (String) getAttribute(STORE_PATH);
         String storeType = (String) getAttribute(STORE_TYPE);
         boolean invalidAttributes = false;
         if (configurationFile == null)
         {
-            if (storePath == null || storeType == null)
+            if (storeType == null)
             {
                 invalidAttributes = true;
             }
         }
         else
         {
-            if (storePath != null || storeType != null)
+            if (storeType != null)
             {
                 invalidAttributes = true;
             }
         }
         if (invalidAttributes)
         {
-            throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or both 'storePath' and 'storeType' attributes");
+            throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or 'storeType' and 'storePath' attributes");
         }
     }
 
@@ -963,10 +968,19 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         else if (desiredState == State.DELETED)
         {
             //TODO: add ACL check to authorize the operation
+
+            String hostName = getName();
+
+            if (hostName.equals(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)))
+            {
+                throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
+            }
             if (_virtualHost != null && _virtualHost.getState() == org.apache.qpid.server.virtualhost.State.ACTIVE)
             {
                 setDesiredState(currentState, State.STOPPED);
             }
+            _virtualHost = null;
+            setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
             return true;
         }
         return false;
@@ -1043,4 +1057,166 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         return _virtualHost.getMessageStore();
     }
 
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        if (State.ACTIVE.equals(getActualState()))
+        {
+            throw new IllegalStateException("Cannot change host attributes on active virtual host. This operation is only supported in management mode.");
+        }
+        Map<String, Object> newAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+        validateConfigurationAndCopyStoreIntoNewLocationIfRequired(newAttributes);
+        super.changeAttributes(newAttributes);
+    }
+
+    private void validateConfigurationAndCopyStoreIntoNewLocationIfRequired(Map<String, Object> newAttributes)
+    {
+        String name = (String)getAttribute(NAME);
+        String configPath =  (String)getAttribute(CONFIG_PATH);
+        String storePath =  (String)getAttribute(STORE_PATH);
+        String storeType = (String)getAttribute(STORE_TYPE);
+
+        String newConfigPath =  (String)newAttributes.get(CONFIG_PATH);
+        String newStorePath =  (String)newAttributes.get(STORE_PATH);
+        String newStoreType = (String)newAttributes.get(STORE_TYPE);
+
+        String newName = (String)newAttributes.get(NAME);
+        if (newName != null && !newName.equals(name))
+        {
+            if (name.equals(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)))
+            {
+                throw new IntegrityViolationException("Cannot rename virtual host '" + name + "' as it is set as a default." +
+                        " Change the broker default virtual host before renaming");
+            }
+        }
+        if (newConfigPath != null)
+        {
+            // try to open new configuration xml and extract information about message store
+            try
+            {
+                Map<String, String> storeDetails = getStoreDetailsFromVirtualHostConfigXml(name, configPath);
+                newStorePath = storeDetails.get(STORE_PATH);
+                newStoreType = storeDetails.get(STORE_TYPE);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalConfigurationException("Cannot open new virtual host configuration at " + newConfigPath, e);
+            }
+            newAttributes.put(STORE_PATH, null);
+            newAttributes.put(STORE_TYPE, null);
+        }
+        else
+        {
+            newAttributes.put(CONFIG_PATH, null);
+        }
+
+        if (configPath != null )
+        {
+            // try to identify store type and location in order to copy old store into a new location
+            try
+            {
+                Map<String, String> storeDetails = getStoreDetailsFromVirtualHostConfigXml(name, configPath);
+                storePath = storeDetails.get(STORE_PATH);
+                storeType = storeDetails.get(STORE_TYPE);
+            }
+            catch (Exception e)
+            {
+                // old configuration might be broken
+                LOGGER.warn("Cannot open virtual host cofiguration at " + configPath + ". Ignoring old broken configuration.", e);
+            }
+        }
+
+        if (storeType != null && storePath != null && newStoreType != null)
+        {
+            File oldStoreLocation = new File(storePath);
+            if (oldStoreLocation.exists())
+            {
+                if (newStoreType.equals(newStoreType))
+                {
+                    File newStoreLocation = new File(newStorePath);
+                    if (!oldStoreLocation.equals(newStoreLocation))
+                    {
+                        if (LOGGER.isInfoEnabled())
+                        {
+                            LOGGER.info("Copying store for virtual host '" + name + "' from '"
+                                    + oldStoreLocation.getAbsolutePath() + "' into '" + newStoreLocation.getAbsolutePath() + "'");
+                        }
+                        copyStoreFiles(oldStoreLocation, newStoreLocation);
+                    }
+                }
+                else
+                {
+                    LOGGER.warn("Requested a message store of different type ("
+                            + newStoreType + ") than existing store (" + storeType
+                            + "). At the moment, copying of data is not supported for stores of different types."
+                            + " As result an empty new store will be created and old data will be lost.");
+                }
+            }
+            else
+            {
+                if (LOGGER.isInfoEnabled())
+                {
+                    LOGGER.info("Virtual host '" + name + "' store does not exists at " + oldStoreLocation.getAbsolutePath() + ". Skipping srore copying...");
+                }
+            }
+        }
+    }
+
+    private void copyStoreFiles(File oldStoreLocation, File newStoreLocation)
+    {
+        if (!newStoreLocation.exists() && !newStoreLocation.getParentFile().exists())
+        {
+            newStoreLocation.getParentFile().mkdirs();
+        }
+        try
+        {
+            if (oldStoreLocation.isFile())
+            {
+                if (!newStoreLocation.exists())
+                {
+                    newStoreLocation.createNewFile();
+                }
+                FileUtils.copy(oldStoreLocation, newStoreLocation);
+            }
+            else
+            {
+                if (!newStoreLocation.exists())
+                {
+                    newStoreLocation.mkdir();
+                }
+                FileUtils.copyRecursive(oldStoreLocation, newStoreLocation);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new IllegalConfigurationException("Cannot copy store data into a new location at " + newStoreLocation, e);
+        }
+    }
+
+    private Map<String, String> getStoreDetailsFromVirtualHostConfigXml(String name, String configPath) throws Exception
+    {
+        Map<String, String> storeDetails = new HashMap<String, String>();
+        VirtualHostConfiguration configuration = new VirtualHostConfiguration(name, new File(configPath) , _broker);
+        String storePath = configuration.getStoreConfiguration().getString("environment-path");
+        String storeType = configuration.getStoreConfiguration().getString("type");
+        if (storeType == null)
+        {
+            String storeClass = configuration.getStoreConfiguration().getString("class");
+            if (storeClass != null)
+            {
+                final Class<?> clazz = Class.forName(storeClass);
+                final Object o = clazz.newInstance();
+
+                if (o instanceof MessageStore)
+                {
+                    MessageStore ms = (MessageStore)o;
+                    storeType =  ms.getStoreType();
+                }
+            }
+        }
+
+        storeDetails.put(STORE_PATH, storePath);
+        storeDetails.put(STORE_TYPE, storeType);
+        return storeDetails;
+    }
 }

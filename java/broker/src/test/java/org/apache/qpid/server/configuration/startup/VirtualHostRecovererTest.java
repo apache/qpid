@@ -91,7 +91,7 @@ public class VirtualHostRecovererTest extends TestCase
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.STORE_PATH, "/path/to/store");
         attributes.put(VirtualHost.STORE_TYPE, "DERBY");
-        mandatoryAttributes = new String[]{VirtualHost.NAME, VirtualHost.STORE_PATH, VirtualHost.STORE_TYPE};
+        mandatoryAttributes = new String[]{VirtualHost.NAME, VirtualHost.STORE_TYPE};
 
         checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
     }

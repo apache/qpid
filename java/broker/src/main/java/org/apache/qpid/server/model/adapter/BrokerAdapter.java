@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
@@ -69,7 +70,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
     @SuppressWarnings("serial")
-    public static final Map<String, Class<?>> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Class<?>>(){{
+    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
         put(ALERT_THRESHOLD_MESSAGE_COUNT, Long.class);
         put(ALERT_THRESHOLD_QUEUE_DEPTH, Long.class);
@@ -312,7 +313,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     {
         synchronized (_vhostAdapters)
         {
-            _vhostAdapters.remove(vhost);
+            _vhostAdapters.remove(vhost.getName());
         }
         vhost.removeChangeListener(this);
         return true;
@@ -410,7 +411,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return Collections.emptySet();
     }
 
-    //TODO: ACL
     @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
@@ -915,5 +915,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public TaskExecutor getTaskExecutor()
     {
         return super.getTaskExecutor();
+    }
+
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
     }
 }
