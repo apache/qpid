@@ -264,7 +264,8 @@ namespace acl {
         }
         // Propagate nonzero per-user max connection setting from CLI
         if (cliMaxConnPerUser > 0) {
-            (*connQuota)[AclData::ACL_KEYWORD_ACL] = cliMaxConnPerUser;
+            connQuotaRulesExist = true;
+            (*connQuota)[AclData::ACL_KEYWORD_ALL] = cliMaxConnPerUser;
         }
         // Loop to process the Acl file
         try {
@@ -413,6 +414,10 @@ namespace acl {
                     return false;
             }
         }
+
+        // We have processed a connection quota rule
+        connQuotaRulesExist = true;
+
         return true;
     }
 

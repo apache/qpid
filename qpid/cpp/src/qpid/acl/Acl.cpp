@@ -157,9 +157,9 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
         dataLocal = data;  //rcu copy
     }
 
-    bool enforcingConnQuotas = dataLocal->getConnQuotaForUser(userName, &connectionLimit);
+    (void) dataLocal->getConnQuotaForUser(userName, &connectionLimit);
 
-    return connectionCounter->approveConnection(conn, enforcingConnQuotas, connectionLimit);
+    return connectionCounter->approveConnection(conn, dataLocal->enforcingConnectionQuotas(), connectionLimit);
 }
 
 bool Acl::approveCreateQueue(const std::string& userId, const std::string& queueName)
