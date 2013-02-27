@@ -21,8 +21,8 @@ package org.apache.qpid.systest.disttest;
 
 public abstract class SystemTestConstants
 {
-    public static final long REGISTRATION_TIMEOUT = 5000;
-    public static final long COMMAND_RESPONSE_TIMEOUT = 10000;
-    public static final long TEST_RESULT_TIMEOUT = 5000;
+    public static final long REGISTRATION_TIMEOUT = 20000;
+    public static final long COMMAND_RESPONSE_TIMEOUT = 30000;
+    public static final long TEST_RESULT_TIMEOUT = 20000;
 
 }
