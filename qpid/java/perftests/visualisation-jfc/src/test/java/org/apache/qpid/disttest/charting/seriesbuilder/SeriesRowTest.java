@@ -18,9 +18,9 @@
  */
 package org.apache.qpid.disttest.charting.seriesbuilder;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class SeriesRowTest extends TestCase
+public class SeriesRowTest extends QpidTestCase
 {
     private static final Integer[] PAIR = new Integer[] {10, 11};
 

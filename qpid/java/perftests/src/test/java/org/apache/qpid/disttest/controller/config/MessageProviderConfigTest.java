@@ -21,13 +21,12 @@ package org.apache.qpid.disttest.controller.config;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.client.property.PropertyValue;
 import org.apache.qpid.disttest.client.property.SimplePropertyValue;
 import org.apache.qpid.disttest.message.CreateMessageProviderCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class MessageProviderConfigTest extends TestCase
+public class MessageProviderConfigTest extends QpidTestCase
 {
     public void testCreateCommandsForMessageProvider()
     {

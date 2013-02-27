@@ -18,21 +18,21 @@
  */
 package org.apache.qpid.disttest.results.aggregation;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.TestResult;
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TestResultAggregatorTest extends TestCase
+public class TestResultAggregatorTest extends QpidTestCase
 {
     private static final String TEST1_NAME = "TEST1_NAME";
     private static final int TEST1_ITERATION_NUMBER = 1;

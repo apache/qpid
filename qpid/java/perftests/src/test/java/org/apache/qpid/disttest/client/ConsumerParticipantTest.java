@@ -34,16 +34,15 @@ import java.util.Collection;
 import javax.jms.Message;
 import javax.jms.Session;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.InOrder;
 
-public class ConsumerParticipantTest extends TestCase
+public class ConsumerParticipantTest extends QpidTestCase
 {
     private static final String SESSION_NAME1 = "SESSION1";
     private static final String PARTICIPANT_NAME1 = "PARTICIPANT_NAME1";

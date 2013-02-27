@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.config.QueueConfig;
 import org.apache.qpid.disttest.controller.config.TestInstance;
@@ -45,10 +43,11 @@ import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.Response;
 import org.apache.qpid.disttest.message.StartTestCommand;
 import org.apache.qpid.disttest.message.TearDownTestCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class TestRunnerTest extends TestCase
+public class TestRunnerTest extends QpidTestCase
 {
     private static final String TEST_NAME = "TEST_NAME";
     private static final String PARTICIPANT_NAME = "TEST_PARTICIPANT_NAME";

@@ -19,9 +19,9 @@
  */
 package org.apache.qpid.disttest.charting.definition;
 
-import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_TITLE_KEY;
-import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_SUBTITLE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_DESCRIPTION_KEY;
+import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_SUBTITLE_KEY;
+import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_TITLE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.CHART_TYPE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.XAXIS_TITLE_KEY;
 import static org.apache.qpid.disttest.charting.definition.ChartingDefinitionCreator.YAXIS_TITLE_KEY;
@@ -32,12 +32,11 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.Properties;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.charting.ChartType;
 import org.apache.qpid.disttest.charting.ChartingException;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ChartingDefinitionCreatorTest extends TestCase
+public class ChartingDefinitionCreatorTest extends QpidTestCase
 {
     private static final String TEST_CHART_TITLE = "CHART_TITLE";
     private static final String TEST_CHART_SUBTITLE = "CHART_SUBTITLE";

@@ -18,12 +18,13 @@
  */
 package org.apache.qpid.disttest.charting.seriesbuilder;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
-import static org.mockito.Mockito.*;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class JdbcUrlGeneratorTest extends TestCase
+public class JdbcUrlGeneratorTest extends QpidTestCase
 {
     public void testGetJdbcUrlWithoutProvidingAUrlReturnsCsvUrlWithCorrectDirectory()
     {

@@ -24,14 +24,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.qpid.disttest.client.property.ListPropertyValue;
 import org.apache.qpid.disttest.client.property.PropertyValue;
 import org.apache.qpid.disttest.json.JsonHandler;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class JsonHandlerTest extends TestCase
+public class JsonHandlerTest extends QpidTestCase
 {
     private JsonHandler _jsonHandler = null;
     private SendChristmasCards _testCommand = null;

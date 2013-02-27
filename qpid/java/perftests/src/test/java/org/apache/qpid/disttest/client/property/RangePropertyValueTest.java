@@ -18,11 +18,9 @@
  */
 package org.apache.qpid.disttest.client.property;
 
-import org.apache.qpid.disttest.client.property.RangePropertyValue;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class RangePropertyValueTest extends TestCase
+public class RangePropertyValueTest extends QpidTestCase
 {
     private RangePropertyValue _generator;
 

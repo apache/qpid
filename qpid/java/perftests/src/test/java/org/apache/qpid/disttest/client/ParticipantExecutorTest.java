@@ -29,14 +29,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.message.ParticipantResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
-public class ParticipantExecutorTest extends TestCase
+public class ParticipantExecutorTest extends QpidTestCase
 {
     private static final ResultHasError HAS_ERROR = new ResultHasError();
     private static final String CLIENT_NAME = "CLIENT_NAME";

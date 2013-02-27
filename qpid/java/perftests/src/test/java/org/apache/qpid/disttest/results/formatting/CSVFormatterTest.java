@@ -22,12 +22,11 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.results.ResultsTestFixture;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class CSVFormatterTest extends TestCase
+public class CSVFormatterTest extends QpidTestCase
 {
     private CSVFormatter _formatter = new CSVFormatter();
 

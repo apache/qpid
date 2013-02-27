@@ -20,16 +20,16 @@
 package org.apache.qpid.disttest.charting.chartbuilder;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
 import org.apache.qpid.disttest.charting.seriesbuilder.DatasetHolder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.Plot;
@@ -37,7 +37,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.general.Dataset;
 
-public class BaseChartBuilderTest extends TestCase
+public class BaseChartBuilderTest extends QpidTestCase
 {
     private static final String CHART_TITLE = "CHART_TITLE";
     private static final String CHART_SUB_TITLE = "CHART_SUB_TITLE";

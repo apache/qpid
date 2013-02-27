@@ -19,12 +19,11 @@
  */
 package org.apache.qpid.disttest;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.Command;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 
-public class VisitorTest extends TestCase
+public class VisitorTest extends QpidTestCase
 {
 
     public void testStringVisited() throws Exception

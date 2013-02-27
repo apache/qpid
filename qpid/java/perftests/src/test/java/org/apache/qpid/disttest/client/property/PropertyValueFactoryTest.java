@@ -18,9 +18,9 @@
  */
 package org.apache.qpid.disttest.client.property;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class PropertyValueFactoryTest extends TestCase
+public class PropertyValueFactoryTest extends QpidTestCase
 {
     private PropertyValueFactory _factory;
 

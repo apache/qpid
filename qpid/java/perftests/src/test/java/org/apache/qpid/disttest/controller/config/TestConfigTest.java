@@ -26,12 +26,11 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.controller.CommandForClient;
 import org.apache.qpid.disttest.message.NoOpCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TestConfigTest extends TestCase
+public class TestConfigTest extends QpidTestCase
 {
     private static final QueueConfig[] EMPTY_QUEUES_ARRAY = new QueueConfig[0];
     private static final String CLIENT1 = "client1";

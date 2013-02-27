@@ -19,11 +19,10 @@
  */
 package org.apache.qpid.disttest.controller.config;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ConsumerConfigTest extends TestCase
+public class ConsumerConfigTest extends QpidTestCase
 {
     public void testConsumerHasZeroArgConstructorForGson()
     {
