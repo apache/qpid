@@ -21,6 +21,7 @@
 package org.apache.qpid.server.management.plugin;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -120,7 +121,7 @@ public class HttpManagement extends AbstractPluginAdapter
             }});
 
     @SuppressWarnings("serial")
-    private static final Map<String, Class<?>> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Class<?>>(){{
+    private static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(HTTP_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
         put(HTTPS_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
         put(HTTP_SASL_AUTHENTICATION_ENABLED, Boolean.class);

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -55,14 +56,7 @@ abstract class AbstractAdapter implements ConfiguredObject
         _id = id;
         if (attributes != null)
         {
-            Collection<String> names = getAttributeNames();
-            for (String name : names)
-            {
-                if (attributes.containsKey(name))
-                {
-                    _attributes.put(name, attributes.get(name));
-                }
-            }
+            _attributes.putAll(attributes);
         }
         if (defaults != null)
         {
@@ -319,4 +313,40 @@ abstract class AbstractAdapter implements ConfiguredObject
         return _taskExecutor;
     }
 
+    @Override
+    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        if (getTaskExecutor().isTaskExecutorThread())
+        {
+            changeAttributes(attributes);
+        }
+        else
+        {
+            getTaskExecutor().submitAndWait(new Callable<Void>()
+            {
+
+                @Override
+                public Void call() throws Exception
+                {
+                    AbstractAdapter.this.setAttributes(attributes);
+                    return null;
+                }
+            });
+        }
+
+    }
+
+    protected void changeAttributes(final Map<String, Object> attributes)
+    {
+        for (Map.Entry<String, Object> attributeEntry : attributes.entrySet())
+        {
+            String name = attributeEntry.getKey();
+            Object desired = attributeEntry.getValue();
+            Object expected = getAttribute(name);
+            if (changeAttribute(name, expected, desired))
+            {
+                attributeSet(name, expected, desired);
+            }
+        }
+    }
 }

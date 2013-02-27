@@ -348,16 +348,7 @@ public class RestServlet extends AbstractServlet
         Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
         if(_hierarchy.length == 1)
         {
-            try
-            {
-                getBroker().createChild(_hierarchy[0], providedObject);
-            }
-            catch (RuntimeException e)
-            {
-                setResponseStatus(response, e);
-                return;
-            }
-
+            createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, response);
         }
         else
         {
@@ -419,40 +410,39 @@ public class RestServlet extends AbstractServlet
             ConfiguredObject theParent = parents.remove(0);
             ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
 
-            try
-            {
-
-                Collection<? extends ConfiguredObject> existingChildren = theParent.getChildren(objClass);
-                for(ConfiguredObject obj: existingChildren)
-                {
-                    if((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
-                       || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents)))
-                    {
-                        doUpdate(obj, providedObject);
-                        response.setStatus(HttpServletResponse.SC_OK);
-                        return;
-                    }
-                }
-
-                theParent.createChild(objClass, providedObject, otherParents);
-            }
-            catch (RuntimeException e)
-            {
-                setResponseStatus(response, e);
-                return;
-            }
-
+            createOrUpdate(providedObject, objClass, theParent, otherParents, response);
         }
-        response.setStatus(HttpServletResponse.SC_CREATED);
+    }
+
+    private void createOrUpdate(Map<String, Object> providedObject, Class<? extends ConfiguredObject> objClass,
+            ConfiguredObject theParent, ConfiguredObject[] otherParents, HttpServletResponse response) throws IOException
+    {
+        try
+        {
+            Collection<? extends ConfiguredObject> existingChildren = theParent.getChildren(objClass);
+            for(ConfiguredObject obj: existingChildren)
+            {
+                if((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
+                   || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents)))
+                {
+                    doUpdate(obj, providedObject);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    return;
+                }
+            }
+
+            theParent.createChild(objClass, providedObject, otherParents);
+            response.setStatus(HttpServletResponse.SC_CREATED);
+        }
+        catch (RuntimeException e)
+        {
+            setResponseStatus(response, e);
+        }
     }
 
     private void doUpdate(ConfiguredObject obj, Map<String, Object> providedObject)
     {
-        for(Map.Entry<String,Object> entry : providedObject.entrySet())
-        {
-            obj.setAttribute(entry.getKey(), obj.getAttribute(entry.getKey()), entry.getValue());
-        }
-        //TODO - Implement.
+        obj.setAttributes(providedObject);
     }
 
     private boolean equalParents(ConfiguredObject obj, ConfiguredObject[] otherParents)
