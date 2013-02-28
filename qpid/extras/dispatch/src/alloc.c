@@ -50,8 +50,8 @@ static void dx_alloc_init(dx_alloc_type_desc_t *desc)
     if (desc->additional_size)
         desc->total_size += *desc->additional_size;
 
-    dx_log("ALLOC", LOG_TRACE, "Initialized Allocator - type=%s type-size=%d total-size=%d",
-           desc->type_name, desc->type_size, desc->total_size);
+    //dx_log("ALLOC", LOG_TRACE, "Initialized Allocator - type=%s type-size=%d total-size=%d",
+    //       desc->type_name, desc->type_size, desc->total_size);
 
     if (!desc->global_pool) {
         if (desc->config == 0)
