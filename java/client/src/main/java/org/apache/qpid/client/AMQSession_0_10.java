@@ -691,11 +691,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         catch (AMQException e)
         {
-            JMSException ex = new JMSException("Error creating producer");
-            ex.initCause(e);
-            ex.setLinkedException(e);
-            
-            throw ex;
+            throw toJMSException("Error creating producer",e);
         }
         catch(TransportException e)
         {

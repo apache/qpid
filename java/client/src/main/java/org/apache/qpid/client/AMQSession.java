@@ -59,6 +59,7 @@ import org.apache.qpid.transport.TransportException;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -831,7 +832,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (AMQException e)
         {
-            throw new JMSAMQException("Exception during commit: " + e.getMessage() + ":" + e.getCause(), e);
+            throw toJMSException("Exception during commit: " + e.getMessage() + ":" + e.getCause(), e);
         }
         catch (FailoverException e)
         {
@@ -1007,10 +1008,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             catch(AMQException e)
             {
-                JMSException ex = new JMSException("Error when verifying destination");
-                ex.initCause(e);
-                ex.setLinkedException(e);
-                throw ex;
+                throw toJMSException("Error when verifying destination",e);
             }
             catch(TransportException e)
             {
@@ -1434,12 +1432,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     new FieldTable(), result.getExchangeName(), result);
             return result;
         }
-        catch (Exception e)
+        catch (AMQException e)
         {
-           JMSException jmse = new JMSException("Cannot create temporary queue");
-           jmse.setLinkedException(e);
-           jmse.initCause(e);
-           throw jmse;
+           throw toJMSException("Cannot create temporary queue",e);
         }
     }
 
@@ -1740,7 +1735,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (AMQException e)
         {
-            throw new JMSAMQException("Recover failed: " + e.getMessage(), e);
+            throw toJMSException("Recover failed: " + e.getMessage(), e);
         }
         catch (FailoverException e)
         {
@@ -1826,7 +1821,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             catch (AMQException e)
             {
-                throw new JMSAMQException("Failed to rollback: " + e, e);
+                throw toJMSException("Failed to rollback: " + e, e);
             }
             catch (FailoverException e)
             {
@@ -2015,10 +2010,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                 close(-1, false);
                             }
 
-                            JMSException ex = new JMSException("Error registering consumer: " + e);
-                            ex.setLinkedException(e);
-                            ex.initCause(e);
-                            throw ex;
+                            throw toJMSException("Error registering consumer: " + e,e);
                         }
                         catch (TransportException e)
                         {
@@ -2753,7 +2745,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (AMQException e)
         {
-            throw new JMSAMQException("The queue deletion failed: " + e.getMessage(), e);
+            throw toJMSException("The queue deletion failed: " + e.getMessage(), e);
         }
     }
 
@@ -3454,6 +3446,22 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
         }
         return code;
+    }
+
+    JMSException toJMSException(String message, AMQException e)
+    {
+        JMSException ex;
+        if (e.getErrorCode() == AMQConstant.ACCESS_REFUSED)
+        {
+            ex = new JMSSecurityException(message);
+        }
+        else
+        {
+            ex = new JMSException(message);
+        }
+        ex.initCause(e);
+        ex.setLinkedException(e);
+        return ex;
     }
 
     private boolean isBrowseOnlyDestination(Destination destination)
