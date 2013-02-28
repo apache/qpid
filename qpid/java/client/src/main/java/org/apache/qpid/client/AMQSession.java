@@ -1436,6 +1436,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
            throw toJMSException("Cannot create temporary queue",e);
         }
+        catch(TransportException e)
+        {
+            throw toJMSException("Cannot create temporary queue: " + e.getMessage(), e);
+        }
+        catch(Exception e)
+        {
+            throw new JMSAMQException("Cannot create temporary queue: " + e.getMessage(), e);
+        }
     }
 
     public TemporaryTopic createTemporaryTopic() throws JMSException
