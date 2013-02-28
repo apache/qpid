@@ -878,7 +878,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public Collection<KeyStore> getKeyStores()
     {
-        synchronized(_trustStores)
+        synchronized(_keyStores)
         {
             return Collections.unmodifiableCollection(_keyStores.values());
         }
