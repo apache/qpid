@@ -47,7 +47,7 @@ static dx_user_fd_t *ufd_write;
 static dx_user_fd_t *ufd_read;
 
 
-static void thread_start(void *context, int thread_id)
+static void thread_start_handler(void *context, int thread_id)
 {
     sys_mutex_lock(test_lock);
     if (context != expected_context && !stored_error[0])
@@ -134,7 +134,7 @@ static char* test_start_handler(void *context)
         threads_seen[i] = 0;
 
     dx_server_set_conn_handler(conn_handler);
-    dx_server_set_start_handler(thread_start, expected_context);
+    dx_server_set_start_handler(thread_start_handler, expected_context);
     dx_server_run();
     dx_server_finalize();
 
@@ -142,6 +142,18 @@ static char* test_start_handler(void *context)
     if (call_count != THREAD_COUNT) return "Incorrect number of thread-start callbacks";
     for (i = 0; i < THREAD_COUNT; i++)
         if (threads_seen[i] != 1)   return "Incorrect count on one thread ID";
+
+    return 0;
+}
+
+
+static char *test_server_start(void *context)
+{
+    dx_server_initialize(THREAD_COUNT);
+    dx_server_set_conn_handler(conn_handler);
+    dx_server_start();
+    dx_server_stop();
+    dx_server_finalize();
 
     return 0;
 }
@@ -186,6 +198,7 @@ int server_tests(void)
     test_lock = sys_mutex();
     dx_log_set_mask(LOG_NONE);
 
+    TEST_CASE(test_server_start, 0);
     TEST_CASE(test_start_handler, 0);
     TEST_CASE(test_user_fd, 0);
 

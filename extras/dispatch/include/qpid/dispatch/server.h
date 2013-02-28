@@ -68,13 +68,21 @@ void dx_server_set_start_handler(dx_thread_start_cb_t start_handler, void *conte
 
 
 /**
- * \brief Run the server threads until completion.
+ * \brief Run the server threads until completion - The blocking version.
  *
  * Start the operation of the server, including launching all of the worker threads.
  * This function does not return until after the server has been stopped.  The thread
  * that calls dx_server_run is used as one of the worker threads.
  */
 void dx_server_run(void);
+
+
+/**
+ * \brief Start the server threads and return immediately.
+ *
+ * Start the operation of the server, including launching all of the worker threads.
+ */
+void dx_server_start(void);
 
 
 /**

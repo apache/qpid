@@ -30,6 +30,7 @@
 #include <signal.h>
 
 static char *module="SERVER";
+static __thread int server_thread = 0;
 
 typedef struct dx_thread_t {
     int           thread_id;
@@ -271,6 +272,7 @@ static void *thread_run(void *arg)
     if (!thread)
         return 0;
 
+    server_thread   = 1;
     thread->running = 1;
 
     if (thread->canceled)
@@ -670,6 +672,21 @@ void dx_server_run(void)
 }
 
 
+void dx_server_start(void)
+{
+    int i;
+    if (!dx_server)
+        return;
+
+    assert(dx_server->conn_handler); // Server can't run without a connection handler.
+
+    for (i = 0; i < dx_server->thread_count; i++)
+        thread_start(dx_server->threads[i]);
+
+    dx_log(module, LOG_INFO, "Operational, %d Threads Running", dx_server->thread_count);
+}
+
+
 void dx_server_stop(void)
 {
     int idx;
@@ -680,6 +697,12 @@ void dx_server_stop(void)
     sys_cond_signal_all(dx_server->cond);
     pn_driver_wakeup(dx_server->driver);
     sys_mutex_unlock(dx_server->lock);
+
+    if (!server_thread) {
+        for (idx = 0; idx < dx_server->thread_count; idx++)
+            thread_join(dx_server->threads[idx]);
+        dx_log(module, LOG_INFO, "Shut Down");
+    }
 }
 
 
