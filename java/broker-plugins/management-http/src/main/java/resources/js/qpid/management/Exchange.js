@@ -115,7 +115,7 @@ define(["dojo/_base/xhr",
            {
                util.deleteGridSelections(
                        this.exchangeUpdater,
-                       "bindingsGrid",
+                       that.exchangeUpdater.bindingsGrid.grid,
                        "rest/binding/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name),
                        "Are you sure you want to delete binding for queue");
            }

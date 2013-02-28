@@ -41,13 +41,13 @@ struct EnvOptMapper {
         return desc->long_name().size() == env.size() &&
             std::equal(env.begin(), env.end(), desc->long_name().begin(), &matchChar);
     }
-            
+
     static bool matchCase(const string& env, boost::shared_ptr<po::option_description> desc) {
         return env == desc->long_name();
     }
-            
+
     EnvOptMapper(const Options& o) : opts(o) {}
-    
+
     string operator()(const string& envVar) {
         static const std::string prefix("QPID_");
         if (envVar.substr(0, prefix.size()) == prefix) {
@@ -74,31 +74,60 @@ struct EnvOptMapper {
     }
 
 
-    string configFileLine (string& line) {
-        
-        if ( isComment ( line ) )
-          return string();
+    void badArg ( string& line ) {
+        ostringstream msg;
+        msg << "Bad argument: |" << line << "|\n";
+        throw Exception(msg.str());
+    }
+
+
+    string configFileLine (string& line, bool allowUnknowns=true) {
+
+        if ( isComment ( line ) ) {
+            return string();
+        }
 
         size_t pos = line.find ('=');
-        if (pos == string::npos)
-            return string();
+        if (pos == string::npos) {
+            if ( allowUnknowns ) {
+                return string();
+            }
+            else {
+                badArg ( line );
+            }
+        }
         string key = line.substr (0, pos);
 #if (BOOST_VERSION >= 103300)
         typedef const std::vector< boost::shared_ptr<po::option_description> > OptDescs;
-        OptDescs::const_iterator i = 
+        OptDescs::const_iterator i =
             find_if(opts.options().begin(), opts.options().end(), boost::bind(matchCase, key, _1));
         if (i != opts.options().end())
             return string (line) + "\n";
-        else
-          return string();
+        else {
+            if ( allowUnknowns ) {
+                return string();
+            }
+            else {
+                badArg ( line );
+            }
+        }
 #else
-        // Use 'count' to see if this option exists.  Using 'find' will SEGV or hang
-        // if the option has not been defined yet.
+        // Use 'count' to see if this option exists.  Using 'find' will 
+        // SEGV or hang if the option has not been defined yet.
         if ( opts.count(key.c_str()) > 0 )
           return string ( line ) + "\n";
-        else
-          return string ( );
+        else {
+            if ( allowUnknowns ) {
+                return string ( );
+            }
+            else {
+                badArg ( line );
+            }
+        }
 #endif
+      // Control will not arrive here, but the compiler things it could.  
+      // Calls to badArg(), that I used above, throw.
+      return string();  
     }
 
     const Options& opts;
@@ -109,8 +138,8 @@ std::string prettyArg(const std::string& name, const std::string& value) {
     return value.empty() ? name+" " : name+" ("+value+") ";
 }
 
-Options::Options(const string& name) : 
-  po::options_description(name) 
+Options::Options(const string& name) :
+  po::options_description(name)
 {
 }
 
@@ -150,6 +179,7 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
         if (!configFile.empty()) {
             parsing="configuration file "+configFile;
             ifstream conf(configFile.c_str());
+            conf.peek();
             if (conf.good()) {
                 // Remove this hack when we get a stable version of boost that
                 // can allow unregistered options in config files.
@@ -159,7 +189,7 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
                 while (!conf.eof()) {
                     string line;
                     getline (conf, line);
-                    filtered << mapper.configFileLine (line);
+                    filtered << mapper.configFileLine (line, allowUnknown);
                 }
 
                 po::store(po::parse_config_file(filtered, *this), vm);
@@ -196,6 +226,34 @@ CommonOptions::CommonOptions(const string& name, const string& configfile, const
         ("client-config", optValue(clientConfig, "FILE"), "Reads client configuration from FILE (for cluster interconnect)");
 }
 
+
+
+bool Options::findArg(int argc, char const* const* argv, const std::string& theArg)
+{
+    const string parsing("command line options");
+    bool result(false);
+    try {
+        if (argc > 0 && argv != 0) {
+            po::command_line_parser clp = po::command_line_parser(argc, const_cast<char**>(argv)).
+            options(*this).allow_unregistered();
+            po::parsed_options opts     = clp.run();
+
+            for (std::vector< po::basic_option<char> >::iterator
+                i = opts.options.begin(); i != opts.options.end(); i++) {
+                if (theArg.compare(i->string_key) == 0) {
+                    result = true;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+    catch (const std::exception& e) {
+        ostringstream msg;
+        msg << "Error in " << parsing << ": " << e.what() << endl;
+        throw Exception(msg.str());
+    }
+}
 
 } // namespace qpid
 

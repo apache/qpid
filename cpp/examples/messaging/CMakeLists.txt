@@ -26,9 +26,13 @@ macro(add_messaging_example example)
   target_link_libraries(${example} qpidmessaging ${_boost_libs_needed})
   # For installs, don't install the built example; that would be pointless.
   # Install the things a user needs to build the example on-site.
-  install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.h ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.cpp
-           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
-           COMPONENT ${QPID_COMPONENT_EXAMPLES})
+  install (FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.cpp
+    DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
+    COMPONENT ${QPID_COMPONENT_EXAMPLES})
+
   if (MSVC)
     install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/messaging_${example}.vcproj
              DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
@@ -57,7 +61,19 @@ install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/hello_world.cpp
 add_executable(hello_xml hello_xml.cpp)
 set_target_properties(hello_xml PROPERTIES OUTPUT_NAME hello_xml)
 target_link_libraries(hello_xml qpidmessaging)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/hello_xml.cpp
+
+install (FILES
+           ${CMAKE_CURRENT_SOURCE_DIR}/extra_dist/CMakeLists.txt
+           ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.h
+           ${CMAKE_CURRENT_SOURCE_DIR}/hello_world.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/hello_xml.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/drain.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/spout.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/map_receiver.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/map_sender.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/client.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/server.cpp
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 

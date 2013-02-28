@@ -27,13 +27,10 @@ var jsonObject = {
       "_name": "Topic ack modes",
       "_iterations": [
         {
+          "_acknowledgeMode": 0
+        },
+        {
           "_acknowledgeMode": 1
-        },
-        {
-          "_acknowledgeMode": 2
-        },
-        {
-          "_acknowledgeMode": 3
         }
       ],
       "_clients": [
@@ -50,6 +47,7 @@ var jsonObject = {
                     {
                       "_name": "Producer",
                       "_destinationName": topicName,
+                      "_isTopic": true,
                       "_deliveryMode": 1,
                       "_maximumDuration": duration,
                       "_startDelay": 2000 // gives the consumers time to implicitly create the topic
@@ -75,6 +73,7 @@ var jsonObject = {
                     {
                       "_name": "Consumer-__INDEX",
                       "_destinationName": topicName,
+                      "_isTopic": true,
                       "_maximumDuration": duration,
                     }
                   ]

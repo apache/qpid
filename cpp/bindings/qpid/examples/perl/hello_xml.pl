@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 
 my $broker            = ( @ARGV > 0 ) ? $ARGV[0] : "localhost:5672";
 my $connectionOptions = ( @ARGV > 1 ) ? $ARGV[1] : "";
@@ -36,23 +36,25 @@ END
 
 my $address = <<END;
 xml-exchange; {
-create: always,      
+create: always,
 node: { type: topic, x-declare: { type: xml } },
 link: {
 x-bindings: [{ exchange: xml-exchange, key: weather, arguments: { xquery:" $query" } }]
 }}
 END
 
-
-my $connection = new cqpid_perl::Connection($broker, $connectionOptions);
+# create a connection object
+my $connection = new qpid::messaging::Connection( $broker, $connectionOptions );
 
 eval {
+    # open the connection, then create from it a session
+    # from the session, create a receiver to handle incoming messages
     $connection->open();
-    my $session = $connection->createSession();
+    my $session = $connection->create_session();
+    my $receiver = $session->create_receiver($address);
 
-    my $receiver = $session->createReceiver($address);
-    
-    my $message = new cqpid_perl::Message();
+    # create a message and set its contentn
+    my $message = new qpid::messaging::Message();
 
     my $content = <<END;
     <weather>
@@ -62,14 +64,19 @@ eval {
     <dewpoint>35</dewpoint>
     </weather>
 END
-    
-    $message->setContent($content);
-    my $sender = $session->createSender('xml-exchange/weather');
-    $sender->send($message);
-    
-    my $response = $receiver->fetch();
-    print $response->getContent() . "\n";
 
+    $message->set_content($content);
+
+    # create a sender for the xml-exchange/weater topic
+    # then send the message
+    my $sender = $session->create_sender('xml-exchange/weather');
+    $sender->send($message);
+
+    # wait for the response and then output it to the screen
+    my $response = $receiver->fetch();
+    print $response->get_content() . "\n";
+
+    # close the connection
     $connection->close();
 };
 

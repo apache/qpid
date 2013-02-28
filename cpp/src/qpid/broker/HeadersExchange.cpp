@@ -48,6 +48,7 @@ namespace {
     const std::string empty;
 
     // federation related args and values
+    const std::string QPID_RESERVED("qpid.");
     const std::string qpidFedOp("qpid.fed.op");
     const std::string qpidFedTags("qpid.fed.tags");
     const std::string qpidFedOrigin("qpid.fed.origin");
@@ -200,8 +201,8 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
             //matching (they are internally added properties
             //controlling binding propagation but not relevant to
             //actual routing)
-            Binding::shared_ptr binding (new Binding (bindingKey, queue, this, extra_args));
-            BoundKey bk(binding);
+            Binding::shared_ptr binding (new Binding (bindingKey, queue, this, args ? *args : FieldTable()));
+            BoundKey bk(binding, extra_args);
             if (bindings.add_unless(bk, MatchArgs(queue, &extra_args))) {
                 binding->startManagement();
                 propagate = bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
@@ -282,7 +283,7 @@ void HeadersExchange::route(Deliverable& msg)
     Bindings::ConstPtr p = bindings.snapshot();
     if (p.get()) {
         for (std::vector<BoundKey>::const_iterator i = p->begin(); i != p->end(); ++i) {
-            Matcher matcher(i->binding->args);
+            Matcher matcher(i->args);
             msg.getMessage().processProperties(matcher);
             if (matcher.matches()) {
                 b->push_back(i->binding);
@@ -298,7 +299,7 @@ bool HeadersExchange::isBound(Queue::shared_ptr queue, const string* const, cons
     Bindings::ConstPtr p = bindings.snapshot();
     if (p.get()){
         for (std::vector<BoundKey>::const_iterator i = p->begin(); i != p->end(); ++i) {
-            if ( (!args || equal((*i).binding->args, *args)) && (!queue || (*i).binding->queue == queue)) {
+            if ( (!args || equal((*i).args, *args)) && (!queue || (*i).binding->queue == queue)) {
                 return true;
             }
         }
@@ -315,10 +316,7 @@ void HeadersExchange::getNonFedArgs(const FieldTable* args, FieldTable& nonFedAr
 
     for (qpid::framing::FieldTable::ValueMap::const_iterator i=args->begin(); i != args->end(); ++i)
     {
-        const string & name(i->first);
-        if (name == qpidFedOp ||
-            name == qpidFedTags ||
-            name == qpidFedOrigin)
+        if (i->first.find(QPID_RESERVED) == 0)
         {
             continue;
         }

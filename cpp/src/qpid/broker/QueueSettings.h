@@ -43,6 +43,7 @@ struct QueueSettings
 
     bool durable;
     bool autodelete;
+    bool isTemporary;
 
     //basic queue types:
     std::string lvqKey;
@@ -59,6 +60,7 @@ struct QueueSettings
     bool dropMessagesAtLimit;//aka ring queue policy
 
     bool noLocal;
+    bool isBrowseOnly;
     std::string traceId;
     std::string traceExcludes;
     uint64_t autoDeleteDelay;//queueTtl?
@@ -70,6 +72,10 @@ struct QueueSettings
     //threshold events:
     QueueDepth alertThreshold;
     int64_t alertRepeatInterval;
+
+    //file limits checked by Acl and shared with storeSettings
+    uint64_t maxFileSize;
+    uint64_t maxFileCount;
 
     //yuck, yuck
     qpid::framing::FieldTable storeSettings;

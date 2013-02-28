@@ -26,8 +26,9 @@ var jsonObject = {
     {
       "_name": "Topic persistence",
       "_iterations": [
-        // note that we use _durableSubscription (the JaveBeans property name)
-        // rather than _isDurableSubscription (the field name)
+        // Note that we use _durableSubscription (more like the JavaBeans property name)
+        // rather than _isDurableSubscription (the field name, which we use elsewhere).
+        // This convention is required within the _iterations definition.
         {
           "_deliveryMode": 1,
           "_durableSubscription": false
@@ -47,10 +48,12 @@ var jsonObject = {
               "_sessions": [
                 {
                   "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
                   "_producers": [
                     {
                       "_name": "Producer",
                       "_destinationName": topicName,
+                      "_isTopic": true,
                       "_maximumDuration": duration,
                       "_startDelay": 2000 // gives the consumers time to implicitly create the topic
                     }
@@ -71,6 +74,7 @@ var jsonObject = {
               "_sessions": [
                 {
                   "_sessionName": "session1",
+                  "_acknowledgeMode": 0,
                   "_consumers": [
                     {
                       "_name": "Consumer-__INDEX",

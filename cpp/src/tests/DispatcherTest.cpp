@@ -20,7 +20,6 @@
  */
 
 #include "qpid/sys/Poller.h"
-#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/posix/PrivatePosix.h"
@@ -147,8 +146,8 @@ int main(int /*argc*/, char** /*argv*/)
     for (int i = 0; i < 8; i++)
         testString += testString;
 
-    PosixIOHandle f0(sv[0]);
-    PosixIOHandle f1(sv[1]);
+    IOHandle f0(sv[0]);
+    IOHandle f1(sv[1]);
 
     rh = new DispatchHandleRef(f0, boost::bind(reader, _1, sv[0]), 0, 0);
     wh = new DispatchHandleRef(f1, 0, boost::bind(writer, _1, sv[1], testString), 0);

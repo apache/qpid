@@ -20,20 +20,23 @@
  */
 package org.apache.qpid.disttest.charting.writer;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.Scanner;
 
-import junit.framework.TestCase;
-
+import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.general.DefaultPieDataset;
 
-public class ChartWriterTest extends TestCase
+public class ChartWriterTest extends QpidTestCase
 {
     private JFreeChart _chart1;
     private JFreeChart _chart2;
@@ -59,24 +62,34 @@ public class ChartWriterTest extends TestCase
 
     public void testWriteChartToFileSystem()
     {
+        ChartingDefinition chartDef1 = mock(ChartingDefinition.class);
+        when(chartDef1.getChartStemName()).thenReturn("chart1");
+
         File chart1File = new File(_chartDir, "chart1.png");
         assertFalse("chart1 png should not exist yet", chart1File.exists());
 
-        _writer.writeChartToFileSystem(_chart1, "chart1");
+        _writer.writeChartToFileSystem(_chart1, chartDef1);
 
         assertTrue("chart1 png does not exist", chart1File.exists());
     }
 
     public void testWriteHtmlSummaryToFileSystemOverwritingExistingFile() throws Exception
     {
+        ChartingDefinition chartDef1 = mock(ChartingDefinition.class);
+        when(chartDef1.getChartStemName()).thenReturn("chart1");
+        when(chartDef1.getChartDescription()).thenReturn("chart description1");
+
+        ChartingDefinition chartDef2 = mock(ChartingDefinition.class);
+        when(chartDef2.getChartStemName()).thenReturn("chart2");
+
         File summaryFile = new File(_chartDir, ChartWriter.SUMMARY_FILE_NAME);
 
         writeDummyContentToSummaryFileToEnsureItGetsOverwritten(summaryFile);
 
-        _writer.writeChartToFileSystem(_chart2, "chart2");
-        _writer.writeChartToFileSystem(_chart1, "chart1");
+        _writer.writeChartToFileSystem(_chart2, chartDef2);
+        _writer.writeChartToFileSystem(_chart1, chartDef1);
 
-        _writer.writeHtmlSummaryToFileSystem();
+        _writer.writeHtmlSummaryToFileSystem("Performance Charts");
 
         InputStream expectedSummaryFileInputStream = getClass().getResourceAsStream("expected-chart-summary.html");
         String expectedSummaryContent = new Scanner(expectedSummaryFileInputStream).useDelimiter("\\A").next();
@@ -87,11 +100,15 @@ public class ChartWriterTest extends TestCase
 
     public void testWriteHtmlSummaryToFileSystemDoesNothingIfLessThanTwoCharts()
     {
+        ChartingDefinition chartDef1 = mock(ChartingDefinition.class);
+        when(chartDef1.getChartStemName()).thenReturn("chart1");
+        when(chartDef1.getChartDescription()).thenReturn("chart description1");
+
         File summaryFile = new File(_chartDir, ChartWriter.SUMMARY_FILE_NAME);
 
-        _writer.writeChartToFileSystem(_chart1, "chart1");
+        _writer.writeChartToFileSystem(_chart1, chartDef1);
 
-        _writer.writeHtmlSummaryToFileSystem();
+        _writer.writeHtmlSummaryToFileSystem("Performance Charts");
 
         assertFalse("Only one chart generated so no summary file should have been written",
                 summaryFile.exists());

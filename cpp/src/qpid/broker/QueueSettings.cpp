@@ -33,10 +33,13 @@ namespace broker {
 namespace {
 const std::string MAX_COUNT("qpid.max_count");
 const std::string MAX_SIZE("qpid.max_size");
+const std::string MAX_FILE_COUNT("qpid.file_count");
+const std::string MAX_FILE_SIZE("qpid.file_size");
 const std::string POLICY_TYPE("qpid.policy_type");
 const std::string POLICY_TYPE_REJECT("reject");
 const std::string POLICY_TYPE_RING("ring");
 const std::string NO_LOCAL("no-local");
+const std::string BROWSE_ONLY("qpid.browse-only");
 const std::string TRACE_ID("qpid.trace.id");
 const std::string TRACE_EXCLUDES("qpid.trace.exclude");
 const std::string LVQ_KEY("qpid.last_value_queue_key");
@@ -74,12 +77,14 @@ const QueueSettings::Aliases QueueSettings::aliases;
 QueueSettings::QueueSettings(bool d, bool a) :
     durable(d),
     autodelete(a),
+    isTemporary(false),
     priorities(0),
     defaultFairshare(0),
     shareGroups(false),
     addTimestamp(false),
     dropMessagesAtLimit(false),
     noLocal(false),
+    isBrowseOnly(false),
     autoDeleteDelay(0),
     alertRepeatInterval(60)
 {}
@@ -105,6 +110,9 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
         }
     } else if (key == NO_LOCAL) {
         noLocal = value;
+        return true;
+    } else if (key == BROWSE_ONLY) {
+        isBrowseOnly = value;
         return true;
     } else if (key == TRACE_ID) {
         traceId = value.asString();
@@ -163,6 +171,12 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
     } else if (key == ALERT_SIZE) {
         alertThreshold.setSize(value);
         return true;
+    } else if (key == MAX_FILE_COUNT && value.asUint64() > 0) {
+        maxFileCount = value.asUint64();
+        return false; // 'handle' here and also pass to store
+    } else if (key == MAX_FILE_SIZE && value.asUint64() > 0) {
+        maxFileSize = value.asUint64();
+        return false; // 'handle' here and also pass to store
     } else {
         return false;
     }

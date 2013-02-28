@@ -43,8 +43,9 @@ class BrokerInfo
     typedef std::set<BrokerInfo> Set;
     typedef std::map<types::Uuid, BrokerInfo> Map;
 
-    BrokerInfo() {}
-    BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id);
+    BrokerInfo();
+    BrokerInfo(const types::Uuid& id, BrokerStatus,
+               const std::string& host=std::string(), uint16_t port=0);
     BrokerInfo(const framing::FieldTable& ft) { assign(ft); }
     BrokerInfo(const types::Variant::Map& m) { assign(m); }
 
@@ -52,7 +53,6 @@ class BrokerInfo
     std::string getHostName() const { return hostName; }
     BrokerStatus getStatus() const { return status; }
     uint16_t getPort() const { return port; }
-    std::string getLogId() const { return logId; }
 
     void setStatus(BrokerStatus s)  { status = s; }
 
@@ -66,8 +66,6 @@ class BrokerInfo
     bool operator<(const BrokerInfo x) const { return systemId < x.systemId; }
 
   private:
-    void updateLogId();
-    std::string logId;
     std::string hostName;
     uint16_t port;
     types::Uuid systemId;

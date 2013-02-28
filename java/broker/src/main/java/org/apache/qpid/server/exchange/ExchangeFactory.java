@@ -22,7 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.plugin.ExchangeType;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -33,8 +33,6 @@ public interface ExchangeFactory
     Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                             int ticket)
             throws AMQException;
-
-    void initialise(VirtualHostConfiguration hostConfig);
 
     Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
     

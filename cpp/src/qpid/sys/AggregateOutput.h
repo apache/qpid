@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <set>
 
 namespace qpid {
 namespace sys {
@@ -44,9 +45,11 @@ namespace sys {
 class QPID_COMMON_CLASS_EXTERN AggregateOutput : public OutputTask, public OutputControl
 {
     typedef std::deque<OutputTask*> TaskList;
+    typedef std::set<OutputTask*> TaskSet;
 
     Monitor lock;
     TaskList tasks;
+    TaskSet taskSet;
     bool busy;
     OutputControl& control;
 
@@ -56,7 +59,6 @@ class QPID_COMMON_CLASS_EXTERN AggregateOutput : public OutputTask, public Outpu
     // These may be called concurrently with any function.
     QPID_COMMON_EXTERN void abort();
     QPID_COMMON_EXTERN void activateOutput();
-    QPID_COMMON_EXTERN void giveReadCredit(int32_t);
     QPID_COMMON_EXTERN void addOutputTask(OutputTask* t);
 
     // These functions must not be called concurrently with each other.

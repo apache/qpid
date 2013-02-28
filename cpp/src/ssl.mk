@@ -25,9 +25,7 @@ libsslcommon_la_SOURCES = \
   qpid/sys/ssl/util.h \
   qpid/sys/ssl/util.cpp \
   qpid/sys/ssl/SslSocket.h \
-  qpid/sys/ssl/SslSocket.cpp \
-  qpid/sys/ssl/SslIo.h \
-  qpid/sys/ssl/SslIo.cpp
+  qpid/sys/ssl/SslSocket.cpp
 
 SSLCOMMON_VERSION_INFO  = 2:0:0
 libsslcommon_la_LDFLAGS = -version-info $(SSLCOMMON_VERSION_INFO)
@@ -37,13 +35,11 @@ libsslcommon_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
 lib_LTLIBRARIES +=  libsslcommon.la
 
 ssl_la_SOURCES = \
-  qpid/sys/SslPlugin.cpp \
-  qpid/sys/ssl/SslHandler.h \
-  qpid/sys/ssl/SslHandler.cpp
+  qpid/sys/SslPlugin.cpp
 
 ssl_la_LIBADD= libqpidbroker.la libsslcommon.la
 
-ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
+ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS) -D_IN_QPID_BROKER
 
 ssl_la_LDFLAGS = $(PLUGINLDFLAGS)
 
@@ -51,6 +47,13 @@ dmoduleexec_LTLIBRARIES += ssl.la
 
 sslconnector_la_SOURCES = \
   qpid/client/SslConnector.cpp
+
+if HAVE_PROTON
+sslconnector_la_SOURCES += \
+  qpid/messaging/amqp/SslTransport.cpp \
+  qpid/messaging/amqp/SslTransport.h
+endif #HAVE_PROTON
+
 
 sslconnector_la_LIBADD = \
   libqpidclient.la \

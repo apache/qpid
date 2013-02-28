@@ -59,10 +59,6 @@ servlet-api=${geronimo-servlet}
 
 dojo=lib/required/dojo-war-1.7.2.war
 
-felix-main=lib/required/org.apache.felix.main-2.0.5.jar
-
-felix.libs=${felix-main}
-
 jackson-core=lib/required/jackson-core-asl-1.9.0.jar
 jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
 
@@ -72,19 +68,20 @@ commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
 common.libs=${slf4j-api}
 client.libs=${geronimo-jms}
 amqp-1-0-common.libs=
-amqp-1-0-client.libs=${commons-cli}
+amqp-1-0-client.libs=
+amqp-1-0-client-example.libs=${commons-cli}
 amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
-    ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs} \
+    ${xalan} ${derby-db} ${commons-configuration.libs} \
     ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
 
 broker-plugins-management-http.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper}
-broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
+broker-plugins.libs=${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
 
-perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all}
+perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all} ${derby-db}
 
 management-common.libs=
 
@@ -93,11 +90,12 @@ broker.test.libs=${test.libs}
 client.test.libs=${test.libs}
 client-example.test.libs=${test.libs}
 tools.test.libs=
-testkit.test.libs=${test.libs}
 systests.libs=${test.libs}
 perftests.test.libs=${test.libs}
 
-broker-plugins.test.libs=${test.libs}
+broker-plugins-access-control.test.libs=${test.libs}
+broker-plugins-management-http.test.libs=${test.libs}
+broker-plugins-management-jmx.test.libs=${test.libs}
 
 management-common.test.libs=${test.libs}
 
@@ -117,10 +115,12 @@ bdbstore-jmx.test.libs=${test.libs}
 jfreechart.jar=lib/jfree/jfreechart-1.0.13.jar
 jcommon.jar=lib/jfree/jcommon-1.0.16.jar
 csvjdbc.jar=lib/csvjdbc/csvjdbc-1.0.8.jar
-perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar}
+perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar} ${derby-db}
 perftests-visualisation-jfc.test.libs=${test.libs}
 
 # Libraries used only within the build
 bnd=lib/required/bnd-0.0.384.jar
 jython=lib/required/jython-standalone-2.5.2.jar
 maven-ant-tasks=lib/required/maven-ant-tasks-2.1.1.jar
+velocity.jar=lib/required/velocity-1.4.jar
+velocity-dep.jar=lib/required/velocity-dep-1.4.jar

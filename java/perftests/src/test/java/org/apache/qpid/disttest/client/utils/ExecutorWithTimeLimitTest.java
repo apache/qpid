@@ -20,16 +20,16 @@
 package org.apache.qpid.disttest.client.utils;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ExecutorWithTimeLimitTest extends TestCase
+public class ExecutorWithTimeLimitTest extends QpidTestCase
 {
     private static final int TIMEOUT = 500;
     private static final Object RESULT = new Object();

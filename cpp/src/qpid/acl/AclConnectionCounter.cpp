@@ -85,32 +85,32 @@ bool ConnectionCounter::limitApproveLH(
 //
 // countConnectionLH
 //
-// Increment the name's count in map and return a comparison against the limit.
-// called with dataLock already taken
+// Increment the name's count in map and return an optional comparison
+//  against a connection limit.
+// Called with dataLock already taken.
 //
 bool ConnectionCounter::countConnectionLH(
     connectCountsMap_t& theMap,
     const std::string& theName,
     uint16_t theLimit,
-    bool emitLog) {
+    bool emitLog,
+    bool enforceLimit) {
 
     bool result(true);
     uint16_t count(0);
-    if (theLimit > 0) {
-        connectCountsMap_t::iterator eRef = theMap.find(theName);
-        if (eRef != theMap.end()) {
-            count = (uint16_t)(*eRef).second + 1;
-            (*eRef).second = count;
-            result = count <= theLimit;
-        } else {
-            theMap[theName] = count = 1;
-        }
-        if (emitLog) {
-            QPID_LOG(trace, "ACL ConnectionApprover user=" << theName
-                << " limit=" << theLimit
-                << " curValue=" << count
-                << " result=" << (result ? "allow" : "deny"));
-        }
+    connectCountsMap_t::iterator eRef = theMap.find(theName);
+    if (eRef != theMap.end()) {
+        count = (uint16_t)(*eRef).second + 1;
+        (*eRef).second = count;
+        result = (enforceLimit ? count <= theLimit : true);
+    } else {
+        theMap[theName] = count = 1;
+    }
+    if (emitLog) {
+        QPID_LOG(trace, "ACL ConnectionApprover user=" << theName
+            << " limit=" << theLimit
+            << " curValue=" << count
+            << " result=" << (result ? "allow" : "deny"));
     }
     return result;
 }
@@ -123,23 +123,21 @@ bool ConnectionCounter::countConnectionLH(
 // called with dataLock already taken
 //
 void ConnectionCounter::releaseLH(
-    connectCountsMap_t& theMap, const std::string& theName, uint16_t theLimit) {
+    connectCountsMap_t& theMap, const std::string& theName) {
 
-    if (theLimit > 0) {
-        connectCountsMap_t::iterator eRef = theMap.find(theName);
-        if (eRef != theMap.end()) {
-            uint16_t count = (uint16_t) (*eRef).second;
-            assert (count > 0);
-            if (1 == count) {
-                theMap.erase (eRef);
-            } else {
-                (*eRef).second = count - 1;
-            }
+    connectCountsMap_t::iterator eRef = theMap.find(theName);
+    if (eRef != theMap.end()) {
+        uint16_t count = (uint16_t) (*eRef).second;
+        assert (count > 0);
+        if (1 == count) {
+            theMap.erase (eRef);
         } else {
-            // User had no connections.
-            QPID_LOG(notice, "ACL ConnectionCounter Connection for '" << theName
-                << "' not found in connection count pool");
+            (*eRef).second = count - 1;
         }
+    } else {
+        // User had no connections.
+        QPID_LOG(notice, "ACL ConnectionCounter Connection for '" << theName
+            << "' not found in connection count pool");
     }
 }
 
@@ -161,7 +159,7 @@ void ConnectionCounter::connection(broker::Connection& connection) {
     connectProgressMap[connection.getMgmtId()] = C_CREATED;
 
     // Count the connection from this host.
-    (void) countConnectionLH(connectByHostMap, hostName, hostLimit, false);
+    (void) countConnectionLH(connectByHostMap, hostName, hostLimit, false, false);
 }
 
 
@@ -180,8 +178,7 @@ void ConnectionCounter::closed(broker::Connection& connection) {
             // Normal case: connection was created and opened.
             // Decrement user in-use counts
             releaseLH(connectByNameMap,
-                      connection.getUserId(),
-                      nameLimit);
+                      connection.getUserId());
         } else {
             // Connection was created but not opened.
             // Don't decrement user count.
@@ -189,8 +186,7 @@ void ConnectionCounter::closed(broker::Connection& connection) {
 
         // Decrement host in-use count.
         releaseLH(connectByHostMap,
-                  getClientHost(connection.getMgmtId()),
-                  hostLimit);
+                  getClientHost(connection.getMgmtId()));
 
         // destroy connection progress indicator
         connectProgressMap.erase(eRef);
@@ -211,7 +207,10 @@ void ConnectionCounter::closed(broker::Connection& connection) {
 //  check total connections, connections from IP, connections by user and
 //  disallow if over any limit
 //
-bool ConnectionCounter::approveConnection(const broker::Connection& connection)
+bool ConnectionCounter::approveConnection(
+        const broker::Connection& connection,
+        bool enforcingConnectionQuotas,
+        uint16_t connectionUserQuota )
 {
     const std::string& hostName(getClientHost(connection.getMgmtId()));
     const std::string& userName(              connection.getUserId());
@@ -220,122 +219,53 @@ bool ConnectionCounter::approveConnection(const broker::Connection& connection)
 
     // Bump state from CREATED to OPENED
     (void) countConnectionLH(connectProgressMap, connection.getMgmtId(),
-                             C_OPENED, false);
+                             C_OPENED, false, false);
 
     // Approve total connections
     bool okTotal  = true;
     if (totalLimit > 0) {
         okTotal = totalCurrentConnections <= totalLimit;
-        if (!connection.isShadow()) {
-            QPID_LOG(trace, "ACL ConnectionApprover totalLimit=" << totalLimit
-                << " curValue=" << totalCurrentConnections
-                << " result=" << (okTotal ? "allow" : "deny"));
-        }
+        QPID_LOG(trace, "ACL ConnectionApprover totalLimit=" << totalLimit
+                 << " curValue=" << totalCurrentConnections
+                 << " result=" << (okTotal ? "allow" : "deny"));
     }
 
     // Approve by IP host connections
-    bool okByIP   = limitApproveLH(connectByHostMap, hostName, hostLimit, !connection.isShadow());
+    bool okByIP   = limitApproveLH(connectByHostMap, hostName, hostLimit, true);
 
     // Count and Approve the connection by the user
-    bool okByUser = countConnectionLH(connectByNameMap, userName, nameLimit, !connection.isShadow());
+    bool okByUser = countConnectionLH(connectByNameMap, userName,
+                                      connectionUserQuota, true,
+                                      enforcingConnectionQuotas);
 
-    if (!connection.isShadow()) {
-        // Emit separate log for each disapproval
-        if (!okTotal) {
-            QPID_LOG(error, "Client max total connection count limit of " << totalLimit
-                << " exceeded by '"
-                << connection.getMgmtId() << "', user: '"
-                << userName << "'. Connection refused");
-        }
-        if (!okByIP) {
-            QPID_LOG(error, "Client max per-host connection count limit of "
-                << hostLimit << " exceeded by '"
-                << connection.getMgmtId() << "', user: '"
-                << userName << "'. Connection refused.");
-        }
-        if (!okByUser) {
-            QPID_LOG(error, "Client max per-user connection count limit of "
-                << nameLimit << " exceeded by '"
-                << connection.getMgmtId() << "', user: '"
-                << userName << "'. Connection refused.");
-        }
-
-        // Count/Event once for each disapproval
-        bool result = okTotal && okByIP && okByUser;
-        if (!result) {
-            acl.reportConnectLimit(userName, hostName);
-        }
-
-        return result;
-    } else {
-        // Always allow shadow connections
-        if (!okTotal) {
-            QPID_LOG(warning, "Client max total connection count limit of " << totalLimit
-                << " exceeded by '"
-                << connection.getMgmtId() << "', user: '"
-                << userName << "' but still within tolerance. Cluster connection allowed");
-        }
-        if (!okByIP) {
-            QPID_LOG(warning, "Client max per-host connection count limit of "
-                << hostLimit << " exceeded by '"
-                << connection.getMgmtId() << "', user: '"
-                << userName << "' but still within tolerance. Cluster connection allowed");
-        }
-        if (!okByUser) {
-            QPID_LOG(warning, "Client max per-user connection count limit of "
-                << nameLimit << " exceeded by '"
-                << connection.getMgmtId() << "', user: '"
-                << userName << "' but still within tolerance. Cluster connection allowed");
-        }
-        if (okTotal && okByIP && okByUser) {
-            QPID_LOG(debug, "Cluster client connection: '"
-                << connection.getMgmtId() << "', user '"
-                <<  userName << "' allowed");
-        }
-        return true;
+    // Emit separate log for each disapproval
+    if (!okTotal) {
+        QPID_LOG(error, "Client max total connection count limit of " << totalLimit
+                 << " exceeded by '"
+                 << connection.getMgmtId() << "', user: '"
+                 << userName << "'. Connection refused");
     }
-}
-
-
-//
-// setUserId
-//  On cluster shadow connections, track a new user id for this connection.
-//
-void ConnectionCounter::setUserId(const broker::Connection& connection,
-                                  const std::string& username)
-{
-    Mutex::ScopedLock locker(dataLock);
-
-    connectCountsMap_t::iterator eRef = connectProgressMap.find(connection.getMgmtId());
-    if (eRef != connectProgressMap.end()) {
-        if ((*eRef).second == C_OPENED){
-            // Connection has been opened so that current user has been counted
-            if (connection.isShadow()) {
-                // This is a shadow connection and therefore receives userId changes
-                QPID_LOG(debug, "Changing User ID for cluster connection: "
-                    << connection.getMgmtId() << ", old user:'" << connection.getUserId()
-                    << "', new user:'" << username << "'");
-
-                // Decrement user in-use count for old userId
-                releaseLH(connectByNameMap,
-                        connection.getUserId(),
-                        nameLimit);
-                // Increment user in-use count for new userId
-                (void) countConnectionLH(connectByNameMap, username, nameLimit, false);
-            } else {
-                QPID_LOG(warning, "Changing User ID for non-cluster connections is not supported: "
-                    << connection.getMgmtId() << ", old user " << connection.getUserId()
-                    << ", new user " << username);
-            }
-        } else {
-            // connection exists  but has not been opened.
-            // setUserId is called in normal course. The user gets counted when connection is opened.
-        }
-    } else {
-        // Connection does not exist.
+    if (!okByIP) {
+        QPID_LOG(error, "Client max per-host connection count limit of "
+                 << hostLimit << " exceeded by '"
+                 << connection.getMgmtId() << "', user: '"
+                 << userName << "'. Connection refused.");
     }
-}
+    if (!okByUser) {
+        QPID_LOG(error, "Client max per-user connection count limit of "
+                 << connectionUserQuota << " exceeded by '"
+                 << connection.getMgmtId() << "', user: '"
+                 << userName << "'. Connection refused.");
+    }
 
+    // Count/Event once for each disapproval
+    bool result = okTotal && okByIP && okByUser;
+    if (!result) {
+        acl.reportConnectLimit(userName, hostName);
+    }
+
+    return result;
+}
 
 //
 // getClientIp - given a connection's mgmtId return the client host part.

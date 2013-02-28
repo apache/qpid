@@ -25,6 +25,7 @@ SUBDIRS = . tests
 windows_dist = \
   qpid/client/windows/SaslFactory.cpp \
   qpid/client/windows/SslConnector.cpp \
+  qpid/client/windows/ClientDllMain.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
@@ -42,9 +43,9 @@ windows_dist = \
   qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/PipeHandle.cpp \
   ../include/qpid/sys/windows/Mutex.h \
+  qpid/sys/windows/QpidDllMain.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/SocketAddress.cpp \
-  qpid/sys/windows/Socket.cpp \
   qpid/sys/windows/SslAsynchIO.cpp \
   qpid/sys/windows/SslAsynchIO.h \
   qpid/sys/windows/StrError.cpp \
@@ -54,6 +55,8 @@ windows_dist = \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
+  qpid/sys/windows/WinSocket.cpp \
+  qpid/sys/windows/WinSocket.h \
   windows/QpiddBroker.cpp \
   windows/SCM.h \
   windows/SCM.cpp \
@@ -127,7 +130,6 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(srcdir) -I=$(bu
 # Destination for intalled programs and tests defined here
 #
 qpidexecdir = $(libexecdir)/qpid
-AM_CXXFLAGS += -DQPID_LIBEXEC_DIR=\"$(qpidexecdir)\"
 qpidexec_PROGRAMS =
 qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/tests
@@ -136,15 +138,16 @@ qpidtest_SCRIPTS =
 tmoduleexecdir = $(libdir)/qpid/tests
 tmoduleexec_LTLIBRARIES=
 
-AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
+BROKER_CXXFLAGS = -D_IN_QPID_BROKER
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) $(BROKER_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
-  libqpidcommon.la
+  libqpidcommon.la              \
+  -lboost_program_options
 
 posix_qpidd_src = posix/QpiddBroker.cpp
 
@@ -157,7 +160,8 @@ qpidd_SOURCES = qpidd.cpp qpidd.h $(posix_qpidd_src)
 libqpidcommon_la_SOURCES +=			\
   qpid/log/posix/SinkOptions.cpp		\
   qpid/sys/posix/IOHandle.cpp			\
-  qpid/sys/posix/Socket.cpp			\
+  qpid/sys/posix/BSDSocket.cpp			\
+  qpid/sys/posix/BSDSocket.h			\
   qpid/sys/posix/SocketAddress.cpp		\
   qpid/sys/posix/AsynchIO.cpp			\
   qpid/sys/posix/FileSysDir.cpp			\
@@ -208,6 +212,7 @@ posix_broker_src = \
 
 lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
+
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
 confdir=$(sysconfdir)/qpid
@@ -254,7 +259,7 @@ rdma_la_LIBADD = \
   -libverbs
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers -D_IN_QPID_BROKER
 dmoduleexec_LTLIBRARIES += \
   rdma.la
 
@@ -290,8 +295,10 @@ endif
 EXTRA_DIST +=\
   CMakeLists.txt \
   config.h.cmake \
+  amqp.cmake \
   rdma.cmake \
   ssl.cmake \
+  legacystore.cmake \
   managementgen.cmake \
   rubygen.cmake \
   versions.cmake \
@@ -331,7 +338,6 @@ EXTRA_DIST +=\
 libqpidcommon_la_LIBADD = \
   libqpidtypes.la \
   -lboost_program_options \
-  -lboost_filesystem \
   -luuid \
   -lpthread \
   $(LIB_DLOPEN) \
@@ -357,6 +363,9 @@ libqpidcommon_la_SOURCES +=			\
   qpid/Sasl.h                                   \
   qpid/SaslFactory.cpp                          \
   qpid/SaslFactory.h                            \
+  qpid/SaslServer.h                             \
+  qpid/NullSaslServer.h                         \
+  qpid/NullSaslServer.cpp                       \
   qpid/Serializer.h				\
   qpid/SessionId.cpp				\
   qpid/SessionState.cpp				\
@@ -462,8 +471,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/AtomicValue_gcc.h			\
   qpid/sys/AtomicValue_mutex.h			\
   qpid/sys/BlockingQueue.h			\
-  qpid/sys/ClusterSafe.h    			\
-  qpid/sys/ClusterSafe.cpp  			\
   qpid/sys/Codec.h				\
   qpid/sys/ConnectionCodec.h			\
   qpid/sys/ConnectionInputHandler.h		\
@@ -506,10 +513,48 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/TimerWarnings.cpp			\
   qpid/sys/TimerWarnings.h			\
   qpid/sys/Waitable.h				\
-  qpid/sys/alloca.h				\
   qpid/sys/uuid.h				\
   qpid/sys/unordered_map.h			\
-  qpid/amqp_0_10/Codecs.cpp
+  qpid/amqp_0_10/Codecs.cpp			\
+  qpid/amqp/CharSequence.h                      \
+  qpid/amqp/CharSequence.cpp                    \
+  qpid/amqp/Codec.h				\
+  qpid/amqp/Constructor.h			\
+  qpid/amqp/Decoder.h                       	\
+  qpid/amqp/Decoder.cpp                       	\
+  qpid/amqp/Descriptor.h                       	\
+  qpid/amqp/Descriptor.cpp                     	\
+  qpid/amqp/descriptors.h                       \
+  qpid/amqp/Encoder.h                       	\
+  qpid/amqp/Encoder.cpp                       	\
+  qpid/amqp/ListReader.h			\
+  qpid/amqp/LoggingReader.h			\
+  qpid/amqp/MapReader.h                       	\
+  qpid/amqp/MapReader.cpp                       \
+  qpid/amqp/MessageEncoder.h                    \
+  qpid/amqp/MessageEncoder.cpp                  \
+  qpid/amqp/MessageId.h		                \
+  qpid/amqp/MessageId.cpp                       \
+  qpid/amqp/MessageReader.h			\
+  qpid/amqp/MessageReader.cpp			\
+  qpid/amqp/Reader.h				\
+  qpid/amqp/Sasl.h				\
+  qpid/amqp/Sasl.cpp				\
+  qpid/amqp/SaslClient.h			\
+  qpid/amqp/SaslClient.cpp			\
+  qpid/amqp/SaslServer.h			\
+  qpid/amqp/SaslServer.cpp			\
+  qpid/amqp/typecodes.h
+
+#libqpidcommon is not really the 'right' place for the Transport
+#interface, which is only used in 1.0 impl of messaging API, but this
+#lets the 1.0 SSL support be included in the existing sslconnector lib
+#which in turn addresses common ssl needs in qpidclient and
+#qpidmessaging:
+libqpidcommon_la_SOURCES +=                    \
+  qpid/messaging/amqp/Transport.h              \
+  qpid/messaging/amqp/Transport.cpp            \
+  qpid/messaging/amqp/TransportContext.h
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
@@ -537,10 +582,9 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerImportExport.h \
   qpid/broker/Connection.cpp \
   qpid/broker/Connection.h \
-  qpid/broker/ConnectionFactory.cpp \
-  qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionHandler.h \
+  qpid/broker/ConnectionState.cpp \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionToken.h \
   qpid/broker/Consumer.h \
@@ -610,6 +654,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/PriorityQueue.h \
   qpid/broker/PriorityQueue.cpp \
+  qpid/broker/Protocol.h \
+  qpid/broker/Protocol.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \
@@ -659,6 +705,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveryManagerImpl.h \
+  qpid/broker/RecoverableMessageImpl.h \
   qpid/broker/RetryList.cpp \
   qpid/broker/RetryList.h \
   qpid/broker/SaslAuthenticator.cpp \
@@ -683,7 +730,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionState.h \
   qpid/broker/SignalHandler.cpp \
   qpid/broker/SignalHandler.h \
-  qpid/broker/StatefulQueueObserver.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
   qpid/broker/ThresholdAlerts.cpp \
@@ -716,6 +762,76 @@ libqpidbroker_la_SOURCES = \
 
 QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
+libqpidbroker_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS)
+
+if HAVE_PROTON
+
+dmoduleexec_LTLIBRARIES += amqp.la
+amqp_la_LIBADD = libqpidcommon.la
+amqp_la_SOURCES = \
+  qpid/broker/amqp/Connection.h \
+  qpid/broker/amqp/Connection.cpp \
+  qpid/broker/amqp/DataReader.h \
+  qpid/broker/amqp/DataReader.cpp \
+  qpid/broker/amqp/Filter.h \
+  qpid/broker/amqp/Filter.cpp \
+  qpid/broker/amqp/Header.h \
+  qpid/broker/amqp/Header.cpp \
+  qpid/broker/amqp/ManagedConnection.h \
+  qpid/broker/amqp/ManagedConnection.cpp \
+  qpid/broker/amqp/ManagedSession.h \
+  qpid/broker/amqp/ManagedSession.cpp \
+  qpid/broker/amqp/ManagedOutgoingLink.h \
+  qpid/broker/amqp/ManagedOutgoingLink.cpp \
+  qpid/broker/amqp/Message.h \
+  qpid/broker/amqp/Message.cpp \
+  qpid/broker/amqp/NodeProperties.h \
+  qpid/broker/amqp/NodeProperties.cpp \
+  qpid/broker/amqp/Outgoing.h \
+  qpid/broker/amqp/Outgoing.cpp \
+  qpid/broker/amqp/ProtocolPlugin.cpp \
+  qpid/broker/amqp/Sasl.h \
+  qpid/broker/amqp/Sasl.cpp \
+  qpid/broker/amqp/Session.h \
+  qpid/broker/amqp/Session.cpp \
+  qpid/broker/amqp/Translation.h \
+  qpid/broker/amqp/Translation.cpp
+
+amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS) $(PROTON_CFLAGS)
+amqp_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
+
+cmoduleexec_LTLIBRARIES += amqpc.la
+amqpc_la_LIBADD = libqpidcommon.la
+amqpc_la_SOURCES = \
+  qpid/messaging/amqp/AddressHelper.h		\
+  qpid/messaging/amqp/AddressHelper.cpp		\
+  qpid/messaging/amqp/ConnectionContext.h	\
+  qpid/messaging/amqp/ConnectionContext.cpp	\
+  qpid/messaging/amqp/ConnectionHandle.h	\
+  qpid/messaging/amqp/ConnectionHandle.cpp	\
+  qpid/messaging/amqp/DriverImpl.h		\
+  qpid/messaging/amqp/DriverImpl.cpp		\
+  qpid/messaging/amqp/ReceiverContext.h		\
+  qpid/messaging/amqp/ReceiverContext.cpp	\
+  qpid/messaging/amqp/ReceiverHandle.h		\
+  qpid/messaging/amqp/ReceiverHandle.cpp	\
+  qpid/messaging/amqp/Sasl.h			\
+  qpid/messaging/amqp/Sasl.cpp			\
+  qpid/messaging/amqp/SenderContext.h		\
+  qpid/messaging/amqp/SenderContext.cpp		\
+  qpid/messaging/amqp/SenderHandle.h		\
+  qpid/messaging/amqp/SenderHandle.cpp		\
+  qpid/messaging/amqp/SessionContext.h		\
+  qpid/messaging/amqp/SessionContext.cpp	\
+  qpid/messaging/amqp/SessionHandle.h		\
+  qpid/messaging/amqp/SessionHandle.cpp		\
+  qpid/messaging/amqp/TcpTransport.h		\
+  qpid/messaging/amqp/TcpTransport.cpp
+
+amqpc_la_CXXFLAGS=$(AM_CXXFLAGS) $(PROTON_CFLAGS)
+amqpc_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
+
+endif #HAVE_PROTON
 
 libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
@@ -793,12 +909,16 @@ libqpidmessaging_la_SOURCES =			\
   qpid/messaging/AddressParser.h		\
   qpid/messaging/AddressParser.cpp		\
   qpid/messaging/Connection.cpp			\
+  qpid/messaging/ConnectionOptions.h		\
+  qpid/messaging/ConnectionOptions.cpp		\
   qpid/messaging/Duration.cpp			\
   qpid/messaging/exceptions.cpp			\
   qpid/messaging/Message.cpp			\
   qpid/messaging/MessageImpl.h			\
   qpid/messaging/MessageImpl.cpp		\
   qpid/messaging/PrivateImplRef.h		\
+  qpid/messaging/ProtocolRegistry.h		\
+  qpid/messaging/ProtocolRegistry.cpp		\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\
@@ -807,6 +927,8 @@ libqpidmessaging_la_SOURCES =			\
   qpid/messaging/ReceiverImpl.h			\
   qpid/messaging/SessionImpl.h			\
   qpid/messaging/FailoverUpdates.cpp		\
+  qpid/messaging/amqp/EncodedMessage.h		\
+  qpid/messaging/amqp/EncodedMessage.cpp	\
   qpid/client/amqp0_10/AcceptTracker.h		\
   qpid/client/amqp0_10/AcceptTracker.cpp	\
   qpid/client/amqp0_10/AddressResolution.h	\
@@ -832,6 +954,7 @@ libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES
 # list for one of the libraries or executables that includes it.
+# Also included are the swig descriptor files.
 
 nobase_include_HEADERS +=			\
   ../include/qpid/Address.h			\
@@ -918,7 +1041,10 @@ nobase_include_HEADERS +=			\
   ../include/qpid/types/Exception.h	 	\
   ../include/qpid/types/Uuid.h	 		\
   ../include/qpid/types/Variant.h		\
-  ../include/qpid/types/ImportExport.h
+  ../include/qpid/types/ImportExport.h          \
+  ../include/qpid/qpid.i                        \
+  ../include/qmf/qmfengine.i                    \
+  ../include/qmf/qmf2.i
 
 # Create the default data directory
 install-data-local:

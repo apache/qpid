@@ -29,38 +29,50 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import javax.security.auth.login.AccountNotFoundException;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
+import org.apache.qpid.server.security.SecurityManager;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
 {
     private static final Logger LOGGER = Logger.getLogger(AuthenticationProviderAdapter.class);
 
-    private final BrokerAdapter _broker;
     private final T _authManager;
+    protected final Broker _broker;
 
-    private AuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
-                                          final T authManager)
+    private GroupPrincipalAccessor _groupAccessor;
+
+    private Object _type;
+
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes)
     {
-        super(UUIDGenerator.generateRandomUUID());
-        _broker = brokerAdapter;
+        super(id, null, attributes, broker.getTaskExecutor());
         _authManager = authManager;
-    }
-
-    public static AuthenticationProviderAdapter createAuthenticationProviderAdapter(BrokerAdapter brokerAdapter,
-                                                                             final AuthenticationManager authManager)
-    {
-        return authManager instanceof PrincipalDatabaseAuthenticationManager
-                ? new PrincipalDatabaseAuthenticationManagerAdapter(brokerAdapter, (PrincipalDatabaseAuthenticationManager) authManager)
-                : new SimpleAuthenticationProviderAdapter(brokerAdapter, authManager);
+        _broker = broker;
+        _type = authManager instanceof PrincipalDatabaseAuthenticationManager? PrincipalDatabaseAuthenticationManager.class.getSimpleName() : AuthenticationManager.class.getSimpleName() ;
+        addParent(Broker.class, broker);
     }
 
     T getAuthManager()
@@ -77,7 +89,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public String getName()
     {
-        return _authManager.getClass().getSimpleName();
+        return (String)getAttribute(AuthenticationProvider.NAME);
     }
 
     @Override
@@ -147,7 +159,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     {
         if(TYPE.equals(name))
         {
-            return _authManager.getClass().getSimpleName();
+            return _type;
         }
         else if(CREATED.equals(name))
         {
@@ -164,10 +176,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         else if(LIFETIME_POLICY.equals(name))
         {
             return LifetimePolicy.PERMANENT;
-        }
-        else if(NAME.equals(name))
-        {
-            return getName();
         }
         else if(STATE.equals(name))
         {
@@ -191,44 +199,86 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass,
-                                                      Map<String, Object> attributes,
-                                                      ConfiguredObject... otherParents)
+    public boolean setState(State currentState, State desiredState)
+            throws IllegalStateTransitionException, AccessControlException
     {
-        return null;
+        if(desiredState == State.DELETED)
+        {
+            return true;
+        }
+        else if(desiredState == State.ACTIVE)
+        {
+            if (_groupAccessor == null)
+            {
+                throw new IllegalStateTransitionException("Cannot transit into ACTIVE state with null group accessor!");
+            }
+            _authManager.initialise();
+            return true;
+        }
+        else if(desiredState == State.STOPPED)
+        {
+            _authManager.close();
+            return true;
+        }
+        return false;
     }
 
-    private static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
+    @Override
+    public SubjectCreator getSubjectCreator()
     {
+        return new SubjectCreator(_authManager, _groupAccessor);
+    }
+
+    public void setGroupAccessor(GroupPrincipalAccessor groupAccessor)
+    {
+        _groupAccessor = groupAccessor;
+    }
+
+    public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
+    {
+
         public SimpleAuthenticationProviderAdapter(
-                BrokerAdapter brokerAdapter, AuthenticationManager authManager)
+                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes)
         {
-            super(brokerAdapter,authManager);
+            super(id, broker,authManager, attributes);
+        }
+
+        @Override
+        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+                                                          Map<String, Object> attributes,
+                                                          ConfiguredObject... otherParents)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 
-    private static class PrincipalDatabaseAuthenticationManagerAdapter
+    public static class PrincipalDatabaseAuthenticationManagerAdapter
             extends AuthenticationProviderAdapter<PrincipalDatabaseAuthenticationManager>
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                BrokerAdapter brokerAdapter, PrincipalDatabaseAuthenticationManager authManager)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes)
         {
-            super(brokerAdapter, authManager);
+            super(id, broker, authManager, attributes);
         }
 
         @Override
         public boolean createUser(String username, String password, Map<String, String> attributes)
         {
-            return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+            if(getSecurityManager().authoriseUserOperation(Operation.CREATE, username))
+            {
+                return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+            }
+            else
+            {
+                throw new AccessControlException("Do not have permission to create new user");
+            }
         }
 
         @Override
         public void deleteUser(String username) throws AccountNotFoundException
         {
-            if(getSecurityManager().authoriseMethod(Operation.DELETE,
-                                                    "UserManagement",
-                                                    "deleteUser"))
+            if(getSecurityManager().authoriseUserOperation(Operation.DELETE, username))
             {
 
                 getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
@@ -239,9 +289,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
         }
 
-        private org.apache.qpid.server.security.SecurityManager getSecurityManager()
+        private SecurityManager getSecurityManager()
         {
-            return ApplicationRegistry.getInstance().getSecurityManager();
+            return _broker.getSecurityManager();
         }
 
         private PrincipalDatabase getPrincipalDatabase()
@@ -252,18 +302,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         public void setPassword(String username, String password) throws AccountNotFoundException
         {
-            getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
-        }
-
-        public void reload() throws IOException
-        {
-            if(getSecurityManager().authoriseMethod(Operation.UPDATE, "UserManagement", "reload"))
+            if(getSecurityManager().authoriseUserOperation(Operation.UPDATE, username))
             {
-                getPrincipalDatabase().reload();
+                getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
             }
             else
             {
-                throw new AccessControlException("Do not have permission to reload principal database");
+                throw new AccessControlException("Do not have permission to set password");
             }
         }
 
@@ -274,34 +319,41 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             Map<String, Map<String,String>> users = new HashMap<String, Map<String, String>>();
             for(Principal principal : getPrincipalDatabase().getUsers())
             {
-                users.put(principal.getName(), Collections.EMPTY_MAP);
+                users.put(principal.getName(), Collections.<String, String>emptyMap());
             }
             return users;
         }
 
+        public void reload() throws IOException
+        {
+            getPrincipalDatabase().reload();
+        }
+
         @Override
-        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
+        public <C extends ConfiguredObject> C addChild(Class<C> childClass,
                                                           Map<String, Object> attributes,
                                                           ConfiguredObject... otherParents)
         {
             if(childClass == User.class)
             {
-                Principal p = new UsernamePrincipal((String) attributes.get("name"));
-                if(getSecurityManager().authoriseMethod(Operation.UPDATE, "UserManagement", "createUser"))
+                String username = (String) attributes.get("name");
+                String password = (String) attributes.get("password");
+                Principal p = new UsernamePrincipal(username);
+
+                if(createUser(username, password,null))
                 {
-                    if(getPrincipalDatabase().createPrincipal(p, ((String)attributes.get("password")).toCharArray()))
-                    {
-                        return (C) new PrincipalAdapter(p);
-                    }
+                    @SuppressWarnings("unchecked")
+                    C pricipalAdapter = (C) new PrincipalAdapter(p, getTaskExecutor());
+                    return pricipalAdapter;
                 }
                 else
                 {
-                    throw new AccessControlException("Do not have permission to create a new user");
+                    //TODO? Silly interface on the PrincipalDatabase at fault
+                    throw new RuntimeException("Failed to create user");
                 }
-
             }
 
-            return super.createChild(childClass, attributes, otherParents);
+            return super.addChild(childClass, attributes, otherParents);
         }
 
         @Override
@@ -313,9 +365,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 Collection<User> principals = new ArrayList<User>(users.size());
                 for(Principal user : users)
                 {
-                    principals.add(new PrincipalAdapter(user));
+                    principals.add(new PrincipalAdapter(user, getTaskExecutor()));
                 }
-                return (Collection<C>) Collections.unmodifiableCollection(principals);
+                @SuppressWarnings("unchecked")
+                Collection<C> unmodifiablePrincipals = (Collection<C>) Collections.unmodifiableCollection(principals);
+                return unmodifiablePrincipals;
             }
             else
             {
@@ -328,17 +382,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             private final Principal _user;
 
 
-            public PrincipalAdapter(Principal user)
+            public PrincipalAdapter(Principal user, TaskExecutor taskExecutor)
             {
-                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()));
+                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()), taskExecutor);
                 _user = user;
 
-            }
-
-            @Override
-            public String getPassword()
-            {
-                return null;
             }
 
             @Override
@@ -445,6 +493,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 {
                     return getId();
                 }
+                else if(PASSWORD.equals(name))
+                {
+                    return null; // for security reasons we don't expose the password
+                }
                 else if(NAME.equals(name))
                 {
                     return getName();
@@ -453,20 +505,19 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
 
             @Override
-            public Object setAttribute(String name, Object expected, Object desired)
+            public boolean changeAttribute(String name, Object expected, Object desired)
                     throws IllegalStateException, AccessControlException, IllegalArgumentException
             {
                 if(name.equals(PASSWORD))
                 {
                     setPassword((String)desired);
+                    return true;
                 }
-                return super.setAttribute(name,
-                                          expected,
-                                          desired);
+                return super.changeAttribute(name, expected, desired);
             }
 
             @Override
-            public State setDesiredState(State currentState, State desiredState)
+            protected boolean setState(State currentState, State desiredState)
                     throws IllegalStateTransitionException, AccessControlException
             {
                 if(desiredState == State.DELETED)
@@ -479,9 +530,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     {
                         LOGGER.warn("Failed to delete user " + _user, e);
                     }
-                    return State.DELETED;
+                    return true;
                 }
-                return super.setDesiredState(currentState, desiredState);
+                return false;
             }
         }
     }

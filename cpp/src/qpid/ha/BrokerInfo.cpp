@@ -33,27 +33,22 @@ namespace qpid {
 namespace ha {
 
 namespace {
-std::string SYSTEM_ID="system-id";
-std::string HOST_NAME="host-name";
-std::string PORT="port";
-std::string STATUS="status";
+const std::string SYSTEM_ID="system-id";
+const std::string HOST_NAME="host-name";
+const std::string PORT="port";
+const std::string STATUS="status";
 }
 
 using types::Uuid;
 using types::Variant;
 using framing::FieldTable;
 
-BrokerInfo::BrokerInfo(const std::string& host, uint16_t port_, const types::Uuid& id) :
-    hostName(host), port(port_), systemId(id)
-{
-    updateLogId();
-}
+BrokerInfo::BrokerInfo() : port(0), status(JOINING) {}
 
-void BrokerInfo::updateLogId() {
-    std::ostringstream o;
-    o << hostName << ":" << port;
-    logId = o.str();
-}
+BrokerInfo::BrokerInfo(const types::Uuid& id, BrokerStatus s,
+                       const std::string& host, uint16_t port_) :
+    hostName(host), port(port_), systemId(id), status(s)
+{}
 
 FieldTable BrokerInfo::asFieldTable() const {
     Variant::Map m = asMap();
@@ -91,7 +86,6 @@ void BrokerInfo::assign(const Variant::Map& m) {
     hostName = get(m, HOST_NAME).asString();
     port = get(m, PORT).asUint16();
     status = BrokerStatus(get(m, STATUS).asUint8());
-    updateLogId();
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {

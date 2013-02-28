@@ -111,6 +111,8 @@ public:
     typedef  std::map<std::string, ruleSet > actionObject; // user
     typedef  actionObject::iterator          actObjItr;
     typedef  actionObject*                   aclAction;
+    typedef  std::map<std::string, uint16_t> quotaRuleSet; // <username, N>
+    typedef  quotaRuleSet::const_iterator    quotaRuleSetItr;
 
     // Action*[] -> Object*[] -> map<user -> set<Rule> >
     aclAction*           actionList[qpid::acl::ACTIONSIZE];
@@ -134,9 +136,18 @@ public:
 
     bool matchProp(const std::string & src, const std::string& src1);
     void clear ();
-    static const std::string USER_SUBSTITUTION_KEYWORD;
-    static const std::string DOMAIN_SUBSTITUTION_KEYWORD;
-    static const std::string USERDOMAIN_SUBSTITUTION_KEYWORD;
+    static const std::string ACL_KEYWORD_USER_SUBST;
+    static const std::string ACL_KEYWORD_DOMAIN_SUBST;
+    static const std::string ACL_KEYWORD_USERDOMAIN_SUBST;
+    static const std::string ACL_KEYWORD_ALL;
+    static const std::string ACL_KEYWORD_ACL;
+    static const std::string ACL_KEYWORD_GROUP;
+    static const std::string ACL_KEYWORD_QUOTA;
+    static const std::string ACL_KEYWORD_QUOTA_CONNECTIONS;
+    static const char        ACL_SYMBOL_WILDCARD;
+    static const std::string ACL_KEYWORD_WILDCARD;
+    static const char        ACL_SYMBOL_LINE_CONTINUATION;
+
     void substituteString(std::string& targetString,
                           const std::string& placeholder,
                           const std::string& replacement);
@@ -145,6 +156,31 @@ public:
                           const std::string& userId);
     void substituteKeywords(std::string& ruleString,
                             const std::string& userId);
+
+    // Per user connection quotas extracted from acl rule file
+    //   Set by reader
+    void setConnQuotaRuleSettings (bool, boost::shared_ptr<quotaRuleSet>);
+    //   Get by connection approvers
+    bool enforcingConnectionQuotas() { return connQuotaRulesExist; }
+    bool getConnQuotaForUser(const std::string&, uint16_t*) const;
+
+    /** getConnectMaxSpec
+     * Connection quotas are held in uint16_t variables.
+     * This function specifies the largest value that a user is allowed
+     * to declare for a connection quota. The upper limit serves two
+     * purposes: 1. It leaves room for magic numbers that may be declared
+     * by keyword names in Acl files and not have those numbers conflict
+     * with innocent user declared values, and 2. It makes the unsigned
+     * math very close to _MAX work reliably with no risk of accidental
+     * wrapping back to zero.
+     */
+    static uint16_t getConnectMaxSpec() {
+        return 65530;
+    }
+    static std::string getMaxConnectSpecStr() {
+        return "65530";
+    }
+
 
     AclData();
     virtual ~AclData();
@@ -157,6 +193,10 @@ private:
     bool compareIntMin(const qpid::acl::SpecProperty theProperty,
                        const std::string             theAclValue,
                        const std::string             theLookupValue);
+
+    // Per-user connection quota
+    bool connQuotaRulesExist;
+    boost::shared_ptr<quotaRuleSet> connQuotaRuleSettings; // Map of user-to-N values from rule file
 };
 
 }} // namespace qpid::acl

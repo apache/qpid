@@ -30,7 +30,6 @@ import org.apache.qpid.url.URLSyntaxException;
 
 public class ConnectionURLTest extends TestCase
 {
-
     public void testFailoverURL() throws URLSyntaxException
     {
         String url = "amqp://ritchiem:bob@/test?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin?cyclecount='100''";
@@ -252,55 +251,47 @@ public class ConnectionURLTest extends TestCase
         assertTrue(service.getPort() == 5672);
     }
 
-    public void testSingleTransportDefaultedBrokerWithIPandPort() throws URLSyntaxException
+    public void testConnectionURLOptionToStringMasksPassword() throws URLSyntaxException
     {
-        String url = "amqp://guest:guest@/test?brokerlist='127.0.0.1:1234'";
+        String url = "amqp://guest:guest@client/localhost?brokerlist='tcp://localhost:1234'";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-//        ConnectionURL connectionurl = new AMQConnectionURL(url);
-//
-//        assertTrue(connectionurl.getFailoverMethod() == null);
-//        assertTrue(connectionurl.getUsername().equals("guest"));
-//        assertTrue(connectionurl.getPassword().equals("guest"));
-//        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
-//
-//
-//        assertTrue(connectionurl.getBrokerCount() == 1);
-//
-//        BrokerDetails service = connectionurl.getBrokerDetails(0);
-//
-//        assertTrue(service.getTransport().equals("tcp"));
-//
-//        assertTrue(service.getHost().equals("127.0.0.1"));
-//        assertTrue(service.getPort() == 1234);
+        String expectedToString = "amqp://guest:********@client/localhost?brokerlist='tcp://localhost:1234'";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
+    }
+
+    public void testConnectionURLOptionToStringMasksSslTrustStorePassword() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@client/vhost?brokerlist='tcp://host:1234?trust_store_password='truststorepassword''";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        String expectedToString = "amqp://guest:********@client/vhost?brokerlist='tcp://host:1234?trust_store_password='********''";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
+    }
+
+    public void testConnectionURLOptionToStringMasksSslKeyStorePassword() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@client/vhost?brokerlist='tcp://host:1234?key_store_password='keystorepassword1';tcp://host:1235?key_store_password='keystorepassword2''";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        String expectedToString = "amqp://guest:********@client/vhost?brokerlist='tcp://host:1234?key_store_password='********';tcp://host:1235?key_store_password='********''";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
     }
 
     /**
      * Test for QPID-3662 to ensure the {@code toString()} representation is correct.
      */
-    public void testConnectionURLOptionToString() throws URLSyntaxException
+    public void testConnectionURLOptionToStringWithMaxPreftech() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        assertNull(connectionurl.getFailoverMethod());
-        assertEquals("guest", connectionurl.getUsername());
-        assertEquals("guest", connectionurl.getPassword());
-        assertEquals("client", connectionurl.getClientName());
-        assertEquals("/localhost", connectionurl.getVirtualHost());
-        assertEquals("1", connectionurl.getOption("maxprefetch"));
-        assertTrue(connectionurl.getBrokerCount() == 1);
-
-        BrokerDetails service = connectionurl.getBrokerDetails(0);
-        assertTrue(service.getTransport().equals("tcp"));
-        assertTrue(service.getHost().equals("localhost"));
-        assertTrue(service.getPort() == 1234);
-        assertTrue(service.getProperties().containsKey("tcp_nodelay"));
-        assertEquals("true", service.getProperties().get("tcp_nodelay"));
-        
-        String nopasswd = "amqp://guest:********@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
-        String tostring = connectionurl.toString();
-        assertEquals(tostring.indexOf("maxprefetch"), tostring.lastIndexOf("maxprefetch"));
-        assertEquals(nopasswd, tostring);
+        String expectedToString = "amqp://guest:********@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
+        String actualToString = connectionurl.toString();
+        assertEquals("Unexpected toString form", expectedToString, actualToString);
     }
 
     public void testSingleTransportMultiOptionURL() throws URLSyntaxException
@@ -572,9 +563,64 @@ public class ConnectionURLTest extends TestCase
                 connectionurl.getOption(ConnectionURL.OPTIONS_REJECT_BEHAVIOUR));
     }
 
-    public static junit.framework.Test suite()
+    /**
+     * Verify that when the ssl option is not specified, asking for the option returns null,
+     * such that this can later be used to verify it wasnt specified.
+     */
+    public void testDefaultSsl() throws URLSyntaxException
     {
-        return new junit.framework.TestSuite(ConnectionURLTest.class);
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&foo='bar'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertNull("default ssl value should be null", connectionURL.getOption(ConnectionURL.OPTIONS_SSL));
+    }
+
+    /**
+     * Verify that when the ssl option is specified, asking for the option returns the value,
+     * such that this can later be used to verify what value it was specified as.
+     */
+    public void testOverridingSsl() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&ssl='true'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertTrue("value should be true", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_SSL)));
+
+        url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&ssl='false'";
+        connectionURL = new AMQConnectionURL(url);
+
+        assertFalse("value should be false", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_SSL)));
+    }
+
+    /**
+     * Verify that when the {@value ConnectionURL#OPTIONS_VERIFY_QUEUE_ON_SEND} option is not
+     * specified, asking for the option returns null, such that this can later be used to
+     * verify it wasn't specified.
+     */
+    public void testDefaultVerifyQueueOnSend() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&foo='bar'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertNull("default ssl value should be null", connectionURL.getOption(ConnectionURL.OPTIONS_SSL));
+    }
+
+    /**
+     * Verify that when the {@value ConnectionURL#OPTIONS_VERIFY_QUEUE_ON_SEND} option is
+     * specified, asking for the option returns the value, such that this can later be used
+     * to verify what value it was specified as.
+     */
+    public void testOverridingVerifyQueueOnSend() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&verifyQueueOnSend='true'";
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertTrue("value should be true", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND)));
+
+        url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&verifyQueueOnSend='false'";
+        connectionURL = new AMQConnectionURL(url);
+
+        assertFalse("value should be false", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND)));
     }
 }
 

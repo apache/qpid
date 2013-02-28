@@ -135,6 +135,16 @@ QPID_AUTO_TEST_CASE(testConversionsFromString)
     BOOST_CHECK_EQUAL(0, value.asInt16());
     BOOST_CHECK_EQUAL(0u, value.asUint16());
 
+    value = "-Blah";
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asFloat(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asDouble(), InvalidConversion);
+
     value = "-000";
     BOOST_CHECK_EQUAL(0, value.asInt16());
     BOOST_CHECK_EQUAL(0u, value.asUint16());

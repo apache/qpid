@@ -34,6 +34,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
 final class SessionAdapter extends AbstractAdapter implements Session
@@ -44,9 +45,9 @@ final class SessionAdapter extends AbstractAdapter implements Session
     private AMQSessionModel _session;
     private SessionStatistics _statistics;
 
-    public SessionAdapter(final AMQSessionModel session)
+    public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
-        super(UUIDGenerator.generateRandomUUID());
+        super(UUIDGenerator.generateRandomUUID(), taskExecutor);
         _session = session;
         _statistics = new SessionStatistics();
     }
@@ -141,13 +142,6 @@ final class SessionAdapter extends AbstractAdapter implements Session
         return super.getAttribute(name);    //TODO - Implement
     }
 
-    @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO - Implement
-    }
-
     public Statistics getStatistics()
     {
         return _statistics;
@@ -236,5 +230,12 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
             return null;  // TODO - Implement
         }
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO : add state management
+        return false;
     }
 }

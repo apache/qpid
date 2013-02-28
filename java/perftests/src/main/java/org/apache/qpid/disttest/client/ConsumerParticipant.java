@@ -35,7 +35,6 @@ import javax.jms.MessageListener;
 
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
-import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.slf4j.Logger;
@@ -103,16 +102,22 @@ public class ConsumerParticipant implements Participant
         }
 
         Date end = new Date();
-        int numberOfMessagesSent = _totalNumberOfMessagesReceived.get();
+        int numberOfMessagesReceived = _totalNumberOfMessagesReceived.get();
         long totalPayloadSize = _totalPayloadSizeOfAllMessagesReceived.get();
         int payloadSize = getPayloadSizeForResultIfConstantOrZeroOtherwise(_allConsumedPayloadSizes);
 
-        ConsumerParticipantResult result = _resultFactory.createForConsumer(
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Consumer {} finished consuming. Number of messages consumed: {}",
+                        getName(), numberOfMessagesReceived);
+        }
+
+        ParticipantResult result = _resultFactory.createForConsumer(
                 getName(),
                 registeredClientName,
                 _command,
                 acknowledgeMode,
-                numberOfMessagesSent,
+                numberOfMessagesReceived,
                 payloadSize,
                 totalPayloadSize,
                 start, end, _messageLatencies);
@@ -174,7 +179,7 @@ public class ConsumerParticipant implements Participant
                 {
                     LOGGER.trace("Committing: batch size " + _command.getBatchSize() );
                 }
-                _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
+                _jmsDelegate.commitOrAcknowledgeMessageIfNecessary(_command.getSessionName(), message);
             }
         }
 
@@ -199,7 +204,7 @@ public class ConsumerParticipant implements Participant
                 }
 
                 // commit/acknowledge remaining messages if necessary
-                _jmsDelegate.commitOrAcknowledgeMessage(message, _command.getSessionName());
+                _jmsDelegate.commitOrAcknowledgeMessageIfNecessary(_command.getSessionName(), message);
             }
             return false;
         }

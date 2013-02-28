@@ -51,7 +51,7 @@ OperationQueue::handle(const OperationQueue::OpQueue::Batch& e) {
     try {
         for (OpQueue::Batch::const_iterator i = e.begin(); i != e.end(); ++i) {
 // DEBUG: kpvdr
-std::cout << "#### OperationQueue::handle(): op=" << (*i)->getOpStr() << std::endl << std::flush;
+//std::cout << "#### OperationQueue::handle(): op=" << (*i)->getOpStr() << std::endl << std::flush;
             (*i)->executeOp(); // Do store work here
         }
     } catch (const std::exception& e) {

@@ -31,7 +31,6 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -41,11 +40,11 @@ import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -1266,18 +1265,12 @@ public class ServerSessionDelegate extends SessionDelegate
                             }
                         }
                         queueRegistry.registerQueue(queue);
-                        boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
-                        if (autoRegister)
-                        {
+                        ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
 
-                            ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
+                        Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                            Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
-
-                            virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
-
-                        }
+                        virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
 
                         if (method.hasAutoDelete()
                             && method.getAutoDelete()

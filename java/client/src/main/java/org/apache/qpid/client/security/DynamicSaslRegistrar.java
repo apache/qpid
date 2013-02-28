@@ -28,8 +28,10 @@ import org.apache.qpid.util.FileUtils;
 import javax.security.sasl.SaslClientFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Provider;
 import java.security.Security;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -67,10 +69,10 @@ public class DynamicSaslRegistrar
     }
 
     /** Reads the properties file, and creates a dynamic security provider to register the SASL implementations with. */
-    public static void registerSaslProviders()
+    public static ProviderRegistrationResult registerSaslProviders()
     {
         _logger.debug("public static void registerSaslProviders(): called");
-
+        ProviderRegistrationResult result = ProviderRegistrationResult.FAILED;
         // Open the SASL properties file, using the default name is one is not specified.
         String filename = System.getProperty(FILE_PROPERTY);
         InputStream is =
@@ -89,22 +91,45 @@ public class DynamicSaslRegistrar
             if (factories.size() > 0)
             {
                 // Ensure we are used before the defaults
-                if (Security.insertProviderAt(new JCAProvider(factories), 1) == -1)
+                JCAProvider qpidProvider = new JCAProvider(factories);
+                if (Security.insertProviderAt(qpidProvider, 1) == -1)
                 {
-                    _logger.error("Unable to load custom SASL providers.");
+                    Provider registeredProvider = findProvider(JCAProvider.QPID_CLIENT_SASL_PROVIDER_NAME);
+                    if (registeredProvider == null)
+                    {
+                        result = ProviderRegistrationResult.FAILED;
+                        _logger.error("Unable to load custom SASL providers.");
+                    }
+                    else if (registeredProvider.equals(qpidProvider))
+                    {
+                        result = ProviderRegistrationResult.EQUAL_ALREADY_REGISTERED;
+                        _logger.debug("Custom SASL provider is already registered with equal properties.");
+                    }
+                    else
+                    {
+                        result = ProviderRegistrationResult.DIFFERENT_ALREADY_REGISTERED;
+                        _logger.warn("Custom SASL provider was already registered with different properties.");
+                        if (_logger.isDebugEnabled())
+                        {
+                            _logger.debug("Custom SASL provider " + registeredProvider + " properties: " + new HashMap<Object, Object>(registeredProvider));
+                        }
+                    }
                 }
                 else
                 {
+                    result = ProviderRegistrationResult.SUCCEEDED;
                     _logger.info("Additional SASL providers successfully registered.");
                 }
             }
             else
             {
-                _logger.warn("No additional SASL providers registered.");
+                result = ProviderRegistrationResult.NO_SASL_FACTORIES;
+                _logger.warn("No additional SASL factories found to register.");
             }
         }
         catch (IOException e)
         {
+            result = ProviderRegistrationResult.FAILED;
             _logger.error("Error reading properties: " + e, e);
         }
         finally
@@ -122,6 +147,22 @@ public class DynamicSaslRegistrar
                 }
             }
         }
+        return result;
+    }
+
+    static Provider findProvider(String name)
+    {
+        Provider[] providers = Security.getProviders();
+        Provider registeredProvider = null;
+        for (Provider provider : providers)
+        {
+            if (name.equals(provider.getName()))
+            {
+                registeredProvider = provider;
+                break;
+            }
+        }
+        return registeredProvider;
     }
 
     /**
@@ -158,15 +199,24 @@ public class DynamicSaslRegistrar
                     continue;
                 }
 
-                _logger.debug("Registering class "+ clazz.getName() +" for mechanism "+mechanism);
+                _logger.debug("Found class "+ clazz.getName() +" for mechanism "+mechanism);
                 factoriesToRegister.put(mechanism, (Class<? extends SaslClientFactory>) clazz);
             }
             catch (Exception ex)
             {
-                _logger.error("Error instantiating SaslClientFactory calss " + className + " - skipping");
+                _logger.error("Error instantiating SaslClientFactory class " + className + " - skipping");
             }
         }
 
         return factoriesToRegister;
+    }
+
+    public static enum ProviderRegistrationResult
+    {
+        SUCCEEDED,
+        EQUAL_ALREADY_REGISTERED,
+        DIFFERENT_ALREADY_REGISTERED,
+        NO_SASL_FACTORIES,
+        FAILED;
     }
 }

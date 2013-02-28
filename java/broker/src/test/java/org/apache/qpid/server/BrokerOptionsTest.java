@@ -22,91 +22,36 @@ package org.apache.qpid.server;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-
 public class BrokerOptionsTest extends QpidTestCase
 {
     private BrokerOptions _options;
-    
-    private static final int TEST_PORT1 = 6789;
-    private static final int TEST_PORT2 = 6790;
-    
 
     protected void setUp()
     {
         _options = new BrokerOptions();
     }
-    
-    public void testDefaultPort()
+
+    public void testDefaultConfigurationStoreType()
     {
-        assertEquals(Collections.<Integer>emptySet(), _options.getPorts());
+        assertEquals("json", _options.getConfigurationStoreType());
     }
 
-    public void testOverriddenPort()
+    public void testOverriddenConfigurationStoreType()
     {
-        _options.addPort(TEST_PORT1);
-        assertEquals(Collections.singleton(TEST_PORT1), _options.getPorts());
+        _options.setConfigurationStoreType("dby");
+        assertEquals("dby", _options.getConfigurationStoreType());
     }
 
-    public void testManyOverriddenPorts()
+    public void testDefaultConfigurationStoreLocation()
     {
-        _options.addPort(TEST_PORT1);
-        _options.addPort(TEST_PORT2);
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getPorts());
+        assertNull(_options.getConfigurationStoreLocation());
     }
 
-    public void testDuplicateOverriddenPortsAreSilentlyIgnored()
-    {
-        _options.addPort(TEST_PORT1);
-        _options.addPort(TEST_PORT2);
-        _options.addPort(TEST_PORT1); // duplicate - should be silently ignored
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getPorts());
-    }
-
-    public void testDefaultSSLPort()
-    {
-        assertEquals(Collections.<Integer>emptySet(), _options.getSSLPorts());
-    }
-
-    public void testOverriddenSSLPort()
-    {
-        _options.addSSLPort(TEST_PORT1);
-        assertEquals(Collections.singleton(TEST_PORT1), _options.getSSLPorts());
-    }
-
-    public void testManyOverriddenSSLPorts()
-    {
-        _options.addSSLPort(TEST_PORT1);
-        _options.addSSLPort(TEST_PORT2);
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getSSLPorts());
-    }
-
-    public void testDuplicateOverriddenSSLPortsAreSilentlyIgnored()
-    {
-        _options.addSSLPort(TEST_PORT1);
-        _options.addSSLPort(TEST_PORT2);
-        _options.addSSLPort(TEST_PORT1); // duplicate - should be silently ignored
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getSSLPorts());
-    }
-
-    public void testDefaultConfigFile()
-    {
-        assertNull(_options.getConfigFile());
-    }
-    
-    public void testOverriddenConfigFile()
+    public void testOverriddenConfigurationStoreLocation()
     {
         final String testConfigFile = "etc/mytestconfig.xml";
-        _options.setConfigFile(testConfigFile);
-        assertEquals(testConfigFile, _options.getConfigFile());
+        _options.setConfigurationStoreLocation(testConfigFile);
+        assertEquals(testConfigFile, _options.getConfigurationStoreLocation());
     }
 
     public void testDefaultLogConfigFile()
@@ -119,72 +64,6 @@ public class BrokerOptionsTest extends QpidTestCase
         final String testLogConfigFile = "etc/mytestlog4j.xml";
         _options.setLogConfigFile(testLogConfigFile);
         assertEquals(testLogConfigFile, _options.getLogConfigFile());
-    }
-
-    public void testDefaultJmxPortRegistryServer()
-    {
-        assertNull(_options.getJmxPortRegistryServer());
-    }
-
-    public void testJmxPortRegistryServer()
-    {
-        _options.setJmxPortRegistryServer(TEST_PORT1);
-        assertEquals(Integer.valueOf(TEST_PORT1), _options.getJmxPortRegistryServer());
-    }
-
-    public void testDefaultJmxPortConnectorServer()
-    {
-        assertNull(_options.getJmxPortConnectorServer());
-    }
-
-    public void testJmxPortConnectorServer()
-    {
-        _options.setJmxPortConnectorServer(TEST_PORT1);
-        assertEquals(Integer.valueOf(TEST_PORT1), _options.getJmxPortConnectorServer());
-    }
-
-    public void testQpidHomeExposesSysProperty()
-    {
-        assertEquals(System.getProperty("QPID_HOME"), _options.getQpidHome());
-    }
-    
-    public void testDefaultExcludesPortFor0_10()
-    {
-        assertEquals(Collections.EMPTY_SET, _options.getExcludedPorts(ProtocolExclusion.v0_10));
-    }
-    
-    public void testOverriddenExcludesPortFor0_10()
-    {
-        _options.addExcludedPort(ProtocolExclusion.v0_10, TEST_PORT1);
-        assertEquals(Collections.singleton(TEST_PORT1), _options.getExcludedPorts(ProtocolExclusion.v0_10));
-    }
-
-    public void testManyOverriddenExcludedPortFor0_10()
-    {
-        _options.addExcludedPort(ProtocolExclusion.v0_10, TEST_PORT1);
-        _options.addExcludedPort(ProtocolExclusion.v0_10, TEST_PORT2);
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getExcludedPorts(ProtocolExclusion.v0_10));
-    }
-
-    public void testDuplicatedOverriddenExcludedPortFor0_10AreSilentlyIgnored()
-    {
-        _options.addExcludedPort(ProtocolExclusion.v0_10, TEST_PORT1);
-        _options.addExcludedPort(ProtocolExclusion.v0_10, TEST_PORT2);
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getExcludedPorts(ProtocolExclusion.v0_10));
-    }
-    
-    public void testDefaultBind()
-    {
-        assertNull(_options.getBind());
-    }
-    
-    public void testOverriddenBind()
-    {
-        final String bind = "192.168.0.1";
-        _options.setBind(bind);
-        assertEquals(bind, _options.getBind());
     }
 
     public void testDefaultLogWatchFrequency()
@@ -200,30 +79,72 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(myFreq, _options.getLogWatchFrequency());
     }
 
-    public void testDefaultIncludesPortFor0_10()
+
+    public void testDefaultInitialConfigurationStoreType()
     {
-        assertEquals(Collections.EMPTY_SET, _options.getIncludedPorts(ProtocolInclusion.v0_10));
+        assertEquals("json", _options.getInitialConfigurationStoreType());
     }
 
-    public void testOverriddenIncludesPortFor0_10()
+    public void testOverriddenInitialConfigurationStoreType()
     {
-        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT1);
-        assertEquals(Collections.singleton(TEST_PORT1), _options.getIncludedPorts(ProtocolInclusion.v0_10));
+        _options.setInitialConfigurationStoreType("dby");
+        assertEquals("dby", _options.getInitialConfigurationStoreType());
     }
 
-    public void testManyOverriddenIncludedPortFor0_10()
+    public void testDefaultInitialConfigurationStoreLocation()
     {
-        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT1);
-        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT2);
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getIncludedPorts(ProtocolInclusion.v0_10));
+        assertNull(_options.getInitialConfigurationStoreLocation());
     }
 
-    public void testDuplicatedOverriddenIncludedPortFor0_10AreSilentlyIgnored()
+    public void testOverriddenInitialConfigurationStoreLocation()
     {
-        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT1);
-        _options.addIncludedPort(ProtocolInclusion.v0_10, TEST_PORT2);
-        final Set<Integer> expectedPorts = new HashSet<Integer>(Arrays.asList(new Integer[] {TEST_PORT1, TEST_PORT2}));
-        assertEquals(expectedPorts, _options.getIncludedPorts(ProtocolInclusion.v0_10));
+        final String testConfigFile = "etc/mytestconfig.xml";
+        _options.setInitialConfigurationStoreLocation(testConfigFile);
+        assertEquals(testConfigFile, _options.getInitialConfigurationStoreLocation());
     }
+
+    public void testDefaultManagementMode()
+    {
+        assertEquals(false, _options.isManagementMode());
+    }
+
+    public void testOverriddenDefaultManagementMode()
+    {
+        _options.setManagementMode(true);
+        assertEquals(true, _options.isManagementMode());
+    }
+
+    public void testDefaultManagementModeRmiPort()
+    {
+        assertEquals(0, _options.getManagementModeRmiPort());
+    }
+
+    public void testOverriddenDefaultManagementModeRmiPort()
+    {
+        _options.setManagementModeRmiPort(5555);
+        assertEquals(5555, _options.getManagementModeRmiPort());
+    }
+
+    public void testDefaultManagementModeConnectorPort()
+    {
+        assertEquals(0, _options.getManagementModeConnectorPort());
+    }
+
+    public void testOverriddenDefaultManagementModeConnectorPort()
+    {
+        _options.setManagementModeConnectorPort(5555);
+        assertEquals(5555, _options.getManagementModeConnectorPort());
+    }
+
+    public void testDefaultManagementModeHttpPort()
+    {
+        assertEquals(0, _options.getManagementModeHttpPort());
+    }
+
+    public void testOverriddenDefaultManagementModeHttpPort()
+    {
+        _options.setManagementModeHttpPort(5555);
+        assertEquals(5555, _options.getManagementModeHttpPort());
+    }
+
 }

@@ -92,10 +92,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     uint16_t getInterval() { return interval; }
     void periodicProcessing();
 
-    // these next are here to support the hot-wiring of state between clustered brokers
-    uint64_t getNextObjectId(void) { return nextObjectId; }
-    void setNextObjectId(uint64_t o) { nextObjectId = o; }
-
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; }
 
@@ -261,7 +257,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void storeData(bool requested=false);
     void retrieveData(std::string& vendor, std::string& product, std::string& inst);
     PackageMap::iterator findOrAddPackage(const std::string& name);
-    void moveNewObjectsLH();
+    void moveNewObjectsLH(const sys::Mutex::ScopedLock& agentLock);
     void addClassLocal (uint8_t               classKind,
                         PackageMap::iterator  pIter,
                         const std::string&    className,

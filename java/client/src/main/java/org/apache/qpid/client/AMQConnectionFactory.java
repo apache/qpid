@@ -140,7 +140,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         {
             try
             {
-                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
+                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.getURL());
                 connectionDetails.setUsername(userName);
                 connectionDetails.setPassword(password);
                 

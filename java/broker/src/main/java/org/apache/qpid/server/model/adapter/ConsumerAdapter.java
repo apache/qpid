@@ -45,7 +45,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
                                                queueAdapter.getName(),
                                                subscription.getSessionModel().getConnectionModel().getRemoteAddressString(),
                                                String.valueOf(subscription.getSessionModel().getChannelId()),
-                                               subscription.getConsumerName()));
+                                               subscription.getConsumerName()), queueAdapter.getTaskExecutor());
         _subscription = subscription;
         _queue = queueAdapter;
         _statistics = new ConsumerStatistics();
@@ -105,13 +105,6 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
     public Collection<String> getAttributeNames()
     {
         return Consumer.AVAILABLE_ATTRIBUTES;
-    }
-
-    @Override
-    public Object setAttribute(final String name, final Object expected, final Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO
     }
 
     @Override
@@ -221,5 +214,12 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
             }
             return null;  // TODO - Implement
         }
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        // TODO : Add state management
+        return false;
     }
 }

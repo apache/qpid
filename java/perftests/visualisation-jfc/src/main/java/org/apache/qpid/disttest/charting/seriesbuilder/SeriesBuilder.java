@@ -22,11 +22,20 @@ package org.apache.qpid.disttest.charting.seriesbuilder;
 import java.util.List;
 
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
+import org.jfree.data.general.Dataset;
 
 public interface SeriesBuilder
 {
-    void build(List<SeriesDefinition> seriesDefinitions);
+    /**
+     * Uses the supplied {@link SeriesDefinition}s to read the series data
+     * and pass it to the dataset holder set up in {@link #setDatasetHolder(DatasetHolder)}.
+     *
+     * @return the populated dataset
+     */
+    Dataset build(List<SeriesDefinition> seriesDefinitions);
 
-    void setSeriesBuilderCallback(SeriesBuilderCallback seriesBuilderCallback);
-
+    /**
+     * Stores the supplied dataset holder so it can be populated in {@link #build(List)}.
+     */
+    void setDatasetHolder(DatasetHolder datasetHolder);
 }

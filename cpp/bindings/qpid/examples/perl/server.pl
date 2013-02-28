@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,43 +20,64 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use qpid;
 
-my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : ""; 
+my $url               = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
+my $connectionOptions = ( @ARGV > 1 )  ? $ARGV[1] : "";
 
-
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+# create a connection object
+my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
 
 eval {
+
+    # connect to the broker and create a session
     $connection->open();
-    my $session = $connection->createSession();
+    my $session = $connection->create_session();
 
-    my $receiver = $session->createReceiver("service_queue; {create: always}");
+    # create a receiver for accepting incoming messages
+    my $receiver = $session->create_receiver("service_queue; {create: always}");
 
+    # go into an infinite loop to receive messages and process them
     while (1) {
+
+        # wait for the next message to be processed
         my $request = $receiver->fetch();
-        my $address = $request->getReplyTo();
+
+
+        # get the address for sending replies
+        # if no address was supplised then we can't really respond, so
+        # only process when one is present
+        my $address = $request->get_reply_to();
         if ($address) {
-            my $sender = $session->createSender($address);
-            my $s = $request->getContent();
+
+            # a temporary sender for sending to the response queue
+            my $sender = $session->create_sender($address);
+            my $s      = $request->get_content();
             $s = uc($s);
-            my $response = new cqpid_perl::Message($s);
+
+            # create the response message and send it
+            my $response = new qpid::messaging::Message($s);
             $sender->send($response);
-            print "Processed request: " . $request->getContent() . " -> " . $response->getContent() . "\n";
+            print "Processed request: "
+              . $request->get_content() . " -> "
+              . $response->get_content() . "\n";
+
+            # acknowledge the message since it was processed
             $session->acknowledge();
         }
         else {
-            print "Error: no reply address specified for request: " . $request->getContent() . "\n";
+            print "Error: no reply address specified for request: "
+              . $request->get_content() . "\n";
             $session->reject($request);
         }
     }
 
-$connection->close();
+    # close connections to clean up
+    $session->close();
+    $connection->close();
 };
 
 if ($@) {
     die $@;
 }
-
 

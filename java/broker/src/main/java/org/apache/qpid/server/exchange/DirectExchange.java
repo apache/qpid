@@ -20,30 +20,22 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class DirectExchange extends AbstractExchange
 {
-    private static final Logger _logger = Logger.getLogger(DirectExchange.class);
-
     private static final class BindingSet
     {
         private CopyOnWriteArraySet<Binding> _bindings = new CopyOnWriteArraySet<Binding>();
@@ -54,7 +46,6 @@ public class DirectExchange extends AbstractExchange
             _bindings.add(binding);
             recalculateQueues();
         }
-
 
         public synchronized void removeBinding(Binding binding)
         {
@@ -91,36 +82,7 @@ public class DirectExchange extends AbstractExchange
     private final ConcurrentHashMap<String, BindingSet> _bindingsByKey =
             new ConcurrentHashMap<String, BindingSet>();
 
-    public static final ExchangeType<DirectExchange> TYPE = new ExchangeType<DirectExchange>()
-    {
-
-        public AMQShortString getName()
-        {
-            return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
-        }
-
-        public Class<DirectExchange> getExchangeClass()
-        {
-            return DirectExchange.class;
-        }
-
-        public DirectExchange newInstance(UUID id, VirtualHost host,
-                                            AMQShortString name,
-                                            boolean durable,
-                                            int ticket,
-                                            boolean autoDelete) throws AMQException
-        {
-            DirectExchange exch = new DirectExchange();
-            exch.initialise(id, host,name,durable,ticket,autoDelete);
-            return exch;
-        }
-
-        public AMQShortString getDefaultExchangeName()
-        {
-            return ExchangeDefaults.DIRECT_EXCHANGE_NAME;
-        }
-    };
-
+    public static final ExchangeType<DirectExchange> TYPE = new DirectExchangeType();
 
     public DirectExchange()
     {

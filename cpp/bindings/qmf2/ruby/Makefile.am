@@ -19,7 +19,7 @@
 
 if HAVE_RUBY_DEVEL
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src $(QMF_INCLUDES)
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/bindings -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src $(QMF_INCLUDES)
 
 EXTRA_DIST = CMakeLists.txt ruby.i
 BUILT_SOURCES = cqmf2.cpp
@@ -27,7 +27,7 @@ SWIG_FLAGS = -w362,401
 
 rubylibdir = $(RUBY_LIB)
 
-cqmf2.cpp: $(srcdir)/ruby.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_ruby_typemaps.i
+cqmf2.cpp: $(srcdir)/ruby.i
 	$(SWIG) -ruby -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)

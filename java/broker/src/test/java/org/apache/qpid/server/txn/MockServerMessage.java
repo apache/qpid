@@ -22,7 +22,6 @@ package org.apache.qpid.server.txn;
 
 import org.apache.commons.lang.NotImplementedException;
 
-import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -64,11 +63,6 @@ class MockServerMessage implements ServerMessage
     }
 
     public long getSize()
-    {
-        throw new NotImplementedException();
-    }
-
-    public SessionConfig getSessionConfig()
     {
         throw new NotImplementedException();
     }

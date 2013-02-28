@@ -71,7 +71,7 @@ var saslPlain = function saslPlain(user, password)
             },
             function(error)
             {
-                if(error.status == 401)
+                if(error.status == 403)
                 {
                     alert("Authentication Failed");
                 }
@@ -127,7 +127,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
                                         },
                                         function(error)
                                         {
-                                            if(error.status == 401)
+                                            if(error.status == 403)
                                             {
                                                 alert("Authentication Failed");
                                             }
@@ -141,7 +141,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
             },
             function(error)
             {
-                if(error.status == 401)
+                if(error.status == 403)
                 {
                     alert("Authentication Failed");
                 }
@@ -152,10 +152,45 @@ var saslCramMD5 = function saslCramMD5(user, password)
             });
 };
 
+var containsMechanism = function containsMechanism(mechanisms, mech)
+{
+    for (var i = 0; i < mechanisms.length; i++) {
+        if (mechanisms[i] == mech) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
 var doAuthenticate = function doAuthenticate()
 {
-    saslCramMD5(dojo.byId("username").value, dojo.byId("pass").value);
-    updateAuthentication();
+    dojo.xhrGet({
+        // The URL of the request
+        url: "rest/sasl",
+        handleAs: "json"
+    }).then(function(data)
+            {
+                var mechMap = data.mechanisms;
+
+                if (containsMechanism(mechMap, "CRAM-MD5"))
+                {
+                    saslCramMD5(dojo.byId("username").value, dojo.byId("pass").value);
+                    updateAuthentication();
+                }
+                else if (containsMechanism(mechMap, "PLAIN"))
+                {
+                    saslPlain(dojo.byId("username").value, dojo.byId("pass").value);
+                    updateAuthentication();
+                }
+                else
+                {
+                    alert("No supported SASL mechanism offered: " + mechMap);
+                }
+            }
+        );
+
+
 };
 
 
@@ -170,13 +205,13 @@ var updateAuthentication = function updateAuthentication()
                 if(data.user)
                 {
                     dojo.byId("authenticatedUser").innerHTML = data.user;
-                    dojo.style(button.domNode, {visibility: 'hidden'});
-                    dojo.style(usernameSpan, {visibility: 'visible'});
+                    dojo.style(button.domNode, {display: 'none'});
+                    dojo.style(usernameSpan, {display: 'block'});
                 }
                 else
                 {
-                    dojo.style(button.domNode, {visibility: 'visible'});
-                    dojo.style(usernameSpan, {visibility: 'hidden'});
+                    dojo.style(button.domNode, {display: 'block'});
+                    dojo.style(usernameSpan, {display: 'none'});
                 }
             }
         );
@@ -198,13 +233,13 @@ require(["dijit/form/DropDownButton", "dijit/TooltipDialog", "dijit/form/TextBox
         dropDown: dialog
     });
 
-    usernameSpan = domConstruct.create("span", { innerHTML: '<strong>User: </strong><span id="authenticatedUser"></span>',
-                                                     style: { visibility: "hidden" }});
+    usernameSpan = domConstruct.create("span", { innerHTML: '<strong>User: </strong> <span id="authenticatedUser"></span><a href="logout">[logout]</a>',
+                                                     style: { display: "none" }});
 
 
     var loginDiv = dom.byId("login");
-    loginDiv.appendChild(button.domNode);
     loginDiv.appendChild(usernameSpan);
+    loginDiv.appendChild(button.domNode);
 
 
 

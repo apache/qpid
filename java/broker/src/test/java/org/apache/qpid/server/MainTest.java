@@ -23,8 +23,6 @@ package org.apache.qpid.server;
 import org.apache.commons.cli.CommandLine;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-import java.util.EnumSet;
-
 /**
  * Test to verify the command line parsing within the Main class, by
  * providing it a series of command line arguments and verifying the
@@ -36,105 +34,35 @@ public class MainTest extends QpidTestCase
     {
         BrokerOptions options = startDummyMain("");
 
-        assertTrue(options.getPorts().isEmpty());
-        assertTrue(options.getSSLPorts().isEmpty());
-        assertEquals(null, options.getJmxPortRegistryServer());
-        assertEquals(null, options.getConfigFile());
+        assertEquals("json", options.getConfigurationStoreType());
+        assertEquals(null, options.getConfigurationStoreLocation());
         assertEquals(null, options.getLogConfigFile());
-        assertEquals(null, options.getBind());
+        assertEquals(0, options.getLogWatchFrequency());
+        assertEquals("json", options.getInitialConfigurationStoreType());
+        assertEquals(null, options.getInitialConfigurationStoreLocation());
 
-        for(ProtocolExclusion pe : EnumSet.allOf(ProtocolExclusion.class))
-        {
-            assertEquals(0, options.getExcludedPorts(pe).size());
-        }
-
-        for(ProtocolInclusion pe : EnumSet.allOf(ProtocolInclusion.class))
-        {
-            assertEquals(0, options.getIncludedPorts(pe).size());
-        }
+        assertFalse(options.isManagementMode());
+        assertEquals(0, options.getManagementModeConnectorPort());
+        assertEquals(0, options.getManagementModeRmiPort());
+        assertEquals(0, options.getManagementModeHttpPort());
     }
 
-    public void testPortOverriddenSingle()
+    public void testConfigurationStoreLocation()
     {
-        BrokerOptions options = startDummyMain("-p 1234");
+        BrokerOptions options = startDummyMain("-sp abcd/config.xml");
+        assertEquals("abcd/config.xml", options.getConfigurationStoreLocation());
 
-        assertTrue(options.getPorts().contains(1234));
-        assertEquals(1, options.getPorts().size());
-        assertTrue(options.getSSLPorts().isEmpty());
+        options = startDummyMain("-store-path abcd/config2.xml");
+        assertEquals("abcd/config2.xml", options.getConfigurationStoreLocation());
     }
 
-    public void testPortOverriddenMultiple()
+    public void testConfigurationStoreType()
     {
-        BrokerOptions options = startDummyMain("-p 1234 -p 4321");
+        BrokerOptions options = startDummyMain("-st dby");
+        assertEquals("dby", options.getConfigurationStoreType());
 
-        assertTrue(options.getPorts().contains(1234));
-        assertTrue(options.getPorts().contains(4321));
-        assertEquals(2, options.getPorts().size());
-        assertTrue(options.getSSLPorts().isEmpty());
-    }
-
-    public void testSSLPortOverriddenSingle()
-    {
-        BrokerOptions options = startDummyMain("-s 5678");
-
-        assertTrue(options.getSSLPorts().contains(5678));
-        assertEquals(1, options.getSSLPorts().size());
-        assertTrue(options.getPorts().isEmpty());
-    }
-
-    public void testSSLPortOverriddenMultiple()
-    {
-        BrokerOptions options = startDummyMain("-s 5678 -s 8765");
-
-        assertTrue(options.getSSLPorts().contains(5678));
-        assertTrue(options.getSSLPorts().contains(8765));
-        assertEquals(2, options.getSSLPorts().size());
-        assertTrue(options.getPorts().isEmpty());
-    }
-
-    public void testNonSSLandSSLPortsOverridden()
-    {
-        BrokerOptions options = startDummyMain("-p 5678 -s 8765");
-
-        assertTrue(options.getPorts().contains(5678));
-        assertTrue(options.getSSLPorts().contains(8765));
-        assertEquals(1, options.getPorts().size());
-        assertEquals(1, options.getSSLPorts().size());
-    }
-
-    public void testJmxPortRegistryServerOverridden()
-    {
-        BrokerOptions options = startDummyMain("--jmxregistryport 3456");
-
-        assertEquals(Integer.valueOf(3456), options.getJmxPortRegistryServer());
-
-         options = startDummyMain("-m 3457");
-         assertEquals(Integer.valueOf(3457), options.getJmxPortRegistryServer());
-    }
-
-    public void testJmxPortConnectorServerOverridden()
-    {
-        BrokerOptions options = startDummyMain("--jmxconnectorport 3456");
-
-        assertEquals(Integer.valueOf(3456), options.getJmxPortConnectorServer());
-    }
-
-    public void testExclude0_10()
-    {
-        BrokerOptions options = startDummyMain("-p 3456 --exclude-0-10 3456");
-
-        assertTrue(options.getPorts().contains(3456));
-        assertEquals(1, options.getPorts().size());
-        assertTrue(options.getExcludedPorts(ProtocolExclusion.v0_10).contains(3456));
-        assertEquals(1, options.getExcludedPorts(ProtocolExclusion.v0_10).size());
-        assertEquals(0, options.getExcludedPorts(ProtocolExclusion.v0_9_1).size());
-    }
-
-    public void testConfig()
-    {
-        BrokerOptions options = startDummyMain("-c abcd/config.xml");
-
-        assertEquals("abcd/config.xml", options.getConfigFile());
+        options = startDummyMain("-store-type bdb");
+        assertEquals("bdb", options.getConfigurationStoreType());
     }
 
     public void testLogConfig()
@@ -167,18 +95,74 @@ public class MainTest extends QpidTestCase
         assertTrue("Parsed command line didnt pick up help option", main.getCommandLine().hasOption("h"));
     }
 
-    public void testInclude010()
+    public void testInitailConfigurationStoreLocation()
     {
-        BrokerOptions options = startDummyMain("-p 5678 --include-0-10 5678");
+        BrokerOptions options = startDummyMain("-isp abcd/config.xml");
+        assertEquals("abcd/config.xml", options.getInitialConfigurationStoreLocation());
 
-        assertTrue(options.getPorts().contains(5678));
-        assertEquals(1, options.getPorts().size());
-        assertTrue(options.getIncludedPorts(ProtocolInclusion.v0_10).contains(5678));
-        assertEquals(1, options.getIncludedPorts(ProtocolInclusion.v0_10).size());
-        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v0_9_1).size());
-        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v0_9).size());
-        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v0_8).size());
-        assertEquals(0, options.getIncludedPorts(ProtocolInclusion.v1_0).size());
+        options = startDummyMain("-initial-store-path abcd/config.xml");
+        assertEquals("abcd/config.xml", options.getInitialConfigurationStoreLocation());
+    }
+
+    public void testInitialConfigurationStoreType()
+    {
+        BrokerOptions options = startDummyMain("-ist dby");
+        assertEquals("dby", options.getInitialConfigurationStoreType());
+
+        options = startDummyMain("-initial-store-type bdb");
+        assertEquals("bdb", options.getInitialConfigurationStoreType());
+
+    }
+
+    public void testManagementMode()
+    {
+        BrokerOptions options = startDummyMain("-mm");
+        assertTrue(options.isManagementMode());
+
+        options = startDummyMain("--management-mode");
+        assertTrue(options.isManagementMode());
+    }
+
+    public void testManagementModeRmiPort()
+    {
+        BrokerOptions options = startDummyMain("-mm -rmi 7777");
+        assertTrue(options.isManagementMode());
+        assertEquals(7777, options.getManagementModeRmiPort());
+
+        options = startDummyMain("-mm --jmxregistryport 7777");
+        assertTrue(options.isManagementMode());
+        assertEquals(7777, options.getManagementModeRmiPort());
+
+        options = startDummyMain("-rmi 7777");
+        assertEquals(0, options.getManagementModeRmiPort());
+    }
+
+    public void testManagementModeConnectorPort()
+    {
+        BrokerOptions options = startDummyMain("-mm -jmxrmi 8888");
+        assertTrue(options.isManagementMode());
+        assertEquals(8888, options.getManagementModeConnectorPort());
+
+        options = startDummyMain("-mm --jmxconnectorport 8888");
+        assertTrue(options.isManagementMode());
+        assertEquals(8888, options.getManagementModeConnectorPort());
+
+        options = startDummyMain("-jmxrmi 8888");
+        assertEquals(0, options.getManagementModeConnectorPort());
+    }
+
+    public void testManagementModeHttpPort()
+    {
+        BrokerOptions options = startDummyMain("-mm -http 9999");
+        assertTrue(options.isManagementMode());
+        assertEquals(9999, options.getManagementModeHttpPort());
+
+        options = startDummyMain("-mm --httpport 9999");
+        assertTrue(options.isManagementMode());
+        assertEquals(9999, options.getManagementModeHttpPort());
+
+        options = startDummyMain("-http 9999");
+        assertEquals(0, options.getManagementModeHttpPort());
     }
 
     private BrokerOptions startDummyMain(String commandLine)

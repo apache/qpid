@@ -20,20 +20,26 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.Principal;
+import java.util.regex.Pattern;
+
+import javax.security.auth.Subject;
+
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-
-import javax.management.remote.JMXPrincipal;
-import javax.security.auth.Subject;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import java.net.InetSocketAddress;
-import java.util.Collections;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
+import org.apache.qpid.server.security.SecurityManager;
 
 /**
  * Tests the RMIPasswordAuthenticator and its collaboration with the AuthenticationManager.
@@ -41,36 +47,35 @@ import java.util.Collections;
  */
 public class RMIPasswordAuthenticatorTest extends TestCase
 {
-    private final String USERNAME = "guest";
-    private final String PASSWORD = "guest";
+    private static final String USERNAME = "guest";
+    private static final String PASSWORD = "password";
+
+    private final Broker _broker = mock(Broker.class);
+    private final SecurityManager _securityManager = mock(SecurityManager.class);
+    private final Subject _loginSubject = new Subject();
+    private final String[] _credentials = new String[] {USERNAME, PASSWORD};
+
     private RMIPasswordAuthenticator _rmipa;
-    private String[] _credentials;
+
+    private SubjectCreator _usernamePasswordOkaySuvjectCreator = createMockSubjectCreator(true, null);
+    private SubjectCreator _badPasswordSubjectCreator = createMockSubjectCreator(false, null);
 
     protected void setUp() throws Exception
     {
-        _rmipa = new RMIPasswordAuthenticator(new InetSocketAddress(5672));
-
-        _credentials = new String[] {USERNAME, PASSWORD};
+        when(_broker.getSecurityManager()).thenReturn(_securityManager);
+        _rmipa = new RMIPasswordAuthenticator(_broker, new InetSocketAddress(8999));
     }
 
     /**
-     * Tests a successful authentication.  Ensures that a populated read-only subject it returned.
+     * Tests a successful authentication.  Ensures that the expected subject is returned.
      */
     public void testAuthenticationSuccess()
     {
-        final Subject expectedSubject = new Subject(true,
-                Collections.singleton(new JMXPrincipal(USERNAME)),
-                Collections.EMPTY_SET,
-                Collections.EMPTY_SET);
-
-        _rmipa.setAuthenticationManager(createTestAuthenticationManager(true, null));
-
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_securityManager.accessManagement()).thenReturn(true);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
-        assertTrue("Subject must be readonly", newSubject.isReadOnly());
-        assertTrue("Returned subject does not equal expected value",
-                newSubject.equals(expectedSubject));
-
+        assertSame("Subject must be unchanged", _loginSubject, newSubject);
     }
 
     /**
@@ -78,7 +83,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testUsernameOrPasswordInvalid()
     {
-        _rmipa.setAuthenticationManager(createTestAuthenticationManager(false, null));
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_badPasswordSubjectCreator);
 
         try
         {
@@ -89,17 +94,31 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         {
             assertEquals("Unexpected exception message",
                     RMIPasswordAuthenticator.INVALID_CREDENTIALS, se.getMessage());
-
         }
     }
 
-    /**
-     * Tests case where authentication system itself fails.
-     */
-    public void testAuthenticationFailure()
+    public void testAuthorisationFailure()
+    {
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_securityManager.accessManagement()).thenReturn(false);
+
+        try
+        {
+            _rmipa.authenticate(_credentials);
+            fail("Exception not thrown");
+        }
+        catch (SecurityException se)
+        {
+            assertEquals("Unexpected exception message",
+                    RMIPasswordAuthenticator.USER_NOT_AUTHORISED_FOR_MANAGEMENT, se.getMessage());
+        }
+    }
+
+    public void testSubjectCreatorInternalFailure()
     {
         final Exception mockAuthException = new Exception("Mock Auth system failure");
-        _rmipa.setAuthenticationManager(createTestAuthenticationManager(false, mockAuthException));
+        SubjectCreator subjectCreator = createMockSubjectCreator(false, mockAuthException);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
 
         try
         {
@@ -112,13 +131,13 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         }
     }
 
-
     /**
      * Tests case where authentication manager is not set.
      */
-    public void testNullAuthenticationManager() throws Exception
+    public void testNullSubjectCreator() throws Exception
     {
-        _rmipa.setAuthenticationManager(null);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(null);
+
         try
         {
             _rmipa.authenticate(_credentials);
@@ -126,8 +145,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         }
         catch (SecurityException se)
         {
-            assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.UNABLE_TO_LOOKUP, se.getMessage());
+            assertTrue("Unexpected exception message", Pattern.matches("Can't get subject creator for .*:8999", se.getMessage()));
         }
     }
 
@@ -155,11 +173,13 @@ public class RMIPasswordAuthenticatorTest extends TestCase
      */
     public void testWithIllegalNumberOfArguments()
     {
+        String[] credentials;
+
         // Test handling of incorrect number of credentials
         try
         {
-            _credentials = new String[]{USERNAME, PASSWORD, PASSWORD};
-            _rmipa.authenticate(_credentials);
+            credentials = new String[]{USERNAME, PASSWORD, PASSWORD};
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to supplying wrong number of credentials");
         }
         catch (SecurityException se)
@@ -172,8 +192,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         try
         {
             //send a null array
-            _credentials = null;
-            _rmipa.authenticate(_credentials);
+            credentials = null;
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to not supplying an array of credentials");
         }
         catch (SecurityException se)
@@ -185,8 +205,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         try
         {
             //send a null password
-            _credentials = new String[]{USERNAME, null};
-            _rmipa.authenticate(_credentials);
+            credentials = new String[]{USERNAME, null};
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to sending a null password");
         }
         catch (SecurityException se)
@@ -198,8 +218,8 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         try
         {
             //send a null username
-            _credentials = new String[]{null, PASSWORD};
-            _rmipa.authenticate(_credentials);
+            credentials = new String[]{null, PASSWORD};
+            _rmipa.authenticate(credentials);
             fail("SecurityException expected due to sending a null username");
         }
         catch (SecurityException se)
@@ -209,55 +229,30 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         }
     }
 
-    private AuthenticationManager createTestAuthenticationManager(final boolean successfulAuth, final Exception exception)
+    private SubjectCreator createMockSubjectCreator(final boolean successfulAuth, final Exception exception)
     {
-        return new AuthenticationManager()
+        SubjectCreator subjectCreator = mock(SubjectCreator.class);
+
+        SubjectAuthenticationResult subjectAuthenticationResult;
+
+        if (exception != null) {
+
+            subjectAuthenticationResult = new SubjectAuthenticationResult(
+                    new AuthenticationResult(AuthenticationStatus.ERROR, exception));
+        }
+        else if (successfulAuth)
         {
-            public void configure(ConfigurationPlugin config)
-            {
-                throw new UnsupportedOperationException();
-            }
 
-            public void initialise()
-            {
-                throw new UnsupportedOperationException();
-            }
+            subjectAuthenticationResult = new SubjectAuthenticationResult(
+                    new AuthenticationResult(mock(Principal.class)), _loginSubject);
+        }
+        else
+        {
+            subjectAuthenticationResult = new SubjectAuthenticationResult(new AuthenticationResult(AuthenticationStatus.CONTINUE));
+        }
 
-            public void close()
-            {
-                throw new UnsupportedOperationException();
-            }
+        when(subjectCreator.authenticate(anyString(), anyString())).thenReturn(subjectAuthenticationResult);
 
-            public String getMechanisms()
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public AuthenticationResult authenticate(SaslServer server, byte[] response)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public AuthenticationResult authenticate(String username, String password)
-            {
-                if (exception != null) {
-                    return new AuthenticationResult(AuthenticationStatus.ERROR, exception);
-                }
-                else if (successfulAuth)
-                {
-                    return new AuthenticationResult(new Subject());
-                }
-                else
-                {
-                    return new AuthenticationResult(AuthenticationStatus.CONTINUE);
-                }
-            }
-
-        };
+        return subjectCreator;
     }
 }

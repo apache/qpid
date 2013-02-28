@@ -52,6 +52,12 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     private AMQShortString _exchangeClass;
 
+    private boolean _exchangeAutoDelete;
+
+    private boolean _exchangeDurable;
+
+    private boolean _exchangeInternal;
+
     private boolean _isDurable;
 
     private boolean _isExclusive;
@@ -104,16 +110,6 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected void setName(String name)
     {
         _name = name;
-    }
-
-    protected Link getTargetLink()
-    {
-        return _targetLink;
-    }
-
-    protected void setTargetLink(Link targetLink)
-    {
-        _targetLink = targetLink;
     }
 
     // ----- Fields required to support new address syntax -------
@@ -180,10 +176,9 @@ public abstract class AMQDestination implements Destination, Referenceable
     private AddressOption _assert = AddressOption.NEVER;
     private AddressOption _delete = AddressOption.NEVER;
 
-    private Node _targetNode;
-    private Node _sourceNode;
-    private Link _targetLink;
+    private Node _node;
     private Link _link;
+
         
     // ----- / Fields required to support new address syntax -------
     
@@ -280,6 +275,9 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         _exchangeName = binding.getExchangeName();
         _exchangeClass = binding.getExchangeClass();
+        _exchangeDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCHANGE_DURABLE));
+        _exchangeAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCHANGE_AUTODELETE));
+        _exchangeInternal = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCHANGE_INTERNAL));
 
         _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
@@ -358,6 +356,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         _destSyntax = DestSyntax.BURL;
         _browseOnly = browseOnly;
         _rejectBehaviour = null;
+        _exchangeAutoDelete = false;
+        _exchangeDurable = false;
+        _exchangeInternal = false;
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Based on " + toString() + " the selected destination syntax is " + _destSyntax);
@@ -410,6 +412,21 @@ public abstract class AMQDestination implements Destination, Referenceable
     public AMQShortString getExchangeClass()
     {
         return _exchangeClass;
+    }
+
+    public boolean isExchangeDurable()
+    {
+        return _exchangeDurable;
+    }
+
+    public boolean isExchangeAutoDelete()
+    {
+        return _exchangeAutoDelete;
+    }
+
+    public boolean isExchangeInternal()
+    {
+        return _exchangeInternal;
     }
 
     public boolean isTopic()
@@ -576,6 +593,27 @@ public abstract class AMQDestination implements Destination, Referenceable
             {
                 sb.append(BindingURL.OPTION_REJECT_BEHAVIOUR);
                 sb.append("='" + _rejectBehaviour + "'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            if (_exchangeDurable)
+            {
+                sb.append(BindingURL.OPTION_EXCHANGE_DURABLE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            if (_exchangeAutoDelete)
+            {
+                sb.append(BindingURL.OPTION_EXCHANGE_AUTODELETE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            if (_exchangeInternal)
+            {
+                sb.append(BindingURL.OPTION_EXCHANGE_INTERNAL);
+                sb.append("='true'");
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }
 
@@ -773,24 +811,14 @@ public abstract class AMQDestination implements Destination, Referenceable
         _delete = option;
     }
 
-    public Node getTargetNode()
+    public Node getNode()
     {
-        return _targetNode;
+        return _node;
     }
 
-    public void setTargetNode(Node node)
+    public void setNode(Node node)
     {
-        _targetNode = node;
-    }
-
-    public Node getSourceNode()
-    {
-        return _sourceNode;
-    }
-
-    public void setSourceNode(Node node)
-    {
-        _sourceNode = node;
+        _node = node;
     }
 
     public Link getLink()
@@ -851,19 +879,9 @@ public abstract class AMQDestination implements Destination, Referenceable
                  
         _browseOnly = _addrHelper.isBrowseOnly();
                         
-        _addressType = _addrHelper.getTargetNodeType();         
-        _targetNode =  _addrHelper.getTargetNode(_addressType);
-        _sourceNode = _addrHelper.getSourceNode(_addressType);
+        _addressType = _addrHelper.getNodeType();
+        _node =  _addrHelper.getNode();
         _link = _addrHelper.getLink();       
-    }
-    
-    // This method is needed if we didn't know the node type at the beginning.
-    // Therefore we have to query the broker to figure out the type.
-    // Once the type is known we look for the necessary properties.
-    public void rebuildTargetAndSourceNodes(int addressType)
-    {
-        _targetNode =  _addrHelper.getTargetNode(addressType);
-        _sourceNode =  _addrHelper.getSourceNode(addressType);
     }
     
     // ----- / new address syntax -----------    
@@ -900,8 +918,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         dest.setDelete(_delete); 
         dest.setBrowseOnly(_browseOnly);
         dest.setAddressType(_addressType);
-        dest.setTargetNode(_targetNode);
-        dest.setSourceNode(_sourceNode);
+        dest.setNode(_node);
         dest.setLink(_link);
         dest.setAddressResolved(_addressResolved.get());
         return dest;        
@@ -935,6 +952,4 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         return _rejectBehaviour;
     }
-
-
 }

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.security.access.config;
 
-import java.util.Comparator;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -32,7 +30,7 @@ import org.apache.qpid.server.security.access.Operation;
 
 /**
  * An access control v2 rule action.
- * 
+ *
  * An action consists of an {@link Operation} on an {@link ObjectType} with certain properties, stored in a {@link java.util.Map}.
  * The operation and object should be an allowable combination, based on the {@link ObjectType#isAllowed(Operation)}
  * method of the object, which is exposed as the {@link #isAllowed()} method here. The internal {@link #propertiesMatch(Map)}
@@ -45,40 +43,35 @@ import org.apache.qpid.server.security.access.Operation;
  */
 public class Action
 {
-    private Operation _operation;
-    private ObjectType _object;
-    private ObjectProperties _properties;
-    
+    private final Operation _operation;
+    private final ObjectType _object;
+    private final ObjectProperties _properties;
+
     public Action(Operation operation)
     {
         this(operation, ObjectType.ALL);
     }
-    
+
     public Action(Operation operation, ObjectType object, String name)
     {
         this(operation, object, new ObjectProperties(name));
     }
-    
+
     public Action(Operation operation, ObjectType object)
     {
         this(operation, object, ObjectProperties.EMPTY);
     }
-    
+
     public Action(Operation operation, ObjectType object, ObjectProperties properties)
     {
-        setOperation(operation);
-        setObjectType(object);
-        setProperties(properties);
+        _operation = operation;
+        _object = object;
+        _properties = properties;
     }
-    
+
     public Operation getOperation()
     {
         return _operation;
-    }
-
-    public void setOperation(Operation operation)
-    {
-        _operation = operation;
     }
 
     public ObjectType getObjectType()
@@ -86,63 +79,60 @@ public class Action
         return _object;
     }
 
-    public void setObjectType(ObjectType object)
-    {
-        _object = object;
-    }
-
     public ObjectProperties getProperties()
     {
         return _properties;
     }
-    
-    public void setProperties(ObjectProperties properties)
-    {
-        _properties = properties;
-    }
-    
+
     public boolean isAllowed()
     {
         return _object.isAllowed(_operation);
     }
 
-    /** @see Comparable#compareTo(Object) */
     public boolean matches(Action a)
     {
-        return ((Operation.ALL == a.getOperation() || getOperation() == a.getOperation())
-                    && (ObjectType.ALL == a.getObjectType() || getObjectType() == a.getObjectType())
-                    && _properties.matches(a.getProperties()));
-    }
-
-    /**
-     * An ordering based on specificity
-     * 
-     * @see Comparator#compare(Object, Object)
-     */
-    public class Specificity implements Comparator<Action>
-    {
-        public int compare(Action a, Action b)
+        if (!operationsMatch(a))
         {
-            if (a.getOperation() == Operation.ALL && b.getOperation() != Operation.ALL)
-            {
-                return 1; // B is more specific
-            }
-            else if (b.getOperation() == Operation.ALL && a.getOperation() != Operation.ALL)
-            {
-                return 1; // A is more specific
-            }
-            else if (a.getOperation() == b.getOperation())
-            {
-                return 1; // b is more specific
-            }
-            else // Different operations
-            {
-                return a.getOperation().compareTo(b.getOperation()); // Arbitrary
-            }
+            return false;
         }
+
+        if (!objectTypesMatch(a))
+        {
+            return false;
+        }
+
+        if (!propertiesMatch(a))
+        {
+            return false;
+        }
+
+        return true;
     }
 
-    /** @see Object#equals(Object) */
+    private boolean operationsMatch(Action a)
+    {
+        return Operation.ALL == a.getOperation() || getOperation() == a.getOperation();
+    }
+
+    private boolean objectTypesMatch(Action a)
+    {
+        return ObjectType.ALL == a.getObjectType() || getObjectType() == a.getObjectType();
+    }
+
+    private boolean propertiesMatch(Action a)
+    {
+        boolean propertiesMatch = false;
+        if (_properties != null)
+        {
+            propertiesMatch = _properties.matches(a.getProperties());
+        }
+        else if (a.getProperties() == null)
+        {
+            propertiesMatch = true;
+        }
+        return propertiesMatch;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -151,26 +141,24 @@ public class Action
             return false;
         }
         Action a = (Action) o;
-        
+
         return new EqualsBuilder()
                 .append(_operation, a.getOperation())
                 .append(_object, a.getObjectType())
-                .appendSuper(_properties.equals(a.getProperties()))
+                .append(_properties, a.getProperties())
                 .isEquals();
     }
 
-    /** @see Object#hashCode() */
     @Override
     public int hashCode()
     {
         return new HashCodeBuilder()
                 .append(_operation)
-                .append(_operation)
+                .append(_object)
                 .append(_properties)
                 .toHashCode();
     }
 
-    /** @see Object#toString() */
     @Override
     public String toString()
     {

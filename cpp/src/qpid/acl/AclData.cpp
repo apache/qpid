@@ -25,11 +25,19 @@ namespace qpid {
 namespace acl {
 
     //
-    // Instantiate the substitution keyword string
+    // Instantiate the keyword strings
     //
-    const std::string AclData::USER_SUBSTITUTION_KEYWORD       = "${user}";
-    const std::string AclData::DOMAIN_SUBSTITUTION_KEYWORD     = "${domain}";
-    const std::string AclData::USERDOMAIN_SUBSTITUTION_KEYWORD = "${userdomain}";
+    const std::string AclData::ACL_KEYWORD_USER_SUBST        = "${user}";
+    const std::string AclData::ACL_KEYWORD_DOMAIN_SUBST      = "${domain}";
+    const std::string AclData::ACL_KEYWORD_USERDOMAIN_SUBST  = "${userdomain}";
+    const std::string AclData::ACL_KEYWORD_ALL               = "all";
+    const std::string AclData::ACL_KEYWORD_ACL               = "acl";
+    const std::string AclData::ACL_KEYWORD_GROUP             = "group";
+    const std::string AclData::ACL_KEYWORD_QUOTA             = "quota";
+    const std::string AclData::ACL_KEYWORD_QUOTA_CONNECTIONS = "connections";
+    const char        AclData::ACL_SYMBOL_WILDCARD           = '*';
+    const std::string AclData::ACL_KEYWORD_WILDCARD          = "*";
+    const char        AclData::ACL_SYMBOL_LINE_CONTINUATION  = '\\';
 
     //
     // constructor
@@ -37,7 +45,9 @@ namespace acl {
     AclData::AclData():
         decisionMode(qpid::acl::DENY),
         transferAcl(false),
-        aclSource("UNKNOWN")
+        aclSource("UNKNOWN"),
+        connQuotaRulesExist(false),
+        connQuotaRuleSettings(new quotaRuleSet)
     {
         for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++)
         {
@@ -60,6 +70,9 @@ namespace acl {
             }
             delete[] actionList[cnt];
         }
+        transferAcl = false;
+        connQuotaRulesExist = false;
+        connQuotaRuleSettings->clear();
     }
 
 
@@ -73,7 +86,7 @@ namespace acl {
                             const std::string& lookupStr)
     {
         // allow wildcard on the end of rule strings...
-        if (ruleStr.data()[ruleStr.size()-1]=='*')
+        if (ruleStr.data()[ruleStr.size()-1]==ACL_SYMBOL_WILDCARD)
         {
             return ruleStr.compare(0,
                                    ruleStr.size()-1,
@@ -124,7 +137,7 @@ namespace acl {
 
             // If individual actorId not found then find a rule set for '*'.
             if (itrRule == actionList[action][objType]->end())
-                itrRule = actionList[action][objType]->find("*");
+                itrRule = actionList[action][objType]->find(ACL_KEYWORD_WILDCARD);
 
             if (itrRule != actionList[action][objType]->end())
             {
@@ -199,6 +212,16 @@ namespace acl {
                                     lookupParamItr = params->find(PROP_MAXQUEUESIZE);
                                     break;
 
+                                case acl::SPECPROP_MAXFILECOUNTUPPERLIMIT:
+                                case acl::SPECPROP_MAXFILECOUNTLOWERLIMIT:
+                                    lookupParamItr = params->find(PROP_MAXFILECOUNT);
+                                    break;
+
+                                case acl::SPECPROP_MAXFILESIZEUPPERLIMIT:
+                                case acl::SPECPROP_MAXFILESIZELOWERLIMIT:
+                                    lookupParamItr = params->find(PROP_MAXFILESIZE);
+                                    break;
+
                                 default:
                                     lookupParamItr = params->find((Property)rulePropMapItr->first);
                                     break;
@@ -222,6 +245,8 @@ namespace acl {
                                     {
                                     case acl::SPECPROP_MAXQUEUECOUNTUPPERLIMIT:
                                     case acl::SPECPROP_MAXQUEUESIZEUPPERLIMIT:
+                                    case acl::SPECPROP_MAXFILECOUNTUPPERLIMIT:
+                                    case acl::SPECPROP_MAXFILESIZEUPPERLIMIT:
                                         limitChecked &=
                                             compareIntMax(
                                                 rulePropMapItr->first,
@@ -231,6 +256,8 @@ namespace acl {
 
                                     case acl::SPECPROP_MAXQUEUECOUNTLOWERLIMIT:
                                     case acl::SPECPROP_MAXQUEUESIZELOWERLIMIT:
+                                    case acl::SPECPROP_MAXFILECOUNTLOWERLIMIT:
+                                    case acl::SPECPROP_MAXFILESIZELOWERLIMIT:
                                         limitChecked &=
                                             compareIntMin(
                                                 rulePropMapItr->first,
@@ -241,14 +268,31 @@ namespace acl {
                                     default:
                                         bool result;
                                         if ((SPECPROP_ALTERNATE  == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_ALTERNATE])  ||
-                                            (SPECPROP_ROUTINGKEY == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_ROUTINGKEY]) ||
                                             (SPECPROP_QUEUENAME  == rulePropMapItr->first && rsItr->ruleHasUserSub[PROP_QUEUENAME]))
                                         {
                                             // These properties are allowed to have username substitution
                                             std::string sName(rulePropMapItr->second);
                                             substituteUserId(sName, id);
                                             result = matchProp(sName, lookupParamItr->second);
-                                        } else {
+                                        }
+                                        else if (SPECPROP_ROUTINGKEY == rulePropMapItr->first)
+                                        {
+                                            // Routing key is allowed to have username substitution
+                                            // and it gets topic exchange matching
+                                            if (rsItr->ruleHasUserSub[PROP_ROUTINGKEY])
+                                            {
+                                                std::string sKey(lookupParamItr->second);
+                                                substituteKeywords(sKey, id);
+                                                result = rsItr->matchRoutingKey(sKey);
+                                            }
+                                            else
+                                            {
+                                                result = rsItr->matchRoutingKey(lookupParamItr->second);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // Rules without substitution
                                             result = matchProp(rulePropMapItr->second, lookupParamItr->second);
                                         }
 
@@ -359,7 +403,7 @@ namespace acl {
             AclData::actObjItr itrRule = actionList[action][objType]->find(id);
 
             if (itrRule == actionList[action][objType]->end())
-                itrRule = actionList[action][objType]->find("*");
+                itrRule = actionList[action][objType]->find(ACL_KEYWORD_WILDCARD);
 
             if (itrRule != actionList[action][objType]->end() )
             {
@@ -405,9 +449,9 @@ namespace acl {
 
                     if (match && rsItr->pubRoutingKeyInRule)
                     {
-                        if ((routingKey.find(USER_SUBSTITUTION_KEYWORD, 0)       != std::string::npos) ||
-                            (routingKey.find(DOMAIN_SUBSTITUTION_KEYWORD, 0)     != std::string::npos) ||
-                            (routingKey.find(USERDOMAIN_SUBSTITUTION_KEYWORD, 0) != std::string::npos))
+                        if ((routingKey.find(ACL_KEYWORD_USER_SUBST, 0)       != std::string::npos) ||
+                            (routingKey.find(ACL_KEYWORD_DOMAIN_SUBST, 0)     != std::string::npos) ||
+                            (routingKey.find(ACL_KEYWORD_USERDOMAIN_SUBST, 0) != std::string::npos))
                         {
                             // The user is not allowed to present a routing key with the substitution key in it
                             QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum <<
@@ -457,6 +501,62 @@ namespace acl {
 
     }
 
+
+
+    //
+    //
+    //
+    void AclData::setConnQuotaRuleSettings (
+                bool rulesExist, boost::shared_ptr<quotaRuleSet> quotaPtr)
+    {
+        connQuotaRulesExist = rulesExist;
+        connQuotaRuleSettings = quotaPtr;
+    }
+
+
+    //
+    // getConnQuotaForUser
+    //
+    // Return the true or false value of connQuotaRulesExist,
+    //  indicating whether any kind of lookup was done or not.
+    //
+    // When lookups are performed return the result value of
+    //  1. The user's setting else
+    //  2. The 'all' user setting else
+    //  3. Zero
+    // When lookups are not performed then return a result value of Zero.
+    //
+    bool AclData::getConnQuotaForUser(const std::string& theUserName,
+                                      uint16_t* theResult) const {
+        if (connQuotaRulesExist) {
+            // look for this user explicitly
+            quotaRuleSetItr nameItr = (*connQuotaRuleSettings).find(theUserName);
+            if (nameItr != (*connQuotaRuleSettings).end()) {
+                QPID_LOG(trace, "ACL: Connection quota for user " << theUserName
+                    << " explicitly set to : " << (*nameItr).second);
+                *theResult = (*nameItr).second;
+            } else {
+                // Look for the 'all' user
+                nameItr = (*connQuotaRuleSettings).find(ACL_KEYWORD_ALL);
+                if (nameItr != (*connQuotaRuleSettings).end()) {
+                    QPID_LOG(trace, "ACL: Connection quota for user " << theUserName
+                        << " chosen through value for 'all' : " << (*nameItr).second);
+                    *theResult = (*nameItr).second;
+                } else {
+                    // Neither userName nor "all" found.
+                    QPID_LOG(trace, "ACL: Connection quota for user " << theUserName
+                        << " absent in quota settings. Return value : 0");
+                    *theResult = 0;
+                }
+            }
+        } else {
+            // Rules do not exist
+            QPID_LOG(trace, "ACL: Connection quota for user " << theUserName
+                << " unavailable; quota settings are not specified. Return value : 0");
+            *theResult = 0;
+        }
+        return connQuotaRulesExist;
+    }
 
     //
     //
@@ -607,8 +707,8 @@ namespace acl {
     //   Given an Acl rule and an authenticated userId
     //   do the keyword substitutions on the rule.
     //
-    void AclData::AclData::substituteUserId(std::string& ruleString,
-                                            const std::string& userId)
+    void AclData::substituteUserId(std::string& ruleString,
+                                   const std::string& userId)
     {
         size_t locDomSeparator(0);
         std::string user("");
@@ -625,9 +725,9 @@ namespace acl {
             domain = normalizeUserId(userId.substr(locDomSeparator+1));
         }
 
-        substituteString(ruleString, USER_SUBSTITUTION_KEYWORD,       user);
-        substituteString(ruleString, DOMAIN_SUBSTITUTION_KEYWORD,     domain);
-        substituteString(ruleString, USERDOMAIN_SUBSTITUTION_KEYWORD, userdomain);
+        substituteString(ruleString, ACL_KEYWORD_USER_SUBST,       user);
+        substituteString(ruleString, ACL_KEYWORD_DOMAIN_SUBST,     domain);
+        substituteString(ruleString, ACL_KEYWORD_USERDOMAIN_SUBST, userdomain);
     }
 
 
@@ -640,8 +740,8 @@ namespace acl {
     //   topic key lookups where the keyword string proper is in the
     //   topic key search tree.
     //
-    void AclData::AclData::substituteKeywords(std::string& ruleString,
-                                              const std::string& userId)
+    void AclData::substituteKeywords(std::string& ruleString,
+                                     const std::string& userId)
     {
         size_t locDomSeparator(0);
         std::string user("");
@@ -658,8 +758,8 @@ namespace acl {
             domain = normalizeUserId(userId.substr(locDomSeparator+1));
         }
         std::string oRule(ruleString);
-        substituteString(ruleString, userdomain, USERDOMAIN_SUBSTITUTION_KEYWORD);
-        substituteString(ruleString, user,       USER_SUBSTITUTION_KEYWORD);
-        substituteString(ruleString, domain,     DOMAIN_SUBSTITUTION_KEYWORD);
+        substituteString(ruleString, userdomain, ACL_KEYWORD_USERDOMAIN_SUBST);
+        substituteString(ruleString, user,       ACL_KEYWORD_USER_SUBST);
+        substituteString(ruleString, domain,     ACL_KEYWORD_DOMAIN_SUBST);
     }
 }}

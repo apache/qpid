@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.PRIORITY_QUEUE_NAME;
+import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_WITH_DLQ_NAME;
 import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.CONFIGURED_OBJECTS_DB_NAME;
 import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.NEW_CONTENT_DB_NAME;
 import static org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.NEW_DELIVERY_DB_NAME;
@@ -42,6 +44,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -50,7 +53,6 @@ import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.CompoundKey;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.CompoundKeyBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.ConfiguredObjectBinding;
-import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.UpgradeConfiguredObjectRecord;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.NewDataBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.NewPreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.NewPreparedTransactionBinding;
@@ -60,6 +62,7 @@ import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.NewRecord
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.OldPreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.OldPreparedTransactionBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.OldRecordImpl;
+import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.UpgradeConfiguredObjectRecord;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.UpgradeUUIDBinding;
 import org.apache.qpid.server.util.MapJsonSerializer;
 
@@ -115,8 +118,8 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 
         upgrade.performUpgrade(_environment, discardMessageInteractionHandler, getVirtualHostName());
 
-        assertDatabaseRecordCount(NEW_METADATA_DB_NAME, 11);
-        assertDatabaseRecordCount(NEW_CONTENT_DB_NAME, 11);
+        assertDatabaseRecordCount(NEW_METADATA_DB_NAME, 12);
+        assertDatabaseRecordCount(NEW_CONTENT_DB_NAME, 12);
 
         assertConfiguredObjects();
         assertQueueEntries();
@@ -264,17 +267,17 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 
     private void assertDatabaseRecordCounts()
     {
-        assertDatabaseRecordCount(CONFIGURED_OBJECTS_DB_NAME, 12);
-        assertDatabaseRecordCount(NEW_DELIVERY_DB_NAME, 12);
+        assertDatabaseRecordCount(CONFIGURED_OBJECTS_DB_NAME, 21);
+        assertDatabaseRecordCount(NEW_DELIVERY_DB_NAME, 13);
 
-        assertDatabaseRecordCount(NEW_METADATA_DB_NAME, 12);
-        assertDatabaseRecordCount(NEW_CONTENT_DB_NAME, 12);
+        assertDatabaseRecordCount(NEW_METADATA_DB_NAME, 13);
+        assertDatabaseRecordCount(NEW_CONTENT_DB_NAME, 13);
     }
 
     private void assertConfiguredObjects()
     {
         Map<UUID, UpgradeConfiguredObjectRecord> configuredObjects = loadConfiguredObjects();
-        assertEquals("Unexpected number of configured objects", 12, configuredObjects.size());
+        assertEquals("Unexpected number of configured objects", 21, configuredObjects.size());
 
         Set<Map<String, Object>> expected = new HashSet<Map<String, Object>>(12);
         List<UUID> expectedBindingIDs = new ArrayList<UUID>();
@@ -282,8 +285,26 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         expected.add(createExpectedQueueMap("myUpgradeQueue", Boolean.FALSE, null, null));
         expected.add(createExpectedQueueMap("clientid:mySelectorDurSubName", Boolean.TRUE, "clientid", null));
         expected.add(createExpectedQueueMap("clientid:myDurSubName", Boolean.TRUE, "clientid", null));
-        expected.add(createExpectedQueueMap("nonexclusive-with-erroneous-owner", Boolean.FALSE, null,
-                     Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, "misused-owner-as-description")));
+
+        final Map<String, Object> queueWithOwnerArguments = new HashMap<String, Object>();
+        queueWithOwnerArguments.put("x-qpid-priorities", 10);
+        queueWithOwnerArguments.put(AMQQueueFactory.X_QPID_DESCRIPTION, "misused-owner-as-description");
+        expected.add(createExpectedQueueMap("nonexclusive-with-erroneous-owner", Boolean.FALSE, null,queueWithOwnerArguments));
+
+        final Map<String, Object> priorityQueueArguments = new HashMap<String, Object>();
+        priorityQueueArguments.put("x-qpid-priorities", 10);
+        expected.add(createExpectedQueueMap(PRIORITY_QUEUE_NAME, Boolean.FALSE, null, priorityQueueArguments));
+
+        final Map<String, Object> queueWithDLQArguments = new HashMap<String, Object>();
+        queueWithDLQArguments.put("x-qpid-dlq-enabled", true);
+        queueWithDLQArguments.put("x-qpid-maximum-delivery-count", 2);
+        expected.add(createExpectedQueueMap(QUEUE_WITH_DLQ_NAME, Boolean.FALSE, null, queueWithDLQArguments));
+
+        final Map<String, Object> dlqArguments = new HashMap<String, Object>();
+        dlqArguments.put("x-qpid-dlq-enabled", false);
+        dlqArguments.put("x-qpid-maximum-delivery-count", 0);
+        expected.add(createExpectedQueueMap(QUEUE_WITH_DLQ_NAME + "_DLQ", Boolean.FALSE, null, dlqArguments));
+        expected.add(createExpectedExchangeMap(QUEUE_WITH_DLQ_NAME + "_DLE", "fanout"));
 
         expected.add(createExpectedQueueBindingMapAndID("myUpgradeQueue","myUpgradeQueue", "<<default>>", null, expectedBindingIDs));
         expected.add(createExpectedQueueBindingMapAndID("myUpgradeQueue", "myUpgradeQueue", "amq.direct", null, expectedBindingIDs));
@@ -296,6 +317,13 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         expected.add(createExpectedQueueBindingMapAndID("nonexclusive-with-erroneous-owner", "nonexclusive-with-erroneous-owner", "amq.direct", null, expectedBindingIDs));
         expected.add(createExpectedQueueBindingMapAndID("nonexclusive-with-erroneous-owner","nonexclusive-with-erroneous-owner", "<<default>>", null, expectedBindingIDs));
 
+        expected.add(createExpectedQueueBindingMapAndID(PRIORITY_QUEUE_NAME, PRIORITY_QUEUE_NAME, "<<default>>", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID(PRIORITY_QUEUE_NAME, PRIORITY_QUEUE_NAME, "amq.direct", null, expectedBindingIDs));
+
+        expected.add(createExpectedQueueBindingMapAndID(QUEUE_WITH_DLQ_NAME, QUEUE_WITH_DLQ_NAME, "<<default>>", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID(QUEUE_WITH_DLQ_NAME, QUEUE_WITH_DLQ_NAME, "amq.direct", null, expectedBindingIDs));
+        expected.add(createExpectedQueueBindingMapAndID(QUEUE_WITH_DLQ_NAME + "_DLQ", "dlq", QUEUE_WITH_DLQ_NAME + "_DLE", null, expectedBindingIDs));
+
         Set<String> expectedTypes = new HashSet<String>();
         expectedTypes.add(Queue.class.getName());
         expectedTypes.add(Exchange.class.getName());
@@ -305,7 +333,9 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         {
             UpgradeConfiguredObjectRecord object = entry.getValue();
             Map<String, Object> deserialized = jsonSerializer.deserialize(object.getAttributes());
-            assertTrue("Unexpected entry:" + object.getAttributes(), expected.remove(deserialized));
+
+            assertTrue("Unexpected entry in a store - json [" + object.getAttributes() + "], map [" + deserialized + "]",
+                    expected.remove(deserialized));
             String type = object.getType();
             assertTrue("Unexpected type:" + type, expectedTypes.contains(type));
             UUID key = entry.getKey();
@@ -350,7 +380,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         return expectedQueueBinding;
     }
 
-    private Map<String, Object> createExpectedQueueMap(String name, boolean exclusiveFlag, String owner, Map<String, String> argumentMap)
+    private Map<String, Object> createExpectedQueueMap(String name, boolean exclusiveFlag, String owner, Map<String, Object> argumentMap)
     {
         Map<String, Object> expectedQueueEntry = new HashMap<String, Object>();
         expectedQueueEntry.put(Queue.NAME, name);
@@ -361,6 +391,15 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
             expectedQueueEntry.put(Queue.ARGUMENTS, argumentMap);
         }
         return expectedQueueEntry;
+    }
+
+    private Map<String, Object> createExpectedExchangeMap(String name, String type)
+    {
+        Map<String, Object> expectedExchnageEntry = new HashMap<String, Object>();
+        expectedExchnageEntry.put(Exchange.NAME, name);
+        expectedExchnageEntry.put(Exchange.TYPE, type);
+        expectedExchnageEntry.put(Exchange.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name());
+        return expectedExchnageEntry;
     }
 
     private Map<UUID, UpgradeConfiguredObjectRecord> loadConfiguredObjects()

@@ -25,6 +25,12 @@ endif(COMMAND cmake_policy)
 
 include(BuildInstallSettings.cmake)
 
+if (${CMAKE_VERSION} VERSION_LESS "2.8.0")
+    set (OPTIONAL_ARG "")
+else()
+    set (OPTIONAL_ARG OPTIONAL)
+endif()
+
 set (qpidc_version ${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR})
 
 enable_testing()
@@ -54,12 +60,22 @@ if (WIN32)
   set (CPACK_PACKAGE_EXECUTABLES "")
 endif (WIN32)
 
-set (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf CACHE STRING
+set_absolute_install_path (QPIDC_CONF_PATH ${QPID_INSTALL_CONFDIR}/qpidc.conf)
+set_absolute_install_path (QPIDD_CONF_PATH ${QPID_INSTALL_CONFDIR}/qpidd.conf)
+set (QPIDC_CONF_FILE ${QPIDC_CONF_PATH} CACHE STRING
      "Name of the Qpid client configuration file")
-set (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf CACHE STRING
+set (QPIDD_CONF_FILE ${QPIDD_CONF_PATH} CACHE STRING
      "Name of the Qpid broker configuration file")
 
-install(FILES  LICENSE NOTICE  DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES  LICENSE NOTICE  DESTINATION ${QPID_INSTALL_DOCDIR})
+install(FILES  include/qpid/qpid.i
+               include/qpid/swig_perl_typemaps.i
+               include/qpid/swig_python_typemaps.i
+               include/qpid/swig_ruby_typemaps.i
+               DESTINATION ${QPID_INSTALL_DATADIR}/qpid)
+install(FILES  include/qmf/qmfengine.i
+               include/qmf/qmf2.i
+        DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf)
 
 if (WIN32)
    set (CMAKE_DEBUG_POSTFIX "d")
@@ -76,12 +92,19 @@ set(CPACK_PACKAGE_VERSION_MINOR "${QPID_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "qpidc-${qpidc_version}")
 
+# Add custom target for docs since we don't include a cmake file there directly.
+# If we can't use OPTIONAL in the install command then we have to make the docs
+# every time so that the install target succeeds
+if (OPTIONAL_ARG)
+  add_custom_target(docs)
+else (OPTIONAL_ARG)
+  add_custom_target(docs ALL)
+endif (OPTIONAL_ARG)
+
 add_subdirectory(managementgen)
 add_subdirectory(src)
 add_subdirectory(etc)
-add_subdirectory(bindings/qpid)
-add_subdirectory(bindings/qmf)
-add_subdirectory(bindings/qmf2)
+add_subdirectory(bindings)
 add_subdirectory(docs/api)
 add_subdirectory(docs/man)
 add_subdirectory(examples)

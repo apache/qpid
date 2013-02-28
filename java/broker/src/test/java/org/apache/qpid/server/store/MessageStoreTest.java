@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -35,11 +36,12 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -48,11 +50,11 @@ import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
@@ -66,7 +68,7 @@ import java.util.Map;
  * For persistent stores, it validates that Exchanges, Queues, Bindings and 
  * Messages are persisted and recovered correctly.
  */
-public class MessageStoreTest extends InternalBrokerBaseCase
+public class MessageStoreTest extends QpidTestCase
 {
     public static final int DEFAULT_PRIORTY_LEVEL = 5;
     public static final String SELECTOR_VALUE = "Test = 'MST'";
@@ -93,11 +95,15 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     private AMQShortString queueOwner = new AMQShortString("MST");
 
-    protected PropertiesConfiguration _config;
+    private PropertiesConfiguration _config;
+
+    private VirtualHost _virtualHost;
+    private Broker _broker;
 
     public void setUp() throws Exception
     {
         super.setUp();
+        BrokerTestHelper.setUp();
 
         String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
         
@@ -107,7 +113,36 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         cleanup(new File(storePath));
 
+        _broker = BrokerTestHelper.createBrokerMock();
+
         reloadVirtualHost();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_virtualHost != null)
+            {
+                _virtualHost.close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public PropertiesConfiguration getConfig()
+    {
+        return _config;
     }
 
     protected void reloadVirtualHost()
@@ -119,8 +154,6 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             try
             {
                 getVirtualHost().close();
-                getVirtualHost().getApplicationRegistry().
-                getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
             }
             catch (Exception e)
             {
@@ -131,7 +164,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            setVirtualHost(ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config)));
+            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker));
         }
         catch (Exception e)
         {
@@ -628,7 +661,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
-            }, 0L);
+            });
         }
     }
 

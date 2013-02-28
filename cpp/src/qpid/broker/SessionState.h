@@ -41,6 +41,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 
+#include <queue>
 #include <set>
 #include <vector>
 #include <ostream>
@@ -73,7 +74,7 @@ class SessionState : public qpid::SessionState,
 {
   public:
     SessionState(Broker&, SessionHandler&, const SessionId&,
-                 const SessionState::Configuration&, bool delayManagement=false);
+                 const SessionState::Configuration&);
     ~SessionState();
     bool isAttached() const { return handler; }
 
@@ -98,7 +99,6 @@ class SessionState : public qpid::SessionState,
     /** OutputControl **/
     void abort();
     void activateOutput();
-    void giveReadCredit(int32_t);
 
     void senderCompleted(const framing::SequenceSet& ranges);
 
@@ -110,16 +110,11 @@ class SessionState : public qpid::SessionState,
                        const qpid::types::Variant::Map& annotations, bool sync);
 
     // Manageable entry points
-    management::ManagementObject* GetManagementObject (void) const;
+    management::ManagementObject::shared_ptr GetManagementObject(void) const;
     management::Manageable::status_t
     ManagementMethod (uint32_t methodId, management::Args& args, std::string&);
 
     void readyToSend();
-
-    // Used by cluster to create replica sessions.
-    SemanticState& getSemanticState() { return semanticState; }
-    boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> getMessageInProgress() { return msgBuilder.getMessage(); }
-    SessionAdapter& getSessionAdapter() { return adapter; }
 
     const SessionId& getSessionId() const { return getId(); }
 
@@ -153,22 +148,13 @@ class SessionState : public qpid::SessionState,
 
     void sendAcceptAndCompletion();
 
-    /**
-     * If commands are sent based on the local time (e.g. in timers), they don't have
-     * a well-defined ordering across cluster nodes.
-     * This proxy is for sending such commands. In a clustered broker it will take steps
-     * to synchronize command order across the cluster. In a stand-alone broker
-     * it is just a synonym for getProxy()
-     */
-    framing::AMQP_ClientProxy& getClusterOrderProxy();
-
     Broker& broker;
     SessionHandler* handler;
     sys::AbsTime expiry;        // Used by SessionManager.
     SemanticState semanticState;
     SessionAdapter adapter;
     MessageBuilder msgBuilder;
-    qmf::org::apache::qpid::broker::Session* mgmtObject;
+    qmf::org::apache::qpid::broker::Session::shared_ptr mgmtObject;
     qpid::framing::SequenceSet accepted;
 
     // sequence numbers for pending received Execution.Sync commands

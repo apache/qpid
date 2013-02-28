@@ -31,7 +31,7 @@ using namespace qpid::broker;
 using namespace std;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-System::System (string _dataDir, Broker* broker) : mgmtObject(0)
+System::System (string _dataDir, Broker* broker)
 {
     ManagementAgent* agent = broker ? broker->getManagementAgent() : 0;
 
@@ -64,7 +64,7 @@ System::System (string _dataDir, Broker* broker) : mgmtObject(0)
             }
         }
 
-        mgmtObject = new _qmf::System(agent, this, types::Uuid(systemId.c_array()));
+        mgmtObject = _qmf::System::shared_ptr(new _qmf::System(agent, this, types::Uuid(systemId.c_array())));
         qpid::sys::SystemInfo::getSystemId (osName,
                                             nodeName,
                                             release,

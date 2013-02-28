@@ -17,5 +17,4 @@
 # under the License.
 #
 
-require 'qpid'
-require 'cqpid'
+require 'qpid_messaging'

@@ -53,6 +53,9 @@ class ACLTests(TestBase010):
     def port_u(self):
         return int(self.defines["port-u"])
 
+    def port_q(self):
+        return int(self.defines["port-q"])
+
     def get_session_by_port(self, user, passwd, byPort):
         socket = connect(self.broker.host, byPort)
         connection = Connection (sock=socket, username=user, password=passwd,
@@ -542,6 +545,123 @@ class ACLTests(TestBase010):
             self.fail(result)
 
 
+    def test_illegal_filemaxsize_upper_limit_spec(self):
+        """
+        Test illegal file policy
+        """
+        #
+        # Use filemaxsizeupperlimit
+        #
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxsizeupperlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "-1 is not a valid value for 'filemaxsizeupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxsizeupperlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "9223372036854775808 is not a valid value for 'filemaxsizeupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+
+
+    def test_illegal_filemaxcount_upper_limit_spec(self):
+        """
+        Test illegal file policy
+        """
+        #
+        # use maxfilecountupperlimit
+        #
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxcountupperlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "-1 is not a valid value for 'filemaxcountupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxcountupperlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "9223372036854775808 is not a valid value for 'filemaxcountupperlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+
+    def test_illegal_filemaxsize_lower_limit_spec(self):
+        """
+        Test illegal file policy
+        """
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxsizelowerlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "-1 is not a valid value for 'filemaxsizelowerlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxsizelowerlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "9223372036854775808 is not a valid value for 'filemaxsizelowerlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+
+
+    def test_illegal_filemaxcount_lower_limit_spec(self):
+        """
+        Test illegal file policy
+        """
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxcountlowerlimit=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "-1 is not a valid value for 'filemaxcountlowerlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID create queue name=q2 filemaxcountlowerlimit=9223372036854775808\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        expected = "9223372036854775808 is not a valid value for 'filemaxcountlowerlimit', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.find(expected) == -1):
+            self.fail(result)
+
+
    #=====================================
    # ACL queue tests
    #=====================================
@@ -829,6 +949,171 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow queue delete request for q4");
+
+   #=====================================
+   # ACL file tests
+   #=====================================
+
+    def test_file_allow_mode(self):
+        """
+        Test cases for file acl in allow mode
+        """
+        aclf = self.get_acl_file()
+        aclf.write('acl deny bob@QPID access queue name=qf1\n')
+        aclf.write('acl deny bob@QPID create queue name=qf1 durable=true\n')
+        aclf.write('acl deny bob@QPID create queue name=qf2 exclusive=true policytype=ring\n')
+        aclf.write('acl deny bob@QPID access queue name=qf3\n')
+        aclf.write('acl deny bob@QPID purge queue name=qf3\n')
+        aclf.write('acl deny bob@QPID delete queue name=qf4\n')
+        aclf.write('acl deny bob@QPID create queue name=qf5 filemaxsizeupperlimit=1000 filemaxcountupperlimit=100\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 200
+            queue_options["qpid.file_size"] = 500
+            session.queue_declare(queue="qf5", exclusive=True, arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=qf5, qpid.file_size=500 and qpid.file_count=200");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 200
+            queue_options["qpid.file_size"] = 100
+            session.queue_declare(queue="qf2", exclusive=True, arguments=queue_options)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qf2, qpid.file_size=100 and qpid.file_count=200 ");
+
+
+    def test_file_deny_mode(self):
+        """
+        Test cases for queue acl in deny mode
+        """
+        aclf = self.get_acl_file()
+        aclf.write('acl allow bob@QPID access queue name=qfd1\n')
+        aclf.write('acl allow bob@QPID create queue name=qfd1 durable=true\n')
+        aclf.write('acl allow bob@QPID create queue name=qfd2 exclusive=true policytype=ring\n')
+        aclf.write('acl allow bob@QPID access queue name=qfd3\n')
+        aclf.write('acl allow bob@QPID purge queue name=qfd3\n')
+        aclf.write('acl allow bob@QPID create queue name=qfd3\n')
+        aclf.write('acl allow bob@QPID create queue name=qfd4\n')
+        aclf.write('acl allow bob@QPID delete queue name=qfd4\n')
+        aclf.write('acl allow bob@QPID create queue name=qfd5 filemaxsizeupperlimit=1000 filemaxcountupperlimit=100\n')
+        aclf.write('acl allow bob@QPID create queue name=qfd6 filemaxsizelowerlimit=50 filemaxsizeupperlimit=100 filemaxcountlowerlimit=50 filemaxcountupperlimit=100\n')
+        aclf.write('acl allow anonymous all all\n')
+        aclf.write('acl deny all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qfd1", durable=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qfd1 durable=true");
+
+        try:
+            session.queue_declare(queue="qfd1", durable=True, passive=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue passive declare request with name=qfd1 durable=true passive=true");
+
+        try:
+            session.queue_declare(queue="qfd1", durable=False, passive=False)
+            self.fail("ACL should deny queue create request with name=qfd1 durable=true passive=false");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qfd2", exclusive=False)
+            self.fail("ACL should deny queue create request with name=qfd2 exclusive=false");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 200
+            queue_options["qpid.file_size"] = 500
+            session.queue_declare(queue="qfd5", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=qfd5 filemaxsizeupperlimit=500 filemaxcountupperlimit=200");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 100
+            queue_options["qpid.file_size"] = 500
+            session.queue_declare(queue="qfd5", arguments=queue_options)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qfd5 filemaxsizeupperlimit=500 filemaxcountupperlimit=200");
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 49
+            queue_options["qpid.file_size"] = 100
+            session.queue_declare(queue="qfd6", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=qfd6 filemaxsizeupperlimit=100 filemaxcountupperlimit=49");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 101
+            queue_options["qpid.file_size"] = 100
+            session.queue_declare(queue="qfd6", arguments=queue_options)
+            self.fail("ACL should allow queue create request with name=qfd6 filemaxsizeupperlimit=100 filemaxcountupperlimit=101");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 100
+            queue_options["qpid.file_size"] = 49
+            session.queue_declare(queue="qfd6", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=qfd6 filemaxsizeupperlimit=49 filemaxcountupperlimit=100");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 100
+            queue_options["qpid.file_size"] =101
+            session.queue_declare(queue="qfd6", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=qfd6 filemaxsizeupperlimit=101 filemaxcountupperlimit=100");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.file_count"] = 50
+            queue_options["qpid.file_size"] = 50
+            session.queue_declare(queue="qfd6", arguments=queue_options)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qfd6 filemaxsizeupperlimit=50 filemaxcountupperlimit=50");
+
 
    #=====================================
    # ACL exchange tests
@@ -1538,10 +1823,10 @@ class ACLTests(TestBase010):
 
 
    #=====================================
-   # QMF Topic Exchange tests
+   # Routingkey lookup using Topic Exchange tests
    #=====================================
 
-    def test_qmf_topic_exchange_tests(self):
+    def test_topic_exchange_publish_tests(self):
         """
         Test using QMF method hooks into ACL logic
         """
@@ -1655,15 +1940,133 @@ class ACLTests(TestBase010):
         self.LookupPublish("dev@QPID", "X", "a.M.N",          "allow-log")
         self.LookupPublish("dev@QPID", "X", "a.M.p.qq.N",     "allow-log")
 
+    def test_topic_exchange_other_tests(self):
+        """
+        Test using QMF method hooks into ACL logic
+        """
+        action_list = ['access','bind','unbind']
+
+        aclf = self.get_acl_file()
+        aclf.write('# begin hack alert: allow anonymous to access the lookup debug functions\n')
+        aclf.write('acl allow-log anonymous create  queue\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qmf.*\n')
+        aclf.write('acl allow-log anonymous all     exchange name=amq.direct\n')
+        aclf.write('acl allow-log anonymous all     exchange name=qpid.management\n')
+        aclf.write('acl allow-log anonymous access  method   name=*\n')
+        aclf.write('# end hack alert\n')
+        for action in action_list:
+            aclf.write('acl allow-log uPlain1@COMPANY   ' + action + ' exchange name=X routingkey=ab.cd.e\n')
+            aclf.write('acl allow-log uPlain2@COMPANY   ' + action + ' exchange name=X routingkey=.\n')
+            aclf.write('acl allow-log uStar1@COMPANY    ' + action + ' exchange name=X routingkey=a.*.b\n')
+            aclf.write('acl allow-log uStar2@COMPANY    ' + action + ' exchange name=X routingkey=*.x\n')
+            aclf.write('acl allow-log uStar3@COMPANY    ' + action + ' exchange name=X routingkey=x.x.*\n')
+            aclf.write('acl allow-log uHash1@COMPANY    ' + action + ' exchange name=X routingkey=a.#.b\n')
+            aclf.write('acl allow-log uHash2@COMPANY    ' + action + ' exchange name=X routingkey=a.#\n')
+            aclf.write('acl allow-log uHash3@COMPANY    ' + action + ' exchange name=X routingkey=#.a\n')
+            aclf.write('acl allow-log uHash4@COMPANY    ' + action + ' exchange name=X routingkey=a.#.b.#.c\n')
+            aclf.write('acl allow-log uMixed1@COMPANY   ' + action + ' exchange name=X routingkey=*.x.#.y\n')
+            aclf.write('acl allow-log uMixed2@COMPANY   ' + action + ' exchange name=X routingkey=a.#.b.*\n')
+            aclf.write('acl allow-log uMixed3@COMPANY   ' + action + ' exchange name=X routingkey=*.*.*.#\n')
+
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=MN.OP.Q\n')
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=M.*.N\n')
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=M.#.N\n')
+            aclf.write('acl allow-log all ' + action + ' exchange name=X routingkey=*.M.#.N\n')
+
+        aclf.write('acl deny-log all all\n')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        for action in action_list:
+            #                                  aclKey: "ab.cd.e"
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e"},        "allow-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e"},        "allow-log")
+
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e"},        "allow-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"abx.cd.e"},       "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd"},          "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd..e."},      "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"ab.cd.e."},       "deny-log")
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":".ab.cd.e"},       "deny-log")
+            #                                  aclKey: "."
+            self.Lookup("uPlain2@COMPANY", action, "exchange", "X", {"routingkey":"."},              "allow-log")
+
+            #                                  aclKey: "a.*.b"
+            self.Lookup("uStar1@COMPANY",  action, "exchange", "X", {"routingkey":"a.xx.b"},         "allow-log")
+            self.Lookup("uStar1@COMPANY",  action, "exchange", "X", {"routingkey":"a.b"},            "deny-log")
+            #                                  aclKey: "*.x"
+            self.Lookup("uStar2@COMPANY",  action, "exchange", "X", {"routingkey":"y.x"},            "allow-log")
+            self.Lookup("uStar2@COMPANY",  action, "exchange", "X", {"routingkey":".x"},             "allow-log")
+            self.Lookup("uStar2@COMPANY",  action, "exchange", "X", {"routingkey":"x"},              "deny-log")
+            #                                  aclKey: "x.x.*"
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"x.x.y"},          "allow-log")
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"x.x."},           "allow-log")
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"x.x"},            "deny-log")
+            self.Lookup("uStar3@COMPANY",  action, "exchange", "X", {"routingkey":"q.x.y"},          "deny-log")
+
+            #                                  aclKey: "a.#.b"
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a.b"},            "allow-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a.x.b"},          "allow-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a..x.y.zz.b"},    "allow-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"a.b."},           "deny-log")
+            self.Lookup("uHash1@COMPANY",  action, "exchange", "X", {"routingkey":"q.x.b"},          "deny-log")
+
+            #                                  aclKey: "a.#"
+            self.Lookup("uHash2@COMPANY",  action, "exchange", "X", {"routingkey":"a"},              "allow-log")
+            self.Lookup("uHash2@COMPANY",  action, "exchange", "X", {"routingkey":"a.b"},            "allow-log")
+            self.Lookup("uHash2@COMPANY",  action, "exchange", "X", {"routingkey":"a.b.c"},          "allow-log")
+
+            #                                  aclKey: "#.a"
+            self.Lookup("uHash3@COMPANY",  action, "exchange", "X", {"routingkey":"a"},              "allow-log")
+            self.Lookup("uHash3@COMPANY",  action, "exchange", "X", {"routingkey":"x.y.a"},          "allow-log")
+
+            #                                  aclKey: "a.#.b.#.c"
+            self.Lookup("uHash4@COMPANY",  action, "exchange", "X", {"routingkey":"a.b.c"},          "allow-log")
+            self.Lookup("uHash4@COMPANY",  action, "exchange", "X", {"routingkey":"a.x.b.y.c"},      "allow-log")
+            self.Lookup("uHash4@COMPANY",  action, "exchange", "X", {"routingkey":"a.x.x.b.y.y.c"},  "allow-log")
+
+            #                                  aclKey: "*.x.#.y"
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.x.y"},          "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.x.p.qq.y"},     "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.a.x.y"},        "deny-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"aa.x.b.c"},       "deny-log")
+
+            #                                  aclKey: "a.#.b.*"
+            self.Lookup("uMixed2@COMPANY", action, "exchange", "X", {"routingkey":"a.b.x"},          "allow-log")
+            self.Lookup("uMixed2@COMPANY", action, "exchange", "X", {"routingkey":"a.x.x.x.b.x"},    "allow-log")
+
+            #                                  aclKey: "*.*.*.#"
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x.y.z"},          "allow-log")
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x.y.z.a.b.c"},    "allow-log")
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x.y"},            "deny-log")
+            self.Lookup("uMixed3@COMPANY", action, "exchange", "X", {"routingkey":"x"},              "deny-log")
+
+            # Repeat the keys with wildcard user spec
+            self.Lookup("uPlain1@COMPANY", action, "exchange", "X", {"routingkey":"MN.OP.Q"},        "allow-log")
+            self.Lookup("uStar1@COMPANY" , action, "exchange", "X", {"routingkey":"M.xx.N"},         "allow-log")
+            self.Lookup("uHash1@COMPANY" , action, "exchange", "X", {"routingkey":"M.N"},            "allow-log")
+            self.Lookup("uHash1@COMPANY" , action, "exchange", "X", {"routingkey":"M.x.N"},          "allow-log")
+            self.Lookup("uHash1@COMPANY" , action, "exchange", "X", {"routingkey":"M..x.y.zz.N"},    "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.M.N"},          "allow-log")
+            self.Lookup("uMixed1@COMPANY", action, "exchange", "X", {"routingkey":"a.M.p.qq.N"},     "allow-log")
+
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "MN.OP.Q"},      "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M.xx.N"},       "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M.N"},          "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M.x.N"},        "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "M..x.y.zz.N"},  "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "a.M.N"},        "allow-log")
+            self.Lookup("dev@QPID",        action, "exchange", "X", {"routingkey":  "a.M.p.qq.N"},   "allow-log")
+
    #=====================================
    # Connection limits
    #=====================================
 
-    def test_connection_limits(self):
-        """
-        Test ACL control connection limits
-        """
-        # By username should be able to connect twice per user
+    def test_connection_limits_cli_sets_all(self):
+
         try:
             sessiona1 = self.get_session_by_port('alice','alice', self.port_u())
             sessiona2 = self.get_session_by_port('alice','alice', self.port_u())
@@ -1677,18 +2080,227 @@ class ACLTests(TestBase010):
         except Exception, e:
             result = None
 
+
+
+    def test_connection_limits_by_named_user(self):
+        """
+        Test ACL control connection limits
+        """
+        aclf = self.get_acl_file()
+        aclf.write('quota connections 2 alice bob\n')
+        aclf.write('quota connections 0 evildude\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # By username should be able to connect twice per user
         try:
-            sessionb1 = self.get_session_by_port('bob','bob', self.port_u())
-            sessionb2 = self.get_session_by_port('bob','bob', self.port_u())
+            sessiona1 = self.get_session('alice','alice')
+            sessiona2 = self.get_session('alice','alice')
+        except Exception, e:
+            self.fail("Could not create two connections for user alice: " + str(e))
+
+        # Third session should fail
+        try:
+            sessiona3 = self.get_session('alice','alice')
+            self.fail("Should not be able to create third connection for user alice")
+        except Exception, e:
+            result = None
+
+        # Disconnecting should allow another session.
+        sessiona1.close()
+        try:
+            sessiona3 = self.get_session('alice','alice')
+        except Exception, e:
+            self.fail("Could not recreate second connection for user alice: " + str(e))
+
+        # By username should be able to connect twice per user
+        try:
+            sessionb1 = self.get_session('bob','bob')
+            sessionb2 = self.get_session('bob','bob')
         except Exception, e:
             self.fail("Could not create two connections for user bob: " + str(e))
 
+        # Third session should fail
         try:
-            sessionb3 = self.get_session_by_port('bob','bob', self.port_u())
+            sessionb3 = self.get_session('bob','bob')
             self.fail("Should not be able to create third connection for user bob")
         except Exception, e:
             result = None
 
+
+        # User with quota of 0 is denied
+        try:
+            sessione1 = self.get_session('evildude','evildude')
+            self.fail("Should not be able to create a connection for user evildude")
+        except Exception, e:
+            result = None
+
+
+        # User not named in quotas is denied
+        try:
+            sessionc1 = self.get_session('charlie','charlie')
+            self.fail("Should not be able to create a connection for user charlie")
+        except Exception, e:
+            result = None
+
+        # Clean up the sessions
+        sessiona2.close()
+        sessiona3.close()
+        sessionb1.close()
+        sessionb2.close()
+
+
+
+    def test_connection_limits_by_unnamed_all(self):
+        """
+        Test ACL control connection limits
+        """
+        aclf = self.get_acl_file()
+        aclf.write('quota connections 2 alice bob\n')
+        aclf.write('quota connections 1 all\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # By username should be able to connect twice per user
+        try:
+            sessiona1 = self.get_session('alice','alice')
+            sessiona2 = self.get_session('alice','alice')
+        except Exception, e:
+            self.fail("Could not create two connections for user alice: " + str(e))
+
+        # Third session should fail
+        try:
+            sessiona3 = self.get_session('alice','alice')
+            self.fail("Should not be able to create third connection for user alice")
+        except Exception, e:
+            result = None
+
+        # By username should be able to connect twice per user
+        try:
+            sessionb1 = self.get_session('bob','bob')
+            sessionb2 = self.get_session('bob','bob')
+        except Exception, e:
+            self.fail("Could not create two connections for user bob: " + str(e))
+
+        # Third session should fail
+        try:
+            sessionb3 = self.get_session('bob','bob')
+            self.fail("Should not be able to create third connection for user bob")
+        except Exception, e:
+            result = None
+
+        # User not named in quotas gets 'all' quota
+        try:
+            sessionc1 = self.get_session('charlie','charlie')
+        except Exception, e:
+            self.fail("Could not create one connection for user charlie: " + str(e))
+
+        # Next session should fail
+        try:
+            sessionc2 = self.get_session('charlie','charlie')
+            self.fail("Should not be able to create second connection for user charlie")
+        except Exception, e:
+            result = None
+
+        # Clean up the sessions
+        sessiona1.close()
+        sessiona2.close()
+        sessionb1.close()
+        sessionb2.close()
+        sessionc1.close()
+
+
+    def test_connection_limits_by_group(self):
+        """
+        Test ACL control connection limits
+        """
+        aclf = self.get_acl_file()
+        aclf.write('group stooges moe@QPID larry@QPID curly@QPID\n')
+        aclf.write('quota connections 2 alice bob\n')
+        aclf.write('quota connections 2 stooges charlie\n')
+        aclf.write('# user and groups may be overwritten. Should use last value\n')
+        aclf.write('quota connections 3 bob stooges\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # Alice gets 2
+        try:
+            sessiona1 = self.get_session('alice','alice')
+            sessiona2 = self.get_session('alice','alice')
+        except Exception, e:
+            self.fail("Could not create two connections for user alice: " + str(e))
+
+        # Third session should fail
+        try:
+            sessiona3 = self.get_session('alice','alice')
+            self.fail("Should not be able to create third connection for user alice")
+        except Exception, e:
+            result = None
+
+        # Bob gets 3
+        try:
+            sessionb1 = self.get_session('bob','bob')
+            sessionb2 = self.get_session('bob','bob')
+            sessionb3 = self.get_session('bob','bob')
+        except Exception, e:
+            self.fail("Could not create three connections for user bob: " + str(e))
+
+        # Fourth session should fail
+        try:
+            sessionb4 = self.get_session('bob','bob')
+            self.fail("Should not be able to create fourth connection for user bob")
+        except Exception, e:
+            result = None
+
+        # Moe gets 3
+        try:
+            sessionm1 = self.get_session('moe','moe')
+            sessionm2 = self.get_session('moe','moe')
+            sessionm3 = self.get_session('moe','moe')
+        except Exception, e:
+            self.fail("Could not create three connections for user moe: " + str(e))
+
+        # Fourth session should fail
+        try:
+            sessionb4 = self.get_session('moe','moe')
+            self.fail("Should not be able to create fourth connection for user ,pe")
+        except Exception, e:
+            result = None
+
+        # User not named in quotas is denied
+        try:
+            sessions1 = self.get_session('shemp','shemp')
+            self.fail("Should not be able to create a connection for user shemp")
+        except Exception, e:
+            result = None
+
+        # Clean up the sessions
+        sessiona1.close()
+        sessiona2.close()
+        sessionb1.close()
+        sessionb2.close()
+        sessionb3.close()
+        sessionm1.close()
+        sessionm2.close()
+        sessionm3.close()
+
+
+    def test_connection_limits_by_ip_address(self):
+        """
+        Test ACL control connection limits by ip address
+        """
         # By IP address should be able to connect twice per client address
         try:
             sessionb1 = self.get_session_by_port('alice','alice', self.port_i())
@@ -1703,6 +2315,8 @@ class ACLTests(TestBase010):
         except Exception, e:
             result = None
 
+        sessionb1.close()
+        sessionb2.close()
 
    #=====================================
    # User name substitution
@@ -2243,6 +2857,62 @@ class ACLTests(TestBase010):
         self.LookupPublish("joe@QPID", "QPID-work",  "QPID",        "allow")
         self.LookupPublish("joe@QPID", "QPID-work2", "QPID",        "allow")
 
+   #=====================================
+   # Queue per-user quota
+   #=====================================
+
+    def test_queue_per_user_quota(self):
+        """
+        Test ACL queue counting limits.
+        port_q has a limit of 2
+        """
+        # bob should be able to create two queues
+        session = self.get_session_by_port('bob','bob', self.port_q())
+
+        try:
+            session.queue_declare(queue="queue1")
+            session.queue_declare(queue="queue2")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
+
+        # third queue should fail
+        try:
+            session.queue_declare(queue="queue3")
+            self.fail("Should not be able to create third queue")
+        except Exception, e:
+            result = None
+            session = self.get_session_by_port('bob','bob', self.port_q())
+
+        # alice should be able to create two queues
+        session2 = self.get_session_by_port('alice','alice', self.port_q())
+
+        try:
+            session2.queue_declare(queue="queuea1")
+            session2.queue_declare(queue="queuea2")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
+
+        # third queue should fail
+        try:
+            session2.queue_declare(queue="queuea3")
+            self.fail("Should not be able to create third queue")
+        except Exception, e:
+            result = None
+            session2 = self.get_session_by_port('alice','alice', self.port_q())
+
+        # bob should be able to delete a queue and create another
+        try:
+            session.queue_delete(queue="queue1")
+            session.queue_declare(queue="queue3")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
+
+        # alice should be able to delete a queue and create another
+        try:
+            session2.queue_delete(queue="queuea1")
+            session2.queue_declare(queue="queuea3")
+        except qpid.session.SessionException, e:
+            self.fail("Error during queue create request");
 
 class BrokerAdmin:
     def __init__(self, broker, username=None, password=None):

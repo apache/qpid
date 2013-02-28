@@ -22,6 +22,7 @@
  *
  */
 
+#include "Role.h"
 #include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Mutex.h"
@@ -38,30 +39,41 @@ namespace ha {
 class Settings;
 class BrokerReplicator;
 class HaBroker;
+class StatusCheck;
+class Membership;
 
 /**
- * State associated with a backup broker. Manages connections to primary.
+ * Backup role: Manages connections to primary, replicates  management events and queue contents.
  *
  * THREAD SAFE
  */
-class Backup
+class Backup : public Role
 {
   public:
     Backup(HaBroker&, const Settings&);
     ~Backup();
+
+    std::string getLogPrefix() const { return logPrefix; }
+
     void setBrokerUrl(const Url&);
-    void setStatus(BrokerStatus);
+
+    Role* promote();
 
   private:
-    void initialize(const Url&);
+    void stop(sys::Mutex::ScopedLock&);
+    Role* recover(sys::Mutex::ScopedLock&);
+
     std::string logPrefix;
+    Membership& membership;
 
     sys::Mutex lock;
+    bool stopped;
     HaBroker& haBroker;
     broker::Broker& broker;
     Settings settings;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<BrokerReplicator> replicator;
+    std::auto_ptr<StatusCheck> statusCheck;
 };
 
 }} // namespace qpid::ha

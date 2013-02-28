@@ -24,18 +24,22 @@
 
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include "qpid/broker/Broker.h"
 #include "qpid/broker/MessageStore.h"
-#include "qpid/broker/PersistableExchange.h"
-#include "qpid/broker/PersistableMessage.h"
-#include "qpid/broker/PersistableQueue.h"
-#include "qpid/management/Manageable.h"
+//#include "qpid/management/Manageable.h"
 
 #include <string>
 
 using namespace qpid;
 
 namespace qpid {
+
+namespace broker {
+class Broker;
+class PersistableExchange;
+class PersistableMessage;
+class PersistableQueue;
+}
+
 namespace store {
 
 class StorageProvider;
@@ -82,18 +86,6 @@ class MessageStorePlugin :
     /**
      * @name Methods inherited from qpid::broker::MessageStore
      */
-    //@{
-    /**
-     * If called before recovery, will discard the database and reinitialize
-     * using an empty store. This is used when cluster nodes recover and
-     * must get their content from a cluster sync rather than directly from
-     * the store.
-     *
-     * @param saveStoreContent    If true, the store's contents should be
-     *                            saved to a backup location before
-     *                            reinitializing the store content.
-     */
-    virtual void truncateInit(const bool saveStoreContent = false);
 
     /**
      * Record the existence of a durable queue

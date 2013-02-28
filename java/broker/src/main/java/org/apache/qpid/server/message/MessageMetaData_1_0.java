@@ -342,6 +342,14 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
     {
         private final AMQPDescribedTypeRegistry _typeRegistry = AMQPDescribedTypeRegistry.newInstance();
 
+        private MetaDataFactory()
+        {
+            _typeRegistry.registerTransportLayer();
+            _typeRegistry.registerMessagingLayer();
+            _typeRegistry.registerTransactionLayer();
+            _typeRegistry.registerSecurityLayer();
+        }
+
         public MessageMetaData_1_0 createMetaData(ByteBuffer buf)
         {
             ValueHandler valueHandler = new ValueHandler(_typeRegistry);
@@ -354,7 +362,8 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
                 try
                 {
                     ByteBuffer encodedBuf = buf.duplicate();
-                    sections.add((Section) valueHandler.parse(buf));
+                    Object parse = valueHandler.parse(buf);
+                    sections.add((Section) parse);
                     encodedBuf.limit(buf.position());
                     encodedSections.add(encodedBuf);
 

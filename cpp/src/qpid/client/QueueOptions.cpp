@@ -49,8 +49,8 @@ QueueOptions::~QueueOptions()
 	
 void QueueOptions::setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount)
 {
-    if (maxCount) setInt(strMaxCountKey, maxCount);
-    if (maxSize) setInt(strMaxSizeKey, maxSize);
+    if (maxCount) setUInt64(strMaxCountKey, maxCount);
+    if (maxSize) setUInt64(strMaxSizeKey, maxSize);
     if (maxSize || maxCount){
         switch (sp)
         {

@@ -40,19 +40,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Description:
  *
  * The problem that this test is exposing is that the dispatcher used to be capable
- * of holding on to a message when stopped. This ment that when the rollback was
+ * of holding on to a message when stopped. This meant that when the rollback was
  * called and the dispatcher stopped it may have hold of a message. So after all
  * the local queues(preDeliveryQueue, SynchronousQueue, PostDeliveryTagQueue)
  * have been cleared the client still had a single message, the one the
  * dispatcher was holding on to.
  *
  * As a result the TxRollback operation would run and then release the dispatcher.
- * Whilst the dispatcher would then proceed to reject the message it was holiding
+ * Whilst the dispatcher would then proceed to reject the message it was holding
  * the Broker would already have resent that message so the rejection would silently
  * fail.
  *
- * And the client would receieve that single message 'early', depending on the
- * number of messages already recevied when rollback was called.
+ * And the client would receive that single message 'early', depending on the
+ * number of messages already received when rollback was called.
  *
  *
  * Aims:
@@ -78,7 +78,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * as expected.
  *
  * We are testing a race condition here but we can check through the log file if
- * the race condition occured. However, performing that check will only validate
+ * the race condition occurred. However, performing that check will only validate
  * the problem exists and will not be suitable as part of a system test.
  *
  */
@@ -183,18 +183,8 @@ public class RollbackOrderTest extends QpidBrokerTestCase
             }
         }
 
-//        _consumer.close();
         _connection.close();
         
         assertFalse("Exceptions thrown during test run, Check Std.err.", failed.get());
     }
-
-    @Override public void tearDown() throws Exception
-    {
-
-        drainQueue(_queue);
-
-        super.tearDown();
-    }
-
 }

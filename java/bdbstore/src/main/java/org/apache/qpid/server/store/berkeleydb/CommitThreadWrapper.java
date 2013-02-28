@@ -80,7 +80,7 @@ public class CommitThreadWrapper
         {
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("public synchronized void complete(): called (Transaction = " + _tx + ")");
+                LOGGER.debug("complete() called for transaction " + _tx);
             }
             _complete = true;
 
@@ -101,7 +101,10 @@ public class CommitThreadWrapper
 
             if(!_syncCommit)
             {
-                LOGGER.debug("CommitAsync was requested, returning immediately.");
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("CommitAsync was requested, returning immediately.");
+                }
                 return;
             }
 
@@ -121,6 +124,12 @@ public class CommitThreadWrapper
 
         public synchronized void waitForCompletion()
         {
+            long startTime = 0;
+            if(LOGGER.isDebugEnabled())
+            {
+                startTime = System.currentTimeMillis();
+            }
+
             while (!isComplete())
             {
                 _commitThread.explicitNotify();
@@ -132,6 +141,12 @@ public class CommitThreadWrapper
                 {
                     throw new RuntimeException(e);
                 }
+            }
+
+            if(LOGGER.isDebugEnabled())
+            {
+                long duration = System.currentTimeMillis() - startTime;
+                LOGGER.debug("waitForCompletion returning after " + duration + " ms for transaction " + _tx);
             }
         }
     }
@@ -198,7 +213,19 @@ public class CommitThreadWrapper
 
             try
             {
+                long startTime = 0;
+                if(LOGGER.isDebugEnabled())
+                {
+                    startTime = System.currentTimeMillis();
+                }
+
                 _environment.flushLog(true);
+
+                if(LOGGER.isDebugEnabled())
+                {
+                    long duration = System.currentTimeMillis() - startTime;
+                    LOGGER.debug("flushLog completed in " + duration  + " ms");
+                }
 
                 for(int i = 0; i < size; i++)
                 {

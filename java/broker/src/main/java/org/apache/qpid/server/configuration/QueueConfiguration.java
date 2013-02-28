@@ -24,11 +24,11 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 
 import java.util.List;
 
-public class QueueConfiguration extends ConfigurationPlugin
+public class QueueConfiguration extends AbstractConfiguration
 {
     private String _name;
     private VirtualHostConfiguration _vHostConfig;
@@ -39,7 +39,7 @@ public class QueueConfiguration extends ConfigurationPlugin
         _name = name;
 
         CompositeConfiguration mungedConf = new CompositeConfiguration();
-        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + name));
+        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + escapeTagName(name)));
         mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues"));
 
         setConfiguration("virtualhosts.virtualhost.queues.queue", mungedConf);
@@ -193,43 +193,4 @@ public class QueueConfiguration extends ConfigurationPlugin
     {
         return getBooleanValue("deadLetterQueues", _vHostConfig.isDeadLetterQueueEnabled());
     }
-
-    public static class QueueConfig extends ConfigurationPlugin
-    {
-        @Override
-        public String[] getElementsProcessed()
-        {
-            return new String[]{"name"};
-        }
-
-        public String getName()
-        {
-            return getStringValue("name");
-        }
-
-
-        public void validateConfiguration() throws ConfigurationException
-        {
-            if (getConfig().isEmpty())
-            {
-                throw new ConfigurationException("Queue section cannot be empty.");
-            }
-
-            if (getName() == null)
-            {
-                throw new ConfigurationException("Queue section must have a 'name' element.");
-            }
-
-        }
-
-
-        @Override
-        public String formatToString()
-        {
-            return "Name:"+getName();
-        }
-          
-
-    }
-
 }

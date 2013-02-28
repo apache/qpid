@@ -20,27 +20,8 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.qpid.qmf.QMFService;
-import org.apache.qpid.server.configuration.BrokerConfig;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfigurationManager;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.IAuthenticationManagerRegistry;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.transport.QpidAcceptor;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.Map;
-import java.util.UUID;
 
 public interface IApplicationRegistry extends StatisticsGatherer
 {
@@ -56,80 +37,5 @@ public interface IApplicationRegistry extends StatisticsGatherer
      */
     void close();
 
-    /**
-     * Get the low level configuration. For use cases where the configured object approach is not required
-     * you can get the complete configuration information.
-     * @return a Commons Configuration instance
-     */
-    ServerConfiguration getConfiguration();
-
-    /**
-     * Get the AuthenticationManager for the given socket address
-     *
-     * If no AuthenticationManager has been specifically set for the given address, then use the default
-     * AuthenticationManager
-     *
-     * @param address The (listening) socket address for which the AuthenticationManager is required
-     * @return the AuthenticationManager
-     */
-    AuthenticationManager getAuthenticationManager(SocketAddress address);
-
-    IAuthenticationManagerRegistry getAuthenticationManagerRegistry();
-
-    VirtualHostRegistry getVirtualHostRegistry();
-
-    SecurityManager getSecurityManager();
-
-    PluginManager getPluginManager();
-
-    ConfigurationManager getConfigurationManager();
-
-    RootMessageLogger getRootMessageLogger();
-
-    /**
-     * Register any acceptors for this registry
-     * @param bindAddress The address that the acceptor has been bound with
-     * @param acceptor The acceptor in use
-     */
-    void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor);
-
-    public UUID getBrokerId();
-
-    QMFService getQMFService();
-
-    void setBrokerConfig(BrokerConfig broker);
-
-    BrokerConfig getBrokerConfig();
-
     Broker getBroker();
-
-    VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
-
-    ConfigStore getConfigStore();
-
-    void setConfigStore(ConfigStore store);
-
-    void initialiseStatisticsReporting();
-
-    Map<InetSocketAddress, QpidAcceptor> getAcceptors();
-
-    void addPortBindingListener(PortBindingListener listener);
-
-    boolean useHTTPManagement();
-
-    int getHTTPManagementPort();
-
-    boolean useHTTPSManagement();
-
-    int getHTTPSManagementPort();
-
-    void addRegistryChangeListener(IAuthenticationManagerRegistry.RegistryChangeListener registryChangeListener);
-
-    public interface PortBindingListener
-    {
-        public void bound(QpidAcceptor acceptor, InetSocketAddress bindAddress);
-        public void unbound(QpidAcceptor acceptor);
-
-    }
-
 }

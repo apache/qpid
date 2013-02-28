@@ -22,14 +22,16 @@ package org.apache.qpid.server.logging.actors;
 
 import java.util.List;
 
+import org.apache.qpid.server.util.BrokerTestHelper;
+
 public class QueueActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
-        _amqpActor = new QueueActor(getQueue(), _rootLogger);
+        super.setUp();
+        setAmqpActor(new QueueActor(BrokerTestHelper.createQueue(getName(), getSession().getVirtualHost()), getRootLogger()));
     }
 
     /**
@@ -42,9 +44,9 @@ public class QueueActorTest extends BaseConnectionActorTestCase
      */
     public void testQueueActor()
     {
-        final String message = sendTestLogMessage(_amqpActor);
+        final String message = sendTestLogMessage(getAmqpActor());
 
-        List<Object> logs = _rawLogger.getLogMessages();
+        List<Object> logs = getRawLogger().getLogMessages();
 
         assertEquals("Message log size not as expected.", 1, logs.size());
 

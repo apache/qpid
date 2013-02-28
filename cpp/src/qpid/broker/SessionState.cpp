@@ -25,7 +25,6 @@
 #include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/SessionManager.h"
 #include "qpid/broker/SessionHandler.h"
-#include "qpid/sys/ClusterSafe.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQMethodBody.h"
@@ -54,15 +53,14 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
     Broker& b, SessionHandler& h, const SessionId& id,
-    const SessionState::Configuration& config, bool delayManagement)
+    const SessionState::Configuration& config)
     : qpid::SessionState(id, config),
       broker(b), handler(&h),
       semanticState(*this),
       adapter(semanticState),
-      mgmtObject(0),
       asyncCommandCompleter(new AsyncCommandCompleter(this))
 {
-    if (!delayManagement) addManagementObject();
+    addManagementObject();
     attach(h);
 }
 
@@ -72,8 +70,8 @@ void SessionState::addManagementObject() {
     if (parent != 0) {
         ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent != 0) {
-            mgmtObject = new _qmf::Session
-                (agent, this, parent, getId().getName());
+            mgmtObject = _qmf::Session::shared_ptr(new _qmf::Session
+                (agent, this, parent, getId().getName()));
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
@@ -145,14 +143,9 @@ void SessionState::activateOutput() {
         getConnection().outputTasks.activateOutput();
 }
 
-void SessionState::giveReadCredit(int32_t credit) {
-    if (isAttached())
-        getConnection().outputTasks.giveReadCredit(credit);
-}
-
-ManagementObject* SessionState::GetManagementObject (void) const
+ManagementObject::shared_ptr SessionState::GetManagementObject(void) const
 {
-    return (ManagementObject*) mgmtObject;
+    return mgmtObject;
 }
 
 Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
@@ -251,11 +244,6 @@ void SessionState::completeRcvMsg(SequenceNumber id,
                                   bool requiresAccept,
                                   bool requiresSync)
 {
-    // Mark this as a cluster-unsafe scope since it can be called in
-    // journal threads or connection threads as part of asynchronous
-    // command completion.
-    sys::ClusterUnsafeScope cus;
-
     bool callSendCompletion = false;
     receiverCompleted(id);
     if (requiresAccept)
@@ -340,14 +328,8 @@ void SessionState::readyToSend() {
 Broker& SessionState::getBroker() { return broker; }
 
 // Session resume is not fully implemented so it is useless to set a
-// non-0 timeout. Moreover it creates problems in a cluster because
-// dead sessions are kept and interfere with failover.
+// non-0 timeout.
 void SessionState::setTimeout(uint32_t) { }
-
-framing::AMQP_ClientProxy& SessionState::getClusterOrderProxy() {
-    return handler->getClusterOrderProxy();
-}
-
 
 // Current received command is an execution.sync command.
 // Complete this command only when all preceding commands have completed.

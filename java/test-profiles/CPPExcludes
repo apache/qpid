@@ -23,8 +23,6 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateEx
 // QPID-3576: Java client issue. MessageConsumer#close() time-out.
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testDeleteOptions
 
-org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
-
 // Those tests are testing 0.8 specific semantics
 org.apache.qpid.test.client.ImmediateAndMandatoryPublishingTest#*
 
@@ -128,17 +126,8 @@ org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFlowContro
 
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 
-//Excluded due to QPID-1447 : CPP broker does not have SlowConsumer Disconnection
-org.apache.qpid.systest.GlobalQueuesTest#*
-org.apache.qpid.systest.GlobalTopicsTest#*
-org.apache.qpid.systest.MergeConfigurationTest#*
-org.apache.qpid.systest.SubscriptionTest#*
-org.apache.qpid.systest.TopicTest#*
-
 // Excluded because Java plugins not used in CPP broker
 org.apache.qpid.server.virtualhost.plugin.*
-org.apache.qpid.server.virtualhost.plugin.policies.*
-org.apache.qpid.info.systest.InfoPluginTest#*
 org.apache.qpid.info.test.*
 org.apache.qpid.server.security.access.*
 org.apache.qpid.server.security.access.plugins.*
@@ -182,4 +171,15 @@ org.apache.qpid.systest.disttest.*
 org.apache.qpid.disttest.*
 
 // Exclude java broker REST API tests
-org.apache.qpid.server.management.plugin.servlet.rest.*
+org.apache.qpid.systest.rest.*
+org.apache.qpid.systest.rest.acl.*
+
+// Exclude failover tests requiring virtual host functionality
+org.apache.qpid.client.failover.MultipleBrokersFailoverTest#*
+
+// Uses Java broker specific configuration
+org.apache.qpid.client.ssl.SSLTest#testClientCertMissingWhilstWanting
+
+// QPID-2796 : Java 0-10 client only sends heartbeats in response to heartbeats from the server, not timeout based
+org.apache.qpid.client.HeartbeatTest#testReadOnlyConnectionHeartbeats
+

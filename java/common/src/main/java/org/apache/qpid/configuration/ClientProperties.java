@@ -87,6 +87,8 @@ public class ClientProperties
 
     public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
+    public static final String USE_LEGACY_STREAM_MESSAGE_FORMAT = "qpid.use_legacy_stream_message";
+
     public static final String AMQP_VERSION = "qpid.amqp.version";
 
     public static final String QPID_VERIFY_CLIENT_ID = "qpid.verify_client_id";
@@ -189,6 +191,19 @@ public class ClientProperties
      * waiting because the client was flow controlled by the broker.
      */
     public static final long DEFAULT_FLOW_CONTROL_WAIT_NOTIFY_PERIOD = 5000L;
+
+    /**
+     * System property to control whether the client will declare queues during
+     * consumer creation when using BindingURLs.
+     */
+    public static final String QPID_DECLARE_QUEUES_PROP_NAME = "qpid.declare_queues";
+
+    /**
+     * System property to control whether the client will declare exchanges during
+     * producer/consumer creation when using BindingURLs.
+     */
+    public static final String QPID_DECLARE_EXCHANGES_PROP_NAME = "qpid.declare_exchanges";
+    public static final String VERIFY_QUEUE_ON_SEND = "qpid.verify_queue_on_send";
 
 
     private ClientProperties()

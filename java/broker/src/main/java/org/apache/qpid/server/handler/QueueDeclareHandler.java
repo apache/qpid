@@ -38,7 +38,6 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -58,8 +57,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     {
         return _instance;
     }
-
-    private boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
     public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
     {
@@ -148,13 +145,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                             });
                         }
                     }
-                    if (autoRegister)
-                    {
-                        Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
+                    Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                        virtualHost.getBindingFactory().addBinding(String.valueOf(queueName), queue, defaultExchange, Collections.EMPTY_MAP);
-                        _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getNameShortString() + ")");
-                    }
+                    virtualHost.getBindingFactory().addBinding(String.valueOf(queueName), queue, defaultExchange,
+                            Collections.<String, Object> emptyMap());
+                    _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getNameShortString() + ")");
                 }
             }
             else if (queue.isExclusive() && !queue.isDurable() && (owningSession == null || owningSession.getConnectionModel() != protocolConnection))

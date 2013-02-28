@@ -40,6 +40,7 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -90,42 +91,43 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
     {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Connecting to broker:" + brokerDetail);
+        }
         final Set<AMQState> openOrClosedStates =
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
-
-
-        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
 
         ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
 
-        SSLContext sslContext = null;
-        if (settings.isUseSSL())
+        //Check connection-level ssl override setting
+        String connectionSslOption = _conn.getConnectionURL().getOption(ConnectionURL.OPTIONS_SSL);
+        if(connectionSslOption != null)
         {
-            try
+            boolean connUseSsl = Boolean.parseBoolean(connectionSslOption);
+            boolean brokerlistUseSsl = settings.isUseSSL();
+
+            if( connUseSsl != brokerlistUseSsl)
             {
-                sslContext = SSLContextFactory.buildClientContext(
-                                settings.getTrustStorePath(),
-                                settings.getTrustStorePassword(),
-                                settings.getTrustStoreType(),
-                                settings.getTrustManagerFactoryAlgorithm(),
-                                settings.getKeyStorePath(),
-                                settings.getKeyStorePassword(),
-                                settings.getKeyStoreType(),
-                                settings.getKeyManagerFactoryAlgorithm(),
-                                settings.getCertAlias());
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new AMQException("Unable to create SSLContext: " + e.getMessage(), e);
+                settings.setUseSSL(connUseSsl);
+
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Applied connection ssl option override, setting UseSsl to: " + connUseSsl );
+                }
             }
         }
 
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()), sslContext);
+
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()),
+                                                      _conn.getProtocolHandler());
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
+
+        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
         _conn.getProtocolHandler().getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
@@ -375,5 +377,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         // The Qpid Java Broker 0-8..0-9-1 does not advertise features by the qpid.features property, so for now
         // we just hardcode JMS selectors as supported.
         return ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR.equals(featureName);
+    }
+
+    @Override
+    public void setHeartbeatListener(HeartbeatListener listener)
+    {
+        _conn.getProtocolHandler().setHeartbeatListener(listener);
     }
 }

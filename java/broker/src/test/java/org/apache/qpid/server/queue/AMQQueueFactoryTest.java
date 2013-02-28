@@ -20,23 +20,23 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Mockito.when;
+
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -50,19 +50,19 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         super.setUp();
 
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-
+        BrokerTestHelper.setUp();
         XMLConfiguration configXml = new XMLConfiguration();
-        configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
-        configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
+        configXml.addProperty("store.class", TestableMemoryMessageStore.class.getName());
 
-        ServerConfiguration configuration = new ServerConfiguration(configXml);
 
-        ApplicationRegistry registry = new TestApplicationRegistry(configuration);
-        ApplicationRegistry.initialise(registry);
-        registry.getVirtualHostRegistry().setDefaultVirtualHostName(getName());
+        Broker broker = BrokerTestHelper.createBrokerMock();
+        if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
+        {
+            when(broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
+            when(broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
+        }
 
-        _virtualHost = registry.getVirtualHostRegistry().getVirtualHost(getName());
+        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, broker));
 
         _queueRegistry = _virtualHost.getQueueRegistry();
 
@@ -73,11 +73,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         try
         {
-            super.tearDown();
+            _virtualHost.close();
         }
         finally
         {
-            ApplicationRegistry.remove();
+            BrokerTestHelper.tearDown();
+            super.tearDown();
         }
     }
 
@@ -172,11 +173,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
      * are not applied to the DLQ itself.
      * @throws AMQException
      */
-    public void testDeadLetterQueueDoesNotInheritDLQorMDCSettings() throws AMQException
+    public void testDeadLetterQueueDoesNotInheritDLQorMDCSettings() throws Exception
     {
-        ApplicationRegistry.getInstance().getConfiguration().getConfig().addProperty("deadLetterQueues","true");
-        ApplicationRegistry.getInstance().getConfiguration().getConfig().addProperty("maximumDeliveryCount","5");
-
         String queueName = "testDeadLetterQueueEnabled";
         AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
         AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
@@ -336,11 +334,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
         try
         {
             // change DLQ name to make its length bigger than exchange name
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterExchangeSuffix", "_DLE");
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterQueueSuffix", "_DLQUEUE");
-
+            setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLE");
+            setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQUEUE");
             FieldTable fieldTable = new FieldTable();
             fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
             AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
@@ -352,13 +347,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
             assertTrue("Unexpected exception is thrown!", e instanceof IllegalArgumentException);
             assertTrue("Unexpected exception message!", e.getMessage().contains("DLQ queue name")
                     && e.getMessage().contains("length exceeds limit of 255"));
-        }
-        finally
-        {
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
         }
     }
 
@@ -372,11 +360,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
         try
         {
             // change DLQ name to make its length bigger than exchange name
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterExchangeSuffix", "_DLEXCHANGE");
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterQueueSuffix", "_DLQ");
-
+            setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLEXCHANGE");
+            setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQ");
             FieldTable fieldTable = new FieldTable();
             fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
             AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
@@ -388,13 +373,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
             assertTrue("Unexpected exception is thrown!", e instanceof IllegalArgumentException);
             assertTrue("Unexpected exception message!", e.getMessage().contains("DL exchange name")
                     && e.getMessage().contains("length exceeds limit of 255"));
-        }
-        finally
-        {
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-            ApplicationRegistry.getInstance().getConfiguration().getConfig()
-                    .addProperty("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
         }
     }
 

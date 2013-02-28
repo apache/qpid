@@ -34,7 +34,7 @@ public class LineChart3DBuilder extends CategoryDataSetBasedChartBuilder
     }
 
     @Override
-    public JFreeChart createChartImpl(String title, String xAxisTitle,
+    protected JFreeChart createCategoryChart(String title, String xAxisTitle,
             String yAxisTitle, final Dataset dataset, PlotOrientation plotOrientation,
             boolean showLegend, boolean showToolTips, boolean showUrls)
     {

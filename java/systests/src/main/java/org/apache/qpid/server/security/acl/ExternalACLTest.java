@@ -319,8 +319,12 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpRequestResponseSuccess() throws Exception
     {
-        writeACLFile("test", "GROUP messaging-users client server",
-                             "ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST",
+        // The group "messaging-users", referenced in the ACL below, is currently defined
+        // in broker/etc/groups-systests.
+        // We tolerate a dependency from this test to that file because its
+        // contents are expected to change rarely.
+
+        writeACLFile("test", "ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST",
                              "# Server side",
                              "ACL ALLOW-LOG server CREATE QUEUE name=\"example.RequestQueue\"" ,
                              "ACL ALLOW-LOG server BIND EXCHANGE",
@@ -389,14 +393,44 @@ public class ExternalACLTest extends AbstractACLTestCase
         conn.start();
 
         // create kipper
-        Topic kipper = sess.createTopic("kipper");
-        TopicSubscriber subscriber = sess.createDurableSubscriber(kipper, "kipper");
+        String topicName = "kipper";
+        Topic topic = sess.createTopic(topicName);
+        TopicSubscriber subscriber = sess.createDurableSubscriber(topic, topicName);
 
         subscriber.close();
-        sess.unsubscribe("kipper");
+        sess.unsubscribe(topicName);
 
         //Do something to show connection is active.
         sess.rollback();
         conn.close();
+    }
+
+    public void setUpFirewallAllow() throws Exception
+    {
+        writeACLFile("test", "ACL ALLOW client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
+    }
+
+    public void testFirewallAllow() throws Exception
+    {
+        getConnection("test", "client", "guest");
+        // test pass because we successfully connected
+    }
+
+    public void setUpFirewallDeny() throws Exception
+    {
+        writeACLFile("test", "ACL DENY client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
+    }
+
+    public void testFirewallDeny() throws Exception
+    {
+        try
+        {
+            getConnection("test", "client", "guest");
+            fail("We expected the connection to fail");
+        }
+        catch(JMSException e)
+        {
+            // pass
+        }
     }
 }

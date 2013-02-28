@@ -98,66 +98,78 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # when running the tests. If you want to build a subset of the tests run
 # ccmake and set unit_tests_to_build to the set you want to build.
 
-set(unit_tests_to_build
-    exception_test
-    RefCounted
-    SessionState
-    logging
-    AsyncCompletion
-    Url
-    Uuid
-    Shlib
-    FieldValue
-    FieldTable
+set(all_unit_tests
+    AccumulatedAckTest
     Array
-    QueueOptionsTest
+    AsyncCompletion
+    AtomicValue
+    ClientMessage
+    ClientMessageTest
+    ClientSessionTest
+    ConsoleTest
+    DeliveryRecordTest
+    DtxWorkRecordTest
+    exception_test
+    ExchangeTest
+    FieldTable
+    FieldValue
+    FrameDecoder
+    FramingTest
+    HeadersExchangeTest
+    HeaderTest
     InlineAllocator
     InlineVector
-    ClientSessionTest
-    MessagingSessionTests
-    SequenceSet
-    StringUtils
-    RangeSet
-    AtomicValue
-    QueueTest
-    AccumulatedAckTest
-    DtxWorkRecordTest
-    DeliveryRecordTest
-    ExchangeTest
-    HeadersExchangeTest
+    logging
+    ManagementTest
+    MessageReplayTracker
     MessageTest
+    MessagingSessionTests
+    PollableCondition
+    ProxyTest
     QueueDepth
-    QueueRegistryTest
-    QueuePolicyTest
     QueueFlowLimitTest
-    FramingTest
-    HeaderTest
+    QueueOptionsTest
+    QueuePolicyTest
+    QueueRegistryTest
+    QueueTest
+    RangeSet
+    RefCounted
+    RetryList
     SequenceNumberTest
+    SequenceSet
+    SessionState
+    Shlib
+    StringUtils
+    SystemInfo
     TimerTest
     TopicExchangeTest
     TxBufferTest
-    ManagementTest
-    MessageReplayTracker
-    ConsoleTest
-    ProxyTest
-    RetryList
-    FrameDecoder
-    ClientMessageTest
-    PollableCondition
+    Url
+    Uuid
     Variant
-    ClientMessage
-    SystemInfo
     ${xml_tests}
+   )
+
+set(unit_tests_to_build
+    ""
     CACHE STRING "Which unit tests to build"
    )
 
 mark_as_advanced(unit_tests_to_build)
 
+# If no unit_test specifically set then use all unit tests
+if (unit_tests_to_build)
+set(actual_unit_tests ${unit_tests_to_build})
+else()
+set(actual_unit_tests ${all_unit_tests})
+endif()
+
 add_executable (unit_test unit_test
-                ${unit_tests_to_build} ${platform_test_additions})
+                ${actual_unit_tests} ${platform_test_additions})
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidmessaging qpidbroker qmfconsole)
+set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
@@ -274,8 +286,12 @@ remember_location(msg_group_test)
 
 
 # qpid-perftest and qpid-latency-test are generally useful so install them
-install (TARGETS qpid-perftest qpid-latency-test RUNTIME
-         DESTINATION ${QPID_INSTALL_BINDIR})
+install (TARGETS
+         qpid-perftest qpid-latency-test qpid-client-test
+         qpid-ping
+         qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
+         qpid-txtest
+         RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
 
 # This should ideally be done as part of the test run, but I don't know a way
 # to get these arguments and the working directory set like Makefile.am does,
@@ -309,10 +325,12 @@ if (PYTHON_EXECUTABLE)
   add_test (ha_tests ${test_wrap} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ha_tests.py)
   add_test (ipv6_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ipv6_test${test_script_suffix})
   add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
+  add_test (federation_sys_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_sys_tests${test_script_suffix})
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
 endif (BUILD_ACL)
 add_test (dynamic_log_level_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_log_level_test${test_script_suffix})
+add_test (dynamic_log_hires_timestamp ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_log_hires_timestamp${test_script_suffix})
 if (BUILD_MSSQL)
   add_test (store_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL)
 endif (BUILD_MSSQL)
@@ -323,7 +341,9 @@ endif (PYTHON_EXECUTABLE)
 
 add_library(test_store MODULE test_store.cpp)
 target_link_libraries (test_store qpidbroker qpidcommon)
-set_target_properties (test_store PROPERTIES PREFIX "")
+set_target_properties (test_store PROPERTIES
+                       COMPILE_DEFINITIONS _IN_QPID_BROKER
+                       PREFIX "")
 
 
 add_library (dlclose_noop MODULE dlclose_noop.c)
@@ -333,10 +353,16 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 #
 ## Longer running stability tests, not run by default check: target.
 ## Not run under valgrind, too slow
-#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak
+#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest
 #EXTRA_DIST+=$(LONG_TESTS) run_perftest
 #check-long:
 #	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
 
 # Include async store tests
 include(asyncstore.cmake)
+
+#
+# legacystore
+#
+#add_subdirectory(legacystore)
+

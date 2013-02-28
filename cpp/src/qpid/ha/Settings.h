@@ -23,6 +23,7 @@
  */
 
 #include "types.h"
+#include "qpid/sys/IntegerTypes.h"
 #include <string>
 
 namespace qpid {
@@ -34,16 +35,25 @@ namespace ha {
 class Settings
 {
   public:
-    Settings() : cluster(false), replicateDefault(NONE), backupTimeout(5)
+    Settings() : cluster(false), queueReplication(false),
+                 replicateDefault(NONE), backupTimeout(5),
+                 flowMessages(100), flowBytes(0)
     {}
 
     bool cluster;               // True if we are a cluster member.
-    std::string clientUrl;
+    bool queueReplication;      // True if enabled.
+    std::string publicUrl;
     std::string brokerUrl;
     Enum<ReplicateLevel> replicateDefault;
     std::string username, password, mechanism;
     double backupTimeout;
-  private:
+
+    uint32_t flowMessages, flowBytes;
+
+    static const uint32_t NO_LIMIT=0xFFFFFFFF;
+    static uint32_t flowValue(uint32_t n) { return n ? n : NO_LIMIT; }
+    uint32_t getFlowMessages() const { return flowValue(flowMessages); }
+    uint32_t getFlowBytes() const { return flowValue(flowBytes); }
 };
 }} // namespace qpid::ha
 

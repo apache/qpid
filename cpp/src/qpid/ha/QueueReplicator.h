@@ -41,6 +41,7 @@ class Deliverable;
 
 namespace ha {
 class HaBroker;
+class Settings;
 
 /**
  * Exchange created on a backup broker to replicate a queue on the primary.
@@ -57,7 +58,11 @@ class QueueReplicator : public broker::Exchange,
   public:
     static const std::string DEQUEUE_EVENT_KEY;
     static const std::string POSITION_EVENT_KEY;
+    static const std::string QPID_SYNC_FREQUENCY;
+
     static std::string replicatorName(const std::string& queueName);
+    static bool isReplicatorName(const std::string&);
+
     /** Test if a string is an event key */
     static bool isEventKey(const std::string key);
 
@@ -68,7 +73,6 @@ class QueueReplicator : public broker::Exchange,
     ~QueueReplicator();
 
     void activate();            // Call after ctor
-    void deactivate();          // Call before dtor
 
     std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*, qpid::broker::AsyncStore* const);
@@ -80,8 +84,18 @@ class QueueReplicator : public broker::Exchange,
     uint64_t getSize();
     void write(char* target);
 
+    // Set if the queue has ever been subscribed to, used for auto-delete cleanup.
+    void setSubscribed() { subscribed = true; }
+    bool isSubscribed() { return subscribed; }
+
+    boost::shared_ptr<broker::Queue> getQueue() const { return queue; }
+
   private:
+    class ErrorListener;
+    class QueueObserver;
+
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
+    void destroy();             // Called when the queue is destroyed.
     void dequeue(framing::SequenceNumber, sys::Mutex::ScopedLock&);
 
     HaBroker& haBroker;
@@ -92,6 +106,8 @@ class QueueReplicator : public broker::Exchange,
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<broker::Bridge> bridge;
     BrokerInfo brokerInfo;
+    bool subscribed;
+    const Settings& settings;
 };
 
 }} // namespace qpid::ha

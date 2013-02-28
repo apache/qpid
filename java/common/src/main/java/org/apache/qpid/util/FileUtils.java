@@ -220,6 +220,19 @@ public class FileUtils
     public static void copyCheckedEx(File src, File dst) throws IOException
     {
         InputStream in = new FileInputStream(src);
+        copy(in, dst);
+    }
+
+    /**
+     * Copies the specified InputStream to the specified destination file. If the destination file does not exist,
+     * it is created.
+     *
+     * @param in The InputStream
+     * @param dst The destination file name.
+     * @throws IOException
+     */
+    public static void copy(InputStream in, File dst) throws IOException
+    {
         try
         {
             if (!dst.exists())

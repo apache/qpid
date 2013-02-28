@@ -35,7 +35,7 @@
 #include "qpid/sys/Thread.h"
 
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <deque>
 #include <string>
 
@@ -66,7 +66,7 @@ class TCPConnector : public Connector, public sys::Codec
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
 
-    sys::Socket socket;
+    boost::scoped_ptr<sys::Socket> socket;
 
     sys::AsynchConnector* connector;
     sys::AsynchIO* aio;
@@ -80,6 +80,7 @@ class TCPConnector : public Connector, public sys::Codec
     void close();
     void send(framing::AMQFrame& frame);
     void abort();
+    void connectAborted();
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
@@ -90,7 +91,7 @@ class TCPConnector : public Connector, public sys::Codec
     const qpid::sys::SecuritySettings* getSecuritySettings() { return 0; }
 
     size_t decode(const char* buffer, size_t size);
-    size_t encode(const char* buffer, size_t size);
+    size_t encode(char* buffer, size_t size);
     bool canEncode();
 
 protected:

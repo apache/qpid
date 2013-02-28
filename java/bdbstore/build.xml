@@ -18,7 +18,7 @@
  -->
 <project name="bdbstore" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="test client common/test broker/test management/common systests" />
+    <property name="module.test.depends" value="client common/tests broker/tests management/common systests broker-plugins/management-jmx" />
     <property name="module.genpom" value="true"/>
 
     <import file="../module.xml" />
@@ -77,20 +77,5 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
     </target>
 
     <target name="build" depends="check-request-props, bdb-jar-required, module.build" />
-
-    <target name="postbuild" depends="copy-store-to-upgrade" />
-
-    <target name="copy-store-to-upgrade" description="copy the upgrade tool resource folder contents into the build tree">
-      <copy todir="${qpid.home}" failonerror="true">
-        <fileset dir="src/test/resources/upgrade"/>
-      </copy>
-    </target>
-
-    <target name="precompile-tests">
-        <mkdir dir="${module.test.resources}"/>
-        <copy todir="${module.test.resources}">
-            <fileset dir="src/test/resources"/>
-        </copy>
-    </target>
 
 </project>

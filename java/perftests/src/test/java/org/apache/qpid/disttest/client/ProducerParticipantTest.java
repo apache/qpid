@@ -31,15 +31,14 @@ import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.Session;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.InOrder;
 
-public class ProducerParticipantTest extends TestCase
+public class ProducerParticipantTest extends QpidTestCase
 {
     private ProducerParticipant _producer;
 
@@ -127,13 +126,13 @@ public class ProducerParticipantTest extends TestCase
 
         _inOrder.verify(_delegate).sendNextMessage(isA(CreateProducerCommand.class));
         _inOrder.verify(_delegate).calculatePayloadSizeFrom(_mockMessage);
-        _inOrder.verify(_delegate).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        _inOrder.verify(_delegate).commitIfNecessary(SESSION_NAME1);
 
     }
 
     public void testSendMessagesForDuration() throws Exception
     {
-        final long duration = 100;
+        final long duration = 1000;
         _command.setMaximumDuration(duration);
 
         ParticipantResult result = _producer.doIt(CLIENT_NAME);
@@ -142,7 +141,24 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, atLeastOnce()).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, atLeastOnce()).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, atLeastOnce()).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, atLeastOnce()).commitIfNecessary(SESSION_NAME1);
+    }
+
+    public void testSendMessagesForDurationWithDelayExceedingDuration() throws Exception
+    {
+        final long duration = 100;
+        _command.setMaximumDuration(duration);
+        _command.setStartDelay(150);
+
+        try
+        {
+            _producer.doIt(CLIENT_NAME);
+            fail("Exception should be thrown indicating configuration error");
+        }
+        catch(DistributedTestException e)
+        {
+            assertEquals("Start delay must be less than maximum test duration", e.getMessage());
+        }
     }
 
     public void testSendMessageBatches() throws Exception
@@ -161,7 +177,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(expectedNumberOfCommits)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(expectedNumberOfCommits)).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testSendMessageWithPublishInterval() throws Exception
@@ -183,7 +199,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(4)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(4)).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testSendMessageWithVaryingPayloadSize() throws Exception
@@ -208,7 +224,7 @@ public class ProducerParticipantTest extends TestCase
 
         verify(_delegate, times(numberOfMessages)).sendNextMessage(isA(CreateProducerCommand.class));
         verify(_delegate, times(numberOfMessages)).calculatePayloadSizeFrom(_mockMessage);
-        verify(_delegate, times(numberOfMessages)).commitOrAcknowledgeMessage(_mockMessage, SESSION_NAME1);
+        verify(_delegate, times(numberOfMessages)).commitIfNecessary(SESSION_NAME1);
     }
 
     public void testReleaseResources()

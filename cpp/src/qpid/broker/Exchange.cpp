@@ -167,19 +167,19 @@ void Exchange::routeIVE(){
 
 Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
     name(_name), durable(false), alternateUsers(0), persistenceId(0), sequence(false),
-    sequenceNo(0), ive(false), mgmtExchange(0), brokerMgmtObject(0), broker(b), destroyed(false)
+    sequenceNo(0), ive(false), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
     {
         ManagementAgent* agent = broker->getManagementAgent();
         if (agent != 0)
         {
-            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name);
+            mgmtExchange = _qmf::Exchange::shared_ptr(new _qmf::Exchange (agent, this, parent, _name));
             mgmtExchange->set_durable(durable);
             mgmtExchange->set_autoDelete(false);
             agent->addObject(mgmtExchange, 0, durable);
             if (broker)
-                brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
+                brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObject());
         }
     }
 }
@@ -187,20 +187,20 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent, Broker* b)
     : name(_name), durable(_durable), alternateUsers(0), persistenceId(0),
-      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), brokerMgmtObject(0), broker(b), destroyed(false)
+      args(_args), sequence(false), sequenceNo(0), ive(false), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
     {
         ManagementAgent* agent = broker->getManagementAgent();
         if (agent != 0)
         {
-            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name);
+            mgmtExchange = _qmf::Exchange::shared_ptr(new _qmf::Exchange (agent, this, parent, _name));
             mgmtExchange->set_durable(durable);
             mgmtExchange->set_autoDelete(false);
             mgmtExchange->set_arguments(ManagementAgent::toMap(args));
             agent->addObject(mgmtExchange, 0, durable);
             if (broker)
-                brokerMgmtObject = (qmf::org::apache::qpid::broker::Broker*) broker->GetManagementObject();
+                brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObject());
         }
     }
 
@@ -212,8 +212,6 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
 
     ive = _args.get(qpidIVE);
     if (ive) {
-        if (broker && broker->isInCluster())
-            throw framing::NotImplementedException("Cannot use Initial Value Exchanges in a cluster");
         QPID_LOG(debug, "Configured exchange " <<  _name  << " with Initial Value");
     }
 }
@@ -227,6 +225,7 @@ Exchange::~Exchange ()
 void Exchange::setAlternate(Exchange::shared_ptr _alternate)
 {
     alternate = _alternate;
+    alternate->incAlternateUsers();
     if (mgmtExchange != 0) {
         if (alternate.get() != 0)
             mgmtExchange->set_altExchange(alternate->GetManagementObject()->getObjectId());
@@ -296,9 +295,9 @@ void Exchange::recoveryComplete(ExchangeRegistry& exchanges)
     }
 }
 
-ManagementObject* Exchange::GetManagementObject (void) const
+ManagementObject::shared_ptr Exchange::GetManagementObject (void) const
 {
-    return (ManagementObject*) mgmtExchange;
+    return mgmtExchange;
 }
 
 void Exchange::registerDynamicBridge(DynamicBridge* db, AsyncStore* const store)
@@ -347,16 +346,16 @@ void Exchange::propagateFedOp(const string& routingKey, const string& tags, cons
 
 Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* _parent,
                            FieldTable _args, const string& _origin, ConfigHandle _cfgHandle)
-    : parent(_parent), queue(_queue), key(_key), args(_args), origin(_origin), cfgHandle(_cfgHandle), mgmtBinding(0)
+    : parent(_parent), queue(_queue), key(_key), args(_args), origin(_origin), cfgHandle(_cfgHandle)
 {
 }
 
 Exchange::Binding::~Binding ()
 {
     if (mgmtBinding != 0) {
-        ManagementObject* mo = queue->GetManagementObject();
+        _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObject());
         if (mo != 0)
-            static_cast<_qmf::Queue*>(mo)->dec_bindingCount();
+            mo->dec_bindingCount();
         mgmtBinding->resourceDestroy ();
     }
 }
@@ -369,25 +368,25 @@ void Exchange::Binding::startManagement()
         if (broker != 0) {
             ManagementAgent* agent = broker->getManagementAgent();
             if (agent != 0) {
-                ManagementObject* mo = queue->GetManagementObject();
+                _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObject());
                 if (mo != 0) {
                     management::ObjectId queueId = mo->getObjectId();
 
-                    mgmtBinding = new _qmf::Binding
-                        (agent, this, (Manageable*) parent, queueId, key, ManagementAgent::toMap(args));
+                    mgmtBinding = _qmf::Binding::shared_ptr(new _qmf::Binding
+                        (agent, this, (Manageable*) parent, queueId, key, ManagementAgent::toMap(args)));
                     if (!origin.empty())
                         mgmtBinding->set_origin(origin);
                     agent->addObject(mgmtBinding);
-                    static_cast<_qmf::Queue*>(mo)->inc_bindingCount();
+                    mo->inc_bindingCount();
                 }
             }
         }
     }
 }
 
-ManagementObject* Exchange::Binding::GetManagementObject () const
+ManagementObject::shared_ptr Exchange::Binding::GetManagementObject () const
 {
-    return (ManagementObject*) mgmtBinding;
+    return mgmtBinding;
 }
 
 uint64_t Exchange::Binding::getSize() { return 0; } // TODO: kpvdr: implement persistence
@@ -432,6 +431,11 @@ bool Exchange::routeWithAlternate(Deliverable& msg)
         alternate->route(msg);
     }
     return msg.delivered;
+}
+
+void Exchange::setArgs(const framing::FieldTable& newArgs) {
+    args = newArgs;
+    if (mgmtExchange) mgmtExchange->set_arguments(ManagementAgent::toMap(args));
 }
 
 }}

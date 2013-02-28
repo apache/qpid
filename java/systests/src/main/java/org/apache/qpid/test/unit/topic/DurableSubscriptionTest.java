@@ -73,7 +73,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
-        setConfigurationProperty("management.enabled", "true");     
+        getBrokerConfiguration().addJmxManagementConfiguration();
         _jmxConnected=false;
         super.setUp();
     }

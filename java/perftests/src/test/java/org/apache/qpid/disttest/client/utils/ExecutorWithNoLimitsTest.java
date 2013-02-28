@@ -25,9 +25,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.concurrent.Callable;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ExecutorWithNoLimitsTest extends TestCase
+public class ExecutorWithNoLimitsTest extends QpidTestCase
 {
     private final static Object RESULT = new Object();
 

@@ -127,7 +127,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         try
         {
-            return _session.getClientSession(). createReceiver(_destination.getAddress(), AcknowledgeMode.ALO,
+            return _session.getClientSession(). createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
                                                                _linkName, _durable, getFilters(), null);
         }
         catch (AmqpErrorException e)
@@ -316,9 +316,9 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         _lastUnackedMessage = deliveryTag;
     }
 
-    void preReceiveAction(final org.apache.qpid.amqp_1_0.client.Message msg) throws IllegalStateException
+    void preReceiveAction(final org.apache.qpid.amqp_1_0.client.Message msg)
     {
-        final int acknowledgeMode = _session.getAcknowledgeMode();
+        int acknowledgeMode = _session.getAckModeEnum().ordinal();
 
         if(acknowledgeMode == Session.AUTO_ACKNOWLEDGE
            || acknowledgeMode == Session.DUPS_OK_ACKNOWLEDGE

@@ -24,6 +24,7 @@
 #endif
 
 #include "qpid/broker/AclModule.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -169,14 +170,8 @@ void SaslAuthenticator::fini(void)
 std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c )
 {
     if (c.getBroker().getOptions().auth) {
-        // The cluster creates non-authenticated connections for internal shadow connections
-        // that are never connected to an external client.
-        if ( !c.isAuthenticated() )
-            return std::auto_ptr<SaslAuthenticator>(
-                new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
-        else
-            return std::auto_ptr<SaslAuthenticator>(
-                new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        return std::auto_ptr<SaslAuthenticator>(
+            new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     } else {
         QPID_LOG(debug, "SASL: No Authentication Performed");
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
@@ -424,7 +419,7 @@ void CyrusAuthenticator::start(const string& mechanism, const string* response)
                                  &challenge, &challenge_len);
 
     processAuthenticationStep(code, challenge, challenge_len);
-    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    qmf::org::apache::qpid::broker::Connection::shared_ptr cnxMgmt = connection.getMgmtObject();
     if ( cnxMgmt )
         cnxMgmt->set_saslMechanism(mechanism);
 }
@@ -505,9 +500,9 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
     uint ssf = *(reinterpret_cast<const unsigned*>(value));
     std::auto_ptr<SecurityLayer> securityLayer;
     if (ssf) {
-        securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
+        securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize, ssf));
     }
-    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    qmf::org::apache::qpid::broker::Connection::shared_ptr cnxMgmt = connection.getMgmtObject();
     if ( cnxMgmt )
         cnxMgmt->set_saslSsf(ssf);
     return securityLayer;

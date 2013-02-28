@@ -20,12 +20,12 @@ broker.language=java
 broker.version=v0_10
 broker.type=internal
 #broker.command only used for the second broker during failover tests in this profile
-broker.command=build/bin/qpid-server -p @PORT -m @MPORT @EXCLUDES @INCLUDES -c @CONFIG_FILE -l @LOG_CONFIG_FILE
+broker.command=build/bin/qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE
 broker.ready=BRK-1004
 broker.stopped=Exception
-broker.protocol.excludes=--exclude-1-0 @PORT --exclude-1-0 @SSL_PORT
-broker.config=build/etc/config-systests-derby-mem.xml
-messagestorefactory.class.name=org.apache.qpid.server.store.derby.DerbyMessageStoreFactory
+qpid.broker_default_amqp_protocol_excludes=AMQP_1_0
+broker.virtualhosts-config=${QPID_HOME}/etc/virtualhosts-systests-derby-mem.xml
+messagestore.class.name=org.apache.qpid.server.store.derby.DerbyMessageStore
 profile.excludes=JavaPersistentExcludes JavaDerbyExcludes Java010Excludes
 broker.clean.between.tests=true
 broker.persistent=true

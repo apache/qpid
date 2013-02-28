@@ -1,0 +1,15 @@
+Qpid Perl Language Bindings
+===========================
+
+How to get help
+===============
+
+You can use the perldoc command to display API help for working with Qpid.
+
+  perldoc qpid_messaging.pm
+
+will show a simple example application written in Perl that uses the APIs.
+From there you can display the individual module documentation by typing:
+
+  perldoc [module]
+

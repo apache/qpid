@@ -20,35 +20,12 @@
  -
  -->
 <virtualhosts>
-    <directory>${QPID_HOME}/virtualhosts</directory>
-    <default>test</default>
-    
-    <virtualhost>
-        <localhost>
-            <store>
-                <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
-                <environment-path>${QPID_WORK}/derbyDB/localhost-store</environment-path>
-            </store>
-        </localhost>
-    </virtualhost>
-
-    <virtualhost>
-        <development>
-            <store>
-                <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
-                <environment-path>${QPID_WORK}/derbyDB/development-store</environment-path>
-            </store>
-        </development>
-    </virtualhost>
-
     <virtualhost>
         <test>
             <store>
                 <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
-                <environment-path>${QPID_WORK}/derbyDB/test-store</environment-path>
+                <environment-path>${QPID_WORK}/test-store</environment-path>
             </store>
         </test>
     </virtualhost>
 </virtualhosts>
-
-

@@ -22,13 +22,8 @@ package org.apache.qpid.server.security.access.config;
 
 import java.io.File;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-
 public abstract class AbstractConfiguration implements ConfigurationFile
 {
-    private static final Logger _logger = Logger.getLogger(ConfigurationFile.class);
-    
     private File _file;
     private RuleSet _config;
     
@@ -42,7 +37,7 @@ public abstract class AbstractConfiguration implements ConfigurationFile
         return _file;
     }
     
-    public RuleSet load() throws ConfigurationException
+    public RuleSet load()
     {
         _config = new RuleSet();
         return _config;

@@ -1,4 +1,0 @@
-qpid_tests.broker_0_10.management.ManagementTest.test_purge_queue
-qpid_tests.broker_0_10.management.ManagementTest.test_connection_close
-qpid_tests.broker_0_10.message.MessageTests.test_ttl
-qpid_tests.broker_0_10.management.ManagementTest.test_broker_connectivity_oldAPI

@@ -19,24 +19,20 @@
 
 ### EXAMPLE ACL V2 FILE
 ### NOTE: Rules are considered from top to bottom, and the first matching rule governs the decision.
-
-### DEFINE GROUPS ###
-
-#Define a 'messaging-users' group with users  'client' and  'server' in it
-GROUP messaging-users client server
-
-#Define a group for management web console users
-GROUP webadmins webadmin
+### Rules may refer to users or groups. Groups are currently defined in the etc/groups file.
 
 ### JMX MANAGEMENT ####
 
-# Allow everyone to perform read operations on the ServerInformation mbean
-# This is used for items such as querying the management API and broker release versions.
-ACL ALLOW ALL ACCESS METHOD component="ServerInformation"
+# To use JMX management, first give the user/group ACCESS MANAGEMENT permission
+ACL ALLOW administrators ACCESS MANAGEMENT
+ACL ALLOW guest ACCESS MANAGEMENT
 
-# Allow 'admin' all management operations. To reduce log file noise, only non-read-only operations are logged.
-ACL ALLOW admin ACCESS METHOD
-ACL ALLOW-LOG admin ALL METHOD
+# Allow guest to perform read operations on the ServerInformation mbean
+ACL ALLOW guest ACCESS METHOD component="ServerInformation"
+
+# Allow 'administrators' all management operations. To reduce log file noise, only non-read-only operations are logged.
+ACL ALLOW administrators ACCESS METHOD
+ACL ALLOW-LOG administrators ALL METHOD
 
 # Allow 'guest' to view logger levels, and use getter methods on LoggingManagement
 ACL ALLOW guest ACCESS METHOD component="LoggingManagement" name="viewEffectiveRuntimeLoggerLevels"
@@ -49,16 +45,60 @@ ACL DENY-LOG ALL ACCESS METHOD component="UserManagement"
 ACL DENY-LOG ALL ACCESS METHOD component="ConfigurationManagement"
 ACL DENY-LOG ALL ACCESS METHOD component="LoggingManagement"
 
-# Allow everyone to perform all read operations (using ALLOW rather than ALLOW-LOG to reduce log file noise)
-# on the mbeans not listed in the DENY rules above
+# Allow everyone to perform all read operations on the mbeans not listed in the DENY rules above
 ACL ALLOW ALL ACCESS METHOD
 
+### WEB MANAGEMENT ####
+
+# To use web management, first give the user/group ACCESS MANAGEMENT permission
+ACL ALLOW webadmins ACCESS MANAGEMENT
+
+# ACL for web management console admins
+# All rules below are required for console admin users
+# to perform create/update/delete operations
+ACL ALLOW-LOG webadmins CREATE QUEUE
+ACL ALLOW-LOG webadmins DELETE QUEUE
+ACL ALLOW-LOG webadmins PURGE  QUEUE
+ACL ALLOW-LOG webadmins CREATE EXCHANGE
+ACL ALLOW-LOG webadmins DELETE EXCHANGE
+ACL ALLOW-LOG webadmins BIND   EXCHANGE
+ACL ALLOW-LOG webadmins UNBIND EXCHANGE
+ACL ALLOW-LOG webadmins CREATE GROUP
+ACL ALLOW-LOG webadmins DELETE GROUP
+ACL ALLOW-LOG webadmins UPDATE GROUP
+ACL ALLOW-LOG webadmins CREATE USER
+ACL ALLOW-LOG webadmins DELETE USER
+ACL ALLOW-LOG webadmins UPDATE USER
+
+ACL ALLOW-LOG webadmins UPDATE METHOD
+
+# at the moment only the following UPDATE METHOD rules are supported by web management console
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
+
 ### MESSAGING ###
+# The 'ACCESS VIRTUALHOST' rules below apply to messaging operations (as opposed to management operations)
 
-#Example permissions for request-response based messaging.
+# Firewall examples
 
-#Allow 'messaging-users' group to connect to the virtualhost
+# Deny access to all users from *.example.company1.com and *.example.company2.com
+ACL DENY-LOG all ACCESS VIRTUALHOST from_hostname=".*\.example\.company1.com,.*\.example\.company2.com"
+
+# Deny access to all users in the IP ranges 192.168.1.0-192.168.1.255 and 192.168.2.0-192.168.2.255,
+# using the notation specified in RFC 4632, "Classless Inter-domain Routing (CIDR)"
+ACL DENY-LOG messaging-users ACCESS VIRTUALHOST from_network="192.168.1.0/24,192.168.2.0/24"
+
+# Deny access to all users in the IP ranges 192.169.1.0-192.169.1.255 and 192.169.2.0-192.169.2.255,
+# using wildcard notation.
+ACL DENY-LOG messaging-users ACCESS VIRTUALHOST from_network="192.169.1.*,192.169.2.*"
+
+# Allow 'messaging-users' group to connect to all virtualhosts
 ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST
+
+# Deny messaging-users management
+ACL DENY-LOG messaging-users ACCESS MANAGEMENT
+
 
 # Client side
 # Allow the 'client' user to publish requests to the request queue and create, consume from, and delete temporary reply queues.
@@ -77,24 +117,8 @@ ACL ALLOW-LOG server CONSUME QUEUE name="example.RequestQueue"
 ACL ALLOW-LOG server BIND EXCHANGE
 ACL ALLOW-LOG server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
 
-# ACL for web management console admins
-# All rules below are required for console admin users
-# to perform create/update/delete operations
-ACL ALLOW-LOG webadmins CREATE QUEUE
-ACL ALLOW-LOG webadmins DELETE QUEUE
-ACL ALLOW-LOG webadmins PURGE  QUEUE
-ACL ALLOW-LOG webadmins CREATE EXCHANGE
-ACL ALLOW-LOG webadmins DELETE EXCHANGE
-ACL ALLOW-LOG webadmins BIND   EXCHANGE
-ACL ALLOW-LOG webadmins UNBIND EXCHANGE
-ACL ALLOW-LOG webadmins UPDATE METHOD
-
-# at the moment only the following UPDATE METHOD rules are supported by web management console
-#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
-#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
-#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
 
 ### DEFAULT ###
 
-#Deny all users from performing all operations
+# Deny all users from performing all operations
 ACL DENY-LOG all all

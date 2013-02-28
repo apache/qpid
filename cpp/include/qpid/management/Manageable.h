@@ -55,7 +55,11 @@ class QPID_COMMON_EXTERN Manageable
     //
     //  This accessor function returns a pointer to the management object.
     //
-    virtual ManagementObject* GetManagementObject(void) const = 0;
+#ifdef _IN_QPID_BROKER
+    virtual ManagementObject::shared_ptr GetManagementObject() const = 0;
+#else
+    virtual ManagementObject* GetManagementObject() const = 0;
+#endif
 
     //  Every "Manageable" object must implement ManagementMethod.  This
     //  function is called when a remote management client invokes a method

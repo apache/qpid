@@ -24,10 +24,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.BindingConfig;
-import org.apache.qpid.server.configuration.BindingConfigType;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
@@ -52,7 +48,7 @@ public class BindingFactory
         _virtualHost = vhost;
     }
 
-    private final class BindingImpl extends Binding implements AMQQueue.Task, Exchange.Task, BindingConfig
+    private final class BindingImpl extends Binding implements AMQQueue.Task, Exchange.Task
     {
         private final BindingLogSubject _logSubject;
         //TODO : persist creation time
@@ -60,7 +56,7 @@ public class BindingFactory
 
         private BindingImpl(UUID id, String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
         {
-            super(id, queue.getVirtualHost().getConfigStore().createId(), bindingKey, queue, exchange, arguments);
+            super(id, bindingKey, queue, exchange, arguments);
             _logSubject = new BindingLogSubject(bindingKey,exchange,queue);
 
         }
@@ -94,16 +90,6 @@ public class BindingFactory
         public long getCreateTime()
         {
             return _createTime;
-        }
-
-        public BindingConfigType getConfigType()
-        {
-            return BindingConfigType.getInstance();
-        }
-
-        public ConfiguredObject getParent()
-        {
-            return _virtualHost;
         }
 
         public boolean isDurable()
@@ -186,7 +172,6 @@ public class BindingFactory
             exchange.addCloseTask(b);
             queue.addBinding(b);
             exchange.addBinding(b);
-            getConfigStore().addConfiguredObject(b);
             b.logCreation();
 
             return true;
@@ -195,11 +180,6 @@ public class BindingFactory
         {
             return false;
         }
-    }
-
-    private ConfigStore getConfigStore()
-    {
-        return _virtualHost.getConfigStore();
     }
 
     public void restoreBinding(final UUID id, final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException, AMQInternalException
@@ -257,7 +237,6 @@ public class BindingFactory
                 _virtualHost.getMessageStore().unbindQueue(b);
             }
             b.logDestruction();
-            getConfigStore().removeConfiguredObject(b);
         }
 
         return b;

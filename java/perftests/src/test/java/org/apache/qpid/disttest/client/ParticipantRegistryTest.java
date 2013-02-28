@@ -20,9 +20,10 @@
 package org.apache.qpid.disttest.client;
 
 import static org.mockito.Mockito.mock;
-import junit.framework.TestCase;
 
-public class ParticipantRegistryTest extends TestCase
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class ParticipantRegistryTest extends QpidTestCase
 {
     private ParticipantExecutorRegistry _participantRegistry = new ParticipantExecutorRegistry();
 

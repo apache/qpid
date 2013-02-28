@@ -17,7 +17,7 @@
 # under the License.
 #
 
-AM_CXXFLAGS = $(WARNING_CFLAGS) -DBOOST_TEST_DYN_LINK
+AM_CXXFLAGS = $(WARNING_CFLAGS) -DBOOST_TEST_DYN_LINK -D_IN_QPID_BROKER
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
 PUBLIC_INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include # Use public API only
 QMF_GEN=$(top_srcdir)/managementgen/qmf-gen
@@ -28,6 +28,7 @@ abs_srcdir=@abs_srcdir@
 extra_libs = 
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_messaging = $(abs_builddir)/../libqpidmessaging.la
+lib_types = $(abs_builddir)/../libqpidtypes.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
 lib_broker = $(abs_builddir)/../libqpidbroker.la
 lib_console = $(abs_builddir)/../libqmfconsole.la
@@ -107,8 +108,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	TopicExchangeTest.cpp \
 	TxBufferTest.cpp \
 	ConnectionOptions.h \
-	ForkedBroker.h \
-	ForkedBroker.cpp \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
@@ -154,7 +153,7 @@ receiver_SOURCES = \
   receiver.cpp \
   TestOptions.h \
   ConnectionOptions.h
-receiver_LDADD = $(lib_client)
+receiver_LDADD = $(lib_client) -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS += sender
 sender_SOURCES = \
@@ -162,7 +161,7 @@ sender_SOURCES = \
   TestOptions.h \
   ConnectionOptions.h \
   Statistics.cpp
-sender_LDADD = $(lib_messaging)
+sender_LDADD = $(lib_messaging) -lboost_program_options $(lib_common) $(lib_types) $(lib_client)
 
 qpidexectest_PROGRAMS += qpid-receive
 qpid_receive_SOURCES = \
@@ -171,7 +170,7 @@ qpid_receive_SOURCES = \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_receive_LDADD = $(lib_messaging)
+qpid_receive_LDADD = $(lib_messaging) -lboost_program_options $(lib_common) $(lib_types)
 
 qpidexectest_PROGRAMS += qpid-send
 qpid_send_SOURCES = \
@@ -180,42 +179,42 @@ qpid_send_SOURCES = \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_send_LDADD = $(lib_messaging)
+qpid_send_LDADD = $(lib_messaging) -lboost_program_options $(lib_common) $(lib_types)
 
 qpidexectest_PROGRAMS+=qpid-perftest
 qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_perftest_INCLUDES=$(PUBLIC_INCLUDES)
-qpid_perftest_LDADD=$(lib_client) 
+qpid_perftest_LDADD=$(lib_client)  -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS+=qpid-txtest
 qpid_txtest_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
-qpid_txtest_LDADD=$(lib_client) 
+qpid_txtest_LDADD=$(lib_client)  -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS+=qpid-latency-test
 qpid_latency_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_latency_test_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
-qpid_latency_test_LDADD=$(lib_client) 
+qpid_latency_test_LDADD=$(lib_client)  -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS+=qpid-client-test
 qpid_client_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
-qpid_client_test_LDADD=$(lib_client) 
+qpid_client_test_LDADD=$(lib_client)  -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS+=qpid-topic-listener
 qpid_topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
-qpid_topic_listener_LDADD=$(lib_client) 
+qpid_topic_listener_LDADD=$(lib_client)  -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS+=qpid-topic-publisher
 qpid_topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
-qpid_topic_publisher_LDADD=$(lib_client) 
+qpid_topic_publisher_LDADD=$(lib_client)  -lboost_program_options $(lib_common)
 
 qpidexectest_PROGRAMS+=qpid-ping
 qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_ping_SOURCES=qpid-ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
-qpid_ping_LDADD=$(lib_client)
+qpid_ping_LDADD=$(lib_client) -lboost_program_options $(lib_common)
 
 #
 # Other test programs
@@ -240,11 +239,6 @@ check_PROGRAMS+=header_test
 header_test_INCLUDES=$(PUBLIC_INCLUDES)
 header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 header_test_LDADD=$(lib_client) 
-
-check_PROGRAMS+=failover_soak
-failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
-failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
-failover_soak_LDADD=$(lib_client) $(lib_broker)
 
 check_PROGRAMS+=declare_queues
 declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
@@ -303,8 +297,8 @@ system_tests = qpid-client-test quick_perftest quick_topictest run_header_test q
   run_msg_group_tests
 TESTS += start_broker $(system_tests) python_tests stop_broker \
   run_ha_tests run_federation_tests run_federation_sys_tests \
-  run_acl_tests run_cli_tests replication_test dynamic_log_level_test \
-  run_queue_flow_limit_tests ipv6_test
+  run_acl_tests run_cli_tests dynamic_log_level_test \
+  dynamic_log_hires_timestamp run_queue_flow_limit_tests ipv6_test
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -316,8 +310,8 @@ EXTRA_DIST +=								\
   run_header_test							\
   header_test.py							\
   ssl_test								\
+  ping_broker								\
   config.null								\
-  cpg_check.sh.in							\
   run_federation_tests							\
   run_federation_sys_tests                  \
   run_long_federation_sys_tests             \
@@ -327,11 +321,11 @@ EXTRA_DIST +=								\
   MessageUtils.h							\
   TestMessageStore.h							\
   TxMocks.h								\
-  replication_test							\
   run_perftest								\
   ring_queue_test							\
   run_ring_queue_test							\
   dynamic_log_level_test						\
+  dynamic_log_hires_timestamp                                           \
   qpid-ctrl								\
   CMakeLists.txt							\
   windows/DisableWin32ErrorWindows.cpp					\
@@ -349,7 +343,10 @@ EXTRA_DIST +=								\
   run_msg_group_tests							\
   ipv6_test								\
   run_ha_tests								\
+  ha_test.py								\
   ha_tests.py								\
+  brokertest.py								\
+  ha_store_tests.py							\
   test_env.ps1.in
 
 check_LTLIBRARIES += libdlclose_noop.la
@@ -372,9 +369,6 @@ EXTRA_DIST+=						\
 	shared_perftest					\
 	multiq_perftest					\
 	topic_perftest					\
-	run_failover_soak				\
-	reliable_replication_test			\
-	federated_cluster_test_with_node_failure        \
 	sasl_test_setup.sh                              \
 	run_msg_group_tests_soak			\
 	qpidd-empty.conf

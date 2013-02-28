@@ -48,16 +48,19 @@
   <property name="module.api"          location="${build.api}/${module}/"/>
   <property name="module.test.api"     location="${build.test.api}/${module}"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
-  <property name="module.test.resources" location="${module.build}/test/resources"/>
+  <property name="module.test.resources" location="src/test/resources"/>
   <property name="module.results"      location="${build.results}/${module}"/>
   <property name="module.failed"       location="${module.results}/FAILED"/>
   <property name="module.src"          location="src/main/java"/>
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
-  <property name="module.src.resources.metainf" location="src/main/resources/META-INF"/>
-  <property name="module.metainf" location="${module.build}/META-INF"/>
-    
+
+  <property name="module.src.resources" location="src/main/resources"/>
+  <property name="module.src.resources.metainf" location="${module.src.resources}/META-INF"/>
+  <property name="module.resources.dir" location="resources/"/>
+  <property name="module.metainf"      location="${module.build}/META-INF"/>
+
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>
   <property name="module.release.base" value="${basedir}/release"/>
@@ -74,6 +77,7 @@
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
 
+  <property name="module.jar"          location="${build.lib}/${project.name}-${module.name}-${project.version}.jar"/>
   <property name="module.qpid.jar"     location="${module.release.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${module.qpid.jar}"/>
 
@@ -84,7 +88,10 @@
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
+  <available property="module.src.resources.exists" file="${module.src.resources}"/>
+  <available property="module.test.src.resources.exists" file="${module.test.resources}"/>
   <available property="module.src.resources.metainf.exists" file="${module.src.resources.metainf}"/>
+  <available property="module.resources.dir.exists" file="${module.resources.dir}"/>
 
   <property name="module.source.jar"
             location="${build.lib}/${project.name}-${module.name}-${project.version}-sources.jar"/>
@@ -93,15 +100,6 @@
   <property name="module.depends"       value=""/>
   <property name="module.test.depends"  value=""/>
   <property name="module.test.excludes" value=""/>
-
-  <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build.scratch}/*/classes"/>
-  </map>
-
-  <map property="module.test.depends.path" value="${module.test.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build.scratch}/*/classes"/>
-  </map>
-
 
    <!-- Add depenencies dependencies to path -->
    <map property="module.depends.libs" value="${module.depends}" join=" ">
@@ -160,30 +158,57 @@
     <pathelement location="${module.test.src}"/>
   </path>
 
-  <condition property="module.jar"
-             value="${build.plugins}/${project.name}-${module.name}-${project.version}.jar"
-             else="${build.lib}/${project.name}-${module.name}-${project.version}.jar">
-    <and>
-      <isset property="module.plugin"/>
-      <istrue value="${module.plugin}"/>
-    </and>
-  </condition>
-
   <property name="module.test.jar"
             location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
 
+  <map property="module.depends.jars" value="${module.depends}" join=",">
+    <globmapper from="*" to="${project.name}-*-${project.version}.jar"/>
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
+  </map>
+
+  <map property="module.depends.jars.path" value="${module.depends}" join="${path.separator}">
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
+
+    <globmapper from="*" to="${build.lib}/${project.name}-*-${project.version}.jar"/>
+  </map>
+
+  <map property="module.test.depends.jars.path" value="${module.test.depends}" join="${path.separator}">
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
+    <globmapper from="*" to="${build.lib}/${project.name}-*-${project.version}.jar"/>
+  </map>
+
+  <!-- used for building the module -->
   <path id="module.class.path">
-    <pathelement location="${module.classes}"/>
-    <pathelement path="${module.depends.path}"/>
+    <pathelement path="${module.depends.jars.path}"/>
     <path refid="module.libs"/>
   </path>
 
+  <!-- used at runtime -->
+  <path id="module.runtime.class.path">
+    <pathelement location="${module.jar}"/>
+    <pathelement path="${module.depends.jars.path}"/>
+    <path refid="module.libs"/>
+  </path>
+
+  <!-- used to build the tests -->
   <path id="module.test.path">
-    <pathelement path="${module.test.classes}"/>
-    <path refid="module.class.path"/>
-    <pathelement path="${module.test.depends.path}"/>
+    <path refid="module.runtime.class.path"/>
+    <pathelement path="${module.test.depends.jars.path}"/>
     <path refid="module.test.libs"/>
-    <pathelement path="${module.test.resources}"/>
+  </path>
+
+  <!-- used to run the tests -->
+  <path id="module.test.runtime.path">
+    <pathelement path="${module.test.jar}"/>
+    <path refid="module.runtime.class.path"/>
+    <pathelement path="${module.test.depends.jars.path}"/>
+    <path refid="module.test.libs"/>
   </path>
 
   <property name="javac.deprecation" value="off"/>
@@ -197,14 +222,21 @@
     <echo-prop name="module.name"/>
     <echo-prop name="module.jar"/>
     <echo-prop name="module.depends"/>
-    <echo-prop name="module.depends.path"/>
+
     <echo-prop name="module.test.depends"/>
-    <echo-prop name="module.test.depends.path"/>
+
     <echo-prop name="module.depends.libs"/>
     <echo-prop name="module.test.depends.libs"/>      
+
+    <echo-prop name="module.depends.jars"/>
+    <echo-prop name="module.depends.jars.path"/>
+    <echo-prop name="module.test.depends.jars.path"/>
+
     <echo-path refid="module.src.path"/>
     <echo-path refid="module.class.path"/>
+    <echo-path refid="module.runtime.class.path"/>
     <echo-path refid="module.test.path"/>
+    <echo-path refid="module.test.runtime.path"/>
   </target>
 
   <target name="prepare">
@@ -212,7 +244,7 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
-    <mkdir dir="${build.plugins}"/>
+    <mkdir dir="${build.scratch.broker.plugins.lib}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
@@ -229,7 +261,7 @@
         <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
         <arg line="-u ${project.url}"/>
         <arg line="-g ${project.groupid}"/>
-        <arg line="-v ${project.version}${maven.version.suffix}"/>
+        <arg line="-v ${project.version.maven}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
         <arg line='-m "${module.depends}"'/>
         <arg line="-a ${module.name}"/>
@@ -239,9 +271,7 @@
     </jython>
   </target>
 
-  <target name="release-mvn" depends="pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release">
-    <antcall target="build"/>
-
+  <target name="release-mvn" depends="build,pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release artifacts">
     <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
     <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
@@ -252,6 +282,29 @@
       <attach file="${module.source.jar}" classifier="sources"/>
       <localRepository path="${maven.local.repo}"/>
       <remoteRepository url="${maven.remote.repo}"/>
+    </artifact:deploy>
+  </target>
+
+  <target name="deploy-snapshot" depends="build,pom" if="module.genpom" description="deploy a snapshot build to nexus">
+    <!-- In order to use this target you need to have predefined a username and password for the
+    server with id ${maven.snapshots.repo.id} in your m2 settings file, e.g ~/.m2/settings.xml -->
+    <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
+
+    <fail message="The pom version must include -SNAPSHOT. Version found was: ${module.pom.version}">
+      <condition>
+        <not>
+          <contains substring="-SNAPSHOT" string="${module.pom.version}" />
+        </not>
+      </condition>
+    </fail>
+
+    <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
+        <localRepository path="${maven.local.repo}"/>
+    </artifact:install>
+
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom">
+      <localRepository path="${maven.local.repo}"/>
+      <remoteRepository id="${maven.snapshots.repo.id}" url="${maven.snapshots.repo.url}"/>
     </artifact:deploy>
   </target>
 
@@ -279,6 +332,13 @@
   </target>
 
   <target name="precompile-tests" if="module.test.src.exists"/>
+
+  <target name="copy-test-resources" if="module.test.src.resources.exists">
+      <echo message="Copying test resources from ${module.test.resources} to ${module.test.classes}..."/>
+      <copy todir="${module.test.classes}" failonerror="true">
+        <fileset dir="${module.test.resources}"/>
+      </copy>
+  </target>
 
   <target name="compile-tests" depends="compile,precompile-tests" if="module.test.src.exists"
           description="compilte unit tests">
@@ -312,9 +372,8 @@
   <map property="_profile_files" value="${profiles}" join=" ">
     <globmapper from="*" to="*.testprofile"/>
   </map>
-  
-  <delete file="${build.scratch}/test-${profile}.properties" quiet="true"/>
-  <concat destfile="${build.scratch}/test-${profile}.properties" force="no" fixlastline="yes">
+
+  <concat destfile="${build.scratch}/test-${profile}.properties" force="yes" append="no" fixlastline="yes">
     <filelist dir="${test.profiles}" files="testprofile.defaults"/>
     <filelist dir="${test.profiles}" files="${_profile_files}"/>
   </concat>
@@ -335,14 +394,13 @@
   <property name="QPID_HOME" value="${qpid.home}"/>
   <property name="QPID_WORK" value="${qpid.work}"/>
   <property name="broker.existing.qpid.work" value=""/>
-  <!-- Used by PluginTest -->
-  <property name="example.plugin.target" value="${project.root}/build/lib/plugins"/>
 
   <propertyset id="all.test.systemproperties">
     <propertyref prefix="test"/>
     <propertyref prefix="profile"/>
     <propertyref prefix="javax.net.ssl"/>
     <propertyref prefix="broker"/>
+    <propertyref prefix="qpid"/>
 
     <propertyref name="amqj.logging.level"/>
     <propertyref name="amqj.server.logging.level"/>
@@ -350,16 +408,14 @@
 
     <propertyref name="log4j.debug"/>
     <propertyref name="log4j.configuration"/>
+    <propertyref name="log4j.configuration.file"/>
 
     <propertyref name="root.logging.level"/>
     <propertyref name="java.naming.factory.initial"/>
     <propertyref name="java.naming.provider.url"/>
     <propertyref name="messagestore.class.name" />
-    <propertyref name="qpid.amqp.version"/>
     <propertyref name="max_prefetch"/>
-    <propertyref name="qpid.dest_syntax"/>
 
-    <propertyref name="test.output"/>
     <propertyref name="QPID_HOME"/>
     <propertyref name="QPID_WORK"/>
     <propertyref name="example.plugin.target"/>
@@ -383,7 +439,7 @@
       <formatter type="plain"/>
       <formatter type="xml"/>
 
-      <classpath refid="module.test.path"/>
+      <classpath refid="module.test.runtime.path"/>
 
       <batchtest todir="${module.results}">
         <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
@@ -447,35 +503,54 @@
 
   <target name="postbuild" description="run after a build"/>
 
-  <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
+  <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild,copy-broker-plugin-jars" description="compile and copy resources into build tree"/>
 
-  <target name="jar.manifest" depends="compile, copy-module-metainf" if="module.manifest">
+  <target name="jar.manifest" depends="compile,copy-resources,copy-files-to-module-metainf" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}">
        <metainf dir="${module.metainf}" />
     </jar>
   </target>
 
-  <target name="jar.nomanifest" depends="compile, copy-module-metainf" unless="module.manifest">
+  <target name="jar.nomanifest" depends="compile,copy-resources,copy-files-to-module-metainf" unless="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}">
        <metainf dir="${module.metainf}" />
     </jar>
   </target>
 
-  <target name="copy-module-metainf" depends="copy-metainf-resources" if="module.src.resources.metainf.exists">
-    <copy todir="${module.metainf}" failonerror="true">
-        <fileset dir="${module.src.resources.metainf}"/>
-    </copy>
+  <target name="copy-broker-plugin-jars" if="broker.plugin" description="copy broker plugins for use in release packaging">
+    <copy file="${module.jar}" todir="${build.scratch.broker.plugins.lib}" failonerror="true"/>
   </target>
 
-  <target name="copy-metainf-resources">
+  <target name="copy-files-to-module-metainf" depends="copy-project-resources-metainf, copy-module-resources-metainf, copy-module-src-resources-metainf"/>
+
+  <target name="copy-project-resources-metainf">
     <copy todir="${module.metainf}" failonerror="true">
         <fileset dir="${project.root}/resources/"/>
     </copy>
   </target>
 
+  <target name="copy-resources" if="module.src.resources.exists">
+      <echo message="Copying resources from ${module.src.resources} to ${module.classes}..."/>
+      <copy todir="${module.classes}" failonerror="true">
+        <fileset dir="${module.src.resources}" excludes="META-INF/**"/>
+      </copy>
+  </target>
+
+  <target name="copy-module-resources-metainf" if="module.resources.dir.exists">
+    <copy todir="${module.metainf}" failonerror="false" overwrite="true">
+        <fileset dir="${module.resources.dir}"/>
+    </copy>
+  </target>
+
+  <target name="copy-module-src-resources-metainf" if="module.src.resources.metainf.exists">
+    <copy todir="${module.metainf}" failonerror="true">
+        <fileset dir="${module.src.resources.metainf}"/>
+    </copy>
+  </target>
+
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
 
-  <target name="jar-tests" depends="compile-tests" description="create unit test jar">
+  <target name="jar-tests" depends="compile-tests, copy-test-resources" description="create unit test jar">
     <jar destfile="${module.test.jar}" basedir="${module.test.classes}"/>
   </target>
 
@@ -494,14 +569,7 @@
     <copylist todir="${build.lib}" dir="${project.root}" files="${module.libs}"/>
   </target>
 
-  <map property="module.depends.jars" value="${module.depends}" join=",">
-    <globmapper from="*" to="${project.name}-*-${project.version}.jar"/>
-    <filtermapper>
-        <replacestring from="/" to="-"/>
-    </filtermapper>
-  </map>
 
- 
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
       <echo message="${module.libs}"/>
@@ -688,8 +756,7 @@
 
       <syspropertyset refid="all.test.systemproperties"/>
 
-      <sysproperty key="net.sourceforge.cobertura.datafile"
-		file="${cobertura.datafile}" />
+      <sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.datafile}" />
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -697,10 +764,10 @@
       <classpath path="${module.instrumented}"/>
       <classpath>
         <fileset dir="${build}">
-	  <include name="**/classes-instrumented/*.class"/>
-	</fileset>
+          <include name="**/classes-instrumented/*.class"/>
+        </fileset>
       </classpath>
-      <classpath refid="module.test.path"/>
+      <classpath refid="module.test.runtime.path"/>
       <classpath refid="cobertura.classpath"/>      
 
       <batchtest todir="${module.results}">
@@ -713,8 +780,8 @@
 
   <target name="coverage-report" depends="cobertura-init">
       <cobertura-report format="html"
-                      destdir="${module.coverage}"
-		      datafile="${cobertura.datafile}">
+                        destdir="${module.coverage}"
+                        datafile="${cobertura.datafile}">
       <fileset dir="${module.src}" includes="**/*.java" />
     </cobertura-report>
   </target>
@@ -750,7 +817,8 @@ qpid.name=${project.name}
 
    -->
 
-    <property name="gentools.home" location="${project.root}/../gentools" />
+    <property name="gentools.home" location="${project.root}/common/gentools" />
+    <property name="gentools.build" location="${build.scratch}/common/gentools" />
     <property name="generated.dir" location="${module.precompiled}" />
     <property name="velocity.compile.dir" value="${build.scratch}/broker/velocity"/>
     <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
@@ -763,7 +831,7 @@ qpid.name=${project.name}
                deprecation="${javac.deprecation}"
                srcdir="${project.root}/broker/src/velocity/java" >
           <classpath>
-            <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+            <pathelement path="${project.root}/${velocity.jar}" />
           </classpath>
           <compilerarg line="${javac.compiler.args}"/>
         </javac>
@@ -793,7 +861,7 @@ qpid.name=${project.name}
 
       <echo message="logmessages is ${logmessages}"/>
 
-      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
+      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.build}/classes" failonerror="true">
         <arg line="'${logmessages}'"/>
           <arg value="-j"/>
           <arg value="-o"/>
@@ -810,7 +878,7 @@ qpid.name=${project.name}
           <fileset dir="${project.root}/lib/required">
             <include name="**/*.jar"/>
           </fileset>
-          <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+          <pathelement path="${project.root}/${velocity.jar}" />
         </classpath>
       </java>
       <touch file="${velocity.timestamp}" />

@@ -24,7 +24,6 @@ import org.apache.qpid.disttest.message.CreateConsumerCommand;
 
 public class ConsumerConfig extends ParticipantConfig
 {
-    private boolean _isTopic;
     private boolean _isDurableSubscription;
     private boolean _isBrowsingSubscription;
     private String _selector;
@@ -35,7 +34,6 @@ public class ConsumerConfig extends ParticipantConfig
     // For Gson
     public ConsumerConfig()
     {
-        _isTopic = false;
         _isDurableSubscription = false;
         _isBrowsingSubscription = false;
         _selector = null;
@@ -56,9 +54,8 @@ public class ConsumerConfig extends ParticipantConfig
             boolean noLocal,
             boolean synchronous)
     {
-        super(consumerName, destinationName, numberOfMessages, batchSize, maximumDuration);
+        super(consumerName, destinationName, isTopic, numberOfMessages, batchSize, maximumDuration);
 
-        _isTopic = isTopic;
         _isDurableSubscription = isDurableSubscription;
         _isBrowsingSubscription = isBrowsingSubscription;
         _selector = selector;
@@ -73,7 +70,6 @@ public class ConsumerConfig extends ParticipantConfig
         setParticipantProperties(createConsumerCommand);
 
         createConsumerCommand.setSessionName(sessionName);
-        createConsumerCommand.setTopic(_isTopic);
         createConsumerCommand.setDurableSubscription(_isDurableSubscription);
         createConsumerCommand.setBrowsingSubscription(_isBrowsingSubscription);
         createConsumerCommand.setSelector(_selector);

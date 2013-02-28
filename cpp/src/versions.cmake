@@ -36,4 +36,5 @@ set (qpidtypes_version 1.0.0)
 set (rdmawrap_version 2.0.0)
 set (sslcommon_version 2.0.0)
 set (asyncStore_version 1.0.0)
+#set (legacystore_version 1.0.0)
 

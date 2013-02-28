@@ -59,7 +59,7 @@ public class ProducerConfig extends ParticipantConfig
             long startDelay,
             String messageProviderName)
     {
-        super(producerName, destinationName, numberOfMessages, batchSize, maximumDuration);
+        super(producerName, destinationName, false, numberOfMessages, batchSize, maximumDuration);
 
         _deliveryMode = deliveryMode;
         _messageSize = messageSize;

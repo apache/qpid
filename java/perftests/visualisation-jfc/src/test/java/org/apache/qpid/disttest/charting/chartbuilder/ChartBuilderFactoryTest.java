@@ -19,14 +19,13 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 import org.apache.qpid.disttest.charting.ChartType;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class ChartBuilderFactoryTest extends TestCase
+public class ChartBuilderFactoryTest extends QpidTestCase
 {
     private SeriesBuilder _seriesBuilder = mock(SeriesBuilder.class);
 
@@ -58,5 +57,11 @@ public class ChartBuilderFactoryTest extends TestCase
     {
         ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, _seriesBuilder);
         assertTrue(builder instanceof XYLineChartBuilder);
+    }
+
+    public void testTimeSeriesLineChart()
+    {
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.TIMELINE, _seriesBuilder);
+        assertTrue(builder instanceof TimeSeriesLineChartBuilder);
     }
 }

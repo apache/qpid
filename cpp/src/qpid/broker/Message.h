@@ -61,7 +61,6 @@ public:
         virtual std::string getPropertyAsString(const std::string& key) const = 0;
         virtual std::string getAnnotationAsString(const std::string& key) const = 0;
         virtual bool getTtl(uint64_t&) const = 0;
-        virtual bool hasExpiration() const = 0;
         virtual std::string getContent() const = 0;
         virtual void processProperties(MapHandler&) const = 0;
         virtual std::string getUserId() const = 0;
@@ -92,6 +91,7 @@ public:
     sys::AbsTime getExpiration() const { return expiration; }
     void setExpiration(sys::AbsTime exp) { expiration = exp; }
     uint64_t getTtl() const;
+    bool getTtl(uint64_t) const;
 
     /** set the timestamp delivery property to the current time-of-day */
     QPID_BROKER_EXTERN void setTimestamp();
@@ -125,7 +125,7 @@ public:
     QPID_BROKER_EXTERN const qpid::types::Variant::Map& getAnnotations() const;
     std::string getUserId() const;
 
-    QPID_BROKER_EXTERN std::string getContent() const;//TODO: may be better to get rid of this...
+    QPID_BROKER_EXTERN std::string getContent() const;//Used for ha, management, when content needs to be decoded
 
     QPID_BROKER_EXTERN boost::intrusive_ptr<AsyncCompletion> getIngressCompletion() const;
     QPID_BROKER_EXTERN boost::intrusive_ptr<PersistableMessage> getPersistentContext() const;

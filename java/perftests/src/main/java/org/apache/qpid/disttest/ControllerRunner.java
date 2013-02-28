@@ -19,9 +19,9 @@
  */
 package org.apache.qpid.disttest;
 
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.naming.Context;
@@ -30,9 +30,9 @@ import org.apache.qpid.disttest.controller.Controller;
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.controller.config.ConfigReader;
+import org.apache.qpid.disttest.db.ResultsDbWriter;
 import org.apache.qpid.disttest.jms.ControllerJmsDelegate;
 import org.apache.qpid.disttest.results.aggregation.Aggregator;
-import org.apache.qpid.disttest.results.formatting.CSVFormater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,20 +43,29 @@ public class ControllerRunner extends AbstractRunner
     public static final String TEST_CONFIG_PROP = "test-config";
     public static final String DISTRIBUTED_PROP = "distributed";
     public static final String OUTPUT_DIR_PROP = "outputdir";
+    public static final String WRITE_TO_DB = "writeToDb";
+    public static final String RUN_ID = "runId";
 
     private static final String TEST_CONFIG_DEFAULT = "perftests-config.json";
     private static final String DISTRIBUTED_DEFAULT = "false";
     private static final String OUTPUT_DIR_DEFAULT = ".";
+    public static final String WRITE_TO_DB_DEFAULT = "false";
 
     private final Aggregator _aggregator = new Aggregator();
 
     private final ConfigFileHelper _configFileHelper = new ConfigFileHelper();
+
+    private ResultsFileWriter _resultsFileWriter;
+
+    private ResultsDbWriter _resultsDbWriter;
 
     public ControllerRunner()
     {
         getCliOptions().put(TEST_CONFIG_PROP, TEST_CONFIG_DEFAULT);
         getCliOptions().put(DISTRIBUTED_PROP, DISTRIBUTED_DEFAULT);
         getCliOptions().put(OUTPUT_DIR_PROP, OUTPUT_DIR_DEFAULT);
+        getCliOptions().put(WRITE_TO_DB, WRITE_TO_DB_DEFAULT);
+        getCliOptions().put(RUN_ID, null);
     }
 
     public static void main(String[] args) throws Exception
@@ -69,6 +78,8 @@ public class ControllerRunner extends AbstractRunner
     public void runController() throws Exception
     {
         Context context = getContext();
+        setUpResultFilesWriter();
+        setUpResultsDbWriter();
 
         ControllerJmsDelegate jmsDelegate = new ControllerJmsDelegate(context);
 
@@ -82,6 +93,24 @@ public class ControllerRunner extends AbstractRunner
         }
     }
 
+    private void setUpResultsDbWriter()
+    {
+        String writeToDbStr = getCliOptions().get(WRITE_TO_DB);
+        if(Boolean.valueOf(writeToDbStr))
+        {
+            String runId = getCliOptions().get(RUN_ID);
+            _resultsDbWriter = new ResultsDbWriter(getContext(), runId);
+            _resultsDbWriter.createResultsTableIfNecessary();
+        }
+    }
+
+    void setUpResultFilesWriter()
+    {
+        String outputDirString = getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP);
+        File outputDir = new File(outputDirString);
+        _resultsFileWriter = new ResultsFileWriter(outputDir);
+    }
+
     private void runTests(ControllerJmsDelegate jmsDelegate)
     {
         Controller controller = new Controller(jmsDelegate, DistributedTestConstants.REGISTRATION_TIMEOUT, DistributedTestConstants.COMMAND_RESPONSE_TIMEOUT);
@@ -92,6 +121,8 @@ public class ControllerRunner extends AbstractRunner
 
         try
         {
+            List<ResultsForAllTests> results = new ArrayList<ResultsForAllTests>();
+
             for (String testConfigFile : testConfigFiles)
             {
                 final Config testConfig = buildTestConfigFrom(testConfigFile);
@@ -100,8 +131,11 @@ public class ControllerRunner extends AbstractRunner
                 controller.awaitClientRegistrations();
 
                 LOGGER.info("Running test : " + testConfigFile);
-                runTest(controller, testConfigFile);
+                ResultsForAllTests testResult = runTest(controller, testConfigFile);
+                results.add(testResult);
             }
+
+            _resultsFileWriter.writeResultsSummary(results);
         }
         catch(Exception e)
         {
@@ -113,7 +147,7 @@ public class ControllerRunner extends AbstractRunner
         }
     }
 
-    private void runTest(Controller controller, String testConfigFile)
+    private ResultsForAllTests runTest(Controller controller, String testConfigFile)
     {
         final Config testConfig = buildTestConfigFrom(testConfigFile);
         controller.setConfig(testConfig);
@@ -121,9 +155,13 @@ public class ControllerRunner extends AbstractRunner
         ResultsForAllTests rawResultsForAllTests = controller.runAllTests();
         ResultsForAllTests resultsForAllTests = _aggregator.aggregateResults(rawResultsForAllTests);
 
-        String outputDir = getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP);
-        final String outputFile = _configFileHelper.generateOutputCsvNameFrom(testConfigFile, outputDir);
-        writeResultsToFile(resultsForAllTests, outputFile);
+        _resultsFileWriter.writeResultsToFile(resultsForAllTests, testConfigFile);
+        if(_resultsDbWriter != null)
+        {
+            _resultsDbWriter.writeResults(resultsForAllTests);
+        }
+
+        return resultsForAllTests;
     }
 
     private void createClientsIfNotDistributed(final List<String> testConfigFiles)
@@ -144,36 +182,6 @@ public class ControllerRunner extends AbstractRunner
                 ClientRunner clientRunner = new ClientRunner();
                 clientRunner.setJndiPropertiesFileLocation(getJndiConfig());
                 clientRunner.runClients();
-            }
-        }
-    }
-
-    private void writeResultsToFile(ResultsForAllTests resultsForAllTests, String outputFile)
-    {
-        FileWriter writer = null;
-        try
-        {
-            final String outputCsv = new CSVFormater().format(resultsForAllTests);
-            writer = new FileWriter(outputFile);
-            writer.write(outputCsv);
-            LOGGER.info("Wrote " + resultsForAllTests.getTestResults().size() + " test result(s) to output file " + outputFile);
-        }
-        catch (IOException e)
-        {
-            throw new DistributedTestException("Unable to write output file " + outputFile, e);
-        }
-        finally
-        {
-            if (writer != null)
-            {
-                try
-                {
-                    writer.close();
-                }
-                catch (IOException e)
-                {
-                    LOGGER.error("Failed to close stream for file " + outputFile, e);
-                }
             }
         }
     }

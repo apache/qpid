@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -42,13 +41,8 @@ public class MessageContentServlet extends AbstractServlet
         super();
     }
 
-    public MessageContentServlet(Broker broker)
-    {
-        super(broker);
-    }
-
     @Override
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
 
         if(request.getPathInfo() != null && request.getPathInfo().length()>0 && request.getPathInfo().substring(1).split("/").length > 2)

@@ -108,7 +108,9 @@ def OptionsAndArguments(argv):
     if opts.ssl_certificate:
         conn_options['ssl_certfile'] = opts.ssl_certificate
     if opts.ssl_key:
-        conn_options['ssl_key'] = opts.ssl_key
+        if not opts.ssl_certificate:
+            parser.error("missing '--ssl-certificate' (required by '--ssl-key')")
+        conn_options['ssl_keyfile'] = opts.ssl_key
     if opts.ha_admin:
         conn_options['client_properties'] = {'qpid.ha-admin' : 1}
 
@@ -156,7 +158,7 @@ class BrokerManager:
         shutting down.
         """
         try:
-            connection.close()
+            self.connection.close()
         except:
             pass
 
@@ -200,17 +202,21 @@ class BrokerManager:
         disp = Display(prefix="  ")
         heads = []
         heads.append(Header('uptime', Header.DURATION))
+        heads.append(Header('cluster', Header.NONE))
         heads.append(Header('connections', Header.COMMAS))
         heads.append(Header('sessions', Header.COMMAS))
         heads.append(Header('exchanges', Header.COMMAS))
         heads.append(Header('queues', Header.COMMAS))
         rows = []
         broker = self.broker.getBroker()
+        cluster = self.broker.getCluster()
+        clusterInfo = cluster and cluster.clusterName + "<" + cluster.status + ">" or "<standalone>"
         connections = self.getConnectionMap()
         sessions = self.getSessionMap()
         exchanges = self.getExchangeMap()
         queues = self.getQueueMap()
         row = (broker.getUpdateTime() - broker.getCreateTime(),
+               clusterInfo,
                len(connections), len(sessions),
                len(exchanges), len(queues))
         rows.append(row)

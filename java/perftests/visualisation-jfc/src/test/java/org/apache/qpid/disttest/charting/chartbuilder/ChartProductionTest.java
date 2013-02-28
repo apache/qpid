@@ -19,33 +19,35 @@
  */
 package org.apache.qpid.disttest.charting.chartbuilder;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.qpid.disttest.charting.ChartType;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
-import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilderCallback;
+import org.apache.qpid.disttest.charting.seriesbuilder.DatasetHolder;
 import org.apache.qpid.disttest.charting.seriesbuilder.SeriesBuilder;
+import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.apache.qpid.disttest.charting.writer.ChartWriter;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.ShortTextTitle;
-
-import junit.framework.TestCase;
+import org.jfree.data.general.Dataset;
 
 /**
  * Tests the production of the different chart types.  To manually
  * verify the generated output, set the system property {@link #RETAIN_TEST_CHARTS}
  * to prevent the automatic deletion of the test chart directory.
- *
  */
-public class ChartProductionTest extends TestCase
+public class ChartProductionTest extends QpidTestCase
 {
     private static final String TEST_CHARTTITLE = "TEST_CHARTTITLE";
     private static final String TEST_CHARTSUBTITLE = "TEST_CHARTSUBTITLE";
@@ -53,6 +55,16 @@ public class ChartProductionTest extends TestCase
     private static final String TEST_YAXIS = "TEST_YAXIS";
 
     private static final String TEST_SERIESLEGEND = "TEST_SERIESLEGEND";
+
+    private static final SeriesRow[] SIMPLE_SERIES_ROWS = new SeriesRow[]
+    {
+        new SeriesRow(1d, 1d),
+        new SeriesRow(2d, 2d),
+        new SeriesRow(3d, 3d),
+        new SeriesRow(4d, 4d),
+        new SeriesRow(5d, 5d),
+        new SeriesRow(6d, 6d),
+    };
 
     private static final String RETAIN_TEST_CHARTS = "retainTestCharts";
 
@@ -66,12 +78,15 @@ public class ChartProductionTest extends TestCase
         super.setUp();
 
         when(_seriesDefinition.getSeriesLegend()).thenReturn(TEST_SERIESLEGEND);
+        when(_seriesDefinition.getStrokeWidth()).thenReturn(null);
+        when(_seriesDefinition.getSeriesColourName()).thenReturn(null);
 
+        when(_chartingDefinition.getChartStemName()).thenReturn(getName());
         when(_chartingDefinition.getChartTitle()).thenReturn(TEST_CHARTTITLE);
         when(_chartingDefinition.getChartSubtitle()).thenReturn(TEST_CHARTSUBTITLE);
         when(_chartingDefinition.getXAxisTitle()).thenReturn(TEST_XAXIS);
         when(_chartingDefinition.getYAxisTitle()).thenReturn(TEST_YAXIS);
-        when(_chartingDefinition.getSeries()).thenReturn(Collections.singletonList(_seriesDefinition));
+        when(_chartingDefinition.getSeriesDefinitions()).thenReturn(Collections.singletonList(_seriesDefinition));
 
         File chartDir = TestFileUtils.createTestDirectory("charts", false);
         if (!System.getProperties().containsKey(RETAIN_TEST_CHARTS))
@@ -88,7 +103,7 @@ public class ChartProductionTest extends TestCase
 
     public void testBarChart() throws Exception
     {
-        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.BAR, new SampleSeriesBuilder());
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.BAR, new SampleSeriesBuilder(SIMPLE_SERIES_ROWS));
         assertChartTitlesAndWriteToFile(builder);
     }
 
@@ -116,36 +131,47 @@ public class ChartProductionTest extends TestCase
         assertChartTitlesAndWriteToFile(builder);
     }
 
-    public void testStatiscticalBarChart() throws Exception
+    public void testXYLineChartWithColourAndWidth() throws Exception
     {
+        when(_seriesDefinition.getStrokeWidth()).thenReturn(3);
+        when(_seriesDefinition.getSeriesColourName()).thenReturn("dark_orange");
+
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(ChartType.XYLINE, new SampleSeriesBuilder());
+        assertChartTitlesAndWriteToFile(builder);
+    }
+
+    public void testTimeSeriesLineChart() throws Exception
+    {
+        SeriesRow[] timelineSeriesRows = new SeriesRow[]
+        {
+            new SeriesRow(new Date(1), 1d),
+            new SeriesRow(new Date(2), 2d),
+            new SeriesRow(new Date(3), 3d),
+            new SeriesRow(new Date(4), 4d),
+            new SeriesRow(new Date(5), 5d),
+            new SeriesRow(new Date(6), 6d),
+        };
+        ChartBuilder builder = ChartBuilderFactory.createChartBuilder(
+                ChartType.TIMELINE,
+                new SampleSeriesBuilder(timelineSeriesRows));
+
+        assertChartTitlesAndWriteToFile(builder);
+    }
+
+    public void testStatisticalBarChart() throws Exception
+    {
+        SeriesRow[] statisticalSeriesRows = new SeriesRow[]
+        {
+            new SeriesRow(1d, 1d, 0.5d),
+            new SeriesRow(2d, 2d, 0.4d),
+            new SeriesRow(4d, 4d, 0.3d),
+            new SeriesRow(5d, 5d, 0.2d),
+            new SeriesRow(6d, 6d, 0.1d)
+        };
+
         ChartBuilder builder = ChartBuilderFactory.createChartBuilder(
                 ChartType.STATISTICAL_BAR,
-                new SeriesBuilder()
-                {
-                    private SeriesBuilderCallback _dataPointCallback;
-
-                    @Override
-                    public void build(List<SeriesDefinition> seriesDefinitions)
-                    {
-                        for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator.hasNext();)
-                        {
-                            SeriesDefinition seriesDefinition = iterator.next();
-                            _dataPointCallback.beginSeries(seriesDefinition);
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{1d, 1d, 0.5d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{2d, 2d, 0.4d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{4d, 4d, 0.3d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{5d, 5d, 0.2d});
-                            _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{6d, 3d, 0.1d});
-                            _dataPointCallback.endSeries(seriesDefinition);
-                        }
-                    }
-
-                    @Override
-                    public void setSeriesBuilderCallback(SeriesBuilderCallback dataPointCallback)
-                    {
-                        _dataPointCallback = dataPointCallback;
-                    }
-                });
+                new SampleSeriesBuilder(statisticalSeriesRows));
 
         assertChartTitlesAndWriteToFile(builder);
     }
@@ -166,33 +192,43 @@ public class ChartProductionTest extends TestCase
             assertEquals(1, chart.getCategoryPlot().getDatasetCount());
         }
 
-        _writer.writeChartToFileSystem(chart, getName());
+        _writer.writeChartToFileSystem(chart, _chartingDefinition);
     }
 
     private class SampleSeriesBuilder implements SeriesBuilder
     {
-        private SeriesBuilderCallback _dataPointCallback;
+        private DatasetHolder _datasetHolder;
+        private SeriesRow[] _sampleSeriesRows = SIMPLE_SERIES_ROWS;
+
+        public SampleSeriesBuilder()
+        {
+        }
+
+        public SampleSeriesBuilder(SeriesRow[] sampleSeriesRows)
+        {
+            _sampleSeriesRows = sampleSeriesRows;
+        }
 
         @Override
-        public void build(List<SeriesDefinition> seriesDefinitions)
+        public Dataset build(List<SeriesDefinition> seriesDefinitions)
         {
             for (Iterator<SeriesDefinition> iterator = seriesDefinitions.iterator(); iterator.hasNext();)
             {
                 SeriesDefinition seriesDefinition = iterator.next();
-                _dataPointCallback.beginSeries(seriesDefinition);
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{1d, 1d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{2d, 2d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{4d, 4d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{5d, 5d});
-                _dataPointCallback.addDataPointToSeries(seriesDefinition, new Object[]{6d, 3d});
-                _dataPointCallback.endSeries(seriesDefinition);
+                _datasetHolder.beginSeries(seriesDefinition);
+                for(SeriesRow seriesRow : _sampleSeriesRows)
+                {
+                    _datasetHolder.addDataPointToSeries(seriesDefinition, seriesRow);
+                }
+                _datasetHolder.endSeries(seriesDefinition);
             }
+            return _datasetHolder.getPopulatedDataset();
         }
 
         @Override
-        public void setSeriesBuilderCallback(SeriesBuilderCallback dataPointCallback)
+        public void setDatasetHolder(DatasetHolder dataPointCallback)
         {
-            _dataPointCallback = dataPointCallback;
+            _datasetHolder = dataPointCallback;
         }
     }
 }

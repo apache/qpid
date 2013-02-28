@@ -42,6 +42,7 @@ public class ProducerParticipantResult extends ParticipantResult
         setParticipantName(participantName);
     }
 
+    @Override
     @OutputAttribute(attribute=PRIORITY)
     public int getPriority()
     {
@@ -53,6 +54,7 @@ public class ProducerParticipantResult extends ParticipantResult
         _priority = priority;
     }
 
+    @Override
     @OutputAttribute(attribute=TIME_TO_LIVE)
     public long getTimeToLive()
     {
@@ -86,6 +88,7 @@ public class ProducerParticipantResult extends ParticipantResult
         _interval = producerInterval;
     }
 
+    @Override
     @OutputAttribute(attribute=DELIVERY_MODE)
     public int getDeliveryMode()
     {
@@ -96,5 +99,4 @@ public class ProducerParticipantResult extends ParticipantResult
     {
         this._deliveryMode = deliveryMode;
     }
-
 }

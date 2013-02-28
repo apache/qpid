@@ -1,3 +1,6 @@
+#ifndef TESTS_MESSAGEUTILS_H
+#define TESTS_MESSAGEUTILS_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -98,3 +101,5 @@ struct MessageUtils
 };
 
 }} // namespace qpid::tests
+
+#endif  /*!TESTS_MESSAGEUTILS_H*/

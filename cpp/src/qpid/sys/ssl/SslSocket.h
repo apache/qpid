@@ -23,7 +23,7 @@
  */
 
 #include "qpid/sys/IOHandle.h"
-#include "qpid/sys/Socket.h"
+#include "qpid/sys/posix/BSDSocket.h"
 #include <nspr.h>
 
 #include <string>
@@ -37,55 +37,54 @@ class Duration;
 
 namespace ssl {
 
-class SslSocket : public qpid::sys::Socket
+class SslSocket : public qpid::sys::BSDSocket
 {
 public:
-    /** Create a socket wrapper for descriptor. */
-    SslSocket();
+    /** Create a socket wrapper for descriptor.
+     *@param certName name of certificate to use to identify the socket
+     */
+    SslSocket(const std::string& certName = "", bool clientAuth = false);
 
     /** Set socket non blocking */
     void setNonblocking() const;
 
     /** Set tcp-nodelay */
-    void setTcpNoDelay(bool nodelay) const;
+    void setTcpNoDelay() const;
 
     /** Set SSL cert-name. Allows the cert-name to be set per
      * connection, overriding global cert-name settings from
      * NSSInit().*/
     void setCertName(const std::string& certName);
 
-    void connect(const std::string& host, const std::string& port) const;
+    void connect(const SocketAddress&) const;
+    void finishConnect(const SocketAddress&) const;
 
     void close() const;
 
     /** Bind to a port and start listening.
      *@param port 0 means choose an available port.
      *@param backlog maximum number of pending connections.
-     *@param certName name of certificate to use to identify the server
      *@return The bound port.
      */
-    int listen(uint16_t port = 0, int backlog = 10, const std::string& certName = "localhost.localdomain", bool clientAuth = false) const;
+    int listen(const SocketAddress&, int backlog = 10) const;
 
     /**
      * Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
-    SslSocket* accept() const;
+    virtual Socket* accept() const;
 
     // TODO The following are raw operations, maybe they need better wrapping?
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
-    uint16_t getLocalPort() const;
-    uint16_t getRemotePort() const;
-
     int getKeyLen() const;
     std::string getClientAuthId() const;
 
 protected:
-    mutable std::string connectname;
-    mutable PRFileDesc* socket;
+    mutable PRFileDesc* nssSocket;
     std::string certname;
+    mutable std::string url;
 
     /**
      * 'model' socket, with configuration to use when importing
@@ -94,13 +93,14 @@ protected:
      */
     mutable PRFileDesc* prototype;
 
-    SslSocket(IOHandlePrivate* ioph, PRFileDesc* model);
-    friend class SslMuxSocket;
+    SslSocket(int fd, PRFileDesc* model);
+    friend class SslMuxSocket; // Needed for this constructor
 };
 
 class SslMuxSocket : public SslSocket
 {
 public:
+    SslMuxSocket(const std::string& certName = "", bool clientAuth = false);
     Socket* accept() const;
 };
 

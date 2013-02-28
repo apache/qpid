@@ -60,15 +60,4 @@ public class ConfigFileHelper
 
         return testConfigFile;
     }
-
-    /**
-     * generateOutputCsvNameFrom("/config/testConfigFile.js", "/output") returns /output/testConfigFile.csv
-     */
-    public String generateOutputCsvNameFrom(String testConfigFile, String outputDir)
-    {
-        final String filenameOnlyWithExtension = new File(testConfigFile).getName();
-        final String cvsFile = filenameOnlyWithExtension.replaceFirst(".?\\w*$", ".csv");
-
-        return new File(outputDir, cvsFile).getAbsolutePath();
-    }
 }

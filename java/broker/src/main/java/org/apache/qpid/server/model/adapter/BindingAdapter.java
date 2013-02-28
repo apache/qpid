@@ -48,7 +48,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
                           ExchangeAdapter exchangeAdapter,
                           QueueAdapter queueAdapter)
     {
-        super(binding.getId());
+        super(binding.getId(), queueAdapter.getTaskExecutor());
         _binding = binding;
         _exchange = exchangeAdapter;
         _queue = queueAdapter;
@@ -206,27 +206,20 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     }
 
     @Override
-    public Object setAttribute(final String name, final Object expected, final Object desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return super.setAttribute(name, expected, desired);    //TODO
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         return Binding.AVAILABLE_ATTRIBUTES;
     }
 
     @Override
-    public State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
+    protected boolean setState(State currentState, State desiredState) throws IllegalStateTransitionException,
             AccessControlException
     {
         if (desiredState == State.DELETED)
         {
             delete();
-            return State.DELETED;
+            return true;
         }
-        return super.setDesiredState(currentState, desiredState);
+        return false;
     }
 }

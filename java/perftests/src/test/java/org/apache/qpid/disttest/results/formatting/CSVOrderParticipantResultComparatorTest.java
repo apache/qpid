@@ -19,15 +19,13 @@
 package org.apache.qpid.disttest.results.formatting;
 
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
 import org.apache.qpid.disttest.results.aggregation.TestResultAggregator;
-import org.apache.qpid.disttest.results.formatting.CSVOrderParticipantResultComparator;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class CSVOrderParticipantResultComparatorTest extends TestCase
+public class CSVOrderParticipantResultComparatorTest extends QpidTestCase
 {
     CSVOrderParticipantResultComparator _comparator = new CSVOrderParticipantResultComparator();
 

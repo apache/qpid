@@ -21,8 +21,6 @@ SUBDIRS = dotnet
 
 if HAVE_SWIG
 
-EXTRA_DIST = CMakeLists.txt qpid.i
-
 if HAVE_RUBY_DEVEL
 SUBDIRS += ruby
 endif
@@ -33,18 +31,18 @@ endif
 
 if HAVE_PERL_DEVEL
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/bindings -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
 
-EXTRA_DIST += perl/perl.i perl/CMakeLists.txt
+EXTRA_DIST = perl/perl.i perl/CMakeLists.txt
 BUILT_SOURCES = perl/cqpid_perl.cpp
 SWIG_FLAGS = -w362,401
 
-perl/cqpid_perl.cpp: $(srcdir)/perl/perl.i $(srcdir)/qpid.i $(srcdir)/../swig_perl_typemaps.i
+perl/cqpid_perl.cpp: $(srcdir)/perl/perl.i
 	$(SWIG) -perl -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o perl/cqpid_perl.cpp $(srcdir)/perl/perl.i
 
 perl/Makefile: perl/cqpid_perl.cpp
 	cd perl; \
-		$(PERL) Makefile.PL PREFIX=$(prefix) LIB=$(PERL_ARCHLIB) ; \
+		$(PERL) Makefile.PL PREFIX=$(prefix) ; \
 	cd ..
 
 all-local: perl/Makefile
@@ -54,7 +52,7 @@ all-local: perl/Makefile
 
 install-exec-local:
 	cd perl ; \
-		$(MAKE) pure_install DESTDIR=$(prefix) ; \
+		$(MAKE) pure_install ; \
 	cd ..
 
 clean-local:
@@ -72,7 +70,6 @@ maintainer-clean-local:
 		$(PERL) maintainer-clean ; \
 	cd ..
 
-DISTCLEANFILES = perl/Makefile.PL
 CLEANFILES = perl/cqpid_perl.cpp perl/Makefile.old perl/cqpid_perl.pm
 
 endif

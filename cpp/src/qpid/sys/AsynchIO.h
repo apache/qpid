@@ -21,8 +21,10 @@
  *
  */
 
-#include "qpid/sys/IntegerTypes.h"
 #include "qpid/CommonImportExport.h"
+
+#include "qpid/sys/IntegerTypes.h"
+#include "qpid/sys/SecuritySettings.h"
 
 #include <string.h>
 
@@ -56,6 +58,7 @@ class AsynchConnector {
 public:
     typedef boost::function1<void, const Socket&> ConnectedCallback;
     typedef boost::function3<void, const Socket&, int, const std::string&> FailedCallback;
+    typedef boost::function1<void, AsynchConnector&> RequestCallback;
 
     // Call create() to allocate a new AsynchConnector object with the
     // specified poller, addressing, and callbacks.
@@ -70,6 +73,7 @@ public:
                                    FailedCallback failCb);
     virtual void start(boost::shared_ptr<Poller> poller) = 0;
     virtual void stop() {};
+    virtual void requestCallback(RequestCallback) = 0;
 protected:
     AsynchConnector() {}
     virtual ~AsynchConnector() {}
@@ -155,10 +159,10 @@ public:
     virtual void notifyPendingWrite() = 0;
     virtual void queueWriteClose() = 0;
     virtual bool writeQueueEmpty() = 0;
-    virtual void startReading() = 0;
-    virtual void stopReading() = 0;
     virtual void requestCallback(RequestCallback) = 0;
     virtual BufferBase* getQueuedBuffer() = 0;
+
+    virtual SecuritySettings getSecuritySettings() = 0;
 
 protected:
     // Derived class manages lifetime; must be constructed using the

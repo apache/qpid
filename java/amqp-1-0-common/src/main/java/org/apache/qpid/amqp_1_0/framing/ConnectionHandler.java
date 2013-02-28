@@ -103,6 +103,7 @@ public class ConnectionHandler
 
         private boolean _setForClose;
         private boolean _closed;
+        private long _nextHeartbeat;
 
         public FrameOutput(final ConnectionEndpoint conn)
         {
@@ -165,14 +166,34 @@ public class ConnectionHandler
         {
             synchronized(_conn.getLock())
             {
+                long time = System.currentTimeMillis();
                 try
                 {
                     AMQFrame frame = null;
                     while(!closed() && (frame = _queue.poll()) == null && wait)
                     {
-                        _conn.getLock().wait();
+                        _conn.getLock().wait(_conn.getIdleTimeout()/2);
+
+                        if(_conn.getIdleTimeout()>0)
+                        {
+                            time = System.currentTimeMillis();
+
+                            if(frame == null && time > _nextHeartbeat)
+                            {
+                                frame = new TransportFrame((short) 0,null);
+                                break;
+                            }
+                        }
                     }
 
+
+
+
+                    if(frame != null)
+                    {
+                        _nextHeartbeat = time + _conn.getIdleTimeout()/2;
+
+                    }
                     if(frame == _endOfFrameMarker)
                     {
                         _closed = true;

@@ -91,6 +91,7 @@ if (UNIX)
         PREFIX ""
         OUTPUT_NAME asyncStore
         SOVERSION ${asyncStore_version}
+        COMPILE_DEFINITIONS _IN_QPID_BROKER
     )
     target_link_libraries (asyncStore
 	    aio

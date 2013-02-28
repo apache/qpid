@@ -208,6 +208,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
+#                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
@@ -271,16 +272,28 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    set (WARNING_FLAGS
         "-Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
 
-   set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
+   set (CATCH_UNDEFINED "-Wl,--no-undefined")
    # gcc on SunOS uses native linker whose "-z defs" is too fussy
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-      set (GCC_CATCH_UNDEFINED "")
+      set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+   set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
+   # gcc 4.1.2 on RHEL 5 needs -Wno-attributes to avoid an error that's fixed
+   # in later gcc versions.
+   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                   OUTPUT_VARIABLE GCC_VERSION)
+   if (GCC_VERSION VERSION_EQUAL 4.1.2)
+     set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden -Wno-attributes")
+   else (GCC_VERSION VERSION_EQUAL 4.1.2)
+     set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
+   endif (GCC_VERSION VERSION_EQUAL 4.1.2)
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
   set (WARNING_FLAGS "+w")
+  set (CATCH_UNDEFINED "")
+  set (HIDE_SYMBOL_FLAGS "")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
@@ -293,9 +306,9 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # Boost.system is sometimes needed; it's handled separately, below.
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components filesystem program_options date_time thread unit_test_framework regex)
+  set (Boost_components program_options date_time thread unit_test_framework regex)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components filesystem program_options unit_test_framework)
+  set (Boost_components program_options unit_test_framework)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # Visual Studio 2010 requires boost 1.45 or better.
@@ -303,7 +316,10 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # where Boost 1.45 is supported, or we can just accept some versions using
 # the Additional_versions variable.
 if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
-  set (Boost_ADDITIONAL_VERSIONS "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0")
+  set (Boost_ADDITIONAL_VERSIONS 
+        "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0"
+        "1.48" "1.48.0" "1.49" "1.49.0" "1.50" "1.50.0"
+        "1.51" "1.51.0" "1.52" "1.52.0" "1.53" "1.53.0")
 endif (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 
 find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
@@ -327,10 +343,6 @@ endif (Boost_VERSION GREATER 103499)
 if (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
   set(Boost_PROGRAM_OPTIONS_LIBRARY boost_program_options)
 endif (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
-
-if (NOT Boost_FILESYSTEM_LIBRARY)
-  set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
-endif (NOT Boost_FILESYSTEM_LIBRARY)
 
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
@@ -357,7 +369,6 @@ option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
-            ${Boost_FILESYSTEM_LIBRARY_DEBUG} ${Boost_FILESYSTEM_LIBRARY_RELEASE}
             ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG} ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
             ${Boost_REGEX_LIBRARY_DEBUG} ${Boost_REGEX_LIBRARY_RELEASE}
             ${Boost_THREAD_LIBRARY_DEBUG} ${Boost_THREAD_LIBRARY_RELEASE}
@@ -377,10 +388,6 @@ if (MSVC)
               _boost_date_time_debug ${Boost_DATE_TIME_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
               _boost_date_time_release ${Boost_DATE_TIME_LIBRARY_RELEASE})
-      string (REPLACE .lib .dll
-              _boost_filesystem_debug ${Boost_FILESYSTEM_LIBRARY_DEBUG})
-      string (REPLACE .lib .dll
-              _boost_filesystem_release ${Boost_FILESYSTEM_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
               _boost_program_options_debug ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
@@ -404,7 +411,6 @@ if (MSVC)
       endif (NOT Boost_VERSION LESS 103500)
       install (PROGRAMS
                ${_boost_date_time_debug} ${_boost_date_time_release}
-               ${_boost_filesystem_debug} ${_boost_filesystem_release}
                ${_boost_program_options_debug} ${_boost_program_options_release}
                ${_boost_regex_debug} ${_boost_regex_release}
                ${_boost_system_debug} ${_boost_system_release}
@@ -453,7 +459,6 @@ if (MSVC)
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
    set(Boost_PROGRAM_OPTIONS_LIBRARY "")
-   set(Boost_FILESYSTEM_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
    set(Boost_REGEX_LIBRARY "")
    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/windows/resources )
@@ -571,13 +576,11 @@ if (BUILD_XML)
                qpid/xml/XmlExchange.cpp
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
-  set_target_properties (xml PROPERTIES PREFIX "")
   target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties (xml PROPERTIES
-                           PREFIX ""
-                           LINK_FLAGS ${GCC_CATCH_UNDEFINED})
-  endif (CMAKE_COMPILER_IS_GNUCXX)
+  set_target_properties (xml PROPERTIES
+                         PREFIX ""
+                         COMPILE_DEFINITIONS _IN_QPID_BROKER
+                         LINK_FLAGS "${CATCH_UNDEFINED}")
   install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
@@ -600,6 +603,8 @@ if (BUILD_ACL)
        qpid/acl/AclPlugin.cpp
        qpid/acl/AclReader.cpp
        qpid/acl/AclReader.h
+       qpid/acl/AclResourceCounter.cpp
+       qpid/acl/AclResourceCounter.h
        qpid/acl/AclValidator.cpp
        qpid/acl/AclValidator.h
       )
@@ -608,13 +613,11 @@ if (BUILD_ACL)
   # the qpidbroker platform-specific source list.
   if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_library (acl MODULE ${acl_SOURCES})
-    set_target_properties (acl PROPERTIES PREFIX "")
     target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set_target_properties (acl PROPERTIES
-                             PREFIX ""
-                             LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties (acl PROPERTIES
+                           PREFIX ""
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER
+                           LINK_FLAGS "${CATCH_UNDEFINED}")
     install (TARGETS acl
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
@@ -652,6 +655,8 @@ if (BUILD_HA)
         qpid/ha/ReplicatingSubscription.cpp
         qpid/ha/ReplicatingSubscription.h
         qpid/ha/Settings.h
+	qpid/ha/StatusCheck.cpp
+	qpid/ha/StatusCheck.h
         qpid/ha/types.cpp
         qpid/ha/types.h
         qpid/ha/RemoteBackup.cpp
@@ -659,8 +664,8 @@ if (BUILD_HA)
     )
 
     add_library (ha MODULE ${ha_SOURCES})
-    set_target_properties (ha PROPERTIES PREFIX "")
-    target_link_libraries (ha qpidtypes qpidcommon qpidbroker)
+    set_target_properties (ha PROPERTIES PREFIX "" COMPILE_DEFINITIONS _IN_QPID_BROKER)
+    target_link_libraries (ha qpidtypes qpidcommon qpidbroker qpidmessaging)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties (ha PROPERTIES
                              PREFIX ""
@@ -679,6 +684,9 @@ include (ssl.cmake)
 
 # Check for optional async store build requirements
 #include (asyncstore.cmake)
+
+# Check for optional AMQP 1.0 support requirements
+include (amqp.cmake)
 
 # Check for syslog capabilities not present on all systems
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
@@ -744,7 +752,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/PipeHandle.cpp
     qpid/sys/windows/PollableCondition.cpp
     qpid/sys/windows/Shlib.cpp
-    qpid/sys/windows/Socket.cpp
+    qpid/sys/windows/WinSocket.cpp
     qpid/sys/windows/SocketAddress.cpp
     qpid/sys/windows/StrError.cpp
     qpid/sys/windows/SystemInfo.cpp
@@ -755,7 +763,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
+    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
@@ -767,6 +775,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
   set (qpidclient_platform_SOURCES
     ${sslclient_windows_SOURCES}
+    qpid/client/windows/ClientDllMain.cpp
   )
   set (qpidclient_platform_LIBS
     ${windows_ssl_libs}
@@ -803,10 +812,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     add_definitions(-pthread)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${GCC_CATCH_UNDEFINED} -pthread")
-      set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CATCH_UNDEFINED} -pthread")
+    set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pthread")
     # On Linux override memory status module
     set (qpid_memstat_module
       qpid/sys/posix/MemStat.cpp
@@ -848,7 +855,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/PollableCondition.cpp
     qpid/sys/posix/Shlib.cpp
     qpid/log/posix/SinkOptions.cpp
-    qpid/sys/posix/Socket.cpp
+    qpid/sys/posix/BSDSocket.cpp
     qpid/sys/posix/SocketAddress.cpp
     qpid/sys/posix/StrError.cpp
     qpid/sys/posix/Thread.cpp
@@ -860,7 +867,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
   set (qpidcommon_platform_LIBS
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_FILESYSTEM_LIBRARY}
     ${CMAKE_DL_LIBS}
   )
 
@@ -900,6 +906,7 @@ set (qpidcommon_SOURCES
      qpid/StringUtils.cpp
      qpid/Url.cpp
      qpid/UrlArray.cpp
+     qpid/NullSaslServer.cpp
      qpid/amqp_0_10/SessionHandler.cpp
      qpid/framing/AccumulatedAck.cpp
      qpid/framing/AMQBody.cpp
@@ -937,7 +944,6 @@ set (qpidcommon_SOURCES
      qpid/management/ManagementObject.cpp
      qpid/sys/AggregateOutput.cpp
      qpid/sys/AsynchIOHandler.cpp
-     qpid/sys/ClusterSafe.cpp
      qpid/sys/Dispatcher.cpp
      qpid/sys/DispatchHandle.cpp
      qpid/sys/Runnable.cpp
@@ -945,6 +951,32 @@ set (qpidcommon_SOURCES
      qpid/sys/Timer.cpp
      qpid/sys/TimerWarnings.cpp
      qpid/amqp_0_10/Codecs.cpp
+     qpid/amqp/CharSequence.h
+     qpid/amqp/CharSequence.cpp
+     qpid/amqp/Decoder.h
+     qpid/amqp/Decoder.cpp
+     qpid/amqp/Descriptor.h
+     qpid/amqp/Descriptor.cpp
+     qpid/amqp/Encoder.h
+     qpid/amqp/Encoder.cpp
+     qpid/amqp/MapReader.h
+     qpid/amqp/MapReader.cpp
+     qpid/amqp/MessageEncoder.h
+     qpid/amqp/MessageEncoder.cpp
+     qpid/amqp/MessageId.h
+     qpid/amqp/MessageId.cpp
+     qpid/amqp/MessageReader.h
+     qpid/amqp/MessageReader.cpp
+     qpid/amqp/Reader.h
+     qpid/amqp/Sasl.h
+     qpid/amqp/Sasl.cpp
+     qpid/amqp/SaslClient.h
+     qpid/amqp/SaslClient.cpp
+     qpid/amqp/SaslServer.h
+     qpid/amqp/SaslServer.cpp
+     qpid/messaging/amqp/Transport.h
+     qpid/messaging/amqp/Transport.cpp
+     qpid/messaging/amqp/TransportContext.h
      ${qpid_memstat_module}
 )
 add_msvc_version (qpidcommon library dll)
@@ -1029,26 +1061,12 @@ install (DIRECTORY ../include/qpid
          PATTERN ".svn" EXCLUDE)
 install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
-
-set (qpidmessaging_SOURCES
-	 ${qpidmessaging_platform_SOURCES}
-     qpid/messaging/Address.cpp
+set (qpidmessaging_SOURCES_hidden
      qpid/messaging/AddressParser.h
-     qpid/messaging/AddressParser.cpp
-     qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
-     qpid/messaging/Duration.cpp
-     qpid/messaging/exceptions.cpp
-     qpid/messaging/Message.cpp
-     qpid/messaging/MessageImpl.h
-     qpid/messaging/MessageImpl.cpp
-     qpid/messaging/Receiver.cpp
      qpid/messaging/ReceiverImpl.h
-     qpid/messaging/Session.cpp
      qpid/messaging/SessionImpl.h
-     qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
-     qpid/messaging/FailoverUpdates.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h
@@ -1067,6 +1085,33 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
+)
+set_source_files_properties(
+     ${qpidmessaging_SOURCES_hidden}
+     PROPERTIES
+     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
+
+set (qpidmessaging_SOURCES
+     ${qpidmessaging_platform_SOURCES}
+     ${qpidmessaging_SOURCES_hidden}
+     qpid/messaging/Address.cpp
+     qpid/messaging/AddressParser.cpp # The functions in here are not in the public interface, but qmf uses them
+     qpid/messaging/Connection.cpp
+     qpid/messaging/Duration.cpp
+     qpid/messaging/exceptions.cpp
+     qpid/messaging/FailoverUpdates.cpp
+     qpid/messaging/Message.cpp
+     qpid/messaging/Receiver.cpp
+     qpid/messaging/Session.cpp
+     qpid/messaging/Sender.cpp
+     #functions from the following are not in the public interface but are used by the AMQP 1.0 client module
+     qpid/messaging/ConnectionOptions.h
+     qpid/messaging/ConnectionOptions.cpp
+     qpid/messaging/MessageImpl.h
+     qpid/messaging/MessageImpl.cpp
+     qpid/messaging/ProtocolRegistry.cpp
+     qpid/messaging/amqp/EncodedMessage.h
+     qpid/messaging/amqp/EncodedMessage.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
@@ -1116,6 +1161,7 @@ set (qpidbroker_SOURCES
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp
      qpid/broker/PriorityQueue.cpp
+     qpid/broker/Protocol.cpp
      qpid/broker/Queue.cpp
      qpid/broker/QueueCleaner.cpp
      qpid/broker/QueueListeners.cpp
@@ -1130,7 +1176,7 @@ set (qpidbroker_SOURCES
      qpid/broker/ConfigHandle.cpp
      qpid/broker/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
-     qpid/broker/ConnectionFactory.cpp
+     qpid/broker/ConnectionState.cpp
      qpid/broker/DeliverableMessage.cpp
      qpid/broker/DeliveryRecord.cpp
      qpid/broker/DirectExchange.cpp
@@ -1203,7 +1249,7 @@ set (qpidbroker_SOURCES
 add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
-set_target_properties (qpidbroker PROPERTIES VERSION ${qpidbroker_version})
+set_target_properties (qpidbroker PROPERTIES VERSION ${qpidbroker_version} COMPILE_DEFINITIONS _IN_QPID_BROKER)
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
@@ -1220,8 +1266,8 @@ set (qpidd_SOURCES
 )
 add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
-target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                          ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
+set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 install (TARGETS qpidd RUNTIME
          DESTINATION ${QPID_INSTALL_SBINDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
@@ -1443,12 +1489,15 @@ install (FILES ${qmfconsole_HEADERS}
 install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 
 
+#
+# Legacy store
+#
+#include (legacystore.cmake)
+
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h
 # file whereas older builds only have config.h on autoconf-generated builds.
 add_definitions(-DHAVE_CONFIG_H)
-
-add_definitions(-DBOOST_FILESYSTEM_VERSION=2)
 
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
@@ -1457,21 +1506,21 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
 add_subdirectory(tests)
 
 # Support for pkg-config
-if (UNIX)
-  add_custom_target(pkgconfig ALL echo DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/qpid.pc.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc)
-  install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc
-           DESTINATION ${QPID_INSTALL_LIBDIR}/pkgconfig
-           COMPONENT ${QPID_COMPONENT_COMMON})
 
-  add_dependencies(pkgconfig ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/qmf2.pc.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
-  install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
-           DESTINATION ${QPID_INSTALL_LIBDIR}/pkgconfig
-           COMPONENT ${QPID_COMPONENT_COMMON})
-endif (UNIX)
+# Compatible variable names used in the pkg config files also for autoconf
+set (prefix ${CMAKE_INSTALL_PREFIX})
+set (exec_prefix ${CMAKE_INSTALL_PREFIX})
+set_absolute_install_path (libdir ${LIB_INSTALL_DIR})
+set_absolute_install_path (includedir ${INCLUDE_INSTALL_DIR})
+set (VERSION ${QPID_VERSION})
+
+#add_custom_target(pkgconfig ALL echo DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc)
+#add_dependencies(pkgconfig ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
+configure_file(qpid.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc @ONLY)
+configure_file(qmf2.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc @ONLY)
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
+         DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
+         COMPONENT ${QPID_COMPONENT_COMMON})
 
 # Async Store support
 # -------------------
@@ -1482,3 +1531,4 @@ endif (UNIX)
 # corrected separately, and when it is, this can be moved up to the location
 # of the other module includes.
 include (asyncstore.cmake)
+

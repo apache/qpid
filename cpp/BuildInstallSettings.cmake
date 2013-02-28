@@ -31,6 +31,7 @@ else()
 endif(EXISTS "${PROJECT_SOURCE_DIR}/../QPID_VERSION.txt")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\1" QPID_VERSION_MAJOR "${QPID_VERSION}")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\2" QPID_VERSION_MINOR "${QPID_VERSION}")
+set (QPID_VERSION_FULL "${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR}")
 
 # When doing installs, there are a number of components that the item can
 # be associated with. Since there may be different sets of components desired
@@ -94,21 +95,67 @@ if (WIN32)
        "Directory to install read-only arch.-independent data root")
   set (QPID_INSTALL_EXAMPLESDIR examples CACHE STRING
        "Directory to install programming examples in")
-  set (QPID_INSTALL_HTMLDIR docs/api/html CACHE STRING
-       "Directory to install HTML documentation")
+  set (QPID_INSTALL_DOCDIR docs CACHE STRING
+       "Directory to install documentation")
   set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
        "Directory to install programming header files")
   set (QPID_INSTALL_LIBDIR bin CACHE STRING
        "Directory to install library files")
   set (QPID_INSTALL_SBINDIR bin CACHE STRING
        "Directory to install system admin executables")
+  set (QPID_INSTALL_TESTDIR bin CACHE STRING
+       "Directory for test executables")
   set (QPIDC_MODULE_DIR plugins/client CACHE STRING
        "Directory to load client plug-in modules from")
   set (QPIDD_MODULE_DIR plugins/broker CACHE STRING
        "Directory to load broker plug-in modules from")
+
+# function to get absolute path from a variable that may be relative to the
+# install prefix - For Windows we can never know the absolute install prefix
+# as this is decided at install time so this just returns the input path
+  function(set_absolute_install_path var input)
+    set (${var} ${input} PARENT_SCOPE)
+  endfunction(set_absolute_install_path)
+
+  set (INCLUDE_INSTALL_DIR ${QPID_INSTALL_INCLUDEDIR})
+  set (LIB_INSTALL_DIR ${QPID_INSTALL_INCLUDEDIR})
 endif (WIN32)
 
 if (UNIX)
+# function to get absolute path from a variable that may be relative to the
+# install prefix
+function(set_absolute_install_path var input)
+  if (${input} MATCHES "^/.*")
+    set (${var} ${input} PARENT_SCOPE)
+  else ()
+    set (${var} ${CMAKE_INSTALL_PREFIX}/${input} PARENT_SCOPE)
+  endif ()
+endfunction(set_absolute_install_path)
+
+# Figure out the default library suffix
+if (NOT DEFINED LIB_SUFFIX)
+    get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+    if (${LIB64} STREQUAL "TRUE" AND ${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+        set(LIB_SUFFIX 64)
+    else()
+        set(LIB_SUFFIX "")
+    endif()
+endif()
+
+# In rpm builds the build sets some variables:
+#  CMAKE_INSTALL_PREFIX - this is a standard cmake variable
+#  INCLUDE_INSTALL_DIR
+#  LIB_INSTALL_DIR
+#  SYSCONF_INSTALL_DIR
+#  SHARE_INSTALL_DIR
+# So make these cached variables and the specific variables non cached and
+# derived from them.
+  set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
+  set (LIB_INSTALL_DIR lib${LIB_SUFFIX} CACHE PATH "Library object file directory")
+  set (SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
+  set (SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
+  set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION_FULL} CACHE PATH "Shared read only data directory")
+  
   set (QPID_COMPONENT_BROKER runtime)
   set (QPID_COMPONENT_CLIENT runtime)
   set (QPID_COMPONENT_COMMON runtime)
@@ -120,32 +167,21 @@ if (UNIX)
   set (CPACK_COMPONENT_DEVELOPMENT_DISPLAY_NAME
        "Items required to build new C++ Qpid client programs")
 
-  set (QPID_INSTALL_BINDIR bin CACHE STRING
-       "Directory to install user executables")
-  set (QPID_INSTALL_CONFDIR etc/qpid CACHE STRING
-       "Directory to install configuration files")
-  set (QPID_INSTALL_DATADIR share/qpid CACHE STRING
-       "Directory to install read-only arch.-independent data root")
-  set (QPID_INSTALL_SASLDIR etc/sasl2 CACHE STRING
-       "Directory to install SASL configuration files")
-  set (QPID_INSTALL_EXAMPLESDIR share/examples CACHE STRING
-       "Directory to install programming examples in")
-  set (QPID_INSTALL_HTMLDIR html CACHE STRING
-       "Directory to install HTML documentation")
-  set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
-       "Directory to install programming header files")
-  set (QPID_INSTALL_LIBDIR lib CACHE STRING
-       "Directory to install library files")
-  set (QPID_INSTALL_SBINDIR sbin CACHE STRING
-       "Directory to install system admin executables")
-  set (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client CACHE STRING
-       "Directory to load client plug-in modules from")
-  set (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon CACHE STRING
-       "Directory to load broker plug-in modules from")
-  set (QPID_LIBEXEC_DIR libexec/qpid CACHE STRING
-       "Directory for executables used by qpid libs")
-  set (QPID_LOCALSTATE_DIR var CACHE STRING
-       "Directory to store local state data")
-  set (QPID_MAN_DIR man CACHE STRING
-       "Directory to install manual files")
+  # These are always relative to $CMAKE_INSTALL_PREFIX
+  set (QPID_INSTALL_BINDIR bin)
+  set (QPID_INSTALL_SBINDIR sbin)
+  set (QPID_INSTALL_TESTDIR libexec/qpid/tests) # Directory for test executables
+  set (QPID_INSTALL_CONFDIR ${SYSCONF_INSTALL_DIR}/qpid)
+  set (QPID_INSTALL_SASLDIR ${SYSCONF_INSTALL_DIR}/sasl2)
+  set (QPID_INSTALL_DATADIR ${SHARE_INSTALL_DIR}/qpid)
+  set (QPID_INSTALL_EXAMPLESDIR ${SHARE_INSTALL_DIR}/examples)
+  set (QPID_INSTALL_DOCDIR ${DOC_INSTALL_DIR}) # Directory to install documentation
+  set (QPID_INSTALL_INCLUDEDIR ${INCLUDE_INSTALL_DIR})
+  set (QPID_INSTALL_LIBDIR ${LIB_INSTALL_DIR})
+  set (QPID_LOCALSTATE_DIR var) # Directory to store local state data
+  set (QPID_MAN_DIR man) # Directory to install manual files
+  set (QPID_INSTALL_SYSTEMDDIR usr/lib/systemd/system) # Systemd service files
+
+  set_absolute_install_path (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client) # Directory to load client plug-in modules from
+  set_absolute_install_path (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon) # Directory to load broker plug-in modules from
 endif (UNIX)

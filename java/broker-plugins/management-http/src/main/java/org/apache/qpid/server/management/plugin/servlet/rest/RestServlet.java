@@ -19,6 +19,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.security.AccessControlException;
 import java.util.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -30,7 +31,6 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
-
 
 public class RestServlet extends AbstractServlet
 {
@@ -47,29 +47,29 @@ public class RestServlet extends AbstractServlet
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
-    private volatile boolean initializationRequired = false;
-
     private final ConfiguredObjectToMapConverter _objectConverter = new ConfiguredObjectToMapConverter();
+    private final boolean _hierarchyInitializationRequired;
 
     public RestServlet()
     {
         super();
-        initializationRequired = true;
+        _hierarchyInitializationRequired = true;
     }
 
-    public RestServlet(Broker broker, Class<? extends ConfiguredObject>... hierarchy)
+    public RestServlet(Class<? extends ConfiguredObject>... hierarchy)
     {
-        super(broker);
+        super();
         _hierarchy = hierarchy;
+        _hierarchyInitializationRequired = false;
     }
 
     @Override
     public void init() throws ServletException
     {
-        if (initializationRequired)
+        super.init();
+        if (_hierarchyInitializationRequired)
         {
             doInitialization();
-            initializationRequired = false;
         }
     }
 
@@ -285,7 +285,7 @@ public class RestServlet extends AbstractServlet
     }
 
     @Override
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
@@ -319,7 +319,7 @@ public class RestServlet extends AbstractServlet
     }
 
     @Override
-    protected void onPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doPutWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
 
@@ -336,7 +336,8 @@ public class RestServlet extends AbstractServlet
 
             if(names.size() != _hierarchy.length)
             {
-                throw new IllegalArgumentException("Path to object to create must be fully specified");
+                throw new IllegalArgumentException("Path to object to create must be fully specified. "
+                       + "Found " + names.size() + " expecting " + _hierarchy.length);
             }
         }
 
@@ -428,8 +429,11 @@ public class RestServlet extends AbstractServlet
                        || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents)))
                     {
                         doUpdate(obj, providedObject);
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        return;
                     }
                 }
+
                 theParent.createChild(objClass, providedObject, otherParents);
             }
             catch (RuntimeException e)
@@ -462,13 +466,17 @@ public class RestServlet extends AbstractServlet
 
     private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException
     {
-        if (e.getCause() instanceof AMQSecurityException)
+        if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Caught security exception, sending " + HttpServletResponse.SC_FORBIDDEN, e);
+            }
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
         else
         {
-            LOGGER.warn("Unexpected exception is caught", e);
+            LOGGER.warn("Caught exception", e);
 
             // TODO
             response.setStatus(HttpServletResponse.SC_CONFLICT);
@@ -476,7 +484,7 @@ public class RestServlet extends AbstractServlet
     }
 
     @Override
-    protected void onDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);

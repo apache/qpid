@@ -153,6 +153,21 @@ namespace Org.Apache.Qpid.Messaging.Examples
 
 
         /// <summary>
+        /// SessionReceiver implements the ISessionReceiver interface.
+        /// It is the exception function that receives all exception messages
+        /// It may be called any time server is running.
+        /// It is always called on server's private thread.
+        /// After this is called then the sessionReceiver and private thread are closed.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        public void SessionException(Exception exception)
+        {
+            // A typical application will take more action here.
+            Console.WriteLine("{0} Exception caught.", exception.ToString());
+        }
+
+
+        /// <summary>
         /// Usage
         /// </summary>
         /// <param name="url">Connection target</param>
@@ -259,8 +274,17 @@ namespace Org.Apache.Qpid.Messaging.Examples
             //
             // Close the receiver and the connection.
             //
-            receiver.Close();
-            connection.Close();
+            try
+            {
+                receiver.Close();
+                connection.Close();
+            }
+            catch (Exception exception)
+            {
+                // receiver or connection may throw if they closed in error.
+                // A typical application will take more action here.
+                Console.WriteLine("{0} Closing exception caught.", exception.ToString());
+            }
             return 0;
         }
     }

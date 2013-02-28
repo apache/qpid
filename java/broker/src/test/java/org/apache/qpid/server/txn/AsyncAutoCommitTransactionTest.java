@@ -82,7 +82,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         AsyncAutoCommitTransaction asyncAutoCommitTransaction =
                 new AsyncAutoCommitTransaction(_messageStore, _futureRecorder);
 
-        asyncAutoCommitTransaction.enqueue(Collections.singletonList(_queue), _message, _postTransactionAction, System.currentTimeMillis());
+        asyncAutoCommitTransaction.enqueue(Collections.singletonList(_queue), _message, _postTransactionAction);
 
         verify(_storeTransaction).enqueueMessage(_queue, _message);
         verify(_futureRecorder).recordFuture(_future, _postTransactionAction);

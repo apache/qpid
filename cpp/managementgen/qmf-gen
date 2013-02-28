@@ -68,9 +68,11 @@ vargs = {}
 if opts.brokerplugin:
   vargs["agentHeaderDir"] = "management"
   vargs["genQmfV1"]       = True
+  vargs["genForBroker"]   = True
 else:
   vargs["agentHeaderDir"] = "agent"
   vargs["genQmfV1"]       = None
+  vargs["genForBroker"]   = None
 
 if opts.qpidlogs:
   vargs["genLogs"]        = True

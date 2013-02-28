@@ -58,10 +58,10 @@ define(["dojo/_base/xhr"],
                return exchangeName == null || exchangeName == "" || "<<default>>" == exchangeName || exchangeName.indexOf("amq.") == 0 || exchangeName.indexOf("qpid.") == 0;
            };
 
-           util.deleteGridSelections = function(updater, gridName, url, confirmationMessageStart)
+           util.deleteGridSelections = function(updater, grid, url, confirmationMessageStart)
            {
-               var grid = updater[gridName].grid;
                var data = grid.selection.getSelected();
+
                if(data.length)
                {
                    var confirmationMessage = null;
@@ -103,7 +103,8 @@ define(["dojo/_base/xhr"],
                        xhr.del({url: query, sync: true, handleAs: "json"}).then(
                            function(data)
                            {
-                               grid.setQuery({id: "*"});
+                               // TODO why query *??
+                               //grid.setQuery({id: "*"});
                                grid.selection.deselectAll();
                                updater.update();
                            },

@@ -30,24 +30,13 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionHandler.h"
 #include "qpid/broker/ConnectionState.h"
-#include "qpid/broker/SessionHandler.h"
-#include "qmf/org/apache/qpid/broker/Connection.h"
-#include "qpid/Exception.h"
-#include "qpid/RefCounted.h"
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
-#include "qpid/framing/ProtocolVersion.h"
-#include "qpid/management/ManagementAgent.h"
-#include "qpid/management/Manageable.h"
-#include "qpid/ptr_map.h"
-#include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionInputHandler.h"
-#include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/SecuritySettings.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/RefCounted.h"
+#include "qpid/ptr_map.h"
+
+#include "qmf/org/apache/qpid/broker/Connection.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/bind.hpp>
@@ -55,11 +44,17 @@
 #include <algorithm>
 
 namespace qpid {
+namespace sys {
+class Timer;
+class TimerTask;
+}
 namespace broker {
 
 class Broker;
 class LinkRegistry;
+class Queue;
 class SecureConnection;
+class SessionHandler;
 struct ConnectionTimeoutTask;
 
 class Connection : public sys::ConnectionInputHandler,
@@ -83,10 +78,7 @@ class Connection : public sys::ConnectionInputHandler,
                const std::string& mgmtId,
                const qpid::sys::SecuritySettings&,
                bool isLink = false,
-               uint64_t objectId = 0,
-               bool shadow=false,
-               bool delayManagement = false,
-               bool authenticated=true);
+               uint64_t objectId = 0);
 
     ~Connection ();
 
@@ -112,7 +104,7 @@ class Connection : public sys::ConnectionInputHandler,
     void closeChannel(framing::ChannelId channel);
 
     // Manageable entry points
-    management::ManagementObject* GetManagementObject (void) const;
+    management::ManagementObject::shared_ptr GetManagementObject(void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args, std::string&);
 
@@ -130,7 +122,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     void notifyConnectionForced(const std::string& text);
     void setUserId(const std::string& uid);
-    void raiseConnectEvent();
 
     // credentials for connected client
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
@@ -144,26 +135,13 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
     void restartTimeout();
-    
+
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
             f(*ptr_map_ptr(i));
     }
 
-    void sendClose();
     void setSecureConnection(SecureConnection* secured);
-
-    /** True if this is a shadow connection in a cluster. */
-    bool isShadow() const { return shadow; }
-
-    /** True if this connection is authenticated */
-    bool isAuthenticated() const { return authenticated; }
-
-    // Used by cluster to update connection status
-    sys::AggregateOutput& getOutputTasks() { return outputTasks; }
-
-    /** Cluster delays adding management object in the constructor then calls this. */
-    void addManagementObject();
 
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
     {
@@ -176,9 +154,6 @@ class Connection : public sys::ConnectionInputHandler,
     bool isLink() { return link; }
     void startLinkHeartbeatTimeoutTask();
 
-    // Used by cluster during catch-up, see cluster::OutputInterceptor
-    void doIoCallbacks();
-
     void setClientProperties(const framing::FieldTable& cp) { clientProperties = cp; }
     const framing::FieldTable& getClientProperties() const { return clientProperties; }
 
@@ -188,15 +163,13 @@ class Connection : public sys::ConnectionInputHandler,
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
-    bool shadow;
-    bool authenticated;
     ConnectionHandler adapter;
     const bool link;
     bool mgmtClosing;
     const std::string mgmtId;
     sys::Mutex ioCallbackLock;
     std::queue<boost::function0<void> > ioCallbacks;
-    qmf::org::apache::qpid::broker::Connection* mgmtObject;
+    qmf::org::apache::qpid::broker::Connection::shared_ptr mgmtObject;
     LinkRegistry& links;
     management::ManagementAgent* agent;
     sys::Timer& timer;
@@ -218,7 +191,6 @@ class Connection : public sys::ConnectionInputHandler,
         size_t getBuffered() const;
         void abort();
         void activateOutput();
-        void giveReadCredit(int32_t credit);
         void send(framing::AMQFrame&);
         void wrap(sys::ConnectionOutputHandlerPtr&);
       private:
@@ -228,10 +200,11 @@ class Connection : public sys::ConnectionInputHandler,
     OutboundFrameTracker outboundTracker;
 
     void sent(const framing::AMQFrame& f);
+    void doIoCallbacks();
 
   public:
 
-    qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
+    qmf::org::apache::qpid::broker::Connection::shared_ptr getMgmtObject() { return mgmtObject; }
 };
 
 }}

@@ -50,29 +50,28 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
     BasicMessageProducer_0_8(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
             AMQSession session, AMQProtocolHandler protocolHandler, long producerId, Boolean immediate, Boolean mandatory) throws AMQException
     {
-        super(_logger,connection, destination,transacted,channelId,session, protocolHandler, producerId, immediate, mandatory);
+        super(_logger,connection, destination,transacted,channelId,session, producerId, immediate, mandatory);
     }
 
     void declareDestination(AMQDestination destination)
     {
-
-        final MethodRegistry methodRegistry = getSession().getMethodRegistry();
-        ExchangeDeclareBody body =
+        if(getSession().isDeclareExchanges())
+        {
+            final MethodRegistry methodRegistry = getSession().getMethodRegistry();
+            ExchangeDeclareBody body =
                 methodRegistry.createExchangeDeclareBody(getSession().getTicket(),
                                                          destination.getExchangeName(),
                                                          destination.getExchangeClass(),
                                                          destination.getExchangeName().toString().startsWith("amq."),
-                                                         false,
-                                                         false,
-                                                         false,
+                                                         destination.isExchangeDurable(),
+                                                         destination.isExchangeAutoDelete(),
+                                                         destination.isExchangeInternal(),
                                                          true,
                                                          null);
-        // Declare the exchange
-        // Note that the durable and internal arguments are ignored since passive is set to false
+            AMQFrame declare = body.generateFrame(getChannelId());
 
-        AMQFrame declare = body.generateFrame(getChannelId());
-
-        getProtocolHandler().writeFrame(declare);
+            getConnection().getProtocolHandler().writeFrame(declare);
+        }
     }
 
     void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
@@ -172,7 +171,7 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
             throw jmse;
         }
 
-        getProtocolHandler().writeFrame(compositeFrame);
+        getConnection().getProtocolHandler().writeFrame(compositeFrame);
     }
 
     /**
@@ -234,4 +233,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         return frameCount;
     }
 
+    @Override
+    public AMQSession_0_8 getSession()
+    {
+        return (AMQSession_0_8) super.getSession();
+    }
 }

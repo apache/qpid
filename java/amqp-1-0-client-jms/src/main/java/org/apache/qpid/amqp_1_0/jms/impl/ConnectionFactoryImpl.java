@@ -20,8 +20,12 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.net.URLStreamHandler;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -39,6 +43,8 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _remoteHost;
     private boolean _ssl;
 
+    private String _queuePrefix;
+    private String _topicPrefix;
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
@@ -86,36 +92,70 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     public ConnectionImpl createConnection() throws JMSException
     {
-        return new ConnectionImpl(_host, _port, _username, _password, _clientId, _remoteHost, _ssl);
+        return createConnection(_username, _password);
     }
 
     public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
-        return new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
+        ConnectionImpl connection = new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
+        connection.setQueuePrefix(_queuePrefix);
+        connection.setTopicPrefix(_topicPrefix);
+        return connection;
     }
 
     public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
     {
-        URL url = new URL(urlString);
+        URL url = new URL(null, urlString, new URLStreamHandler()
+                    {
+                        @Override
+                        protected URLConnection openConnection(URL u) throws IOException
+                        {
+                            throw new UnsupportedOperationException();
+                        }
+                    });
+        String protocol = url.getProtocol();
+        if(protocol == null || "".equals(protocol))
+        {
+            protocol = "amqp";
+        }
+        else if(!protocol.equals("amqp") && !protocol.equals("amqps"))
+        {
+            throw new MalformedURLException("Protocol '"+protocol+"' unknown. Must be one of 'amqp' or 'amqps'.");
+        }
         String host = url.getHost();
         int port = url.getPort();
+
+        boolean ssl = false;
+
         if(port == -1)
         {
-            port = 5672;
+            if("amqps".equals(protocol))
+            {
+                port = 5671;
+                ssl = true;
+            }
+            else
+            {
+                port = 5672;
+            }
         }
+        else if("amqps".equals(protocol))
+        {
+            ssl = true;
+        }
+
         String userInfo = url.getUserInfo();
         String username = null;
         String password = null;
         String clientId = null;
         String remoteHost = null;
-        boolean ssl = false;
         if(userInfo != null)
         {
             String[] components = userInfo.split(":",2);
-            username = components[0];
+            username = URLDecoder.decode(components[0]);
             if(components.length == 2)
             {
-                password = components[1];
+                password = URLDecoder.decode(components[1]);
             }
         }
         String query = url.getQuery();
@@ -137,6 +177,11 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                    remoteHost = keyValuePair[1];
                }
            }
+        }
+
+        if(remoteHost == null)
+        {
+            remoteHost = host;
         }
 
         return new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
@@ -169,5 +214,25 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         final ConnectionImpl connection = createConnection(username, password);
         connection.setTopicConnection(true);
         return connection;
+    }
+
+    public String getTopicPrefix()
+    {
+        return _topicPrefix;
+    }
+
+    public void setTopicPrefix(String topicPrefix)
+    {
+        _topicPrefix = topicPrefix;
+    }
+
+    public String getQueuePrefix()
+    {
+        return _queuePrefix;
+    }
+
+    public void setQueuePrefix(String queuePrefix)
+    {
+        _queuePrefix = queuePrefix;
     }
 }

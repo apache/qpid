@@ -18,8 +18,10 @@
  */
 
 %module cqpid
+/* Ruby doesn't have a != operator*/
+#pragma SWIG nowarn=378
 %include "std_string.i"
-%include "../../swig_ruby_typemaps.i"
+%include "qpid/swig_ruby_typemaps.i"
 
 /* Define the general-purpose exception handling */
 %exception {
@@ -32,5 +34,5 @@
     }
 }
 
-%include "../qpid.i"
+%include "qpid/qpid.i"
 

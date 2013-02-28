@@ -55,30 +55,45 @@ under the License.
       <title>Avoiding message loss</title>
       <para>
 	In order to avoid message loss, the primary broker <emphasis>delays
-	acknowledgment</emphasis> of messages received from clients until the
-	message has been replicated to and acknowledged by all of the back-up
+	acknowledgment</emphasis> of messages received from clients until the message has
+	been replicated to and acknowledged by all of the back-up brokers. This means that
+	all <emphasis>acknowledged</emphasis> messages are safely stored on all the backup
 	brokers.
       </para>
       <para>
-	Clients buffer unacknowledged messages and re-send them in the event of
-	a fail-over.
+	Clients keep <emphasis>unacknowledged</emphasis> messages in a buffer
+	<footnote>
+	  <para>
+	    You can control the maximum number of messages in the buffer by setting the
+	    client's <literal>capacity</literal>. For details of how to set the capacity
+	    in client code see &#34;Using the Qpid Messaging API&#34; in
+	    <citetitle>Programming in Apache Qpid</citetitle>.
+	  </para>
+	</footnote>
+	until they are acknowledged by the primary. If the primary fails, clients will
+	fail-over to the new primary and <emphasis>re-send</emphasis> all their
+	unacknowledged messages.
 	<footnote>
 	  <para>
 	  Clients must use "at-least-once" reliability to enable re-send of unacknowledged
 	  messages. This is the default behavior, no options need be set to enable it. For
 	  details of client addressing options see &#34;Using the Qpid Messaging API&#34;
-	  in <citetitle>Programming in Apache Qpid</citetitle>
+	  in <citetitle>Programming in Apache Qpid</citetitle>.
 	  </para>
 	</footnote>
-	If the primary crashes before a message is replicated to
-	all the backups, the client will re-send the message when it fails over
-	to the new primary.
+      </para>
+      <para>
+	  So if the primary crashes, all the <emphasis>acknowledged</emphasis>
+	  messages will be available on the backup that takes over as the new
+	  primary. The <emphasis>unacknowledged</emphasis> messages will be
+	  re-sent by the clients.  Thus no messages are lost.
       </para>
       <para>
 	Note that this means it is possible for messages to be
-	<emphasis>duplicated</emphasis>. In the event of a failure it is
-	possible for a message to be both received by the backup that becomes
-	the new primary <emphasis>and</emphasis> re-sent by the client.
+	<emphasis>duplicated</emphasis>. In the event of a failure it is possible for a
+	message to received by the backup that becomes the new primary
+	<emphasis>and</emphasis> re-sent by the client.  The application must take steps
+	to identify and eliminate duplicates.
       </para>
       <para>
 	When a new primary is promoted after a fail-over it is initially in
@@ -86,6 +101,11 @@ under the License.
 	on behalf of all the backups that were connected to the previous
 	primary. This protects those messages against a failure of the new
 	primary until the backups have a chance to connect and catch up.
+      </para>
+      <para>
+	Not all messages need to be replicated to the back-up brokers. If a
+	message is consumed and acknowledged by a regular client before it has
+	been replicated to a backup, then it doesn't need to be replicated.
       </para>
       <variablelist>
 	<title>Status of a HA broker</title>
@@ -134,67 +154,35 @@ under the License.
       </variablelist>
     </section>
     <section>
-      <title>Replacing the old cluster module</title>
-      <para>
-	The High Availability (HA) module replaces the previous
-	<firstterm>active-active</firstterm> cluster module.  The new active-passive
-	approach has several advantages compared to the existing active-active cluster
-	module.
-	<itemizedlist>
-	  <listitem>
-	    It does not depend directly on openais or corosync. It does not use multicast
-	    which simplifies deployment.
-	  </listitem>
-	  <listitem>
-	    It is more portable: in environments that don't support corosync, it can be
-	    integrated with a resource manager available in that environment.
-	  </listitem>
-	  <listitem>
-	    Replication to a <firstterm>disaster recovery</firstterm> site can be handled as
-	    simply another node in the cluster, it does not require a separate replication
-	    mechanism.
-	  </listitem>
-	  <listitem>
-	    It can take advantage of features provided by the resource manager, for example
-	    virtual IP addresses.
-	  </listitem>
-	  <listitem>
-	    Improved performance and scalability due to better use of multiple CPUs
-	  </listitem>
-	</itemizedlist>
-      </para>
-    </section>
-    <section>
       <title>Limitations</title>
+      <para>
+	There are a some known limitations in the current implementation. These
+	will be fixed in furture versions.
+      </para>
       <itemizedlist>
 	<listitem>
-	  Transactional changes to queue state are not replicated atomically. If the
-	  primary crashes during a transaction, it is possible that the backup could
-	  contain only part of the changes introduced by a transaction.
+	  <para>
+	    Transactional changes to queue state are not replicated atomically. If
+	    the primary crashes during a transaction, it is possible that the
+	    backup could contain only part of the changes introduced by a
+	    transaction.
+	  </para>
 	</listitem>
 	<listitem>
-	  Not yet integrated with the persistent store.  A persistent broker must have its
-	  store erased before joining an existing cluster.  If the entire cluster fails,
-	  there are no tools to help identify the most recent store. In the future a
-	  persistent broker will be able to use its stored messages to avoid downloading
-	  messages from the primary when joining a cluster.
+	  <para>
+	    Configuration changes (creating or deleting queues, exchanges and
+	    bindings) are replicated asynchronously. Management tools used to
+	    make changes will consider the change complete when it is complete
+	    on the primary, it may not yet be replicated to all the backups.
+	  </para>
 	</listitem>
 	<listitem>
-	  Configuration changes (creating or deleting queues, exchanges and bindings) are
-	  replicated asynchronously. Management tools used to make changes will consider
-	  the change complete when it is complete on the primary, it may not yet be
-	  replicated to all the backups.
-	</listitem>
-	<listitem>
-	  Deletions made immediately after a failure (before all the backups are ready)
-	  may be lost on a backup. Queues, exchange or bindings that were deleted on the
-	  primary could re-appear if that backup is promoted to primary on a subsequent
-	  failure.
-	</listitem>
-	<listitem>
-	  Federated links <emphasis>from</emphasis> the primary will be lost in fail over,
-	  they will not be re-connected to the new primary. Federation links
-	  <emphasis>to</emphasis> the primary can fail over.
+	  <para>
+	    Federated links <emphasis>from</emphasis> the primary will be lost
+	    in fail over, they will not be re-connected to the new
+	    primary. Federation links <emphasis>to</emphasis> the primary will
+	    fail over.
+	  </para>
 	</listitem>
       </itemizedlist>
     </section>
@@ -247,12 +235,20 @@ under the License.
 	  </row>
 	  <row>
 	    <entry>
+	      <literal>ha-queue-replication <replaceable>yes|no</replaceable></literal>
+	    </entry>
+	    <entry>
+	      Enable replication of specific queues without joining a cluster, see <xref linkend="ha-queue-replication"/>.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>
 	      <literal>ha-brokers-url <replaceable>URL</replaceable></literal>
 	    </entry>
 	    <entry>
 	      <para>
 		The URL
-		<footnote>
+		<footnote id="ha-url-grammar">
 		  <para>
 		  The full format of the URL is given by this grammar:
 		  <programlisting>
@@ -264,10 +260,9 @@ ssl_addr = "ssl:" host [":" port]'
 		  </programlisting>
 		  </para>
 		</footnote>
-		used by cluster brokers to connect to each other. The URL can
-		contain a list of all the broker addresses or it can contain a single
-		virtual IP address.  If a list is used it is comma separated, for example
-		<literal>amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com</literal>
+		used by cluster brokers to connect to each other. The URL should
+		contain a comma separated list of the broker addresses, rather than a
+		virtual IP address.
 	      </para>
 	    </entry>
 	  </row>
@@ -275,20 +270,23 @@ ssl_addr = "ssl:" host [":" port]'
 	    <entry><literal>ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL that is advertised to clients. This defaults to the
-		<literal>ha-brokers-url</literal> URL above, and has the same format.  A
-		virtual IP address is recommended for the public URL as it simplifies
-		deployment and hides changes to the cluster membership from clients.
+		The URL <footnoteref linkend="ha-url-grammar"/> is advertised to
+		clients as the "known-hosts" for fail-over.  It can be a list or
+		a single virtual IP address. A virtual IP address is recommended.
 	      </para>
 	      <para>
-		This option allows you to put client traffic on a different network from
-		broker traffic, which is recommended.
+		Using this option you can put client and broker traffic on
+		separate networks, which is recommended.
+	      </para>
+	      <para>
+		Note: When HA clustering is enabled the broker option
+		<literal>known-hosts-url</literal> is ignored and over-ridden by
+		the <literal>ha-public-url</literal> setting.
 	      </para>
 	    </entry>
 	  </row>
 	  <row>
 	    <entry><literal>ha-replicate </literal><replaceable>VALUE</replaceable></entry>
-	    <foo/>
 	    <entry>
 	      <para>
 		Specifies whether queues and exchanges are replicated by default.
@@ -327,6 +325,15 @@ ssl_addr = "ssl:" host [":" port]'
 		Interval for the broker to check link health and re-connect links if need
 		be. If you want brokers to fail over quickly you can set this to a
 		fraction of a second, for example: 0.1.
+	      </para>
+	    </entry>
+	  </row>
+	  <row>
+	    <entry><literal>link-heartbeat-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <para>
+		Heartbeat interval for replication links. The link will be assumed broken
+		if there is no heartbeat for twice the interval.
 	      </para>
 	    </entry>
 	  </row>
@@ -382,7 +389,7 @@ ssl_addr = "ssl:" host [":" port]'
       clustered services using <command>cman</command> and
       <command>rgmanager</command>. It will show you how to configure an active-passive,
       hot-standby <command>qpidd</command> HA cluster with <command>rgmanager</command>.
-    </para> 
+    </para>
     <para>
       You must provide a <literal>cluster.conf</literal> file to configure
       <command>cman</command> and <command>rgmanager</command>.  Here is
@@ -532,22 +539,28 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   </section>
 
   <section id="ha-creating-replicated">
-    <title>Creating replicated queues and exchanges</title>
+    <title>Controlling replication of queues and exchanges</title>
     <para>
       By default, queues and exchanges are not replicated automatically. You can change
       the default behavior by setting the <literal>ha-replicate</literal> configuration
       option. It has one of the following values:
       <itemizedlist>
 	<listitem>
-	  <firstterm>all</firstterm>: Replicate everything automatically: queues,
-	  exchanges, bindings and messages.
+	  <para>
+	    <firstterm>all</firstterm>: Replicate everything automatically: queues,
+	    exchanges, bindings and messages.
+	  </para>
 	</listitem>
 	<listitem>
-	  <firstterm>configuration</firstterm>: Replicate the existence of queues,
-	  exchange and bindings but don't replicate messages.
+	  <para>
+	    <firstterm>configuration</firstterm>: Replicate the existence of queues,
+	    exchange and bindings but don't replicate messages.
+	  </para>
 	</listitem>
 	<listitem>
-	  <firstterm>none</firstterm>: Don't replicate anything, this is the default.
+	  <para>
+	    <firstterm>none</firstterm>: Don't replicate anything, this is the default.
+	  </para>
 	</listitem>
       </itemizedlist>
     </para>
@@ -575,6 +588,18 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <programlisting>
       "myqueue;{create:always,node:{x-declare:{arguments:{'qpid.replicate':all}}}}"
     </programlisting>
+    <para>
+      There are some built-in exchanges created automatically by the broker, these
+      exchangs are never replicated. The built-in exchanges are the default (nameless)
+      exchange, the AMQP standard exchanges (<literal>amq.direct, amq.topic, amq.fanout</literal> and
+      <literal>amq.match</literal>) and the management exchanges (<literal>qpid.management, qmf.default.direct</literal> and
+      <literal>qmf.default.topic</literal>)
+    </para>
+    <para>
+      Note that if you bind a replicated queue to one of these exchanges, the
+      binding wil <emphasis>not</emphasis> be replicated, so the queue will not
+      have the binding after a fail-over.
+    </para>
   </section>
 
   <section>
@@ -588,12 +613,17 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       each type of client). There are two possibilities
       <itemizedlist>
 	<listitem>
-	  The URL contains multiple addresses, one for each broker in the cluster.
+	  <para>
+	    The URL contains multiple addresses, one for each broker in the cluster.
+	  </para>
 	</listitem>
 	<listitem>
-	  The URL contains a single <firstterm>virtual IP address</firstterm>
-	  that is assigned to the primary broker by the resource manager.
-	  <footnote><para>Only if the resource manager supports virtual IP addresses</para></footnote>
+	  <para>
+	    The URL contains a single <firstterm>virtual IP address</firstterm>
+	    that is assigned to the primary broker by the resource manager.
+	    <footnote><para>Only if the resource manager supports virtual IP
+	    addresses</para></footnote>
+	  </para>
 	</listitem>
       </itemizedlist>
       In the first case, clients will repeatedly re-try each address in the URL
@@ -790,10 +820,10 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       To integrate with a different resource manager you must configure it to:
       <itemizedlist>
-	<listitem>Start a qpidd process on each node of the cluster.</listitem>
-	<listitem>Restart qpidd if it crashes.</listitem>
-	<listitem>Promote exactly one of the brokers to primary.</listitem>
-	<listitem>Detect a failure and promote a new primary.</listitem>
+	<listitem><para>Start a qpidd process on each node of the cluster.</para></listitem>
+	<listitem><para>Restart qpidd if it crashes.</para></listitem>
+	<listitem><para>Promote exactly one of the brokers to primary.</para></listitem>
+	<listitem><para>Detect a failure and promote a new primary.</para></listitem>
       </itemizedlist>
     </para>
     <para>
@@ -819,6 +849,30 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       You can also use <command>qpid-ha</command> to manually examine and promote brokers. This
       can be useful for testing failover scenarios without having to set up a full resource manager,
       or to simulate a cluster on a single node. For deployment, a resource manager is required.
+    </para>
+  </section>
+  <section id="ha-queue-replication">
+    <title>Replicating specific queues</title>
+    <para>
+      In addition to the automatic replication performed in a cluster, you can
+      set up replication for specific queues between arbitrary brokers, even if
+      the brokers are not members of a cluster. The command:
+    </para>
+    <programlisting>
+      qpid-ha replicate <replaceable>QUEUE</replaceable> <replaceable>REMOTE-BROKER</replaceable>
+    </programlisting>
+    <para>
+    sets up replication of <replaceable>QUEUE</replaceable> on <replaceable>REMOTE-BROKER</replaceable> to <replaceable>QUEUE</replaceable> on the current broker.
+    </para>
+    <para>
+      Set the configuration option
+      <literal>ha-queue-replication=yes</literal> on both brokers to enable this
+      feature on non-cluster brokers. It is automatically enabled for brokers
+      that are part of a cluster.
+    </para>
+    <para>
+      Note that this feature does not provide automatic fail-over, for that you
+      need to run a cluster.
     </para>
   </section>
 </section>

@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.client.message.AMQPEncodedListMessage;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.*;
@@ -28,6 +29,8 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
+import javax.jms.StreamMessage;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -276,7 +279,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
                     null, null, false, true);
-            session.sendConsume(consumer, new AMQShortString("test"), null, true, 1);
+            session.sendConsume(consumer, new AMQShortString("test"), true, 1);
         }
         catch (Exception e)
         {
@@ -459,6 +462,13 @@ public class AMQSession_0_10Test extends QpidTestCase
         assertNotNull("ExchangeDeclare event was not sent", event);
     }
 
+    public void testCreateStreamMessage() throws Exception
+    {
+        AMQSession_0_10 session = createAMQSession_0_10();
+        StreamMessage m = session.createStreamMessage();
+        assertTrue("Legacy Stream message encoding should be the default" + m.getClass(),!(m instanceof AMQPEncodedListMessage));
+    }
+
     public void testGetQueueDepthWithSync()
     {
         // slow down a flush thread
@@ -587,7 +597,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         connection.setSessionFactory(new SessionFactory()
         {
 
-            public Session newSession(Connection conn, Binary name, long expiry)
+            public Session newSession(Connection conn, Binary name, long expiry, boolean isNoReplay)
             {
                 return new MockSession(conn, new SessionDelegate(), name, expiry, throwException);
             }
@@ -660,7 +670,6 @@ public class AMQSession_0_10Test extends QpidTestCase
             if (m instanceof ExchangeBound)
             {
                 ExchangeBoundResult struc = new ExchangeBoundResult();
-                struc.setQueueNotFound(true);
                 result.setValue(struc);
             }
             else if (m instanceof ExchangeQuery)

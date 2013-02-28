@@ -25,10 +25,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
@@ -39,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -47,6 +47,7 @@ import java.util.Random;
 
 public class SaslServlet extends AbstractServlet
 {
+
     private static final Logger LOGGER = Logger.getLogger(SaslServlet.class);
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -56,18 +57,12 @@ public class SaslServlet extends AbstractServlet
     private static final String ATTR_EXPIRY = "SaslServlet.Expiry";
     private static final long SASL_EXCHANGE_EXPIRY = 1000L;
 
-
     public SaslServlet()
     {
         super();
     }
 
-    public SaslServlet(Broker broker)
-    {
-        super(broker);
-    }
-
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws
                                                                                    ServletException,
                                                                                    IOException
     {
@@ -79,15 +74,16 @@ public class SaslServlet extends AbstractServlet
         response.setDateHeader ("Expires", 0);
 
         HttpSession session = request.getSession();
-        Random rand = getRandom(session);
+        getRandom(session);
 
-        AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
-        String[] mechanisms = authManager.getMechanisms().split(" ");
+        SubjectCreator subjectCreator = getSubjectCreator(request);
+        String[] mechanisms = subjectCreator.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
-        final Subject subject = (Subject) session.getAttribute("subject");
+
+        final Subject subject = getAuthorisedSubjectFromSession(session);
         if(subject != null)
         {
-            final Principal principal = subject.getPrincipals().iterator().next();
+            Principal principal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
             outputObject.put("user", principal.getName());
         }
         else if (request.getRemoteUser() != null)
@@ -121,9 +117,10 @@ public class SaslServlet extends AbstractServlet
 
 
     @Override
-    protected void onPost(final HttpServletRequest request, final HttpServletResponse response)
-            throws ServletException, IOException
+    protected void doPostWithSubjectAndActor(final HttpServletRequest request, final HttpServletResponse response) throws IOException
     {
+        checkSaslAuthEnabled(request);
+
         try
         {
             response.setContentType("application/json");
@@ -137,14 +134,18 @@ public class SaslServlet extends AbstractServlet
             String id = request.getParameter("id");
             String saslResponse = request.getParameter("response");
 
-            AuthenticationManager authManager = ApplicationRegistry.getInstance().getAuthenticationManager(getSocketAddress(request));
+            SubjectCreator subjectCreator = getSubjectCreator(request);
 
             if(mechanism != null)
             {
                 if(id == null)
                 {
-                    SaslServer saslServer = authManager.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
-                    evaluateSaslResponse(response, session, saslResponse, saslServer);
+                    if(LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Creating SaslServer for mechanism: " + mechanism);
+                    }
+                    SaslServer saslServer = subjectCreator.createSaslServer(mechanism, request.getServerName(), null/*TODO*/);
+                    evaluateSaslResponse(request, response, session, saslResponse, saslServer, subjectCreator);
                 }
                 else
                 {
@@ -152,9 +153,7 @@ public class SaslServlet extends AbstractServlet
                     session.removeAttribute(ATTR_ID);
                     session.removeAttribute(ATTR_SASL_SERVER);
                     session.removeAttribute(ATTR_EXPIRY);
-
                 }
-
             }
             else
             {
@@ -163,8 +162,7 @@ public class SaslServlet extends AbstractServlet
                     if(id.equals(session.getAttribute(ATTR_ID)) && System.currentTimeMillis() < (Long) session.getAttribute(ATTR_EXPIRY))
                     {
                         SaslServer saslServer = (SaslServer) session.getAttribute(ATTR_SASL_SERVER);
-                        evaluateSaslResponse(response, session, saslResponse, saslServer);
-
+                        evaluateSaslResponse(request, response, session, saslResponse, saslServer, subjectCreator);
                     }
                     else
                     {
@@ -180,7 +178,6 @@ public class SaslServlet extends AbstractServlet
                     session.removeAttribute(ATTR_ID);
                     session.removeAttribute(ATTR_SASL_SERVER);
                     session.removeAttribute(ATTR_EXPIRY);
-
                 }
             }
         }
@@ -194,12 +191,30 @@ public class SaslServlet extends AbstractServlet
             LOGGER.error("Error processing SASL request", e);
             throw e;
         }
-
     }
 
-    private void evaluateSaslResponse(final HttpServletResponse response,
-                                      final HttpSession session,
-                                      final String saslResponse, final SaslServer saslServer) throws IOException
+    private void checkSaslAuthEnabled(HttpServletRequest request)
+    {
+        boolean saslAuthEnabled;
+        HttpManagement management = getManagement();
+        if (request.isSecure())
+        {
+            saslAuthEnabled = management.isHttpsSaslAuthenticationEnabled();
+        }
+        else
+        {
+            saslAuthEnabled = management.isHttpSaslAuthenticationEnabled();
+        }
+
+        if (!saslAuthEnabled)
+        {
+            throw new RuntimeException("Sasl authentication disabled.");
+        }
+    }
+
+    private void evaluateSaslResponse(final HttpServletRequest request,
+                                      final HttpServletResponse response,
+                                      final HttpSession session, final String saslResponse, final SaslServer saslServer, SubjectCreator subjectCreator) throws IOException
     {
         final String id;
         byte[] challenge;
@@ -209,27 +224,34 @@ public class SaslServlet extends AbstractServlet
         }
         catch(SaslException e)
         {
-
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
             return;
         }
 
         if(saslServer.isComplete())
         {
-            final Subject subject = new Subject();
-            subject.getPrincipals().add(new UsernamePrincipal(saslServer.getAuthorizationID()));
-            session.setAttribute("subject", subject);
+            Subject subject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
+
+            try
+            {
+                authoriseManagement(request, subject);
+            }
+            catch (AccessControlException ace)
+            {
+                sendError(response, HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+
+            setAuthorisedSubjectInSession(subject, request, session);
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
 
             response.setStatus(HttpServletResponse.SC_OK);
-
-
         }
         else
         {
@@ -250,7 +272,6 @@ public class SaslServlet extends AbstractServlet
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
             mapper.writeValue(writer, outputObject);
-
         }
     }
 }

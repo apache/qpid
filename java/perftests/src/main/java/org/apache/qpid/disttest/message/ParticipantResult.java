@@ -22,11 +22,12 @@ import static org.apache.qpid.disttest.message.ParticipantAttribute.BATCH_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.CONFIGURED_CLIENT_NAME;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.ITERATION_NUMBER;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.MAXIMUM_DURATION;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.MESSAGE_THROUGHPUT;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.NUMBER_OF_MESSAGES_PROCESSED;
-import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.PARTICIPANT_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.PAYLOAD_SIZE;
 import static org.apache.qpid.disttest.message.ParticipantAttribute.TEST_NAME;
+import static org.apache.qpid.disttest.message.ParticipantAttribute.THROUGHPUT;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -49,6 +50,7 @@ public class ParticipantResult extends Response
     private long _totalPayloadProcessed;
     private int _payloadSize;
     private double _throughput;
+    private int _messageThroughput;
 
     private int _totalNumberOfConsumers;
     private int _totalNumberOfProducers;
@@ -236,6 +238,17 @@ public class ParticipantResult extends Response
         _throughput = throughput;
     }
 
+    @OutputAttribute(attribute=MESSAGE_THROUGHPUT)
+    public int getMessageThroughput()
+    {
+        return _messageThroughput;
+    }
+
+    public void setMessageThroughput(int throughput)
+    {
+        _messageThroughput = throughput;
+    }
+
     public void setTotalNumberOfConsumers(int totalNumberOfConsumers)
     {
         _totalNumberOfConsumers = totalNumberOfConsumers;
@@ -269,4 +282,41 @@ public class ParticipantResult extends Response
         _acknowledgeMode = acknowledgeMode;
     }
 
+    public double getLatencyStandardDeviation()
+    {
+        return 0.0;
+    }
+
+    @OutputAttribute(attribute = ParticipantAttribute.MIN_LATENCY)
+    public long getMinLatency()
+    {
+        return 0;
+    }
+
+    @OutputAttribute(attribute = ParticipantAttribute.MAX_LATENCY)
+    public long getMaxLatency()
+    {
+        return 0;
+    }
+
+    @OutputAttribute(attribute = ParticipantAttribute.AVERAGE_LATENCY)
+    public double getAverageLatency()
+    {
+        return 0;
+    }
+
+    public int getPriority()
+    {
+        return 0;
+    }
+
+    public long getTimeToLive()
+    {
+        return 0;
+    }
+
+    public int getDeliveryMode()
+    {
+        return 0;
+    }
 }

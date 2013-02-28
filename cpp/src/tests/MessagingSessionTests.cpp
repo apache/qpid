@@ -1164,6 +1164,59 @@ QPID_AUTO_TEST_CASE(testAlternateExchangeInLinkDeclare)
     }
 }
 
+QPID_AUTO_TEST_CASE(testBrowseOnly)
+{
+    /* Set up a queue browse-only, and try to receive
+       the same messages twice with two different receivers. 
+       This works because the browse-only queue does not
+       allow message acquisition. */
+
+    QueueFixture fix;
+    std::string addr = "q; {create:always, node:{type:queue, durable:false, x-declare:{arguments:{qpid.browse-only:1}}}}";
+    Sender sender = fix.session.createSender(addr);
+    Message out("test-message");
+
+    int count = 10;
+    for ( int i = 0; i < count; ++ i ) {
+        sender.send(out);
+    }
+
+    Message m;
+
+    Receiver receiver_1 = fix.session.createReceiver(addr);
+    for ( int i = 0; i < count; ++ i ) {
+      BOOST_CHECK(receiver_1.fetch(m, Duration::SECOND));
+    }
+
+    Receiver receiver_2 = fix.session.createReceiver(addr);
+    for ( int i = 0; i < count; ++ i ) {
+      BOOST_CHECK(receiver_2.fetch(m, Duration::SECOND));
+    }
+
+    fix.session.acknowledge();
+}
+
+QPID_AUTO_TEST_CASE(testLinkBindingCleanup)
+{
+    MessagingFixture fix;
+
+    Sender sender = fix.session.createSender("test.ex;{create:always,node:{type:topic}}");
+
+    Connection connection = fix.newConnection();
+    connection.open();
+
+    Session session(connection.createSession());
+    Receiver receiver1 = session.createReceiver("test.q;{create:always, node:{type:queue, x-bindings:[{exchange:test.ex,queue:test.q,key:#,arguments:{x-scope:session}}]}}");
+    Receiver receiver2 = fix.session.createReceiver("test.q;{create:never, delete:always}");
+    connection.close();
+
+    sender.send(Message("test-message"), true);
+
+    // The session-scoped binding should be removed when receiver1's network connection is lost
+    Message in;
+    BOOST_CHECK(!receiver2.fetch(in, Duration::IMMEDIATE));
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

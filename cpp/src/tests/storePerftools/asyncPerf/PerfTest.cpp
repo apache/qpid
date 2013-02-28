@@ -157,7 +157,7 @@ PerfTest::destroyQueues() {
 int
 runPerfTest(int argc, char** argv) {
     // Load async store module
-    qpid::tryShlib ("asyncStore.so", false);
+    qpid::tryShlib ("asyncStore.so");
 
     qpid::CommonOptions co;
     qpid::asyncStore::AsyncStoreOptions aso;

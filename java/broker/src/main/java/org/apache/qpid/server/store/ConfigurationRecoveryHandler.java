@@ -46,19 +46,7 @@ public interface ConfigurationRecoveryHandler
     public static interface BindingRecoveryHandler
     {
         void binding(UUID bindingId, UUID exchangeId, UUID queueId, String bindingName, ByteBuffer buf);
-        BrokerLinkRecoveryHandler completeBindingRecovery();
-    }
-    
-    public static interface BrokerLinkRecoveryHandler
-    {
-        BridgeRecoveryHandler brokerLink(UUID id, long createTime, Map<String,String> arguments);
-        void completeBrokerLinkRecovery();
-    }
-    
-    public static interface BridgeRecoveryHandler
-    {
-        void bridge(UUID id, long createTime, Map<String,String> arguments);
-        void completeBridgeRecoveryForLink();
+        void completeBindingRecovery();
     }
 
 }

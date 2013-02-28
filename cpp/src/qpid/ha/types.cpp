@@ -33,6 +33,7 @@ namespace ha {
 using namespace std;
 
 const string QPID_REPLICATE("qpid.replicate");
+const string QPID_HA_UUID("qpid.ha-uuid");
 
 string EnumBase::str() const {
     assert(value < count);
@@ -55,6 +56,11 @@ template <> const char* Enum<ReplicateLevel>::NAMES[] = { "none", "configuration
 template <> const size_t Enum<ReplicateLevel>::N = 3;
 
 template <> const char* Enum<BrokerStatus>::NAME = "HA broker status";
+
+// NOTE: Changing status names will  have an impact on qpid-ha and
+// the qpidd-primary init script.
+// Don't change them unless you are going to  update all dependent code.
+//
 template <> const char* Enum<BrokerStatus>::NAMES[] = {
     "joining", "catchup", "ready", "recovering", "active", "standalone"
 };

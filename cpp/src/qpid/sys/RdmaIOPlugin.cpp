@@ -23,6 +23,7 @@
 
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/NameGenerator.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/rdma/RdmaIO.h"
@@ -67,7 +68,6 @@ class RdmaIOHandler : public OutputControl {
     void close();
     void abort();
     void activateOutput();
-    void giveReadCredit(int32_t credit);
     void initProtocolOut();
 
     // Input side
@@ -83,7 +83,7 @@ class RdmaIOHandler : public OutputControl {
 };
 
 RdmaIOHandler::RdmaIOHandler(Rdma::Connection::intrusive_ptr c, qpid::sys::ConnectionCodec::Factory* f) :
-    identifier(c->getFullName()),
+    identifier(broker::QPID_NAME_PREFIX+c->getFullName()),
     factory(f),
     codec(0),
     readError(false),
@@ -199,10 +199,6 @@ void RdmaIOHandler::full(Rdma::AsynchIO&) {
     QPID_LOG(debug, "Rdma: buffer full [" << identifier << "]");
 }
 
-// TODO: Dummy implementation of read throttling
-void RdmaIOHandler::giveReadCredit(int32_t) {
-}
-
 // The logic here is subtly different from TCP as RDMA is message oriented
 // so we define that an RDMA message is a frame - in this case there is no putting back
 // of any message remainder - there shouldn't be any. And what we read here can't be
@@ -250,7 +246,7 @@ class RdmaIOProtocolFactory : public ProtocolFactory {
   public:
     RdmaIOProtocolFactory(int16_t port, int backlog);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const string& host, const std::string& port, ConnectionCodec::Factory*, ConnectFailedCallback);
+    void connect(Poller::shared_ptr, const std::string& name, const string& host, const std::string& port, ConnectionCodec::Factory*, ConnectFailedCallback);
 
     uint16_t getPort() const;
 
@@ -371,6 +367,7 @@ void RdmaIOProtocolFactory::connected(Poller::shared_ptr poller, Rdma::Connectio
 
 void RdmaIOProtocolFactory::connect(
     Poller::shared_ptr poller,
+    const std::string& /*name*/,
     const std::string& host, const std::string& port,
     ConnectionCodec::Factory* f,
     ConnectFailedCallback failed)

@@ -44,7 +44,12 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
 
     }
 
+    JMSStreamMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data) throws AMQException
+    {
+        super(delegateFactory, data!=null);
+        _typedBytesContentWriter = new TypedBytesContentWriter();
 
+    }
 
     JMSStreamMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {

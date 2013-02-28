@@ -18,22 +18,23 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.plugins.PluginManager;
+
+import org.apache.qpid.server.plugin.AccessControlFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
+import static org.apache.qpid.server.security.access.ObjectType.GROUP;
 import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
+import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
 import static org.apache.qpid.server.security.access.Operation.BIND;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
@@ -45,103 +46,105 @@ import static org.apache.qpid.server.security.access.Operation.UNBIND;
 
 import javax.security.auth.Subject;
 import java.net.SocketAddress;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The security manager contains references to all loaded {@link SecurityPlugin}s and delegates security decisions to them based
+ * The security manager contains references to all loaded {@link AccessControl}s and delegates security decisions to them based
  * on virtual host name. The plugins can be external <em>OSGi</em> .jar files that export the required classes or just internal
  * objects for simpler plugins.
- * 
- * @see SecurityPlugin
+ *
+ * @see AccessControl
  */
 public class SecurityManager
 {
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
-    
+
     /** Container for the {@link java.security.Principal} that is using to this thread. */
     private static final ThreadLocal<Subject> _subject = new ThreadLocal<Subject>();
-    private static final ThreadLocal<Boolean> _accessChecksDisabled = new ThreadLocal<Boolean>()
+
+    public static final ThreadLocal<Boolean> _accessChecksDisabled = new ClearingThreadLocal(false);
+
+    private Map<String, AccessControl> _globalPlugins = new HashMap<String, AccessControl>();
+    private Map<String, AccessControl> _hostPlugins = new HashMap<String, AccessControl>();
+
+    /**
+     * A special ThreadLocal, which calls remove() on itself whenever the value is
+     * the default, to avoid leaving a default value set after its use has passed.
+     */
+    private static final class ClearingThreadLocal extends ThreadLocal<Boolean>
     {
-        protected Boolean initialValue()
+        private Boolean _defaultValue;
+
+        public ClearingThreadLocal(Boolean defaultValue)
         {
-            return false;
+            super();
+            _defaultValue = defaultValue;
         }
-    };
-
-    private PluginManager _pluginManager;
-    private Map<String, SecurityPluginFactory> _pluginFactories = new HashMap<String, SecurityPluginFactory>();
-    private Map<String, SecurityPlugin> _globalPlugins = new HashMap<String, SecurityPlugin>();
-    private Map<String, SecurityPlugin> _hostPlugins = new HashMap<String, SecurityPlugin>();
-
-    public static class SecurityConfiguration extends ConfigurationPlugin
-    {
-        public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
-        {
-            public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
-            {
-                ConfigurationPlugin instance = new SecurityConfiguration();
-                instance.setConfiguration(path, config);
-                return instance;
-            }
-
-            public List<String> getParentPaths()
-            {
-                return Arrays.asList("security", "virtualhosts.virtualhost.security");
-            }
-        };
 
         @Override
-        public String[] getElementsProcessed()
+        protected Boolean initialValue()
         {
-            return new String[]{"security"};
+            return _defaultValue;
         }
 
-        public void validateConfiguration() throws ConfigurationException
+        @Override
+        public void set(Boolean value)
         {
-            if (getConfig().isEmpty())
+            if (value == _defaultValue)
             {
-                throw new ConfigurationException("security section is incomplete, no elements found.");
+                super.remove();
             }
+            else
+            {
+                super.set(value);
+            }
+        }
+
+        @Override
+        public Boolean get()
+        {
+            Boolean value = super.get();
+            if (value == _defaultValue)
+            {
+                super.remove();
+            }
+            return value;
         }
     }
 
-
-    public SecurityManager(SecurityManager parent) throws ConfigurationException
+    /*
+     * Used by the VirtualHost to allow deferring to the broker level security plugins if required.
+     */
+    public SecurityManager(SecurityManager parent, String aclFile)
     {
-        _pluginManager = parent._pluginManager;
-        _pluginFactories = parent._pluginFactories;
-        
+        this(aclFile);
+
         // our global plugins are the parent's host plugins
         _globalPlugins = parent._hostPlugins;
     }
 
-    public SecurityManager(ConfigurationPlugin configuration, PluginManager manager) throws ConfigurationException
+    public SecurityManager(String aclFile)
     {
-        this(configuration, manager, null);
-    }
-
-    public SecurityManager(ConfigurationPlugin configuration, PluginManager manager, SecurityPluginFactory plugin) throws ConfigurationException
-    {
-        _pluginManager = manager;
-        if (manager == null) // No plugin manager, no plugins
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("aclFile", aclFile);
+        for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
         {
-            return;
+            AccessControl accessControl = provider.createInstance(attributes);
+            if(accessControl != null)
+            {
+                addHostPlugin(accessControl);
+            }
         }
 
-        _pluginFactories = _pluginManager.getSecurityPlugins();
-        if (plugin != null)
+        if(_logger.isDebugEnabled())
         {
-            _pluginFactories.put(plugin.getPluginName(), plugin);
+            _logger.debug("Configured " + _hostPlugins.size() + " access control plugins");
         }
-
-        configureHostPlugins(configuration);
     }
 
     public static Subject getThreadSubject()
@@ -152,41 +155,6 @@ public class SecurityManager
     public static void setThreadSubject(final Subject subject)
     {
         _subject.set(subject);
-    }
-
-    public void configureHostPlugins(ConfigurationPlugin hostConfig) throws ConfigurationException
-    {
-        _hostPlugins = configurePlugins(hostConfig);
-    }
-    
-    public void configureGlobalPlugins(ConfigurationPlugin configuration) throws ConfigurationException
-    {
-        _globalPlugins = configurePlugins(configuration);
-    }
-
-    public Map<String, SecurityPlugin> configurePlugins(ConfigurationPlugin hostConfig) throws ConfigurationException
-    {
-        Map<String, SecurityPlugin> plugins = new HashMap<String, SecurityPlugin>();
-        SecurityConfiguration securityConfig = hostConfig.getConfiguration(SecurityConfiguration.class.getName());
-
-        // If we have no security Configuration then there is nothing to configure.        
-        if (securityConfig != null)
-        {
-            for (SecurityPluginFactory<?> factory : _pluginFactories.values())
-            {
-                SecurityPlugin plugin = factory.newInstance(securityConfig);
-                if (plugin != null)
-                {
-                    plugins.put(factory.getPluginName(), plugin);
-                }
-            }
-        }
-        return plugins;
-    }
-
-    public void addHostPlugin(SecurityPlugin plugin)
-    {
-        _hostPlugins.put(plugin.getClass().getName(), plugin);
     }
 
     public static Logger getLogger()
@@ -205,7 +173,7 @@ public class SecurityManager
 
     private abstract class AccessCheck
     {
-        abstract Result allowed(SecurityPlugin plugin);
+        abstract Result allowed(AccessControl plugin);
     }
 
     private boolean checkAllPlugins(AccessCheck checker)
@@ -215,16 +183,16 @@ public class SecurityManager
             return true;
         }
 
-        Map<String, SecurityPlugin> remainingPlugins = _globalPlugins.isEmpty()
-                ? Collections.<String, SecurityPlugin>emptyMap()
-                : _hostPlugins.isEmpty() ? _globalPlugins : new HashMap<String, SecurityPlugin>(_globalPlugins);
-		
-		if(!_hostPlugins.isEmpty())
+        Map<String, AccessControl> remainingPlugins = _globalPlugins.isEmpty()
+                ? Collections.<String, AccessControl>emptyMap()
+                : _hostPlugins.isEmpty() ? _globalPlugins : new HashMap<String, AccessControl>(_globalPlugins);
+
+        if(!_hostPlugins.isEmpty())
         {
-            for (Entry<String, SecurityPlugin> hostEntry : _hostPlugins.entrySet())
+            for (Entry<String, AccessControl> hostEntry : _hostPlugins.entrySet())
             {
                 // Create set of global only plugins
-                SecurityPlugin globalPlugin = remainingPlugins.get(hostEntry.getKey());
+                AccessControl globalPlugin = remainingPlugins.get(hostEntry.getKey());
                 if (globalPlugin != null)
                 {
                     remainingPlugins.remove(hostEntry.getKey());
@@ -272,7 +240,7 @@ public class SecurityManager
             }
         }
 
-        for (SecurityPlugin plugin : remainingPlugins.values())
+        for (AccessControl plugin : remainingPlugins.values())
         {
             Result remaining = checker.allowed(plugin);
 			if (remaining == Result.DEFER)
@@ -284,16 +252,16 @@ public class SecurityManager
                 return false;
             }
         }
-        
+
         // getting here means either allowed or abstained from all plugins
         return true;
     }
-    
+
     public boolean authoriseBind(final Exchange exch, final AMQQueue queue, final AMQShortString routingKey)
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
             }
@@ -304,7 +272,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 ObjectProperties properties = new ObjectProperties();
                 properties.setName(methodName);
@@ -318,11 +286,22 @@ public class SecurityManager
         });
     }
 
+    public boolean accessManagement()
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.access(ObjectType.MANAGEMENT, null);
+            }
+        });
+    }
+
     public boolean accessVirtualhost(final String vhostname, final SocketAddress remoteAddress)
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.access(VIRTUALHOST, remoteAddress);
             }
@@ -333,7 +312,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CONSUME, QUEUE, new ObjectProperties(queue));
             }
@@ -345,7 +324,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(autoDelete, durable, exchangeName,
                         internal, nowait, passive, exchangeType));
@@ -358,7 +337,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CREATE, QUEUE, new ObjectProperties(autoDelete, durable, exclusive, nowait, passive, queueName, owner));
             }
@@ -369,7 +348,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(DELETE, QUEUE, new ObjectProperties(queue));
             }
@@ -380,13 +359,34 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(DELETE, EXCHANGE, new ObjectProperties(exchange.getName()));
             }
         });
     }
 
+    public boolean authoriseGroupOperation(final Operation operation, final String groupName)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(operation, GROUP, new ObjectProperties(groupName));
+            }
+        });
+    }
+
+    public boolean authoriseUserOperation(final Operation operation, final String userName)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(operation, USER, new ObjectProperties(userName));
+            }
+        });
+    }
 
     private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _immediatePublishPropsCache
             = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
@@ -428,7 +428,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(PURGE, QUEUE, new ObjectProperties(queue));
             }
@@ -439,7 +439,7 @@ public class SecurityManager
     {
         return checkAllPlugins(new AccessCheck()
         {
-            Result allowed(SecurityPlugin plugin)
+            Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(UNBIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
             }
@@ -465,9 +465,16 @@ public class SecurityManager
             _props = props;
         }
 
-        Result allowed(SecurityPlugin plugin)
+        Result allowed(AccessControl plugin)
         {
             return plugin.authorise(PUBLISH, EXCHANGE, _props);
         }
     }
+
+
+    public void addHostPlugin(AccessControl plugin)
+    {
+        _hostPlugins.put(plugin.getClass().getName(), plugin);
+    }
+
 }

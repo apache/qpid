@@ -50,4 +50,8 @@ public interface NetworkConnection
     void setPeerPrincipal(Principal principal);
 
     Principal getPeerPrincipal();
+
+    int getMaxReadIdle();
+
+    int getMaxWriteIdle();
 }

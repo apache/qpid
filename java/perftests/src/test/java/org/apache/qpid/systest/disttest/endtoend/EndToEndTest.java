@@ -20,7 +20,9 @@ package org.apache.qpid.systest.disttest.endtoend;
 
 import static org.apache.qpid.disttest.AbstractRunner.JNDI_CONFIG_PROP;
 import static org.apache.qpid.disttest.ControllerRunner.OUTPUT_DIR_PROP;
+import static org.apache.qpid.disttest.ControllerRunner.RUN_ID;
 import static org.apache.qpid.disttest.ControllerRunner.TEST_CONFIG_PROP;
+import static org.apache.qpid.disttest.ControllerRunner.WRITE_TO_DB;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +38,7 @@ public class EndToEndTest extends QpidBrokerTestCase
     private ControllerRunner _runner;
     private static final String TEST_CONFIG = "perftests/src/test/java/org/apache/qpid/systest/disttest/endtoend/endtoend.json";
     private static final String JNDI_CONFIG_FILE = "perftests/src/test/java/org/apache/qpid/systest/disttest/perftests.systests.properties";
+    private static final String RUN1 = "run1";
 
     public void testRunner() throws Exception
     {
@@ -44,6 +47,8 @@ public class EndToEndTest extends QpidBrokerTestCase
 
         final String[] args = new String[] {TEST_CONFIG_PROP + "=" + TEST_CONFIG,
                                             JNDI_CONFIG_PROP + "=" + JNDI_CONFIG_FILE,
+                                            WRITE_TO_DB + "=true",
+                                            RUN_ID + "=" + RUN1,
                                             OUTPUT_DIR_PROP  + "=" + csvOutputDir.getAbsolutePath()};
         _runner = new ControllerRunner();
         _runner.parseArgumentsIntoConfig(args);
@@ -76,10 +81,10 @@ public class EndToEndTest extends QpidBrokerTestCase
         String[] cells = csvLine.split(",", DONT_STRIP_EMPTY_LAST_FIELD_FLAG);
         // All attributes become cells in the CSV, so this will be true
         assertEquals("Unexpected number of cells in CSV line " + csvLine, ParticipantAttribute.values().length, cells.length);
-        assertEquals("Unexpected test name in CSV line " + csvLine, testName, cells[0]);
-        assertEquals("Unexpected client name in CSV line " + csvLine, clientName, cells[2]);
-        assertEquals("Unexpected participant name in CSV line " + csvLine, participantName, cells[3]);
-        assertEquals("Unexpected number of messages processed in CSV line " + csvLine, String.valueOf(expectedNumberOfMessagesProcessed), cells[4]);
+        assertEquals("Unexpected test name in CSV line " + csvLine, testName, cells[ParticipantAttribute.TEST_NAME.ordinal()]);
+        assertEquals("Unexpected client name in CSV line " + csvLine, clientName, cells[ParticipantAttribute.CONFIGURED_CLIENT_NAME.ordinal()]);
+        assertEquals("Unexpected participant name in CSV line " + csvLine, participantName, cells[ParticipantAttribute.PARTICIPANT_NAME.ordinal()]);
+        assertEquals("Unexpected number of messages processed in CSV line " + csvLine, String.valueOf(expectedNumberOfMessagesProcessed), cells[ParticipantAttribute.NUMBER_OF_MESSAGES_PROCESSED.ordinal()]);
 
     }
 

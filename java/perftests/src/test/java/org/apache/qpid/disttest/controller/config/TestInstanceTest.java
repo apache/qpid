@@ -26,14 +26,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.controller.CommandForClient;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.NoOpCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TestInstanceTest extends TestCase
+public class TestInstanceTest extends QpidTestCase
 {
     private static final String CLIENT_NAME = "CLIENT_NAME";
     private static final int ITERATION_NUMBER = 0;

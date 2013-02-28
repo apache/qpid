@@ -38,8 +38,9 @@ class HeadersExchange : public virtual Exchange {
     struct BoundKey
     {
         Binding::shared_ptr binding;
+        qpid::framing::FieldTable args;
         FedBinding fedBinding;
-        BoundKey(Binding::shared_ptr binding_) : binding(binding_) {}
+        BoundKey(Binding::shared_ptr binding_, const qpid::framing::FieldTable& args_) : binding(binding_), args(args_) {}
     };
 
     struct MatchArgs

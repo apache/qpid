@@ -18,7 +18,7 @@
 #
 
 import os, connection, session
-from util import notify
+from util import notify, get_client_properties_with_defaults
 from datatypes import RangedSet
 from exceptions import VersionError, Closed
 from logging import getLogger
@@ -137,24 +137,12 @@ class Server(Delegate):
 
 class Client(Delegate):
 
-  ppid = 0
-  try:
-    ppid = os.getppid()
-  except:
-    pass
-
-  PROPERTIES = {"product": "qpid python client",
-                "version": "development",
-                "platform": os.name,
-                "qpid.client_process": os.path.basename(sys.argv[0]),
-                "qpid.client_pid": os.getpid(),
-                "qpid.client_ppid": ppid}
-
   def __init__(self, connection, username=None, password=None,
                mechanism=None, heartbeat=None, **kwargs):
     Delegate.__init__(self, connection)
-    self.client_properties=Client.PROPERTIES.copy()
-    self.client_properties.update(kwargs.get("client_properties",{}))
+    provided_client_properties = kwargs.get("client_properties")
+    self.client_properties=get_client_properties_with_defaults(provided_client_properties)
+
     ##
     ## self.acceptableMechanisms is the list of SASL mechanisms that the client is willing to
     ## use.  If it's None, then any mechanism is acceptable.

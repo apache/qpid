@@ -28,6 +28,7 @@
 #include "qpid/sys/Mutex.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/ptr_container/ptr_deque.hpp>
 
@@ -116,9 +117,10 @@ namespace Rdma {
     // Wrapper for a queue pair - this has the functionality for
     // putting buffers on the receive queue and for sending buffers
     // to the other end of the connection.
-    class QueuePair : public qpid::sys::IOHandle, public qpid::RefCounted {
+    class QueuePair : public qpid::RefCounted {
         friend class Connection;
 
+        boost::scoped_ptr< qpid::sys::IOHandle > handle;
         boost::shared_ptr< ::ibv_pd > pd;
         boost::shared_ptr< ::ibv_mr > smr;
         boost::shared_ptr< ::ibv_mr > rmr;
@@ -138,6 +140,8 @@ namespace Rdma {
 
     public:
         typedef boost::intrusive_ptr<QueuePair> intrusive_ptr;
+
+        operator qpid::sys::IOHandle&() const;
 
         // Create a buffers to use for writing
         void createSendBuffers(int sendBufferCount, int dataSize, int headerSize);
@@ -195,7 +199,8 @@ namespace Rdma {
     // registered buffers can't be shared between different connections
     // (this can only happen between connections on the same controller in any case,
     // so needs careful management if used)
-    class Connection : public qpid::sys::IOHandle, public qpid::RefCounted {
+    class Connection : public qpid::RefCounted {
+        boost::scoped_ptr< qpid::sys::IOHandle > handle;
         boost::shared_ptr< ::rdma_event_channel > channel;
         boost::shared_ptr< ::rdma_cm_id > id;
         QueuePair::intrusive_ptr qp;
@@ -215,6 +220,8 @@ namespace Rdma {
 
     public:
         typedef boost::intrusive_ptr<Connection> intrusive_ptr;
+
+        operator qpid::sys::IOHandle&() const;
 
         static intrusive_ptr make();
         static intrusive_ptr find(::rdma_cm_id* i);

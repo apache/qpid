@@ -61,10 +61,14 @@ class QueueGuard;
  *
  * Lifecycle: broker::Queue holds shared_ptrs to this as a consumer.
  *
+ * Lock Hierarchy: ReplicatingSubscription MUS NOT call QueueGuard with it's lock held
+ * QueueGuard MAY call ReplicatingSubscription with it's lock held.
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 {
   public:
+    typedef broker::SemanticState::ConsumerImpl ConsumerImpl;
+
     struct Factory : public broker::ConsumerFactory {
         boost::shared_ptr<broker::SemanticState::ConsumerImpl> create(
             broker::SemanticState* parent,
@@ -79,17 +83,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     static const std::string QPID_BACK;
     static const std::string QPID_FRONT;
     static const std::string QPID_BROKER_INFO;
-
-    // TODO aconway 2012-05-23: these don't belong on ReplicatingSubscription
-    /** Get position of front message on queue.
-     *@return false if queue is empty.
-     */
-    static bool getFront(broker::Queue&, framing::SequenceNumber& result);
-    /** Get next message after from in queue.
-     *@return false if none found.
-     */
-    static bool getNext(broker::Queue&, framing::SequenceNumber from,
-                        framing::SequenceNumber& result);
 
     ReplicatingSubscription(broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
@@ -114,6 +107,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     // Hide the "queue deleted" error for a ReplicatingSubscription when a
     // queue is deleted, this is normal and not an error.
     bool hideDeletedError() { return true; }
+    // Not counted for auto deletion and immediate message purposes.
+    bool isCounted() { return false; }
 
     /** Initialization that must be done separately from construction
      * because it requires a shared_ptr to this to exist.

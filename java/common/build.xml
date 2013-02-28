@@ -53,7 +53,15 @@
   </target>
 
   <target name="compile_gentools">
-    <ant dir="${gentools.home}" />
+    <mkdir dir="${gentools.build}/classes"/>
+    <javac srcdir="${gentools.home}/src" destdir="${gentools.build}/classes" source="${java.source}" target="${java.target}" fork="true" includeantruntime="false">
+      <classpath>
+        <fileset dir="${project.root}">
+          <include name="${velocity.jar}"/>
+          <include name="${velocity-dep.jar}"/>
+        </fileset>
+      </classpath>
+    </javac>
   </target>
 
   <target name="check_gentool_deps">
@@ -64,15 +72,12 @@
 
   <target name="gentools" depends="compile_gentools,check_gentool_deps" unless="gentools.notRequired">
     <mkdir dir="${framing.generated.dir}"/>
-    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src" failonerror="true">
+    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.build}/classes" failonerror="true">
       <arg line='-j -o "${framing.generated.dir}" -t "${project.root}/common/templates" ${xml.spec.list}'/>
       <classpath>
-        <pathelement path="${gentools.home}/src" />
-        <fileset dir="${gentools.home}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-        <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
-        <pathelement path="${gentools.home}/lib/velocity-dep-1.4.jar" />
+        <pathelement path="${gentools.build}/classes" />
+        <pathelement path="${project.root}/${velocity.jar}" />
+        <pathelement path="${project.root}/${velocity-dep.jar}" />
       </classpath>
     </java>
     <touch file="${gentools.timestamp}" />

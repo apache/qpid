@@ -16,7 +16,7 @@
 -->
 <ivysettings>
   <property name="ivy.default.resolver" value="chain" override="false"/>
-  <property name="ivy.localfs.root" value="${project.root}/localfs_repo" override="false"/>
+  <property name="ivy.localfs.root" value="${project.root}/lib/localfs_repo" override="false"/>
   <property name="ivy.localfs.pattern" value="[artifact]-[revision](-[classifier]).[ext]" override="false"/>
 
   <settings defaultResolver="${ivy.default.resolver}"/>

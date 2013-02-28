@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.server.transport;
 
+import java.net.SocketAddress;
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -39,6 +38,7 @@ import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
@@ -48,6 +48,7 @@ import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
@@ -55,7 +56,6 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORM
 
 public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
 {
-    private ConnectionConfig _config;
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
     private LogActor _actor = GenericActor.getInstance(this);
@@ -69,6 +69,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
     private Principal _peerPrincipal;
+    private NetworkConnection _networkConnection;
 
     public ServerConnection(final long connectionId)
     {
@@ -147,16 +148,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         initialiseStatistics();
     }
 
-    public void setConnectionConfig(final ConnectionConfig config)
-    {
-        _config = config;
-    }
-
-    public ConnectionConfig getConfig()
-    {
-        return _config;
-    }
-
     public void onOpen(final Runnable task)
     {
         _onOpenTask = task;
@@ -228,7 +219,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                     MessageFormat.format(CONNECTION_FORMAT,
                                          getConnectionId(),
                                          getClientId(),
-                                         getConfig().getAddress(),
+                                         getRemoteAddressString(),
                                          getVirtualHost().getName())
                  + "] ";
         }
@@ -238,7 +229,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                     MessageFormat.format(USER_FORMAT,
                                          getConnectionId(),
                                          getClientId(),
-                                         getConfig().getAddress())
+                                         getRemoteAddressString())
                  + "] ";
 
         }
@@ -247,7 +238,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
             return "[" +
                     MessageFormat.format(SOCKET_FORMAT,
                                          getConnectionId(),
-                                         getConfig().getAddress())
+                                         getRemoteAddressString())
                  + "] ";
         }
     }
@@ -396,7 +387,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         else
         {
             _authorizedSubject = authorizedSubject;
-            _authorizedPrincipal = authorizedSubject.getPrincipals().iterator().next();
+            _authorizedPrincipal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(authorizedSubject);
         }
     }
 
@@ -417,7 +408,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
     public String getRemoteAddressString()
     {
-        return getConfig().getAddress();
+        return String.valueOf(getRemoteAddress());
     }
 
     public String getUserName()
@@ -488,5 +479,33 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setPeerPrincipal(Principal peerPrincipal)
     {
         _peerPrincipal = peerPrincipal;
+    }
+
+    @Override
+    public void setRemoteAddress(SocketAddress remoteAddress)
+    {
+        super.setRemoteAddress(remoteAddress);
+    }
+
+    @Override
+    public void setLocalAddress(SocketAddress localAddress)
+    {
+        super.setLocalAddress(localAddress);
+    }
+
+    public void setNetworkConnection(NetworkConnection network)
+    {
+        _networkConnection = network;
+    }
+
+    public NetworkConnection getNetworkConnection()
+    {
+        return _networkConnection;
+    }
+
+    public void doHeartbeat()
+    {
+        super.doHeartBeat();
+
     }
 }

@@ -131,6 +131,18 @@ uint64_t Message::getTtl() const
     }
 }
 
+bool Message::getTtl(uint64_t ttl) const
+{
+    if (encoding->getTtl(ttl) && expiration < FAR_FUTURE) {
+        sys::Duration remaining(sys::AbsTime::now(), getExpiration());
+        // convert from ns to ms; set to 0 if expired
+        ttl = (int64_t(remaining) >= 1000000 ? int64_t(remaining)/1000000 : 0);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void Message::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& e)
 {
     //TODO: this is still quite 0-10 specific...

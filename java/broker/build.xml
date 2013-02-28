@@ -20,7 +20,7 @@
  -->
 <project name="AMQ Broker" default="build">
     <property name="module.depends" value="management/common common amqp-1-0-common"/>
-    <property name="module.test.depends" value="common/test" />
+    <property name="module.test.depends" value="common/tests" />
     <property name="module.main" value="org.apache.qpid.server.Main"/>
     <property name="module.genpom" value="true"/>
 
@@ -28,23 +28,7 @@
 
     <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
 
-    <property name="qmf.input.file" value="${project.root}/../specs/management-schema.xml"/>
-    <property name="qmf.xsl.file" value="${project.root}/broker/src/xsl/qmf.xsl"/>
-    <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/qmf/schema"/>
-    <property name="qmf.output.file" value="BrokerSchema.java"/>
-
-    <target name="precompile" depends="gen_logging,gen_qmf"/>
-
-  <target name="check_qmf_deps">
-    <uptodate property="gen_qmf.notRequired" targetfile="${qmf.output.dir}/${qmf.output.file}">
-      <srcfiles file="${qmf.input.file}"/>
-      <srcfiles file="${qmf.xsl.file}"/>
-    </uptodate>
-  </target>
-
-  <target name="gen_qmf" depends="check_qmf_deps" unless="gen_qmf.notRequired">
-    <xslt in="${qmf.input.file}" out="${qmf.output.dir}/${qmf.output.file}" style="${qmf.xsl.file}"/>
-  </target>
+    <target name="precompile" depends="gen_logging"/>
 
     <target name="copy-etc-release" if="module.etc.exists" description="copy etc directory if it exists to build tree">
       <copy todir="${module.release}/etc" failonerror="false" flatten="true">
@@ -64,9 +48,15 @@
         <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="dos" includes="*.bat"/>
     </target>
 
-    <target name="release-bin-other" depends="release-bin-other-bdbstore" description="copy broker-plugins into module release">
+    <target name="release-bin-other" depends="release-bin-other-lib-opt,release-bin-other-bdbstore,release-bin-copy-broker-plugins"/>
+
+    <target name="release-bin-other-lib-opt" depends="release-bin-other-bdbstore" description="make lib/opt dir in the module release">
+        <mkdir dir="${module.release}/lib/opt"/>
+    </target>
+
+    <target name="release-bin-copy-broker-plugins" description="copy broker-plugins into module release">
         <copy todir="${module.release}/lib/plugins" failonerror="true">
-            <fileset dir="${build.lib}/plugins"/>
+            <fileset dir="${build.scratch.broker.plugins.lib}"/>
         </copy>
     </target>
 

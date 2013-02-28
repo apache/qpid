@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,11 +38,10 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConnectionConfigType;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -54,8 +52,9 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
     //private NetworkConnection _networkDriver;
     private long _readBytes;
     private long _writtenBytes;
-    private final UUID _id;
-    private final IApplicationRegistry _appRegistry;
+    private long _lastReadTime;
+    private long _lastWriteTime;
+    private final Broker _broker;
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _conn;
     private final long _connectionId;
@@ -99,11 +98,14 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
 
 
-    public ProtocolEngine_1_0_0(final IApplicationRegistry appRegistry, long id)
+    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver, final Broker broker, long id)
     {
-        _id = appRegistry.getConfigStore().createId();
-        _appRegistry = appRegistry;
+        _broker = broker;
         _connectionId = id;
+        if(networkDriver != null)
+        {
+            setNetworkConnection(networkDriver, networkDriver.getSender());
+        }
     }
 
 
@@ -142,13 +144,15 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         _network = network;
         _sender = sender;
 
-        Container container = new Container(_appRegistry.getBrokerId().toString());
+        Container container = new Container(_broker.getId().toString());
 
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_appRegistry.getAuthenticationManager(
+        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(
                 getLocalAddress())));
-        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
-        _conn.setFrameOutputHandler(this);
         _conn.setRemoteAddress(_network.getRemoteAddress());
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
+        _conn.setFrameOutputHandler(this);
 
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
         _frameHandler = new FrameHandler(_conn);
@@ -157,14 +161,14 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         _sender.flush();
     }
 
-    private SaslServerProvider asSaslServerProvider(final AuthenticationManager authenticationManager)
+    private SaslServerProvider asSaslServerProvider(final SubjectCreator subjectCreator)
     {
         return new SaslServerProvider()
         {
             @Override
             public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
-                return authenticationManager.createSaslServer(mechanism, fqdn, null);
+                return subjectCreator.createSaslServer(mechanism, fqdn, null);
             }
         };
     }
@@ -174,22 +178,6 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         return getRemoteAddress().toString();
     }
 
-
-    public ConfigStore getConfigStore()
-    {
-        return _appRegistry.getConfigStore();
-    }
-
-    public UUID getId()
-    {
-        return _id;
-    }
-
-    public ConnectionConfigType getConfigType()
-    {
-        return ConnectionConfigType.getInstance();
-    }
-
     public boolean isDurable()
     {
         return false;
@@ -197,6 +185,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
     public synchronized void received(ByteBuffer msg)
     {
+        _lastReadTime = System.currentTimeMillis();
         if(RAW_LOGGER.isLoggable(Level.FINE))
         {
             ByteBuffer dup = msg.duplicate();
@@ -339,6 +328,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         synchronized(_sendLock)
         {
 
+            _lastWriteTime = System.currentTimeMillis();
             if(FRAME_LOGGER.isLoggable(Level.FINE))
             {
                 FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
@@ -393,4 +383,13 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         return _connectionId;
     }
 
+    public long getLastReadTime()
+    {
+        return _lastReadTime;
+    }
+
+    public long getLastWriteTime()
+    {
+        return _lastWriteTime;
+    }
 }

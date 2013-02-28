@@ -120,6 +120,48 @@ public class BrokerDetailsTest extends TestCase
         {
             assertTrue(urise.getReason().equals("Illegal character in port number"));
         }
+    }
 
+    public void testToStringMasksKeyStorePassword() throws Exception
+    {
+        String url = "tcp://localhost:5672?key_store_password='password'";
+        BrokerDetails details = new AMQBrokerDetails(url);
+
+        String expectedToString = "tcp://localhost:5672?key_store_password='********'";
+        String actualToString = details.toString();
+
+        assertEquals("Unexpected toString", expectedToString, actualToString);
+    }
+
+    public void testToStringMasksTrustStorePassword() throws Exception
+    {
+        String url = "tcp://localhost:5672?trust_store_password='password'";
+        BrokerDetails details = new AMQBrokerDetails(url);
+
+        String expectedToString = "tcp://localhost:5672?trust_store_password='********'";
+        String actualToString = details.toString();
+
+        assertEquals("Unexpected toString", expectedToString, actualToString);
+    }
+
+    public void testDefaultSsl() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        assertNull("default value should be null", broker.getProperty(BrokerDetails.OPTIONS_SSL));
+    }
+
+    public void testOverridingSsl() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672?ssl='true'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        assertTrue("value should be true", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_SSL)));
+
+        brokerURL = "tcp://localhost:5672?ssl='false''&maxprefetch='1'";
+        broker = new AMQBrokerDetails(brokerURL);
+
+        assertFalse("value should be false", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_SSL)));
     }
 }

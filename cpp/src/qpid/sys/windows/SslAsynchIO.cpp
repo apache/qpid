@@ -209,18 +209,6 @@ bool SslAsynchIO::writeQueueEmpty() {
     return aio->writeQueueEmpty();
 }
 
-/*
- * Initiate a read operation. AsynchIO::readComplete() will be
- * called when the read is complete and data is available.
- */
-void SslAsynchIO::startReading() {
-    aio->startReading();
-}
-
-void SslAsynchIO::stopReading() {
-    aio->stopReading();
-}
-
 // Queue the specified callback for invocation from an I/O thread.
 void SslAsynchIO::requestCallback(RequestCallback callback) {
     aio->requestCallback(callback);
@@ -241,11 +229,15 @@ AsynchIO::BufferBase* SslAsynchIO::getQueuedBuffer() {
     return sslBuff;
 }
 
-unsigned int SslAsynchIO::getSslKeySize() {
+SecuritySettings SslAsynchIO::getSecuritySettings() {
     SecPkgContext_KeyInfo info;
     memset(&info, 0, sizeof(info));
     ::QueryContextAttributes(&ctxtHandle, SECPKG_ATTR_KEY_INFO, &info);
-    return info.KeySize;
+
+    SecuritySettings settings;
+    settings.ssf = info.KeySize;
+    settings.authid = std::string();
+    return settings;
 }
 
 void SslAsynchIO::negotiationDone() {

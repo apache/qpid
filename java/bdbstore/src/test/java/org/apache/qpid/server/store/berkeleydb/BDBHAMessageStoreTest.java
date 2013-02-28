@@ -24,12 +24,8 @@ import java.io.File;
 import java.net.InetAddress;
 
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -51,6 +47,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
     private int _masterPort;
     private String _host;
     private XMLConfiguration _configXml;
+    private VirtualHost _virtualHost;
 
     public void setUp() throws Exception
     {
@@ -63,39 +60,46 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         FileUtils.delete(new File(_workDir), true);
         _configXml = new XMLConfiguration();
-    }
+
+        BrokerTestHelper.setUp();
+     }
 
     public void tearDown() throws Exception
     {
-        FileUtils.delete(new File(_workDir), true);
-        super.tearDown();
+        try
+        {
+            FileUtils.delete(new File(_workDir), true);
+            if (_virtualHost != null)
+            {
+                _virtualHost.close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
     }
 
     public void testSetSystemConfiguration() throws Exception
     {
         // create virtual host configuration, registry and host instance
         addVirtualHostConfiguration();
-        TestApplicationRegistry registry = initialize();
-        try
-        {
-            VirtualHost virtualhost = registry.getVirtualHostRegistry().getVirtualHost("test" + _masterPort);
-            BDBHAMessageStore store = (BDBHAMessageStore) virtualhost.getMessageStore();
+        String vhostName = "test" + _masterPort;
+        VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), BrokerTestHelper.createBrokerMock());
+        _virtualHost = BrokerTestHelper.createVirtualHost(configuration);
+        BDBHAMessageStore store = (BDBHAMessageStore) _virtualHost.getMessageStore();
 
-            // test whether JVM system settings were applied
-            Environment env = store.getEnvironment();
-            assertEquals("Unexpected number of cleaner threads", TEST_NUMBER_OF_THREADS, env.getConfig().getConfigParam(EnvironmentConfig.CLEANER_THREADS));
-            assertEquals("Unexpected log file max", TEST_LOG_FILE_MAX, env.getConfig().getConfigParam(EnvironmentConfig.LOG_FILE_MAX));
+        // test whether JVM system settings were applied
+        Environment env = store.getEnvironment();
+        assertEquals("Unexpected number of cleaner threads", TEST_NUMBER_OF_THREADS, env.getConfig().getConfigParam(EnvironmentConfig.CLEANER_THREADS));
+        assertEquals("Unexpected log file max", TEST_LOG_FILE_MAX, env.getConfig().getConfigParam(EnvironmentConfig.LOG_FILE_MAX));
 
-            ReplicatedEnvironment repEnv = store.getReplicatedEnvironment();
-            assertEquals("Unexpected number of elections primary retries", TEST_ELECTION_RETRIES,
-                    repEnv.getConfig().getConfigParam(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES));
-            assertEquals("Unexpected number of elections primary retries", TEST_ENV_CONSISTENCY_TIMEOUT,
-                    repEnv.getConfig().getConfigParam(ReplicationConfig.ENV_CONSISTENCY_TIMEOUT));
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        ReplicatedEnvironment repEnv = store.getReplicatedEnvironment();
+        assertEquals("Unexpected number of elections primary retries", TEST_ELECTION_RETRIES,
+                repEnv.getConfig().getConfigParam(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES));
+        assertEquals("Unexpected number of elections primary retries", TEST_ENV_CONSISTENCY_TIMEOUT,
+                repEnv.getConfig().getConfigParam(ReplicationConfig.ENV_CONSISTENCY_TIMEOUT));
     }
 
     private void addVirtualHostConfiguration() throws Exception
@@ -151,15 +155,5 @@ public class BDBHAMessageStoreTest extends QpidTestCase
             throw new IllegalStateException("Helper port not yet assigned.");
         }
         return _host + ":" + _masterPort;
-    }
-
-    private TestApplicationRegistry initialize() throws Exception
-    {
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        ServerConfiguration configuration = new ServerConfiguration(_configXml);
-        TestApplicationRegistry registry = new TestApplicationRegistry(configuration);
-        ApplicationRegistry.initialise(registry);
-        registry.getVirtualHostRegistry().setDefaultVirtualHostName("test" + _masterPort);
-        return registry;
     }
 }

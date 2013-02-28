@@ -45,6 +45,9 @@ public:
                       const std::string& routingKey,
                       qpid::framing::FieldTable&,
                       AsyncStore* const store) = 0;
+
+    virtual std::string getName() const = 0;
+
     virtual ~RecoverableExchange() {};
 };
 

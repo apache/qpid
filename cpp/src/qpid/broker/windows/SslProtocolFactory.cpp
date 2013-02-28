@@ -93,26 +93,22 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
     CredHandle credHandle;
 
   public:
-    SslProtocolFactory(const SslServerOptions&, const std::string& host, const std::string& port,
-                       int backlog, bool nodelay,
-                       Timer& timer, uint32_t maxTime);
+    SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions&, Timer& timer);
     ~SslProtocolFactory();
     void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
-    void connect(sys::Poller::shared_ptr, const std::string& host, const std::string& port,
+    void connect(sys::Poller::shared_ptr, const std::string& name, const std::string& host, const std::string& port,
                  sys::ConnectionCodec::Factory*,
                  ConnectFailedCallback failed);
 
     uint16_t getPort() const;
-    bool supports(const std::string& capability);
 
   private:
     void connectFailed(const qpid::sys::Socket&,
                        int err,
                        const std::string& msg);
-    void established(sys::Poller::shared_ptr,
-                     const qpid::sys::Socket&,
-                     sys::ConnectionCodec::Factory*,
-                     bool isClient);
+    void establishedIncoming(sys::Poller::shared_ptr, const qpid::sys::Socket&, sys::ConnectionCodec::Factory*);
+    void establishedOutgoing(sys::Poller::shared_ptr, const qpid::sys::Socket&, sys::ConnectionCodec::Factory*, std::string& );
+    void establishedCommon(sys::Poller::shared_ptr, sys::AsynchIOHandler*, sys::AsynchIO*, const qpid::sys::Socket&);
 };
 
 // Static instance to initialise plugin
@@ -130,10 +126,7 @@ static struct SslPlugin : public Plugin {
         if (broker) {
             try {
                 const broker::Broker::Options& opts = broker->getOptions();
-                ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
-                                                                            "", boost::lexical_cast<std::string>(options.port),
-                                                                            opts.connectionBacklog, opts.tcpNoDelay,
-                                                                            broker->getTimer(), opts.maxNegotiateTime));
+                ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(opts, options, broker->getTimer()));
                 QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
                 broker->registerProtocolFactory("ssl", protocol);
             } catch (const std::exception& e) {
@@ -143,13 +136,36 @@ static struct SslPlugin : public Plugin {
     }
 } sslPlugin;
 
-SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
-                                       const std::string& host, const std::string& port,
-                                       int backlog, bool nodelay,
-                                       Timer& timer, uint32_t maxTime)
+namespace {
+    // Expand list of Interfaces and addresses to a list of addresses
+    std::vector<std::string> expandInterfaces(const std::vector<std::string>& interfaces) {
+        std::vector<std::string> addresses;
+        // If there are no specific interfaces listed use a single "" to listen on every interface
+        if (interfaces.empty()) {
+            addresses.push_back("");
+            return addresses;
+        }
+        for (unsigned i = 0; i < interfaces.size(); ++i) {
+            const std::string& interface = interfaces[i];
+            if (!(SystemInfo::getInterfaceAddresses(interface, addresses))) {
+                // We don't have an interface of that name -
+                // Check for IPv6 ('[' ']') brackets and remove them
+                // then pass to be looked up directly
+                if (interface[0]=='[' && interface[interface.size()-1]==']') {
+                    addresses.push_back(interface.substr(1, interface.size()-2));
+                } else {
+                    addresses.push_back(interface);
+                }
+            }
+        }
+        return addresses;
+    }
+}
+
+SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options, Timer& timer)
     : brokerTimer(timer),
-      maxNegotiateTime(maxTime),
-      tcpNoDelay(nodelay),
+      maxNegotiateTime(opts.maxNegotiateTime),
+      tcpNoDelay(opts.tcpNoDelay),
       clientAuthSelected(options.clientAuth) {
 
     // Make sure that certificate store is good before listening to sockets
@@ -213,21 +229,31 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
     ::CertFreeCertificateContext(certContext);
     ::CertCloseStore(certStoreHandle, 0);
 
-    // Listen to socket(s)
-    SocketAddress sa(host, port);
+    std::vector<std::string> addresses = expandInterfaces(opts.listenInterfaces);
+    if (addresses.empty()) {
+        // We specified some interfaces, but couldn't find addresses for them
+        QPID_LOG(warning, "TCP/TCP6: No specified network interfaces found: Not Listening");
+        listeningPort = 0;
+    }
 
-    // We must have at least one resolved address
-    QPID_LOG(info, "SSL Listening to: " << sa.asString())
-    Socket* s = new Socket;
-    listeningPort = s->listen(sa, backlog);
-    listeners.push_back(s);
+    for (unsigned i = 0; i<addresses.size(); ++i) {
+        QPID_LOG(debug, "Using interface: " << addresses[i]);
+        SocketAddress sa(addresses[i], boost::lexical_cast<std::string>(options.port));
 
-    // Try any other resolved addresses
-    while (sa.nextAddress()) {
+
+        // We must have at least one resolved address
         QPID_LOG(info, "SSL Listening to: " << sa.asString())
-        Socket* s = new Socket;
-        s->listen(sa, backlog);
+        Socket* s = createSocket();
+        listeningPort = s->listen(sa, opts.connectionBacklog);
         listeners.push_back(s);
+
+        // Try any other resolved addresses
+        while (sa.nextAddress()) {
+            QPID_LOG(info, "SSL Listening to: " << sa.asString())
+            Socket* s = createSocket();
+            s->listen(sa, opts.connectionBacklog);
+            listeners.push_back(s);
+        }
     }
 }
 
@@ -242,43 +268,55 @@ void SslProtocolFactory::connectFailed(const qpid::sys::Socket&,
         connectFailedCallback(err, msg);
 }
 
-void SslProtocolFactory::established(sys::Poller::shared_ptr poller,
-                                     const qpid::sys::Socket& s,
-                                     sys::ConnectionCodec::Factory* f,
-                                     bool isClient) {
-    sys::AsynchIOHandler* async = new sys::AsynchIOHandler(s.getFullAddress(), f);
+void SslProtocolFactory::establishedIncoming(sys::Poller::shared_ptr poller,
+                                             const qpid::sys::Socket& s,
+                                             sys::ConnectionCodec::Factory* f) {
+    sys::AsynchIOHandler* async = new sys::AsynchIOHandler(s.getFullAddress(), f, false, false);
 
+    sys::AsynchIO *aio = 
+        new qpid::sys::windows::ServerSslAsynchIO(
+            clientAuthSelected,
+            s,
+            credHandle,
+            boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
+            boost::bind(&AsynchIOHandler::eof, async, _1),
+            boost::bind(&AsynchIOHandler::disconnect, async, _1),
+            boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
+            boost::bind(&AsynchIOHandler::nobuffs, async, _1),
+            boost::bind(&AsynchIOHandler::idle, async, _1));
+
+	establishedCommon(poller, async, aio, s);
+}
+
+void SslProtocolFactory::establishedOutgoing(sys::Poller::shared_ptr poller,
+                                             const qpid::sys::Socket& s,
+                                             sys::ConnectionCodec::Factory* f,
+                                             std::string& name) {
+    sys::AsynchIOHandler* async = new sys::AsynchIOHandler(name, f, true, false);
+
+    sys::AsynchIO *aio = 
+        new qpid::sys::windows::ClientSslAsynchIO(
+            brokerHost,
+            s,
+            credHandle,
+            boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
+            boost::bind(&AsynchIOHandler::eof, async, _1),
+            boost::bind(&AsynchIOHandler::disconnect, async, _1),
+            boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
+            boost::bind(&AsynchIOHandler::nobuffs, async, _1),
+            boost::bind(&AsynchIOHandler::idle, async, _1));
+
+	establishedCommon(poller, async, aio, s);
+}
+
+void SslProtocolFactory::establishedCommon(sys::Poller::shared_ptr poller,
+                                           sys::AsynchIOHandler* async,
+                                           sys::AsynchIO* aio,
+                                           const qpid::sys::Socket& s) {
     if (tcpNoDelay) {
         s.setTcpNoDelay();
         QPID_LOG(info,
                  "Set TCP_NODELAY on connection to " << s.getPeerAddress());
-    }
-
-    SslAsynchIO *aio;
-    if (isClient) {
-        async->setClient();
-        aio =
-          new qpid::sys::windows::ClientSslAsynchIO(brokerHost,
-                                                    s,
-                                                    credHandle,
-                                                    boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
-                                                    boost::bind(&AsynchIOHandler::eof, async, _1),
-                                                    boost::bind(&AsynchIOHandler::disconnect, async, _1),
-                                                    boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
-                                                    boost::bind(&AsynchIOHandler::nobuffs, async, _1),
-                                                    boost::bind(&AsynchIOHandler::idle, async, _1));
-    }
-    else {
-        aio =
-          new qpid::sys::windows::ServerSslAsynchIO(clientAuthSelected,
-                                                    s,
-                                                    credHandle,
-                                                    boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
-                                                    boost::bind(&AsynchIOHandler::eof, async, _1),
-                                                    boost::bind(&AsynchIOHandler::disconnect, async, _1),
-                                                    boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
-                                                    boost::bind(&AsynchIOHandler::nobuffs, async, _1),
-                                                    boost::bind(&AsynchIOHandler::idle, async, _1));
     }
 
     async->init(aio, brokerTimer, maxNegotiateTime);
@@ -294,12 +332,13 @@ void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
     for (unsigned i = 0; i<listeners.size(); ++i) {
         acceptors.push_back(
             AsynchAcceptor::create(listeners[i],
-                            boost::bind(&SslProtocolFactory::established, this, poller, _1, fact, false)));
+                            boost::bind(&SslProtocolFactory::establishedIncoming, this, poller, _1, fact)));
         acceptors[i].start(poller);
     }
 }
 
 void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
+                                 const std::string& name,
                                  const std::string& host,
                                  const std::string& port,
                                  sys::ConnectionCodec::Factory* fact,
@@ -326,27 +365,15 @@ void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
     // upon connection failure or by the AsynchIO upon connection
     // shutdown.  The allocated AsynchConnector frees itself when it
     // is no longer needed.
-    qpid::sys::Socket* socket = new qpid::sys::Socket();
+    qpid::sys::Socket* socket = createSocket();
     connectFailedCallback = failed;
     AsynchConnector::create(*socket,
                             host,
                             port,
-                            boost::bind(&SslProtocolFactory::established,
-                                        this, poller, _1, fact, true),
+                            boost::bind(&SslProtocolFactory::establishedOutgoing,
+                                        this, poller, _1, fact, name),
                             boost::bind(&SslProtocolFactory::connectFailed,
                                         this, _1, _2, _3));
-}
-
-namespace
-{
-const std::string SSL = "ssl";
-}
-
-bool SslProtocolFactory::supports(const std::string& capability)
-{
-    std::string s = capability;
-    transform(s.begin(), s.end(), s.begin(), tolower);
-    return s == SSL;
 }
 
 }}} // namespace qpid::sys::windows

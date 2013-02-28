@@ -54,13 +54,8 @@ Plugin::initialize(Target& target) {
     Broker* broker = dynamic_cast<Broker*>(&target);
     if (!broker || !m_store) return;
 
-    // Not done in earlyInitialize as the Broker::isInCluster test won't work there.
-    if (broker->isInCluster()) {
-        QPID_LOG(info, "asyncStore: Part of cluster: Disabling management instrumentation");
-    } else {
-        QPID_LOG(info, "asyncStore: Enabling management instrumentation");
-        m_store->initManagement(broker);
-    }
+    QPID_LOG(info, "asyncStore: Enabling management instrumentation");
+    m_store->initManagement(broker);
 }
 
 void

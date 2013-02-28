@@ -28,13 +28,11 @@ import org.apache.qpid.server.jmx.MBeanProvider;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 /**
  * This provide will create a {@link BDBHAMessageStoreManagerMBean} if the child is a virtual
- * host and of type {@link BDBHAMessageStore#BDB_HA_STORE_TYPE}.
+ * host and of type {@link BDBHAMessageStore#TYPE}.
  *
  */
 public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
@@ -50,7 +48,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     public boolean isChildManageableByMBean(ConfiguredObject child)
     {
         return (child instanceof VirtualHost
-            && BDBHAMessageStore.BDB_HA_STORE_TYPE.equals(child.getAttribute(VirtualHost.STORE_TYPE)));
+            && BDBHAMessageStore.TYPE.equals(child.getAttribute(VirtualHost.STORE_TYPE)));
     }
 
     @Override
@@ -58,10 +56,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     {
         VirtualHost virtualHostChild = (VirtualHost) child;
 
-        VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
-        org.apache.qpid.server.virtualhost.VirtualHost vhost = virtualHostRegistry.getVirtualHost(virtualHostChild.getName());
-
-        BDBHAMessageStore messageStore = (BDBHAMessageStore) vhost.getMessageStore();
+        BDBHAMessageStore messageStore = (BDBHAMessageStore) virtualHostChild.getMessageStore();
 
         if (LOGGER.isDebugEnabled())
         {

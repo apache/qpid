@@ -22,7 +22,6 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import java.security.Principal;
-import java.util.Arrays;
 
 import javax.security.auth.Subject;
 
@@ -34,8 +33,7 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.config.Rule;
 import org.apache.qpid.server.security.access.config.RuleSet;
-import org.apache.qpid.server.security.auth.sasl.TestPrincipalUtils;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.TestPrincipalUtils;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -46,10 +44,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
  * access control mechanism is validated by checking whether operations would be authorised by calling the
  * {@link RuleSet#check(Principal, Operation, ObjectType, ObjectProperties)} method.
  *
- * It ensure that permissions can be granted correctly on users directly, ACL groups (that is those
- * groups declared directly in the ACL itself), and External groups (that is a group from an External
- * Authentication Provider, such as an LDAP).
-
+ * It ensure that permissions can be granted correctly on users directly and on groups.
  */
 public class RuleSetTest extends QpidTestCase
 {
@@ -316,63 +311,36 @@ public class RuleSetTest extends QpidTestCase
         assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("userb"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
     }
 
-    /**
-     * Tests support for ACL groups (i.e. inline groups declared in the ACL file itself).
-     */
-    public void testAclGroupsSupported()
+    public void testGroupsSupported()
     {
-        assertTrue(_ruleSet.addGroup("aclgroup", Arrays.asList(new String[] {"usera", "userb"})));
+        String allowGroup = "allowGroup";
+        String deniedGroup = "deniedGroup";
 
-        _ruleSet.grant(1, "aclgroup", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(1, _ruleSet.getRuleCount());
+        _ruleSet.grant(1, allowGroup, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        _ruleSet.grant(2, deniedGroup, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
-        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("usera"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
-        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("userb"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
-        assertEquals(Result.DEFER, _ruleSet.check(TestPrincipalUtils.createTestSubject("userc"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
-    }
-
-    /**
-     * Tests support for nested ACL groups.
-     */
-    public void testNestedAclGroupsSupported()
-    {
-        assertTrue(_ruleSet.addGroup("aclgroup1", Arrays.asList(new String[] {"userb"})));
-        assertTrue(_ruleSet.addGroup("aclgroup2", Arrays.asList(new String[] {"usera", "aclgroup1"})));
-
-        _ruleSet.grant(1, "aclgroup2", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(1, _ruleSet.getRuleCount());
-
-        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("usera"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
-        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("userb"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
-    }
-
-    /**
-     * Tests support for nested External groups (i.e. those groups coming from an external source such as an LDAP).
-     */
-    public void testExternalGroupsSupported()
-    {
-        _ruleSet.grant(1, "extgroup1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        _ruleSet.grant(2, "extgroup2", Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(2, _ruleSet.getRuleCount());
 
-        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("usera", "extgroup1"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
-        assertEquals(Result.DENIED, _ruleSet.check(TestPrincipalUtils.createTestSubject("userb", "extgroup2"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("usera", allowGroup),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+        assertEquals(Result.DENIED, _ruleSet.check(TestPrincipalUtils.createTestSubject("userb", deniedGroup),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+        assertEquals(Result.DEFER, _ruleSet.check(TestPrincipalUtils.createTestSubject("user", "group not mentioned in acl"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
     }
 
     /**
      * Rule order in the ACL determines the outcome of the check.  This test ensures that a user who is
-     * granted explicit permission on an object, is granted that access even although late a group
+     * granted explicit permission on an object, is granted that access even though a group
      * to which the user belongs is later denied the permission.
      */
     public void testAllowDeterminedByRuleOrder()
     {
-        assertTrue(_ruleSet.addGroup("aclgroup", Arrays.asList(new String[] {"usera"})));
+        String group = "group";
+        String user = "user";
 
-        _ruleSet.grant(1, "usera", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        _ruleSet.grant(2, "aclgroup", Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        _ruleSet.grant(1, user, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        _ruleSet.grant(2, group, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(2, _ruleSet.getRuleCount());
 
-        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject("usera"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+        assertEquals(Result.ALLOWED, _ruleSet.check(TestPrincipalUtils.createTestSubject(user, group),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
     }
 
     /**
@@ -381,13 +349,33 @@ public class RuleSetTest extends QpidTestCase
      */
     public void testDenyDeterminedByRuleOrder()
     {
-        assertTrue(_ruleSet.addGroup("aclgroup", Arrays.asList(new String[] {"usera"})));
+        String group = "aclgroup";
+        String user = "usera";
 
-        _ruleSet.grant(1, "aclgroup", Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        _ruleSet.grant(2, "usera", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        _ruleSet.grant(1, group, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        _ruleSet.grant(2, user, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
         assertEquals(2, _ruleSet.getRuleCount());
 
-        assertEquals(Result.DENIED, _ruleSet.check(TestPrincipalUtils.createTestSubject("usera"),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+        assertEquals(Result.DENIED, _ruleSet.check(TestPrincipalUtils.createTestSubject(user, group),Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+    }
+
+    public void testUserInMultipleGroups()
+    {
+        String allowedGroup = "group1";
+        String deniedGroup = "group2";
+
+        _ruleSet.grant(1, allowedGroup, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        _ruleSet.grant(2, deniedGroup, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+
+        Subject subjectInBothGroups = TestPrincipalUtils.createTestSubject("user", allowedGroup, deniedGroup);
+        Subject subjectInDeniedGroupAndOneOther = TestPrincipalUtils.createTestSubject("user", deniedGroup, "some other group");
+        Subject subjectInAllowedGroupAndOneOther = TestPrincipalUtils.createTestSubject("user", allowedGroup, "some other group");
+
+        assertEquals(Result.ALLOWED, _ruleSet.check(subjectInBothGroups,Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+
+        assertEquals(Result.DENIED, _ruleSet.check(subjectInDeniedGroupAndOneOther,Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
+
+        assertEquals(Result.ALLOWED, _ruleSet.check(subjectInAllowedGroupAndOneOther,Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
     }
 }

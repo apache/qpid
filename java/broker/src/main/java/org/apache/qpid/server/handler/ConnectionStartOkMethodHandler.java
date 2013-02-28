@@ -29,12 +29,11 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -60,16 +59,17 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
     public void methodReceived(AMQStateManager stateManager, ConnectionStartOkBody body, int channelId) throws AMQException
     {
+        Broker broker = stateManager.getBroker();
         AMQProtocolSession session = stateManager.getProtocolSession();
 
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
         _logger.info("Locale selected: " + body.getLocale());
 
-        AuthenticationManager authMgr = stateManager.getAuthenticationManager();
+        SubjectCreator subjectCreator = stateManager.getSubjectCreator();
         SaslServer ss = null;
         try
         {
-            ss = authMgr.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN(), session.getPeerPrincipal());
+            ss = subjectCreator.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN(), session.getPeerPrincipal());
 
             if (ss == null)
             {
@@ -78,7 +78,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             session.setSaslServer(ss);
 
-            final AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
+            final SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, body.getResponse());
             //save clientProperties
             session.setClientProperties(body.getClientProperties());
 
@@ -112,9 +112,9 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
-                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount(),
-                                                                                          getConfiguredFrameSize(),
-                                                                                          ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
+                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT),
+                                                                                          BrokerProperties.DEFAULT_FRAME_SIZE,
+                                                                                          (Integer)broker.getAttribute(Broker.HEART_BEAT_DELAY));
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:
@@ -148,13 +148,6 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         }
     }
 
-    static int getConfiguredFrameSize()
-    {
-        final ServerConfiguration config = ApplicationRegistry.getInstance().getConfiguration();
-        final int framesize = config.getFrameSize();
-        _logger.info("Framesize set to " + framesize);
-        return framesize;
-    }
 }
 
 

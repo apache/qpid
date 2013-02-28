@@ -344,9 +344,34 @@ namespace Messaging {
 
     void Receiver::Close()
     {
-        msclr::lock lk(privateLock);
-        ThrowIfDisposed();
+        System::Exception         ^ newException = nullptr;
+        Message                   ^ newMessage   = nullptr;
 
-        nativeObjPtr->close();
+        try
+        {
+			msclr::lock lk(privateLock);
+			ThrowIfDisposed();
+
+			nativeObjPtr->close();
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        finally
+        {
+            if (newException != nullptr)
+            {
+                if (newMessage != nullptr)
+                {
+                    delete newMessage;
+                }
+            }
+        }
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 }}}}

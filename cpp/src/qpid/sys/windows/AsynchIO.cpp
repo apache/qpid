@@ -24,6 +24,8 @@
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/windows/WinSocket.h"
+#include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
@@ -50,8 +52,8 @@ namespace {
  * The function pointers for AcceptEx and ConnectEx need to be looked up
  * at run time.
  */
-const LPFN_ACCEPTEX lookUpAcceptEx(const qpid::sys::Socket& s) {
-    SOCKET h = toSocketHandle(s);
+const LPFN_ACCEPTEX lookUpAcceptEx(const qpid::sys::IOHandle& io) {
+    SOCKET h = io.fd;
     GUID guidAcceptEx = WSAID_ACCEPTEX;
     DWORD dwBytes = 0;
     LPFN_ACCEPTEX fnAcceptEx;
@@ -93,12 +95,14 @@ private:
 
     AsynchAcceptor::Callback acceptedCallback;
     const Socket& socket;
+    const SOCKET wSocket;
     const LPFN_ACCEPTEX fnAcceptEx;
 };
 
 AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback)
   : acceptedCallback(callback),
     socket(s),
+    wSocket(IOHandle(s).fd),
     fnAcceptEx(lookUpAcceptEx(s)) {
 
     s.setNonblocking();
@@ -121,8 +125,8 @@ void AsynchAcceptor::restart(void) {
                                                         this,
                                                         socket);
     BOOL status;
-    status = fnAcceptEx(toSocketHandle(socket),
-                        toSocketHandle(*result->newSocket),
+    status = fnAcceptEx(wSocket,
+                        IOHandle(*result->newSocket).fd,
                         result->addressBuffer,
                         0,
                         AsynchAcceptResult::SOCKADDRMAXLEN,
@@ -133,16 +137,30 @@ void AsynchAcceptor::restart(void) {
 }
 
 
+Socket* createSameTypeSocket(const Socket& sock) {
+    SOCKET socket = IOHandle(sock).fd;
+    // Socket currently has no actual socket attached
+    if (socket == INVALID_SOCKET)
+        return new WinSocket;
+
+    ::sockaddr_storage sa;
+    ::socklen_t salen = sizeof(sa);
+    QPID_WINSOCK_CHECK(::getsockname(socket, (::sockaddr*)&sa, &salen));
+    SOCKET s = ::socket(sa.ss_family, SOCK_STREAM, 0); // Currently only work with SOCK_STREAM
+    if (s == INVALID_SOCKET) throw QPID_WINDOWS_ERROR(WSAGetLastError());
+    return new WinSocket(s);
+}
+
 AsynchAcceptResult::AsynchAcceptResult(AsynchAcceptor::Callback cb,
                                        AsynchAcceptor *acceptor,
-                                       const Socket& listener)
+                                       const Socket& lsocket)
   : callback(cb), acceptor(acceptor),
-    listener(toSocketHandle(listener)),
-    newSocket(listener.createSameTypeSocket()) {
+    listener(IOHandle(lsocket).fd),
+    newSocket(createSameTypeSocket(lsocket)) {
 }
 
 void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
-    ::setsockopt (toSocketHandle(*newSocket),
+    ::setsockopt (IOHandle(*newSocket).fd,
                   SOL_SOCKET,
                   SO_UPDATE_ACCEPT_CONTEXT,
                   (char*)&listener,
@@ -180,6 +198,7 @@ public:
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
     void start(Poller::shared_ptr poller);
+    void requestCallback(RequestCallback rCb);
 };
 
 AsynchConnector::AsynchConnector(const Socket& sock,
@@ -195,7 +214,7 @@ AsynchConnector::AsynchConnector(const Socket& sock,
 void AsynchConnector::start(Poller::shared_ptr)
 {
     try {
-        socket.connect(hostname, port);
+        socket.connect(SocketAddress(hostname, port));
         socket.setNonblocking();
         connCallback(socket);
     } catch(std::exception& e) {
@@ -203,6 +222,13 @@ void AsynchConnector::start(Poller::shared_ptr)
             failCallback(socket, -1, std::string(e.what()));
         socket.close();
     }
+}
+
+// This can never be called in the current windows code as connect
+// is blocking and requestCallback only makes sense if connect is
+// non-blocking with the results returned via a poller callback.
+void AsynchConnector::requestCallback(RequestCallback rCb)
+{
 }
 
 } // namespace windows
@@ -260,8 +286,6 @@ public:
     virtual void notifyPendingWrite();
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
-    virtual void startReading();
-    virtual void stopReading();
     virtual void requestCallback(RequestCallback);
 
     /**
@@ -271,6 +295,8 @@ public:
      * @retval Pointer to BufferBase buffer; 0 if none is available.
      */
     virtual BufferBase* getQueuedBuffer();
+
+    virtual SecuritySettings getSecuritySettings(void);
 
 private:
     ReadCallback readCallback;
@@ -319,6 +345,12 @@ private:
     void close(void);
 
     /**
+     * startReading initiates reading, readComplete() is
+     * called when the read completes.
+     */
+    void startReading();
+
+    /**
      * readComplete is called when a read request is complete.
      *
      * @param result Results of the operation.
@@ -362,7 +394,7 @@ class CallbackHandle : public IOHandle {
 public:
     CallbackHandle(AsynchIoResult::Completer completeCb,
                    AsynchIO::RequestCallback reqCb = 0) :
-    IOHandle(new IOHandlePrivate (INVALID_SOCKET, completeCb, reqCb))
+        IOHandle(INVALID_SOCKET, completeCb, reqCb)
     {}
 };
 
@@ -515,7 +547,7 @@ void AsynchIO::startReading() {
         DWORD bytesReceived = 0, flags = 0;
         InterlockedIncrement(&opsInProgress);
         readInProgress = true;
-        int status = WSARecv(toSocketHandle(socket),
+        int status = WSARecv(IOHandle(socket).fd,
                              const_cast<LPWSABUF>(result->getWSABUF()), 1,
                              &bytesReceived,
                              &flags,
@@ -536,15 +568,6 @@ void AsynchIO::startReading() {
     }
     return;
 }
-
-// stopReading was added to prevent a race condition with read-credit on Linux.
-// It may or may not be required on windows.
-// 
-// AsynchIOHandler::readbuff() calls stopReading() inside the same
-// critical section that protects startReading() in
-// AsynchIOHandler::giveReadCredit().
-// 
-void AsynchIO::stopReading() {}
 
 // Queue the specified callback for invocation from an I/O thread.
 void AsynchIO::requestCallback(RequestCallback callback) {
@@ -613,7 +636,7 @@ void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
                               buff,
                               buff->dataCount);
     DWORD bytesSent = 0;
-    int status = WSASend(toSocketHandle(socket),
+    int status = WSASend(IOHandle(socket).fd,
                          const_cast<LPWSABUF>(result->getWSABUF()), 1,
                          &bytesSent,
                          0,
@@ -637,6 +660,13 @@ void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
 void AsynchIO::close(void) {
     socket.close();
     notifyClosed();
+}
+
+SecuritySettings AsynchIO::getSecuritySettings() {
+    SecuritySettings settings;
+    settings.ssf = socket.getKeyLen();
+    settings.authid = socket.getClientAuthId();
+    return settings;
 }
 
 void AsynchIO::readComplete(AsynchReadResult *result) {
@@ -683,7 +713,8 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
         else {
             // An error... if it's a connection close, ignore it - it will be
             // noticed and handled on a read completion any moment now.
-            // What to do with real error??? Save the Buffer?
+            // What to do with real error??? Save the Buffer?  TBD.
+            queueReadBuffer(buff);     // All done; back to the pool
         }
     }
 

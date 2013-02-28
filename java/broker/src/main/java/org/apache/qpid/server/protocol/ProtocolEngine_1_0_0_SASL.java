@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.security.sasl.SaslException;
@@ -40,12 +39,10 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConnectionConfigType;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -53,8 +50,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 {
        private long _readBytes;
        private long _writtenBytes;
-       private final UUID _id;
-       private final IApplicationRegistry _appRegistry;
+
+       private long _lastReadTime;
+       private long _lastWriteTime;
+       private final Broker _broker;
        private long _createTime = System.currentTimeMillis();
        private ConnectionEndpoint _conn;
        private long _connectionId;
@@ -113,13 +112,11 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
        private State _state = State.A;
 
 
-    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry,
+    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker broker,
                                      long id)
     {
-        _id = appRegistry.getConfigStore().createId();
         _connectionId = id;
-        _appRegistry = appRegistry;
-
+        _broker = broker;
         if(networkDriver != null)
         {
             setNetworkConnection(networkDriver, networkDriver.getSender());
@@ -162,21 +159,17 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _network = network;
         _sender = sender;
 
-        Container container = new Container(_appRegistry.getBrokerId().toString());
+        Container container = new Container(_broker.getId().toString());
 
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(ApplicationRegistry.getInstance()
-                .getAuthenticationManager(getLocalAddress())));
-        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry, _conn, _connectionId));
+        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(getLocalAddress())));
         _conn.setRemoteAddress(getRemoteAddress());
-
-
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
         _conn.setSaslFrameOutput(this);
 
         _conn.setOnSaslComplete(new Runnable()
         {
-
-
             public void run()
             {
                 if(_conn.isAuthenticated())
@@ -201,14 +194,14 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     }
 
-    private SaslServerProvider asSaslServerProvider(final AuthenticationManager authenticationManager)
+    private SaslServerProvider asSaslServerProvider(final SubjectCreator subjectCreator)
     {
         return new SaslServerProvider()
         {
             @Override
             public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
-                return authenticationManager.createSaslServer(mechanism, fqdn, null);
+                return subjectCreator.createSaslServer(mechanism, fqdn, null);
             }
         };
     }
@@ -216,22 +209,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     public String getAddress()
     {
         return getRemoteAddress().toString();
-    }
-
-
-    public ConfigStore getConfigStore()
-    {
-        return _appRegistry.getConfigStore();
-    }
-
-    public UUID getId()
-    {
-        return _id;
-    }
-
-    public ConnectionConfigType getConfigType()
-    {
-        return ConnectionConfigType.getInstance();
     }
 
     public boolean isDurable()
@@ -244,6 +221,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     public synchronized void received(ByteBuffer msg)
     {
+        _lastReadTime = System.currentTimeMillis();
         if(RAW_LOGGER.isLoggable(Level.FINE))
         {
             ByteBuffer dup = msg.duplicate();
@@ -386,16 +364,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
          synchronized(_sendLock)
          {
-
+             _lastWriteTime = System.currentTimeMillis();
              if(FRAME_LOGGER.isLoggable(Level.FINE))
              {
                  FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
              }
 
-
              _frameWriter.setValue(amqFrame);
-
-
 
              ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
 
@@ -447,4 +422,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
          return _connectionId;
      }
 
+    public long getLastReadTime()
+    {
+        return _lastReadTime;
+    }
+
+    public long getLastWriteTime()
+    {
+        return _lastWriteTime;
+    }
 }

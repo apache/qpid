@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.jms;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import java.util.List;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  Connection URL format
@@ -35,12 +34,20 @@ public interface ConnectionURL
     public static final String AMQ_PROTOCOL = "amqp";
     public static final String OPTIONS_SYNC_PERSISTENCE = "sync_persistence";
     public static final String OPTIONS_MAXPREFETCH = "maxprefetch";
-    public static final String OPTIONS_SYNC_ACK = "sync_ack";    
+    public static final String OPTIONS_SYNC_ACK = "sync_ack";
     public static final String OPTIONS_SYNC_PUBLISH = "sync_publish";
     public static final String OPTIONS_USE_LEGACY_MAP_MESSAGE_FORMAT = "use_legacy_map_msg_format";
+    public static final String OPTIONS_USE_LEGACY_STREAM_MESSAGE_FORMAT = "use_legacy_stream_msg_format";
     public static final String OPTIONS_BROKERLIST = "brokerlist";
     public static final String OPTIONS_FAILOVER = "failover";
     public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";
+
+    /**
+     * This option is used to apply a connection level override of
+     * the {@value BrokerDetails#OPTIONS_SSL} option values in the
+     * {@value ConnectionURL#OPTIONS_BROKERLIST};
+     */
+    public static final String OPTIONS_SSL = "ssl";
 
     /**
      * This option is only applicable for 0-8/0-9/0-9-1 protocols connection
@@ -54,9 +61,11 @@ public interface ConnectionURL
     public static final String OPTIONS_DEFAULT_QUEUE_EXCHANGE = "defaultQueueExchange";
     public static final String OPTIONS_TEMPORARY_TOPIC_EXCHANGE = "temporaryTopicExchange";
     public static final String OPTIONS_TEMPORARY_QUEUE_EXCHANGE = "temporaryQueueExchange";
+    public static final String OPTIONS_VERIFY_QUEUE_ON_SEND = "verifyQueueOnSend";
+
     public static final byte  URL_0_8 = 1;
     public static final byte  URL_0_10 = 2;
-    
+
     String getURL();
 
     String getFailoverMethod();

@@ -90,7 +90,6 @@ public class LogRecorder implements Appender, Iterable<LogRecorder.Record>
 
     public LogRecorder()
     {
-
         Logger.getRootLogger().addAppender(this);
     }
 
@@ -109,7 +108,11 @@ public class LogRecorder implements Appender, Iterable<LogRecorder.Record>
     @Override
     public void close()
     {
-        //TODO - Implement
+    }
+
+    public void closeLogRecorder()
+    {
+        Logger.getRootLogger().removeAppender(this);
     }
 
     @Override

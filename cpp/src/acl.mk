@@ -31,6 +31,9 @@ acl_la_SOURCES = \
   qpid/acl/AclPlugin.cpp \
   qpid/acl/AclReader.cpp \
   qpid/acl/AclReader.h \
+  qpid/acl/AclResourceCounter.cpp \
+  qpid/acl/AclResourceCounter.h \
+  qpid/acl/AclTopicMatch.h \
   qpid/acl/AclValidator.cpp \
   qpid/acl/AclValidator.h
 
@@ -40,4 +43,5 @@ if SUNOS
 endif
 
 acl_la_LDFLAGS = $(PLUGINLDFLAGS)
+acl_la_CXXFLAGS = $(AM_CXXFLAGS) -D_IN_QPID_BROKER
 

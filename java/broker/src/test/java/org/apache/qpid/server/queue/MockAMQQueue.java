@@ -23,10 +23,8 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.QueueConfigType;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.ServerMessage;
@@ -106,11 +104,6 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public ConfigStore getConfigStore()
-    {
-        return getVirtualHost().getConfigStore();
-    }
-
     public long getMessageDequeueCount()
     {
         return 0;
@@ -182,22 +175,6 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public UUID getId()
-    {
-        return null;
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return null;
-    }
-
-    public QueueConfigType getConfigType()
-    {
-        return null;
-    }
-
-    public ConfiguredObject getParent()
     {
         return null;
     }
@@ -532,14 +509,9 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
-    public void configure(ConfigurationPlugin config)
+    public void configure(QueueConfiguration config)
     {
 
-    }
-
-    public ConfigurationPlugin getConfiguration()
-    {
-        return null;
     }
 
     public AuthorizationHolder getAuthorizationHolder()

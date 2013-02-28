@@ -24,6 +24,8 @@
 
 #include "types.h"
 #include "BrokerInfo.h"
+#include "ReplicationTest.h"
+#include "Role.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -48,6 +50,7 @@ class HaBroker;
 class ReplicatingSubscription;
 class RemoteBackup;
 class QueueGuard;
+class Membership;
 
 /**
  * State associated with a primary broker:
@@ -56,15 +59,21 @@ class QueueGuard;
  *
  * THREAD SAFE: called concurrently in arbitrary connection threads.
  */
-class Primary
+class Primary : public Role
 {
   public:
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
+    typedef boost::shared_ptr<broker::Exchange> ExchangePtr;
 
     static Primary* get() { return instance; }
 
     Primary(HaBroker& hb, const BrokerInfo::Set& expectedBackups);
     ~Primary();
+
+    // Role implementation
+    std::string getLogPrefix() const { return logPrefix; }
+    Role* promote();
+    void setBrokerUrl(const Url&) {}
 
     void readyReplica(const ReplicatingSubscription&);
     void removeReplica(const std::string& q);
@@ -72,6 +81,8 @@ class Primary
     // Called via ConfigurationObserver
     void queueCreate(const QueuePtr&);
     void queueDestroy(const QueuePtr&);
+    void exchangeCreate(const ExchangePtr&);
+    void exchangeDestroy(const ExchangePtr&);
 
     // Called via ConnectionObserver
     void opened(broker::Connection& connection);
@@ -91,17 +102,19 @@ class Primary
 
     sys::Mutex lock;
     HaBroker& haBroker;
+    Membership& membership;
     std::string logPrefix;
     bool active;
+    ReplicationTest replicationTest;
+
     /**
      * Set of expected backups that must be ready before we declare ourselves
-     * active
+     * active. These are backups that were known and ready before the primary
+     * crashed. As new primary we expect them to re-connect.
      */
     BackupSet expectedBackups;
     /**
-     * Map of all the remote backups we know about: any expected backups plus
-     * all actual backups that have connected. We do not remove entries when a
-     * backup disconnects. @see Primary::closed()
+     * Map of all the expected backups plus all connected backups.
      */
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;

@@ -20,66 +20,25 @@
  */
 package org.apache.qpid.server;
 
-import org.osgi.framework.BundleContext;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 public class BrokerOptions
 {
-    public static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
+    public static final String DEFAULT_STORE_TYPE = "json";
+    public static final String DEFAULT_CONFIG_FILE = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
-    public static final String QPID_HOME = "QPID_HOME";
-    public static final String QPID_WORK = "QPID_WORK";
 
-    private final Set<Integer> _ports = new HashSet<Integer>();
-    private final Set<Integer> _sslPorts = new HashSet<Integer>();
-    private final Map<ProtocolExclusion,Set<Integer>> _exclusionMap = new HashMap<ProtocolExclusion, Set<Integer>>();
-    private final Map<ProtocolInclusion,Set<Integer>> _inclusionMap = new HashMap<ProtocolInclusion, Set<Integer>>();
-
-    private String _configFile;
     private String _logConfigFile;
-    private String _bind;
-    private Integer _jmxPortRegistryServer;
-    private Integer _jmxPortConnectorServer;
-    private BundleContext _bundleContext;
-
     private Integer _logWatchFrequency = 0;
-    private String _qpidWorkFolder;
-    private String _qpidHomeFolder;
 
-    public void addPort(final int port)
-    {
-        _ports.add(port);
-    }
+    private String _configurationStoreLocation;
+    private String _configurationStoreType = DEFAULT_STORE_TYPE;
 
-    public void addSSLPort(final int sslPort)
-    {
-        _sslPorts.add(sslPort);
-    }
+    private String _initialConfigurationStoreLocation;
+    private String _initialConfigurationStoreType = DEFAULT_STORE_TYPE;
 
-    public Set<Integer> getPorts()
-    {
-        return Collections.unmodifiableSet(_ports);
-    }
-
-    public Set<Integer> getSSLPorts()
-    {
-        return Collections.unmodifiableSet(_sslPorts);
-    }
-
-    public String getConfigFile()
-    {
-        return _configFile;
-    }
-
-    public void setConfigFile(final String configFile)
-    {
-        _configFile = configFile;
-    }
+    private boolean _managementMode;
+    private int _managementModeRmiPort;
+    private int _managementModeConnectorPort;
+    private int _managementModeHttpPort;
 
     public String getLogConfigFile()
     {
@@ -89,57 +48,6 @@ public class BrokerOptions
     public void setLogConfigFile(final String logConfigFile)
     {
         _logConfigFile = logConfigFile;
-    }
-
-    public Integer getJmxPortRegistryServer()
-    {
-        return _jmxPortRegistryServer;
-    }
-
-    public void setJmxPortRegistryServer(final int jmxPortRegistryServer)
-    {
-        _jmxPortRegistryServer = jmxPortRegistryServer;
-    }
-
-    public Integer getJmxPortConnectorServer()
-    {
-        return _jmxPortConnectorServer;
-    }
-
-    public void setJmxPortConnectorServer(final int jmxPortConnectorServer)
-    {
-        _jmxPortConnectorServer = jmxPortConnectorServer;
-    }
-    public String getQpidHome()
-    {
-        return _qpidHomeFolder == null? System.getProperty(QPID_HOME): _qpidHomeFolder;
-    }
-
-    public Set<Integer> getExcludedPorts(final ProtocolExclusion excludeProtocol)
-    {
-        final Set<Integer> excludedPorts = _exclusionMap.get(excludeProtocol);
-        return excludedPorts == null ? Collections.<Integer>emptySet() : excludedPorts;
-    }
-
-    public void addExcludedPort(final ProtocolExclusion excludeProtocol, final int port)
-    {
-        if (!_exclusionMap.containsKey(excludeProtocol))
-        {
-            _exclusionMap.put(excludeProtocol, new HashSet<Integer>());
-        }
-
-        Set<Integer> ports = _exclusionMap.get(excludeProtocol);
-        ports.add(port);
-    }
-
-    public String getBind()
-    {
-        return _bind;
-    }
-
-    public void setBind(final String bind)
-    {
-        _bind = bind;
     }
 
     public int getLogWatchFrequency()
@@ -156,45 +64,83 @@ public class BrokerOptions
         _logWatchFrequency = logWatchFrequency;
     }
 
-    public BundleContext getBundleContext()
+    public String getConfigurationStoreLocation()
     {
-        return _bundleContext ;
+        return _configurationStoreLocation;
     }
 
-    public void setBundleContext(final BundleContext bundleContext)
+    public void setConfigurationStoreLocation(String cofigurationStore)
     {
-        _bundleContext = bundleContext;
+        _configurationStoreLocation = cofigurationStore;
     }
 
-    public Set<Integer> getIncludedPorts(final ProtocolInclusion includeProtocol)
+    public String getConfigurationStoreType()
     {
-        final Set<Integer> includedPorts = _inclusionMap.get(includeProtocol);
-        return includedPorts == null ? Collections.<Integer>emptySet() : includedPorts;
+        return _configurationStoreType;
     }
 
-    public void addIncludedPort(final ProtocolInclusion includeProtocol, final int port)
+    public void setConfigurationStoreType(String cofigurationStoreType)
     {
-        if (!_inclusionMap.containsKey(includeProtocol))
-        {
-            _inclusionMap.put(includeProtocol, new HashSet<Integer>());
-        }
-
-        Set<Integer> ports = _inclusionMap.get(includeProtocol);
-        ports.add(port);
+        _configurationStoreType = cofigurationStoreType;
     }
 
-    public String getQpidWork()
+    public void setInitialConfigurationStoreLocation(String initialConfigurationStore)
     {
-        return _qpidWorkFolder;
+        _initialConfigurationStoreLocation = initialConfigurationStore;
     }
 
-    public void setQpidWork(String qpidWorkFolder)
+    public void setInitialConfigurationStoreType(String initialConfigurationStoreType)
     {
-        _qpidWorkFolder = qpidWorkFolder;
+        _initialConfigurationStoreType = initialConfigurationStoreType;
     }
 
-    public void setQpidHome(String qpidHomeFolder)
+    public String getInitialConfigurationStoreLocation()
     {
-        _qpidHomeFolder = qpidHomeFolder;
+        return _initialConfigurationStoreLocation;
+    }
+
+    public String getInitialConfigurationStoreType()
+    {
+        return _initialConfigurationStoreType;
+    }
+
+    public boolean isManagementMode()
+    {
+        return _managementMode;
+    }
+
+    public void setManagementMode(boolean managementMode)
+    {
+        _managementMode = managementMode;
+    }
+
+    public int getManagementModeRmiPort()
+    {
+        return _managementModeRmiPort;
+    }
+
+    public void setManagementModeRmiPort(int managementModeRmiPort)
+    {
+        _managementModeRmiPort = managementModeRmiPort;
+    }
+
+    public int getManagementModeConnectorPort()
+    {
+        return _managementModeConnectorPort;
+    }
+
+    public void setManagementModeConnectorPort(int managementModeConnectorPort)
+    {
+        _managementModeConnectorPort = managementModeConnectorPort;
+    }
+
+    public int getManagementModeHttpPort()
+    {
+        return _managementModeHttpPort;
+    }
+
+    public void setManagementModeHttpPort(int managementModeHttpPort)
+    {
+        _managementModeHttpPort = managementModeHttpPort;
     }
 }

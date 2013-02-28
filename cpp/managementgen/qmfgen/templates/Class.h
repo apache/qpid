@@ -24,7 +24,11 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/ManagementObject.h"
+/*MGEN:IF(Root.InBroker)*/
 #include "qmf/BrokerImportExport.h"
+#include <boost/shared_ptr.hpp>
+/*MGEN:ENDIF*/
+#include <limits>
 
 namespace qpid {
     namespace management {
@@ -35,7 +39,7 @@ namespace qpid {
 namespace qmf {
 /*MGEN:Class.OpenNamespaces*/
 
-QPID_BROKER_CLASS_EXTERN class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
+/*MGEN:Root.ExternClass*/ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 {
   private:
 
@@ -76,22 +80,26 @@ QPID_BROKER_CLASS_EXTERN class /*MGEN:Class.NameCap*/ : public ::qpid::managemen
     void aggregatePerThreadStats(struct PerThreadStats*) const;
 /*MGEN:ENDIF*/
   public:
-    QPID_BROKER_EXTERN static void writeSchema(std::string& schema);
-    QPID_BROKER_EXTERN void mapEncodeValues(::qpid::types::Variant::Map& map,
+/*MGEN:IF(Root.InBroker)*/
+    typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
+/*MGEN:ENDIF*/
+
+    /*MGEN:Root.ExternMethod*/ static void writeSchema(std::string& schema);
+    /*MGEN:Root.ExternMethod*/ void mapEncodeValues(::qpid::types::Variant::Map& map,
                                           bool includeProperties=true,
                                           bool includeStatistics=true);
-    QPID_BROKER_EXTERN void mapDecodeValues(const ::qpid::types::Variant::Map& map);
-    QPID_BROKER_EXTERN void doMethod(std::string&           methodName,
+    /*MGEN:Root.ExternMethod*/ void mapDecodeValues(const ::qpid::types::Variant::Map& map);
+    /*MGEN:Root.ExternMethod*/ void doMethod(std::string&           methodName,
                                    const ::qpid::types::Variant::Map& inMap,
                                    ::qpid::types::Variant::Map& outMap,
                                    const std::string& userId);
-    QPID_BROKER_EXTERN std::string getKey() const;
+    /*MGEN:Root.ExternMethod*/ std::string getKey() const;
 /*MGEN:IF(Root.GenQMFv1)*/
-    QPID_BROKER_EXTERN uint32_t writePropertiesSize() const;
-    QPID_BROKER_EXTERN void readProperties(const std::string& buf);
-    QPID_BROKER_EXTERN void writeProperties(std::string& buf) const;
-    QPID_BROKER_EXTERN void writeStatistics(std::string& buf, bool skipHeaders = false);
-    QPID_BROKER_EXTERN void doMethod(std::string& methodName,
+    /*MGEN:Root.ExternMethod*/ uint32_t writePropertiesSize() const;
+    /*MGEN:Root.ExternMethod*/ void readProperties(const std::string& buf);
+    /*MGEN:Root.ExternMethod*/ void writeProperties(std::string& buf) const;
+    /*MGEN:Root.ExternMethod*/ void writeStatistics(std::string& buf, bool skipHeaders = false);
+    /*MGEN:Root.ExternMethod*/ void doMethod(std::string& methodName,
                                    const std::string& inBuf,
                                    std::string& outBuf,
                                    const std::string& userId);
@@ -104,15 +112,15 @@ QPID_BROKER_CLASS_EXTERN class /*MGEN:Class.NameCap*/ : public ::qpid::managemen
     bool hasInst() { return false; }
 /*MGEN:ENDIF*/
 
-    QPID_BROKER_EXTERN /*MGEN:Class.NameCap*/(
+    /*MGEN:Root.ExternMethod*/ /*MGEN:Class.NameCap*/(
         ::qpid::management::ManagementAgent* agent,
         ::qpid::management::Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
 
-    QPID_BROKER_EXTERN ~/*MGEN:Class.NameCap*/();
+    /*MGEN:Root.ExternMethod*/ ~/*MGEN:Class.NameCap*/();
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
-    QPID_BROKER_EXTERN static void registerSelf(
+    /*MGEN:Root.ExternMethod*/ static void registerSelf(
         ::qpid::management::ManagementAgent* agent);
 
     std::string& getPackageName() const { return packageName; }

@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/RefCounted.h"
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace messaging {

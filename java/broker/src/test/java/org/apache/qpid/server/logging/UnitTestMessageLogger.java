@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -34,9 +33,9 @@ public class UnitTestMessageLogger extends AbstractRootMessageLogger
 
     }
 
-    public UnitTestMessageLogger(ServerConfiguration config)
+    public UnitTestMessageLogger(boolean statusUpdatesEnabled)
     {
-        super(config);
+        super(statusUpdatesEnabled);
     }
 
     public void rawMessage(String message, String logHierarchy)

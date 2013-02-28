@@ -41,6 +41,18 @@ int run_broker(int argc, char *argv[], bool hidden)
     {
         BootstrapOptions bootOptions(argv[0]);
         string           defaultPath (bootOptions.module.loadDir);
+
+        // --version causes print and exit
+        if (bootOptions.findArg(argc, argv, "version")) {
+            cout << "qpidd (" << qpid::product << ") version "
+                << qpid::version << endl;
+            return 0;
+        }
+
+        // --help sets a flag so that its presence is known despite
+        // subsequent parse problems.
+        bool helpArgSeen = bootOptions.findArg(argc, argv, "help");
+
         // Parse only the common, load, and log options to see which
         // modules need to be loaded.  Once the modules are loaded,
         // the command line will be re-parsed with all of the
@@ -51,32 +63,42 @@ int run_broker(int argc, char *argv[], bool hidden)
                 bootOptions.log.sinkOptions->detached();
             qpid::log::Logger::instance().configure(bootOptions.log);
         } catch (const std::exception& e) {
+            if (helpArgSeen) {
+                // provide help even when parsing fails
+                 bootOptions.usage();
+            }
             // Couldn't configure logging so write the message direct to stderr.
-            cerr << "Unexpected error: " << e.what() << endl;
+            cerr << endl << "Unexpected error: " << e.what() << endl;
             return 1;
         }
 
         for (vector<string>::iterator iter = bootOptions.module.load.begin();
              iter != bootOptions.module.load.end();
              iter++)
-            qpid::tryShlib (iter->data(), false);
+            qpid::tryShlib (*iter);
 
         if (!bootOptions.module.noLoad) {
             bool isDefault = defaultPath == bootOptions.module.loadDir;
             qpid::loadModuleDir (bootOptions.module.loadDir, isDefault);
         }
 
-        // Parse options
-        options.reset(new QpiddOptions(argv[0]));
-        options->parse(argc, argv, options->common.config);
+        // Parse options.  In the second pass, do not allow unknown options.
+        // All the modules have been added now, so any unknown options
+        // should be flagged as errors.
+        try {
+            options.reset(new QpiddOptions(argv[0]));
+            options->parse(argc, argv, options->common.config, false);
+        } catch (const std::exception& /*e*/) {
+            if (helpArgSeen) {
+                 // provide help even when parsing fails
+                options->usage();
+            }
+            throw;
+        }
 
         // Options that just print information.
-        if (options->common.help || options->common.version) {
-            if (options->common.version) 
-                cout << "qpidd (" << qpid::product << ") version "
-                     << qpid::version << endl;
-            else if (options->common.help)
-                options->usage();
+        if (helpArgSeen) {
+            options->usage();
             return 0;
         }
 

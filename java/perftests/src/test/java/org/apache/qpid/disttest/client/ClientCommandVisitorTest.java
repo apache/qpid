@@ -21,7 +21,6 @@ package org.apache.qpid.disttest.client;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import junit.framework.TestCase;
 
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.CreateConnectionCommand;
@@ -32,8 +31,9 @@ import org.apache.qpid.disttest.message.CreateSessionCommand;
 import org.apache.qpid.disttest.message.StartTestCommand;
 import org.apache.qpid.disttest.message.StopClientCommand;
 import org.apache.qpid.disttest.message.TearDownTestCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ClientCommandVisitorTest extends TestCase
+public class ClientCommandVisitorTest extends QpidTestCase
 {
     private Client _client;
     private ClientCommandVisitor _visitor;

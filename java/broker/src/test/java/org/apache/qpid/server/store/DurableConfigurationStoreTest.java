@@ -51,10 +51,6 @@ import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockStoredMessage;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
@@ -76,7 +72,6 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     private QueueRecoveryHandler _queueRecoveryHandler;
     private ExchangeRecoveryHandler _exchangeRecoveryHandler;
     private BindingRecoveryHandler _bindingRecoveryHandler;
-    private ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler _linkRecoveryHandler;
     private MessageStoreRecoveryHandler _messageStoreRecoveryHandler;
     private StoredMessageRecoveryHandler _storedMessageRecoveryHandler;
     private TransactionLogRecoveryHandler _logRecoveryHandler;
@@ -116,7 +111,6 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         when(_recoveryHandler.begin(isA(MessageStore.class))).thenReturn(_exchangeRecoveryHandler);
         when(_exchangeRecoveryHandler.completeExchangeRecovery()).thenReturn(_queueRecoveryHandler);
         when(_queueRecoveryHandler.completeQueueRecovery()).thenReturn(_bindingRecoveryHandler);
-        when(_bindingRecoveryHandler.completeBindingRecovery()).thenReturn(_linkRecoveryHandler);
         when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
         when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
         when(_exchange.getNameShortString()).thenReturn(AMQShortString.valueOf(EXCHANGE_NAME));
@@ -161,7 +155,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testBindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), null, ROUTING_KEY, queue,
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
                 _exchange, FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 
@@ -175,7 +169,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     public void testUnbindQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
-        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), null, ROUTING_KEY, queue,
+        Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
                 _exchange, FieldTable.convertToMap(_bindingArgs));
         _store.bindQueue(binding);
 

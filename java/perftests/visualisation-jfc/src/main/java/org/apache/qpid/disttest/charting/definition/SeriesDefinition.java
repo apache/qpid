@@ -19,17 +19,24 @@
  */
 package org.apache.qpid.disttest.charting.definition;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 public class SeriesDefinition
 {
     private final String _seriesStatement;
     private final String _seriesLegend;
     private final String _seriesDirectory;
+    private final String _seriesColourName;
+    private final Integer _seriesStrokeWidth;
 
-    public SeriesDefinition(String seriesStatement, String seriesLegend, String seriesDirectory)
+    public SeriesDefinition(String seriesStatement, String seriesLegend, String seriesDirectory, String seriesColourName, Integer seriesStrokeWidth)
     {
         _seriesStatement = seriesStatement;
         _seriesLegend = seriesLegend;
         _seriesDirectory = seriesDirectory;
+        _seriesColourName = seriesColourName;
+        _seriesStrokeWidth = seriesStrokeWidth;
     }
 
     public String getSeriesStatement()
@@ -47,4 +54,22 @@ public class SeriesDefinition
         return _seriesDirectory;
     }
 
+    public String getSeriesColourName()
+    {
+        return _seriesColourName;
+    }
+
+    public Integer getStrokeWidth()
+    {
+        return _seriesStrokeWidth;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            .append("seriesLegend", _seriesLegend)
+            .append("seriesStatement", _seriesStatement)
+            .append("seriesDirectory", _seriesDirectory).toString();
+    }
 }

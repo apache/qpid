@@ -69,8 +69,6 @@ if (BUILD_SSL)
          qpid/sys/ssl/util.cpp
          qpid/sys/ssl/SslSocket.h
          qpid/sys/ssl/SslSocket.cpp
-         qpid/sys/ssl/SslIo.h
-         qpid/sys/ssl/SslIo.cpp
         )
 
     add_library (sslcommon SHARED ${sslcommon_SOURCES})
@@ -87,14 +85,13 @@ if (BUILD_SSL)
 
     set (ssl_SOURCES
          qpid/sys/SslPlugin.cpp
-         qpid/sys/ssl/SslHandler.h
-         qpid/sys/ssl/SslHandler.cpp
         )
     add_library (ssl MODULE ${ssl_SOURCES})
     target_link_libraries (ssl qpidbroker sslcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (ssl PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
+                           COMPILE_FLAGS "${NSS_COMPILE_FLAGS}"
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER)
     if (CMAKE_COMPILER_IS_GNUCXX)
       set_target_properties(ssl PROPERTIES
                             LINK_FLAGS "${GCC_CATCH_UNDEFINED}")
@@ -104,7 +101,7 @@ if (BUILD_SSL)
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
 
-    add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
+    add_library (sslconnector MODULE qpid/client/SslConnector.cpp qpid/messaging/amqp/SslTransport.cpp)
     target_link_libraries (sslconnector qpidclient sslcommon)
     set_target_properties (sslconnector PROPERTIES
                            PREFIX ""

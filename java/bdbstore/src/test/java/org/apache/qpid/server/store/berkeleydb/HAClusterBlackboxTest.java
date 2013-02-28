@@ -31,6 +31,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestUtils;
 
 import com.sleepycat.je.rep.ReplicationConfig;
 
@@ -134,7 +135,10 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
 
         public void assertFailoverOccurs(long delay) throws InterruptedException
         {
-            _failoverLatch.await(delay, TimeUnit.MILLISECONDS);
+            if (!_failoverLatch.await(delay, TimeUnit.MILLISECONDS))
+            {
+                LOGGER.warn("Test thread dump:\n\n" + TestUtils.dumpThreads() + "\n");
+            }
             assertEquals("Failover did not occur", 0, _failoverLatch.getCount());
         }
 

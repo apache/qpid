@@ -20,14 +20,43 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.util.BrokerTestHelper;
+
 public class BaseConnectionActorTestCase extends BaseActorTestCase
 {
+    private AMQProtocolSession _session;
 
     @Override
-    public void createBroker() throws Exception
+    public void setUp() throws Exception
     {
-        super.createBroker();
+        super.setUp();
+        BrokerTestHelper.setUp();
+        _session = BrokerTestHelper.createSession();
 
-        _amqpActor = new AMQPConnectionActor(getSession(), _rootLogger);
+        setAmqpActor(new AMQPConnectionActor(_session, getRootLogger()));
     }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            if (_session != null)
+            {
+                _session.getVirtualHost().close();
+            }
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+            super.tearDown();
+        }
+    }
+
+    public AMQProtocolSession getSession()
+    {
+        return _session;
+    }
+
 }

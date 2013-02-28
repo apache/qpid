@@ -29,14 +29,13 @@ import java.util.List;
 
 import javax.jms.Session;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.CreateSessionCommand;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class SessionConfigTest extends TestCase
+public class SessionConfigTest extends QpidTestCase
 {
     private static final String CONNECTION_NAME = "conn1";
     private static final String SESSION = "session1";

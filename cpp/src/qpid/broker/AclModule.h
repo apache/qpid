@@ -79,6 +79,8 @@ namespace acl {
         PROP_POLICYTYPE,
         PROP_MAXQUEUESIZE,
         PROP_MAXQUEUECOUNT,
+        PROP_MAXFILESIZE,
+        PROP_MAXFILECOUNT,
         PROPERTYSIZE           // PROPERTYSIZE must be last in list
     };
 
@@ -102,7 +104,11 @@ namespace acl {
         SPECPROP_MAXQUEUESIZELOWERLIMIT,
         SPECPROP_MAXQUEUESIZEUPPERLIMIT,
         SPECPROP_MAXQUEUECOUNTLOWERLIMIT,
-        SPECPROP_MAXQUEUECOUNTUPPERLIMIT };
+        SPECPROP_MAXQUEUECOUNTUPPERLIMIT,
+        SPECPROP_MAXFILESIZELOWERLIMIT,
+        SPECPROP_MAXFILESIZEUPPERLIMIT,
+        SPECPROP_MAXFILECOUNTLOWERLIMIT,
+        SPECPROP_MAXFILECOUNTUPPERLIMIT };
 
 // AclResult  shared between ACL spec and ACL authorise interface
     enum AclResult {
@@ -126,6 +132,8 @@ namespace broker {
         // doTransferAcl pervents time consuming ACL calls on a per-message basis.
         virtual bool doTransferAcl()=0;
 
+        virtual uint16_t getMaxConnectTotal()=0;
+
         virtual bool authorise(
             const std::string&                    id,
             const acl::Action&                    action,
@@ -147,9 +155,10 @@ namespace broker {
          */
         virtual bool approveConnection (const Connection& connection)=0;
 
-        /** Change connection's counted userId
+        /** Approve queue creation by counting per-user.
          */
-        virtual void setUserId(const Connection& connection, const std::string& username)=0;
+        virtual bool approveCreateQueue(const std::string& userId, const std::string& queueName)=0;
+        virtual void recordDestroyQueue(const std::string& queueName)=0;
 
         virtual ~AclModule() {};
     };
@@ -222,6 +231,8 @@ namespace acl {
             if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
             if (str.compare("maxqueuesize")  == 0) return PROP_MAXQUEUESIZE;
             if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT;
+            if (str.compare("maxfilesize")   == 0) return PROP_MAXFILESIZE;
+            if (str.compare("maxfilecount")  == 0) return PROP_MAXFILECOUNT;
             throw qpid::Exception(str);
         }
         static inline std::string getPropertyStr(const Property p) {
@@ -240,6 +251,8 @@ namespace acl {
             case PROP_POLICYTYPE:    return "policytype";
             case PROP_MAXQUEUESIZE:  return "maxqueuesize";
             case PROP_MAXQUEUECOUNT: return "maxqueuecount";
+            case PROP_MAXFILESIZE:   return "maxfilesize";
+            case PROP_MAXFILECOUNT:  return "maxfilecount";
             default: assert(false); // should never get here
             }
             return "";
@@ -261,6 +274,10 @@ namespace acl {
             if (str.compare("queuemaxsizeupperlimit")   == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
             if (str.compare("queuemaxcountlowerlimit")  == 0) return SPECPROP_MAXQUEUECOUNTLOWERLIMIT;
             if (str.compare("queuemaxcountupperlimit")  == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
+            if (str.compare("filemaxsizelowerlimit")    == 0) return SPECPROP_MAXFILESIZELOWERLIMIT;
+            if (str.compare("filemaxsizeupperlimit")    == 0) return SPECPROP_MAXFILESIZEUPPERLIMIT;
+            if (str.compare("filemaxcountlowerlimit")   == 0) return SPECPROP_MAXFILECOUNTLOWERLIMIT;
+            if (str.compare("filemaxcountupperlimit")   == 0) return SPECPROP_MAXFILECOUNTUPPERLIMIT;
             // Allow old names in ACL file as aliases for newly-named properties
             if (str.compare("maxqueuesize")             == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
             if (str.compare("maxqueuecount")            == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
@@ -284,6 +301,10 @@ namespace acl {
                 case SPECPROP_MAXQUEUESIZEUPPERLIMIT:  return "queuemaxsizeupperlimit";
                 case SPECPROP_MAXQUEUECOUNTLOWERLIMIT: return "queuemaxcountlowerlimit";
                 case SPECPROP_MAXQUEUECOUNTUPPERLIMIT: return "queuemaxcountupperlimit";
+                case SPECPROP_MAXFILESIZELOWERLIMIT:   return "filemaxsizelowerlimit";
+                case SPECPROP_MAXFILESIZEUPPERLIMIT:   return "filemaxsizeupperlimit";
+                case SPECPROP_MAXFILECOUNTLOWERLIMIT:  return "filemaxcountlowerlimit";
+                case SPECPROP_MAXFILECOUNTUPPERLIMIT:  return "filemaxcountupperlimit";
                 default: assert(false); // should never get here
             }
             return "";

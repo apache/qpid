@@ -47,16 +47,23 @@ QPID_COMMON_EXTERN long concurrency();
 QPID_COMMON_EXTERN bool getLocalHostname (Address &address);
 
 /**
- * Get the (possibly multiple) local IP addresses of this host
- * using the specified port.
+ * Get the names of all the network interfaces connected to
+ * this host.
+ * @param names Receives the list of interface names
  */
-QPID_COMMON_EXTERN void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
+QPID_COMMON_EXTERN void getInterfaceNames(std::vector<std::string>& names );
 
 /**
- * Return true if host names an address of the local host.
- *@param host host name or IP address.
+ * Get strings for each of the IP addresses associated with a named network
+ * interface.
+ * If there is no interface of that name an empty list will be returned.
+ *
+ * @param interface The name of the network interface
+ * @param addresses The list of the strings for the IP addresses are pushed on the back of this parameter
+ *                  to get just the list you need to clear the vector before using it.
+ * @return true if an interface of the correct name was found, false otherwise
  */
-QPID_COMMON_EXTERN bool isLocalHost(const std::string& host);
+QPID_COMMON_EXTERN bool getInterfaceAddresses(const std::string& interface, std::vector<std::string>& addresses);
 
 /**
  * Retrieve system identifiers and versions. This is information that can
@@ -89,6 +96,12 @@ QPID_COMMON_EXTERN uint32_t getParentProcessId();
  * Get the name of the current process (i.e. the name of the executable)
  */
 QPID_COMMON_EXTERN std::string getProcessName();
+
+/**
+ * Can thread related primitives be trusted during runtime house-cleaning?
+ * (i.e. static destructors, atexit()).
+ */
+QPID_COMMON_EXTERN bool threadSafeShutdown();
 
 
 }}} // namespace qpid::sys::SystemInfo

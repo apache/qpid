@@ -19,7 +19,7 @@
 
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
-require 'qpid'
+require 'qpid_messaging'
 
 # This is your classic Hello World application, written in
 # Ruby, that uses Qpid. It demonstrates how to send and

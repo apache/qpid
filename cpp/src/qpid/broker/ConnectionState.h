@@ -21,17 +21,21 @@
 #ifndef _ConnectionState_
 #define _ConnectionState_
 
-#include <vector>
-
+#include "qpid/broker/ConnectionToken.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionOutputHandlerPtr.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/Url.h"
-#include "qpid/broker/Broker.h"
+
+#include <boost/function.hpp>
+#include <vector>
+
 
 namespace qpid {
 namespace broker {
+
+class Broker;
 
 class ConnectionState : public ConnectionToken, public management::Manageable
 {
@@ -46,9 +50,8 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         framemax(65535),
         heartbeat(0),
         heartbeatmax(120),
-        userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links & clustering)
+        userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links)
         federationLink(true),
-        clusterOrderOut(0),
         isDefaultRealm(false)
     {}
 
@@ -62,14 +65,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
 
-    virtual void setUserId(const std::string& uid) {
-        userId = uid;
-        size_t at = userId.find('@');
-        userName = userId.substr(0, at);
-        isDefaultRealm = (
-            at!= std::string::npos &&
-            getBroker().getOptions().realm == userId.substr(at+1,userId.size()));
-    }
+    virtual void setUserId(const std::string& uid);
 
     const std::string& getUserId() const { return userId; }
 
@@ -102,15 +98,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     framing::ProtocolVersion getVersion() const { return version; }
     void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out.set(o); }
 
-    /**
-     * If the broker is part of a cluster, this is a handler provided
-     * by cluster code. It ensures consistent ordering of commands
-     * that are sent based on criteria that are not predictably
-     * ordered cluster-wide, e.g. a timer firing.
-     */
-    framing::FrameHandler* getClusterOrderOutput() { return clusterOrderOut; }
-    void setClusterOrderOutput(framing::FrameHandler& fh) { clusterOrderOut = &fh; }
-
     virtual void requestIOProcessing (boost::function0<void>) = 0;
 
   protected:
@@ -124,7 +111,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     bool federationLink;
     std::string federationPeerTag;
     std::vector<Url> knownHosts;
-    framing::FrameHandler* clusterOrderOut;
     std::string userName;
     bool isDefaultRealm;
 };

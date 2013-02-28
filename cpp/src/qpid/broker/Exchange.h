@@ -55,14 +55,14 @@ public:
         const framing::FieldTable args;
         std::string               origin;
         ConfigHandle              cfgHandle;
-        qmf::org::apache::qpid::broker::Binding* mgmtBinding;
+        qmf::org::apache::qpid::broker::Binding::shared_ptr mgmtBinding;
 
         Binding(const std::string& key, boost::shared_ptr<Queue> queue, Exchange* parent = 0,
                 framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string(),
                 ConfigHandle cfgHandle = ConfigHandle());
         ~Binding();
         void startManagement();
-        management::ManagementObject* GetManagementObject() const;
+        management::ManagementObject::shared_ptr GetManagementObject() const;
 
         // DataSource implementation - allows for persistence
         uint64_t getSize();
@@ -170,8 +170,8 @@ protected:
         }
     };
 
-    qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
-    qmf::org::apache::qpid::broker::Broker* brokerMgmtObject;
+    qmf::org::apache::qpid::broker::Exchange::shared_ptr mgmtExchange;
+    qmf::org::apache::qpid::broker::Broker::shared_ptr brokerMgmtObject;
 
 public:
     typedef boost::shared_ptr<Exchange> shared_ptr;
@@ -184,7 +184,8 @@ public:
 
     const std::string& getName() const { return name; }
     bool isDurable() { return durable; }
-    qpid::framing::FieldTable& getArgs() { return args; }
+    QPID_BROKER_EXTERN const qpid::framing::FieldTable& getArgs() const { return args; }
+    QPID_BROKER_EXTERN void setArgs(const framing::FieldTable&);
 
     QPID_BROKER_EXTERN Exchange::shared_ptr getAlternate() { return alternate; }
     QPID_BROKER_EXTERN void setAlternate(Exchange::shared_ptr _alternate);
@@ -221,7 +222,7 @@ public:
     static QPID_BROKER_EXTERN Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
     // Manageable entry points
-    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject(void) const;
+    QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject(void) const;
 
     // Federation hooks
     class DynamicBridge {

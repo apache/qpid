@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server.management.plugin.servlet;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,7 +98,7 @@ public class FileServlet extends HttpServlet
         }
         else
         {
-            response.sendError(404, "unknown file: "+ filename);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "unknown file: "+ filename);
         }
 
     }

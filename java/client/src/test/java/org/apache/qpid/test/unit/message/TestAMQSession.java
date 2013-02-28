@@ -124,7 +124,7 @@ public class TestAMQSession extends AMQSession_0_8
         return false;
     }
 
-    public void sendConsume(BasicMessageConsumer_0_8 consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler, boolean nowait, int tag) throws AMQException, FailoverException
+    public void sendConsume(BasicMessageConsumer_0_8 consumer, AMQShortString queueName, boolean nowait, int tag) throws AMQException, FailoverException
     {
 
     }
@@ -139,13 +139,13 @@ public class TestAMQSession extends AMQSession_0_8
         return null;
     }
 
-    public void sendExchangeDeclare(AMQShortString name, AMQShortString type, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException, FailoverException
+    public void sendExchangeDeclare(AMQShortString name, AMQShortString type, boolean nowait, boolean durable, boolean autoDelete, boolean internal) throws AMQException, FailoverException
     {
 
     }
 
     public void sendQueueDeclare(AMQDestination amqd, AMQProtocolHandler protocolHandler,
-                                 boolean nowait, boolean passive) throws AMQException, FailoverException
+                                 boolean passive) throws AMQException, FailoverException
     {
 
     }
@@ -187,14 +187,6 @@ public class TestAMQSession extends AMQSession_0_8
 
     public void sync()
     {
-    }
-
-    public void handleAddressBasedDestination(AMQDestination dest, 
-                                              boolean isConsumer, 
-                                              boolean noWait) throws AMQException
-    {
-        throw new UnsupportedOperationException("The new addressing based sytanx is "
-                + "not supported for AMQP 0-8/0-9 versions");
     }
 
     @Override

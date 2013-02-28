@@ -81,6 +81,7 @@
     <property name="systemRef"        type="objId"  references="System" access="RO" desc="System ID" parentRef="y"/>
     <property name="port"             type="uint16" access="RO" desc="TCP Port for AMQP Service"/>
     <property name="workerThreads"    type="uint16" access="RO" desc="Thread pool size"/>
+    <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
     <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
     <property name="mgmtPublish"      type="bool"   access="RO" desc="Broker's management agent sends unsolicited data on the publish interval"/>
@@ -153,7 +154,7 @@
       <arg name="level"     dir="O" type="sstr"/>
     </method>
 
-    <method name="getTimestampConfig" desc="Get the message timestamping configuration">
+   <method name="getTimestampConfig" desc="Get the message timestamping configuration">
       <arg name="receive" dir="O" type="bool"  desc="True if received messages are timestamped."/>
     </method>
 
@@ -178,6 +179,14 @@
       <arg name="type" dir="I" type="sstr" desc="The type of object to query."/>
       <arg name="name" dir="I" type="sstr" desc="The name of the object to query"/>
       <arg name="results" dir="O" type="map"  desc="A snapshot of the object's state."/>
+    </method>
+
+    <method name="getLogHiresTimestamp" desc="Get the high resolution timestamp in logs">
+      <arg name="logHires" dir="O" type="bool"  desc="True if high resolution timestamp in logs is enabled."/>
+    </method>
+
+    <method name="setLogHiresTimestamp" desc="Set the high resolution timestamp in logs">
+      <arg name="logHires" dir="I" type="bool"  desc="True to enable enable high resolution timestamp in logs."/>
     </method>
 
 
@@ -357,6 +366,8 @@
     <property name="shadow"             type="bool"   access="RO" desc="True for shadow connections"/>
     <property name="saslMechanism"      type="sstr"   access="RO" desc="SASL mechanism"/>
     <property name="saslSsf"            type="uint16"   access="RO" desc="SASL security strength factor"/>
+    <property name="remoteProperties"   type="map"    access="RO" desc="optional map of identifying information sent by the remote"/>
+    <property name="protocol"           type="sstr"   access="RC" desc="protocol in use"/>
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
@@ -496,11 +507,12 @@
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
     <arg name="msgDepth" type="count64" desc="Current size of queue in messages"/>
     <arg name="byteDepth" type="count64" desc="Current size of queue in bytes"/>
+    <arg name="properties" type="map" desc="optional identifying information sent by the remote"/>
   </eventArguments>
 
-  <event name="clientConnect"     sev="inform" args="rhost, user"/>
-  <event name="clientConnectFail" sev="warn"   args="rhost, user, reason"/>
-  <event name="clientDisconnect"  sev="inform" args="rhost, user"/>
+  <event name="clientConnect"     sev="inform" args="rhost, user, properties"/>
+  <event name="clientConnectFail" sev="warn"   args="rhost, user, reason, properties"/>
+  <event name="clientDisconnect"  sev="inform" args="rhost, user, properties"/>
   <event name="brokerLinkUp"      sev="inform" args="rhost"/>
   <event name="brokerLinkDown"    sev="warn"   args="rhost"/>
   <event name="queueDeclare"      sev="inform" args="rhost, user, qName, durable, excl, autoDel, altEx, args, disp"/>

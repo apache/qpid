@@ -24,9 +24,10 @@ ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = \
   LICENSE NOTICE README.txt SSL RELEASE_NOTES DESIGN \
-  xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
-  packaging/NSIS QPID_VERSION.txt bindings/swig_python_typemaps.i \
-  bindings/swig_ruby_typemaps.i bindings/swig_perl_typemaps.i
+  INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
+  packaging/NSIS QPID_VERSION.txt bindings/CMakeLists.txt \
+  include/qpid/swig_python_typemaps.i include/qpid/swig_ruby_typemaps.i include/qpid/swig_perl_typemaps.i \
+  include/qpid/qpid.i include/qmf/qmfengine.i include/qmf/qmf2.i
 
 SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings/qpid bindings/qmf2
 
@@ -36,4 +37,4 @@ libtool: $(LIBTOOL_DEPS)
 
 check-long: all
 	$(MAKE) -C src/tests check-long
-	
+

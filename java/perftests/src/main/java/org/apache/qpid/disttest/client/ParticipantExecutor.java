@@ -108,8 +108,16 @@ public class ParticipantExecutor
             }
             finally
             {
+                try
+                {
+                    _participant.releaseResources();
+                }
+                catch(Exception e)
+                {
+                    LOGGER.error("Participant " + _participant + " unable to release resources", e);
+                }
+
                 _client.sendResults(result);
-                _participant.releaseResources();
             }
         }
     }

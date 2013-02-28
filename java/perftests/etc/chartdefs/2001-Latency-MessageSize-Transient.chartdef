@@ -20,21 +20,27 @@
 chartType=STATISTICAL_BAR
 chartTitle=Impact of message size on latency
 chartSubtitle=Transient messages
+chartDescription=1P 1C, transient, auto-ack, with message payload between 256-262144 bytes.
+
 xAxisTitle=Message Size (B)
 yAxisTitle=Latency (millis)
 
 series.1.statement=SELECT payloadSizeB, maxLatency, 0 FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.1.legend=Maximum latency
 series.1.dir=${csvCurrentDir}
+series.1.colourName=blue
 
 series.2.statement=SELECT payloadSizeB, averageLatency,latencyStandardDeviation FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.2.legend=Average latency
 series.2.dir=${csvCurrentDir}
+series.2.colourName=red
 
 series.3.statement=SELECT payloadSizeB, averageLatency,latencyStandardDeviation FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.3.legend=Average latency (baseline)
 series.3.dir=${csvBaselineDir}
+series.3.colourName=dark_red
 
 series.4.statement=SELECT payloadSizeB, minLatency,0 FROM Latency-MessageSize WHERE testName like '%TRANSIENT' AND participantName = 'All Consumers'
 series.4.legend=Minimum latency
 series.4.dir=${csvCurrentDir}
+series.4.colourName=green

@@ -22,13 +22,13 @@ package org.apache.qpid.server.security.auth.rmi;
 
 import java.net.SocketAddress;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 
 import javax.management.remote.JMXAuthenticator;
-import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
 
 public class RMIPasswordAuthenticator implements JMXAuthenticator
@@ -38,23 +38,33 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String SHOULD_HAVE_2_ELEMENTS = "User details should have 2 elements, username, password";
     static final String SHOULD_BE_NON_NULL = "Supplied username and password should be non-null";
     static final String INVALID_CREDENTIALS = "Invalid user details supplied";
+    static final String USER_NOT_AUTHORISED_FOR_MANAGEMENT = "User not authorised for management";
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
-    		            "Please ensure you are using an up to date management console to connect.";
+                        "Please ensure you are using an up to date management console to connect.";
 
-    private AuthenticationManager _authenticationManager = null;
-    private SocketAddress _socketAddress;
+    private final Broker _broker;
+    private final SocketAddress _address;
 
-    public RMIPasswordAuthenticator(SocketAddress socketAddress)
+    public RMIPasswordAuthenticator(Broker broker, SocketAddress address)
     {
-        _socketAddress = socketAddress;
-    }
-
-    public void setAuthenticationManager(final AuthenticationManager authenticationManager)
-    {
-        _authenticationManager = authenticationManager;
+        _broker = broker;
+        _address = address;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
+    {
+        validateCredentials(credentials);
+
+        final String[] userCredentials = (String[]) credentials;
+        final String username = (String) userCredentials[0];
+        final String password = (String) userCredentials[1];
+
+        final Subject authenticatedSubject = doAuthentication(username, password);
+        doManagementAuthorisation(authenticatedSubject);
+        return authenticatedSubject;
+    }
+
+    private void validateCredentials(Object credentials)
     {
         // Verify that credential's are of type String[].
         if (!(credentials instanceof String[]))
@@ -70,41 +80,27 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         }
 
         // Verify that required number of credentials.
-        final String[] userCredentials = (String[]) credentials;
-        if (userCredentials.length != 2)
+        if (((String[])credentials).length != 2)
         {
             throw new SecurityException(SHOULD_HAVE_2_ELEMENTS);
         }
+    }
 
-        final String username = (String) userCredentials[0];
-        final String password = (String) userCredentials[1];
-
+    private Subject doAuthentication(final String username, final String password)
+    {
         // Verify that all required credentials are actually present.
         if (username == null || password == null)
         {
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        // Verify that an AuthenticationManager has been set.
-        if (_authenticationManager == null)
+        SubjectCreator subjectCreator = _broker.getSubjectCreator(_address);
+        if (subjectCreator == null)
         {
-            try
-            {
-                if(ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress) != null)
-                {
-                    _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager(_socketAddress);
-                }
-                else
-                {
-                    throw new SecurityException(UNABLE_TO_LOOKUP);
-                }
-            }
-            catch(IllegalStateException e)
-            {
-                throw new SecurityException(UNABLE_TO_LOOKUP);
-            }
+            throw new SecurityException("Can't get subject creator for " + _address);
         }
-        final AuthenticationResult result = _authenticationManager.authenticate(username, password);
+
+        final SubjectAuthenticationResult result = subjectCreator.authenticate(username, password);
 
         if (AuthenticationStatus.ERROR.equals(result.getStatus()))
         {
@@ -112,15 +108,29 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         }
         else if (AuthenticationStatus.SUCCESS.equals(result.getStatus()))
         {
-            final Subject subject = result.getSubject();
-            subject.getPrincipals().add(new JMXPrincipal(username));
-            subject.setReadOnly();
-            return subject;
+            return result.getSubject();
         }
         else
         {
             throw new SecurityException(INVALID_CREDENTIALS);
         }
     }
+
+    private void doManagementAuthorisation(Subject authenticatedSubject)
+    {
+        SecurityManager.setThreadSubject(authenticatedSubject);
+        try
+        {
+            if (!_broker.getSecurityManager().accessManagement())
+            {
+                throw new SecurityException(USER_NOT_AUTHORISED_FOR_MANAGEMENT);
+            }
+        }
+        finally
+        {
+            SecurityManager.setThreadSubject(null);
+        }
+    }
+
 
 }

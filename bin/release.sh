@@ -37,6 +37,7 @@ usage()
     echo "--source|-e : Generate the source artefact"
     echo "--cpp   |-c : Generate the CPP artefacts"
     echo "--java  |-j : Generate the java artefacts"
+    echo "--perl  |-r : Generate the Perl artefacts"
     echo "--python|-p : Generate the python artefacts"
     echo "--wcf   |-w : Generate the WCF artefacts"
     echo "--tools |-t : Generate the tools artefacts"
@@ -53,6 +54,7 @@ all_artefacts()
 
    CPP="CPP"
    JAVA="JAVA"
+   PERL="PERL"
    PYTHON="PYTHON"
    WCF="WCF"
    TOOLS="TOOLS"
@@ -93,6 +95,9 @@ for arg in $* ; do
  ;;
  --java|-j)
    JAVA="JAVA"
+ ;;
+ --perl|-r)
+   PERL="PERL"
  ;;
  --python|-p)
    PYTHON="PYTHON"
@@ -146,7 +151,7 @@ echo REV:$REV
 echo VER:$VER
 
 # If nothing is specified then do it all
-if [ -z "${CLEAN}${PREPARE}${CPP}${JAVA}${PYTHON}${QMF}${TOOLS}${WCF}${SOURCE}${SIGN}${UPLOAD}" ] ; then
+if [ -z "${CLEAN}${PREPARE}${CPP}${JAVA}${PERL}${PYTHON}${QMF}${TOOLS}${WCF}${SOURCE}${SIGN}${UPLOAD}" ] ; then
    PREPARE="PREPARE"
    all_artefacts
    SIGN="SIGN"
@@ -182,6 +187,27 @@ fi
 
 if [ "SOURCE" == "$SOURCE" ] ; then
   tar -czf artifacts/qpid-${VER}.tar.gz qpid-${VER}
+fi
+
+if [ "PERL" == "$PERL" ]; then
+  pushd qpid-${VER}/cpp/bindings/qpid
+  make
+  popd
+  mkdir qpid-${VER}/perl-qpid-${VER}
+  cp qpid-${VER}/cpp/bindings/qpid/perl/perl.i \
+     qpid-${VER}/cpp/bindings/qpid/perl/*pm \
+     qpid-${VER}/cpp/bindings/qpid/perl/LICENSE \
+     qpid-${VER}/cpp/bindings/qpid/perl/Makefile.PL \
+     qpid-${VER}/cpp/bindings/qpid/perl/t/*.t \
+     qpid-${VER}/perl-qpid-${VER}
+  cp -r qpid-${VER}/cpp/bindings/qpid/perl/lib \
+     qpid-${VER}/perl-qpid-${VER}
+  mkdir qpid-${VER}/perl-qpid-${VER}/examples
+  cp qpid-${VER}/cpp/bindings/qpid/examples/perl/* \
+     qpid-${VER}/perl-qpid-${VER}/examples
+  pushd qpid-${VER}
+  tar -czf ../artifacts/perl-qpid-${VER}.tar.gz perl-qpid-${VER}
+  popd
 fi
 
 if [ "PYTHON" == "$PYTHON" ] ; then
@@ -231,7 +257,6 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/management/common/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/access-control/release/maven artifacts/
-  cp -a qpid-${VER}/java/broker-plugins/firewall/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
   cp -a qpid-${VER}/java/bdbstore/jmx/release/maven artifacts/

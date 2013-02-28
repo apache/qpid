@@ -22,6 +22,7 @@ examplesdir=$(pkgdatadir)/examples/messaging
 AM_CXXFLAGS = $(WARNING_CFLAGS)
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 CLIENT_LIB=$(top_builddir)/src/libqpidmessaging.la
+TYPES_LIB=$(top_builddir)/src/libqpidtypes.la
 CLIENTFLAGS=-lqpidmessaging
 
 noinst_PROGRAMS=drain spout client server map_sender map_receiver hello_world hello_xml
@@ -33,10 +34,10 @@ hello_xml_SOURCES=hello_xml.cpp
 hello_xml_LDADD=$(CLIENT_LIB)
 
 drain_SOURCES=drain.cpp OptionParser.h OptionParser.cpp
-drain_LDADD=$(CLIENT_LIB)
+drain_LDADD=$(CLIENT_LIB) $(TYPES_LIB)
 
 spout_SOURCES=spout.cpp OptionParser.h OptionParser.cpp
-spout_LDADD=$(CLIENT_LIB)
+spout_LDADD=$(CLIENT_LIB) $(TYPES_LIB)
 
 client_SOURCES=client.cpp
 client_LDADD=$(CLIENT_LIB)
@@ -45,10 +46,10 @@ server_SOURCES=server.cpp
 server_LDADD=$(CLIENT_LIB)
 
 map_sender_SOURCES=map_sender.cpp
-map_sender_LDADD=$(CLIENT_LIB)
+map_sender_LDADD=$(CLIENT_LIB) $(TYPES_LIB)
 
 map_receiver_SOURCES=map_receiver.cpp
-map_receiver_LDADD=$(CLIENT_LIB)
+map_receiver_LDADD=$(CLIENT_LIB) $(TYPES_LIB)
 
 examples_DATA=                 \
 	hello_world.cpp	       \
@@ -61,7 +62,7 @@ examples_DATA=                 \
 	server.cpp             \
 	map_sender.cpp         \
 	map_receiver.cpp       \
-        extra_dist/Makefile
+	extra_dist/CMakeLists.txt
 
 EXTRA_DIST=                  \
 	$(examples_DATA)     \

@@ -23,6 +23,7 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/Endian.h"
 #include "qpid/framing/List.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/Msg.h"
 
@@ -43,7 +44,9 @@ void FieldValue::setType(uint8_t type)
         data.reset(new EncodedValue<List>());
     } else if (typeOctet == 0xAA) {
         data.reset(new EncodedValue<Array>());
-    } else {    
+    } else if (typeOctet == 0x48) {
+        data.reset(new UuidData());
+    } else {
         uint8_t lenType = typeOctet >> 4;
         switch(lenType){
           case 0:
@@ -213,9 +216,12 @@ Integer8Value::Integer8Value(int8_t v) :
 Integer16Value::Integer16Value(int16_t v) :
     FieldValue(0x11, new FixedWidthValue<2>(v))
 {}
-UuidValue::UuidValue(const unsigned char* v) :
-    FieldValue(0x48, new FixedWidthValue<16>(v))
-{}
+
+UuidData::UuidData() {}
+UuidData::UuidData(const unsigned char* bytes) : FixedWidthValue<16>(bytes) {}
+bool UuidData::convertsToString() const { return true; }
+std::string UuidData::getString() const { return Uuid(rawOctets()).str(); }
+UuidValue::UuidValue(const unsigned char* v) : FieldValue(0x48, new UuidData(v)) {}
 
 void FieldValue::print(std::ostream& out) const {
     data->print(out);

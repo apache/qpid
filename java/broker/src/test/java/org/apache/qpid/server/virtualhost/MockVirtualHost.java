@@ -22,26 +22,18 @@ package org.apache.qpid.server.virtualhost;
 
 import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.server.binding.BindingFactory;
-import org.apache.qpid.server.configuration.BrokerConfig;
-import org.apache.qpid.server.configuration.ConfigStore;
-import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.VirtualHostConfig;
-import org.apache.qpid.server.configuration.VirtualHostConfigType;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
-import java.util.Map;
 import java.util.UUID;
 
 public class MockVirtualHost implements VirtualHost
@@ -58,19 +50,8 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public void createBrokerConnection(String transport, String host, int port,
-            String vhost, boolean durable, String authMechanism,
-            String username, String password)
-    {
-
-    }
-
-    public BrokerLink createBrokerConnection(final UUID id, final long createTime, final Map<String, String> arguments)
-    {
-        return null;
-    }
-
-    public IApplicationRegistry getApplicationRegistry()
+    @Override
+    public VirtualHostRegistry getVirtualHostRegistry()
     {
         return null;
     }
@@ -81,16 +62,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public BindingFactory getBindingFactory()
-    {
-        return null;
-    }
-
-    public UUID getBrokerId()
-    {
-        return null;
-    }
-
-    public ConfigStore getConfigStore()
     {
         return null;
     }
@@ -160,12 +131,6 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
-
-    public void removeBrokerConnection(BrokerLink brokerLink)
-    {
-
-    }
-
     public LinkRegistry getLinkRegistry(String remoteContainerId)
     {
         return null;
@@ -186,25 +151,6 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public BrokerConfig getBroker()
-    {
-        return null;
-    }
-
-    public String getFederationTag()
-    {
-        return null;
-    }
-
-    public void setBroker(BrokerConfig brokerConfig)
-    {
-
-    }
-
-    public VirtualHostConfigType getConfigType()
-    {
-        return null;
-    }
 
     public long getCreateTime()
     {
@@ -212,17 +158,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public UUID getId()
-    {
-        return null;
-    }
-
-    @Override
-    public UUID getQMFId()
-    {
-        return null;
-    }
-
-    public ConfiguredObject<VirtualHostConfigType, VirtualHostConfig> getParent()
     {
         return null;
     }

@@ -22,16 +22,15 @@ import java.util.Date;
 
 import javax.jms.DeliveryMode;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.disttest.message.ConsumerParticipantResult;
 import org.apache.qpid.disttest.message.CreateConsumerCommand;
 import org.apache.qpid.disttest.message.CreateParticpantCommand;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.ProducerParticipantResult;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ParticipantResultFactoryTest extends TestCase
+public class ParticipantResultFactoryTest extends QpidTestCase
 {
     private static final String PARTICIPANT_NAME = "participantName";
     private static final String REGISTERED_CLIENT_NAME = "registeredClientName";

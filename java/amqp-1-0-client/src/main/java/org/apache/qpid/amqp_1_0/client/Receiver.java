@@ -241,7 +241,7 @@ public class Receiver implements DeliveryStateHandler
                     }
                     if(hasMore)
                     {
-                        xfr = receiveFromPrefetch(0L);
+                        xfr = receiveFromPrefetch(-1l);
                         if(xfr== null)
                         {
                             // TODO - this is wrong!!!!
@@ -501,6 +501,37 @@ public class Receiver implements DeliveryStateHandler
     public void drain()
     {
         _endpoint.drain();
+    }
+
+    /**
+     * Waits for the receiver to drain or a message to be available to be received.
+     * @return true if the receiver has been drained.
+     */
+    public boolean drainWait()
+    {
+        final Object lock = _endpoint.getLock();
+        synchronized(lock)
+        {
+            try
+            {
+                while( _prefetchQueue.peek()==null && !_endpoint.isDrained() && !_endpoint.isDetached() )
+                {
+                    lock.wait();
+                }
+            }
+            catch (InterruptedException e)
+            {
+            }
+        }
+        return _prefetchQueue.peek()==null && _endpoint.isDrained();
+    }
+
+    /**
+     * Clears the receiver drain so that message delivery can resume.
+     */
+    public void clearDrain()
+    {
+        _endpoint.clearDrain();
     }
 
     public void setCreditWithTransaction(final UnsignedInteger credit, final Transaction txn)

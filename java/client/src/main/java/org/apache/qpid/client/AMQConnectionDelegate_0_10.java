@@ -33,6 +33,7 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
@@ -214,7 +215,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                         + "********");
             }
 
-            ConnectionSettings conSettings = retriveConnectionSettings(brokerDetail);
+            ConnectionSettings conSettings = retrieveConnectionSettings(brokerDetail);
+
             _qpidConnection.setConnectionDelegate(new ClientConnectionDelegate(conSettings, _conn.getConnectionURL()));
             _qpidConnection.connect(conSettings);
 
@@ -420,7 +422,13 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return featureSupported;
     }
 
-    private ConnectionSettings retriveConnectionSettings(BrokerDetails brokerDetail)
+    @Override
+    public void setHeartbeatListener(HeartbeatListener listener)
+    {
+        ((ClientConnectionDelegate)(_qpidConnection.getConnectionDelegate())).setHeartbeatListener(listener);
+    }
+
+    private ConnectionSettings retrieveConnectionSettings(BrokerDetails brokerDetail)
     {
         ConnectionSettings conSettings = brokerDetail.buildConnectionSettings();
 
@@ -441,6 +449,24 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
 
         conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
+
+        //Check connection-level ssl override setting
+        String connectionSslOption = _conn.getConnectionURL().getOption(ConnectionURL.OPTIONS_SSL);
+        if(connectionSslOption != null)
+        {
+            boolean connUseSsl = Boolean.parseBoolean(connectionSslOption);
+            boolean brokerlistUseSsl = conSettings.isUseSSL();
+
+            if( connUseSsl != brokerlistUseSsl)
+            {
+                conSettings.setUseSSL(connUseSsl);
+
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Applied connection ssl option override, setting UseSsl to: " + connUseSsl );
+                }
+            }
+        }
 
         return conSettings;
     }
@@ -464,9 +490,13 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             heartbeat = Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME)/1000;
             _logger.warn("JVM arg -Didle_timeout=<mili_secs> is deprecated, please use -Dqpid.heartbeat=<secs>");
         }
-        else
+        else if(Integer.getInteger(ClientProperties.HEARTBEAT) != null)
         {
             heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
+        }
+        else
+        {
+            heartbeat = Integer.getInteger("amqj.heartbeat.delay", ClientProperties.HEARTBEAT_DEFAULT);
         }
         return heartbeat;
     }

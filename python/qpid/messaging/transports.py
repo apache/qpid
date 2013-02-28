@@ -55,7 +55,41 @@ try:
   from ssl import wrap_socket, SSLError, SSL_ERROR_WANT_READ, \
       SSL_ERROR_WANT_WRITE
 except ImportError:
-  pass
+
+  ## try the older python SSL api:
+  from socket import ssl
+
+  class old_ssl(SocketTransport):
+    def __init__(self, conn, host, port):
+      SocketTransport.__init__(self, conn, host, port)
+      # Bug (QPID-4337): this is the "old" version of python SSL.
+      # The private key is required. If a certificate is given, but no
+      # keyfile, assume the key is contained in the certificate
+      ssl_keyfile = conn.ssl_keyfile
+      ssl_certfile = conn.ssl_certfile
+      if ssl_certfile and not ssl_keyfile:
+        ssl_keyfile = ssl_certfile
+      self.ssl = ssl(self.socket, keyfile=ssl_keyfile, certfile=ssl_certfile)
+      self.socket.setblocking(1)
+
+    def reading(self, reading):
+      return reading
+
+    def writing(self, writing):
+      return writing
+
+    def recv(self, n):
+      return self.ssl.read(n)
+
+    def send(self, s):
+      return self.ssl.write(s)
+
+    def close(self):
+      self.socket.close()
+
+  TRANSPORTS["ssl"] = old_ssl
+  TRANSPORTS["tcp+tls"] = old_ssl
+    
 else:
   class tls(SocketTransport):
 

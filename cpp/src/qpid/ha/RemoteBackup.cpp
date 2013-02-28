@@ -21,6 +21,7 @@
 #include "RemoteBackup.h"
 #include "QueueGuard.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/log/Statement.h"
@@ -32,32 +33,45 @@ namespace ha {
 using sys::Mutex;
 using boost::bind;
 
-RemoteBackup::RemoteBackup(const BrokerInfo& info, ReplicationTest rt, bool con) :
-    logPrefix("Primary: Remote backup "+info.getLogId()+": "),
-    brokerInfo(info), replicationTest(rt), connected(con), reportedReady(false)
-{}
-
-void RemoteBackup::setInitialQueues(broker::QueueRegistry& queues, bool createGuards)
+RemoteBackup::RemoteBackup(
+    const BrokerInfo& info, broker::Connection* c
+) : brokerInfo(info), replicationTest(NONE), connection(c), reportedReady(false)
 {
-    QPID_LOG(debug, logPrefix << "Setting initial queues" << (createGuards ? " and guards" : ""));
-    queues.eachQueue(boost::bind(&RemoteBackup::initialQueue, this, _1, createGuards));
+    std::ostringstream oss;
+    oss << "Primary: Remote backup " << info << ": ";
+    logPrefix = oss.str();
+}
+
+void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGuards)
+{
+    queues.eachQueue(boost::bind(&RemoteBackup::catchupQueue, this, _1, createGuards));
+    QPID_LOG(debug, logPrefix << "Set " << catchupQueues.size() << " catch-up queues"
+             << (createGuards ? " and guards" : ""));
 }
 
 RemoteBackup::~RemoteBackup() { cancel(); }
 
 void RemoteBackup::cancel() {
+    QPID_LOG(debug, logPrefix << "Cancelled " << (connection? "connected":"disconnected")
+             << " backup: " << brokerInfo);
     for (GuardMap::iterator i = guards.begin(); i != guards.end(); ++i)
         i->second->cancel();
     guards.clear();
+    if (connection) {
+        connection->abort();
+        connection = 0;
+    }
 }
 
 bool RemoteBackup::isReady() {
-    return connected && initialQueues.empty();
+    return connection && catchupQueues.empty();
 }
 
-void RemoteBackup::initialQueue(const QueuePtr& q, bool createGuard) {
-    if (replicationTest.isReplicated(ALL, *q)) {
-        initialQueues.insert(q);
+void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
+    if (replicationTest.getLevel(*q) == ALL) {
+        QPID_LOG(debug, logPrefix << "Catch-up queue"
+                 << (createGuard ? " and guard" : "") << ": " << q->getName());
+        catchupQueues.insert(q);
         if (createGuard) guards[q].reset(new QueueGuard(*q, brokerInfo));
     }
 }
@@ -88,21 +102,24 @@ std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
 }
 
 void RemoteBackup::ready(const QueuePtr& q) {
-    initialQueues.erase(q);
-    QPID_LOG(debug, logPrefix << "Queue ready: " << q->getName()
-             <<  QueueSetPrinter(", waiting for: ", initialQueues));
-    if (isReady()) QPID_LOG(debug, logPrefix << "All queues ready");
+    catchupQueues.erase(q);
+    if (catchupQueues.size()) {
+        QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() << ", "
+                 << catchupQueues.size() << " remain to catch up");
+    }
+    else
+        QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() );
 }
 
-// Called via ConfigurationObserver::queueCreate and from initialQueue
+// Called via ConfigurationObserver::queueCreate and from catchupQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
-    if (replicationTest.isReplicated(ALL, *q))
+    if (replicationTest.getLevel(*q) == ALL)
         guards[q].reset(new QueueGuard(*q, brokerInfo));
 }
 
 // Called via ConfigurationObserver
 void RemoteBackup::queueDestroy(const QueuePtr& q) {
-    initialQueues.erase(q);
+    catchupQueues.erase(q);
     GuardMap::iterator i = guards.find(q);
     if (i != guards.end()) {
         i->second->cancel();

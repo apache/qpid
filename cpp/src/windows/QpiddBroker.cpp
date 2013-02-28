@@ -27,10 +27,18 @@
 #include "qpid/Plugin.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/windows/check.h"
+#include "qpid/sys/Thread.h"
 #include "qpid/broker/Broker.h"
 
 #include <iostream>
+#include <string>
+#include <vector>
 #include <windows.h>
+
+namespace {
+  // This will accept args from the command line; augmented with service args.
+  std::vector<std::string> cmdline_args;
+}
 
 namespace qpid {
 namespace broker {
@@ -44,6 +52,10 @@ BootstrapOptions::BootstrapOptions(const char* argv0)
     add(common);
     add(module);
     add(log);
+}
+
+void BootstrapOptions::usage() const {
+    std::cout << "Usage: qpidd [OPTIONS]" << std::endl << std::endl << *this << std::endl;
 }
 
 // Local functions to set and get the pid via a LockFile.
@@ -218,10 +230,10 @@ VOID WINAPI SvcCtrlHandler(DWORD control)
         ::SetServiceStatus(svcStatusHandle, &svcStatus);
         CtrlHandler(CTRL_C_EVENT);
         break;
- 
+
     case SERVICE_CONTROL_INTERROGATE:
         break;
- 
+
     default:
         break;
     }
@@ -229,6 +241,25 @@ VOID WINAPI SvcCtrlHandler(DWORD control)
 
 VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 {
+    // The arguments can come from 2 places. Args set with the executable
+    // name when the service is installed come through main() and are now
+    // in cmdline_args. Arguments set in StartService come into argc/argv
+    // above; if they are set, argv[0] is the service name. Make command
+    // line args first; StartService args come later and can override
+    // command line args.
+    int all_argc = argc + cmdline_args.size();
+    if (argc == 0 && !cmdline_args.empty())
+      ++all_argc;    // No StartService args, so need to add prog name argv[0]
+    const char **all_argv = new const char *[all_argc];
+    if (all_argc > 0) {
+      int i = 0;
+      all_argv[i++] = argc > 0 ? argv[0] : svcName.c_str();
+      for (size_t j = 0; j < cmdline_args.size(); ++j)
+        all_argv[i++] = cmdline_args[j].c_str();
+      for (DWORD k = 1; k < argc; ++k)
+        all_argv[i++] = argv[k];
+    }
+
     ::memset(&svcStatus, 0, sizeof(svcStatus));
     svcStatusHandle = ::RegisterServiceCtrlHandler(svcName.c_str(),
                                                    SvcCtrlHandler);
@@ -238,7 +269,9 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
     svcStatus.dwCurrentState = SERVICE_START_PENDING;
     ::SetServiceStatus(svcStatusHandle, &svcStatus);
     // QpiddBroker class resets state to running.
-    svcStatus.dwWin32ExitCode = run_broker(argc, argv, true);
+    svcStatus.dwWin32ExitCode = run_broker(all_argc,
+                                           const_cast<char**>(all_argv),
+                                           true);
     svcStatus.dwCurrentState = SERVICE_STOPPED;
     svcStatus.dwCheckPoint = 0;
     svcStatus.dwWaitHint = 0;
@@ -278,7 +311,7 @@ struct ServiceOptions : public qpid::Options {
     std::string password;
     std::string depends;
 
-    ServiceOptions() 
+    ServiceOptions()
         : qpid::Options("Service options"),
           install(false),
           start(false),
@@ -395,7 +428,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
         // Relies on port number being set via --port or QPID_PORT env variable.
         NamedSharedMemory<BrokerInfo> info(brokerInfoName(options->broker.port));
         int pid = info.get().pid;
-        if (pid < 0) 
+        if (pid < 0)
             return 1;
         if (myOptions->control.check)
             std::cout << pid << std::endl;
@@ -464,6 +497,11 @@ int main(int argc, char* argv[])
         { "", (LPSERVICE_MAIN_FUNCTION)qpid::broker::ServiceMain },
         { NULL, NULL }
     };
+    // Copy any command line args to be available in case we're started
+    // as a service. Pick these back up in ServiceMain.
+    for (int i = 1; i < argc; ++i)
+      cmdline_args.push_back(argv[i]);
+
     if (!StartServiceCtrlDispatcher(dispatchTable)) {
         DWORD err = ::GetLastError();
         if (err == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT) // Run as console

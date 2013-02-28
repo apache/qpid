@@ -1,4 +1,4 @@
-#! /usr/bin/perl5
+#! /usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,25 +21,33 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use cqpid_perl;
+use qpid;
 
-my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $address           = ( @ARGV > 1 ) ? $ARGV[0] : "message_queue; {create: always}";
+my $url     = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
+my $address = ( @ARGV > 1 ) ? $ARGV[0] : "message_queue; {create: always}";
 my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+# create a connection object
+my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
 
 eval {
+    # open the connection, then create a session from it
     $connection->open();
-    my $session  = $connection->createSession();
-    my $receiver = $session->createReceiver($address);
+    my $session  = $connection->create_session();
 
-    my $content = cqpid_perl::decodeMap($receiver->fetch());
-    #my $content = cqpid_perl::decodeList($receiver->fetch());
-   
+    # create a receiver for the session, subscribed the the specified queue
+    my $receiver = $session->create_receiver($address);
+    # wait for a message to appear in the queue
+    my $message  = $receiver->fetch();
+
+    # display the content of the message
+    my $content  = $message->get_content();
     print Dumper($content);
 
+    # acknowledge the message, removing it from the queue
     $session->acknowledge();
+
+    # close everything, cleaning up
     $receiver->close();
     $connection->close();
 };

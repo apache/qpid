@@ -34,13 +34,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.subscription.Subscription;
@@ -56,13 +53,8 @@ public class MessageServlet extends AbstractServlet
         super();
     }
 
-    public MessageServlet(Broker broker)
-    {
-        super(broker);
-    }
-
     @Override
-    protected void onGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+    protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
 
         if(request.getPathInfo() != null && request.getPathInfo().length()>0 && request.getPathInfo().substring(1).split("/").length > 2)
@@ -400,7 +392,7 @@ public class MessageServlet extends AbstractServlet
      * POST moves or copies messages to the given queue from a queue specified in the posted JSON data
      */
     @Override
-    protected void onPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doPostWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 
         try
@@ -422,7 +414,7 @@ public class MessageServlet extends AbstractServlet
             // FIXME: added temporary authorization check until we introduce management layer
             // and review current ACL rules to have common rules for all management interfaces
             String methodName = isMoveTransaction? "moveMessages":"copyMessages";
-            if (isQueueUpdateMethodAuthorized(methodName, vhost.getName()))
+            if (isQueueUpdateMethodAuthorized(methodName, vhost))
             {
                 final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
                 final List messageIds = new ArrayList((List) providedObject.get("messages"));
@@ -435,7 +427,7 @@ public class MessageServlet extends AbstractServlet
             }
             else
             {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             }
         }
         catch(RuntimeException e)
@@ -450,7 +442,7 @@ public class MessageServlet extends AbstractServlet
      * DELETE removes messages from the queue
      */
     @Override
-    protected void onDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response)
     {
 
         final Queue sourceQueue = getQueueFromRequest(request);
@@ -466,37 +458,22 @@ public class MessageServlet extends AbstractServlet
 
         // FIXME: added temporary authorization check until we introduce management layer
         // and review current ACL rules to have common rules for all management interfaces
-        if (isQueueUpdateMethodAuthorized("deleteMessages", vhost.getName()))
+        if (isQueueUpdateMethodAuthorized("deleteMessages", vhost))
         {
             vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
             response.setStatus(HttpServletResponse.SC_OK);
         }
         else
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
     }
 
-    private boolean isQueueUpdateMethodAuthorized(String methodName, String virtualHost)
+    private boolean isQueueUpdateMethodAuthorized(String methodName, VirtualHost host)
     {
-        SecurityManager securityManager = getSecurityManager(virtualHost);
+        SecurityManager securityManager = host.getSecurityManager();
         return securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName);
-    }
-
-    private SecurityManager getSecurityManager(String virtualHost)
-    {
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        SecurityManager security;
-        if (virtualHost == null)
-        {
-            security = appRegistry.getSecurityManager();
-        }
-        else
-        {
-            security = appRegistry.getVirtualHostRegistry().getVirtualHost(virtualHost).getSecurityManager();
-        }
-        return security;
     }
 
 }

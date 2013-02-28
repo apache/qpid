@@ -23,7 +23,6 @@
  */
 
 #include "qpid/sys/Time.h"
-#include "qpid/sys/IOHandle.h"
 
 struct timespec;
 struct timeval;
@@ -41,32 +40,21 @@ Duration toTime(const struct timespec& ts);
 class SocketAddress;
 const struct addrinfo& getAddrInfo(const SocketAddress&);
 
-// Private fd related implementation details
-class IOHandlePrivate {
+// Posix fd as an IOHandle
+class IOHandle {
 public:
-    IOHandlePrivate(int f = -1) :
-            fd(f)
+    IOHandle(int fd0 = -1) :
+        fd(fd0)
     {}
 
     int fd;
-};
-
-int toFd(const IOHandlePrivate* h);
-
-// Posix fd as an IOHandle
-class PosixIOHandle : public IOHandle {
-public:
-    PosixIOHandle(int fd) :
-        IOHandle(new IOHandlePrivate(fd))
-    {}
 };
 
 // Dummy IOHandle for places it's required in the API
 // but we promise not to actually try to do any operations on the IOHandle
 class NullIOHandle : public IOHandle {
 public:
-    NullIOHandle() :
-        IOHandle(new IOHandlePrivate)
+    NullIOHandle()
     {}
 };
 

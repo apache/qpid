@@ -65,6 +65,7 @@ class Bridge : public PersistableConfig,
 
     QPID_BROKER_EXTERN void close();
     bool isDurable() { return args.i_durable; }
+    framing::ChannelId getChannel() const { return channel; }
     Link *getLink() const { return link; }
     const std::string getSrc() const { return args.i_src; }
     const std::string getDest() const { return args.i_dest; }
@@ -72,7 +73,7 @@ class Bridge : public PersistableConfig,
 
     bool isDetached() const { return detached; }
 
-    management::ManagementObject* GetManagementObject() const;
+    management::ManagementObject::shared_ptr GetManagementObject() const;
     management::Manageable::status_t ManagementMethod(uint32_t methodId,
                                                       management::Args& args,
                                                       std::string& text);
@@ -128,7 +129,7 @@ class Bridge : public PersistableConfig,
     Link* const link;
     const framing::ChannelId          channel;
     qmf::org::apache::qpid::broker::ArgsLinkBridge args;
-    qmf::org::apache::qpid::broker::Bridge*        mgmtObject;
+    qmf::org::apache::qpid::broker::Bridge::shared_ptr mgmtObject;
     CancellationListener        listener;
     std::string name;
     std::string queueName;

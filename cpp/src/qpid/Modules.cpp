@@ -24,11 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Shlib.h"
-
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
-namespace fs=boost::filesystem;
+#include "qpid/sys/FileSysDir.h"
 
 namespace {
 
@@ -43,7 +39,7 @@ inline std::string& suffix() {
 }
 
 bool isShlibName(const std::string& name) {
-    return name.find (suffix()) == name.length() - suffix().length();
+    return name.substr(name.size()-suffix().size()) == suffix();
 }
 
 }
@@ -59,39 +55,40 @@ ModuleOptions::ModuleOptions(const std::string& defaultModuleDir)
         ("no-module-dir", optValue(noLoad),          "Don't load modules from module directory");
 }
 
-void tryShlib(const char* libname_, bool noThrow) {
-    std::string libname(libname_);
-    if (!isShlibName(libname)) libname += suffix();
+void tryShlib(const std::string& libname) {
+    sys::Shlib shlib( isShlibName(libname) ? libname : (libname + suffix()));
+}
+
+namespace {
+
+void tryOnlyShlib(const std::string& libname) throw() {
     try {
-        sys::Shlib shlib(libname);
+        if (isShlibName(libname)) sys::Shlib shlib( libname );
     }
     catch (const std::exception& /*e*/) {
-        if (!noThrow)
-            throw;
     }
+}
+
 }
 
 void loadModuleDir (std::string dirname, bool isDefault)
 {
-    fs::path dirPath (dirname, fs::native);
 
-    if (!fs::exists (dirPath))
+    sys::FileSysDir dirPath (dirname);
+
+    bool exists;
+    try
     {
-        if (isDefault)
-            return;
+        exists = dirPath.exists();
+    } catch (Exception& e) {
+        throw Exception ("Invalid value for module-dir: " + e.getMessage());
+    }
+    if (!exists) {
+        if (isDefault) return;
         throw Exception ("Directory not found: " + dirname);
     }
-    if (!fs::is_directory(dirPath))
-    {
-        throw Exception ("Invalid value for module-dir: " + dirname + " is not a directory");
-    }
 
-    fs::directory_iterator endItr;
-    for (fs::directory_iterator itr (dirPath); itr != endItr; ++itr)
-    {
-        if (!fs::is_directory(*itr) && isShlibName(itr->string()))
-            tryShlib (itr->string().data(), true);
-    }
+    dirPath.forEachFile(&tryOnlyShlib);
 }
 
 } // namespace qpid

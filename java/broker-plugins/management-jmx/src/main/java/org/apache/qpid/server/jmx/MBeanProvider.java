@@ -21,17 +21,16 @@
 
 package org.apache.qpid.server.jmx;
 
-import java.util.ServiceLoader;
-
 import javax.management.JMException;
 import javax.management.StandardMBean;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 /**
  * A provider of an mbean implementation.
  *
- * Provider implementations are advertised as services and loaded via {@link ServiceLoader}.
+ * Provider implementations are advertised as services and loaded by a {@link QpidServiceLoader}.
  */
 public interface MBeanProvider
 {

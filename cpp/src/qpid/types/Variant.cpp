@@ -110,21 +110,28 @@ class VariantImpl
     } value;
     std::string encoding;//optional encoding for variable length data
 
-    template<class T> T convertFromString() const
+  template<class T> T convertFromString() const
     {
         const std::string& s = *value.string;
+
         try {
-            T r = boost::lexical_cast<T>(s);
-            //lexical_cast won't fail if string is a negative number and T is unsigned
-            //So check that and allow special case of negative zero
-            //else its a non-zero negative number so throw exception at end of function
-            if (std::numeric_limits<T>::is_signed || s.find('-') != 0 || r == 0) {
-                return r;
+            // Extra shenanigans to work around negative zero
+            // conversion error in older GCC libs.
+            if ( s[0] != '-' ) {
+                return boost::lexical_cast<T>(s);
+            } else {
+                T r = boost::lexical_cast<T>(s.substr(1));
+                if (std::numeric_limits<T>::is_signed) {
+                    return -r;                    
+                } else {
+                    if (r==0) return 0;
+                }
             }
         } catch(const boost::bad_lexical_cast&) {
         }
         throw InvalidConversion(QPID_MSG("Cannot convert " << s));
     }
+
 };
 
 
@@ -650,7 +657,7 @@ VariantImpl* VariantImpl::create(const Variant& v)
     }
 }
 
-Variant::Variant() : impl(0) {}
+Variant::Variant() : impl(new VariantImpl()) {}
 Variant::Variant(bool b) : impl(new VariantImpl(b)) {}
 Variant::Variant(uint8_t i) : impl(new VariantImpl(i)) {}
 Variant::Variant(uint16_t i) : impl(new VariantImpl(i)) {}
@@ -892,6 +899,8 @@ bool operator==(const Variant& a, const Variant& b)
 {
     return a.isEqualTo(b);
 }
+
+bool operator!=(const Variant& a, const Variant& b) { return !(a == b); }
 
 bool Variant::isEqualTo(const Variant& other) const
 {
