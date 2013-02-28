@@ -800,6 +800,8 @@ dx_iovec_t *dx_message_field_iovec(dx_message_t *msg, dx_message_field_t field)
     remaining  = loc->length;
 
     while (remaining > 0) {
+        if (bufsize > remaining)
+            bufsize = remaining;
         dx_iovec_array(iov)[bufcnt].iov_base = base;
         dx_iovec_array(iov)[bufcnt].iov_len  = bufsize;
         bufcnt++;
@@ -808,12 +810,48 @@ dx_iovec_t *dx_message_field_iovec(dx_message_t *msg, dx_message_field_t field)
             buf     = buf->next;
             base    = dx_buffer_base(buf);
             bufsize = dx_buffer_size(buf);
-            if (bufsize > remaining)
-                bufsize = remaining;
         }
     }
 
     return iov;
+}
+
+
+ssize_t dx_message_field_length(dx_message_t *msg, dx_message_field_t field)
+{
+    dx_field_location_t *loc = dx_message_field_location(msg, field);
+    if (!loc)
+        return -1;
+
+    return loc->length;
+}
+
+
+ssize_t dx_message_field_copy(dx_message_t *msg, dx_message_field_t field, void *buffer)
+{
+    dx_field_location_t *loc = dx_message_field_location(msg, field);
+    if (!loc)
+        return -1;
+
+    dx_buffer_t *buf       = loc->buffer;
+    size_t       bufsize   = dx_buffer_size(buf) - loc->offset;
+    void        *base      = dx_buffer_base(buf) + loc->offset;
+    size_t       remaining = loc->length;
+
+    while (remaining > 0) {
+        if (bufsize > remaining)
+            bufsize = remaining;
+        memcpy(buffer, base, bufsize);
+        buffer    += bufsize;
+        remaining -= bufsize;
+        if (remaining > 0) {
+            buf     = buf->next;
+            base    = dx_buffer_base(buf);
+            bufsize = dx_buffer_size(buf);
+        }
+    }
+
+    return loc->length;
 }
 
 

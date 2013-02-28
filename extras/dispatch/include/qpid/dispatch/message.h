@@ -112,6 +112,9 @@ int dx_message_check(dx_message_t *msg, dx_message_depth_t depth);
 dx_field_iterator_t *dx_message_field_iterator(dx_message_t *msg, dx_message_field_t field);
 dx_iovec_t *dx_message_field_iovec(dx_message_t *msg, dx_message_field_t field);
 
+ssize_t dx_message_field_length(dx_message_t *msg, dx_message_field_t field);
+ssize_t dx_message_field_copy(dx_message_t *msg, dx_message_field_t field, void *buffer);
+
 pn_delivery_t *dx_message_inbound_delivery(dx_message_t *qm);
 
 //
