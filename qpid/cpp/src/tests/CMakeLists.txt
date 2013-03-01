@@ -361,4 +361,4 @@ add_library (dlclose_noop MODULE dlclose_noop.c)
 #
 # legacystore
 #
-add_subdirectory(legacystore)
+# add_subdirectory(legacystore)
