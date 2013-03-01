@@ -54,33 +54,42 @@ ResourceCounter::~ResourceCounter() {}
 // Called with lock held.
 //
 bool ResourceCounter::limitApproveLH(
-    const std::string& theTitle,
     countsMap_t& theMap,
     const std::string& theName,
     uint16_t theLimit,
-    bool emitLog) {
+    bool emitLog,
+    bool enforceLimit) {
 
     bool result(true);
-    if (theLimit > 0) {
-        uint16_t count;
-        countsMap_t::iterator eRef = theMap.find(theName);
-        if (eRef != theMap.end()) {
-            count = (uint16_t)(*eRef).second;
-            result = count < theLimit;
-            if (result) {
-                count += 1;
-                (*eRef).second = count;
+    uint16_t count;
+    countsMap_t::iterator eRef = theMap.find(theName);
+    if (eRef != theMap.end()) {
+        count = (uint16_t)(*eRef).second;
+        result = (enforceLimit ? count < theLimit : true);
+        if (result) {
+            count += 1;
+            (*eRef).second = count;
+        }
+    } else {
+        // user not found in map
+        if (enforceLimit) {
+            if (theLimit > 0) {
+                theMap[theName] = count = 1;
+            } else {
+                count = 0;
+                result = false;
             }
-        } else {
-            // Not found
+        }
+        else {
+            // not enforcing the limit
             theMap[theName] = count = 1;
         }
-        if (emitLog) {
-            QPID_LOG(trace, theTitle << theName
-                << " limit=" << theLimit
-                << " curValue=" << count
-                << " result=" << (result ? "allow" : "deny"));
-        }
+    }
+    if (emitLog) {
+        QPID_LOG(trace, "ACL QueueApprover user=" << theName
+            << " limit=" << theLimit
+            << " curValue=" << count
+            << " result=" << (result ? "allow" : "deny"));
     }
     return result;
 }
@@ -92,24 +101,21 @@ bool ResourceCounter::limitApproveLH(
 // Decrement the name's count in map.
 // called with dataLock already taken
 //
-void ResourceCounter::releaseLH(
-    const std::string& theTitle, countsMap_t& theMap, const std::string& theName, uint16_t theLimit) {
+void ResourceCounter::releaseLH(countsMap_t& theMap, const std::string& theName) {
 
-    if (theLimit > 0) {
-        countsMap_t::iterator eRef = theMap.find(theName);
-        if (eRef != theMap.end()) {
-            uint16_t count = (uint16_t) (*eRef).second;
-            assert (count > 0);
-            if (1 == count) {
-                theMap.erase (eRef);
-            } else {
-                (*eRef).second = count - 1;
-            }
+    countsMap_t::iterator eRef = theMap.find(theName);
+    if (eRef != theMap.end()) {
+        uint16_t count = (uint16_t) (*eRef).second;
+        assert (count > 0);
+        if (1 == count) {
+            theMap.erase (eRef);
         } else {
-            // User had no connections.
-            QPID_LOG(notice, theTitle << theName
-                << "' not found in resource count pool");
+            (*eRef).second = count - 1;
         }
+    } else {
+        // User had no connections.
+        QPID_LOG(notice, "ACL resource counter: Queue owner for queue '" << theName
+            << "' not found in resource count pool");
     }
 }
 
@@ -119,11 +125,14 @@ void ResourceCounter::releaseLH(
 //  Count an attempted queue creation by this user.
 //  Disapprove if over limit.
 //
-bool ResourceCounter::approveCreateQueue(const std::string& userId, const std::string& queueName)
+bool ResourceCounter::approveCreateQueue(const std::string& userId,
+        const std::string& queueName,
+        bool enforcingQueueQuotas,
+        uint16_t queueUserQuota )
 {
     Mutex::ScopedLock locker(dataLock);
 
-    bool okByQ = limitApproveLH("ACL Queue creation approver. userId:", queuePerUserMap, userId, queueLimit, true);
+    bool okByQ = limitApproveLH(queuePerUserMap, userId, queueUserQuota, true, enforcingQueueQuotas);
 
     if (okByQ) {
         // Queue is owned by this userId
@@ -133,7 +142,7 @@ bool ResourceCounter::approveCreateQueue(const std::string& userId, const std::s
             << "' queue '" << queueName << "'");
     } else {
 
-        QPID_LOG(error, "Client max queue count limit of " << queueLimit
+        QPID_LOG(error, "Client max queue count limit of " << queueUserQuota
             << " exceeded by '" << userId << "' creating queue '"
             << queueName << "'. Queue creation denied.");
 
@@ -153,7 +162,7 @@ void ResourceCounter::recordDestroyQueue(const std::string& queueName)
 
     queueOwnerMap_t::iterator eRef = queueOwnerMap.find(queueName);
     if (eRef != queueOwnerMap.end()) {
-        releaseLH("ACL resource counter: Queue owner for queue '", queuePerUserMap, (*eRef).second, queueLimit);
+        releaseLH(queuePerUserMap, (*eRef).second);
 
         queueOwnerMap.erase(eRef);
     } else {

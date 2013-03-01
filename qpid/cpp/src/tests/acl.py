@@ -2871,58 +2871,142 @@ class ACLTests(TestBase010):
    # Queue per-user quota
    #=====================================
 
+    def queue_quota(self, user, passwd, count, byPort=None):
+        """ Helper method to:
+        - create a number of queues (should succeed)
+        - create too many queues (should fail)
+        - create another queue after deleting a queue (should succeed)
+        """
+
+        try:
+            if byPort:
+                session = self.get_session_by_port(user, passwd, byPort)
+            else:
+                session = self.get_session(user, passwd)
+        except Exception, e:
+            self.fail("Unexpected error creating session for %s: %s" % (user, str(e)))
+
+        # Should be able to create count queues per user
+        try:
+            for i in range(count):
+                session.queue_declare(queue="%s%d" % (user, i))
+        except Exception, e:
+            self.fail("Could not create %s for %s: %s" % ("%s%d" % (user, i), user, str(e)))
+
+        # next queue should fail
+        try:
+            session.queue_declare(queue="%s%d" % (user, count))
+            self.fail("Should not be able to create another queue for user %s" % user)
+        except Exception, e:
+            if byPort:
+                session = self.get_session_by_port(user, passwd, byPort)
+            else:
+                session = self.get_session(user, passwd)
+
+        if count > 0:
+            # Deleting a queue should allow another queue.
+            session.queue_delete(queue="%s0" % user)
+            try:
+                session.queue_declare(queue="%s%d" % (user, count))
+            except Exception, e:
+                self.fail("Could not recreate additional queue for user %s: %s " % (user, str(e)))
+
+        # Clean up
+        for i in range(1, count+1):
+            session.queue_delete(queue="%s%d" % (user, i))
+        try:
+            session.close()
+        except Exception, e:
+            pass
+
+    def test_queue_per_named_user_quota(self):
+        """
+        Test ACL queue counting limits per named user.
+        """
+        aclf = self.get_acl_file()
+        aclf.write('quota queues 2 ted@QPID carrol@QPID\n')
+        aclf.write('quota queues 1 edward@QPID\n')
+        aclf.write('quota queues 0 mick@QPID\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # named users should be able to create specified number of queues
+        self.queue_quota("ted", 'ted', 2)
+        self.queue_quota("carrol", 'carrol', 2)
+        self.queue_quota("edward", 'edward', 1)
+
+        # User with quota of 0 is denied
+        self.queue_quota("mick", 'mick', 0)
+
+        # User not named in quotas is denied
+        self.queue_quota("dan", 'dan', 0)
+
     def test_queue_per_user_quota(self):
         """
         Test ACL queue counting limits.
         port_q has a limit of 2
         """
         # bob should be able to create two queues
-        session = self.get_session_by_port('bob','bob', self.port_q())
-
-        try:
-            session.queue_declare(queue="queue1")
-            session.queue_declare(queue="queue2")
-        except qpid.session.SessionException, e:
-            self.fail("Error during queue create request");
-
-        # third queue should fail
-        try:
-            session.queue_declare(queue="queue3")
-            self.fail("Should not be able to create third queue")
-        except Exception, e:
-            result = None
-            session = self.get_session_by_port('bob','bob', self.port_q())
+        self.queue_quota("bob", 'bob', 2, self.port_q())
 
         # alice should be able to create two queues
-        session2 = self.get_session_by_port('alice','alice', self.port_q())
+        self.queue_quota("alice", 'alice', 2, self.port_q())
 
-        try:
-            session2.queue_declare(queue="queuea1")
-            session2.queue_declare(queue="queuea2")
-        except qpid.session.SessionException, e:
-            self.fail("Error during queue create request");
 
-        # third queue should fail
-        try:
-            session2.queue_declare(queue="queuea3")
-            self.fail("Should not be able to create third queue")
-        except Exception, e:
-            result = None
-            session2 = self.get_session_by_port('alice','alice', self.port_q())
+    def test_queue_limits_by_unnamed_all(self):
+        """
+        Test ACL control queue limits
+        """
+        aclf = self.get_acl_file()
+        aclf.write('quota queues 2 aliceQUA@QPID bobQUA@QPID\n')
+        aclf.write('quota queues 1 all\n')
+        aclf.write('acl allow all all')
+        aclf.close()
 
-        # bob should be able to delete a queue and create another
-        try:
-            session.queue_delete(queue="queue1")
-            session.queue_declare(queue="queue3")
-        except qpid.session.SessionException, e:
-            self.fail("Error during queue create request");
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
 
-        # alice should be able to delete a queue and create another
-        try:
-            session2.queue_delete(queue="queuea1")
-            session2.queue_declare(queue="queuea3")
-        except qpid.session.SessionException, e:
-            self.fail("Error during queue create request");
+        # By username should be able to connect twice per user
+        self.queue_quota('aliceQUA', 'alice', 2)
+        self.queue_quota('bobQUA', 'bob', 2)
+
+        # User not named in quotas gets 'all' quota
+        self.queue_quota('charlieQUA', 'charlie', 1)
+
+
+    def test_queue_limits_by_group(self):
+        """
+        Test ACL control queue limits
+        """
+        aclf = self.get_acl_file()
+        aclf.write('group hobbits frodoGR@QPID samGR@QPID merryGR@QPID\n')
+        aclf.write('quota queues 2 gandalfGR@QPID aragornGR@QPID\n')
+        aclf.write('quota queues 2 hobbits rosieGR@QPID\n')
+        aclf.write('# user and groups may be overwritten. Should use last value\n')
+        aclf.write('quota queues 3 aragornGR@QPID hobbits\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        # gandalf gets 2
+        self.queue_quota('gandalfGR', 'gandalf', 2)
+
+        # aragorn gets 3
+        self.queue_quota('aragornGR', 'aragorn', 3)
+
+        # frodo gets 3
+        self.queue_quota('frodoGR', 'frodo', 3)
+
+        # User not named in quotas is denied
+        self.queue_quota('bilboGR', 'bilbo', 0)
 
 class BrokerAdmin:
     def __init__(self, broker, username=None, password=None):

@@ -75,16 +75,17 @@ class AclReader {
       private:
         void processName(const std::string& name, const groupMap& groups);
     };
-    typedef boost::shared_ptr<aclRule>          aclRulePtr;
-    typedef std::vector<aclRulePtr>             ruleList;
-    typedef ruleList::const_iterator            rlCitr;
+    typedef boost::shared_ptr<AclData::quotaRuleSet> aclQuotaRuleSet;
+    typedef boost::shared_ptr<aclRule>               aclRulePtr;
+    typedef std::vector<aclRulePtr>                  ruleList;
+    typedef ruleList::const_iterator                 rlCitr;
 
-    typedef std::vector<std::string>            tokList;
-    typedef tokList::const_iterator             tlCitr;
+    typedef std::vector<std::string>                 tokList;
+    typedef tokList::const_iterator                  tlCitr;
 
-    typedef std::set<std::string>               keywordSet;
-    typedef keywordSet::const_iterator          ksCitr;
-    typedef std::pair<std::string, std::string> nvPair; // Name-Value pair
+    typedef std::set<std::string>                    keywordSet;
+    typedef keywordSet::const_iterator               ksCitr;
+    typedef std::pair<std::string, std::string>      nvPair; // Name-Value pair
 
     std::string             fileName;
     int                     lineNumber;
@@ -97,7 +98,7 @@ class AclReader {
     std::ostringstream      errorStream;
 
   public:
-    AclReader(uint16_t cliMaxConnPerUser);
+    AclReader(uint16_t cliMaxConnPerUser, uint16_t cliMaxQueuesPerUser);
     virtual ~AclReader();
     int read(const std::string& fn, boost::shared_ptr<AclData> d); // return=0 for success
     std::string getError();
@@ -118,16 +119,20 @@ class AclReader {
     bool isValidUserName(const std::string& name);
 
     bool processQuotaLine(tokList& toks);
-    bool processQuotaConnLine(tokList& toks);
-    bool processQuotaConnGroup(const std::string&, uint16_t);
-    void printConnectionQuotas() const;
+    bool processQuotaLine(tokList& toks, const std::string theNoun, uint16_t maxSpec, aclQuotaRuleSet theRules);
+    bool processQuotaGroup(const std::string&, uint16_t, aclQuotaRuleSet theRules);
+    void printQuotas(const std::string theNoun, aclQuotaRuleSet theRules) const;
 
     static bool isValidGroupName(const std::string& name);
     static nvPair splitNameValuePair(const std::string& nvpString);
 
     const uint16_t cliMaxConnPerUser;
     bool connQuotaRulesExist;
-    boost::shared_ptr<AclData::quotaRuleSet> connQuota;
+    aclQuotaRuleSet connQuota;
+
+    const uint16_t cliMaxQueuesPerUser;
+    bool queueQuotaRulesExist;
+    aclQuotaRuleSet queueQuota;
 };
 
 }} // namespace qpid::acl
