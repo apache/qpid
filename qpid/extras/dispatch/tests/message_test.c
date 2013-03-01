@@ -24,6 +24,41 @@
 #include <qpid/dispatch/iterator.h>
 #include <proton/message.h>
 
+static char buffer[10000];
+
+static size_t flatten_bufs(dx_message_content_t *content)
+{
+    char        *cursor = buffer;
+    dx_buffer_t *buf    = DEQ_HEAD(content->buffers);
+
+    while (buf) {
+        memcpy(cursor, dx_buffer_base(buf), dx_buffer_size(buf));
+        cursor += dx_buffer_size(buf);
+        buf = buf->next;
+    }
+
+    return (size_t) (cursor - buffer);
+}
+
+
+static void set_content(dx_message_content_t *content, size_t len)
+{
+    char        *cursor = buffer;
+    dx_buffer_t *buf;
+
+    while (len > (size_t) (cursor - buffer)) {
+        buf = dx_allocate_buffer();
+        size_t segment   = dx_buffer_capacity(buf);
+        size_t remaining = len - (size_t) (cursor - buffer);
+        if (segment > remaining)
+            segment = remaining;
+        memcpy(dx_buffer_base(buf), cursor, segment);
+        cursor += segment;
+        dx_buffer_insert(buf, segment);
+        DEQ_INSERT_TAIL(content->buffers, buf);
+    }
+}
+
 
 static char* test_send_to_messenger(void *context)
 {
@@ -35,7 +70,8 @@ static char* test_send_to_messenger(void *context)
     if (buf == 0) return "Expected a buffer in the test message";
 
     pn_message_t *pn_msg = pn_message();
-    int result = pn_message_decode(pn_msg, (const char*) dx_buffer_base(buf), dx_buffer_size(buf));
+    size_t len = flatten_bufs(content);
+    int result = pn_message_decode(pn_msg, buffer, len);
     if (result != 0) return "Error in pn_message_decode";
 
     if (strcmp(pn_message_get_address(pn_msg), "test_addr_0") != 0)
@@ -53,16 +89,15 @@ static char* test_receive_from_messenger(void *context)
     pn_message_t *pn_msg = pn_message();
     pn_message_set_address(pn_msg, "test_addr_1");
 
-    dx_buffer_t *buf  = dx_allocate_buffer();
-    size_t       size = dx_buffer_capacity(buf);
-    int result = pn_message_encode(pn_msg, (char*) dx_buffer_cursor(buf), &size);
+    size_t       size = 10000;
+    int result = pn_message_encode(pn_msg, buffer, &size);
     if (result != 0) return "Error in pn_message_encode";
-    dx_buffer_insert(buf, size);
 
     dx_message_t         *msg     = dx_allocate_message();
     dx_message_content_t *content = MSG_CONTENT(msg);
 
-    DEQ_INSERT_TAIL(content->buffers, buf);
+    set_content(content, size);
+
     int valid = dx_message_check(msg, DX_DEPTH_ALL);
     if (!valid) return "dx_message_check returns 'invalid'";
 
@@ -94,16 +129,15 @@ static char* test_insufficient_check_depth(void *context)
     pn_message_t *pn_msg = pn_message();
     pn_message_set_address(pn_msg, "test_addr_2");
 
-    dx_buffer_t *buf  = dx_allocate_buffer();
-    size_t       size = dx_buffer_capacity(buf);
-    int result = pn_message_encode(pn_msg, (char*) dx_buffer_cursor(buf), &size);
+    size_t       size = 10000;
+    int result = pn_message_encode(pn_msg, buffer, &size);
     if (result != 0) return "Error in pn_message_encode";
-    dx_buffer_insert(buf, size);
 
     dx_message_t         *msg     = dx_allocate_message();
     dx_message_content_t *content = MSG_CONTENT(msg);
 
-    DEQ_INSERT_TAIL(content->buffers, buf);
+    set_content(content, size);
+
     int valid = dx_message_check(msg, DX_DEPTH_DELIVERY_ANNOTATIONS);
     if (!valid) return "dx_message_check returns 'invalid'";
 
