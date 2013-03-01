@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/sys/ProtocolFactory.h"
+#include "qpid/sys/TransportFactory.h"
 
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
@@ -239,7 +239,7 @@ void RdmaIOHandler::initProtocolIn(Rdma::Buffer* buff) {
     }
 }
 
-class RdmaIOProtocolFactory : public ProtocolFactory {
+class RdmaIOProtocolFactory : public TransportAcceptor, public TransportConnector {
     auto_ptr<Rdma::Listener> listener;
     const uint16_t listeningPort;
 
@@ -275,9 +275,10 @@ static class RdmaIOPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
-            ProtocolFactory::shared_ptr protocol(new RdmaIOProtocolFactory(opts.port, opts.connectionBacklog));
-            QPID_LOG(notice, "Rdma: Listening on RDMA port " << protocol->getPort());
-            broker->registerProtocolFactory("rdma", protocol);
+            boost::shared_ptr<RdmaIOProtocolFactory> protocol(new RdmaIOProtocolFactory(opts.port, opts.connectionBacklog));
+            uint16_t port = protocol->getPort();
+            QPID_LOG(notice, "Rdma: Listening on RDMA port " << port);
+            broker->registerTransport("rdma", protocol, protocol, port);
         }
     }
 } rdmaPlugin;

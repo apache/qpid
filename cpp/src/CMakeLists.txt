@@ -1224,6 +1224,7 @@ set (qpidbroker_SOURCES
      qpid/management/ManagementAgent.cpp
      qpid/management/ManagementDirectExchange.cpp
      qpid/management/ManagementTopicExchange.cpp
+     qpid/sys/SocketTransport.cpp
      qpid/sys/TCPIOPlugin.cpp
 )
 add_msvc_version (qpidbroker library dll)
