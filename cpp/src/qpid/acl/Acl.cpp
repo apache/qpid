@@ -64,7 +64,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
     if (aclValues.aclMaxConnectTotal > AclData::getConnectMaxSpec())
         throw Exception("--max-connections switch cannot be larger than " + AclData::getMaxConnectSpecStr());
     if (aclValues.aclMaxQueuesPerUser > AclData::getConnectMaxSpec())
-        throw Exception("--max-queues-per-user switch cannot be larger than " + AclData::getMaxConnectSpecStr());
+        throw Exception("--max-queues-per-user switch cannot be larger than " + AclData::getMaxQueueSpecStr());
 
     agent = broker->getManagementAgent();
 
@@ -164,7 +164,18 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
 
 bool Acl::approveCreateQueue(const std::string& userId, const std::string& queueName)
 {
-    return resourceCounter->approveCreateQueue(userId, queueName);
+//    return resourceCounter->approveCreateQueue(userId, queueName);
+    uint16_t queueLimit(0);
+
+    boost::shared_ptr<AclData> dataLocal;
+    {
+        Mutex::ScopedLock locker(dataLock);
+        dataLocal = data;  //rcu copy
+    }
+
+    (void) dataLocal->getQueueQuotaForUser(userId, &queueLimit);
+
+    return resourceCounter->approveCreateQueue(userId, queueName, dataLocal->enforcingQueueQuotas(), queueLimit);
 }
 
 
@@ -228,7 +239,7 @@ bool Acl::readAclFile(std::string& errorText)
 
 bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     boost::shared_ptr<AclData> d(new AclData);
-    AclReader ar(aclValues.aclMaxConnectPerUser);
+    AclReader ar(aclValues.aclMaxConnectPerUser, aclValues.aclMaxQueuesPerUser);
     if (ar.read(aclFile, d)){
         agent->raiseEvent(_qmf::EventFileLoadFailed("", ar.getError()));
         errorText = ar.getError();
@@ -251,6 +262,10 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
 
     if (data->enforcingConnectionQuotas()){
         QPID_LOG(debug, "ACL: Connection quotas are Enabled.");
+    }
+
+    if (data->enforcingQueueQuotas()){
+        QPID_LOG(debug, "ACL: Queue quotas are Enabled.");
     }
 
     data->aclSource = aclFile;
