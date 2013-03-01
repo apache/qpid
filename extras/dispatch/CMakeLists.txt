@@ -23,6 +23,9 @@ include(CheckSymbolExists)
 
 project(qpid-dispatch C)
 
+enable_testing()
+include (CTest)
+
 set (SO_VERSION_MAJOR 0)
 set (SO_VERSION_MINOR 1)
 set (SO_VERSION "${SO_VERSION_MAJOR}.${SO_VERSION_MINOR}")

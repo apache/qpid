@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include <qpid/dispatch/buffer.h>
+
 int tool_tests();
 int timer_tests();
 int alloc_tests();
@@ -25,6 +27,16 @@ int message_tests();
 
 int main(int argc, char** argv)
 {
+    ssize_t buffer_size = 512;
+
+    if (argc > 1) {
+        buffer_size = atoi(argv[1]);
+        if (buffer_size < 1)
+            return 1;
+    }
+
+    dx_buffer_set_size(buffer_size);
+
     int result = 0;
     result += tool_tests();
     result += timer_tests();
