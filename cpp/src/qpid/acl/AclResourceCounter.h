@@ -52,24 +52,25 @@ private:
     countsMap_t queuePerUserMap;
 
     /** Return approval for proposed resource creation */
-    bool limitApproveLH(const std::string& theTitle,
-                        countsMap_t& theMap,
+    bool limitApproveLH(countsMap_t& theMap,
                         const std::string& theName,
                         uint16_t theLimit,
-                        bool emitLog);
+                        bool emitLog,
+                        bool enforceLimit);
 
     /** Release a connection */
-    void releaseLH(const std::string& theTitle,
-                   countsMap_t& theMap,
-                   const std::string& theName,
-                   uint16_t theLimit);
+    void releaseLH(countsMap_t& theMap,
+                   const std::string& theName);
 
 public:
     ResourceCounter(Acl& acl, uint16_t ql);
     ~ResourceCounter();
 
     // Queue counting
-    bool approveCreateQueue(const std::string& userId, const std::string& queueName);
+    bool approveCreateQueue(const std::string& userId,
+    		const std::string& queueName,
+            bool enforcingQueueQuotas,
+            uint16_t queueUserQuota );
     void recordDestroyQueue(const std::string& queueName);
 };
 

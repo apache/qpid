@@ -35,6 +35,7 @@ namespace acl {
     const std::string AclData::ACL_KEYWORD_GROUP             = "group";
     const std::string AclData::ACL_KEYWORD_QUOTA             = "quota";
     const std::string AclData::ACL_KEYWORD_QUOTA_CONNECTIONS = "connections";
+    const std::string AclData::ACL_KEYWORD_QUOTA_QUEUES      = "queues";
     const char        AclData::ACL_SYMBOL_WILDCARD           = '*';
     const std::string AclData::ACL_KEYWORD_WILDCARD          = "*";
     const char        AclData::ACL_SYMBOL_LINE_CONTINUATION  = '\\';
@@ -47,7 +48,9 @@ namespace acl {
         transferAcl(false),
         aclSource("UNKNOWN"),
         connQuotaRulesExist(false),
-        connQuotaRuleSettings(new quotaRuleSet)
+        connQuotaRuleSettings(new quotaRuleSet),
+        queueQuotaRulesExist(false),
+        queueQuotaRuleSettings(new quotaRuleSet)
     {
         for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++)
         {
@@ -73,6 +76,8 @@ namespace acl {
         transferAcl = false;
         connQuotaRulesExist = false;
         connQuotaRuleSettings->clear();
+        queueQuotaRulesExist = false;
+        queueQuotaRuleSettings->clear();
     }
 
 
@@ -557,6 +562,62 @@ namespace acl {
         }
         return connQuotaRulesExist;
     }
+
+    //
+    //
+    //
+    void AclData::setQueueQuotaRuleSettings (
+                bool rulesExist, boost::shared_ptr<quotaRuleSet> quotaPtr)
+    {
+        queueQuotaRulesExist = rulesExist;
+        queueQuotaRuleSettings = quotaPtr;
+    }
+
+
+    //
+    // getQueueQuotaForUser
+    //
+    // Return the true or false value of queueQuotaRulesExist,
+    //  indicating whether any kind of lookup was done or not.
+    //
+    // When lookups are performed return the result value of
+    //  1. The user's setting else
+    //  2. The 'all' user setting else
+    //  3. Zero
+    // When lookups are not performed then return a result value of Zero.
+    //
+    bool AclData::getQueueQuotaForUser(const std::string& theUserName,
+                                      uint16_t* theResult) const {
+        if (queueQuotaRulesExist) {
+            // look for this user explicitly
+            quotaRuleSetItr nameItr = (*queueQuotaRuleSettings).find(theUserName);
+            if (nameItr != (*queueQuotaRuleSettings).end()) {
+                QPID_LOG(trace, "ACL: Queue quota for user " << theUserName
+                    << " explicitly set to : " << (*nameItr).second);
+                *theResult = (*nameItr).second;
+            } else {
+                // Look for the 'all' user
+                nameItr = (*queueQuotaRuleSettings).find(ACL_KEYWORD_ALL);
+                if (nameItr != (*queueQuotaRuleSettings).end()) {
+                    QPID_LOG(trace, "ACL: Queue quota for user " << theUserName
+                        << " chosen through value for 'all' : " << (*nameItr).second);
+                    *theResult = (*nameItr).second;
+                } else {
+                    // Neither userName nor "all" found.
+                    QPID_LOG(trace, "ACL: Queue quota for user " << theUserName
+                        << " absent in quota settings. Return value : 0");
+                    *theResult = 0;
+                }
+            }
+        } else {
+            // Rules do not exist
+            QPID_LOG(trace, "ACL: Queue quota for user " << theUserName
+                << " unavailable; quota settings are not specified. Return value : 0");
+            *theResult = 0;
+        }
+        return queueQuotaRulesExist;
+    }
+
 
     //
     //

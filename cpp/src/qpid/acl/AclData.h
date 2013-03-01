@@ -144,6 +144,7 @@ public:
     static const std::string ACL_KEYWORD_GROUP;
     static const std::string ACL_KEYWORD_QUOTA;
     static const std::string ACL_KEYWORD_QUOTA_CONNECTIONS;
+    static const std::string ACL_KEYWORD_QUOTA_QUEUES;
     static const char        ACL_SYMBOL_WILDCARD;
     static const std::string ACL_KEYWORD_WILDCARD;
     static const char        ACL_SYMBOL_LINE_CONTINUATION;
@@ -164,6 +165,13 @@ public:
     bool enforcingConnectionQuotas() { return connQuotaRulesExist; }
     bool getConnQuotaForUser(const std::string&, uint16_t*) const;
 
+    // Per user queue quotas extracted from acl rule file
+    //   Set by reader
+    void setQueueQuotaRuleSettings (bool, boost::shared_ptr<quotaRuleSet>);
+    //   Get by queue approvers
+    bool enforcingQueueQuotas() { return queueQuotaRulesExist; }
+    bool getQueueQuotaForUser(const std::string&, uint16_t*) const;
+
     /** getConnectMaxSpec
      * Connection quotas are held in uint16_t variables.
      * This function specifies the largest value that a user is allowed
@@ -181,6 +189,12 @@ public:
         return "65530";
     }
 
+    static uint16_t getQueueMaxSpec() {
+        return 65530;
+    }
+    static std::string getMaxQueueSpecStr() {
+        return "65530";
+    }
 
     AclData();
     virtual ~AclData();
@@ -197,6 +211,9 @@ private:
     // Per-user connection quota
     bool connQuotaRulesExist;
     boost::shared_ptr<quotaRuleSet> connQuotaRuleSettings; // Map of user-to-N values from rule file
+    // Per-user queue quota
+    bool queueQuotaRulesExist;
+    boost::shared_ptr<quotaRuleSet> queueQuotaRuleSettings; // Map of user-to-N values from rule file
 };
 
 }} // namespace qpid::acl

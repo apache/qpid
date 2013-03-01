@@ -222,6 +222,8 @@ namespace acl {
 
         // connection quota
         d->setConnQuotaRuleSettings(connQuotaRulesExist, connQuota);
+        // queue quota
+        d->setQueueQuotaRuleSettings(queueQuotaRulesExist, queueQuota);
     }
 
 
@@ -238,11 +240,15 @@ namespace acl {
         }
     }
 
-    AclReader::AclReader(uint16_t theCliMaxConnPerUser) : lineNumber(0), contFlag(false),
+    AclReader::AclReader(uint16_t theCliMaxConnPerUser, uint16_t theCliMaxQueuesPerUser) :
+        lineNumber(0), contFlag(false),
         validationMap(new AclHelper::objectMap),
         cliMaxConnPerUser (theCliMaxConnPerUser),
         connQuotaRulesExist(false),
-        connQuota(new AclData::quotaRuleSet) {
+        connQuota(new AclData::quotaRuleSet),
+        cliMaxQueuesPerUser (theCliMaxQueuesPerUser),
+        queueQuotaRulesExist(false),
+        queueQuota(new AclData::quotaRuleSet) {
         AclHelper::loadValidationMap(validationMap);
         names.insert(AclData::ACL_KEYWORD_WILDCARD);
     }
@@ -266,6 +272,11 @@ namespace acl {
         if (cliMaxConnPerUser > 0) {
             connQuotaRulesExist = true;
             (*connQuota)[AclData::ACL_KEYWORD_ALL] = cliMaxConnPerUser;
+        }
+        // Propagate nonzero per-user max queue setting from CLI
+        if (cliMaxQueuesPerUser > 0) {
+            queueQuotaRulesExist = true;
+            (*queueQuota)[AclData::ACL_KEYWORD_ALL] = cliMaxQueuesPerUser;
         }
         // Loop to process the Acl file
         try {
@@ -296,7 +307,8 @@ namespace acl {
         }
         printNames();
         printRules();
-        printConnectionQuotas();
+        printQuotas(AclData::ACL_KEYWORD_QUOTA_CONNECTIONS, connQuota);
+        printQuotas(AclData::ACL_KEYWORD_QUOTA_QUEUES, queueQuota);
         loadDecisionData(d);
 
         return 0;
@@ -370,61 +382,69 @@ namespace acl {
         }
 
         if (toks[1].compare(AclData::ACL_KEYWORD_QUOTA_CONNECTIONS) == 0) {
-            return processQuotaConnLine(toks);
+            if (processQuotaLine(toks, AclData::ACL_KEYWORD_QUOTA_CONNECTIONS, AclData::getConnectMaxSpec(), connQuota)) {
+                // We have processed a connection quota rule
+                connQuotaRulesExist = true;
+                return true;
+            }
+        } else if (toks[1].compare(AclData::ACL_KEYWORD_QUOTA_QUEUES) == 0) {
+            if (processQuotaLine(toks, AclData::ACL_KEYWORD_QUOTA_QUEUES, AclData::getConnectMaxSpec(), queueQuota)) {
+                // We have processed a queue quota rule
+                queueQuotaRulesExist = true;
+                return true;
+            }
         } else {
             errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
                 << ", Quota type \"" << toks[1] << "\" unrecognized.";
             return false;
         }
+        return false;
     }
 
 
-    // Process 'quota connections' rule lines
+    // Process quota rule lines
     // Return true if the line is successfully processed without errors
-    bool AclReader::processQuotaConnLine(tokList& toks) {
+    bool AclReader::processQuotaLine(tokList& toks, const std::string theNoun, uint16_t maxSpec, aclQuotaRuleSet theRules) {
         const unsigned toksSize = toks.size();
 
-        uint16_t nConns(0);
+        uint16_t nEntities(0);
         try {
-            nConns = boost::lexical_cast<uint16_t>(toks[2]);
+        	nEntities = boost::lexical_cast<uint16_t>(toks[2]);
         } catch(const boost::bad_lexical_cast&) {
             errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
-                << ", Connection quota value \"" << toks[2]
+                << ", " << theNoun << " quota value \"" << toks[2]
                 << "\" cannot be converted to a 16-bit unsigned integer.";
             return false;
         }
 
-        // limit check the connection setting
-        if (nConns > AclData::getConnectMaxSpec())
+        // limit check the setting
+        if (nEntities > maxSpec)
         {
             errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
-                << ", Connection quota value \"" << toks[2]
+                << ", " << theNoun << " quota value \"" << toks[2]
                 << "\" exceeds maximum configuration setting of "
-                << AclData::getConnectMaxSpec();
+                << maxSpec;
             return false;
         }
 
-        // Apply the connection count to all names in rule
+        // Apply the ount to all names in rule
         for (unsigned idx = 3; idx < toksSize; idx++) {
             if (groups.find(toks[idx]) == groups.end()) {
                 // This is the name of an individual, not a group
-                (*connQuota)[toks[idx]] = nConns;
+                (*theRules)[toks[idx]] = nEntities;
             } else {
-                if (!processQuotaConnGroup(toks[idx], nConns))
+                if (!processQuotaGroup(toks[idx], nEntities, theRules))
                     return false;
             }
         }
-
-        // We have processed a connection quota rule
-        connQuotaRulesExist = true;
 
         return true;
     }
 
 
-    // Process 'quota connections' group expansion
+    // Process quota group expansion
     // Return true if the quota is applied to all members of the group
-    bool AclReader::processQuotaConnGroup(const std::string& theGroup, uint16_t theQuota) {
+    bool AclReader::processQuotaGroup(const std::string& theGroup, uint16_t theQuota, aclQuotaRuleSet theRules) {
         gmCitr citr = groups.find(theGroup);
 
         if (citr == groups.end()) {
@@ -435,9 +455,9 @@ namespace acl {
 
         for (nsCitr gni=citr->second->begin(); gni!=citr->second->end(); gni++) {
             if (groups.find(*gni) == groups.end()) {
-                (*connQuota)[*gni] = theQuota;
+                (*theRules)[*gni] = theQuota;
             } else {
-                if (!processQuotaConnGroup(*gni, theQuota))
+                if (!processQuotaGroup(*gni, theQuota, theRules))
                     return false;
             }
         }
@@ -445,14 +465,14 @@ namespace acl {
     }
 
 
-    void AclReader::printConnectionQuotas() const {
-        QPID_LOG(debug, "ACL: connection quota: " << (*connQuota).size() << " rules found:");
+    void AclReader::printQuotas(const std::string theNoun, aclQuotaRuleSet theRules) const {
+        QPID_LOG(debug, "ACL: " << theNoun << " quota: " << (*theRules).size() << " rules found:");
         int cnt = 1;
-        for (AclData::quotaRuleSetItr itr=(*connQuota).begin();
-                                      itr != (*connQuota).end();
+        for (AclData::quotaRuleSetItr itr=(*theRules).begin();
+                                      itr != (*theRules).end();
                                       ++itr,++cnt) {
             QPID_LOG(debug, "ACL: quota " << cnt << " : " << (*itr).second
-                << " connections for " << (*itr).first)
+                << " " << theNoun << " for " << (*itr).first)
         }
     }
 
