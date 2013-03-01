@@ -76,6 +76,7 @@ std::string SocketAddress::asString(::sockaddr const * const addr, size_t addrle
     switch (addr->sa_family) {
         case AF_INET: s += dispName; break;
         case AF_INET6: s += "["; s += dispName; s+= "]"; break;
+        case AF_UNIX: s += "UNIX:"; break;
         default: throw Exception(QPID_MSG("Unexpected socket type"));
     }
     s += ":";

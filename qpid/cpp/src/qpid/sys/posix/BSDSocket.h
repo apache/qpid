@@ -45,6 +45,10 @@ class QPID_COMMON_CLASS_EXTERN BSDSocket : public Socket
 public:
     /** Create a socket wrapper for descriptor. */
     QPID_COMMON_EXTERN BSDSocket();
+
+    /** Construct socket with existing fd (posix specific and not in Socket interface) */
+    QPID_COMMON_EXTERN BSDSocket(int fd);
+
     QPID_COMMON_EXTERN ~BSDSocket();
 
     QPID_COMMON_EXTERN operator const IOHandle&() const;
@@ -103,10 +107,6 @@ protected:
     mutable std::string peername;
     mutable bool nonblocking;
     mutable bool nodelay;
-
-    /** Construct socket with existing handle */
-    BSDSocket(int fd);
-    friend class qpid::sys::ssl::SslMuxSocket; // Needed for this constructor
 };
 
 }}

@@ -873,6 +873,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
      qpid/broker/SignalHandler.h
      qpid/broker/SignalHandler.cpp
      qpid/broker/posix/BrokerDefaults.cpp
+     qpid/broker/posix/SocketFDPlugin.cpp
   )
 
   set (qpidclient_platform_SOURCES
