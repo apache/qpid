@@ -249,7 +249,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         ReplyTo replyTo = _messageProps.getReplyTo();
 
-        if (replyTo == null)
+        if ((replyTo == null) || ((replyTo.getExchange() == null) && (replyTo.getRoutingKey() == null)))
         {
             return null;
         }
