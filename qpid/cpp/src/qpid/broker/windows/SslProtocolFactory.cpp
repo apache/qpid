@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +19,8 @@
  *
  */
 
-#include "qpid/sys/ProtocolFactory.h"
+#include "qpid/sys/TransportFactory.h"
+#include "qpid/sys/SocketTransport.h"
 
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
@@ -74,17 +75,14 @@ struct SslServerOptions : qpid::Options
              "Local store name location for certificates ( CurrentUser | LocalMachine | CurrentService )")
             ("ssl-cert-name", optValue(certName, "NAME"), "Name of the certificate to use")
             ("ssl-port", optValue(port, "PORT"), "Port on which to listen for SSL connections")
-            ("ssl-require-client-authentication", optValue(clientAuth), 
+            ("ssl-require-client-authentication", optValue(clientAuth),
              "Forces clients to authenticate in order to establish an SSL connection");
     }
 };
 
-class SslProtocolFactory : public qpid::sys::ProtocolFactory {
-    boost::ptr_vector<Socket> listeners;
-    boost::ptr_vector<AsynchAcceptor> acceptors;
+class SslProtocolFactory : public qpid::sys::SocketAcceptor, public qpid::sys::TransportConnector {
     Timer& brokerTimer;
     uint32_t maxNegotiateTime;
-    uint16_t listeningPort;
     const bool tcpNoDelay;
     std::string brokerHost;
     const bool clientAuthSelected;
@@ -95,12 +93,10 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
   public:
     SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions&, Timer& timer);
     ~SslProtocolFactory();
-    void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
+
     void connect(sys::Poller::shared_ptr, const std::string& name, const std::string& host, const std::string& port,
                  sys::ConnectionCodec::Factory*,
                  ConnectFailedCallback failed);
-
-    uint16_t getPort() const;
 
   private:
     void connectFailed(const qpid::sys::Socket&,
@@ -119,16 +115,20 @@ static struct SslPlugin : public Plugin {
 
     void earlyInitialize(Target&) {
     }
-    
+
     void initialize(Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
             try {
                 const broker::Broker::Options& opts = broker->getOptions();
-                ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(opts, options, broker->getTimer()));
-                QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
-                broker->registerProtocolFactory("ssl", protocol);
+                boost::shared_ptr<SslProtocolFactory> protocol(new SslProtocolFactory(opts, options, broker->getTimer()));
+                uint16_t port =
+                    protocol->listen(opts.listenInterfaces,
+                                     boost::lexical_cast<std::string>(opts.port), opts.connectionBacklog,
+                                     &createSocket);
+                QPID_LOG(notice, "Listening for SSL connections on TCP port " << port);
+                broker->registerTransport("ssl", protocol, protocol, port);
             } catch (const std::exception& e) {
                 QPID_LOG(error, "Failed to initialise SSL listener: " << e.what());
             }
@@ -136,34 +136,10 @@ static struct SslPlugin : public Plugin {
     }
 } sslPlugin;
 
-namespace {
-    // Expand list of Interfaces and addresses to a list of addresses
-    std::vector<std::string> expandInterfaces(const std::vector<std::string>& interfaces) {
-        std::vector<std::string> addresses;
-        // If there are no specific interfaces listed use a single "" to listen on every interface
-        if (interfaces.empty()) {
-            addresses.push_back("");
-            return addresses;
-        }
-        for (unsigned i = 0; i < interfaces.size(); ++i) {
-            const std::string& interface = interfaces[i];
-            if (!(SystemInfo::getInterfaceAddresses(interface, addresses))) {
-                // We don't have an interface of that name -
-                // Check for IPv6 ('[' ']') brackets and remove them
-                // then pass to be looked up directly
-                if (interface[0]=='[' && interface[interface.size()-1]==']') {
-                    addresses.push_back(interface.substr(1, interface.size()-2));
-                } else {
-                    addresses.push_back(interface);
-                }
-            }
-        }
-        return addresses;
-    }
-}
-
 SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options, Timer& timer)
-    : brokerTimer(timer),
+    : SocketAcceptor(opts.tcpNoDelay, false, opts.maxNegotiateTime, timer,
+                     boost::bind(&SslProtocolFactory::establishedIncoming, this, _1, _2, _3)),
+      brokerTimer(timer),
       maxNegotiateTime(opts.maxNegotiateTime),
       tcpNoDelay(opts.tcpNoDelay),
       clientAuthSelected(options.clientAuth) {
@@ -228,33 +204,6 @@ SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts
         throw QPID_WINDOWS_ERROR(status);
     ::CertFreeCertificateContext(certContext);
     ::CertCloseStore(certStoreHandle, 0);
-
-    std::vector<std::string> addresses = expandInterfaces(opts.listenInterfaces);
-    if (addresses.empty()) {
-        // We specified some interfaces, but couldn't find addresses for them
-        QPID_LOG(warning, "TCP/TCP6: No specified network interfaces found: Not Listening");
-        listeningPort = 0;
-    }
-
-    for (unsigned i = 0; i<addresses.size(); ++i) {
-        QPID_LOG(debug, "Using interface: " << addresses[i]);
-        SocketAddress sa(addresses[i], boost::lexical_cast<std::string>(options.port));
-
-
-        // We must have at least one resolved address
-        QPID_LOG(info, "SSL Listening to: " << sa.asString())
-        Socket* s = createSocket();
-        listeningPort = s->listen(sa, opts.connectionBacklog);
-        listeners.push_back(s);
-
-        // Try any other resolved addresses
-        while (sa.nextAddress()) {
-            QPID_LOG(info, "SSL Listening to: " << sa.asString())
-            Socket* s = createSocket();
-            s->listen(sa, opts.connectionBacklog);
-            listeners.push_back(s);
-        }
-    }
 }
 
 SslProtocolFactory::~SslProtocolFactory() {
@@ -273,7 +222,7 @@ void SslProtocolFactory::establishedIncoming(sys::Poller::shared_ptr poller,
                                              sys::ConnectionCodec::Factory* f) {
     sys::AsynchIOHandler* async = new sys::AsynchIOHandler(s.getFullAddress(), f, false, false);
 
-    sys::AsynchIO *aio = 
+    sys::AsynchIO *aio =
         new qpid::sys::windows::ServerSslAsynchIO(
             clientAuthSelected,
             s,
@@ -294,7 +243,7 @@ void SslProtocolFactory::establishedOutgoing(sys::Poller::shared_ptr poller,
                                              std::string& name) {
     sys::AsynchIOHandler* async = new sys::AsynchIOHandler(name, f, true, false);
 
-    sys::AsynchIO *aio = 
+    sys::AsynchIO *aio =
         new qpid::sys::windows::ClientSslAsynchIO(
             brokerHost,
             s,
@@ -321,20 +270,6 @@ void SslProtocolFactory::establishedCommon(sys::Poller::shared_ptr poller,
 
     async->init(aio, brokerTimer, maxNegotiateTime);
     aio->start(poller);
-}
-
-uint16_t SslProtocolFactory::getPort() const {
-    return listeningPort; // Immutable no need for lock.
-}
-
-void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
-                                sys::ConnectionCodec::Factory* fact) {
-    for (unsigned i = 0; i<listeners.size(); ++i) {
-        acceptors.push_back(
-            AsynchAcceptor::create(listeners[i],
-                            boost::bind(&SslProtocolFactory::establishedIncoming, this, poller, _1, fact)));
-        acceptors[i].start(poller);
-    }
 }
 
 void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
@@ -376,4 +311,4 @@ void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
                                         this, _1, _2, _3));
 }
 
-}}} // namespace qpid::sys::windows
+}}}

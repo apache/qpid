@@ -1,5 +1,5 @@
-#ifndef _sys_ProtocolFactory_h
-#define _sys_ProtocolFactory_h
+#ifndef QPID_SYS_TRANSPORTFACTORY_H
+#define QPID_SYS_TRANSPORTFACTORY_H
 
 /*
  *
@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,24 +22,34 @@
  *
  */
 
-#include "qpid/sys/IntegerTypes.h"
 #include "qpid/SharedObject.h"
 #include "qpid/sys/ConnectionCodec.h"
+#include <string>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace sys {
 
+class AsynchAcceptor;
 class Poller;
+class Timer;
 
-class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
+class TransportAcceptor : public qpid::SharedObject<TransportAcceptor>
 {
   public:
+    virtual ~TransportAcceptor() = 0;
+    virtual void accept(boost::shared_ptr<Poller>, ConnectionCodec::Factory*) = 0;
+};
+
+inline TransportAcceptor::~TransportAcceptor() {}
+
+class TransportConnector : public qpid::SharedObject<TransportConnector>
+{
+public:
     typedef boost::function2<void, int, std::string> ConnectFailedCallback;
 
-    virtual ~ProtocolFactory() = 0;
-    virtual uint16_t getPort() const = 0;
-    virtual void accept(boost::shared_ptr<Poller>, ConnectionCodec::Factory*) = 0;
+    virtual ~TransportConnector() = 0;
     virtual void connect(
         boost::shared_ptr<Poller>,
         const std::string& name,
@@ -48,10 +58,8 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
         ConnectFailedCallback failed) = 0;
 };
 
-inline ProtocolFactory::~ProtocolFactory() {}
+inline TransportConnector::~TransportConnector() {}
 
 }}
 
-
-    
-#endif  //!_sys_ProtocolFactory_h
+#endif

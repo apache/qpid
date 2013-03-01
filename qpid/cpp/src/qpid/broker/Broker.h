@@ -51,7 +51,8 @@
 namespace qpid {
 
 namespace sys {
-class ProtocolFactory;
+class TransportAcceptor;
+class TransportConnector;
 class Poller;
 class Timer;
 }
@@ -124,8 +125,23 @@ class Broker : public sys::Runnable, public Plugin::Target,
     };
 
   private:
-    typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
+    struct TransportInfo {
+        boost::shared_ptr<sys::TransportAcceptor> acceptor;
+        boost::shared_ptr<sys::TransportConnector> connectorFactory;
+        uint16_t port;
 
+        TransportInfo() :
+            port(0)
+        {}
+
+        TransportInfo(boost::shared_ptr<sys::TransportAcceptor> a, boost::shared_ptr<sys::TransportConnector> c, uint16_t p) :
+            acceptor(a),
+            connectorFactory(c),
+            port(p)
+        {}
+    };
+    typedef std::map<std::string, TransportInfo > TransportMap;
+    
     void declareStandardExchange(const std::string& name, const std::string& type);
     void setStore ();
     void setLogLevel(const std::string& level);
@@ -150,7 +166,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     std::auto_ptr<sys::Timer> timer;
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
-    ProtocolFactoryMap protocolFactories;
+    TransportMap transportMap;
     std::auto_ptr<MessageStore> store;
     AclModule* acl;
     DataDir dataDir;
@@ -228,9 +244,11 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint32_t methodId, management::Args& args, std::string& text);
 
     /** Add to the broker's protocolFactorys */
-    QPID_BROKER_EXTERN void registerProtocolFactory(
-        const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
-
+    QPID_BROKER_EXTERN void registerTransport(
+        const std::string& name,
+        boost::shared_ptr<sys::TransportAcceptor>, boost::shared_ptr<sys::TransportConnector>,
+        uint16_t port);
+    
     /** Accept connections */
     QPID_BROKER_EXTERN void accept();
 
@@ -251,7 +269,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint32_t  qty,
         const qpid::types::Variant::Map& filter);
 
-    QPID_BROKER_EXTERN boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(
+    QPID_BROKER_EXTERN const TransportInfo& getTransportInfo(
         const std::string& name = TCP_TRANSPORT) const;
 
     /** Expose poller so plugins can register their descriptors. */

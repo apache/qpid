@@ -68,7 +68,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/Uuid.h"
-#include "qpid/sys/ProtocolFactory.h"
+#include "qpid/sys/TransportFactory.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Thread.h"
@@ -89,7 +89,8 @@
 #include <iostream>
 #include <memory>
 
-using qpid::sys::ProtocolFactory;
+using qpid::sys::TransportAcceptor;
+using qpid::sys::TransportConnector;
 using qpid::sys::Poller;
 using qpid::sys::Dispatcher;
 using qpid::sys::Thread;
@@ -485,7 +486,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         string transport = hp.i_transport.empty() ? TCP_TRANSPORT : hp.i_transport;
         QPID_LOG (debug, "Broker::connect() " << hp.i_host << ":" << hp.i_port << "; transport=" << transport <<
                         "; durable=" << (hp.i_durable?"T":"F") << "; authMech=\"" << hp.i_authMechanism << "\"");
-        if (!getProtocolFactory(transport)) {
+        if (!getTransportInfo(transport).connectorFactory) {
             QPID_LOG(error, "Transport '" << transport << "' not supported");
             text = "transport type not supported";
             return  Manageable::STATUS_NOT_IMPLEMENTED;
@@ -795,7 +796,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
             }
         }
 
-        if (!getProtocolFactory(transport)) {
+        if (!getTransportInfo(transport).connectorFactory) {
             QPID_LOG(error, "Transport '" << transport << "' not supported.");
             throw UnsupportedTransport(transport);
         }
@@ -1011,30 +1012,29 @@ bool Broker::getLogHiresTimestamp()
 }
 
 
-boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string& name) const {
-    ProtocolFactoryMap::const_iterator i
-        = name.empty() ? protocolFactories.begin() : protocolFactories.find(name);
-    if (i == protocolFactories.end()) return boost::shared_ptr<ProtocolFactory>();
+const Broker::TransportInfo& Broker::getTransportInfo(const std::string& name) const {
+    static TransportInfo nullTransportInfo;
+    TransportMap::const_iterator i
+        = name.empty() ? transportMap.begin() : transportMap.find(name);
+    if (i == transportMap.end()) return nullTransportInfo;
     else return i->second;
 }
 
 uint16_t Broker::getPort(const std::string& name) const  {
-    boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(name);
-    if (factory) {
-        return factory->getPort();
+    if (int p = getTransportInfo(name).port) {
+        return p;
     } else {
         throw NoSuchTransportException(QPID_MSG("No such transport: '" << name << "'"));
     }
 }
 
-void Broker::registerProtocolFactory(const std::string& name, ProtocolFactory::shared_ptr protocolFactory) {
-    protocolFactories[name] = protocolFactory;
-    Url::addProtocol(name);
+void Broker::registerTransport(const std::string& name, boost::shared_ptr<TransportAcceptor> a, boost::shared_ptr<TransportConnector> c, uint16_t p) {
+    transportMap[name] = TransportInfo(a, c, p);
 }
 
 void Broker::accept() {
-    for (ProtocolFactoryMap::const_iterator i = protocolFactories.begin(); i != protocolFactories.end(); i++) {
-        i->second->accept(poller, factory.get());
+    for (TransportMap::const_iterator i = transportMap.begin(); i != transportMap.end(); i++) {
+        if (i->second.acceptor) i->second.acceptor->accept(poller, factory.get());
     }
 }
 
@@ -1043,8 +1043,8 @@ void Broker::connect(
     const std::string& host, const std::string& port, const std::string& transport,
     boost::function2<void, int, std::string> failed)
 {
-    boost::shared_ptr<ProtocolFactory> pf = getProtocolFactory(transport);
-    if (pf) pf->connect(poller, name, host, port, factory.get(), failed);
+    boost::shared_ptr<TransportConnector> tcf = getTransportInfo(transport).connectorFactory;
+    if (tcf) tcf->connect(poller, name, host, port, factory.get(), failed);
     else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
 }
 
