@@ -248,7 +248,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         const std::string& name,
         boost::shared_ptr<sys::TransportAcceptor>, boost::shared_ptr<sys::TransportConnector>,
         uint16_t port);
-    
+
     /** Accept connections */
     QPID_BROKER_EXTERN void accept();
 

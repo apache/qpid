@@ -208,7 +208,9 @@ endif
 libqpidcommon_la_SOURCES += $(poller) $(systeminfo)
 
 posix_broker_src = \
-  qpid/broker/posix/BrokerDefaults.cpp
+  qpid/broker/posix/BrokerDefaults.cpp \
+  qpid/broker/posix/SocketFDPlugin.cpp
+
 
 lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
