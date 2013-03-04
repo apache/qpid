@@ -221,10 +221,77 @@ bool tokeniseOperator(std::string::const_iterator& s, std::string::const_iterato
     return true;
 }
 
-// Can't parse numerics yet
-bool tokeniseNumeric(std::string::const_iterator& /*s*/, std::string::const_iterator& /*e*/, Token& /*tok*/)
+bool tokeniseNumeric(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
 {
-    return false;
+    std::string::const_iterator t = s;
+
+    // Hand constructed state machine recogniser
+    enum {
+        START,
+        REJECT,
+        DIGIT,
+        DECIMAL_START,
+        DECIMAL,
+        EXPONENT_SIGN,
+        EXPONENT_START,
+        EXPONENT,
+        ACCEPT_EXACT,
+        ACCEPT_INEXACT
+    } state = START;
+
+    while (true)
+    switch (state) {
+    case START:
+        if (t==e) {state = REJECT;}
+        else if (std::isdigit(*t)) {++t; state = DIGIT;}
+        else if (*t=='.') {++t; state = DECIMAL_START;}
+        else state = REJECT;
+        break;
+    case DECIMAL_START:
+        if (t==e) {state = REJECT;}
+        else if (std::isdigit(*t)) {++t; state = DECIMAL;}
+        else state = REJECT;
+        break;
+    case EXPONENT_SIGN:
+        if (t==e) {state = REJECT;}
+        else if (*t=='-' || *t=='+') {++t; state = EXPONENT_START;}
+        else if (std::isdigit(*t)) {++t; state = EXPONENT;}
+        else state = REJECT;
+        break;
+    case EXPONENT_START:
+        if (t==e) {state = REJECT;}
+        else if (std::isdigit(*t)) {++t; state = EXPONENT;}
+        else state = REJECT;
+        break;
+    case DIGIT:
+        if (t==e) {state = ACCEPT_EXACT;}
+        else if (std::isdigit(*t)) {++t; state = DIGIT;}
+        else if (*t=='.') {++t; state = DECIMAL;}
+        else if (*t=='e' || *t=='E') {++t; state = EXPONENT_SIGN;}
+        else state = ACCEPT_EXACT;
+        break;
+    case DECIMAL:
+        if (t==e) {state = ACCEPT_INEXACT;}
+        else if (std::isdigit(*t)) {++t; state = DECIMAL;}
+        else if (*t=='e' || *t=='E') {++t; state = EXPONENT_SIGN;}
+        else state = ACCEPT_INEXACT;
+        break;
+    case EXPONENT:
+        if (t==e) {state = ACCEPT_INEXACT;}
+        else if (std::isdigit(*t)) {++t; state = EXPONENT;}
+        else state = ACCEPT_INEXACT;
+        break;
+    case ACCEPT_EXACT:
+        tok = Token(T_NUMERIC_EXACT, s, t);
+        s = t;
+        return true;
+    case ACCEPT_INEXACT:
+        tok = Token(T_NUMERIC_APPROX, s, t);
+        s = t;
+        return true;
+    case REJECT:
+        return false;
+    };
 }
 
 Tokeniser::Tokeniser(const std::string::const_iterator& s, const std::string::const_iterator& e) :

@@ -29,29 +29,15 @@ namespace qpid {
 namespace broker {
 
 class SelectorEnv;
-class Tokeniser;
 
-class Expression {
+class TopExpression {
 public:
-    virtual ~Expression() {}
-    virtual void repr(std::ostream&) const = 0;
-    virtual std::string eval(const SelectorEnv&) const = 0;
-};
-
-class BoolExpression {
-public:
-    virtual ~BoolExpression() {};
+    virtual ~TopExpression() {};
     virtual void repr(std::ostream&) const = 0;
     virtual bool eval(const SelectorEnv&) const = 0;
-};
 
-BoolExpression* parseTopBoolExpression(const std::string& exp);
-BoolExpression* parseBoolExpression(Tokeniser&);
-BoolExpression* parseOrExpression(Tokeniser&);
-BoolExpression* parseAndExpression(Tokeniser&);
-BoolExpression* parseNotExpression(Tokeniser&);
-BoolExpression* parseEqualityExpression(Tokeniser&);
-Expression* parsePrimaryExpression(Tokeniser&);
+    static TopExpression* parse(const std::string& exp);
+};
 
 }}
 

@@ -719,6 +719,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SelectorExpression.h \
   qpid/broker/SelectorToken.cpp \
   qpid/broker/SelectorToken.h \
+  qpid/broker/SelectorValue.cpp \
+  qpid/broker/SelectorValue.h \
   qpid/broker/SemanticState.cpp \
   qpid/broker/SemanticState.h \
   qpid/broker/SessionAdapter.cpp \
