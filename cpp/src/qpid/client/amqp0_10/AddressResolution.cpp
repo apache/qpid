@@ -93,6 +93,7 @@ const std::string DURABLE("durable");
 const std::string X_DECLARE("x-declare");
 const std::string X_SUBSCRIBE("x-subscribe");
 const std::string X_BINDINGS("x-bindings");
+const std::string QPID_SELECTOR("qpid.selector");
 const std::string EXCHANGE("exchange");
 const std::string QUEUE("queue");
 const std::string KEY("key");
@@ -315,6 +316,7 @@ struct Opt
     Opt(const Variant::Map& base);
     Opt& operator/(const std::string& name);
     operator bool() const;
+    operator std::string() const;
     std::string str() const;
     bool asBool(bool defaultValue) const;
     const Variant::List& asList() const;
@@ -346,6 +348,11 @@ Opt& Opt::operator/(const std::string& name)
 Opt::operator bool() const
 {
     return value && !value->isVoid() && value->asBool();
+}
+
+Opt::operator std::string() const
+{
+    return str();
 }
 
 bool Opt::asBool(bool defaultValue) const
@@ -470,6 +477,8 @@ QueueSource::QueueSource(const Address& address) :
     //options)
     exclusive = Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE;
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(options);
+    std::string selector = Opt(address)/LINK/QPID_SELECTOR;
+    if (!selector.empty()) options.setString(QPID_SELECTOR, selector);
 }
 
 void QueueSource::subscribe(qpid::client::AsyncSession& session, const std::string& destination)
@@ -981,6 +990,7 @@ Verifier::Verifier()
     link[X_SUBSCRIBE] = true;
     link[X_DECLARE] = true;
     link[X_BINDINGS] = true;
+    link[QPID_SELECTOR] = true;
     defined[LINK] = link;
 }
 void Verifier::verify(const Address& address) const

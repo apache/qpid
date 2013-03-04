@@ -52,6 +52,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/cast.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -59,6 +60,7 @@ namespace broker {
 class Exchange;
 class MessageStore;
 class ProtocolRegistry;
+class Selector;
 class SessionContext;
 class SessionState;
 
@@ -206,6 +208,7 @@ class SemanticStateConsumerImpl : public Consumer, public sys::OutputTask,
     bool exclusive;
     std::string resumeId;
     const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
+    boost::shared_ptr<Selector> selector;
     uint64_t resumeTtl;
     framing::FieldTable arguments;
     Credit credit;

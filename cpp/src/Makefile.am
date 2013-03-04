@@ -713,6 +713,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SecureConnection.h \
   qpid/broker/SecureConnectionFactory.cpp \
   qpid/broker/SecureConnectionFactory.h \
+  qpid/broker/Selector.cpp \
+  qpid/broker/Selector.h \
   qpid/broker/SemanticState.cpp \
   qpid/broker/SemanticState.h \
   qpid/broker/SessionAdapter.cpp \

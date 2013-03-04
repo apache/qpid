@@ -28,6 +28,7 @@
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/Selector.h"
 #include "qpid/broker/SessionContext.h"
 #include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/TxAccept.h"
@@ -285,6 +286,7 @@ void SemanticState::record(const DeliveryRecord& delivery)
 }
 
 const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
+const std::string QPID_SELECTOR("qpid.selector");
 
 SemanticStateConsumerImpl::SemanticStateConsumerImpl(SemanticState* _parent,
                                           const string& _name,
@@ -307,6 +309,7 @@ Consumer(_name, type),
     exclusive(_exclusive),
     resumeId(_resumeId),
     tag(_tag),
+    selector(returnSelector(_arguments.getAsString(QPID_SELECTOR))),
     resumeTtl(_resumeTtl),
     arguments(_arguments),
     notifyEnabled(true),
@@ -378,9 +381,9 @@ bool SemanticStateConsumerImpl::deliver(const QueueCursor& cursor, const Message
     return true;
 }
 
-bool SemanticStateConsumerImpl::filter(const Message&)
+bool SemanticStateConsumerImpl::filter(const Message& msg)
 {
-    return true;
+    return !selector || selector->filter(msg);
 }
 
 bool SemanticStateConsumerImpl::accept(const Message& msg)
