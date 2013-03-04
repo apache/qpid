@@ -1211,6 +1211,8 @@ set (qpidbroker_SOURCES
      qpid/broker/SelectorExpression.cpp
      qpid/broker/SelectorToken.h
      qpid/broker/SelectorToken.cpp
+     qpid/broker/SelectorValue.h
+     qpid/broker/SelectorValue.cpp
      qpid/broker/SemanticState.h
      qpid/broker/SemanticState.cpp
      qpid/broker/SessionAdapter.cpp

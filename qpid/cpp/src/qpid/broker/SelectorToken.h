@@ -83,19 +83,12 @@ public:
 };
 
 bool tokeniseEos(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseIdentifier(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseIdentifierOrReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseString(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseParens(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseOperator(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-
 bool tokeniseNumeric(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
 
 class Tokeniser {

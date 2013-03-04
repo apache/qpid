@@ -21,14 +21,17 @@
 
 #include "qpid/broker/SelectorToken.h"
 #include "qpid/broker/Selector.h"
+#include "qpid/broker/SelectorValue.h"
 
 #include "unit_test.h"
 
 #include <string>
 #include <map>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 using std::string;
 using std::map;
+using std::vector;
 
 namespace qb = qpid::broker;
 
@@ -86,6 +89,15 @@ QPID_AUTO_TEST_CASE(tokeniseSuccess)
     verifyTokeniserSuccess(&tokeniseOperator, "<> Identifier", qb::T_OPERATOR, "<>", " Identifier");
     verifyTokeniserSuccess(&tokeniseParens, "(a and b) not c", qb::T_LPAREN, "(", "a and b) not c");
     verifyTokeniserSuccess(&tokeniseParens, ") not c", qb::T_RPAREN, ")", " not c");
+    verifyTokeniserSuccess(&tokeniseNumeric, "019kill", qb::T_NUMERIC_EXACT, "019", "kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "0kill", qb::T_NUMERIC_EXACT, "0", "kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "0.kill", qb::T_NUMERIC_APPROX, "0.", "kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "3.1415=pi", qb::T_NUMERIC_APPROX, "3.1415", "=pi");
+    verifyTokeniserSuccess(&tokeniseNumeric, ".25.kill", qb::T_NUMERIC_APPROX, ".25", ".kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "2e5.kill", qb::T_NUMERIC_APPROX, "2e5", ".kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "3.e50easy to kill", qb::T_NUMERIC_APPROX, "3.e50", "easy to kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "34.25e+50easy to kill", qb::T_NUMERIC_APPROX, "34.25e+50", "easy to kill");
+    verifyTokeniserSuccess(&tokeniseNumeric, "34.e-50easy to kill", qb::T_NUMERIC_APPROX, "34.e-50", "easy to kill");
 }
 
 QPID_AUTO_TEST_CASE(tokeniseFailure)
@@ -105,6 +117,13 @@ QPID_AUTO_TEST_CASE(tokeniseFailure)
     verifyTokeniserFail(&tokeniseOperator, ")");
     verifyTokeniserFail(&tokeniseParens, "=");
     verifyTokeniserFail(&tokeniseParens, "what ho!");
+    verifyTokeniserFail(&tokeniseNumeric, "kill");
+    verifyTokeniserFail(&tokeniseNumeric, "e3");
+    verifyTokeniserFail(&tokeniseNumeric, "1.e.5");
+    verifyTokeniserFail(&tokeniseNumeric, ".e5");
+    verifyTokeniserFail(&tokeniseNumeric, "34e");
+    verifyTokeniserFail(&tokeniseNumeric, ".3e+");
+    verifyTokeniserFail(&tokeniseNumeric, ".3e-.");
 }
 
 QPID_AUTO_TEST_CASE(tokenString)
@@ -138,11 +157,25 @@ QPID_AUTO_TEST_CASE(tokenString)
     BOOST_CHECK_EQUAL(u.nextToken(), Token(qb::T_NULL, "null"));
     BOOST_CHECK_EQUAL(u.nextToken(), Token(qb::T_EOS, ""));
     BOOST_CHECK_EQUAL(u.nextToken(), Token(qb::T_EOS, ""));
+
+    exp = "(a+6)*7.5/1e6";
+    s = exp.begin();
+    e = exp.end();
+    Tokeniser v(s, e);
+
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_LPAREN, "("));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_IDENTIFIER, "a"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_OPERATOR, "+"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_NUMERIC_EXACT, "6"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_RPAREN, ")"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_OPERATOR, "*"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_NUMERIC_APPROX, "7.5"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_OPERATOR, "/"));
+    BOOST_CHECK_EQUAL(v.nextToken(), Token(qb::T_NUMERIC_APPROX, "1e6"));
 }
 
 QPID_AUTO_TEST_CASE(parseStringFail)
 {
-    BOOST_CHECK_THROW(qb::Selector e("'Daft' is not null"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A is null not"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A is null or not"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A is null or and"), std::range_error);
@@ -152,67 +185,132 @@ QPID_AUTO_TEST_CASE(parseStringFail)
 }
 
 class TestSelectorEnv : public qpid::broker::SelectorEnv {
-    map<string, string> values;
+    map<string, qb::Value> values;
+    boost::ptr_vector<string> strings;
+    static const qb::Value EMPTY;
 
-    bool present(const std::string& v) const {
+    bool present(const string& v) const {
         return values.find(v)!=values.end();
     }
 
-    std::string value(const std::string& v) const {
-        return present(v) ? values.at(v) : "";
+    const qb::Value& value(const string& v) const {
+        const qb::Value& r = present(v) ? values.at(v) : EMPTY;
+        return r;
     }
 
 public:
-    void set(const string& id, const string& value) {
-        values[id] = value;
+    void set(const string& id, const char* value) {
+        strings.push_back(new string(value));
+        values[id] = strings[strings.size()-1];
+    }
+
+    void set(const string& id, const qb::Value& value) {
+        if (value.type==qb::Value::T_STRING) {
+            strings.push_back(new string(*value.s));
+            values[id] = strings[strings.size()-1];
+        } else {
+            values[id] = value;
+        }
     }
 };
 
+const qb::Value TestSelectorEnv::EMPTY;
+
 QPID_AUTO_TEST_CASE(parseString)
 {
-    qb::Selector a("A is not null");
-    qb::Selector a1("A is null");
-    qb::Selector a2("A = C");
-    qb::Selector a3("A <> C");
-    qb::Selector c("C is not null");
-    qb::Selector c1("C is null");
-    qb::Selector d("A='hello kitty'");
-    qb::Selector e("A<>'hello kitty'");
-    qb::Selector f("A=B");
-    qb::Selector g("A<>B");
-    qb::Selector h("A='hello kitty' OR B='Bye, bye cruel world'");
-    qb::Selector i("B='hello kitty' OR A='Bye, bye cruel world'");
-    qb::Selector j("B='hello kitty' AnD A='Bye, bye cruel world'");
-    qb::Selector k("B='hello kitty' AnD B='Bye, bye cruel world'");
-    qb::Selector a4("A is null or A='Bye, bye cruel world'");
-    qb::Selector a5("Z is null OR A is not null and A<>'Bye, bye cruel world'");
-    qb::Selector a6("(Z is null OR A is not null) and A<>'Bye, bye cruel world'");
-    qb::Selector t("NOT C is not null OR C is null");
-    qb::Selector n("Not A='' or B=z");
+    BOOST_CHECK_NO_THROW(qb::Selector e("'Daft' is not null"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("42 is null"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A is not null"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A is null"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A = C"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A <> C"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A='hello kitty'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A<>'hello kitty'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A=B"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A<>B"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A='hello kitty' OR B='Bye, bye cruel world'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("B='hello kitty' AnD A='Bye, bye cruel world'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A is null or A='Bye, bye cruel world'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("Z is null OR A is not null and A<>'Bye, bye cruel world'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("(Z is null OR A is not null) and A<>'Bye, bye cruel world'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("NOT C is not null OR C is null"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("Not A='' or B=z"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("Not A=17 or B=5.6"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A<>17 and B=5.6e17"));
+}
 
+QPID_AUTO_TEST_CASE(simpleEval)
+{
     TestSelectorEnv env;
     env.set("A", "Bye, bye cruel world");
     env.set("B", "hello kitty");
 
-    BOOST_CHECK(a.eval(env));
-    BOOST_CHECK(!a1.eval(env));
-    BOOST_CHECK(!a2.eval(env));
-    BOOST_CHECK(a3.eval(env));
-    BOOST_CHECK(!c.eval(env));
-    BOOST_CHECK(c1.eval(env));
-    BOOST_CHECK(!d.eval(env));
-    BOOST_CHECK(e.eval(env));
-    BOOST_CHECK(!f.eval(env));
-    BOOST_CHECK(g.eval(env));
-    BOOST_CHECK(!h.eval(env));
-    BOOST_CHECK(i.eval(env));
-    BOOST_CHECK(j.eval(env));
-    BOOST_CHECK(!k.eval(env));
-    BOOST_CHECK(a4.eval(env));
-    BOOST_CHECK(a5.eval(env));
-    BOOST_CHECK(!a6.eval(env));
-    BOOST_CHECK(t.eval(env));
-    BOOST_CHECK(n.eval(env));
+    BOOST_CHECK(qb::Selector("A is not null").eval(env));
+    BOOST_CHECK(!qb::Selector("A is null").eval(env));
+    BOOST_CHECK(!qb::Selector("A = C").eval(env));
+    BOOST_CHECK(!qb::Selector("A <> C").eval(env));
+    BOOST_CHECK(!qb::Selector("C is not null").eval(env));
+    BOOST_CHECK(qb::Selector("C is null").eval(env));
+    BOOST_CHECK(qb::Selector("A='Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(!qb::Selector("A<>'Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(!qb::Selector("A='hello kitty'").eval(env));
+    BOOST_CHECK(qb::Selector("A<>'hello kitty'").eval(env));
+    BOOST_CHECK(!qb::Selector("A=B").eval(env));
+    BOOST_CHECK(qb::Selector("A<>B").eval(env));
+    BOOST_CHECK(!qb::Selector("A='hello kitty' OR B='Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(qb::Selector("B='hello kitty' OR A='Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(qb::Selector("B='hello kitty' AnD A='Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(!qb::Selector("B='hello kitty' AnD B='Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(qb::Selector("A is null or A='Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(qb::Selector("Z is null OR A is not null and A<>'Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(!qb::Selector("(Z is null OR A is not null) and A<>'Bye, bye cruel world'").eval(env));
+    BOOST_CHECK(qb::Selector("NOT C is not null OR C is null").eval(env));
+    BOOST_CHECK(qb::Selector("Not A='' or B=z").eval(env));
+    BOOST_CHECK(qb::Selector("Not A=17 or B=5.6").eval(env));
+    BOOST_CHECK(!qb::Selector("A<>17 and B=5.6e17").eval(env));
+    BOOST_CHECK(!qb::Selector("C=D").eval(env));
+    BOOST_CHECK(qb::Selector("13 is not null").eval(env));
+    BOOST_CHECK(!qb::Selector("'boo!' is null").eval(env));
+}
+
+QPID_AUTO_TEST_CASE(numericEval)
+{
+    TestSelectorEnv env;
+    env.set("A", 42.0);
+    env.set("B", 39l);
+
+    BOOST_CHECK(qb::Selector("A>B").eval(env));
+    BOOST_CHECK(qb::Selector("A=42").eval(env));
+    BOOST_CHECK(qb::Selector("B=39.0").eval(env));
+    BOOST_CHECK(qb::Selector("Not A=17 or B=5.6").eval(env));
+    BOOST_CHECK(!qb::Selector("A<>17 and B=5.6e17").eval(env));
+}
+
+QPID_AUTO_TEST_CASE(comparisonEval)
+{
+    TestSelectorEnv env;
+
+    BOOST_CHECK(!qb::Selector("17 > 19.0").eval(env));
+    BOOST_CHECK(!qb::Selector("'hello' > 19.0").eval(env));
+    BOOST_CHECK(!qb::Selector("'hello' < 19.0").eval(env));
+    BOOST_CHECK(!qb::Selector("'hello' = 19.0").eval(env));
+    BOOST_CHECK(!qb::Selector("'hello'>42 and 'hello'<42 and 'hello'=42 and 'hello'<>42").eval(env));
+    BOOST_CHECK(qb::Selector("20 >= 19.0 and 20 > 19").eval(env));
+    BOOST_CHECK(qb::Selector("42 <= 42.0 and 37.0 >= 37").eval(env));
+}
+
+QPID_AUTO_TEST_CASE(NullEval)
+{
+    TestSelectorEnv env;
+
+    BOOST_CHECK(qb::Selector("P > 19.0 or (P is null)").eval(env));
+    BOOST_CHECK(qb::Selector("P is null or P=''").eval(env));
+    BOOST_CHECK(!qb::Selector("P=Q").eval(env));
+    BOOST_CHECK(!qb::Selector("not P=Q").eval(env));
+    BOOST_CHECK(!qb::Selector("not P=Q and not P=Q").eval(env));
+    BOOST_CHECK(!qb::Selector("P=Q or not P=Q").eval(env));
+    BOOST_CHECK(!qb::Selector("P > 19.0 or P <= 19.0").eval(env));
+    BOOST_CHECK(qb::Selector("P > 19.0 or 17 <= 19.0").eval(env));
 }
 
 QPID_AUTO_TEST_SUITE_END()
