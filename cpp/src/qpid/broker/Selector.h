@@ -31,7 +31,8 @@ namespace qpid {
 namespace broker {
 
 class Message;
-class BoolExpression;
+class Value;
+class TopExpression;
 
 /**
  * Interface to provide values to a Selector evaluation
@@ -42,22 +43,11 @@ class SelectorEnv {
 public:
     virtual ~SelectorEnv() {};
 
-    virtual bool present(const std::string&) const = 0;
-    virtual std::string value(const std::string&) const = 0;
-};
-
-class MessageSelectorEnv : public SelectorEnv {
-    const Message& msg;
-
-    bool present(const std::string&) const;
-    std::string value(const std::string&) const;
-
-public:
-    MessageSelectorEnv(const Message&);
+    virtual const Value& value(const std::string&) const = 0;
 };
 
 class Selector {
-    boost::scoped_ptr<BoolExpression> parse;
+    boost::scoped_ptr<TopExpression> parse;
     const std::string expression;
 
 public:

@@ -23,12 +23,15 @@
 
 #include "qpid/broker/Selector.h"
 #include "qpid/broker/SelectorToken.h"
+#include "qpid/broker/SelectorValue.h"
+#include "qpid/sys/IntegerTypes.h"
 
 #include <string>
 #include <memory>
 #include <ostream>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 /*
  * Syntax for JMS style selector expressions (informal):
@@ -42,17 +45,15 @@
  *
  * LiteralString ::= ("'" ~[']* "'")+ // Repeats to cope with embedded single quote
  *
- * // Currently no numerics at all
- * //LiteralExactNumeric ::= Digit+
- * //LiteralApproxNumeric ::= ( Digit "." Digit* [ "E" LiteralExactNumeric ] ) |
- * //                         ( "." Digit+ [ "E" LiteralExactNumeric ] ) |
- * //                         ( Digit+ "E" LiteralExactNumeric )
- * //LiteralBool ::= "TRUE" | "FALSE"
- * //
+ * LiteralExactNumeric ::= Digit+
+ * Exponent ::= ['+'|'-'] LiteralExactNumeric
+ * LiteralApproxNumeric ::= ( Digit "." Digit* [ "E" Exponent ] ) |
+ *                          ( "." Digit+ [ "E" Exponent ] ) |
+ *                          ( Digit+ "E" Exponent )
+ * LiteralBool ::= "TRUE" | "FALSE"
  *
  * Literal ::= LiteralBool | LiteralString | LiteralApproxNumeric | LiteralExactNumeric
  *
- * // Currently only simple string comparison expressions + IS NULL or IS NOT NULL
  * EqOps ::= "=" | "<>"
  *
  * ComparisonOps ::= EqOps | ">" | ">=" | "<" | "<="
@@ -63,38 +64,54 @@
  *
  * AndExpression :: = EqualityExpression ( "AND" EqualityExpression  )*
  *
- * EqualityExpression ::= Identifier "IS" "NULL" |
- *                        Identifier "IS "NOT" "NULL" |
- *                        PrimaryExpression EqOps PrimaryExpression |
- *                        "NOT" EqualityExpression |
+ * ComparisonExpression ::= PrimaryExpression "IS" "NULL" |
+ *                        PrimaryExpression "IS" "NOT" "NULL" |
+ *                        PrimaryExpression ComparisonOpsOps PrimaryExpression |
+ *                        "NOT" ComparisonExpression |
  *                        "(" OrExpression ")"
  *
  * PrimaryExpression :: = Identifier |
- *                        LiteralString
+ *                        Literal
  *
  */
 
 namespace qpid {
 namespace broker {
 
-class Expression;
-
 using std::string;
 using std::ostream;
 
+class Expression {
+public:
+    virtual ~Expression() {}
+    virtual void repr(std::ostream&) const = 0;
+    virtual Value eval(const SelectorEnv&) const = 0;
+};
+
+class BoolExpression : public Expression {
+public:
+    virtual ~BoolExpression() {}
+    virtual void repr(std::ostream&) const = 0;
+    virtual BoolOrNone eval_bool(const SelectorEnv&) const = 0;
+
+    Value eval(const SelectorEnv& env) const {
+        return eval_bool(env);
+    }
+};
+
 // Operators
 
-class EqualityOperator {
+class ComparisonOperator {
 public:
     virtual void repr(ostream&) const = 0;
-    virtual bool eval(Expression&, Expression&, const SelectorEnv&) const = 0;
+    virtual BoolOrNone eval(Expression&, Expression&, const SelectorEnv&) const = 0;
 };
 
 template <typename T>
 class UnaryBooleanOperator {
 public:
     virtual void repr(ostream&) const = 0;
-    virtual bool eval(T&, const SelectorEnv&) const = 0;
+    virtual BoolOrNone eval(T&, const SelectorEnv&) const = 0;
 };
 
 ////////////////////////////////////////////////////
@@ -107,13 +124,7 @@ ostream& operator<<(ostream& os, const Expression& e)
     return os;
 }
 
-ostream& operator<<(ostream& os, const BoolExpression& e)
-{
-    e.repr(os);
-    return os;
-}
-
-ostream& operator<<(ostream& os, const EqualityOperator& e)
+ostream& operator<<(ostream& os, const ComparisonOperator& e)
 {
     e.repr(os);
     return os;
@@ -128,13 +139,13 @@ ostream& operator<<(ostream& os, const UnaryBooleanOperator<T>& e)
 
 // Boolean Expression types...
 
-class EqualityExpression : public BoolExpression {
-    EqualityOperator* op;
+class ComparisonExpression : public BoolExpression {
+    ComparisonOperator* op;
     boost::scoped_ptr<Expression> e1;
     boost::scoped_ptr<Expression> e2;
 
 public:
-    EqualityExpression(EqualityOperator* o, Expression* e, Expression* e_):
+    ComparisonExpression(ComparisonOperator* o, Expression* e, Expression* e_):
         op(o),
         e1(e),
         e2(e_)
@@ -144,7 +155,7 @@ public:
         os << "(" << *e1 << *op << *e2 << ")";
     }
 
-    bool eval(const SelectorEnv& env) const {
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
         return op->eval(*e1, *e2, env);
     }
 };
@@ -163,9 +174,19 @@ public:
         os << "(" << *e1 << " OR " << *e2 << ")";
     }
 
-    // We can use the regular C++ short-circuiting operator||
-    bool eval(const SelectorEnv& env) const {
-        return e1->eval(env) || e2->eval(env);
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
+        BoolOrNone bn1(e1->eval_bool(env));
+        if (bn1==BN_TRUE) {
+            return BN_TRUE;
+        } else {
+            BoolOrNone bn2(e2->eval_bool(env));
+            if (bn2==BN_TRUE) {
+                return BN_TRUE;
+            } else {
+                if (bn1==BN_FALSE && bn2==BN_FALSE) return BN_FALSE;
+                else return BN_UNKNOWN;
+            }
+        }
     }
 };
 
@@ -183,9 +204,19 @@ public:
         os << "(" << *e1 << " AND " << *e2 << ")";
     }
 
-    // We can use the regular C++ short-circuiting operator&&
-    bool eval(const SelectorEnv& env) const {
-        return e1->eval(env) && e2->eval(env);
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
+        BoolOrNone bn1(e1->eval_bool(env));
+        if (bn1==BN_FALSE) {
+            return BN_FALSE;
+        } else {
+            BoolOrNone bn2(e2->eval_bool(env));
+            if (bn2==BN_FALSE) {
+                return BN_FALSE;
+            } else {
+                if (bn1==BN_TRUE && bn2==BN_TRUE) return BN_TRUE;
+                else return BN_UNKNOWN;
+            }
+        }
     }
 };
 
@@ -204,7 +235,7 @@ public:
         os << *op << "(" << *e1 << ")";
     }
 
-    virtual bool eval(const SelectorEnv& env) const {
+    virtual BoolOrNone eval_bool(const SelectorEnv& env) const {
         return op->eval(*e1, env);
     }
 };
@@ -212,10 +243,28 @@ public:
 // Expression types...
 
 class Literal : public Expression {
-    string value;
+    const Value value;
 
 public:
-    Literal(const string& v) :
+    template <typename T>
+    Literal(const T& v) :
+        value(v)
+    {}
+
+    void repr(ostream& os) const {
+        os << value;
+    }
+
+    Value eval(const SelectorEnv&) const {
+        return value;
+    }
+};
+
+class StringLiteral : public Expression {
+    const string value;
+
+public:
+    StringLiteral(const string& v) :
         value(v)
     {}
 
@@ -223,7 +272,7 @@ public:
         os << "'" << value << "'";
     }
 
-    string eval(const SelectorEnv&) const {
+    Value eval(const SelectorEnv&) const {
         return value;
     }
 };
@@ -240,12 +289,8 @@ public:
         os << "I:" << identifier;
     }
 
-    string eval(const SelectorEnv& env) const {
+    Value eval(const SelectorEnv& env) const {
         return env.value(identifier);
-    }
-
-    bool present(const SelectorEnv& env) const {
-        return env.present(identifier);
     }
 };
 
@@ -253,47 +298,104 @@ public:
 
 // Some operators...
 
+typedef bool BoolOp(const Value&, const Value&);
+
+BoolOrNone booleval(BoolOp* op, Expression& e1, Expression& e2, const SelectorEnv& env) {
+    const Value v1(e1.eval(env));
+    if (!unknown(v1)) {
+        const Value v2(e2.eval(env));
+        if (!unknown(v2)) {
+            return BoolOrNone(op(v1, v2));
+        }
+    }
+    return BN_UNKNOWN;
+}
+
 // "="
-class Eq : public EqualityOperator {
+class Eq : public ComparisonOperator {
     void repr(ostream& os) const {
         os << "=";
     }
 
-    bool eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
-        return e1.eval(env) == e2.eval(env);
+    BoolOrNone eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
+        return booleval(&operator==, e1, e2, env);
     }
 };
 
 // "<>"
-class Neq : public EqualityOperator {
+class Neq : public ComparisonOperator {
     void repr(ostream& os) const {
         os << "<>";
     }
 
-    bool eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
-        return e1.eval(env) != e2.eval(env);
+    BoolOrNone eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
+        return booleval(&operator!=, e1, e2, env);
+    }
+};
+
+// "<"
+class Ls : public ComparisonOperator {
+    void repr(ostream& os) const {
+        os << "<";
+    }
+
+    BoolOrNone eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
+        return booleval(&operator<, e1, e2, env);
+    }
+};
+
+// ">"
+class Gr : public ComparisonOperator {
+    void repr(ostream& os) const {
+        os << ">";
+    }
+
+    BoolOrNone eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
+        return booleval(&operator>, e1, e2, env);
+    }
+};
+
+// "<="
+class Lseq : public ComparisonOperator {
+    void repr(ostream& os) const {
+        os << "<=";
+    }
+
+    BoolOrNone eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
+        return booleval(&operator<=, e1, e2, env);
+    }
+};
+
+// ">="
+class Greq : public ComparisonOperator {
+    void repr(ostream& os) const {
+        os << ">=";
+    }
+
+    BoolOrNone eval(Expression& e1, Expression& e2, const SelectorEnv& env) const {
+        return booleval(&operator>=, e1, e2, env);
     }
 };
 
 // "IS NULL"
-class IsNull : public UnaryBooleanOperator<Identifier> {
+class IsNull : public UnaryBooleanOperator<Expression> {
     void repr(ostream& os) const {
         os << "IsNull";
     }
 
-    bool eval(Identifier& i, const SelectorEnv& env) const {
-        return !i.present(env);
+    BoolOrNone eval(Expression& e, const SelectorEnv& env) const {
+        return BoolOrNone(unknown(e.eval(env)));
     }
 };
 
 // "IS NOT NULL"
-class IsNonNull : public UnaryBooleanOperator<Identifier> {
+class IsNonNull : public UnaryBooleanOperator<Expression> {
     void repr(ostream& os) const {
         os << "IsNonNull";
     }
 
-    bool eval(Identifier& i, const SelectorEnv& env) const {
-        return i.present(env);
+    BoolOrNone eval(Expression& e, const SelectorEnv& env) const {
+        return BoolOrNone(!unknown(e.eval(env)));
     }
 };
 
@@ -303,21 +405,51 @@ class Not : public UnaryBooleanOperator<BoolExpression> {
         os << "NOT";
     }
 
-    bool eval(BoolExpression& e, const SelectorEnv& env) const {
-        return !e.eval(env);
+    BoolOrNone eval(BoolExpression& e, const SelectorEnv& env) const {
+        BoolOrNone bn = e.eval_bool(env);
+        if (bn==BN_UNKNOWN) return bn;
+        else return BoolOrNone(!bn);
     }
 };
 
 Eq eqOp;
 Neq neqOp;
+Ls lsOp;
+Gr grOp;
+Lseq lseqOp;
+Greq greqOp;
 IsNull isNullOp;
 IsNonNull isNonNullOp;
 Not notOp;
 
 ////////////////////////////////////////////////////
 
+BoolExpression* parseOrExpression(Tokeniser&);
+BoolExpression* parseAndExpression(Tokeniser&);
+BoolExpression* parseComparisonExpression(Tokeniser&);
+Expression* parsePrimaryExpression(Tokeniser&);
+
 // Top level parser
-BoolExpression* parseTopBoolExpression(const string& exp)
+class TopBoolExpression : public TopExpression {
+    boost::scoped_ptr<BoolExpression> expression;
+
+    void repr(ostream& os) const {
+        expression->repr(os);
+    }
+
+    bool eval(const SelectorEnv& env) const {
+        BoolOrNone bn = expression->eval_bool(env);
+        if (bn==BN_TRUE) return true;
+        else return false;
+    }
+
+public:
+    TopBoolExpression(BoolExpression* be) :
+        expression(be)
+    {}
+};
+
+TopExpression* TopExpression::parse(const string& exp)
 {
     string::const_iterator s = exp.begin();
     string::const_iterator e = exp.end();
@@ -325,7 +457,7 @@ BoolExpression* parseTopBoolExpression(const string& exp)
     std::auto_ptr<BoolExpression> b(parseOrExpression(tokeniser));
     if (!b.get()) throw std::range_error("Illegal selector: couldn't parse");
     if (tokeniser.nextToken().type != T_EOS) throw std::range_error("Illegal selector: too much input");
-    return b.release();
+    return new TopBoolExpression(b.release());
 }
 
 BoolExpression* parseOrExpression(Tokeniser& tokeniser)
@@ -344,11 +476,11 @@ BoolExpression* parseOrExpression(Tokeniser& tokeniser)
 
 BoolExpression* parseAndExpression(Tokeniser& tokeniser)
 {
-    std::auto_ptr<BoolExpression> e(parseEqualityExpression(tokeniser));
+    std::auto_ptr<BoolExpression> e(parseComparisonExpression(tokeniser));
     if (!e.get()) return 0;
     while ( tokeniser.nextToken().type==T_AND ) {
         std::auto_ptr<BoolExpression> e1(e);
-        std::auto_ptr<BoolExpression> e2(parseEqualityExpression(tokeniser));
+        std::auto_ptr<BoolExpression> e2(parseComparisonExpression(tokeniser));
         if (!e2.get()) return 0;
         e.reset(new AndExpression(e1.release(), e2.release()));
     }
@@ -356,31 +488,16 @@ BoolExpression* parseAndExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-BoolExpression* parseEqualityExpression(Tokeniser& tokeniser)
+BoolExpression* parseComparisonExpression(Tokeniser& tokeniser)
 {
     const Token t = tokeniser.nextToken();
-    if ( t.type==T_IDENTIFIER ) {
-        // Check for "IS NULL" and "IS NOT NULL"
-        if ( tokeniser.nextToken().type==T_IS ) {
-            // The rest must be T_NULL or T_NOT, T_NULL
-            switch (tokeniser.nextToken().type) {
-            case T_NULL:
-                return new UnaryBooleanExpression<Identifier>(&isNullOp, new Identifier(t.val));
-            case T_NOT:
-                if ( tokeniser.nextToken().type == T_NULL)
-                    return new UnaryBooleanExpression<Identifier>(&isNonNullOp, new Identifier(t.val));
-            default:
-                return 0;
-            }
-        }
-        tokeniser.returnTokens();
-    } else if ( t.type==T_LPAREN ) {
+    if ( t.type==T_LPAREN ) {
         std::auto_ptr<BoolExpression> e(parseOrExpression(tokeniser));
         if (!e.get()) return 0;
         if ( tokeniser.nextToken().type!=T_RPAREN ) return 0;
         return e.release();
     } else if ( t.type==T_NOT ) {
-        std::auto_ptr<BoolExpression> e(parseEqualityExpression(tokeniser));
+        std::auto_ptr<BoolExpression> e(parseComparisonExpression(tokeniser));
         if (!e.get()) return 0;
         return new UnaryBooleanExpression<BoolExpression>(&notOp, e.release());
     }
@@ -388,6 +505,21 @@ BoolExpression* parseEqualityExpression(Tokeniser& tokeniser)
     tokeniser.returnTokens();
     std::auto_ptr<Expression> e1(parsePrimaryExpression(tokeniser));
     if (!e1.get()) return 0;
+
+    // Check for "IS NULL" and "IS NOT NULL"
+    if ( tokeniser.nextToken().type==T_IS ) {
+        // The rest must be T_NULL or T_NOT, T_NULL
+        switch (tokeniser.nextToken().type) {
+            case T_NULL:
+                return new UnaryBooleanExpression<Expression>(&isNullOp, e1.release());
+            case T_NOT:
+                if ( tokeniser.nextToken().type == T_NULL)
+                    return new UnaryBooleanExpression<Expression>(&isNonNullOp, e1.release());
+            default:
+                return 0;
+        }
+    }
+    tokeniser.returnTokens();
 
     const Token op = tokeniser.nextToken();
     if (op.type != T_OPERATOR) {
@@ -397,8 +529,12 @@ BoolExpression* parseEqualityExpression(Tokeniser& tokeniser)
     std::auto_ptr<Expression> e2(parsePrimaryExpression(tokeniser));
     if (!e2.get()) return 0;
 
-    if (op.val == "=") return new EqualityExpression(&eqOp, e1.release(), e2.release());
-    if (op.val == "<>") return new EqualityExpression(&neqOp, e1.release(), e2.release());
+    if (op.val == "=") return new ComparisonExpression(&eqOp, e1.release(), e2.release());
+    if (op.val == "<>") return new ComparisonExpression(&neqOp, e1.release(), e2.release());
+    if (op.val == "<") return new ComparisonExpression(&lsOp, e1.release(), e2.release());
+    if (op.val == ">") return new ComparisonExpression(&grOp, e1.release(), e2.release());
+    if (op.val == "<=") return new ComparisonExpression(&lseqOp, e1.release(), e2.release());
+    if (op.val == ">=") return new ComparisonExpression(&greqOp, e1.release(), e2.release());
 
     return 0;
 }
@@ -410,7 +546,15 @@ Expression* parsePrimaryExpression(Tokeniser& tokeniser)
         case T_IDENTIFIER:
             return new Identifier(t.val);
         case T_STRING:
-            return new Literal(t.val);
+            return new StringLiteral(t.val);
+        case T_FALSE:
+            return new Literal(false);
+        case T_TRUE:
+            return new Literal(true);
+        case T_NUMERIC_EXACT:
+            return new Literal(boost::lexical_cast<int64_t>(t.val));
+        case T_NUMERIC_APPROX:
+            return new Literal(boost::lexical_cast<double>(t.val));
         default:
             return 0;
     }
