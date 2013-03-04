@@ -135,6 +135,7 @@ set(all_unit_tests
     RangeSet
     RefCounted
     RetryList
+    Selector
     SequenceNumberTest
     SequenceSet
     SessionState
