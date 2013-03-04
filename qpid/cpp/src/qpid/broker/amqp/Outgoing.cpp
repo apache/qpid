@@ -22,6 +22,7 @@
 #include "qpid/broker/amqp/Header.h"
 #include "qpid/broker/amqp/Translation.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/Selector.h"
 #include "qpid/broker/TopicKeyNode.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/amqp/MessageEncoder.h"
@@ -170,6 +171,11 @@ void Outgoing::setSubjectFilter(const std::string& f)
     subjectFilter = f;
 }
 
+void Outgoing::setSelectorFilter(const std::string& f)
+{
+    selector.reset(new Selector(f));
+}
+
 namespace {
 
 bool match(TokenIterator& filter, TokenIterator& target)
@@ -213,7 +219,8 @@ bool match(const std::string& filter, const std::string& target)
 
 bool Outgoing::filter(const qpid::broker::Message& m)
 {
-    return subjectFilter.empty() || subjectFilter == m.getRoutingKey() || match(subjectFilter, m.getRoutingKey());
+    return (subjectFilter.empty() || subjectFilter == m.getRoutingKey() || match(subjectFilter, m.getRoutingKey()))
+           && (!selector || selector->filter(m));
 }
 
 void Outgoing::cancel() {}

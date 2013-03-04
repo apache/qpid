@@ -31,6 +31,7 @@
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/Selector.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/amqp/Filter.h"
 #include "qpid/broker/amqp/NodeProperties.h"
@@ -131,6 +132,9 @@ void Session::attach(pn_link_t* link)
             q->init();
             if (filter.hasSubjectFilter()) {
                 q->setSubjectFilter(filter.getSubjectFilter());
+            }
+            if (filter.hasSelectorFilter()) {
+                q->setSelectorFilter(filter.getSelectorFilter());
             }
             senders[link] = q;
         } else if (node.exchange) {

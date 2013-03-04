@@ -40,6 +40,8 @@ class Filter : qpid::amqp::MapReader
     void write(pn_data_t*);
     bool hasSubjectFilter() const;
     std::string getSubjectFilter() const;
+    bool hasSelectorFilter() const;
+    std::string getSelectorFilter() const;
     void bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue);
   private:
     struct StringFilter
@@ -55,8 +57,10 @@ class Filter : qpid::amqp::MapReader
 
     void onStringValue(const qpid::amqp::CharSequence& key, const qpid::amqp::CharSequence& value, const qpid::amqp::Descriptor* descriptor);
     void setSubjectFilter(const StringFilter&);
+    void setSelectorFilter(const StringFilter&);
 
     StringFilter subjectFilter;
+    StringFilter selectorFilter;
 };
 }}} // namespace qpid::broker::amqp
 

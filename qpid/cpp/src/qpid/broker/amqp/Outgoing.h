@@ -24,7 +24,9 @@
 #include "qpid/broker/amqp/Message.h"
 #include "qpid/broker/amqp/ManagedOutgoingLink.h"
 #include "qpid/broker/Consumer.h"
+
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 extern "C" {
 #include <proton/engine.h>
@@ -37,6 +39,7 @@ class OutputControl;
 namespace broker {
 class Broker;
 class Queue;
+class Selector;
 namespace amqp {
 class ManagedSession;
 template <class T>
@@ -61,6 +64,7 @@ class Outgoing : public qpid::broker::Consumer, public boost::enable_shared_from
   public:
     Outgoing(Broker&,boost::shared_ptr<Queue> q, pn_link_t* l, ManagedSession&, qpid::sys::OutputControl& o, bool topic);
     void setSubjectFilter(const std::string&);
+    void setSelectorFilter(const std::string&);
     void init();
     bool dispatch();
     void write(const char* data, size_t size);
@@ -102,6 +106,7 @@ class Outgoing : public qpid::broker::Consumer, public boost::enable_shared_from
     int outstanding;
     std::vector<char> buffer;
     std::string subjectFilter;
+    boost::scoped_ptr<Selector> selector;
 };
 }}} // namespace qpid::broker::amqp
 
