@@ -121,6 +121,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ClientMessage.cpp \
 	Qmf2.cpp \
 	BrokerOptions.cpp \
+	Selector.cpp \
 	SystemInfo.cpp
 
 if HAVE_XML
