@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cassert>
+#include <cctype>
 
 namespace qpid {
 namespace broker {
@@ -93,7 +94,7 @@ struct RWEntry {
     TokenType type;
 };
 
-bool caseless(const char* s1, const char* s2)
+inline bool caseless(const char* s1, const char* s2)
 {
     do {
         char ls1 = std::tolower(*s1);
@@ -107,12 +108,8 @@ bool caseless(const char* s1, const char* s2)
     return false;
 }
 
-bool operator<(const RWEntry& r, const char* rhs) {
-    return caseless(r.word, rhs);
-}
-
-bool operator<(const char* rhs, const RWEntry& r) {
-    return caseless(rhs, r.word);
+inline bool operator<(const RWEntry& lhs, const RWEntry& rhs) {
+    return caseless(lhs.word, rhs.word);
 }
 
 }
@@ -138,7 +135,9 @@ bool tokeniseReservedWord(Token& tok)
 
     if ( tok.type != T_IDENTIFIER ) return false;
 
-    std::pair<const RWEntry*, const RWEntry*> entry = std::equal_range(&reserved[0], &reserved[reserved_size], tok.val.c_str());
+    RWEntry rw;
+    rw.word = tok.val.c_str();
+    std::pair<const RWEntry*, const RWEntry*> entry = std::equal_range(&reserved[0], &reserved[reserved_size], rw);
 
     if ( entry.first==entry.second ) return false;
 
