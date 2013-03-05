@@ -368,6 +368,20 @@ com.sun.security.jgss.initiate {
     acl allow admin create all
     acl deny all all
 </programlisting>
+		 <para>
+			An ACL file can define per user connection and queue quotas:
+		</para>
+
+<programlisting>
+    group admin ted@QPID martin@QPID
+    group blacklist usera@qpid userb@qpid
+    quota connections 10 admin
+    quota connections  5 all
+    quota connections  0 blacklist
+    quota queues      50 admin
+    quota queues       5 all
+    quota queues       1 test@qpid
+</programlisting>
 
 		 <para>
 			Performance Note: Most ACL queries are performed infrequently. The overhead associated with 
@@ -411,6 +425,10 @@ com.sun.security.jgss.initiate {
     
     acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all" 
                 [property=<property-value> ...]]
+
+    quota-spec = [connections | queues]
+    quota quota-spec N {<group-name>|<user-name>|"all"}
+                [{<group-name>|<user-name>|"all"}]
 ]]></programlisting>
 
 				 ACL rules can also include a single object name (or the keyword <parameter>all</parameter>) and one or more property name value pairs in the form <command>property=value</command>
@@ -1458,28 +1476,62 @@ com.sun.security.jgss.initiate {
 		  </para>
 		  <para>
 		    <programlisting>
-    --max-connections          N
-    --max-connections-per-user N
-    --max-connections-per-ip   N
+    --max-connections           N
+    --connection-limit-per-user N
+    --connection-limit-per-ip   N
 		    </programlisting>
 		  </para>
 		  <para>
-		    If a switch is not specified or the value specified is zero then the corresponding connection limit is not enforced.
+		    <command>--max-connections</command> specifies an upper limit for all user connections.
 		  </para>
 		  <para>
-		    <command>max-connections</command> specifies an upper limit for all user connections.
+		    <command>--connection-limit-per-user</command> specifies an upper limit for each user based on the authenticated user name. This limit is enforced regardless of the client IP address from which the connection originates.
 		  </para>
 		  <para>
-		    <command>max-connections-per-user</command> specifies an upper limit for each user based on the authenticated user name. This limit is enforced regardless of the client IP address from which the connection originates.
-		  </para>
-		  <para>
-		    <command>max-connections-per-ip</command> specifies an upper limit for connections for all users based on the originating client IP address. This limit is enforced regardless of the user credentials presented with the connection.
+		    <command>--connection-limit-per-ip</command> specifies an upper limit for connections for all users based on the originating client IP address. This limit is enforced regardless of the user credentials presented with the connection.
 		    <itemizedlist>
 		      <listitem>
 			Note that addresses using different transports are counted separately even though the originating host is actually the same physical machine. In the setting illustrated above a host would allow N_IP connections from [::1] IPv6 transport localhost and another N_IP connections from [127.0.0.1] IPv4 transport localhost.
 		      </listitem>
 		      <listitem>
-			The max-connections-per-ip and max-connections-per-user counts are active simultaneously. From a given client system users may be denied access to the broker by either connection limit.
+			The connection-limit-per-ip and connection-limit-per-user counts are active simultaneously. From a given client system users may be denied access to the broker by either connection limit.
+		      </listitem>
+		    </itemizedlist>
+		  </para>
+		  <para>
+		    The 0.22 C++ Broker ACL module accepts fine grained per-user connection limits through quota rules in the ACL file.
+		  </para>
+		  <para>
+		    <programlisting>
+    quota connections 10 admins userX@QPID
+		    </programlisting>
+		  </para>
+		  <para>
+		    <itemizedlist>
+		      <listitem>
+			User <literal>all</literal> receives the value passed by the command line switch <literal>--connection-limit-per-user</literal>.
+		      </listitem>
+		      <listitem>
+			Values specified in the ACL rule for user <literal>all</literal> overwrite the value specified on the command line if any.
+		      </listitem>
+		      <listitem>
+			Connection quotas values are determined by first searching for the authenticated user name. If that user name is not specified then the value for user <literal>all</literal>
+			is used. If user <literal>all</literal> is not specified then the connection is denied.
+		      </listitem>
+		      <listitem>
+			The connection quota values range from 0..65530 inclusive. A value of zero disables connections from that user.
+		      </listitem>
+		      <listitem>
+			A user's quota may be specified many times in the ACL rule file. Only the last value specified is retained and enforced.
+		      </listitem>
+		      <listitem>
+			Per-user connection quotas are disabled when two conditions are true: 1) No --connection-limit-per-user command line switch and 2) No <literal>quota connections</literal>
+			rules in the ACL file. Per-user connections are always counted even if connection quotas are not enforced. This supports ACL file reloading that may subsequently
+			enable per-user connection quotas.
+		      </listitem>
+		      <listitem>
+			An ACL file reload may lower a user's connection quota value to a number lower than the user's current connection count. In that case the active connections
+			remain unaffected. New connections are denied until that user closes enough of his connections so that his count falls below the configured limit.
 		      </listitem>
 		    </itemizedlist>
 		  </para>
@@ -1496,10 +1548,44 @@ com.sun.security.jgss.initiate {
 		    </programlisting>
 		  </para>
 		  <para>
-		    If this switch is not specified or the value specified is zero then the queue limit is not enforced.
+		    The queue limit is set for all users on the broker.
 		  </para>
 		  <para>
-		    The queue limit is set for all users on the broker based on the authenticated user name.
+		    The 0.22 C++ Broker ACL module accepts fine grained per-user queue limits through quota rules in the ACL file.
+		  </para>
+		  <para>
+		    <programlisting>
+    quota queues 10 admins userX@QPID
+		    </programlisting>
+		  </para>
+		  <para>
+		    <itemizedlist>
+		      <listitem>
+			User <literal>all</literal> receives the value passed by the command line switch <literal>--max-queues-per-user</literal>.
+		      </listitem>
+		      <listitem>
+			Values specified in the ACL rule for user <literal>all</literal> overwrite the value specified on the command line if any.
+		      </listitem>
+		      <listitem>
+			Queue quotas values are determined by first searching for the authenticated user name. If that user name is not specified then the value for user <literal>all</literal>
+			is used. If user <literal>all</literal> is not specified then the queue creation is denied.
+		      </listitem>
+		      <listitem>
+			The queue quota values range from 0..65530 inclusive. A value of zero disables queue creation by that user.
+		      </listitem>
+		      <listitem>
+			A user's quota may be specified many times in the ACL rule file. Only the last value specified is retained and enforced.
+		      </listitem>
+		      <listitem>
+			Per-user queue quotas are disabled when two conditions are true: 1) No --queue-limit-per-user command line switch and 2) No <literal>quota queues</literal>
+			rules in the ACL file. Per-user queue creations are always counted even if queue quotas are not enforced. This supports ACL file reloading that may subsequently
+			enable per-user queue quotas.
+		      </listitem>
+		      <listitem>
+			An ACL file reload may lower a user's queue quota value to a number lower than the user's current queue count. In that case the active queues
+			remain unaffected. New queues are denied until that user closes enough of his queues so that his count falls below the configured limit.
+		      </listitem>
+		    </itemizedlist>
 		  </para>
 		</section>
 		
