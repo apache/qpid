@@ -324,7 +324,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         if (destination == null)
         {
-            _messageProps.setReplyTo(null);
+            _messageProps.clearReplyTo();
             return;
         }
 
