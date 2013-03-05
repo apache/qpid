@@ -41,24 +41,24 @@ void Buffer::reset(){
 ///////////////////////////////////////////////////
 
 void Buffer::putOctet(uint8_t i){
+    checkAvailable(1);
     data[position++] = i;
-    assert(position <= size);
 }
 
 void Buffer::putShort(uint16_t i){
+    checkAvailable(2);
     uint16_t b = i;
     data[position++] = (uint8_t) (0xFF & (b >> 8));
     data[position++] = (uint8_t) (0xFF & b);
-    assert(position <= size);
 }
 
 void Buffer::putLong(uint32_t i){
+    checkAvailable(4);
     uint32_t b = i;
     data[position++] = (uint8_t) (0xFF & (b >> 24));
     data[position++] = (uint8_t) (0xFF & (b >> 16));
     data[position++] = (uint8_t) (0xFF & (b >> 8));
     data[position++] = (uint8_t) (0xFF & b);
-    assert(position <= size);
 }
 
 void Buffer::putLongLong(uint64_t i){
@@ -69,8 +69,8 @@ void Buffer::putLongLong(uint64_t i){
 }
 
 void Buffer::putInt8(int8_t i){
+    checkAvailable(1);
     data[position++] = (uint8_t) i;
-    assert(position <= size);
 }
 
 void Buffer::putInt16(int16_t i){
@@ -106,30 +106,31 @@ void Buffer::putDouble(double f){
 }
 
 void Buffer::putBin128(const uint8_t* b){
+    checkAvailable(16);
     memcpy (data + position, b, 16);
     position += 16;
 }
 
-uint8_t Buffer::getOctet(){ 
+uint8_t Buffer::getOctet(){
+    checkAvailable(1);
     uint8_t octet = static_cast<uint8_t>(data[position++]);
-    assert(position <= size);
     return octet;
 }
 
-uint16_t Buffer::getShort(){ 
+uint16_t Buffer::getShort(){
+    checkAvailable(2);
     uint16_t hi = (unsigned char) data[position++];
     hi = hi << 8;
     hi |= (unsigned char) data[position++];
-    assert(position <= size);
     return hi;
 }
 
-uint32_t Buffer::getLong(){ 
+uint32_t Buffer::getLong(){
+    checkAvailable(4);
     uint32_t a = (unsigned char) data[position++];
     uint32_t b = (unsigned char) data[position++];
     uint32_t c = (unsigned char) data[position++];
     uint32_t d = (unsigned char) data[position++];
-    assert(position <= size);
     a = a << 24;
     a |= b << 16;
     a |= c << 8;
@@ -145,8 +146,8 @@ uint64_t Buffer::getLongLong(){
 }
 
 int8_t Buffer::getInt8(){
+    checkAvailable(1);
     int8_t i = static_cast<int8_t>(data[position++]);
-    assert(position <= size);
     return i;
 }
 
@@ -236,8 +237,8 @@ void Buffer::putShortString(const string& s){
     size_t slen = s.length();
     if (slen <= std::numeric_limits<uint8_t>::max()) {
         uint8_t len = (uint8_t) slen;
-        checkAvailable(slen + 1);
         putOctet(len);
+        checkAvailable(slen);
         s.copy(data + position, len);
         position += len;
         return;
@@ -249,8 +250,8 @@ void Buffer::putMediumString(const string& s){
     size_t slen = s.length();
     if (slen <= std::numeric_limits<uint16_t>::max()) {
         uint16_t len = (uint16_t) slen;
-        checkAvailable(slen + 2);
         putShort(len);
+        checkAvailable(slen);
         s.copy(data + position, len);
         position += len;
         return;
@@ -259,11 +260,16 @@ void Buffer::putMediumString(const string& s){
 }
 
 void Buffer::putLongString(const string& s){
-    uint32_t len = s.length();
-    checkAvailable(len + 4);
-    putLong(len);
-    s.copy(data + position, len);
-    position += len;    
+    size_t slen = s.length();
+    if (slen <= std::numeric_limits<uint32_t>::max()) {
+        uint32_t len = (uint32_t) slen;
+        putLong(len);
+        checkAvailable(slen);
+        s.copy(data + position, len);
+        position += len;
+        return;
+    }
+    throw Exception(QPID_MSG("Could not encode string of " << slen << " bytes as uint32_t string."));
 }
 
 void Buffer::getShortString(string& s){
@@ -288,12 +294,13 @@ void Buffer::getLongString(string& s){
 }
 
 void Buffer::getBin128(uint8_t* b){
+    checkAvailable(16);
     memcpy (b, data + position, 16);
     position += 16;
 }
 
 void Buffer::putRawData(const string& s){
-    uint32_t len = s.length();
+    size_t len = s.length();
     checkAvailable(len);
     s.copy(data + position, len);
     position += len;    
