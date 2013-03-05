@@ -45,7 +45,7 @@ class QPID_COMMON_CLASS_EXTERN Buffer
     uint32_t position;
 
   public:
-    void checkAvailable(uint32_t count) { if (position + count > size) throw OutOfBounds(); }
+    void checkAvailable(size_t count) { if (count > size - position) throw OutOfBounds(); }
 
     QPID_COMMON_EXTERN Buffer(char* data=0, uint32_t size=0);
 
