@@ -86,22 +86,28 @@ void Array::decode(Buffer& buffer){
     if (size) {
         type = TypeCode(buffer.getOctet());
         uint32_t count = buffer.getLong();
-        
+
         FieldValue dummy;
         dummy.setType(type);
         available = buffer.available();
-        if (available < count * dummy.getData().encodedSize()) {
+        uint32_t elementSize = dummy.getData().encodedSize();
+        if (available < count * elementSize) {
             throw IllegalArgumentException(QPID_MSG("Not enough data for array, expected " 
-                                                << count << " items of " << dummy.getData().encodedSize()
+                                                << count << " items of " << elementSize
                                                 << " bytes each  but only " << available << " bytes available"));
         }
-        
+        // Special check to avoid ridiculously long arrays of zero length elements (they must all be the same
+        // value, but consume broker resources without consuming any on the wire)
+        if (elementSize == 0 && count > 256) {
+            throw IllegalArgumentException(QPID_MSG("Too many zero length elements in array: " << count));
+        }
+
         for (uint32_t i = 0; i < count; i++) {
             ValuePtr value(new FieldValue);
             value->setType(type);
             value->getData().decode(buffer);
             values.push_back(ValuePtr(value));
-        }    
+        }
     }
 }
 

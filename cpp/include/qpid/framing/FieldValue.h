@@ -281,6 +281,7 @@ class VariableWidthValue : public FieldValue::Data {
     };
     void decode(Buffer& buffer) {
         uint32_t len = buffer.getUInt<lenwidth>();
+        buffer.checkAvailable(len);
         octets.resize(len);
         if (len > 0)
             buffer.getRawData(&octets[0], len);
