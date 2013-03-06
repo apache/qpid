@@ -27,6 +27,7 @@ import org.apache.qpid.util.FileUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -79,6 +80,8 @@ public class CallbackHandlerRegistry
 
     /** Ordered collection of mechanisms for which callback handlers exist. */
     private Collection<String> _mechanisms;
+
+    private static final Collection<String> MECHS_THAT_NEED_USERPASS = Arrays.asList(new String [] {"PLAIN", "AMQPLAIN", "CRAM-MD5","CRAM-MD5-HASHED"});
 
     static
     {
@@ -311,4 +314,8 @@ public class CallbackHandlerRegistry
         return Collections.unmodifiableSet(mechanismSet);
     }
 
+    public boolean isUserPassRequired(String selectedMech)
+    {
+        return MECHS_THAT_NEED_USERPASS.contains(selectedMech);
+    }
 }

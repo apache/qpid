@@ -106,11 +106,7 @@ public class URLParser
 
             }
 
-            if (userInfo == null)
-            {
-                throw URLHelper.parseError(AMQConnectionURL.AMQ_PROTOCOL.length() + 3, "User information not found on url", fullURL);
-            }
-            else
+            if (userInfo != null)
             {
                 parseUserInfo(userInfo);
             }

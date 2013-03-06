@@ -98,6 +98,14 @@ public class ClientConnectionDelegate extends ClientDelegate
                     " Client restricted itself to : " + (restrictionList != null ? restrictionList : "no restriction"));
         }
 
+        if (CallbackHandlerRegistry.getInstance().isUserPassRequired(selectedMech))
+        {
+            throw new ConnectionException("Username and Password is required for the selected mechanism : " + selectedMech +
+                    " Broker allows : " + brokerMechanisms +
+                    " Client has : " + CallbackHandlerRegistry.getInstance().getMechanisms()  +
+                    " Client restricted itself to : " + (restrictionList != null ? restrictionList : "no restriction"));
+        }
+
         Map<String,Object> saslProps = new HashMap<String,Object>();
         if (getConnectionSettings().isUseSASLEncryption())
         {
