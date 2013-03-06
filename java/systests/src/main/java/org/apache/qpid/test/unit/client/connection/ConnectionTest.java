@@ -351,4 +351,28 @@ public class ConnectionTest extends QpidBrokerTestCase
     {
         return new junit.framework.TestSuite(ConnectionTest.class);
     }
+
+    public void testExceptionWhenUserPassIsRequired() throws Exception
+    {
+        AMQConnection conn = null;
+        try
+        {
+            BrokerDetails broker = getBroker();
+            String url = "amqp:///test?brokerlist='" + broker + "'&sasl_mech='PLAIN'";
+            conn = new AMQConnection(url);
+            conn.close();
+            fail("Exception should be thrown as user name and password is required");
+        }
+        catch (Exception e)
+        {
+            if (!e.getMessage().contains("Username and Password is required for the selected mechanism"))
+            {
+                if (conn != null && !conn.isClosed())
+                {
+                    conn.close();
+                }
+                fail("Incorrect Exception thrown! The exception thrown is : " + e.getMessage());
+            }
+        }
+    }
 }
