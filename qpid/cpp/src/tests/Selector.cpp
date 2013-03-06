@@ -185,16 +185,12 @@ QPID_AUTO_TEST_CASE(parseStringFail)
 }
 
 class TestSelectorEnv : public qpid::broker::SelectorEnv {
-    map<string, qb::Value> values;
+    mutable map<string, qb::Value> values;
     boost::ptr_vector<string> strings;
     static const qb::Value EMPTY;
 
-    bool present(const string& v) const {
-        return values.find(v)!=values.end();
-    }
-
     const qb::Value& value(const string& v) const {
-        const qb::Value& r = present(v) ? values.at(v) : EMPTY;
+        const qb::Value& r = values.find(v)!=values.end() ? values[v] : EMPTY;
         return r;
     }
 
