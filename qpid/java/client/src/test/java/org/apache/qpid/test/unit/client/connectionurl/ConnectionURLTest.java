@@ -384,11 +384,10 @@ public class ConnectionURLTest extends TestCase
         try
         {
             new AMQConnectionURL(url);
-            fail("URL Should not parse");
         }
         catch (URLSyntaxException urise)
         {
-            assertTrue(urise.getMessage().startsWith("User information not found on url"));
+            fail("User information is optional in url");
         }
 
     }
@@ -400,11 +399,10 @@ public class ConnectionURLTest extends TestCase
         try
         {
             new AMQConnectionURL(url);
-            fail("URL Should not parse");
         }
         catch (URLSyntaxException urise)
         {
-            assertTrue(urise.getMessage().startsWith("User information not found on url"));
+            fail("User information is optional in url");
         }
 
     }
