@@ -75,3 +75,5 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testGetSetAlternateEx
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testRemoveAlternateExchange
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchangeSurvivesRestart
 
+// QPID-3396
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testExceptionWhenUserPassIsRequired
