@@ -273,7 +273,7 @@ QPID_AUTO_TEST_CASE(numericEval)
 {
     TestSelectorEnv env;
     env.set("A", 42.0);
-    env.set("B", 39l);
+    env.set("B", 39);
 
     BOOST_CHECK(qb::Selector("A>B").eval(env));
     BOOST_CHECK(qb::Selector("A=42").eval(env));
