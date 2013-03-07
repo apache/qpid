@@ -30,7 +30,7 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/deq_rec.h"
+#include "qpid/legacystore/jrnl/deq_rec.h"
 
 #include <cassert>
 #include <cerrno>
