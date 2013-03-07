@@ -1598,6 +1598,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             if (isQueueExist(dest,false))
             {
                 getQpidSession().queueDelete(dest.getAddressName());
+                dest.setAddressResolved(0);
             }
         }
     }
