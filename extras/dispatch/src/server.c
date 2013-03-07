@@ -23,16 +23,17 @@
 #include "server_private.h"
 #include "timer_private.h"
 #include "alloc_private.h"
+#include "dispatch_private.h"
 #include "auth.h"
 #include "work_queue.h"
 #include <stdio.h>
 #include <time.h>
-#include <signal.h>
 
 static char *module="SERVER";
-static __thread int server_thread = 0;
+static __thread dx_server_t *thread_server = 0;
 
 typedef struct dx_thread_t {
+    dx_server_t  *dx_server;
     int           thread_id;
     volatile int  running;
     volatile int  canceled;
@@ -41,16 +42,14 @@ typedef struct dx_thread_t {
 } dx_thread_t;
 
 
-typedef struct dx_server_t {
+struct dx_server_t {
     int                      thread_count;
     pn_driver_t             *driver;
     dx_thread_start_cb_t     start_handler;
     dx_conn_handler_cb_t     conn_handler;
-    dx_signal_handler_cb_t   signal_handler;
     dx_user_fd_handler_cb_t  ufd_handler;
     void                    *start_context;
-    void                    *conn_context;
-    void                    *signal_context;
+    void                    *conn_handler_context;
     sys_cond_t              *cond;
     sys_mutex_t             *lock;
     dx_thread_t            **threads;
@@ -62,8 +61,12 @@ typedef struct dx_server_t {
     int                      threads_paused;
     int                      pause_next_sequence;
     int                      pause_now_serving;
+    dx_signal_handler_cb_t   signal_handler;
+    void                    *signal_context;
     int                      pending_signal;
-} dx_server_t;
+};
+
+
 
 
 ALLOC_DEFINE(dx_listener_t);
@@ -72,25 +75,13 @@ ALLOC_DEFINE(dx_connection_t);
 ALLOC_DEFINE(dx_user_fd_t);
 
 
-/**
- * Singleton Concurrent Proton Driver object
- */
-static dx_server_t *dx_server = 0;
-
-
-static void signal_handler(int signum)
-{
-    dx_server->pending_signal = signum;
-    sys_cond_signal_all(dx_server->cond);
-}
-
-
-static dx_thread_t *thread(int id)
+static dx_thread_t *thread(dx_server_t *dx_server, int id)
 {
     dx_thread_t *thread = NEW(dx_thread_t);
     if (!thread)
         return 0;
 
+    thread->dx_server    = dx_server;
     thread->thread_id    = id;
     thread->running      = 0;
     thread->canceled     = 0;
@@ -126,7 +117,7 @@ static void thread_process_listeners(pn_driver_t *driver)
 }
 
 
-static void handle_signals_LH(void)
+static void handle_signals_LH(dx_server_t *dx_server)
 {
     int signum = dx_server->pending_signal;
 
@@ -141,7 +132,7 @@ static void handle_signals_LH(void)
 }
 
 
-static void block_if_paused_LH(void)
+static void block_if_paused_LH(dx_server_t *dx_server)
 {
     if (dx_server->pause_requests > 0) {
         dx_server->threads_paused++;
@@ -153,7 +144,7 @@ static void block_if_paused_LH(void)
 }
 
 
-static void process_connector(pn_connector_t *cxtr)
+static void process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
 {
     dx_connection_t *ctx = pn_connector_context(cxtr);
     int events      = 0;
@@ -225,19 +216,20 @@ static void process_connector(pn_connector_t *cxtr)
             } else
                 assert(0);
 
-            dx_server->conn_handler(ctx->context, ce, (dx_connection_t*) pn_connector_context(cxtr));
+            dx_server->conn_handler(dx_server->conn_handler_context,
+                                    ctx->context, ce, (dx_connection_t*) pn_connector_context(cxtr));
             events = 1;
             break;
 
         case CONN_STATE_OPERATIONAL:
             if (pn_connector_closed(cxtr)) {
-                dx_server->conn_handler(ctx->context,
+                dx_server->conn_handler(dx_server->conn_handler_context, ctx->context,
                                         DX_CONN_EVENT_CLOSE,
                                         (dx_connection_t*) pn_connector_context(cxtr));
                 events = 0;
             }
             else
-                events = dx_server->conn_handler(ctx->context,
+                events = dx_server->conn_handler(dx_server->conn_handler_context, ctx->context,
                                                  DX_CONN_EVENT_PROCESS,
                                                  (dx_connection_t*) pn_connector_context(cxtr));
             break;
@@ -261,7 +253,8 @@ void pn_driver_wait_3(pn_driver_t *d);
 
 static void *thread_run(void *arg)
 {
-    dx_thread_t     *thread = (dx_thread_t*) arg;
+    dx_thread_t     *thread    = (dx_thread_t*) arg;
+    dx_server_t     *dx_server = thread->dx_server;
     pn_connector_t  *work;
     pn_connection_t *conn;
     dx_connection_t *ctx;
@@ -272,7 +265,7 @@ static void *thread_run(void *arg)
     if (!thread)
         return 0;
 
-    server_thread   = 1;
+    thread_server   = dx_server;
     thread->running = 1;
 
     if (thread->canceled)
@@ -294,7 +287,7 @@ static void *thread_run(void *arg)
         //
         // Check for pending signals to process
         //
-        handle_signals_LH();
+        handle_signals_LH(dx_server);
         if (!thread->running) {
             sys_mutex_unlock(dx_server->lock);
             break;
@@ -303,7 +296,7 @@ static void *thread_run(void *arg)
         //
         // Check to see if the server is pausing.  If so, block here.
         //
-        block_if_paused_LH();
+        block_if_paused_LH(dx_server);
         if (!thread->running) {
             sys_mutex_unlock(dx_server->lock);
             break;
@@ -450,7 +443,7 @@ static void *thread_run(void *arg)
         // Process the connector that we now have exclusive access to.
         //
         if (work) {
-            process_connector(work);
+            process_connector(dx_server, work);
 
             //
             // Check to see if the connector was closed during processing
@@ -540,6 +533,7 @@ static void cxtr_try_open(void *context)
         return;
 
     dx_connection_t *ctx = new_dx_connection_t();
+    ctx->server       = ct->server;
     ctx->state        = CONN_STATE_CONNECTING;
     ctx->owner_thread = CONTEXT_NO_OWNER;
     ctx->enqueued     = 0;
@@ -553,9 +547,9 @@ static void cxtr_try_open(void *context)
     //
     // pn_connector is not thread safe
     //
-    sys_mutex_lock(dx_server->lock);
-    ctx->pn_cxtr = pn_connector(dx_server->driver, ct->config->host, ct->config->port, (void*) ctx);
-    sys_mutex_unlock(dx_server->lock);
+    sys_mutex_lock(ct->server->lock);
+    ctx->pn_cxtr = pn_connector(ct->server->driver, ct->config->host, ct->config->port, (void*) ctx);
+    sys_mutex_unlock(ct->server->lock);
 
     ct->ctx   = ctx;
     ct->delay = 5000;
@@ -563,18 +557,13 @@ static void cxtr_try_open(void *context)
 }
 
 
-void dx_server_initialize(int thread_count)
+dx_server_t *dx_server(int thread_count)
 {
     int i;
 
-    if (dx_server)
-        return;     // TODO - Fail in a more dramatic way
-
-    dx_alloc_initialize();
-    dx_server = NEW(dx_server_t);
-
-    if (!dx_server)
-        return;   // TODO - Fail in a more dramatic way
+    dx_server_t *dx_server = NEW(dx_server_t);
+    if (dx_server == 0)
+        return 0;
 
     dx_server->thread_count    = thread_count;
     dx_server->driver          = pn_driver();
@@ -591,7 +580,7 @@ void dx_server_initialize(int thread_count)
 
     dx_server->threads = NEW_PTR_ARRAY(dx_thread_t, thread_count);
     for (i = 0; i < thread_count; i++)
-        dx_server->threads[i] = thread(i);
+        dx_server->threads[i] = thread(dx_server, i);
 
     dx_server->work_queue          = work_queue();
     DEQ_INIT(dx_server->pending_timers);
@@ -602,10 +591,12 @@ void dx_server_initialize(int thread_count)
     dx_server->pause_next_sequence = 0;
     dx_server->pause_now_serving   = 0;
     dx_server->pending_signal      = 0;
+
+    return dx_server;
 }
 
 
-void dx_server_finalize(void)
+void dx_server_free(dx_server_t *dx_server)
 {
     int i;
     if (!dx_server)
@@ -620,38 +611,40 @@ void dx_server_finalize(void)
     sys_mutex_free(dx_server->lock);
     sys_cond_free(dx_server->cond);
     free(dx_server);
-    dx_server = 0;
 }
 
 
-void dx_server_set_conn_handler(dx_conn_handler_cb_t handler)
+void dx_server_set_conn_handler(dx_dispatch_t *dx, dx_conn_handler_cb_t handler, void *handler_context)
 {
-    dx_server->conn_handler = handler;
+    dx->server->conn_handler         = handler;
+    dx->server->conn_handler_context = handler_context;
 }
 
 
-void dx_server_set_signal_handler(dx_signal_handler_cb_t handler, void *context)
+void dx_server_set_signal_handler(dx_dispatch_t *dx, dx_signal_handler_cb_t handler, void *context)
 {
-    dx_server->signal_handler = handler;
-    dx_server->signal_context = context;
+    dx->server->signal_handler = handler;
+    dx->server->signal_context = context;
 }
 
 
-void dx_server_set_start_handler(dx_thread_start_cb_t handler, void *context)
+void dx_server_set_start_handler(dx_dispatch_t *dx, dx_thread_start_cb_t handler, void *context)
 {
-    dx_server->start_handler = handler;
-    dx_server->start_context = context;
+    dx->server->start_handler = handler;
+    dx->server->start_context = context;
 }
 
 
-void dx_server_set_user_fd_handler(dx_user_fd_handler_cb_t ufd_handler)
+void dx_server_set_user_fd_handler(dx_dispatch_t *dx, dx_user_fd_handler_cb_t ufd_handler)
 {
-    dx_server->ufd_handler = ufd_handler;
+    dx->server->ufd_handler = ufd_handler;
 }
 
 
-void dx_server_run(void)
+void dx_server_run(dx_dispatch_t *dx)
 {
+    dx_server_t *dx_server = dx->server;
+
     int i;
     if (!dx_server)
         return;
@@ -672,9 +665,11 @@ void dx_server_run(void)
 }
 
 
-void dx_server_start(void)
+void dx_server_start(dx_dispatch_t *dx)
 {
+    dx_server_t *dx_server = dx->server;
     int i;
+
     if (!dx_server)
         return;
 
@@ -687,8 +682,9 @@ void dx_server_start(void)
 }
 
 
-void dx_server_stop(void)
+void dx_server_stop(dx_dispatch_t *dx)
 {
+    dx_server_t *dx_server = dx->server;
     int idx;
 
     sys_mutex_lock(dx_server->lock);
@@ -698,7 +694,7 @@ void dx_server_stop(void)
     pn_driver_wakeup(dx_server->driver);
     sys_mutex_unlock(dx_server->lock);
 
-    if (!server_thread) {
+    if (thread_server != dx_server) {
         for (idx = 0; idx < dx_server->thread_count; idx++)
             thread_join(dx_server->threads[idx]);
         dx_log(module, LOG_INFO, "Shut Down");
@@ -706,14 +702,19 @@ void dx_server_stop(void)
 }
 
 
-void dx_server_signal(int signum)
+void dx_server_signal(dx_dispatch_t *dx, int signum)
 {
-    signal(signum, signal_handler);
+    dx_server_t *dx_server = dx->server;
+
+    dx_server->pending_signal = signum;
+    sys_cond_signal_all(dx_server->cond);
 }
 
 
-void dx_server_pause(void)
+void dx_server_pause(dx_dispatch_t *dx)
 {
+    dx_server_t *dx_server = dx->server;
+
     sys_mutex_lock(dx_server->lock);
 
     //
@@ -741,8 +742,10 @@ void dx_server_pause(void)
 }
 
 
-void dx_server_resume(void)
+void dx_server_resume(dx_dispatch_t *dx)
 {
+    dx_server_t *dx_server = dx->server;
+
     sys_mutex_lock(dx_server->lock);
     dx_server->pause_requests--;
     dx_server->pause_now_serving++;
@@ -783,13 +786,15 @@ pn_connection_t *dx_connection_pn(dx_connection_t *conn)
 }
 
 
-dx_listener_t *dx_server_listen(const dx_server_config_t *config, void *context)
+dx_listener_t *dx_server_listen(dx_dispatch_t *dx, const dx_server_config_t *config, void *context)
 {
-    dx_listener_t *li = new_dx_listener_t();
+    dx_server_t   *dx_server = dx->server;
+    dx_listener_t *li        = new_dx_listener_t();
 
     if (!li)
         return 0;
 
+    li->server      = dx_server;
     li->config      = config;
     li->context     = context;
     li->pn_listener = pn_listener(dx_server->driver, config->host, config->port, (void*) li);
@@ -819,18 +824,20 @@ void dx_server_listener_close(dx_listener_t* li)
 }
 
 
-dx_connector_t *dx_server_connect(const dx_server_config_t *config, void *context)
+dx_connector_t *dx_server_connect(dx_dispatch_t *dx, const dx_server_config_t *config, void *context)
 {
-    dx_connector_t *ct = new_dx_connector_t();
+    dx_server_t    *dx_server = dx->server;
+    dx_connector_t *ct        = new_dx_connector_t();
 
     if (!ct)
         return 0;
 
+    ct->server  = dx_server;
     ct->state   = CXTR_STATE_CONNECTING;
     ct->config  = config;
     ct->context = context;
     ct->ctx     = 0;
-    ct->timer   = dx_timer(cxtr_try_open, (void*) ct);
+    ct->timer   = dx_timer(dx, cxtr_try_open, (void*) ct);
     ct->delay   = 0;
 
     dx_timer_schedule(ct->timer, ct->delay);
@@ -853,14 +860,16 @@ void dx_server_connector_free(dx_connector_t* ct)
 }
 
 
-dx_user_fd_t *dx_user_fd(int fd, void *context)
+dx_user_fd_t *dx_user_fd(dx_dispatch_t *dx, int fd, void *context)
 {
-    dx_user_fd_t *ufd = new_dx_user_fd_t();
+    dx_server_t  *dx_server = dx->server;
+    dx_user_fd_t *ufd       = new_dx_user_fd_t();
 
     if (!ufd)
         return 0;
 
     dx_connection_t *ctx = new_dx_connection_t();
+    ctx->server       = dx_server;
     ctx->state        = CONN_STATE_USER;
     ctx->owner_thread = CONTEXT_NO_OWNER;
     ctx->enqueued     = 0;
@@ -872,6 +881,7 @@ dx_user_fd_t *dx_user_fd(int fd, void *context)
     ctx->ufd          = ufd;
 
     ufd->context = context;
+    ufd->server  = dx_server;
     ufd->fd      = fd;
     ufd->pn_conn = pn_connector_fd(dx_server->driver, fd, (void*) ctx);
     pn_driver_wakeup(dx_server->driver);
@@ -890,14 +900,14 @@ void dx_user_fd_free(dx_user_fd_t *ufd)
 void dx_user_fd_activate_read(dx_user_fd_t *ufd)
 {
     pn_connector_activate(ufd->pn_conn, PN_CONNECTOR_READABLE);
-    pn_driver_wakeup(dx_server->driver);
+    pn_driver_wakeup(ufd->server->driver);
 }
 
 
 void dx_user_fd_activate_write(dx_user_fd_t *ufd)
 {
     pn_connector_activate(ufd->pn_conn, PN_CONNECTOR_WRITABLE);
-    pn_driver_wakeup(dx_server->driver);
+    pn_driver_wakeup(ufd->server->driver);
 }
 
 
@@ -915,12 +925,12 @@ bool dx_user_fd_is_writeable(dx_user_fd_t *ufd)
 
 void dx_server_timer_pending_LH(dx_timer_t *timer)
 {
-    DEQ_INSERT_TAIL(dx_server->pending_timers, timer);
+    DEQ_INSERT_TAIL(timer->server->pending_timers, timer);
 }
 
 
 void dx_server_timer_cancel_LH(dx_timer_t *timer)
 {
-    DEQ_REMOVE(dx_server->pending_timers, timer);
+    DEQ_REMOVE(timer->server->pending_timers, timer);
 }
 

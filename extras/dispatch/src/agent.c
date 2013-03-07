@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "dispatch_private.h"
 #include <qpid/dispatch/agent.h>
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/hash.h>
@@ -28,14 +29,13 @@
 
 
 typedef struct dx_agent_t {
+    dx_server_t       *server;
     hash_t            *class_hash;
     dx_message_list_t  in_fifo;
     dx_message_list_t  out_fifo;
     sys_mutex_t       *lock;
     dx_timer_t        *timer;
 } dx_agent_t;
-
-static dx_agent_t *agent = 0;
 
 
 struct dx_agent_class_t {
@@ -52,33 +52,37 @@ static void dx_agent_timer_handler(void *context)
 }
 
 
-void dx_agent_initialize()
+dx_agent_t *dx_agent(dx_dispatch_t *dx)
 {
-    assert(!agent);
-    agent = NEW(dx_agent_t);
+    dx_agent_t *agent = NEW(dx_agent_t);
+    agent->server     = dx->server;
     agent->class_hash = hash(6, 10, 1);
     DEQ_INIT(agent->in_fifo);
     DEQ_INIT(agent->out_fifo);
     agent->lock  = sys_mutex();
-    agent->timer = dx_timer(dx_agent_timer_handler, agent);
+    agent->timer = dx_timer(dx, dx_agent_timer_handler, agent);
+
+    return agent;
 }
 
 
-void dx_agent_finalize(void)
+void dx_agent_free(dx_agent_t *agent)
 {
     sys_mutex_free(agent->lock);
     dx_timer_free(agent->timer);
     hash_free(agent->class_hash);
     free(agent);
-    agent = 0;
 }
 
 
-dx_agent_class_t *dx_agent_register_class(const char           *fqname,
+dx_agent_class_t *dx_agent_register_class(dx_dispatch_t        *dx,
+                                          const char           *fqname,
                                           void                 *context,
                                           dx_agent_schema_cb_t  schema_handler,
                                           dx_agent_query_cb_t   query_handler)
 {
+    dx_agent_t *agent = dx->agent;
+
     dx_agent_class_t *cls = NEW(dx_agent_class_t);
     assert(cls);
     cls->fqname = (char*) malloc(strlen(fqname) + 1);
@@ -90,61 +94,63 @@ dx_agent_class_t *dx_agent_register_class(const char           *fqname,
     dx_field_iterator_t *iter = dx_field_iterator_string(fqname, ITER_VIEW_ALL);
     int result = hash_insert_const(agent->class_hash, iter, cls);
     dx_field_iterator_free(iter);
-    assert(result >= 0);
+    if (result < 0)
+        assert(false);
 
     return cls;
 }
 
 
-dx_agent_class_t *dx_agent_register_event(const char           *fqname,
+dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
+                                          const char           *fqname,
                                           void                 *context,
                                           dx_agent_schema_cb_t  schema_handler)
 {
-    return dx_agent_register_class(fqname, context, schema_handler, 0);
+    return dx_agent_register_class(dx, fqname, context, schema_handler, 0);
 }
 
 
-void dx_agent_value_string(const void *correlator, const char *key, const char *value)
+void dx_agent_value_string(dx_dispatch_t *dx, const void *correlator, const char *key, const char *value)
 {
 }
 
 
-void dx_agent_value_uint(const void *correlator, const char *key, uint64_t value)
+void dx_agent_value_uint(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value)
 {
 }
 
 
-void dx_agent_value_null(const void *correlator, const char *key)
+void dx_agent_value_null(dx_dispatch_t *dx, const void *correlator, const char *key)
 {
 }
 
 
-void dx_agent_value_boolean(const void *correlator, const char *key, bool value)
+void dx_agent_value_boolean(dx_dispatch_t *dx, const void *correlator, const char *key, bool value)
 {
 }
 
 
-void dx_agent_value_binary(const void *correlator, const char *key, const uint8_t *value, size_t len)
+void dx_agent_value_binary(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value, size_t len)
 {
 }
 
 
-void dx_agent_value_uuid(const void *correlator, const char *key, const uint8_t *value)
+void dx_agent_value_uuid(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value)
 {
 }
 
 
-void dx_agent_value_timestamp(const void *correlator, const char *key, uint64_t value)
+void dx_agent_value_timestamp(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value)
 {
 }
 
 
-void dx_agent_value_complete(const void *correlator, bool more)
+void dx_agent_value_complete(dx_dispatch_t *dx, const void *correlator, bool more)
 {
 }
 
 
-void *dx_agent_raise_event(dx_agent_class_t *event)
+void *dx_agent_raise_event(dx_dispatch_t *dx, dx_agent_class_t *event)
 {
     return 0;
 }

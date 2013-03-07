@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct dx_dispatch_t dx_dispatch_t;
+
 /**
  * \defgroup Container Management Agent
  * @{
@@ -50,22 +52,10 @@ typedef void (*dx_agent_query_cb_t)(void* context, const char *id, const void *c
 
 
 /**
- * \brief Initialize the agent module and prepare it for operation.
- *
- */
-void dx_agent_initialize();
-
-
-/**
- * \brief Finalize the agent after it has stopped running.
- */
-void dx_agent_finalize(void);
-
-
-/**
  * \brief Register a class/object-type with the agent.
  */
-dx_agent_class_t *dx_agent_register_class(const char           *fqname,
+dx_agent_class_t *dx_agent_register_class(dx_dispatch_t        *dx,
+                                          const char           *fqname,
                                           void                 *context,
                                           dx_agent_schema_cb_t  schema_handler,
                                           dx_agent_query_cb_t   query_handler);
@@ -73,32 +63,33 @@ dx_agent_class_t *dx_agent_register_class(const char           *fqname,
 /**
  * \brief Register an event-type with the agent.
  */
-dx_agent_class_t *dx_agent_register_event(const char           *fqname,
+dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
+                                          const char           *fqname,
                                           void                 *context,
                                           dx_agent_schema_cb_t  schema_handler);
 
 /**
  *
  */
-void dx_agent_value_string(const void *correlator, const char *key, const char *value);
-void dx_agent_value_uint(const void *correlator, const char *key, uint64_t value);
-void dx_agent_value_null(const void *correlator, const char *key);
-void dx_agent_value_boolean(const void *correlator, const char *key, bool value);
-void dx_agent_value_binary(const void *correlator, const char *key, const uint8_t *value, size_t len);
-void dx_agent_value_uuid(const void *correlator, const char *key, const uint8_t *value);
-void dx_agent_value_timestamp(const void *correlator, const char *key, uint64_t value);
+void dx_agent_value_string(dx_dispatch_t *dx, const void *correlator, const char *key, const char *value);
+void dx_agent_value_uint(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value);
+void dx_agent_value_null(dx_dispatch_t *dx, const void *correlator, const char *key);
+void dx_agent_value_boolean(dx_dispatch_t *dx, const void *correlator, const char *key, bool value);
+void dx_agent_value_binary(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value, size_t len);
+void dx_agent_value_uuid(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value);
+void dx_agent_value_timestamp(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value);
 
 
 /**
  *
  */
-void dx_agent_value_complete(const void *correlator, bool more);
+void dx_agent_value_complete(dx_dispatch_t *dx, const void *correlator, bool more);
 
 
 /**
  *
  */
-void *dx_agent_raise_event(dx_agent_class_t *event);
+void *dx_agent_raise_event(dx_dispatch_t *dx, dx_agent_class_t *event);
 
 
 /**

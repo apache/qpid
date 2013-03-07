@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <qpid/dispatch/server.h>
 
 /**
  * \defgroup UserFd Server User-File-Descriptor Functions
@@ -44,7 +45,7 @@ typedef void (*dx_user_fd_handler_cb_t)(void* context, dx_user_fd_t *ufd);
  * Set the user-fd handler callback for the server.  This handler is optional, but must be supplied
  * if the dx_server is used to manage the activation of user file descriptors.
  */
-void dx_server_set_user_fd_handler(dx_user_fd_handler_cb_t ufd_handler);
+void dx_server_set_user_fd_handler(dx_dispatch_t *dx, dx_user_fd_handler_cb_t ufd_handler);
 
 
 /**
@@ -58,7 +59,7 @@ void dx_server_set_user_fd_handler(dx_user_fd_handler_cb_t ufd_handler);
  * @param context User context passed back in the connection handler.
  * @return A pointer to the new user_fd.
  */
-dx_user_fd_t *dx_user_fd(int fd, void *context);
+dx_user_fd_t *dx_user_fd(dx_dispatch_t *dx, int fd, void *context);
 
 
 /**

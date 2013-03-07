@@ -18,26 +18,28 @@
  */
 
 #include <stdio.h>
-#include <proton/driver.h>
-#include <qpid/dispatch/server.h>
-#include <qpid/dispatch/container.h>
-#include <qpid/dispatch/timer.h>
-#include <qpid/dispatch/log.h>
-#include <qpid/dispatch/router.h>
+#include <qpid/dispatch.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-static int exit_with_sigint = 0;
+static int            exit_with_sigint = 0;
+static dx_dispatch_t *dispatch;
 
 static void thread_start_handler(void* context, int thread_id)
 {
 }
 
 
-static void signal_handler(void* context, int signum)
+static void signal_handler(int signum)
 {
-    dx_server_pause();
+    dx_server_signal(dispatch, signum);
+}
+
+
+static void server_signal_handler(void* context, int signum)
+{
+    dx_server_pause(dispatch);
 
     switch (signum) {
     case SIGINT:
@@ -46,7 +48,7 @@ static void signal_handler(void* context, int signum)
     case SIGQUIT:
     case SIGTERM:
         fflush(stdout);
-        dx_server_stop();
+        dx_server_stop(dispatch);
         break;
 
     case SIGHUP:
@@ -56,7 +58,7 @@ static void signal_handler(void* context, int signum)
         break;
     }
 
-    dx_server_resume();
+    dx_server_resume(dispatch);
 }
 
 
@@ -64,7 +66,7 @@ static void startup(void *context)
 {
     // TODO - Move this into a configuration framework
 
-    dx_server_pause();
+    dx_server_pause(dispatch);
 
     static dx_server_config_t server_config;
     server_config.host            = "0.0.0.0";
@@ -72,7 +74,7 @@ static void startup(void *context)
     server_config.sasl_mechanisms = "ANONYMOUS";
     server_config.ssl_enabled     = 0;
 
-    dx_server_listen(&server_config, 0);
+    dx_server_listen(dispatch, &server_config, 0);
 
     /*
     static dx_server_config_t client_config;
@@ -81,10 +83,10 @@ static void startup(void *context)
     client_config.sasl_mechanisms = "ANONYMOUS";
     client_config.ssl_enabled     = 0;
 
-    dx_server_connect(&client_config, 0);
+    dx_server_connect(dispatch, &client_config, 0);
     */
 
-    dx_server_resume();
+    dx_server_resume(dispatch);
 }
 
 
@@ -92,25 +94,21 @@ int main(int argc, char **argv)
 {
     dx_log_set_mask(LOG_INFO | LOG_TRACE | LOG_ERROR);
 
-    dx_server_initialize(4);
-    dx_container_initialize();
+    dispatch = dx_dispatch(4);
 
-    dx_server_set_signal_handler(signal_handler, 0);
-    dx_server_set_start_handler(thread_start_handler, 0);
+    dx_server_set_signal_handler(dispatch, server_signal_handler, 0);
+    dx_server_set_start_handler(dispatch, thread_start_handler, 0);
 
-    dx_router_t *router = dx_router(0);
-
-    dx_timer_t *startup_timer = dx_timer(startup, 0);
+    dx_timer_t *startup_timer = dx_timer(dispatch, startup, 0);
     dx_timer_schedule(startup_timer, 0);
 
-    dx_server_signal(SIGHUP);
-    dx_server_signal(SIGQUIT);
-    dx_server_signal(SIGTERM);
-    dx_server_signal(SIGINT);
+    signal(SIGHUP,  signal_handler);
+    signal(SIGQUIT, signal_handler);
+    signal(SIGTERM, signal_handler);
+    signal(SIGINT,  signal_handler);
 
-    dx_server_run();
-    dx_router_free(router);
-    dx_server_finalize();
+    dx_server_run(dispatch);
+    dx_dispatch_free(dispatch);
 
     if (exit_with_sigint) {
 	signal(SIGINT, SIG_DFL);

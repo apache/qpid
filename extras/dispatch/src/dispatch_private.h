@@ -1,5 +1,5 @@
-#ifndef __dispatch_router_h__
-#define __dispatch_router_h__ 1
+#ifndef __dispatch_private_h__
+#define __dispatch_private_h__
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,6 +19,17 @@
  * under the License.
  */
 
-// TODO - Add router message-passing methods
+typedef struct dx_server_t    dx_server_t;
+typedef struct dx_container_t dx_container_t;
+typedef struct dx_router_t    dx_router_t;
+typedef struct dx_agent_t     dx_agent_t;
+
+struct dx_dispatch_t {
+    dx_server_t    *server;
+    dx_container_t *container;
+    dx_router_t    *router;
+    dx_agent_t     *agent;
+};
 
 #endif
+

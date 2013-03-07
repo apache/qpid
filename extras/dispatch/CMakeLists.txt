@@ -71,6 +71,7 @@ set(server_SOURCES
     src/auth.c
     src/buffer.c
     src/container.c
+    src/dispatch.c
     src/hash.c
     src/iovec.c
     src/iterator.c
@@ -94,6 +95,7 @@ install(TARGETS qpid-dispatch
         LIBRARY DESTINATION ${LIB_INSTALL_DIR})
 file(GLOB headers "include/qpid/dispatch/*.h")
 install(FILES ${headers} DESTINATION ${INCLUDE_INSTALL_DIR}/qpid/dispatch)
+install(FILES include/qpid/dispatch.h DESTINATION ${INCLUDE_INSTALL_DIR}/qpid)
 
 ##
 ## Build Tests

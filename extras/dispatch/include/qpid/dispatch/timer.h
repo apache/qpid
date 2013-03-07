@@ -19,6 +19,10 @@
  * under the License.
  */
 
+#include <qpid/dispatch/server.h>
+
+typedef struct dx_dispatch_t dx_dispatch_t;
+
 /**
  * \defgroup Timer Server Timer Functions
  * @{
@@ -43,7 +47,7 @@ typedef void (*dx_timer_cb_t)(void* context);
  * @param context An opaque, user-supplied context to be passed into the callback.
  * @return A pointer to the new timer object or NULL if memory is exhausted.
  */
-dx_timer_t *dx_timer(dx_timer_cb_t cb, void* context);
+dx_timer_t *dx_timer(dx_dispatch_t *dx, dx_timer_cb_t cb, void* context);
 
 
 /**
