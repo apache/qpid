@@ -31,7 +31,6 @@
 #include <sstream>
 #include "qpid/sys/unordered_map.h"
 
-#include <boost/make_shared.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -182,7 +181,7 @@ const boost::shared_ptr<Selector> NULL_SELECTOR = boost::shared_ptr<Selector>();
 boost::shared_ptr<Selector> returnSelector(const string& e)
 {
     if (e.empty()) return NULL_SELECTOR;
-    return boost::make_shared<Selector>(e);
+    return boost::shared_ptr<Selector>(new Selector(e));
 }
 
 }}
