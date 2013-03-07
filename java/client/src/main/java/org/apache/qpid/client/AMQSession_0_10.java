@@ -1591,6 +1591,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             if (isExchangeExist(dest,false))
             {
                 getQpidSession().exchangeDelete(dest.getAddressName());
+                dest.setAddressResolved(0);
             }
         }
         else
