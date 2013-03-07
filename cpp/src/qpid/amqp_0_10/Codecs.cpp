@@ -527,6 +527,15 @@ void translate(const FieldTable& from, Variant::Map& to)
     convert(from, to, &toVariantMapEntry);
 }
 
+boost::shared_ptr<framing::FieldValue> fieldValue(const types::Variant& value) {
+    // TODO aconway 2013-03-05: Nasty implementation
+    Variant::Map m;
+    m[std::string()] = value;
+    framing::FieldTable f;
+    translate(m, f);
+    return f.get(std::string());
+}
+
 const std::string ListCodec::contentType("amqp/list");
 const std::string MapCodec::contentType("amqp/map");
 
