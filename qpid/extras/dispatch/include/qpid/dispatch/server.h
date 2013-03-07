@@ -21,6 +21,8 @@
 
 #include <proton/engine.h>
 
+typedef struct dx_dispatch_t dx_dispatch_t;
+
 /**
  * \defgroup Control Server Control Functions
  * @{
@@ -42,20 +44,6 @@ typedef void (*dx_thread_start_cb_t)(void* context, int thread_id);
 
 
 /**
- * \brief Initialize the server module and prepare it for operation.
- *
- * @param thread_count The number of worker threads (1 or more) that the server shall create
- */
-void dx_server_initialize(int thread_count);
-
-
-/**
- * \brief Finalize the server after it has stopped running.
- */
-void dx_server_finalize(void);
-
-
-/**
  * \brief Set the optional thread-start handler.
  *
  * This handler is called once on each worker thread at the time
@@ -64,7 +52,7 @@ void dx_server_finalize(void);
  * @param start_handler The thread-start handler invoked per thread on thread startup.
  * @param context Opaque context to be passed back in the callback function.
  */
-void dx_server_set_start_handler(dx_thread_start_cb_t start_handler, void *context);
+void dx_server_set_start_handler(dx_dispatch_t *dx, dx_thread_start_cb_t start_handler, void *context);
 
 
 /**
@@ -74,7 +62,7 @@ void dx_server_set_start_handler(dx_thread_start_cb_t start_handler, void *conte
  * This function does not return until after the server has been stopped.  The thread
  * that calls dx_server_run is used as one of the worker threads.
  */
-void dx_server_run(void);
+void dx_server_run(dx_dispatch_t *dx);
 
 
 /**
@@ -82,7 +70,7 @@ void dx_server_run(void);
  *
  * Start the operation of the server, including launching all of the worker threads.
  */
-void dx_server_start(void);
+void dx_server_start(dx_dispatch_t *dx);
 
 
 /**
@@ -92,7 +80,7 @@ void dx_server_start(void);
  * thread.  When this function returns, all of the other server threads have been closed and
  * joined.  The calling thread will be the only running thread in the process.
  */
-void dx_server_stop(void);
+void dx_server_stop(dx_dispatch_t *dx);
 
 
 /**
@@ -102,7 +90,7 @@ void dx_server_stop(void);
  * the one calling the this function) are finished processing and have been blocked.  When
  * this call returns, the calling thread is the only thread running in the process.
  */
-void dx_server_pause(void);
+void dx_server_pause(dx_dispatch_t *dx);
 
 
 /**
@@ -111,7 +99,7 @@ void dx_server_pause(void);
  * This call unblocks all of the worker threads
  * so they can resume normal connection processing.
  */
-void dx_server_resume(void);
+void dx_server_resume(dx_dispatch_t *dx);
 
 
 /**
@@ -143,15 +131,15 @@ typedef void (*dx_signal_handler_cb_t)(void* context, int signum);
  * @param signal_handler The signal handler called when a registered signal is caught.
  * @param context Opaque context to be passed back in the callback function.
  */
-void dx_server_set_signal_handler(dx_signal_handler_cb_t signal_handler, void *context);
+void dx_server_set_signal_handler(dx_dispatch_t *dx, dx_signal_handler_cb_t signal_handler, void *context);
 
 
 /**
- * \brief Register a signal to be caught and handled by the signal handler.
+ * \brief TODO
  *
- * @param signum The signal number of a signal to be handled by the application.
+ * @param signum The signal number... TODO
  */
-void dx_server_signal(int signum);
+void dx_server_signal(dx_dispatch_t *dx, int signum);
 
 
 /**
@@ -202,13 +190,14 @@ typedef enum {
  * The implementation of this handler may assume that it has exclusive access to the
  * connection and its subservient components (sessions, links, deliveries, etc.).
  *
- * @param context The handler context supplied in dx_server_{connect,listen}.
+ * @param handler_context The handler context supplied in dx_server_set_conn_handler.
+ * @param conn_context The handler context supplied in dx_server_{connect,listen}.
  * @param event The event/reason for the invocation of the handler.
  * @param conn The connection that requires processing by the handler.
  * @return A value greater than zero if the handler did any proton processing for
  *         the connection.  If no work was done, zero is returned.
  */
-typedef int (*dx_conn_handler_cb_t)(void* context, dx_conn_event_t event, dx_connection_t *conn);
+typedef int (*dx_conn_handler_cb_t)(void *handler_context, void* conn_context, dx_conn_event_t event, dx_connection_t *conn);
 
 
 /**
@@ -219,7 +208,7 @@ typedef int (*dx_conn_handler_cb_t)(void* context, dx_conn_event_t event, dx_con
  *
  * @param conn_hander The handler for processing connection-related events.
  */
-void dx_server_set_conn_handler(dx_conn_handler_cb_t conn_handler);
+void dx_server_set_conn_handler(dx_dispatch_t *dx, dx_conn_handler_cb_t conn_handler, void *handler_context);
 
 
 /**
@@ -366,7 +355,7 @@ typedef struct dx_server_config_t {
  * @param context User context passed back in the connection handler.
  * @return A pointer to the new listener, or NULL in case of failure.
  */
-dx_listener_t *dx_server_listen(const dx_server_config_t *config, void *context);
+dx_listener_t *dx_server_listen(dx_dispatch_t *dx, const dx_server_config_t *config, void *context);
 
 
 /**
@@ -394,7 +383,7 @@ void dx_listener_close(dx_listener_t* li);
  * @param context User context passed back in the connection handler.
  * @return A pointer to the new connector, or NULL in case of failure.
  */
-dx_connector_t *dx_server_connect(const dx_server_config_t *config, void *context);
+dx_connector_t *dx_server_connect(dx_dispatch_t *dx, const dx_server_config_t *config, void *context);
 
 
 /**

@@ -19,6 +19,7 @@
 
 #include "timer_private.h"
 #include "server_private.h"
+#include "dispatch_private.h"
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/threading.h>
 #include <qpid/dispatch/alloc.h>
@@ -67,7 +68,7 @@ static void dx_timer_cancel_LH(dx_timer_t *timer)
 // Public Functions from timer.h
 //=========================================================================
 
-dx_timer_t *dx_timer(dx_timer_cb_t cb, void* context)
+dx_timer_t *dx_timer(dx_dispatch_t *dx, dx_timer_cb_t cb, void* context)
 {
     dx_timer_t *timer = new_dx_timer_t();
     if (!timer)
@@ -75,6 +76,7 @@ dx_timer_t *dx_timer(dx_timer_cb_t cb, void* context)
 
     DEQ_ITEM_INIT(timer);
 
+    timer->server     = dx ? dx->server : 0;
     timer->handler    = cb;
     timer->context    = context;
     timer->delta_time = 0;

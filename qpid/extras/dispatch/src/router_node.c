@@ -18,19 +18,13 @@
  */
 
 #include <stdio.h>
-#include <qpid/dispatch/server.h>
-#include <qpid/dispatch/message.h>
-#include <qpid/dispatch/threading.h>
-#include <qpid/dispatch/timer.h>
-#include <qpid/dispatch/ctools.h>
-#include <qpid/dispatch/hash.h>
-#include <qpid/dispatch/iterator.h>
-#include <qpid/dispatch/log.h>
-#include <qpid/dispatch/router.h>
+#include <qpid/dispatch.h>
+#include "dispatch_private.h"
 
 static char *module="ROUTER_NODE";
 
 struct dx_router_t {
+    dx_dispatch_t      *dx;
     dx_node_t          *node;
     dx_link_list_t      in_links;
     dx_link_list_t      out_links;
@@ -389,23 +383,24 @@ static dx_node_type_t router_node = {"router", 0, 0,
 static int type_registered = 0;
 
 
-dx_router_t *dx_router(dx_router_configuration_t *config)
+dx_router_t *dx_router(dx_dispatch_t *dx)
 {
     if (!type_registered) {
         type_registered = 1;
-        dx_container_register_node_type(&router_node);
+        dx_container_register_node_type(dx, &router_node);
     }
 
     dx_router_t *router = NEW(dx_router_t);
-    dx_container_set_default_node_type(&router_node, (void*) router, DX_DIST_BOTH);
+    dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
 
     DEQ_INIT(router->in_links);
     DEQ_INIT(router->out_links);
     DEQ_INIT(router->in_fifo);
 
+    router->dx   = dx;
     router->lock = sys_mutex();
 
-    router->timer = dx_timer(dx_router_timer_handler, (void*) router);
+    router->timer = dx_timer(dx, dx_router_timer_handler, (void*) router);
     dx_timer_schedule(router->timer, 0); // Immediate
 
     router->out_hash = hash(10, 32, 0);
@@ -417,7 +412,7 @@ dx_router_t *dx_router(dx_router_configuration_t *config)
 
 void dx_router_free(dx_router_t *router)
 {
-    dx_container_set_default_node_type(0, 0, DX_DIST_BOTH);
+    dx_container_set_default_node_type(router->dx, 0, 0, DX_DIST_BOTH);
     sys_mutex_free(router->lock);
     free(router);
 }

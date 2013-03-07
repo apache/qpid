@@ -24,6 +24,8 @@
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/ctools.h>
 
+typedef struct dx_dispatch_t dx_dispatch_t;
+
 typedef uint8_t dx_dist_mode_t;
 #define DX_DIST_COPY 0x01
 #define DX_DIST_MOVE 0x02
@@ -84,16 +86,16 @@ typedef struct {
     dx_container_conn_handler_t  outbound_conn_open_handler;
 } dx_node_type_t;
 
-void dx_container_initialize(void);
-void dx_container_finalize(void);
 
-int dx_container_register_node_type(const dx_node_type_t *nt);
+int dx_container_register_node_type(dx_dispatch_t *dispatch, const dx_node_type_t *nt);
 
-void dx_container_set_default_node_type(const dx_node_type_t *nt,
+void dx_container_set_default_node_type(dx_dispatch_t        *dispatch,
+                                        const dx_node_type_t *nt,
                                         void                 *node_context,
                                         dx_dist_mode_t        supported_dist);
 
-dx_node_t *dx_container_create_node(const dx_node_type_t *nt,
+dx_node_t *dx_container_create_node(dx_dispatch_t        *dispatch,
+                                    const dx_node_type_t *nt,
                                     const char           *name,
                                     void                 *node_context,
                                     dx_dist_mode_t        supported_dist,

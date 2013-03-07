@@ -22,6 +22,7 @@
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/timer.h>
 #include <qpid/dispatch/threading.h>
+#include "server_private.h"
 
 typedef enum {
     TIMER_FREE,
@@ -33,6 +34,7 @@ typedef enum {
 
 struct dx_timer_t {
     DEQ_LINKS(dx_timer_t);
+    dx_server_t      *server;
     dx_timer_cb_t     handler;
     void             *context;
     long              delta_time;
