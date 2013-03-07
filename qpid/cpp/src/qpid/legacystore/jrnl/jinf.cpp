@@ -31,7 +31,7 @@
  * \author Kim van der Riet
  */
 
-#include "jrnl/jinf.h"
+#include "qpid/legacystore/jrnl/jinf.h"
 
 #include <cstdlib>
 #include <cstring>
