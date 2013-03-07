@@ -42,11 +42,11 @@ class rmgr;
 }
 
 #include <cstring>
-#include "jrnl/enums.h"
-#include "jrnl/file_hdr.h"
-#include "jrnl/pmgr.h"
-#include "jrnl/rec_hdr.h"
-#include "jrnl/rrfc.h"
+#include "qpid/legacystore/jrnl/enums.h"
+#include "qpid/legacystore/jrnl/file_hdr.h"
+#include "qpid/legacystore/jrnl/pmgr.h"
+#include "qpid/legacystore/jrnl/rec_hdr.h"
+#include "qpid/legacystore/jrnl/rrfc.h"
 
 namespace mrg
 {
