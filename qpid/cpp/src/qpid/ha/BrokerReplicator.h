@@ -153,7 +153,6 @@ class BrokerReplicator : public broker::Exchange,
     AlternateExchangeSetter alternates;
     qpid::Address primary;
     typedef std::set<std::string> StringSet;
-    StringSet replicatedExchanges; // exchanges that have been replicated.
     broker::Connection* connection;
     EventDispatchMap dispatch;
     std::auto_ptr<UpdateTracker> queueTracker;
