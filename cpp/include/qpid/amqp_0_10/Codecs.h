@@ -24,10 +24,12 @@
 
 #include "qpid/CommonImportExport.h"
 #include "qpid/types/Variant.h"
+#include "boost/shared_ptr.hpp"
 
 namespace qpid {
 namespace framing {
 class FieldTable;
+class FieldValue;
 }
 namespace amqp_0_10 {
 /**
@@ -73,6 +75,8 @@ QPID_COMMON_EXTERN void translate(const qpid::types::Variant::Map& from, const s
                                   qpid::framing::FieldTable& to);
 QPID_COMMON_EXTERN void translate(const qpid::framing::FieldTable& from,
                                   qpid::types::Variant::Map& to);
+
+QPID_COMMON_EXTERN boost::shared_ptr<framing::FieldValue> fieldValue(const types::Variant&);
 
 }} // namespace qpid::amqp_0_10
 

@@ -40,13 +40,12 @@ class StoreTests(BrokerTest):
 
     def test_store_recovery(self):
         """Verify basic store and recover functionality"""
-        cluster = HaCluster(self, 2)
+        cluster = HaCluster(self, 1)
         sn = cluster[0].connect().session()
+        # Create queue qq, exchange exx and binding between them
         s = sn.sender("qq;{create:always,node:{durable:true}}")
-        sk = sn.sender("xx/k;{create:always,node:{type:topic, durable:true, x-declare:{type:'direct'}, x-bindings:[{exchange:xx,key:k,queue:qq}]}}")
-        s.send(Message("foo", durable=True))
-        s.send(Message("bar", durable=True))
-        sk.send(Message("baz", durable=True))
+        sk = sn.sender("exx/k;{create:always,node:{type:topic, durable:true, x-declare:{type:'direct'}, x-bindings:[{exchange:exx,key:k,queue:qq}]}}")
+        for m in ["foo", "bar", "baz"]: s.send(Message(m, durable=True))
         r = cluster[0].connect().session().receiver("qq")
         self.assertEqual(r.fetch().content, "foo")
         r.session.acknowledge()
@@ -57,16 +56,16 @@ class StoreTests(BrokerTest):
         def verify(broker, x_count):
             sn = broker.connect().session()
             assert_browse(sn, "qq", [ "bar", "baz", "flush" ]+ (x_count)*["x"])
-            sn.sender("xx/k").send(Message("x", durable=True))
+            sn.sender("exx/k").send(Message("x", durable=True))
             assert_browse(sn, "qq", [ "bar", "baz", "flush" ]+ (x_count+1)*["x"])
 
-        verify(cluster[0], 0)
-        cluster.bounce(0, promote_next=False)
-        cluster[0].promote()
+        verify(cluster[0], 0)   # Sanity check
+        cluster.bounce(0)
         cluster[0].wait_status("active")
-        verify(cluster[0], 1)
-        cluster.kill(0, promote_next=False)
-        cluster[1].promote()
+        verify(cluster[0], 1)   # Loaded from store
+        cluster.start()
+        cluster[1].wait_status("ready")
+        cluster.kill(0)
         cluster[1].wait_status("active")
         verify(cluster[1], 2)
         cluster.bounce(1, promote_next=False)
@@ -90,7 +89,6 @@ class StoreTests(BrokerTest):
 
         # Make changes that the backup doesn't see
         cluster.kill(1, promote_next=False)
-        time.sleep(1)           # FIXME aconway 2012-09-25: 
         r1 = cluster[0].connect().session().receiver("q1")
         for m in ["foo", "bar"]: self.assertEqual(r1.fetch().content, m)
         r1.session.acknowledge()

@@ -234,7 +234,10 @@ class BrokerReplicator::UpdateTracker {
     /** Destructor cleans up remaining initial queues. */
     ~UpdateTracker() {
         // Don't throw in a destructor.
-        try { for_each(initial.begin(), initial.end(), cleanFn); }
+        try {
+            for_each(initial.begin(), initial.end(),
+                     boost::bind(&UpdateTracker::clean, this, _1));
+        }
         catch (const std::exception& e) {
             QPID_LOG(error, "Error in cleanup of lost objects: " << e.what());
         }
@@ -269,7 +272,8 @@ class BrokerReplicator::UpdateTracker {
 
   private:
     void clean(const std::string& name) {
-        QPID_LOG(info, "Backup updated, deleting  " << type << " " << name);
+        QPID_LOG(info, "Backup: Deleted " << type << " " << name <<
+                 ": no longer exists on primary");
         cleanFn(name);
     }
 
@@ -531,7 +535,6 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
         CreateExchangeResult result = createExchange(
             name, values[EXTYPE].asString(), values[DURABLE].asBool(), args,
             values[ALTEX].asString());
-        replicatedExchanges.insert(name);
         assert(result.second);
     }
 }
@@ -547,7 +550,6 @@ void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
         QPID_LOG(debug, logPrefix << "Exchange delete event:" << name);
         if (exchangeTracker.get()) exchangeTracker->event(name);
         deleteExchange(name);
-        replicatedExchanges.erase(name);
     }
 }
 
@@ -638,12 +640,12 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
         throw Exception(QPID_MSG("Unexpected queue response: " << values));
     if (!queueTracker->response(name)) return; // Response is out-of-date
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
-    // If we see a queue with the same name as one we have, but not the same UUID,
-    // then replace the one we have.
     boost::shared_ptr<Queue> queue = queues.find(name);
-    if (queue && getHaUuid(queue->getSettings().original) != getHaUuid(argsMap)) {
-        QPID_LOG(warning, logPrefix << "UUID mismatch, replacing queue: "
-                 << name);
+    if (queue) { // Already exists
+        bool uuidOk = (getHaUuid(queue->getSettings().original) == getHaUuid(argsMap));
+        if (!uuidOk) QPID_LOG(debug, logPrefix << "UUID mismatch for queue: " << name);
+        if (uuidOk && findQueueReplicator(name)) return; // already replicated, UUID OK.
+        QPID_LOG(debug, logPrefix << "Queue response replacing queue:  " << name);
         deleteQueue(name);
     }
     framing::FieldTable args;
@@ -669,7 +671,7 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     QPID_LOG(debug, logPrefix << "Exchange response: " << name);
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
-    // If we see an exchange with the same name as one we have, but not the same UUID,
+    // If we see an exchange with the same name as one we have, but a different UUID,
     // then replace the one we have.
     boost::shared_ptr<Exchange> exchange = exchanges.find(name);
     if (exchange &&
@@ -682,7 +684,6 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     CreateExchangeResult result = createExchange(
         name, values[TYPE].asString(), values[DURABLE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
-    replicatedExchanges.insert(name);
 }
 
 namespace {

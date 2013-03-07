@@ -59,6 +59,8 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
         QueueMap::iterator i =  queues.find(name);
         if (i == queues.end()) {
             Queue::shared_ptr queue = create(name, settings);
+            // Allow ConfigurationObserver to modify settings before storing the message.
+            if (getBroker()) getBroker()->getConfigurationObservers().queueCreate(queue);
             //Move this to factory also?
             if (alternate)
                 queue->setAlternateExchange(alternate);//need to do this *before* create
@@ -67,16 +69,11 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
                 queue->create();
             }
             queues[name] = queue;
-            // NOTE: raiseEvent and queueCreate must be called with the lock held in
-            // order to ensure events are generated in the correct order.
-            // Call queueCreate before raiseEvents so it can add arguments that
-            // will be included in the management event.
-            if (getBroker()) getBroker()->getConfigurationObservers().queueCreate(queue);
             result = std::pair<Queue::shared_ptr, bool>(queue, true);
         } else {
             result = std::pair<Queue::shared_ptr, bool>(i->second, false);
         }
-            if (getBroker() && getBroker()->getManagementAgent()) {
+        if (getBroker() && getBroker()->getManagementAgent()) {
             getBroker()->getManagementAgent()->raiseEvent(
                 _qmf::EventQueueDeclare(
                     connectionId, userId, name,

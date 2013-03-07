@@ -1587,7 +1587,9 @@ void Queue::UsageBarrier::destroy()
 }
 
 void Queue::addArgument(const string& key, const types::Variant& value) {
-    settings.original.insert(types::Variant::Map::value_type(key, value));
+    settings.original[key] = value;
+    qpid::amqp_0_10::translate(settings.asMap(), encodableSettings);
+    settings.storeSettings.set(key, qpid::amqp_0_10::fieldValue(value));
     if (mgmtObject != 0) mgmtObject->set_arguments(settings.asMap());
 }
 
