@@ -358,7 +358,7 @@ public class ConnectionTest extends QpidBrokerTestCase
         try
         {
             BrokerDetails broker = getBroker();
-            String url = "amqp:///test?brokerlist='" + broker + "'&sasl_mech='PLAIN'";
+            String url = "amqp:///test?brokerlist='" + broker + "?sasl_mechs='PLAIN''";
             conn = new AMQConnection(url);
             conn.close();
             fail("Exception should be thrown as user name and password is required");
