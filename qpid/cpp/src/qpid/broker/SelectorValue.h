@@ -72,6 +72,11 @@ public:
         type(T_EXACT)
     {}
 
+    Value(const int32_t i0) :
+        i(i0),
+        type(T_EXACT)
+    {}
+
     Value(const double x0) :
         x(x0),
         type(T_INEXACT)

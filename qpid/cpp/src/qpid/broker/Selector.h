@@ -22,6 +22,8 @@
  *
  */
 
+#include "qpid/broker/BrokerImportExport.h"
+
 #include <string>
 
 #include <boost/scoped_ptr.hpp>
@@ -51,13 +53,13 @@ class Selector {
     const std::string expression;
 
 public:
-    Selector(const std::string&);
-    ~Selector();
+    QPID_BROKER_EXTERN Selector(const std::string&);
+    QPID_BROKER_EXTERN ~Selector();
 
     /**
      * Evaluate parsed expression with a given environment
      */
-    bool eval(const SelectorEnv& env);
+    QPID_BROKER_EXTERN bool eval(const SelectorEnv& env);
 
     /**
      * Apply selector to message
