@@ -43,15 +43,18 @@
 typedef struct dx_dispatch_t dx_dispatch_t;
 
 /**
- * \brief Initialize the server module and prepare it for operation.
+ * \brief Initialize the Dispatch library and prepare it for operation.
  *
  * @param thread_count The number of worker threads (1 or more) that the server shall create
+ * @return A handle to be used in API calls for this instance.
  */
 dx_dispatch_t *dx_dispatch(int thread_count);
 
 
 /**
- * \brief Finalize the server after it has stopped running.
+ * \brief Finalize the Dispatch library after it has stopped running.
+ *
+ * @param dispatch The dispatch handle returned by dx_dispatch
  */
 void dx_dispatch_free(dx_dispatch_t *dispatch);
 

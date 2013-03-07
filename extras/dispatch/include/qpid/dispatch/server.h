@@ -46,9 +46,11 @@ typedef void (*dx_thread_start_cb_t)(void* context, int thread_id);
 /**
  * \brief Set the optional thread-start handler.
  *
- * This handler is called once on each worker thread at the time
- * the thread is started.  This may be used to set tuning settings like processor affinity, etc.
+ * This handler is called once on each worker thread at the time the thread is
+ * started.  This may be used to set tuning settings like processor affinity,
+ * etc.
  *
+ * @param dx The dispatch handle returned by dx_dispatch.
  * @param start_handler The thread-start handler invoked per thread on thread startup.
  * @param context Opaque context to be passed back in the callback function.
  */
@@ -58,17 +60,23 @@ void dx_server_set_start_handler(dx_dispatch_t *dx, dx_thread_start_cb_t start_h
 /**
  * \brief Run the server threads until completion - The blocking version.
  *
- * Start the operation of the server, including launching all of the worker threads.
- * This function does not return until after the server has been stopped.  The thread
- * that calls dx_server_run is used as one of the worker threads.
+ * Start the operation of the server, including launching all of the worker
+ * threads.  This function does not return until after the server has been
+ * stopped.  The thread that calls dx_server_run is used as one of the worker
+ * threads.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
  */
 void dx_server_run(dx_dispatch_t *dx);
 
 
 /**
- * \brief Start the server threads and return immediately.
+ * \brief Start the server threads and return immediately - The non-blocking version.
  *
- * Start the operation of the server, including launching all of the worker threads.
+ * Start the operation of the server, including launching all of the worker
+ * threads.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
  */
 void dx_server_start(dx_dispatch_t *dx);
 
@@ -76,9 +84,12 @@ void dx_server_start(dx_dispatch_t *dx);
 /**
  * \brief Stop the server
  *
- * Stop the server and join all of its worker threads.  This function may be called from any
- * thread.  When this function returns, all of the other server threads have been closed and
- * joined.  The calling thread will be the only running thread in the process.
+ * Stop the server and join all of its worker threads.  This function may be
+ * called from any thread.  When this function returns, all of the other
+ * server threads have been closed and joined.  The calling thread will be the
+ * only running thread in the process.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
  */
 void dx_server_stop(dx_dispatch_t *dx);
 
@@ -86,9 +97,14 @@ void dx_server_stop(dx_dispatch_t *dx);
 /**
  * \brief Pause (quiesce) the server.
  *
- * This call blocks until all of the worker threads (except
- * the one calling the this function) are finished processing and have been blocked.  When
- * this call returns, the calling thread is the only thread running in the process.
+ * This call blocks until all of the worker threads (except the one calling
+ * this function) are finished processing and have been blocked.  When this
+ * call returns, the calling thread is the only thread running in the process.
+ *
+ * If the calling process is *not* one of the server's worker threads, then
+ * this function will block all of the worker threads before returning.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
  */
 void dx_server_pause(dx_dispatch_t *dx);
 
@@ -96,8 +112,10 @@ void dx_server_pause(dx_dispatch_t *dx);
 /**
  * \brief Resume normal operation of a paused server.
  *
- * This call unblocks all of the worker threads
- * so they can resume normal connection processing.
+ * This call unblocks all of the worker threads so they can resume normal
+ * connection processing.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
  */
 void dx_server_resume(dx_dispatch_t *dx);
 
@@ -112,22 +130,22 @@ void dx_server_resume(dx_dispatch_t *dx);
 /**
  * \brief Signal Handler
  *
- * Callback for caught signals.  This handler will only be invoked for signal numbers
- * that were registered via dx_server_signal.  The handler is not invoked in the context
- * of the OS signal handler.  Rather, it is invoked on one of the worker threads in an
- * orderly sequence.
+ * Callback for signal handling.  This handler will be invoked on one of the
+ * worker threads in an orderly fashion.  This callback is triggered by a call
+ * to dx_server_signal.
  *
  * @param context The handler context supplied in dx_server_initialize.
- * @param signum The signal number that was raised.
+ * @param signum The signal number that was passed into dx_server_signal.
  */
 typedef void (*dx_signal_handler_cb_t)(void* context, int signum);
 
 
 /**
- * Set the signal handler for the server.  The signal handler is invoked cleanly on a worker thread
- * after the server process catches an operating-system signal.  The signal handler is optional and
- * need not be set.
+ * Set the signal handler for the server.  The signal handler is invoked
+ * cleanly on a worker thread after a call is made to dx_server_signal.  The
+ * signal handler is optional and need not be set.
  *
+ * @param dx The dispatch handle returned by dx_dispatch.
  * @param signal_handler The signal handler called when a registered signal is caught.
  * @param context Opaque context to be passed back in the callback function.
  */
@@ -135,8 +153,13 @@ void dx_server_set_signal_handler(dx_dispatch_t *dx, dx_signal_handler_cb_t sign
 
 
 /**
- * \brief TODO
+ * \brief Schedule the invocation of the Server's signal handler.
  *
+ * This function is safe to call from any context, including an OS signal
+ * handler or an Interrupt Service Routine.  It schedules the orderly
+ * invocation of the Server's signal handler on one of the worker threads.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
  * @param signum The signal number... TODO
  */
 void dx_server_signal(dx_dispatch_t *dx, int signum);
@@ -184,11 +207,12 @@ typedef enum {
 /**
  * \brief Connection Event Handler
  *
- * Callback invoked when processing is needed on a proton connection.  This callback
- * shall be invoked on one of the server's worker threads.  The server guarantees that
- * no two threads shall be allowed to process a single connection concurrently.
- * The implementation of this handler may assume that it has exclusive access to the
- * connection and its subservient components (sessions, links, deliveries, etc.).
+ * Callback invoked when processing is needed on a proton connection.  This
+ * callback shall be invoked on one of the server's worker threads.  The
+ * server guarantees that no two threads shall be allowed to process a single
+ * connection concurrently.  The implementation of this handler may assume
+ * that it has exclusive access to the connection and its subservient
+ * components (sessions, links, deliveries, etc.).
  *
  * @param handler_context The handler context supplied in dx_server_set_conn_handler.
  * @param conn_context The handler context supplied in dx_server_{connect,listen}.
@@ -203,9 +227,10 @@ typedef int (*dx_conn_handler_cb_t)(void *handler_context, void* conn_context, d
 /**
  * \brief Set the connection event handler callback.
  *
- * Set the connection handler callback for the server.  This callback is mandatory and must be set
- * prior to the invocation of dx_server_run.
+ * Set the connection handler callback for the server.  This callback is
+ * mandatory and must be set prior to the invocation of dx_server_run.
  *
+ * @param dx The dispatch handle returned by dx_dispatch.
  * @param conn_hander The handler for processing connection-related events.
  */
 void dx_server_set_conn_handler(dx_dispatch_t *dx, dx_conn_handler_cb_t conn_handler, void *handler_context);
@@ -232,11 +257,11 @@ void *dx_connection_get_context(dx_connection_t *conn);
 /**
  * \brief Activate a connection for output.
  *
- * This function is used to request that the server activate the indicated connection.
- * It is assumed that the connection is one that the caller does not have permission to
- * access (i.e. it may be owned by another thread currently).  An activated connection
- * will, when writable, appear in the internal work list and be invoked for processing
- * by a worker thread.
+ * This function is used to request that the server activate the indicated
+ * connection.  It is assumed that the connection is one that the caller does
+ * not have permission to access (i.e. it may be owned by another thread
+ * currently).  An activated connection will, when writable, appear in the
+ * internal work list and be invoked for processing by a worker thread.
  *
  * @param conn The connection over which the application wishes to send data
  */
@@ -349,6 +374,7 @@ typedef struct dx_server_config_t {
 /**
  * \brief Create a listener for incoming connections.
  *
+ * @param dx The dispatch handle returned by dx_dispatch.
  * @param config Pointer to a configuration block for this listener.  This block will be
  *               referenced by the server, not copied.  The referenced record must remain
  *               in-scope for the life of the listener.
@@ -377,6 +403,7 @@ void dx_listener_close(dx_listener_t* li);
 /**
  * \brief Create a connector for an outgoing connection.
  *
+ * @param dx The dispatch handle returned by dx_dispatch.
  * @param config Pointer to a configuration block for this connector.  This block will be
  *               referenced by the server, not copied.  The referenced record must remain
  *               in-scope for the life of the connector..
