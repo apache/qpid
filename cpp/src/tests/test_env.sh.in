@@ -67,6 +67,7 @@ exportmodule SSLCONNECTOR_LIB sslconnector.so
 exportmodule SSL_LIB ssl.so
 exportmodule WATCHDOG_LIB watchdog.so
 exportmodule XML_LIB xml.so
+exportmodule STORE_LIB legacystore.so
 
 # Qpid options
 export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules

@@ -20,9 +20,7 @@
 
 """
 This module contains tests for HA functionality that requires a store.
-It is not included as part of "make check" since it will not function
-without a store. Currently it can be run from a build of the message
-store.
+It will only be run if the STORE_LIB environment variable is defined.
 """
 
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math, unittest, random
