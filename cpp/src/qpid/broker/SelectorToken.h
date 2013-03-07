@@ -22,6 +22,8 @@
  *
  */
 
+#include "qpid/broker/BrokerImportExport.h"
+
 #include <iosfwd>
 #include <string>
 #include <stdexcept>
@@ -75,21 +77,21 @@ struct Token {
     }
 };
 
-std::ostream& operator<<(std::ostream& os, const Token& t);
+QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream& os, const Token& t);
 
 class TokenException : public std::range_error {
 public:
     TokenException(const std::string&);
 };
 
-bool tokeniseEos(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseIdentifier(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseIdentifierOrReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseString(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseParens(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseOperator(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
-bool tokeniseNumeric(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseEos(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseIdentifier(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseIdentifierOrReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseString(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseParens(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseOperator(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
+QPID_BROKER_EXTERN bool tokeniseNumeric(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok);
 
 class Tokeniser {
     std::vector<Token> tokens;
@@ -99,9 +101,9 @@ class Tokeniser {
     std::string::const_iterator inEnd;
 
 public:
-    Tokeniser(const std::string::const_iterator& s, const std::string::const_iterator& e);
-    void returnTokens(unsigned int n = 1);
-    const Token& nextToken();
+    QPID_BROKER_EXTERN Tokeniser(const std::string::const_iterator& s, const std::string::const_iterator& e);
+    QPID_BROKER_EXTERN void returnTokens(unsigned int n = 1);
+    QPID_BROKER_EXTERN const Token& nextToken();
 };
 
 }}
