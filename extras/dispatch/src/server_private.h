@@ -48,8 +48,10 @@ typedef enum {
     CXTR_STATE_FAILED
 } cxtr_state_t;
 
+typedef struct dx_server_t dx_server_t;
 
 struct dx_listener_t {
+    dx_server_t              *server;
     const dx_server_config_t *config;
     void                     *context;
     pn_listener_t            *pn_listener;
@@ -57,6 +59,7 @@ struct dx_listener_t {
 
 
 struct dx_connector_t {
+    dx_server_t              *server;
     cxtr_state_t              state;
     const dx_server_config_t *config;
     void                     *context;
@@ -67,6 +70,7 @@ struct dx_connector_t {
 
 
 struct dx_connection_t {
+    dx_server_t     *server;
     conn_state_t     state;
     int              owner_thread;
     int              enqueued;
@@ -81,6 +85,7 @@ struct dx_connection_t {
 
 
 struct dx_user_fd_t {
+    dx_server_t    *server;
     void           *context;
     int             fd;
     pn_connector_t *pn_conn;

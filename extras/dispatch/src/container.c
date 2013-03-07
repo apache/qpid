@@ -19,7 +19,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "dispatch_private.h"
 #include <qpid/dispatch/container.h>
+#include <qpid/dispatch/server.h>
 #include <qpid/dispatch/message.h>
 #include <proton/engine.h>
 #include <proton/message.h>
@@ -31,7 +33,10 @@
 
 static char *module="CONTAINER";
 
+typedef struct dx_container_t dx_container_t;
+
 struct dx_node_t {
+    dx_container_t       *container;
     const dx_node_type_t *ntype;
     char                 *name;
     void                 *context;
@@ -52,22 +57,25 @@ struct dx_link_t {
 ALLOC_DECLARE(dx_link_t);
 ALLOC_DEFINE(dx_link_t);
 
-typedef struct nxc_node_type_t {
-    DEQ_LINKS(struct nxc_node_type_t);
+typedef struct dxc_node_type_t {
+    DEQ_LINKS(struct dxc_node_type_t);
     const dx_node_type_t *ntype;
-} nxc_node_type_t;
-DEQ_DECLARE(nxc_node_type_t, nxc_node_type_list_t);
+} dxc_node_type_t;
+DEQ_DECLARE(dxc_node_type_t, dxc_node_type_list_t);
 
 
-static hash_t               *node_type_map;
-static hash_t               *node_map;
-static sys_mutex_t          *lock;
-static dx_node_t            *default_node;
-static nxc_node_type_list_t  node_type_list;
+struct dx_container_t {
+    dx_server_t          *server;
+    hash_t               *node_type_map;
+    hash_t               *node_map;
+    sys_mutex_t          *lock;
+    dx_node_t            *default_node;
+    dxc_node_type_list_t  node_type_list;
+};
 
-static void setup_outgoing_link(pn_link_t *pn_link)
+static void setup_outgoing_link(dx_container_t *container, pn_link_t *pn_link)
 {
-    sys_mutex_lock(lock);
+    sys_mutex_lock(container->lock);
     dx_node_t  *node;
     int         result;
     const char *source = pn_terminus_get_address(pn_link_remote_source(pn_link));
@@ -76,15 +84,15 @@ static void setup_outgoing_link(pn_link_t *pn_link)
 
     if (source) {
         iter   = dx_field_iterator_string(source, ITER_VIEW_NODE_ID);
-        result = hash_retrieve(node_map, iter, (void*) &node);
+        result = hash_retrieve(container->node_map, iter, (void*) &node);
         dx_field_iterator_free(iter);
     } else
         result = -1;
-    sys_mutex_unlock(lock);
+    sys_mutex_unlock(container->lock);
 
     if (result < 0) {
-        if (default_node)
-            node = default_node;
+        if (container->default_node)
+            node = container->default_node;
         else {
             // Reject the link
             // TODO - When the API allows, add an error message for "no available node"
@@ -108,9 +116,9 @@ static void setup_outgoing_link(pn_link_t *pn_link)
 }
 
 
-static void setup_incoming_link(pn_link_t *pn_link)
+static void setup_incoming_link(dx_container_t *container, pn_link_t *pn_link)
 {
-    sys_mutex_lock(lock);
+    sys_mutex_lock(container->lock);
     dx_node_t   *node;
     int          result;
     const char  *target = pn_terminus_get_address(pn_link_remote_target(pn_link));
@@ -119,15 +127,15 @@ static void setup_incoming_link(pn_link_t *pn_link)
 
     if (target) {
         iter   = dx_field_iterator_string(target, ITER_VIEW_NODE_ID);
-        result = hash_retrieve(node_map, iter, (void*) &node);
+        result = hash_retrieve(container->node_map, iter, (void*) &node);
         dx_field_iterator_free(iter);
     } else
         result = -1;
-    sys_mutex_unlock(lock);
+    sys_mutex_unlock(container->lock);
 
     if (result < 0) {
-        if (default_node)
-            node = default_node;
+        if (container->default_node)
+            node = container->default_node;
         else {
             // Reject the link
             // TODO - When the API allows, add an error message for "no available node"
@@ -248,7 +256,7 @@ static int close_handler(void* unused, pn_connection_t *conn)
 }
 
 
-static int process_handler(void* unused, pn_connection_t *conn)
+static int process_handler(dx_container_t *container, void* unused, pn_connection_t *conn)
 {
     pn_session_t    *ssn;
     pn_link_t       *pn_link;
@@ -276,9 +284,9 @@ static int process_handler(void* unused, pn_connection_t *conn)
     pn_link = pn_link_head(conn, PN_LOCAL_UNINIT);
     while (pn_link) {
         if (pn_link_is_sender(pn_link))
-            setup_outgoing_link(pn_link);
+            setup_outgoing_link(container, pn_link);
         else
-            setup_incoming_link(pn_link);
+            setup_incoming_link(container, pn_link);
         pn_link = pn_link_next(pn_link, PN_LOCAL_UNINIT);
         event_count++;
     }
@@ -348,7 +356,7 @@ static int process_handler(void* unused, pn_connection_t *conn)
 }
 
 
-static void open_handler(dx_connection_t *conn, dx_direction_t dir)
+static void open_handler(dx_container_t *container, dx_connection_t *conn, dx_direction_t dir)
 {
     const dx_node_type_t *nt;
 
@@ -357,9 +365,9 @@ static void open_handler(dx_connection_t *conn, dx_direction_t dir)
     // this particular list is only ever appended to and never has items inserted or deleted,
     // this usage is safe in this case.
     //
-    sys_mutex_lock(lock);
-    nxc_node_type_t *nt_item = DEQ_HEAD(node_type_list);
-    sys_mutex_unlock(lock);
+    sys_mutex_lock(container->lock);
+    dxc_node_type_t *nt_item = DEQ_HEAD(container->node_type_list);
+    sys_mutex_unlock(container->lock);
 
     pn_connection_open(dx_connection_pn(conn));
 
@@ -373,59 +381,70 @@ static void open_handler(dx_connection_t *conn, dx_direction_t dir)
                 nt->outbound_conn_open_handler(nt->type_context, conn);
         }
 
-        sys_mutex_lock(lock);
+        sys_mutex_lock(container->lock);
         nt_item = DEQ_NEXT(nt_item);
-        sys_mutex_unlock(lock);
+        sys_mutex_unlock(container->lock);
     }
 }
 
 
-static int handler(void* context, dx_conn_event_t event, dx_connection_t *dx_conn)
+static int handler(void *handler_context, void *conn_context, dx_conn_event_t event, dx_connection_t *dx_conn)
 {
-    pn_connection_t *conn = dx_connection_pn(dx_conn);
+    dx_container_t  *container = (dx_container_t*) handler_context;
+    pn_connection_t *conn      = dx_connection_pn(dx_conn);
 
     switch (event) {
-    case DX_CONN_EVENT_LISTENER_OPEN:  open_handler(dx_conn, DX_INCOMING);   break;
-    case DX_CONN_EVENT_CONNECTOR_OPEN: open_handler(dx_conn, DX_OUTGOING);   break;
-    case DX_CONN_EVENT_CLOSE:          return close_handler(context, conn);
-    case DX_CONN_EVENT_PROCESS:        return process_handler(context, conn);
+    case DX_CONN_EVENT_LISTENER_OPEN:  open_handler(container, dx_conn, DX_INCOMING);   break;
+    case DX_CONN_EVENT_CONNECTOR_OPEN: open_handler(container, dx_conn, DX_OUTGOING);   break;
+    case DX_CONN_EVENT_CLOSE:          return close_handler(conn_context, conn);
+    case DX_CONN_EVENT_PROCESS:        return process_handler(container, conn_context, conn);
     }
 
     return 0;
 }
 
 
-void dx_container_initialize(void)
+dx_container_t *dx_container(dx_dispatch_t *dx)
 {
+    dx_container_t *container = NEW(dx_container_t);
+
+    container->server        = dx->server;
+    container->node_type_map = hash(6,  4, 1);  // 64 buckets, item batches of 4
+    container->node_map      = hash(10, 32, 0); // 1K buckets, item batches of 32
+    container->lock          = sys_mutex();
+    container->default_node  = 0;
+    DEQ_INIT(container->node_type_list);
+
     dx_log(module, LOG_TRACE, "Container Initializing");
+    dx_server_set_conn_handler(dx, handler, container);
 
-    node_type_map = hash(6,  4, 1);  // 64 buckets, item batches of 4
-    node_map      = hash(10, 32, 0); // 1K buckets, item batches of 32
-    lock          = sys_mutex();
-    default_node  = 0;
-    DEQ_INIT(node_type_list);
-
-    dx_server_set_conn_handler(handler);
+    return container;
 }
 
 
-void dx_container_finalize(void)
+void dx_container_free(dx_container_t *container)
 {
+    // TODO - Free the nodes
+    // TODO - Free the node types
+    sys_mutex_free(container->lock);
+    free(container);
 }
 
 
-int dx_container_register_node_type(const dx_node_type_t *nt)
+int dx_container_register_node_type(dx_dispatch_t *dx, const dx_node_type_t *nt)
 {
+    dx_container_t *container = dx->container;
+
     int result;
     dx_field_iterator_t *iter = dx_field_iterator_string(nt->type_name, ITER_VIEW_ALL);
-    nxc_node_type_t     *nt_item = NEW(nxc_node_type_t);
+    dxc_node_type_t     *nt_item = NEW(dxc_node_type_t);
     DEQ_ITEM_INIT(nt_item);
     nt_item->ntype = nt;
 
-    sys_mutex_lock(lock);
-    result = hash_insert_const(node_type_map, iter, nt);
-    DEQ_INSERT_TAIL(node_type_list, nt_item);
-    sys_mutex_unlock(lock);
+    sys_mutex_lock(container->lock);
+    result = hash_insert_const(container->node_type_map, iter, nt);
+    DEQ_INSERT_TAIL(container->node_type_list, nt_item);
+    sys_mutex_unlock(container->lock);
 
     dx_field_iterator_free(iter);
     if (result < 0)
@@ -436,34 +455,40 @@ int dx_container_register_node_type(const dx_node_type_t *nt)
 }
 
 
-void dx_container_set_default_node_type(const dx_node_type_t *nt,
+void dx_container_set_default_node_type(dx_dispatch_t        *dx,
+                                        const dx_node_type_t *nt,
                                         void                 *context,
                                         dx_dist_mode_t        supported_dist)
 {
-    if (default_node)
-        dx_container_destroy_node(default_node);
+    dx_container_t *container = dx->container;
+
+    if (container->default_node)
+        dx_container_destroy_node(container->default_node);
 
     if (nt) {
-        default_node = dx_container_create_node(nt, 0, context, supported_dist, DX_LIFE_PERMANENT);
+        container->default_node = dx_container_create_node(dx, nt, 0, context, supported_dist, DX_LIFE_PERMANENT);
         dx_log(module, LOG_TRACE, "Node of type '%s' installed as default node", nt->type_name);
     } else {
-        default_node = 0;
+        container->default_node = 0;
         dx_log(module, LOG_TRACE, "Default node removed");
     }
 }
 
 
-dx_node_t *dx_container_create_node(const dx_node_type_t *nt,
+dx_node_t *dx_container_create_node(dx_dispatch_t        *dx,
+                                    const dx_node_type_t *nt,
                                     const char           *name,
                                     void                 *context,
                                     dx_dist_mode_t        supported_dist,
                                     dx_lifetime_policy_t  life_policy)
 {
+    dx_container_t *container = dx->container;
     int result;
     dx_node_t *node = new_dx_node_t();
     if (!node)
         return 0;
 
+    node->container      = container;
     node->ntype          = nt;
     node->name           = 0;
     node->context        = context;
@@ -472,9 +497,9 @@ dx_node_t *dx_container_create_node(const dx_node_type_t *nt,
 
     if (name) {
         dx_field_iterator_t *iter = dx_field_iterator_string(name, ITER_VIEW_ALL);
-        sys_mutex_lock(lock);
-        result = hash_insert(node_map, iter, node);
-        sys_mutex_unlock(lock);
+        sys_mutex_lock(container->lock);
+        result = hash_insert(container->node_map, iter, node);
+        sys_mutex_unlock(container->lock);
         dx_field_iterator_free(iter);
         if (result < 0) {
             free_dx_node_t(node);
@@ -494,11 +519,13 @@ dx_node_t *dx_container_create_node(const dx_node_type_t *nt,
 
 void dx_container_destroy_node(dx_node_t *node)
 {
+    dx_container_t *container = node->container;
+
     if (node->name) {
         dx_field_iterator_t *iter = dx_field_iterator_string(node->name, ITER_VIEW_ALL);
-        sys_mutex_lock(lock);
-        hash_remove(node_map, iter);
-        sys_mutex_unlock(lock);
+        sys_mutex_lock(container->lock);
+        hash_remove(container->node_map, iter);
+        sys_mutex_unlock(container->lock);
         dx_field_iterator_free(iter);
         free(node->name);
     }

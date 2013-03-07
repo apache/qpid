@@ -350,22 +350,22 @@ int timer_tests(void)
     dx_timer_initialize(lock);
     time = 1;
 
-    timers[0]  = dx_timer(0, (void*) 0x00000001);
-    timers[1]  = dx_timer(0, (void*) 0x00000002);
-    timers[2]  = dx_timer(0, (void*) 0x00000004);
-    timers[3]  = dx_timer(0, (void*) 0x00000008);
-    timers[4]  = dx_timer(0, (void*) 0x00000010);
-    timers[5]  = dx_timer(0, (void*) 0x00000020);
-    timers[6]  = dx_timer(0, (void*) 0x00000040);
-    timers[7]  = dx_timer(0, (void*) 0x00000080);
-    timers[8]  = dx_timer(0, (void*) 0x00000100);
-    timers[9]  = dx_timer(0, (void*) 0x00000200);
-    timers[10] = dx_timer(0, (void*) 0x00000400);
-    timers[11] = dx_timer(0, (void*) 0x00000800);
-    timers[12] = dx_timer(0, (void*) 0x00001000);
-    timers[13] = dx_timer(0, (void*) 0x00002000);
-    timers[14] = dx_timer(0, (void*) 0x00004000);
-    timers[15] = dx_timer(0, (void*) 0x00008000);
+    timers[0]  = dx_timer(0, 0, (void*) 0x00000001);
+    timers[1]  = dx_timer(0, 0, (void*) 0x00000002);
+    timers[2]  = dx_timer(0, 0, (void*) 0x00000004);
+    timers[3]  = dx_timer(0, 0, (void*) 0x00000008);
+    timers[4]  = dx_timer(0, 0, (void*) 0x00000010);
+    timers[5]  = dx_timer(0, 0, (void*) 0x00000020);
+    timers[6]  = dx_timer(0, 0, (void*) 0x00000040);
+    timers[7]  = dx_timer(0, 0, (void*) 0x00000080);
+    timers[8]  = dx_timer(0, 0, (void*) 0x00000100);
+    timers[9]  = dx_timer(0, 0, (void*) 0x00000200);
+    timers[10] = dx_timer(0, 0, (void*) 0x00000400);
+    timers[11] = dx_timer(0, 0, (void*) 0x00000800);
+    timers[12] = dx_timer(0, 0, (void*) 0x00001000);
+    timers[13] = dx_timer(0, 0, (void*) 0x00002000);
+    timers[14] = dx_timer(0, 0, (void*) 0x00004000);
+    timers[15] = dx_timer(0, 0, (void*) 0x00008000);
 
     TEST_CASE(test_quiet, 0);
     TEST_CASE(test_immediate, 0);

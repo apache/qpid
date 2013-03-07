@@ -23,17 +23,14 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
-#include <qpid/dispatch/timer.h>
 #include "test_case.h"
-#include <qpid/dispatch/server.h>
-#include <qpid/dispatch/user_fd.h>
-#include <qpid/dispatch/threading.h>
-#include <qpid/dispatch/log.h>
+#include <qpid/dispatch.h>
 
 #define THREAD_COUNT 4
 #define OCTET_COUNT  100
 
-static sys_mutex_t *test_lock;
+static dx_dispatch_t *dx;
+static sys_mutex_t   *test_lock;
 
 static void *expected_context;
 static int   call_count;
@@ -62,14 +59,8 @@ static void thread_start_handler(void *context, int thread_id)
         threads_seen[thread_id]++;
 
     if (call_count == THREAD_COUNT)
-        dx_server_stop();
+        dx_server_stop(dx);
     sys_mutex_unlock(test_lock);
-}
-
-
-static int conn_handler(void *context, dx_conn_event_t event, dx_connection_t *conn)
-{
-    return 0;
 }
 
 
@@ -86,13 +77,13 @@ static void ufd_handler(void *context, dx_user_fd_t *ufd)
         assert(in_read == 1);
         if (!dx_user_fd_is_readable(ufd_read)) {
             sprintf(stored_error, "Expected Readable");
-            dx_server_stop();
+            dx_server_stop(dx);
         } else {
             len = read(fd[0], &buffer, 1);
             if (len == 1) {
                 read_count++;
                 if (read_count == OCTET_COUNT)
-                    dx_server_stop();
+                    dx_server_stop(dx);
             }
             dx_user_fd_activate_read(ufd_read);
         }
@@ -102,7 +93,7 @@ static void ufd_handler(void *context, dx_user_fd_t *ufd)
         assert(in_write == 1);
         if (!dx_user_fd_is_writeable(ufd_write)) {
             sprintf(stored_error, "Expected Writable");
-            dx_server_stop();
+            dx_server_stop(dx);
         } else {
             write(fd[1], "X", 1);
 
@@ -125,7 +116,7 @@ static char* test_start_handler(void *context)
 {
     int i;
 
-    dx_server_initialize(THREAD_COUNT);
+    dx = dx_dispatch(THREAD_COUNT);
 
     expected_context = (void*) 0x00112233;
     stored_error[0] = 0x0;
@@ -133,10 +124,9 @@ static char* test_start_handler(void *context)
     for (i = 0; i < THREAD_COUNT; i++)
         threads_seen[i] = 0;
 
-    dx_server_set_conn_handler(conn_handler);
-    dx_server_set_start_handler(thread_start_handler, expected_context);
-    dx_server_run();
-    dx_server_finalize();
+    dx_server_set_start_handler(dx, thread_start_handler, expected_context);
+    dx_server_run(dx);
+    dx_dispatch_free(dx);
 
     if (stored_error[0])            return stored_error;
     if (call_count != THREAD_COUNT) return "Incorrect number of thread-start callbacks";
@@ -149,11 +139,10 @@ static char* test_start_handler(void *context)
 
 static char *test_server_start(void *context)
 {
-    dx_server_initialize(THREAD_COUNT);
-    dx_server_set_conn_handler(conn_handler);
-    dx_server_start();
-    dx_server_stop();
-    dx_server_finalize();
+    dx = dx_dispatch(THREAD_COUNT);
+    dx_server_start(dx);
+    dx_server_stop(dx);
+    dx_dispatch_free(dx);
 
     return 0;
 }
@@ -164,22 +153,21 @@ static char* test_user_fd(void *context)
     int res;
     dx_timer_t *timer;
 
-    dx_server_initialize(THREAD_COUNT);
-    dx_server_set_conn_handler(conn_handler);
-    dx_server_set_user_fd_handler(ufd_handler);
-    timer = dx_timer(fd_test_start, 0);
+    dx = dx_dispatch(THREAD_COUNT);
+    dx_server_set_user_fd_handler(dx, ufd_handler);
+    timer = dx_timer(dx, fd_test_start, 0);
     dx_timer_schedule(timer, 0);
 
     stored_error[0] = 0x0;
     res = pipe2(fd, O_NONBLOCK);
     if (res != 0) return "Error creating pipe2";
 
-    ufd_write = dx_user_fd(fd[1], (void*) 1);
-    ufd_read  = dx_user_fd(fd[0], (void*) 0);
+    ufd_write = dx_user_fd(dx, fd[1], (void*) 1);
+    ufd_read  = dx_user_fd(dx, fd[0], (void*) 0);
 
-    dx_server_run();
+    dx_server_run(dx);
     dx_timer_free(timer);
-    dx_server_finalize();
+    dx_dispatch_free(dx);
     close(fd[0]);
     close(fd[1]);
 
