@@ -255,6 +255,7 @@ class PropertyRetriever : public MapHandler
   public:
     PropertyRetriever(const std::string& key) : name(key) {}
     void handleVoid(const CharSequence&) {}
+    void handleBool(const CharSequence& key, bool value) { handle(key, value); }
     void handleUint8(const CharSequence& key, uint8_t value) { handle(key, value); }
     void handleUint16(const CharSequence& key, uint16_t value) { handle(key, value); }
     void handleUint32(const CharSequence& key, uint32_t value) { handle(key, value); }

@@ -19,6 +19,7 @@
  *
  */
 #include "MessageTransfer.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/MapHandler.h"
 #include "qpid/broker/Message.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -307,26 +308,46 @@ void MessageTransfer::processProperties(qpid::broker::MapHandler& handler) const
     if (mp && mp->hasApplicationHeaders()) {
         const FieldTable ft = mp->getApplicationHeaders();
         for (FieldTable::const_iterator i = ft.begin(); i != ft.end(); ++i) {
-            qpid::broker::MapHandler::CharSequence key;
-            key.data = i->first.data();
-            key.size = i->first.size();
-            FieldTable::ValuePtr v = i->second;
-            //TODO: something more sophisticated... 
-            if (v->empty()) {
-                handler.handleVoid(key);
-            } else if (v->convertsTo<uint64_t>()) {
-                handler.handleUint64(key, v->get<uint64_t>());
-            } else if (v->convertsTo<int64_t>()) {
-                handler.handleInt64(key, v->get<int64_t>());
-            } else if (v->convertsTo<std::string>()) {
-                std::string s = v->get<std::string>();
-                qpid::broker::MapHandler::CharSequence value;
-                value.data = s.data();
-                value.size = s.size();
-                qpid::broker::MapHandler::CharSequence encoding; encoding.size = 0; encoding.data = 0;
+            qpid::types::Variant v;
+            qpid::amqp_0_10::translate(i->second, v);
+            qpid::broker::MapHandler::CharSequence key = {i->first.data(), i->first.size()};
+            switch (v.getType()) {
+            case qpid::types::VAR_VOID:
+                handler.handleVoid(key); break;
+            case qpid::types::VAR_BOOL:
+                handler.handleBool(key, v); break;
+            case qpid::types::VAR_UINT8:
+                handler.handleUint8(key, v); break;
+            case qpid::types::VAR_UINT16:
+                handler.handleUint8(key, v); break;
+            case qpid::types::VAR_UINT32:
+                handler.handleUint32(key, v); break;
+            case qpid::types::VAR_UINT64:
+                handler.handleUint64(key, v); break;
+            case qpid::types::VAR_INT8:
+                handler.handleInt8(key, v); break;
+            case qpid::types::VAR_INT16:
+                handler.handleInt16(key, v); break;
+            case qpid::types::VAR_INT32:
+                handler.handleInt32(key, v); break;
+            case qpid::types::VAR_INT64:
+                handler.handleInt64(key, v); break;
+            case qpid::types::VAR_FLOAT:
+                handler.handleFloat(key, v); break;
+            case qpid::types::VAR_DOUBLE:
+                handler.handleDouble(key, v); break;
+            case qpid::types::VAR_STRING: {
+                std::string s(v);
+                qpid::broker::MapHandler::CharSequence value = {s.data(), s.size()};
+                qpid::broker::MapHandler::CharSequence encoding = {0, 0};
                 handler.handleString(key, value, encoding);
-            } else {
-                QPID_LOG(debug, "Unhandled key!" << *v);
+                break;
+            }
+            case qpid::types::VAR_MAP:
+            case qpid::types::VAR_LIST:
+            case qpid::types::VAR_UUID:
+                 QPID_LOG(debug, "Unhandled key!" << v);
+                 break;
             }
         }
     }

@@ -76,6 +76,7 @@ class Matcher : public MapHandler
 {
   public:
     Matcher(const FieldTable& b) : binding(b), matched(0) {}
+    void handleBool(const MapHandler::CharSequence& key, bool value) { processUint(std::string(key.data, key.size), value); }
     void handleUint8(const MapHandler::CharSequence& key, uint8_t value) { processUint(std::string(key.data, key.size), value); }
     void handleUint16(const MapHandler::CharSequence& key, uint16_t value) { processUint(std::string(key.data, key.size), value); }
     void handleUint32(const MapHandler::CharSequence& key, uint32_t value) { processUint(std::string(key.data, key.size), value); }
