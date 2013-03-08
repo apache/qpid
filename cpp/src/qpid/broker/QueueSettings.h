@@ -71,6 +71,7 @@ struct QueueSettings
 
     //threshold events:
     QueueDepth alertThreshold;
+    QueueDepth alertThresholdDown;
     int64_t alertRepeatInterval;
 
     //file limits checked by Acl and shared with storeSettings

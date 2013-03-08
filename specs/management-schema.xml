@@ -523,6 +523,10 @@
   <event name="unbind"            sev="inform" args="rhost, user, exName, qName, key"/>
   <event name="subscribe"         sev="inform" args="rhost, user, qName, dest, excl, args"/>
   <event name="unsubscribe"       sev="inform" args="rhost, user, dest"/>
-  <event name="queueThresholdExceeded"       sev="warn" args="qName, msgDepth, byteDepth"/>
+  <event name="queueThresholdCrossedUpward"   sev="inform" args="qName, msgDepth, byteDepth"/>
+  <event name="queueThresholdCrossedDownward" sev="inform" args="qName, msgDepth, byteDepth"/>
+
+  <!-- The following are deprecated -->
+  <event name="queueThresholdExceeded" sev="warn" args="qName, msgDepth, byteDepth"/>
 </schema>
 

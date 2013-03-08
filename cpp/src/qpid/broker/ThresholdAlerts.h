@@ -22,7 +22,6 @@
  *
  */
 #include "qpid/broker/QueueObserver.h"
-#include "qpid/sys/Time.h"
 #include "qpid/types/Variant.h"
 #include <string>
 
@@ -44,8 +43,10 @@ class ThresholdAlerts : public QueueObserver
     ThresholdAlerts(const std::string& name,
                     qpid::management::ManagementAgent& agent,
                     const uint32_t countThreshold,
+                    const uint32_t countThresholdDown,
                     const uint64_t sizeThreshold,
-                    const long repeatInterval);
+                    const uint64_t sizeThresholdDown,
+                    const bool backwardCompat);
     void enqueued(const Message&);
     void dequeued(const Message&);
     void acquired(const Message&) {};
@@ -53,19 +54,23 @@ class ThresholdAlerts : public QueueObserver
 
     static void observe(Queue& queue, qpid::management::ManagementAgent& agent,
                         const uint64_t countThreshold,
+                        const uint64_t countThresholdDown,
                         const uint64_t sizeThreshold,
-                        const long repeatInterval);
+                        const uint64_t sizeThresholdDown);
     static void observe(Queue& queue, qpid::management::ManagementAgent& agent,
                         const QueueSettings& settings, uint16_t limitRatio);
   private:
     const std::string name;
     qpid::management::ManagementAgent& agent;
     const uint32_t countThreshold;
+    const uint32_t countThresholdDown;
     const uint64_t sizeThreshold;
-    const qpid::sys::Duration repeatInterval;
+    const uint64_t sizeThresholdDown;
     uint64_t count;
     uint64_t size;
-    qpid::sys::AbsTime lastAlert;
+    bool countGoingUp;
+    bool sizeGoingUp;
+    bool backwardCompat;
 };
 }} // namespace qpid::broker
 
