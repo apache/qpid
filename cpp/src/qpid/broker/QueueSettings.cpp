@@ -47,6 +47,10 @@ const std::string AUTO_DELETE_TIMEOUT("qpid.auto_delete_timeout");
 const std::string ALERT_REPEAT_GAP("qpid.alert_repeat_gap");
 const std::string ALERT_COUNT("qpid.alert_count");
 const std::string ALERT_SIZE("qpid.alert_size");
+const std::string ALERT_COUNT_UP("qpid.alert_count_up");
+const std::string ALERT_SIZE_UP("qpid.alert_size_up");
+const std::string ALERT_COUNT_DOWN("qpid.alert_count_down");
+const std::string ALERT_SIZE_DOWN("qpid.alert_size_down");
 const std::string PRIORITIES("qpid.priorities");
 const std::string FAIRSHARE("qpid.fairshare");
 const std::string FAIRSHARE_ALIAS("x-qpid-fairshare");
@@ -165,11 +169,17 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
     } else if (key == ALERT_REPEAT_GAP) {
         alertRepeatInterval = value;
         return true;
-    } else if (key == ALERT_COUNT) {
+    } else if ((key == ALERT_COUNT) || (key == ALERT_COUNT_UP)) {
         alertThreshold.setCount(value);
         return true;
-    } else if (key == ALERT_SIZE) {
+    } else if ((key == ALERT_SIZE) || (key == ALERT_SIZE_UP)) {
         alertThreshold.setSize(value);
+        return true;
+    } else if (key == ALERT_COUNT_DOWN) {
+        alertThresholdDown.setCount(value);
+        return true;
+    } else if (key == ALERT_SIZE_DOWN) {
+        alertThresholdDown.setSize(value);
         return true;
     } else if (key == MAX_FILE_COUNT && value.asUint64() > 0) {
         maxFileCount = value.asUint64();
