@@ -1589,7 +1589,9 @@ void Queue::UsageBarrier::destroy()
 void Queue::addArgument(const string& key, const types::Variant& value) {
     settings.original[key] = value;
     qpid::amqp_0_10::translate(settings.asMap(), encodableSettings);
-    settings.storeSettings.set(key, qpid::amqp_0_10::fieldValue(value));
+    boost::shared_ptr<qpid::framing::FieldValue> v;
+    qpid::amqp_0_10::translate(value, v);
+    settings.storeSettings.set(key, v);
     if (mgmtObject != 0) mgmtObject->set_arguments(settings.asMap());
 }
 
