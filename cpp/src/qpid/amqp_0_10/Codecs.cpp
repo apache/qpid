@@ -576,6 +576,11 @@ void translate(const types::Variant& from, boost::shared_ptr<framing::FieldValue
     to = toFieldValue(from);
 }
 
+void translate(const boost::shared_ptr<FieldValue> from, Variant& to)
+{
+    to = toVariant(from);
+}
+
 const std::string ListCodec::contentType("amqp/list");
 const std::string MapCodec::contentType("amqp/map");
 
