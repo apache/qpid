@@ -103,6 +103,7 @@ public:
 
 class ComparisonOperator {
 public:
+    virtual ~ComparisonOperator() {}
     virtual void repr(ostream&) const = 0;
     virtual BoolOrNone eval(Expression&, Expression&, const SelectorEnv&) const = 0;
 };
@@ -110,6 +111,7 @@ public:
 template <typename T>
 class UnaryBooleanOperator {
 public:
+    virtual ~UnaryBooleanOperator() {}
     virtual void repr(ostream&) const = 0;
     virtual BoolOrNone eval(T&, const SelectorEnv&) const = 0;
 };

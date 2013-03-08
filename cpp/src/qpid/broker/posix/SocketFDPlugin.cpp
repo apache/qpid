@@ -35,8 +35,6 @@
 namespace qpid {
 namespace sys {
 
-namespace {
-
 struct SocketOptions : public Options {
     std::vector<int> socketFds;
 
@@ -56,8 +54,6 @@ bool isSocket(int fd)
     if (::fstat(fd, &st_fd) < 0) return false;
 
     return S_ISSOCK(st_fd.st_mode);
-}
-
 }
 
 // Static instance to initialise plugin

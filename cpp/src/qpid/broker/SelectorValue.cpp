@@ -43,6 +43,7 @@ ostream& operator<<(ostream& os, const Value& v)
 
 class NumericPairBase {
 public:
+    virtual ~NumericPairBase() {}
     virtual Value add() = 0;
     virtual Value sub() = 0;
     virtual Value mul() = 0;
