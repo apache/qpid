@@ -171,7 +171,8 @@ bool Selector::eval(const SelectorEnv& env)
 
 bool Selector::filter(const Message& msg)
 {
-    return eval(MessageSelectorEnv(msg));
+    const MessageSelectorEnv env(msg);
+    return eval(env);
 }
 
 namespace {
