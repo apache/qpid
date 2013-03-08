@@ -204,6 +204,7 @@ class DefineExternals : public MapHandler
 {
   public:
     DefineExternals(DynamicContext* c) : context(c) { assert(context); }
+    void handleBool(const MapHandler::CharSequence& key, bool value) { process(std::string(key.data, key.size), (int) value); }
     void handleUint8(const MapHandler::CharSequence& key, uint8_t value) { process(std::string(key.data, key.size), (int) value); }
     void handleUint16(const MapHandler::CharSequence& key, uint16_t value) { process(std::string(key.data, key.size), (int) value); }
     void handleUint32(const MapHandler::CharSequence& key, uint32_t value) { process(std::string(key.data, key.size), (int) value); }

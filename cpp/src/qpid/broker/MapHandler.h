@@ -39,6 +39,7 @@ class MapHandler
 
     virtual ~MapHandler() {}
     virtual void handleVoid(const CharSequence& key) = 0;
+    virtual void handleBool(const CharSequence& key, bool value) = 0;
     virtual void handleUint8(const CharSequence& key, uint8_t value) = 0;
     virtual void handleUint16(const CharSequence& key, uint16_t value) = 0;
     virtual void handleUint32(const CharSequence& key, uint32_t value) = 0;
