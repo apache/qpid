@@ -76,7 +76,8 @@ QPID_COMMON_EXTERN void translate(const qpid::types::Variant::Map& from, const s
 QPID_COMMON_EXTERN void translate(const qpid::framing::FieldTable& from,
                                   qpid::types::Variant::Map& to);
 
-QPID_COMMON_EXTERN boost::shared_ptr<framing::FieldValue> fieldValue(const types::Variant&);
+QPID_COMMON_EXTERN void translate(const types::Variant& from,
+                                  boost::shared_ptr<qpid::framing::FieldValue> to);
 
 }} // namespace qpid::amqp_0_10
 
