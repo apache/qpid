@@ -113,16 +113,6 @@ public class Broker
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        if (storeLocation == null)
-        {
-            String qpidWork = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
-            if (qpidWork == null)
-            {
-                qpidWork = new File(System.getProperty("user.dir"), "work").getAbsolutePath();
-            }
-            storeLocation = new File(qpidWork, BrokerOptions.DEFAULT_CONFIG_FILE + "." + storeType).getAbsolutePath();
-        }
-
         CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
 
         File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);

@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.server;
 
+import java.io.File;
+
 import org.apache.commons.cli.CommandLine;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -34,8 +37,13 @@ public class MainTest extends QpidTestCase
     {
         BrokerOptions options = startDummyMain("");
 
+        String qpidWork = "/qpid/work";
+        setTestSystemProperty(BrokerProperties.PROPERTY_QPID_WORK, qpidWork);
+
+        String expectedStorePath = new File(qpidWork, BrokerOptions.DEFAULT_CONFIG_NAME_PREFIX + ".json").getAbsolutePath();
+
         assertEquals("json", options.getConfigurationStoreType());
-        assertEquals(null, options.getConfigurationStoreLocation());
+        assertEquals(expectedStorePath, options.getConfigurationStoreLocation());
         assertEquals(null, options.getLogConfigFile());
         assertEquals(0, options.getLogWatchFrequency());
         assertEquals("json", options.getInitialConfigurationStoreType());
