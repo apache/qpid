@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 public class MemoryMessageStoreFactory implements MessageStoreFactory
 {
