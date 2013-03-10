@@ -7,19 +7,23 @@ import java.util.Locale;
  */
 public class BrokerProperties
 {
-    public static final int  DEFAULT_HEART_BEAT_TIMEOUT_FACTOR = 2;
+    public static final int  DEFAULT_HEARTBEAT_TIMEOUT_FACTOR = 2;
+    public static final String PROPERTY_HEARTBEAT_TIMEOUT_FACTOR = "qpid.broker_heartbeat_timeout_factor";
+    public static final int HEARTBEAT_TIMEOUT_FACTOR = Integer.getInteger(PROPERTY_HEARTBEAT_TIMEOUT_FACTOR, DEFAULT_HEARTBEAT_TIMEOUT_FACTOR);
 
-    public static final String PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX = "qpid.dead_letter_exchange_suffix";
-    public static final String PROPERTY_DEAD_LETTER_QUEUE_SUFFIX = "qpid.dead_letter_queue_suffix";
+    public static final String PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX = "qpid.broker_dead_letter_exchange_suffix";
+    public static final String PROPERTY_DEAD_LETTER_QUEUE_SUFFIX = "qpid.broker_dead_letter_queue_suffix";
 
-    public static final String PROPERTY_FRAME_SIZE = "qpid.frame_size";
-    public static final String PROPERTY_MSG_AUTH = "qpid.msg_auth";
-    public static final String PROPERTY_STATUS_UPDATES = "qpid.status_updates";
-    public static final String PROPERTY_LOCALE = "qpid.locale";
-    public static final String PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY = "qpid.default_supported_protocol_version_reply";
+    public static final String PROPERTY_MSG_AUTH = "qpid.broker_msg_auth";
+    public static final String PROPERTY_STATUS_UPDATES = "qpid.broker_status_updates";
+    public static final String PROPERTY_LOCALE = "qpid.broker_locale";
+    public static final String PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY = "qpid.broker_default_supported_protocol_version_reply";
     public static final String PROPERTY_DISABLED_FEATURES = "qpid.broker_disabled_features";
 
-    public static final int  DEFAULT_FRAME_SIZE = Integer.getInteger(PROPERTY_FRAME_SIZE, 65535);
+    private static final int DEFAULT_FRAME_SIZE = 65535;
+    public static final String PROPERTY_FRAME_SIZE = "qpid.broker_frame_size";
+    public static final int FRAME_SIZE = Integer.getInteger(PROPERTY_FRAME_SIZE, DEFAULT_FRAME_SIZE);
+
     public static final String PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES = "qpid.broker_default_amqp_protocol_excludes";
     public static final String PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES = "qpid.broker_default_amqp_protocol_includes";
 
