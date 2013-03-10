@@ -100,7 +100,7 @@ broker-plugins-management-jmx.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
 
 # JCA Resource adapter
-jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${test.libs} ${geronimo-kernel} ${geronimo-openejb} ${geronimo-servlet}
+jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${geronimo-openejb} ${geronimo-servlet} ${geronimo-kernel}
 jca.test.libs=${test.libs}
 
 # optional bdbstore module deps
