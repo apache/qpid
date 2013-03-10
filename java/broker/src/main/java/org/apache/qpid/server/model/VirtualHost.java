@@ -117,10 +117,6 @@ public interface VirtualHost extends ConfiguredObject
                             ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                             CONFIG_PATH));
 
-
-
-    String getReplicationGroupName();
-
     //children
     Collection<VirtualHostAlias> getAliases();
     Collection<Connection> getConnections();

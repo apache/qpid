@@ -146,9 +146,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _bindingFactory = new BindingFactory(this);
 
-        _messageStore = initialiseMessageStore(hostConfig);
-
-        configureMessageStore(hostConfig);
+        _messageStore = configureMessageStore(hostConfig);
 
         activateNonHAMessageStore();
 
@@ -278,7 +276,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         return messageStore;
     }
 
-    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    private MessageStore configureMessageStore(VirtualHostConfiguration hostConfig) throws Exception
     {
         String storeType = hostConfig.getConfig().getString("store.type");
         MessageStore  messageStore = null;
@@ -298,18 +296,13 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
         messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
         messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
-        return messageStore;
-    }
-
-    private void configureMessageStore(VirtualHostConfiguration hostConfig) throws Exception
-    {
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
 
-        // TODO perhaps pass config on construction??
-        _messageStore.configureConfigStore(getName(), recoveryHandler, hostConfig.getStoreConfiguration());
-        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, hostConfig.getStoreConfiguration());
+        messageStore.configureConfigStore(getName(), recoveryHandler, hostConfig.getStoreConfiguration());
+        messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, hostConfig.getStoreConfiguration());
 
+        return messageStore;
     }
 
     private void activateNonHAMessageStore() throws Exception

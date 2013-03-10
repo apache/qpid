@@ -270,7 +270,6 @@ public class ManagementLoggingTest extends AbstractTestLogging
     {
         if (isJavaBroker())
         {
-            setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
             startBrokerAndCreateMonitor(true, false);
 
             final JMXTestUtils jmxUtils = new JMXTestUtils(this);
