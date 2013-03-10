@@ -20,25 +20,30 @@
  */
 package org.apache.qpid.server;
 
+import java.io.File;
+
+import org.apache.qpid.server.configuration.BrokerProperties;
+
 public class BrokerOptions
 {
     public static final String DEFAULT_STORE_TYPE = "json";
-    public static final String DEFAULT_CONFIG_FILE = "config";
+    public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
 
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
 
     private String _configurationStoreLocation;
-    private String _configurationStoreType = DEFAULT_STORE_TYPE;
+    private String _configurationStoreType;
 
     private String _initialConfigurationStoreLocation;
-    private String _initialConfigurationStoreType = DEFAULT_STORE_TYPE;
+    private String _initialConfigurationStoreType;
 
     private boolean _managementMode;
     private int _managementModeRmiPort;
     private int _managementModeConnectorPort;
     private int _managementModeHttpPort;
+    private String _workingDir;
 
     public String getLogConfigFile()
     {
@@ -64,26 +69,6 @@ public class BrokerOptions
         _logWatchFrequency = logWatchFrequency;
     }
 
-    public String getConfigurationStoreLocation()
-    {
-        return _configurationStoreLocation;
-    }
-
-    public void setConfigurationStoreLocation(String cofigurationStore)
-    {
-        _configurationStoreLocation = cofigurationStore;
-    }
-
-    public String getConfigurationStoreType()
-    {
-        return _configurationStoreType;
-    }
-
-    public void setConfigurationStoreType(String cofigurationStoreType)
-    {
-        _configurationStoreType = cofigurationStoreType;
-    }
-
     public void setInitialConfigurationStoreLocation(String initialConfigurationStore)
     {
         _initialConfigurationStoreLocation = initialConfigurationStore;
@@ -101,6 +86,11 @@ public class BrokerOptions
 
     public String getInitialConfigurationStoreType()
     {
+        if(_initialConfigurationStoreType == null)
+        {
+            return DEFAULT_STORE_TYPE;
+        }
+
         return _initialConfigurationStoreType;
     }
 
@@ -142,5 +132,94 @@ public class BrokerOptions
     public void setManagementModeHttpPort(int managementModeHttpPort)
     {
         _managementModeHttpPort = managementModeHttpPort;
+    }
+
+    /**
+     * Get the broker configuration store type.
+     *
+     * @return the previously set store type, or if none was set the default: {@value #DEFAULT_STORE_TYPE}
+     */
+    public String getConfigurationStoreType()
+    {
+        if(_configurationStoreType == null)
+        {
+            return  DEFAULT_STORE_TYPE;
+        }
+
+        return _configurationStoreType;
+    }
+
+    /**
+     * Set the broker configuration store type.
+     *
+     * Passing null clears previously set values and returns to the default.
+     */
+    public void setConfigurationStoreType(String cofigurationStoreType)
+    {
+        _configurationStoreType = cofigurationStoreType;
+    }
+
+    /**
+     * Get the broker configuration store location.
+     *
+     * Defaults to {@value #DEFAULT_CONFIG_NAME_PREFIX}.{@literal <store type>} (see {@link BrokerOptions#getConfigurationStoreType()}) within the broker work directory (see {@link BrokerOptions#getWorkDir()}).
+     *
+     * @return the previously set configuration store location, or the default location if none was set.
+     */
+    public String getConfigurationStoreLocation()
+    {
+        if(_configurationStoreLocation == null)
+        {
+            String workDir = getWorkDir();
+            String storeType = getConfigurationStoreType();
+
+            return new File(workDir, DEFAULT_CONFIG_NAME_PREFIX + "." + storeType).getAbsolutePath();
+        }
+
+        return _configurationStoreLocation;
+    }
+
+    /**
+     * Set the absolute path to use for the broker configuration store.
+     *
+     * Passing null clears any previously set value and returns to the default.
+     */
+    public void setConfigurationStoreLocation(String cofigurationStore)
+    {
+        _configurationStoreLocation = cofigurationStore;
+    }
+
+    /**
+     * Get the broker work directory location.
+     *
+     * Defaults to the location set in the "QPID_WORK" system property if it is set, or the 'work' sub-directory
+     * of the user working directory ("user.dir" property) for the Java process if it is not.
+     *
+     * @return the previously set configuration store location, or the default location if none was set.
+     */
+    public String getWorkDir()
+    {
+        if(_workingDir == null)
+        {
+            String qpidWork = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
+            if (qpidWork == null)
+            {
+                return new File(System.getProperty("user.dir"), "work").getAbsolutePath();
+            }
+
+            return qpidWork;
+        }
+
+        return _workingDir;
+    }
+
+    /**
+     * Set the absolute path to use for the broker work directory.
+     *
+     * Passing null clears any previously set value and returns to the default.
+     */
+    public void setWorkDir(String workingDir)
+    {
+        _workingDir = workingDir;
     }
 }
