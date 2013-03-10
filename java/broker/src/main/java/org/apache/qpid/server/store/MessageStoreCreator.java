@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class MessageStoreCreator
