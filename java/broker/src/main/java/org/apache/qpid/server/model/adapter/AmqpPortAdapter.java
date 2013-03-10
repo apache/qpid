@@ -101,7 +101,10 @@ public class AmqpPortAdapter extends PortAdapter
                 _broker, supported, defaultSupportedProtocolReply);
 
         _transport.accept(settings, protocolEngineFactory, sslContext);
-        CurrentActor.get().message(BrokerMessages.LISTENING(getTransports().toString(), getPort()));
+        for(Transport transport : getTransports())
+        {
+            CurrentActor.get().message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));
+        }
     }
 
     @Override
@@ -109,7 +112,10 @@ public class AmqpPortAdapter extends PortAdapter
     {
         if (_transport != null)
         {
-            CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(getTransports().toString(), getPort()));
+            for(Transport transport : getTransports())
+            {
+                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(String.valueOf(transport), getPort()));
+            }
             _transport.close();
         }
     }
