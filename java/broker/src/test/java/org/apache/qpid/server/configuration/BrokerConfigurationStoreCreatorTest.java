@@ -114,9 +114,8 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         assertTrue("Unexpected children: " + childrenIds, childrenIds.isEmpty());
     }
 
-    public void testCreateDerbyStore()
+    public void testCreateStoreWithUnknownType()
     {
-        //TODO: Implement DERBY store
         try
         {
             _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", null, null);
@@ -127,18 +126,4 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
             // pass
         }
     }
-
-    public void testCreateXmlStore() throws Exception
-    {
-        try
-        {
-            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "xml", null, null);
-            fail("Store is not yet supported");
-        }
-        catch(IllegalConfigurationException e)
-        {
-            // pass
-        }
-    }
-
 }
