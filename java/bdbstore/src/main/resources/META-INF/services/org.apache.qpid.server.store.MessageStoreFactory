@@ -17,4 +17,3 @@
 # under the License.
 #
 org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory
-org.apache.qpid.server.store.berkeleydb.BDBHAMessageStoreFactory

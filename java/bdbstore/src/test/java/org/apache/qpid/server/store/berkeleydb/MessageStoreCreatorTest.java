@@ -23,14 +23,13 @@ package org.apache.qpid.server.store.berkeleydb;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class MessageStoreCreatorTest extends QpidTestCase
 {
-    private static final String[] STORE_TYPES = {MemoryMessageStore.TYPE, DerbyMessageStore.TYPE, BDBMessageStore.TYPE, BDBHAMessageStore.TYPE};
+    private static final String[] STORE_TYPES = {MemoryMessageStore.TYPE, DerbyMessageStore.TYPE, BDBMessageStore.TYPE};
 
     public void testMessageStoreCreator()
     {
