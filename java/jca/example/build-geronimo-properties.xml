@@ -104,9 +104,11 @@
 
     <path id="run.classpath">
         <fileset dir="${lib.dir}">
-            <include name="qpid-ra-*.jar"/>
+            <include name="qpid-jca-*.jar"/>
             <include name="qpid-client-*.jar"/>
             <include name="qpid-common-*.jar"/>
+            <!-- Old jar, for examples compatibility -->
+            <include name="qpid-ra-*.jar"/>
         </fileset>
         <fileset dir="${geronimo.home}/repository/org/apache/geronimo/specs">
             <include name="geronimo-j2ee-connector_1.5_spec/2.0.0/geronimo-j2ee-connector_1.5_spec-2.0.0.jar"/>

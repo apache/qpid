@@ -93,6 +93,17 @@
     <artifact name="qpid-bdbstore-jmx" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-bdbstore-jmx" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-bdbstore-jmx" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-jca" type="pom" ext="pom"/>
+    <artifact name="qpid-jca" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-jca" type="jar" ext="jar"/>
+    <artifact name="qpid-jca" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-jca" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-jca" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-ra" type="pom" ext="pom"/>
+    <artifact name="qpid-ra" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-ra" type="rar" ext="rar"/>
+    <artifact name="qpid-ra" type="rar.asc" ext="rar.asc"/>
+
   </publications>
 
   <dependencies/>
