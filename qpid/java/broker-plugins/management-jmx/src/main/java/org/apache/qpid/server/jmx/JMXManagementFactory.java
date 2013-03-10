@@ -21,15 +21,12 @@ package org.apache.qpid.server.jmx;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.plugin.PluginFactory;
 
 public class JMXManagementFactory implements PluginFactory
 {
-    private static final Logger LOGGER = Logger.getLogger(JMXManagementFactory.class);
-
     @Override
     public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
     {
@@ -39,10 +36,6 @@ public class JMXManagementFactory implements PluginFactory
         }
         else
         {
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Skipping registration of JMX plugin as JMX Management disabled in config.");
-            }
             return null;
         }
     }

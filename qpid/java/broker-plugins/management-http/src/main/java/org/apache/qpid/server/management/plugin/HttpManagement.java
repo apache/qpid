@@ -320,20 +320,20 @@ public class HttpManagement extends AbstractPluginAdapter
     {
         if (keyStorePath == null)
         {
-            throw new RuntimeException("Management SSL keystore path not defined, unable to start SSL protected HTTP connector");
+            throw new RuntimeException("SSL keystore path not defined, unable to start HTTPS connector");
         }
         if (password == null)
         {
-            throw new RuntimeException("Management SSL keystore password, unable to start SSL protected HTTP connector");
+            throw new RuntimeException("SSL keystore password not defined, unable to start HTTPS connector");
         }
         File ksf = new File(keyStorePath);
         if (!ksf.exists())
         {
-            throw new RuntimeException("Cannot find management SSL keystore file: " + ksf);
+            throw new RuntimeException("Cannot find SSL keystore file for HTTPS management: " + ksf);
         }
         if (!ksf.canRead())
         {
-            throw new RuntimeException("Cannot read management SSL keystore file: " + ksf + ". Check permissions.");
+            throw new RuntimeException("Cannot read SSL keystore file for HTTPS management: " + ksf + ". Check permissions.");
         }
     }
 
