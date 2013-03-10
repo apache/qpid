@@ -45,7 +45,7 @@ public class XmlConfigurationUtilities
         }
     }
 
-    public static Configuration parseConfig(File file, Map<String, String> envVarMap) throws ConfigurationException
+    public static Configuration parseConfig(File file) throws ConfigurationException
     {
         ConfigurationFactory factory = new ConfigurationFactory();
         factory.setConfigurationFileName(file.getAbsolutePath());
@@ -58,7 +58,6 @@ public class XmlConfigurationUtilities
             conf = flatConfig(file);
         }
 
-        XmlConfigurationUtilities.substituteEnvironmentVariables(conf, envVarMap);
         return conf;
     }
 
@@ -86,23 +85,6 @@ public class XmlConfigurationUtilities
         });
         return conf;
     }
-
-    static void substituteEnvironmentVariables(Configuration conf, Map<String, String> envVarMap)
-    {
-        if (envVarMap == null || envVarMap.isEmpty())
-        {
-            return;
-        }
-        for (Entry<String, String> var : envVarMap.entrySet())
-        {
-            String val = System.getenv(var.getKey());
-            if (val != null)
-            {
-                conf.setProperty(var.getValue(), val);
-            }
-        }
-    }
-
 
     public static String escapeTagName(String name)
     {
