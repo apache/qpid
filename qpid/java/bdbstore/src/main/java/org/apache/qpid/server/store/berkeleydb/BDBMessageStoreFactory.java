@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreFactory;
 
 public class BDBMessageStoreFactory implements MessageStoreFactory
 {

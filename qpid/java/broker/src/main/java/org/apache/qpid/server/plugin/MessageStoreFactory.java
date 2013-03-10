@@ -18,7 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.plugin;
+
+import org.apache.qpid.server.store.MessageStore;
 
 public interface MessageStoreFactory
 {
