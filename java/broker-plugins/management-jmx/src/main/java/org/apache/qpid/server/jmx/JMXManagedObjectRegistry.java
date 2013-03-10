@@ -278,11 +278,11 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         File ksf = new File(keyStorePath);
         if (!ksf.exists())
         {
-            throw new FileNotFoundException("Cannot find JMX management SSL keystore file: " + ksf);
+            throw new FileNotFoundException("Cannot find SSL keystore file for JMX management: " + ksf);
         }
         if (!ksf.canRead())
         {
-            throw new FileNotFoundException("Cannot read JMX management SSL keystore file: "
+            throw new FileNotFoundException("Cannot read SSL keystore file for JMX management: "
                                             + ksf +  ". Check permissions.");
         }
     }

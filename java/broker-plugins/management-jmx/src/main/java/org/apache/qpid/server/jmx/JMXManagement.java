@@ -168,9 +168,16 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             {
                 if(!_children.containsKey(virtualHost))
                 {
-                    LOGGER.debug("Create MBean for virtual host:" + virtualHost.getName());
+                    if(LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Create MBean for virtual host:" + virtualHost.getName());
+                    }
                     VirtualHostMBean mbean = new VirtualHostMBean(virtualHost, _objectRegistry);
-                    LOGGER.debug("Check for additional MBeans for virtual host:" + virtualHost.getName());
+
+                    if(LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Check for additional MBeans for virtual host:" + virtualHost.getName());
+                    }
                     createAdditionalMBeansFromProviders(virtualHost, mbean);
                 }
             }
@@ -312,10 +319,17 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
         for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
         {
-            LOGGER.debug("Consulting mbean provider : " + provider + " for child : " + child);
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Consulting mbean provider : " + provider + " for child : " + child);
+            }
+
             if (provider.isChildManageableByMBean(child))
             {
-                LOGGER.debug("Provider will create mbean ");
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Provider will create mbean");
+                }
                 provider.createMBean(child, mbean);
                 // TODO track the mbeans that have been created on behalf of a child in a map, then
                 // if the child is ever removed, destroy these beans too.
