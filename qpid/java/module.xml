@@ -253,6 +253,7 @@
     <mkdir dir="${module.results}"/>
   </target>
 
+  <!--Overridden by (but still used in) the JCA module -->
   <target name="pom" depends="prepare" if="module.genpom">
     <jython path="${mllib.dir}">
       <args>
@@ -271,6 +272,7 @@
     </jython>
   </target>
 
+  <!--Overridden by (but still used in) the JCA module -->
   <target name="release-mvn" depends="build,pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release artifacts">
     <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
@@ -285,6 +287,7 @@
     </artifact:deploy>
   </target>
 
+  <!--Overridden by (but still used in) the JCA module -->
   <target name="deploy-snapshot" depends="build,pom" if="module.genpom" description="deploy a snapshot build to nexus">
     <!-- In order to use this target you need to have predefined a username and password for the
     server with id ${maven.snapshots.repo.id} in your m2 settings file, e.g ~/.m2/settings.xml -->

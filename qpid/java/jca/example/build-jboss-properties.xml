@@ -68,9 +68,11 @@
 
     <path id="run.classpath">
         <fileset dir="${lib.dir}">
-            <include name="qpid-ra-*.jar"/>
+            <include name="qpid-jca-*.jar"/>
             <include name="qpid-client-*.jar"/>
             <include name="qpid-common-*.jar"/>
+            <!-- Old jar, for examples compatibility -->
+            <include name="qpid-ra-*.jar"/>
         </fileset>
         <fileset dir="${jboss.client}">
             <!-- Shortcut to get it working!-->

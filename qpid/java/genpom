@@ -41,6 +41,7 @@ parser.add_option("-S", "--scope", metavar="ARTIFACT=SCOPE", action="append",
                   default=[],
                   help="specify scope for an artifact")
 parser.add_option("-o", "--output")
+parser.add_option("-t", "--type", default="jar", help="packaging type")
 
 opts, jars = parser.parse_args()
 
@@ -160,6 +161,7 @@ TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd ">
   <modelVersion>4.0.0</modelVersion>
+  <packaging>%(type)s</packaging>
   <groupId>%(group)s</groupId>
   <artifactId>%(artifact)s</artifactId>
   <version>%(version)s</version>

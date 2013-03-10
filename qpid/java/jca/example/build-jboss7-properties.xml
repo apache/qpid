@@ -74,9 +74,11 @@
             <include name="jboss-client.jar"/>
         </fileset>
         <fileset dir="${lib.dir}">
-            <include name="qpid-ra-*.jar"/>
+            <include name="qpid-jca-*.jar"/>
             <include name="qpid-client-*.jar"/>
             <include name="qpid-common-*.jar"/>
+            <!-- Old jar, for examples compatibility -->
+            <include name="qpid-ra-*.jar"/>
         </fileset>
         <fileset dir="${jboss.modules}/org/slf4j/main">
             <include name="slf4j-api-1.6.1.jar"/>

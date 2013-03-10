@@ -18,26 +18,21 @@
  - under the License.
  -
  -->
-<project name="Qpid JCA" default="build">
+<project name="jca" xmlns:artifact="antlib:org.apache.maven.artifact.ant" default="build">
 
   <property name="module.depends" value="common client"/>
   <property name="module.name" value="jca"/>
-  <!-- Hack to make the renamed module jars available on the module test classpath -->
-  <property name="module.test.depends" value="ra ra/tests"/>
 
-  <!-- Import common.xml to make the properties it defines available before importing module.xml -->
-  <import file="../common.xml"/>
-
-  <!-- Override the standard output jar names before importing module.xml, to produce
-       artifacts that use ra in the name instead of jca like the module should -->
-  <property name="module.test.jar" value="${build.lib}/${project.name}-ra-tests-${project.version}.jar"/>
-  <property name="module.jar" value="${build.lib}/${project.name}-ra-${project.version}.jar"/>
-  <property name="module.source.jar" value="${build.lib}/${project.name}-ra-${project.version}-sources.jar"/>
+  <property name="module.genpom" value="true"/>
+  <property name="module.genpom.args" value="-Sgeronimo-j2ee-connector_1.5_spec=provided -Sgeronimo-jta_1.1_spec=provided -Sgeronimo-jms_1.1_spec=provided -Sgeronimo-ejb_3.0_spec=provided -Sgeronimo-servlet_2.5_spec=provided -Sgeronimo-kernel=provided"/>
 
   <import file="../module.xml"/>
 
-  <property name="module.rar" value="${build.lib}/${project.name}-ra-${project.version}.rar"/>
+  <property name="rar.name.prefix" value="${project.name}-ra"/>
+  <property name="module.rar" value="${build.lib}/${rar.name.prefix}-${project.version}.rar"/>
   <property name="rar.resources" value="rar/src/main/resources"/>
+  <property name="rar.scratch.pom" value="${build.scratch}/${rar.name.prefix}-${project.version}.pom"/>
+
 
   <target name="rar" depends="jar" description="creates a rar file containing the module jar, client jars, etc">
     <jar destfile="${module.rar}">
@@ -45,7 +40,7 @@
         <include name="**/*.xml"/>
       </fileset>
       <fileset dir="${build.lib}">
-        <include name="${project.name}-ra-${project.version}.jar"/>
+        <include name="${project.name}-jca-${project.version}.jar"/>
         <include name="${project.name}-client-${project.version}.jar"/>
         <include name="${project.name}-common-${project.version}.jar"/>
       </fileset>
@@ -54,7 +49,7 @@
 
   <!-- Create properties file for examples -->
   <target name="example-properties-file">
-    <copy file="example/build-properties.xml.temp" tofile="example/build-properties.xml">
+    <copy file="example/build-properties.xml.temp" tofile="example/build-properties.xml" overwrite="true">
       <filterset>
         <filter token="project.version" value="${project.version}"/>
       </filterset>
@@ -66,7 +61,7 @@
     <mkdir dir="example/lib"/>
     <copy todir="example/lib">
       <fileset dir="${build.lib}">
-        <include name="${project.name}-ra-${project.version}.jar"/>
+        <include name="${project.name}-jca-${project.version}.jar"/>
         <include name="${project.name}-client-${project.version}.jar"/>
         <include name="${project.name}-common-${project.version}.jar"/>
       </fileset>
@@ -80,4 +75,59 @@
   <!-- Override module.xml 'libs' target to avoid copying the jar files dependencies
        into the 'build/lib' dir, since they will be supplied by the app server -->
   <target name="libs"/>
+
+  <!--Overrides, but depends on, [module.]pom target in module.xml -->
+  <target name="pom" depends="module.pom" if="module.genpom">
+    <jython path="${mllib.dir}">
+      <args>
+        <arg line='"${project.root}/genpom"'/>
+        <arg line='-s "${project.root}/lib/poms"'/>
+        <arg line='-o "${rar.scratch.pom}"'/>
+        <arg line="-u ${project.url}"/>
+        <arg line="-g ${project.groupid}"/>
+        <arg line="-v ${project.version.maven}${maven.version.suffix}"/>
+        <arg line="-a ${rar.name.prefix}"/>
+        <arg line="-t rar"/>
+      </args>
+    </jython>
+  </target>
+
+  <!--Overrides, but depends on, [module.]release-mvn target in module.xml -->
+  <target name="release-mvn" depends="module.release-mvn" if="module.genpom" description="Install the artifacts into the local repository and prepare the release artifacts">
+    <artifact:pom id="rar.pom" file="${rar.scratch.pom}"/>
+
+    <artifact:install file="${module.rar}" pomRefId="rar.pom" settingsFile="${maven.settings.xml}">
+        <localRepository path="${maven.local.repo}"/>
+    </artifact:install>
+
+    <artifact:deploy file="${module.rar}" pomRefId="rar.pom" uniqueVersion="${maven.unique.version}" settingsFile="${maven.settings.xml}">
+      <localRepository path="${maven.local.repo}"/>
+      <remoteRepository url="${maven.remote.repo}"/>
+    </artifact:deploy>
+  </target>
+
+  <!--Overrides, but depends on, [module.]deploy-snapshot target in module.xml -->
+  <target name="deploy-snapshot" depends="module.deploy-snapshot" if="module.genpom" description="deploy a snapshot build to nexus">
+    <!-- In order to use this target you need to have predefined a username and password for the
+    server with id ${maven.snapshots.repo.id} in your m2 settings file, e.g ~/.m2/settings.xml -->
+    <artifact:pom id="rar.pom" file="${rar.scratch.pom}"/>
+
+    <fail message="The pom version must include -SNAPSHOT. Version found was: ${rar.pom.version}">
+      <condition>
+        <not>
+          <contains substring="-SNAPSHOT" string="${rar.pom.version}" />
+        </not>
+      </condition>
+    </fail>
+
+    <artifact:install file="${module.rar}" pomRefId="rar.pom" settingsFile="${maven.settings.xml}">
+        <localRepository path="${maven.local.repo}"/>
+    </artifact:install>
+
+    <artifact:deploy file="${module.rar}" pomRefId="rar.pom">
+      <localRepository path="${maven.local.repo}"/>
+      <remoteRepository id="${maven.snapshots.repo.id}" url="${maven.snapshots.repo.url}"/>
+    </artifact:deploy>
+  </target>
+
 </project>
