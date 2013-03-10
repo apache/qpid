@@ -188,12 +188,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
     }
 
-    @Override
-    public String getReplicationGroupName()
-    {
-        return null;  //TODO
-    }
-
     public Collection<VirtualHostAlias> getAliases()
     {
         return Collections.unmodifiableCollection(_aliases);
