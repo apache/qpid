@@ -54,6 +54,8 @@ ha_la_SOURCES =					\
   qpid/ha/StatusCheck.h				\
   qpid/ha/RemoteBackup.cpp			\
   qpid/ha/RemoteBackup.h			\
+  qpid/ha/Role.h				\
+  qpid/ha/StandAlone.h				\
   qpid/ha/types.cpp				\
   qpid/ha/types.h
 

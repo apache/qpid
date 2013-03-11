@@ -21,7 +21,7 @@ if HAVE_RUBY_DEVEL
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
 
-EXTRA_DIST = CMakeLists.txt ruby.i
+EXTRA_DIST = $(srcdir)/CMakeLists.txt $(srcdir)/ruby.i
 BUILT_SOURCES = qmfengine.cpp
 SWIG_FLAGS = -w362,401
 
