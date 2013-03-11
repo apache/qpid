@@ -72,6 +72,7 @@
   <property name="module.release.bz2"  location="${module.release}/${module.namever}.tar.bz2"/>
 
   <property name="module.genpom.args"  value=""/>
+  <property name="module.maven.depends"  value=""/>
   <property name="maven.remote.repo"     value="file://${module.release.base}/maven"/>
 
   <property name="broker.log.prefix" value="BROKER: "/> 
@@ -264,7 +265,7 @@
         <arg line="-g ${project.groupid}"/>
         <arg line="-v ${project.version.maven}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
-        <arg line='-m "${module.depends}"'/>
+        <arg line='-m "${module.depends} ${module.maven.depends}"'/>
         <arg line="-a ${module.name}"/>
         <arg line="${module.genpom.args}"/>
         <arg line="${module.libs}"/>
