@@ -44,6 +44,7 @@ public interface Broker extends ConfiguredObject
     String PROCESS_PID = "processPid";
     String PRODUCT_VERSION = "productVersion";
     String SUPPORTED_STORE_TYPES = "supportedStoreTypes";
+    String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
     String CREATED = "created";
     String DURABLE = "durable";
     String ID = "id";
@@ -103,6 +104,7 @@ public interface Broker extends ConfiguredObject
                               PROCESS_PID,
                               PRODUCT_VERSION,
                               SUPPORTED_STORE_TYPES,
+                              SUPPORTED_AUTHENTICATION_PROVIDERS,
                               CREATED,
                               DURABLE,
                               ID,

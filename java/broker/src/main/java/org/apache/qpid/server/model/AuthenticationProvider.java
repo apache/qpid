@@ -39,8 +39,8 @@ public interface AuthenticationProvider extends ConfiguredObject
     public static final String TIME_TO_LIVE = "timeToLive";
     public static final String CREATED = "created";
     public static final String UPDATED = "updated";
-    public static final String CATEGORY = "category";
-    public static final String TYPE = "authenticationProviderType";
+
+    public static final String TYPE = "type";
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -53,8 +53,8 @@ public interface AuthenticationProvider extends ConfiguredObject
                                   TIME_TO_LIVE,
                                   CREATED,
                                   UPDATED,
-                                  CATEGORY,
-                                  TYPE));
+                                  TYPE
+                                  ));
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();
 

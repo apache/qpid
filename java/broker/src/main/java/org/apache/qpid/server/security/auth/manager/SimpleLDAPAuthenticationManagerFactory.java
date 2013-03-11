@@ -19,12 +19,17 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.util.ResourceBundleLoader;
 
 public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
+    public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationProviderAttributeDescriptions";
     private static final String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
     public static final String PROVIDER_TYPE = SimpleLDAPAuthenticationManager.class.getSimpleName();
@@ -35,6 +40,15 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
     public static final String ATTRIBUTE_PROVIDER_AUTH_URL = "providerAuthUrl";
     public static final String ATTRIBUTE_PROVIDER_SEARCH_URL = "providerSearchUrl";
     public static final String ATTRIBUTE_PROVIDER_URL = "providerUrl";
+
+    public static final Collection<String> ATTRIBUTES = Collections.<String> unmodifiableList(Arrays.asList(
+            ATTRIBUTE_TYPE,
+            ATTRIBUTE_LDAP_CONTEXT_FACTORY,
+            ATTRIBUTE_SEARCH_FILTER,
+            ATTRIBUTE_SEARCH_CONTEXT,
+            ATTRIBUTE_PROVIDER_AUTH_URL,
+            ATTRIBUTE_PROVIDER_SEARCH_URL,
+            ATTRIBUTE_PROVIDER_URL));
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
@@ -66,4 +80,21 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
                 ldapContextFactory);
     }
 
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return ATTRIBUTES;
+    }
+
+    @Override
+    public String getType()
+    {
+        return PROVIDER_TYPE;
+    }
+
+    @Override
+    public Map<String, String> getAttributeDescriptions()
+    {
+        return ResourceBundleLoader.getResources(RESOURCE_BUNDLE);
+    }
 }

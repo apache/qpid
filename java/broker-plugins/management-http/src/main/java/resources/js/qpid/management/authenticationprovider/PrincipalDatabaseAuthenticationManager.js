@@ -44,7 +44,7 @@ define(["dojo/_base/xhr",
         "dijit/form/DateTextBox",
         "dojo/domReady!"],
     function (xhr, dom, parser, query, construct, connect, win, event, json, registry, util, properties, updater, UpdatableStore, EnhancedGrid) {
-        function DatabaseAuthManager(containerNode, authProviderObj, controller) {
+        function DatabaseAuthManager(containerNode, authProviderObj, controller, authenticationManagerUpdater) {
             var node = construct.create("div", null, containerNode, "last");
             var that = this;
             this.name = authProviderObj.name;
@@ -55,8 +55,7 @@ define(["dojo/_base/xhr",
                                         parser.parse(node);
 
 
-                                        that.authDatabaseUpdater= new AuthProviderUpdater(node, authProviderObj, controller);
-
+                                        that.authDatabaseUpdater= new AuthProviderUpdater(node, authProviderObj, controller, authenticationManagerUpdater);
                                         updater.add( that.authDatabaseUpdater);
 
                                         that.authDatabaseUpdater.update();
@@ -73,17 +72,18 @@ define(["dojo/_base/xhr",
             updater.remove( this.authDatabaseUpdater );
         };
 
-        function AuthProviderUpdater(node, authProviderObj, controller)
+        function AuthProviderUpdater(node, authProviderObj, controller, authenticationManagerUpdater)
         {
             this.controller = controller;
-            this.query = "rest/authenticationprovider/"+encodeURIComponent(authProviderObj.name);
+            this.query = "rest/authenticationprovider?id="+encodeURIComponent(authProviderObj.id);
             this.name = authProviderObj.name;
+            this.authenticationManagerUpdater = authenticationManagerUpdater;
             var that = this;
 
             xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                .then(function(data) {
                      that.authProviderData = data[0];
-
+                     that.name = data[0].name
                      util.flattenStatistics( that.authProviderData );
 
                      var userDiv = query(".users")[0];
@@ -116,13 +116,13 @@ define(["dojo/_base/xhr",
                                                     theItem = this.getItem(idx);
                                                     var name = obj.dataStore.getValue(theItem,"name");
                                                     var id = obj.dataStore.getValue(theItem,"id");
-                                                    setPassword.show(authProviderObj.name, {name: name, id: id});
+                                                    setPassword.show(that.name, {name: name, id: id});
                                                 });
                                         }, gridProperties, EnhancedGrid);
 
 
                      var addUserButton = query(".addUserButton", node)[0];
-                     connect.connect(registry.byNode(addUserButton), "onClick", function(evt){ addUser.show(authProviderObj.name) });
+                     connect.connect(registry.byNode(addUserButton), "onClick", function(evt){ addUser.show(that.name) });
 
                      var deleteMessagesButton = query(".deleteUserButton", node)[0];
                                                 var deleteWidget = registry.byNode(deleteMessagesButton);
@@ -176,10 +176,13 @@ define(["dojo/_base/xhr",
             xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                 .then(function(data) {
                     that.authProviderData = data[0];
+                    that.name = data[0].name
                     util.flattenStatistics( that.authProviderData );
 
                     that.usersGrid.update(that.authProviderData.users);
 
+                    that.authenticationManagerUpdater.authProviderData = data[0];
+                    that.authenticationManagerUpdater.updateHeader();
                 });
 
 

@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,34 +17,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.manager;
+package org.apache.qpid.server.util;
 
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
-import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
-public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractPrincipalDatabaseAuthManagerFactory
+public class ResourceBundleLoader
 {
-    public static final String PROVIDER_TYPE = "Base64MD5PasswordFileAuthenticationProvider";
-
-    @Override
-    public String getType()
+    public static Map<String, String> getResources(String baseName)
     {
-        return PROVIDER_TYPE;
+        try
+        {
+            ResourceBundle bundle = ResourceBundle.getBundle(baseName);
+            Map<String, String> resources = new HashMap<String, String>();
+            Enumeration<String> en = bundle.getKeys();
+            while (en.hasMoreElements())
+            {
+                String key = (String) en.nextElement();
+                resources.put(key, bundle.getString(key));
+            }
+            return resources;
+        }
+        catch(MissingResourceException e)
+        {
+            return null;
+        }
     }
-
-    @Override
-    PrincipalDatabase createPrincipalDatabase()
-    {
-        return new Base64MD5PasswordFilePrincipalDatabase();
-    }
-
-    @Override
-    public Map<String, String> getAttributeDescriptions()
-    {
-        return ResourceBundleLoader.getResources(RESOURCE_BUNDLE);
-    }
-
 }
