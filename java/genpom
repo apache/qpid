@@ -40,6 +40,8 @@ parser.add_option("-s", "--search-path", action="append",
 parser.add_option("-S", "--scope", metavar="ARTIFACT=SCOPE", action="append",
                   default=[],
                   help="specify scope for an artifact")
+parser.add_option("-O", "--optional", action="append", default=[],
+                  help="specify dependencies that are optional")
 parser.add_option("-o", "--output")
 parser.add_option("-t", "--type", default="jar", help="packaging type")
 
@@ -113,9 +115,15 @@ for module in module_depends:
       <artifactId>%s</artifactId>
       <version>%s</version>
       <scope>%s</scope>
-    </dependency>
 """ % (opts.group, artifactId, opts.version,
        scopes.get(artifactId, "compile")))
+  if artifactId in opts.optional:
+    deps.append("""      <optional>true</optional>
+""")
+
+  deps.append("""    </dependency>
+""")
+
 
 for jar in jars:
   base, ext = os.path.splitext(os.path.basename(jar))

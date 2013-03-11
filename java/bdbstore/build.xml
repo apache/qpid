@@ -20,6 +20,7 @@
     <property name="module.depends" value="common broker" />
     <property name="module.test.depends" value="client common/tests broker/tests management/common systests broker-plugins/management-jmx" />
     <property name="module.genpom" value="true"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sje=provided"/>
 
     <import file="../module.xml" />
 

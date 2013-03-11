@@ -24,6 +24,11 @@
     <property name="module.main" value="org.apache.qpid.server.Main"/>
     <property name="module.genpom" value="true"/>
 
+    <!-- Add dependencies to the broker pom for the broker-plugins and bdbstore modules -->
+    <property name="module.maven.depends" value="broker-plugins/management-http broker-plugins/management-jmx broker-plugins/access-control broker-plugins/firewall bdbstore"/>
+    <!-- Make them optional -->
+    <property name="module.genpom.args" value="-Oqpid-broker-plugins-management-http -Oqpid-broker-plugins-management-jmx -Oqpid-broker-plugins-access-control -Oqpid-broker-plugins-firewall -Oqpid-bdbstore"/>
+
     <import file="../module.xml"/>
 
     <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
