@@ -28,7 +28,7 @@
   "trustStorePassword": "password",
   "authenticationproviders" : [ {
     "name" : "plain",
-    "authenticationProviderType" : "PlainPasswordFileAuthenticationProvider",
+    "type" : "PlainPasswordFileAuthenticationProvider",
     "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [  {

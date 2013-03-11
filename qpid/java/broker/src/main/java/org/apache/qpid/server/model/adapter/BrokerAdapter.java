@@ -63,6 +63,7 @@ import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -168,6 +169,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final UUID _defaultKeyStoreId;
     private final UUID _defaultTrustStoreId;
 
+    private Collection<String> _supportedStoreTypes;
+
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
             PortFactory portFactory, TaskExecutor taskExecutor)
@@ -185,6 +188,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _defaultKeyStoreId = UUIDGenerator.generateBrokerChildUUID(KeyStore.class.getSimpleName(), DEFAULT_KEY_STORE_NAME);
         _defaultTrustStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_TRUST_STORE_NAME);
         createBrokerChildrenFromAttributes();
+        _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
     }
 
     /*
@@ -646,7 +650,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
         else if(SUPPORTED_STORE_TYPES.equals(name))
         {
-            // TODO
+            return _supportedStoreTypes;
         }
         else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
         {

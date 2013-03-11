@@ -134,7 +134,10 @@ define(["dojo/_base/xhr",
                            "bytesInRateUnits",
                            "msgOutRate",
                            "bytesOutRate",
-                           "bytesOutRateUnits"]);
+                           "bytesOutRateUnits",
+                           "storeType",
+                           "storePath",
+                           "configPath"]);
 
                this.query = "rest/virtualhost/"+ encodeURIComponent(vhost.name);
 
@@ -143,6 +146,11 @@ define(["dojo/_base/xhr",
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data) {
                    that.vhostData = data[0];
 
+                   if (!that.vhostData.hasOwnProperty("configPath"))
+                   {
+                       var node = findNode("configPathDiv");
+                       node.style.display = "none";
+                   }
                        // flatten statistics into attributes
                        util.flattenStatistics( that.vhostData );
 
@@ -233,8 +241,9 @@ define(["dojo/_base/xhr",
                this.state.innerHTML = this.vhostData[ "state" ];
                this.durable.innerHTML = this.vhostData[ "durable" ];
                this.lifetimePolicy.innerHTML = this.vhostData[ "lifetimePolicy" ];
-
-
+               this.storeType.innerHTML = this.vhostData[ "storeType" ];
+               this.storePath.innerHTML = this.vhostData[ "storePath" ];
+               this.configPath.innerHTML = this.vhostData[ "configPath" ];
            };
 
            Updater.prototype.update = function()

@@ -115,9 +115,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
         super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
-        validateAttributes();
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
+        validateAttributes();
         addParent(Broker.class, broker);
     }
 
@@ -145,10 +145,21 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 invalidAttributes = true;
             }
+
         }
         if (invalidAttributes)
         {
             throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or 'storeType' and 'storePath' attributes");
+        }
+
+        // pre-load the configuration in order to validate
+        try
+        {
+            createVirtualHostConfiguration(name);
+        }
+        catch(ConfigurationException e)
+        {
+            throw new IllegalConfigurationException("Failed to validate configuration", e);
         }
     }
 
@@ -504,11 +515,19 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         if(childClass == Exchange.class)
         {
-            return (C) createExchange(attributes);
+            createExchange(attributes);
+
+            // return null to avoid double notification of VirtualHostMBean
+            // as we already notify it in the exchangeRegistered
+            return null;
         }
         else if(childClass == Queue.class)
         {
-            return (C) createQueue(attributes);
+            createQueue(attributes);
+
+            // return null to avoid double notification of VirtualHostMBean
+            // as we already notify it in the queueRegistered
+            return null;
         }
         else if(childClass == VirtualHostAlias.class)
         {
@@ -969,12 +988,24 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
             }
+            String storePath = (String)getAttribute(STORE_PATH);
             if (_virtualHost != null && _virtualHost.getState() == org.apache.qpid.server.virtualhost.State.ACTIVE)
             {
                 setDesiredState(currentState, State.STOPPED);
             }
             _virtualHost = null;
             setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
+            if (storePath != null)
+            {
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Deleting store at " + storePath);
+                }
+                if (!FileUtils.delete(new File(storePath), true))
+                {
+                    LOGGER.warn("Cannot delete  " + storePath);
+                }
+            }
             return true;
         }
         return false;
@@ -1034,6 +1065,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         else
         {
+            if (!new File(configurationFile).exists())
+            {
+                throw new IllegalConfigurationException("Configuration file '" + configurationFile + "' does not exist");
+            }
             configuration = new VirtualHostConfiguration(virtualHostName, new File(configurationFile) , _broker);
         }
         return configuration;
