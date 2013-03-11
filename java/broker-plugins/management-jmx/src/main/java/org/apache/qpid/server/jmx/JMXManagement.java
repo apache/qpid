@@ -297,12 +297,27 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                     }
                     catch(JMException e)
                     {
-                        LOGGER.error("Error creating mbean", e);
+                        LOGGER.error("Error unregistering user management mbean: " + child.getName(), e);
                         //TODO - report error on removing child MBean
                     }
                 }
             }
-
+            else if (child instanceof VirtualHost)
+            {
+                AMQManagedObject mbean = _children.remove(child);
+                if(mbean != null)
+                {
+                    try
+                    {
+                        mbean.unregister();
+                    }
+                    catch(JMException e)
+                    {
+                        LOGGER.error("Error unregistering virtual host mbean :" + child.getName(), e);
+                        //TODO - report error on removing child MBean
+                    }
+                }
+            }
         }
     }
 

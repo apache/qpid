@@ -29,10 +29,13 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "dijit/registry",
         "qpid/management/addAuthenticationProvider",
+        "qpid/management/addVirtualHost",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
+        "dijit/layout/AccordionContainer",
+        "dijit/layout/AccordionPane",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -78,6 +81,19 @@ define(["dojo/_base/xhr",
                                 }
                             );
 
+                            var addHostButton = query(".addVirtualHost", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addHostButton), "onClick", function(evt){ addVirtualHost.show(); });
+
+                            var deleteHostButton = query(".deleteVirtualHost", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteHostButton), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.vhostsGrid.grid,
+                                                "rest/virtualhost",
+                                                "Deletion of virtual will delete the message store data.\n\n Are you sure you want to delete virtual host");
+                                }
+                            );
                         }});
            };
 
@@ -105,6 +121,22 @@ define(["dojo/_base/xhr",
                              util.flattenStatistics( that.brokerData);
 
                              that.updateHeader();
+
+                             var gridProperties = {
+                                     height: 400,
+                                     plugins: {
+                                              pagination: {
+                                                  pageSizes: ["10", "25", "50", "100"],
+                                                  description: true,
+                                                  sizeSwitch: true,
+                                                  pageStepper: true,
+                                                  gotoButton: true,
+                                                  maxPageStep: 4,
+                                                  position: "bottom"
+                                              },
+                                              indirectSelection: true
+                                     }};
+
                              that.vhostsGrid =
                                 new UpdatableStore(that.brokerData.vhosts, query(".broker-virtualhosts")[0],
                                                 [ { name: "Virtual Host",    field: "name",      width: "120px"},
@@ -119,7 +151,7 @@ define(["dojo/_base/xhr",
                                                             var name = obj.dataStore.getValue(theItem,"name");
                                                             that.controller.show("virtualhost", name, brokerObj);
                                                         });
-                                                });
+                                                }, gridProperties, EnhancedGrid);
 
                              that.portsGrid =
                                 new UpdatableStore(that.brokerData.ports, query(".broker-ports")[0],
@@ -137,7 +169,7 @@ define(["dojo/_base/xhr",
                                                         });
                                                 });
 
-                             var gridProperties = {
+                             gridProperties = {
                                      keepSelection: true,
                                      plugins: {
                                                indirectSelection: true

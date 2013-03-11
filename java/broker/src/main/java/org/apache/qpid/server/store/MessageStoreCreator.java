@@ -64,4 +64,9 @@ public class MessageStoreCreator
     {
         return Collections.unmodifiableCollection(_factories.values());
     }
+
+    public Collection<String> getStoreTypes()
+    {
+        return Collections.unmodifiableCollection(_factories.keySet());
+    }
 }
