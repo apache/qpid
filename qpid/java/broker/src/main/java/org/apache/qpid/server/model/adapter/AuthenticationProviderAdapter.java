@@ -69,14 +69,16 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     private GroupPrincipalAccessor _groupAccessor;
 
-    protected String _category;
+    protected Collection<String> _supportedAttributes;
+    Map<String, AuthenticationManagerFactory> _factories;
 
-    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes)
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
         super(id, null, attributes, broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
-        _category = authManager instanceof PrincipalDatabaseAuthenticationManager? PrincipalDatabaseAuthenticationManager.class.getSimpleName() : AuthenticationManager.class.getSimpleName() ;
+        _supportedAttributes = createSupportedAttributes(attributeNames);
+        _factories = getAuthenticationManagerFactories();
         addParent(Broker.class, broker);
     }
 
@@ -156,17 +158,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AuthenticationProvider.AVAILABLE_ATTRIBUTES;
+        return _supportedAttributes;
     }
 
     @Override
     public Object getAttribute(String name)
     {
-        if(CATEGORY.equals(name))
-        {
-            return _category;
-        }
-        else if(CREATED.equals(name))
+        if(CREATED.equals(name))
         {
             // TODO
         }
@@ -224,7 +222,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }
             }
-
             return true;
         }
         else if(desiredState == State.ACTIVE)
@@ -255,28 +252,74 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         _groupAccessor = groupAccessor;
     }
 
-    public AuthenticationManager createAuthenticationManager(Map<String, Object> attributes)
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        AuthenticationManager manager = validateAttributes(attributes);
+        manager.initialise();
+        _authManager = (T)manager;
+        String type = (String)attributes.get(AuthenticationManagerFactory.ATTRIBUTE_TYPE);
+        AuthenticationManagerFactory managerFactory = _factories.get(type);
+        _supportedAttributes = createSupportedAttributes(managerFactory.getAttributeNames());
+        super.changeAttributes(attributes);
+    }
+
+    private Map<String, AuthenticationManagerFactory> getAuthenticationManagerFactories()
     {
         QpidServiceLoader<AuthenticationManagerFactory> loader = new QpidServiceLoader<AuthenticationManagerFactory>();
         Iterable<AuthenticationManagerFactory> factories = loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class);
+        Map<String, AuthenticationManagerFactory> factoryMap = new HashMap<String, AuthenticationManagerFactory>();
         for (AuthenticationManagerFactory factory : factories)
         {
-            AuthenticationManager manager = factory.createInstance(attributes);
-            if (manager != null)
-            {
-                return manager;
-            }
+            factoryMap.put(factory.getType(), factory);
         }
-        return null;
+        return factoryMap;
+    }
+
+    protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
+    {
+        List<String> attributesNames = new ArrayList<String>(AVAILABLE_ATTRIBUTES);
+        if (factoryAttributes != null)
+        {
+            attributesNames.addAll(factoryAttributes);
+        }
+        return Collections.unmodifiableCollection(attributesNames);
+    }
+
+    protected AuthenticationManager validateAttributes(Map<String, Object> attributes)
+    {
+        String newName = (String)attributes.get(NAME);
+        String currentName = getName();
+        if (!currentName.equals(newName))
+        {
+            throw new IllegalConfigurationException("Changing the name of authentication provider is not supported");
+        }
+        String newType = (String)attributes.get(AuthenticationManagerFactory.ATTRIBUTE_TYPE);
+        String currentType = (String)getAttribute(AuthenticationManagerFactory.ATTRIBUTE_TYPE);
+        if (!currentType.equals(newType))
+        {
+            throw new IllegalConfigurationException("Changing the type of authentication provider is not supported");
+        }
+        AuthenticationManagerFactory managerFactory = _factories.get(newType);
+        if (managerFactory == null)
+        {
+            throw new IllegalConfigurationException("Cannot find authentication provider factory for type " + newType);
+        }
+        AuthenticationManager manager = managerFactory.createInstance(attributes);
+        if (manager == null)
+        {
+            throw new IllegalConfigurationException("Cannot change authentication provider " + newName + " of type " + newType + " with the given attributes");
+        }
+        return manager;
     }
 
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
 
         public SimpleAuthenticationProviderAdapter(
-                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes)
+                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
         {
-            super(id, broker,authManager, attributes);
+            super(id, broker,authManager, attributes, attributeNames);
         }
 
         @Override
@@ -287,21 +330,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             throw new UnsupportedOperationException();
         }
 
-        @Override
-        protected void changeAttributes(Map<String, Object> attributes)
-        {
-            AuthenticationManager manager = createAuthenticationManager(attributes);
-            if (manager == null)
-            {
-                throw new IllegalConfigurationException("Cannot create authentication manager from " + attributes);
-            }
-            if (manager instanceof PrincipalDatabaseAuthenticationManager)
-            {
-                throw new IllegalConfigurationException("Cannot change the category of the authentication provider");
-            }
-            _authManager = manager;
-            super.changeAttributes(attributes);
-        }
+
 
     }
 
@@ -310,9 +339,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
         {
-            super(id, broker, authManager, attributes);
+            super(id, broker, authManager, attributes, attributeNames);
         }
 
         @Override
@@ -333,7 +362,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             if(getSecurityManager().authoriseUserOperation(Operation.DELETE, username))
             {
-
                 getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
             }
             else
@@ -431,19 +459,15 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
 
         @Override
-        protected void changeAttributes(Map<String, Object> attributes)
+        protected void childAdded(ConfiguredObject child)
         {
-            AuthenticationManager manager = createAuthenticationManager(attributes);
-            if (manager == null)
-            {
-                throw new IllegalConfigurationException("Cannot create authentication manager from " + attributes);
-            }
-            if (!(manager instanceof PrincipalDatabaseAuthenticationManager))
-            {
-                throw new IllegalConfigurationException("Cannot change the category of the authentication provider");
-            }
-            _authManager = (PrincipalDatabaseAuthenticationManager)manager;
-            super.changeAttributes(attributes);
+            // no-op, prevent storing users in the broker store
+        }
+
+        @Override
+        protected void childRemoved(ConfiguredObject child)
+        {
+            // no-op, as per above, users are not in the store
         }
 
         private class PrincipalAdapter extends AbstractAdapter implements User

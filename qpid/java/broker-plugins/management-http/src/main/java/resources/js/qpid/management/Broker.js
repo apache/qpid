@@ -27,10 +27,12 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/UpdatableStore",
         "dojox/grid/EnhancedGrid",
+        "dijit/registry",
+        "qpid/management/addAuthenticationProvider",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -61,6 +63,20 @@ define(["dojo/_base/xhr",
                             updater.add( that.brokerUpdater );
 
                             that.brokerUpdater.update();
+
+                            var addProviderButton = query(".addAuthenticationProvider", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addProviderButton), "onClick", function(evt){ addAuthenticationProvider.show(); });
+
+                            var deleteProviderButton = query(".deleteAuthenticationProvider", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteProviderButton), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.authenticationProvidersGrid.grid,
+                                                "rest/authenticationprovider",
+                                                "Are you sure you want to delete authentication provider");
+                                }
+                            );
 
                         }});
            };
@@ -120,6 +136,36 @@ define(["dojo/_base/xhr",
                                                             that.controller.show("port", name, brokerObj);
                                                         });
                                                 });
+
+                             var gridProperties = {
+                                     keepSelection: true,
+                                     plugins: {
+                                               indirectSelection: true
+                                      }};
+
+                             that.authenticationProvidersGrid =
+                                 new UpdatableStore(that.brokerData.authenticationproviders, query(".broker-authentication-providers")[0],
+                                                 [ { name: "Name",    field: "name",      width: "100%"},
+                                                     { name: "Type", field: "type", width: "300px"},
+                                                     { name: "User Management", field: "type", width: "200px",
+                                                             formatter: function(val){
+                                                                 return "<input type='radio' disabled='disabled' "+(util.isProviderManagingUsers(val)?"checked='checked'": "")+" />";
+                                                             }
+                                                     },
+                                                     { name: "Default", field: "name", width: "100px",
+                                                         formatter: function(val){
+                                                             return "<input type='radio' disabled='disabled' "+(val == that.brokerData.defaultAuthenticationProvider ? "checked='checked'": "")+" />";
+                                                         }
+                                                 }
+                                                 ], function(obj) {
+                                                         connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                         function(evt){
+                                                             var idx = evt.rowIndex,
+                                                                 theItem = this.getItem(idx);
+                                                             var name = obj.dataStore.getValue(theItem,"name");
+                                                             that.controller.show("authenticationprovider", name, brokerObj);
+                                                         });
+                                                 }, gridProperties, EnhancedGrid);
 
                          });
 
@@ -186,7 +232,7 @@ define(["dojo/_base/xhr",
 
                                                                                        that.portsGrid.update(that.brokerData.ports);
 
-
+                                                                                       that.authenticationProvidersGrid.update(that.brokerData.authenticationproviders);
                                                                                    });
 
 

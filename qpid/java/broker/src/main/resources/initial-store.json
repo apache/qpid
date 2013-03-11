@@ -20,11 +20,11 @@
  */
 {
   "name": "QpidBroker",
-  "defaultAuthenticationProvider" : "defaultAuthenticationProvider",
+  "defaultAuthenticationProvider" : "passwordFile",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
-    "name" : "defaultAuthenticationProvider",
-    "authenticationProviderType" : "PlainPasswordFileAuthenticationProvider",
+    "name" : "passwordFile",
+    "type" : "PlainPasswordFileAuthenticationProvider",
     "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [  {

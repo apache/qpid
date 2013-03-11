@@ -27,10 +27,14 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/UpdatableStore",
         "dojox/grid/EnhancedGrid",
+        "qpid/management/addAuthenticationProvider",
+        "dojo/_base/event",
+        "dijit/registry",
+        "dojo/dom-style",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, addAuthenticationProvider, event, registry, domStyle) {
 
            function AuthenticationProvider(name, parent, controller) {
                this.name = name;
@@ -55,29 +59,68 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.authProviderAdapter = new AuthProviderUpdater(contentPane.containerNode, that.modelObj, that.controller);
+                            that.authProviderUpdater = new AuthProviderUpdater(contentPane.containerNode, that.modelObj, that.controller, that);
 
-                            updater.add( that.authProviderAdapter );
+                            updater.add( that.authProviderUpdater );
 
-                            that.authProviderAdapter.update();
+                            that.authProviderUpdater.update();
 
+                            var editButton = query(".editAuthenticationProviderButton", contentPane.containerNode)[0];
+                            var editWidget = registry.byNode(editButton);
+                            connect.connect(editWidget, "onClick",
+                                            function(evt){
+                                                event.stop(evt);
+                                                addAuthenticationProvider.show(that.name);
+                                            });
+
+                            var deleteButton = query(".deleteAuthenticationProviderButton", contentPane.containerNode)[0];
+                            var deleteWidget = registry.byNode(deleteButton);
+                            connect.connect(deleteWidget, "onClick",
+                                            function(evt){
+                                                event.stop(evt);
+                                                that.deleteAuthenticationProvider();
+                                            });
                         }});
            };
 
            AuthenticationProvider.prototype.close = function() {
-               updater.remove( this.authProviderAdapter );
+               updater.remove( this.authProviderUpdater);
+               if (this.authProviderUpdater.details)
+               {
+                   updater.remove(this.authProviderUpdater.details.authDatabaseUpdater);
+               }
            };
 
-           function AuthProviderUpdater(node, authProviderObj, controller)
+           AuthenticationProvider.prototype.deleteAuthenticationProvider = function() {
+               if(confirm("Are you sure you want to delete authentication provider '" + this.name + "'?")) {
+                   var query = "rest/authenticationprovider/" +encodeURIComponent(this.name);
+                   this.success = true
+                   var that = this;
+                   xhr.del({url: query, sync: true, handleAs: "json"}).then(
+                       function(data) {
+                           that.close();
+                           that.contentPane.onClose()
+                           that.controller.tabContainer.removeChild(that.contentPane);
+                           that.contentPane.destroyRecursive();
+                       },
+                       function(error) {that.success = false; that.failureReason = error;});
+                   if(!this.success ) {
+                       alert("Error:" + this.failureReason);
+                   }
+               }
+           };
+
+           function AuthProviderUpdater(node, authProviderObj, controller, authenticationProvider)
            {
                this.controller = controller;
                this.name = query(".name", node)[0];
                this.type = query(".type", node)[0];
+               this.authenticationProvider = authenticationProvider;
                /*this.state = dom.byId("state");
                this.durable = dom.byId("durable");
                this.lifetimePolicy = dom.byId("lifetimePolicy");
                */
-               this.query = "rest/authenticationprovider/"+encodeURIComponent(authProviderObj.name);
+               this.query = "rest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
 
                var that = this;
 
@@ -90,20 +133,28 @@ define(["dojo/_base/xhr",
 
                              that.updateHeader();
 
-                             require(["qpid/management/authenticationprovider/"+that.authProviderData.category],
-                                 function(SpecificProvider) {
-                                 that.details = new SpecificProvider(node, authProviderObj, controller);
-                                 that.details.update();
-                             });
+                             var editButton = query(".editAuthenticationProviderButton", node)[0];
+                             var editWidget = registry.byNode(editButton);
+                             var hideEdit = (that.authProviderData.type === 'AnonymousAuthenticationManager' || that.authProviderData.type === 'ExternalAuthenticationManager')
+                             domStyle.set(editWidget.domNode, "display", hideEdit ? "none": "");
 
+                             if (util.isProviderManagingUsers(that.authProviderData.type))
+                             {
+                                 require(["qpid/management/authenticationprovider/PrincipalDatabaseAuthenticationManager"],
+                                     function(PrincipalDatabaseAuthenticationManager) {
+                                     that.details = new PrincipalDatabaseAuthenticationManager(node, data[0], controller, that);
+                                     that.details.update();
+                                 });
+                             }
                          });
 
            }
 
            AuthProviderUpdater.prototype.updateHeader = function()
            {
+               this.authenticationProvider.name = this.authProviderData[ "name" ]
                this.name.innerHTML = this.authProviderData[ "name" ];
-               this.type.innerHTML = this.authProviderData[ "authenticationProviderType" ];
+               this.type.innerHTML = this.authProviderData[ "type" ];
     /*           this.state.innerHTML = this.brokerData[ "state" ];
                this.durable.innerHTML = this.brokerData[ "durable" ];
                this.lifetimePolicy.innerHTML = this.brokerData[ "lifetimePolicy" ];

@@ -55,6 +55,8 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
@@ -152,7 +154,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private final Map<String, VirtualHost> _vhostAdapters = new HashMap<String, VirtualHost>();
     private final Map<Integer, Port> _portAdapters = new HashMap<Integer, Port>();
-    private final Map<String, AuthenticationProvider> _authenticationProviders = new HashMap<String, AuthenticationProvider>();
+    private final Map<UUID, AuthenticationProvider> _authenticationProviders = new HashMap<UUID, AuthenticationProvider>();
     private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
     private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
     private final Map<UUID, KeyStore> _keyStores = new HashMap<UUID, KeyStore>();
@@ -456,11 +458,46 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
-        // it's cheap to create the groupPrincipalAccessor on the fly
-        GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(_groupProviders.values());
+        String type = (String)attributes.get(AuthenticationProvider.TYPE);
+        if (type == null)
+        {
+            throw new IllegalConfigurationException("Authentication provider type is not specified");
+        }
 
-        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes, groupPrincipalAccessor);
-        addAuthenticationProvider(authenticationProvider);
+        AuthenticationProvider authenticationProvider = null;
+        synchronized (_authenticationProviders)
+        {
+            // a temporary restriction to prevent creation of several instances
+            // of PlainPasswordFileAuthenticationProvider/Base64MD5PasswordFileAuthenticationProvider
+            // due to current limitation of JMX management which cannot cope
+            // with several user management MBeans as MBEan type is used as a name.
+
+            // TODO: Remove this check after fixing the JMX management
+            if (type.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
+                    || type.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
+            {
+
+                for (AuthenticationProvider provider : _authenticationProviders.values())
+                {
+                    String providerType = (String) provider.getAttribute(AuthenticationProvider.TYPE);
+                    if (providerType.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
+                            || providerType.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
+                    {
+                        throw new IllegalConfigurationException("Authentication provider managing users alredy exists ["
+                                + provider.getName() + "]. Only one instance is allowed.");
+                    }
+                }
+
+            }
+
+            // it's cheap to create the groupPrincipalAccessor on the fly
+            GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(_groupProviders.values());
+
+            authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes,
+                    groupPrincipalAccessor);
+            addAuthenticationProvider(authenticationProvider);
+        }
+        authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
         return authenticationProvider;
     }
 
@@ -472,11 +509,18 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         String name = authenticationProvider.getName();
         synchronized (_authenticationProviders)
         {
-            if(_authenticationProviders.containsKey(name))
+            if (_authenticationProviders.containsKey(authenticationProvider.getId()))
             {
-                throw new IllegalConfigurationException("Cannot add AuthenticationProvider because one with name " + name + " already exists");
+                throw new IllegalConfigurationException("Cannot add AuthenticationProvider because one with id " + authenticationProvider.getId() + " already exists");
             }
-            _authenticationProviders.put(name, authenticationProvider);
+            for (AuthenticationProvider provider : _authenticationProviders.values())
+            {
+                if (provider.getName().equals(name))
+                {
+                    throw new IllegalConfigurationException("Cannot add AuthenticationProvider because one with name " + name + " already exists");
+                }
+            }
+            _authenticationProviders.put(authenticationProvider.getId(), authenticationProvider);
         }
         authenticationProvider.addChangeListener(this);
     }
@@ -604,6 +648,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             // TODO
         }
+        else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
+        {
+            return _authenticationProviderFactory.getSupportedAuthenticationProviders();
+        }
         else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
         {
             return _defaultAuthenticationProvider == null ? null : _defaultAuthenticationProvider.getName();
@@ -634,7 +682,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         AuthenticationProvider removedAuthenticationProvider = null;
         synchronized (_authenticationProviders)
         {
-            removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getName());
+            removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getId());
         }
         return removedAuthenticationProvider != null;
     }

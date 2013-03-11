@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,10 +40,17 @@ import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.Simple
 public class AuthenticationProviderFactory
 {
     private final Iterable<AuthenticationManagerFactory> _factories;
+    private Collection<String> _supportedAuthenticationProviders;
 
     public AuthenticationProviderFactory(QpidServiceLoader<AuthenticationManagerFactory> authManagerFactoryServiceLoader)
     {
         _factories = authManagerFactoryServiceLoader.atLeastOneInstanceOf(AuthenticationManagerFactory.class);
+        List<String> supportedAuthenticationProviders = new ArrayList<String>();
+        for (AuthenticationManagerFactory factory : _factories)
+        {
+            supportedAuthenticationProviders.add(factory.getType());
+        }
+        _supportedAuthenticationProviders = Collections.unmodifiableCollection(supportedAuthenticationProviders);
     }
 
     /**
@@ -60,11 +71,11 @@ public class AuthenticationProviderFactory
                 if (manager instanceof PrincipalDatabaseAuthenticationManager)
                 {
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
-                            (PrincipalDatabaseAuthenticationManager) manager, attributes);
+                            (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
                 }
                 else
                 {
-                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes);
+                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
                 }
                 authenticationProvider.setGroupAccessor(groupPrincipalAccessor);
                 return authenticationProvider;
@@ -74,4 +85,8 @@ public class AuthenticationProviderFactory
         throw new IllegalArgumentException("No authentication provider factory found for configuration attributes " + attributes);
     }
 
+    public Collection<String> getSupportedAuthenticationProviders()
+    {
+        return _supportedAuthenticationProviders;
+    }
 }
