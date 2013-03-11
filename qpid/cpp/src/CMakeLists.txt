@@ -661,6 +661,8 @@ if (BUILD_HA)
         qpid/ha/types.h
         qpid/ha/RemoteBackup.cpp
         qpid/ha/RemoteBackup.h
+	qpid/ha/Role.h
+	qpid/ha/StandAlone.h
     )
 
     add_library (ha MODULE ${ha_SOURCES})
