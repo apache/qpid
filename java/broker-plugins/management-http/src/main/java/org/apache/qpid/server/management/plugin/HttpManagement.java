@@ -36,6 +36,7 @@ import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.AbstractServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
@@ -303,6 +304,7 @@ public class HttpManagement extends AbstractPluginAdapter
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.txt");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.xsl");
+        root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
 

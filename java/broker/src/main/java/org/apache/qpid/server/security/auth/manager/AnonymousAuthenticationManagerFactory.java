@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
@@ -37,4 +39,21 @@ public class AnonymousAuthenticationManagerFactory implements AuthenticationMana
         return null;
     }
 
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return Collections.<String>singletonList(ATTRIBUTE_TYPE);
+    }
+
+    @Override
+    public String getType()
+    {
+        return PROVIDER_TYPE;
+    }
+
+    @Override
+    public Map<String, String> getAttributeDescriptions()
+    {
+        return null;
+    }
 }

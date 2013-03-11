@@ -66,6 +66,7 @@ public class BrokerRecovererTest extends TestCase
     private Map<String, Collection<ConfigurationEntry>> _brokerEntryChildren = new HashMap<String, Collection<ConfigurationEntry>>();
     private ConfigurationEntry _authenticationProviderEntry1;
     private AuthenticationProvider _authenticationProvider1;
+    private UUID _authenticationProvider1Id = UUID.randomUUID();
 
     @Override
     protected void setUp() throws Exception
@@ -80,6 +81,7 @@ public class BrokerRecovererTest extends TestCase
         //Add a base AuthenticationProvider for all tests
         _authenticationProvider1 = mock(AuthenticationProvider.class);
         when(_authenticationProvider1.getName()).thenReturn("authenticationProvider1");
+        when(_authenticationProvider1.getId()).thenReturn(_authenticationProvider1Id);
         _authenticationProviderEntry1 = mock(ConfigurationEntry.class);
         _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1));
     }

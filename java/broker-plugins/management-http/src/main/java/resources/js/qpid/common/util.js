@@ -117,5 +117,10 @@ define(["dojo/_base/xhr"],
                }
            }
 
+           util.isProviderManagingUsers = function(type)
+           {
+               return (type === "PlainPasswordFileAuthenticationProvider" || type === "Base64MD5PasswordFileAuthenticationProvider");
+           };
+
            return util;
        });

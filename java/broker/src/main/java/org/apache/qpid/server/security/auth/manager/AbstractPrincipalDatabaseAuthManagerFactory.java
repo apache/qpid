@@ -20,6 +20,9 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -33,9 +36,15 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
  */
 public abstract class AbstractPrincipalDatabaseAuthManagerFactory implements AuthenticationManagerFactory
 {
+    public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.PasswordFileAuthenticationProviderAttributeDescriptions";
     public static final String ATTRIBUTE_PATH = "path";
 
     private static final Logger LOGGER = Logger.getLogger(AbstractPrincipalDatabaseAuthManagerFactory.class);
+
+    public static final Collection<String> ATTRIBUTES = Collections.unmodifiableList(Arrays.asList(
+            ATTRIBUTE_TYPE,
+            ATTRIBUTE_PATH));
+
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
@@ -65,7 +74,11 @@ public abstract class AbstractPrincipalDatabaseAuthManagerFactory implements Aut
         return new PrincipalDatabaseAuthenticationManager(principalDatabase);
     }
 
-    abstract String getType();
-
     abstract PrincipalDatabase createPrincipalDatabase();
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return ATTRIBUTES;
+    }
 }

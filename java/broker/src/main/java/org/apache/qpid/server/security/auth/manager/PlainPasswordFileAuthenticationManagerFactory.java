@@ -20,15 +20,18 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.util.Map;
+
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.util.ResourceBundleLoader;
 
 public class PlainPasswordFileAuthenticationManagerFactory extends AbstractPrincipalDatabaseAuthManagerFactory
 {
     public static final String PROVIDER_TYPE = "PlainPasswordFileAuthenticationProvider";
 
     @Override
-    String getType()
+    public String getType()
     {
         return PROVIDER_TYPE;
     }
@@ -39,4 +42,9 @@ public class PlainPasswordFileAuthenticationManagerFactory extends AbstractPrinc
         return new PlainPasswordFilePrincipalDatabase();
     }
 
+    @Override
+    public Map<String, String> getAttributeDescriptions()
+    {
+        return ResourceBundleLoader.getResources(AbstractPrincipalDatabaseAuthManagerFactory.RESOURCE_BUNDLE);
+    }
 }
