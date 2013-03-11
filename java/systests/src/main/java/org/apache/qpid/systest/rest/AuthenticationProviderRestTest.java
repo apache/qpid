@@ -52,7 +52,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         }
     }
 
-    public void testPutCreateNewPlainPrincipalDatabaseProvider() throws Exception
+    public void testPutCreateSecondPlainPrincipalDatabaseProviderFails() throws Exception
     {
         File principalDatabase = getRestTestHelper().createTemporaryPasswdFile(new String[]{"admin2", "guest2", "test2"});
 
@@ -63,19 +63,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, principalDatabase.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
-        assertEquals("Unexpected response code", 201, responseCode);
-
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
-        assertNotNull("Providers details cannot be null", providerDetails);
-        assertEquals("Unexpected number of providers", 1, providerDetails.size());
-        Map<String, Object> provider = providerDetails.get(0);
-        assertProvider(true, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE, provider);
-
-        // provider should exists after broker restart
-        restartBroker();
-        providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
-        assertNotNull("Providers details cannot be null", providerDetails);
-        assertEquals("Unexpected number of providers", 1, providerDetails.size());
+        assertEquals("Expected to fail because we can have only one password provider", 409, responseCode);
     }
 
     public void testPutCreateNewAnonymousProvider() throws Exception

@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.spi.ErrorHandler;
 import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.log4j.spi.ThrowableInformation;
 
 public class LogRecorder implements Appender, Iterable<LogRecorder.Record>
 {
@@ -54,7 +55,34 @@ public class LogRecorder implements Appender, Iterable<LogRecorder.Record>
             _timestamp = event.timeStamp;
             _threadName = event.getThreadName();
             _level = event.getLevel().toString();
-            _message = event.getRenderedMessage();
+            StringBuilder message = new StringBuilder();
+            String renderedMessage = event.getRenderedMessage();
+            if (renderedMessage != null)
+            {
+                message.append(renderedMessage);
+            }
+            ThrowableInformation ti = event.getThrowableInformation();
+            if (ti != null)
+            {
+                Throwable t = ti.getThrowable();
+                if (t != null)
+                {
+                    if (message.length() > 0)
+                    {
+                        message.append(":");
+                    }
+                    String exceptionMessage = t.getMessage();
+                    if (exceptionMessage != null && !"".equals(exceptionMessage))
+                    {
+                        message.append(t.getMessage());
+                    }
+                    else
+                    {
+                        message.append(t.getClass().getName());
+                    }
+                }
+            }
+            _message = message.toString();
         }
 
         public long getId()
