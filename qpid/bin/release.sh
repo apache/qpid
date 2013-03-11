@@ -190,9 +190,6 @@ if [ "SOURCE" == "$SOURCE" ] ; then
 fi
 
 if [ "PERL" == "$PERL" ]; then
-  pushd qpid-${VER}/cpp/bindings/qpid
-  make
-  popd
   mkdir qpid-${VER}/perl-qpid-${VER}
   cp qpid-${VER}/cpp/bindings/qpid/perl/perl.i \
      qpid-${VER}/cpp/bindings/qpid/perl/*pm \
