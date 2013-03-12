@@ -38,6 +38,8 @@ namespace ha {
 class Role
 {
   public:
+    virtual ~Role() {}
+
     /** Log prefix appropriate to the role */
     virtual std::string getLogPrefix() const = 0;
 
