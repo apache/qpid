@@ -24,6 +24,11 @@
 #include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
+
+namespace amqp {
+struct CharSequence;
+}
+
 namespace broker {
 
 /**
@@ -32,10 +37,7 @@ namespace broker {
 class MapHandler
 {
   public:
-    typedef struct {
-        const char* data;
-        size_t size;
-    } CharSequence;
+    typedef qpid::amqp::CharSequence CharSequence;
 
     virtual ~MapHandler() {}
     virtual void handleVoid(const CharSequence& key) = 0;

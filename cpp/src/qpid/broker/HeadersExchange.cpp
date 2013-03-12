@@ -19,6 +19,8 @@
  *
  */
 #include "qpid/broker/HeadersExchange.h"
+
+#include "qpid/amqp/CharSequence.h"
 #include "qpid/broker/MapHandler.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"

@@ -20,6 +20,8 @@
  */
 
 #include "qpid/broker/Message.h"
+
+#include "qpid/amqp/CharSequence.h"
 #include "qpid/broker/MapHandler.h"
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
