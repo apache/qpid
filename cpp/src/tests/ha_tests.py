@@ -970,42 +970,43 @@ class LongTests(HaBrokerTest):
         i = 0
         primary = 0
         try:
-            while time.time() < endtime or i < 3: # At least 3 iterations
-                # Precondition: All 3 brokers running,
-                # primary = index of promoted primary
-                # one or two backups are running,
-                for s in senders: s.sender.assert_running()
-                for r in receivers: r.receiver.assert_running()
-                checkpoint = [ r.received+100 for r in receivers ]
-                dead = None
-                victim = random.randint(0,2)
-                if victim == primary:
-                    # Don't kill primary till it is active and the next
-                    # backup is ready, otherwise we can lose messages.
-                    brokers[victim].wait_status("active")
-                    next = (victim+1)%3
-                    brokers[next].wait_status("ready")
-                    brokers.bounce(victim) # Next one is promoted
-                    primary = next
-                else:
-                    brokers.kill(victim, False)
-                    dead = victim
-
-                # At this point the primary is running with 1 or 2 backups
-                # Make sure we are not stalled
-                map(wait_passed, receivers, checkpoint)
-                # Run another checkpoint to ensure things work in this configuration
-                checkpoint = [ r.received+100 for r in receivers ]
-                map(wait_passed, receivers, checkpoint)
-
-                if dead is not None:
-                    brokers.restart(dead) # Restart backup
-                    brokers[dead].ready()
+            try:
+                while time.time() < endtime or i < 3: # At least 3 iterations
+                    # Precondition: All 3 brokers running,
+                    # primary = index of promoted primary
+                    # one or two backups are running,
+                    for s in senders: s.sender.assert_running()
+                    for r in receivers: r.receiver.assert_running()
+                    checkpoint = [ r.received+100 for r in receivers ]
                     dead = None
-                i += 1
-        except:
-            traceback.print_exc()
-            raise
+                    victim = random.randint(0,2)
+                    if victim == primary:
+                        # Don't kill primary till it is active and the next
+                        # backup is ready, otherwise we can lose messages.
+                        brokers[victim].wait_status("active")
+                        next = (victim+1)%3
+                        brokers[next].wait_status("ready")
+                        brokers.bounce(victim) # Next one is promoted
+                        primary = next
+                    else:
+                        brokers.kill(victim, False)
+                        dead = victim
+
+                    # At this point the primary is running with 1 or 2 backups
+                    # Make sure we are not stalled
+                    map(wait_passed, receivers, checkpoint)
+                    # Run another checkpoint to ensure things work in this configuration
+                    checkpoint = [ r.received+100 for r in receivers ]
+                    map(wait_passed, receivers, checkpoint)
+
+                    if dead is not None:
+                        brokers.restart(dead) # Restart backup
+                        brokers[dead].ready()
+                        dead = None
+                    i += 1
+            except:
+                traceback.print_exc()
+                raise
         finally:
             for s in senders: s.stop()
             for r in receivers: r.stop()
