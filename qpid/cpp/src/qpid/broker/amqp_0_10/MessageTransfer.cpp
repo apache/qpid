@@ -19,6 +19,8 @@
  *
  */
 #include "MessageTransfer.h"
+
+#include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/MapHandler.h"
 #include "qpid/broker/Message.h"
