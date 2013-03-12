@@ -183,6 +183,7 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging:
         {
             sys::Mutex::ScopedLock l(lock);
             startFlow(l); //reallocate credit
+            session.sendCompletion();//ensure previously received messages are signalled as completed
         }
         return getImpl(message, Duration::IMMEDIATE);
     }
