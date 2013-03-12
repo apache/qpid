@@ -65,12 +65,16 @@ void ManagedConnection::setUserid(const std::string& uid)
 
 void ManagedConnection::setSaslMechanism(const std::string& mechanism)
 {
-    connection->set_saslMechanism(mechanism);
+    if (connection) {
+        connection->set_saslMechanism(mechanism);
+    }
 }
 
 void ManagedConnection::setSaslSsf(int ssf)
 {
-    connection->set_saslSsf(ssf);
+    if (connection) {
+        connection->set_saslSsf(ssf);
+    }
 }
 
 qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementObject() const
