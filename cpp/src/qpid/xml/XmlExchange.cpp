@@ -23,6 +23,7 @@
 
 #include "qpid/xml/XmlExchange.h"
 
+#include "qpid/amqp/CharSequence.h"
 #include "qpid/broker/DeliverableMessage.h"
 
 #include "qpid/log/Statement.h"

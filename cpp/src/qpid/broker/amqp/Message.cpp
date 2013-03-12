@@ -21,7 +21,9 @@
 #include "Message.h"
 #include "qpid/amqp/Decoder.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/amqp/Reader.h"
 #include "qpid/amqp/MessageEncoder.h"
+#include "qpid/broker/MapHandler.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/Buffer.h"
 #include <string.h>
@@ -29,6 +31,11 @@
 namespace qpid {
 namespace broker {
 namespace amqp {
+
+using qpid::amqp::CharSequence;
+using qpid::amqp::Constructor;
+using qpid::amqp::Descriptor;
+using qpid::amqp::Reader;
 
 namespace {
 std::string empty;
@@ -69,7 +76,67 @@ uint8_t Message::getPriority() const
 
 std::string Message::getPropertyAsString(const std::string& /*key*/) const { return empty; }
 std::string Message::getAnnotationAsString(const std::string& /*key*/) const { return empty; }
-void Message::processProperties(MapHandler&) const {}
+
+namespace {
+    class PropertyAdapter : public Reader {
+        MapHandler& handler;
+        CharSequence key;
+        enum {
+            KEY,
+            VALUE
+        } state;
+
+        void checkValue() {
+            if ( state==VALUE ) state = KEY;
+            else {
+                // TODO: Would throwing an exception make more sense here?
+                QPID_LOG(error, "Received non string property key");
+                key = CharSequence();
+                state = KEY;
+            }
+        }
+
+        void onNull(const Descriptor*) {checkValue(); handler.handleVoid(key);}
+        void onBoolean(bool b, const Descriptor*) {checkValue(); handler.handleBool(key, b);}
+        void onUByte(uint8_t i, const Descriptor*) {checkValue(); handler.handleUint8(key, i);}
+        void onUShort(uint16_t i, const Descriptor*) {checkValue(); handler.handleUint16(key, i);}
+        void onUInt(uint32_t i, const Descriptor*) {checkValue(); handler.handleUint32(key, i);}
+        void onULong(uint64_t i, const Descriptor*) {checkValue(); handler.handleUint64(key, i);}
+        void onByte(int8_t i, const Descriptor*) {checkValue(); handler.handleInt8(key, i);}
+        void onShort(int16_t i, const Descriptor*) {checkValue(); handler.handleInt16(key, i);}
+        void onInt(int32_t i, const Descriptor*) {checkValue(); handler.handleInt32(key, i);}
+        void onLong(int64_t i, const Descriptor*) {checkValue(); handler.handleInt64(key, i);}
+        void onFloat(float x, const Descriptor*) {checkValue(); handler.handleFloat(key, x);}
+        void onDouble(double x, const Descriptor*) {checkValue(); handler.handleDouble(key, x);}
+        void onTimestamp(int64_t i, const Descriptor*) {checkValue(); handler.handleInt64(key, i);}
+
+        void onString(const CharSequence& s, const Descriptor*) {
+            if ( state==KEY ) {
+                state = VALUE;
+                key = s;
+            } else {
+                state = KEY;
+                handler.handleString(key, s, CharSequence());
+            }
+        }
+
+        bool onStartList(uint32_t, const CharSequence&, const Descriptor*) { return false; }
+        bool onStartMap(uint32_t, const CharSequence&, const Descriptor*) { return false; }
+        bool onStartArray(uint32_t, const CharSequence&, const Constructor&, const Descriptor*) { return false; }
+
+    public:
+        PropertyAdapter(MapHandler& mh) :
+            handler(mh),
+            state(KEY)
+         {}
+    };
+}
+
+void Message::processProperties(MapHandler& mh) const {
+    qpid::amqp::Decoder d(applicationProperties.data, applicationProperties.size);
+    PropertyAdapter mha(mh);
+    d.read(mha);
+}
 
 //getContentSize() is primarily used in stats about the number of
 //bytes enqueued/dequeued etc, not sure whether this is the right name
