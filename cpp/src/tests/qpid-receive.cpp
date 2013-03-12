@@ -200,8 +200,11 @@ int main(int argc, char ** argv)
             Duration timeout = opts.getTimeout();
             bool done = false;
             Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery, opts.reportHeader);
-            if (!opts.readyAddress.empty())
+            if (!opts.readyAddress.empty()) {
                 session.createSender(opts.readyAddress).send(msg);
+		if (opts.tx)
+		    session.commit();
+	    }
             // For receive rate calculation
             qpid::sys::AbsTime start = qpid::sys::now();
             int64_t interval = 0;
