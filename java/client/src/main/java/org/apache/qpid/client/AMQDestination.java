@@ -638,20 +638,38 @@ public abstract class AMQDestination implements Destination, Referenceable
 
         final AMQDestination that = (AMQDestination) o;
 
-        if (!_exchangeClass.equals(that._exchangeClass))
-        {
-            return false;
-        }
-        if (!_exchangeName.equals(that._exchangeName))
-        {
-            return false;
-        }
-        if ((_queueName == null && that._queueName != null) ||
-            (_queueName != null && !_queueName.equals(that._queueName)))
+        if (_destSyntax != that.getDestSyntax())
         {
             return false;
         }
 
+        if (_destSyntax == DestSyntax.ADDR)
+        {
+            if (_addressType != that.getAddressType())
+            {
+                return false;
+            }
+            if (!_name.equals(that.getAddressName()))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (!_exchangeClass.equals(that._exchangeClass))
+            {
+                return false;
+            }
+            if (!_exchangeName.equals(that._exchangeName))
+            {
+                return false;
+            }
+            if ((_queueName == null && that._queueName != null) ||
+                (_queueName != null && !_queueName.equals(that._queueName)))
+            {
+                return false;
+            }
+        }
         return true;
     }
 
