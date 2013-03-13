@@ -462,21 +462,21 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
-        String type = (String)attributes.get(AuthenticationProvider.TYPE);
-        if (type == null)
-        {
-            throw new IllegalConfigurationException("Authentication provider type is not specified");
-        }
-
         AuthenticationProvider authenticationProvider = null;
         synchronized (_authenticationProviders)
         {
+            String type = (String)attributes.get(AuthenticationProvider.TYPE);
+            if (type == null)
+            {
+                throw new IllegalConfigurationException("Authentication provider type is not specified");
+            }
+
             // a temporary restriction to prevent creation of several instances
             // of PlainPasswordFileAuthenticationProvider/Base64MD5PasswordFileAuthenticationProvider
             // due to current limitation of JMX management which cannot cope
-            // with several user management MBeans as MBEan type is used as a name.
+            // with several user management MBeans as MBean type is used as a name.
 
-            // TODO: Remove this check after fixing the JMX management
+            // TODO: Remove this check after fixing of JMX management
             if (type.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
                     || type.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
             {
@@ -487,7 +487,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                     if (providerType.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
                             || providerType.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
                     {
-                        throw new IllegalConfigurationException("Authentication provider managing users alredy exists ["
+                        throw new IllegalConfigurationException("An authentication provider which can manage users alredy exists ["
                                 + provider.getName() + "]. Only one instance is allowed.");
                     }
                 }

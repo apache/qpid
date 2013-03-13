@@ -32,7 +32,7 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationProviderAttributeDescriptions";
     private static final String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
-    public static final String PROVIDER_TYPE = SimpleLDAPAuthenticationManager.class.getSimpleName();
+    public static final String PROVIDER_TYPE = "SimpleLDAP";
 
     public static final String ATTRIBUTE_LDAP_CONTEXT_FACTORY = "ldapContextFactory";
     public static final String ATTRIBUTE_SEARCH_FILTER = "searchFilter";

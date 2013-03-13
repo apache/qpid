@@ -203,12 +203,12 @@ public class Asserts
         }
         if (isAMQPPort)
         {
-            assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_MANAGER);
+            assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_PROVIDER);
             assertNotNull("Unexpected value of attribute " + Port.BINDING_ADDRESS, port.get(Port.BINDING_ADDRESS));
         }
         else
         {
-            assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_MANAGER,
+            assertAttributesPresent(port, Port.AVAILABLE_ATTRIBUTES, Port.CREATED, Port.UPDATED, Port.AUTHENTICATION_PROVIDER,
                     Port.BINDING_ADDRESS, Port.TCP_NO_DELAY, Port.SEND_BUFFER_SIZE, Port.RECEIVE_BUFFER_SIZE,
                     Port.NEED_CLIENT_AUTH, Port.WANT_CLIENT_AUTH);
         }

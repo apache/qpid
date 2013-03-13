@@ -27,7 +27,7 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class ExternalAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-    public static final String PROVIDER_TYPE = ExternalAuthenticationManager.class.getSimpleName();
+    public static final String PROVIDER_TYPE = "External";
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)

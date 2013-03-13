@@ -141,7 +141,7 @@ public class PortRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code for authentication provider creation", 201, responseCode);
 
         attributes = new HashMap<String, Object>(port);
-        attributes.put(Port.AUTHENTICATION_MANAGER, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.AMQP_0_9_1));
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
@@ -152,7 +152,7 @@ public class PortRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
         port = portDetails.get(0);
 
-        assertEquals("Unexpected authentication provider", TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER, port.get(Port.AUTHENTICATION_MANAGER));
+        assertEquals("Unexpected authentication provider", TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
         Object protocols = port.get(Port.PROTOCOLS);
         assertNotNull("Protocols attribute is not found", protocols);
         assertTrue("Protocol attribute value is not collection:" + protocols, protocols instanceof Collection);

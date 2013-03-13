@@ -28,7 +28,7 @@ import org.apache.qpid.server.util.ResourceBundleLoader;
 
 public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractPrincipalDatabaseAuthManagerFactory
 {
-    public static final String PROVIDER_TYPE = "Base64MD5PasswordFileAuthenticationProvider";
+    public static final String PROVIDER_TYPE = "Base64MD5PasswordFile";
 
     @Override
     public String getType()

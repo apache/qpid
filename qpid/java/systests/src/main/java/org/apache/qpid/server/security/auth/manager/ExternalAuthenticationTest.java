@@ -57,7 +57,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerOnSSLPort() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_MANAGER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientKeystoreProperties();

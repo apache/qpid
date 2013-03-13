@@ -245,7 +245,7 @@ public class BrokerRecovererTest extends TestCase
         Port port1 = mock(Port.class);
         when(port1.getName()).thenReturn("port1");
         when(port1.getPort()).thenReturn(5671);
-        when(port1.getAttribute(Port.AUTHENTICATION_MANAGER)).thenReturn("authenticationProvider1");
+        when(port1.getAttribute(Port.AUTHENTICATION_PROVIDER)).thenReturn("authenticationProvider1");
         ConfigurationEntry portEntry2 = mock(ConfigurationEntry.class);
         Port port2 = mock(Port.class);
         when(port2.getName()).thenReturn("port2");
