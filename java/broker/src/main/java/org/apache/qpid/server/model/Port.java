@@ -44,11 +44,7 @@ public interface Port extends ConfiguredObject
     String RECEIVE_BUFFER_SIZE                  = "receiveBufferSize";
     String NEED_CLIENT_AUTH                     = "needClientAuth";
     String WANT_CLIENT_AUTH                     = "wantClientAuth";
-
-    /**
-     * TODO: rename it to AUTHENTICATION_MANAGER_ID or introduce relationships
-     */
-    String AUTHENTICATION_MANAGER               = "authenticationManager";
+    String AUTHENTICATION_PROVIDER              = "authenticationProvider";
 
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
@@ -71,7 +67,7 @@ public interface Port extends ConfiguredObject
                             RECEIVE_BUFFER_SIZE,
                             NEED_CLIENT_AUTH,
                             WANT_CLIENT_AUTH,
-                            AUTHENTICATION_MANAGER
+                            AUTHENTICATION_PROVIDER
                                  ));
 
 

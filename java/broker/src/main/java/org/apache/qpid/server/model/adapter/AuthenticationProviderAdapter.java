@@ -217,7 +217,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
             for (Port port : ports)
             {
-                if (providerName.equals(port.getAttribute(Port.AUTHENTICATION_MANAGER)))
+                if (providerName.equals(port.getAttribute(Port.AUTHENTICATION_PROVIDER)))
                 {
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }

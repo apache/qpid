@@ -27,7 +27,7 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class AnonymousAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-    public static final String PROVIDER_TYPE = AnonymousAuthenticationManager.class.getSimpleName();
+    public static final String PROVIDER_TYPE = "Anonymous";
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
