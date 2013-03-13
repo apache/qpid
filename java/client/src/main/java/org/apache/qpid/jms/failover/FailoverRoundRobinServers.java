@@ -84,6 +84,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
         _serverRetries = 0;
         _currentServerRetry = 0;
+	setBroker(getCurrentBrokerDetails());
     }
 
     public void reset()
@@ -114,14 +115,11 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
     public BrokerDetails getNextBrokerDetails()
     {
-        boolean doDelay = false;
-
         if (_currentBrokerIndex == (_connectionDetails.getBrokerCount() - 1))
         {
             if (_currentServerRetry < _serverRetries)
             {
                 _logger.info("Trying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
-                doDelay= _currentBrokerIndex != 0;
                 _currentServerRetry++;
             }
             else
@@ -142,7 +140,6 @@ public class FailoverRoundRobinServers implements FailoverMethod
             if (_currentServerRetry < _serverRetries)
             {
                 _logger.info("Trying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
-                doDelay= _currentBrokerIndex != 0;
 
                 _currentServerRetry++;
             }
@@ -159,7 +156,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
         BrokerDetails broker = _connectionDetails.getBrokerDetails(_currentBrokerIndex);
 
         String delayStr = broker.getProperty(BrokerDetails.OPTIONS_CONNECT_DELAY);
-        if (delayStr != null && doDelay)
+        if (delayStr != null)
         {
             Long delay = Long.parseLong(delayStr);
             _logger.info("Delay between connect retries:" + delay);
