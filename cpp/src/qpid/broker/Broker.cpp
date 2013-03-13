@@ -624,6 +624,10 @@ const std::string SRC_IS_QUEUE("srcIsQueue");
 const std::string SRC_IS_LOCAL("srcIsLocal");
 const std::string DYNAMIC("dynamic");
 const std::string SYNC("sync");
+
+// parameters for deleting a Queue object
+const std::string IF_EMPTY("if_empty");
+const std::string IF_UNUSED("if_unused");
 }
 
 struct InvalidBindingIdentifier : public qpid::Exception
@@ -890,7 +894,14 @@ void Broker::deleteObject(const std::string& type, const std::string& name,
     }
     QPID_LOG (debug, "Broker::delete(" << type << ", " << name << "," << options << ")");
     if (type == TYPE_QUEUE) {
-        deleteQueue(name, userId, connectionId);
+        // extract ifEmpty and ifUnused from options
+    	bool ifUnused = false, ifEmpty = false;
+        for (Variant::Map::const_iterator i = options.begin(); i != options.end(); ++i) {
+            if (i->first == IF_UNUSED) ifUnused = i->second.asBool();
+            else if (i->first == IF_EMPTY) ifEmpty = i->second.asBool();
+        }
+        deleteQueue(name, userId, connectionId,
+                    boost::bind(&Broker::checkDeleteQueue, this, _1, ifUnused, ifEmpty));
     } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
         deleteExchange(name, userId, connectionId);
     } else if (type == TYPE_BINDING) {
@@ -909,7 +920,17 @@ void Broker::deleteObject(const std::string& type, const std::string& name,
     } else {
         throw UnknownObjectType(type);
     }
+}
 
+void Broker::checkDeleteQueue(Queue::shared_ptr queue, bool ifUnused, bool ifEmpty)
+{
+    if(ifEmpty && queue->getMessageCount() > 0) {
+        throw qpid::framing::PreconditionFailedException(QPID_MSG("Cannot delete queue "
+                                                                  << queue->getName() << "; queue not empty"));
+    } else if(ifUnused && queue->getConsumerCount() > 0) {
+        throw qpid::framing::PreconditionFailedException(QPID_MSG("Cannot delete queue "
+                                                                  << queue->getName() << "; queue in use"));
+    }
 }
 
 Manageable::status_t Broker::queryObject(const std::string& type,

@@ -624,7 +624,8 @@ class BrokerManager:
         if len(args) < 1:
             Usage()
         qname = args[0]
-        self.broker.delQueue(qname)
+        self.broker.delQueue(qname, if_empty=config._if_empty, if_unused=config._if_unused)
+ 
 
 
     def Bind(self, args):
