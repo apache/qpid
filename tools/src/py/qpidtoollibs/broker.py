@@ -250,8 +250,13 @@ class BrokerAgent(object):
             'strict':      True}
     self._method('create', args)
 
-  def delQueue(self, name):
-    args = {'type': 'queue', 'name': name}
+  def delQueue(self, name, if_empty=True, if_unused=True):
+    options = {'if_empty':  if_empty,
+               'if_unused': if_unused}
+
+    args = {'type':        'queue', 
+            'name':         name,
+            'options':      options}
     self._method('delete', args)
 
   def bind(self, exchange, queue, key, options={}, **kwargs):
