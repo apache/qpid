@@ -27,7 +27,7 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class KerberosAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
-    public static final String PROVIDER_TYPE = KerberosAuthenticationManager.class.getSimpleName();
+    public static final String PROVIDER_TYPE = "Kerberos";
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)

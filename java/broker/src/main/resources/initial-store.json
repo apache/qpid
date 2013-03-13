@@ -24,7 +24,7 @@
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
     "name" : "passwordFile",
-    "type" : "PlainPasswordFileAuthenticationProvider",
+    "type" : "PlainPasswordFile",
     "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [  {

@@ -28,7 +28,7 @@ import org.apache.qpid.server.util.ResourceBundleLoader;
 
 public class PlainPasswordFileAuthenticationManagerFactory extends AbstractPrincipalDatabaseAuthManagerFactory
 {
-    public static final String PROVIDER_TYPE = "PlainPasswordFileAuthenticationProvider";
+    public static final String PROVIDER_TYPE = "PlainPasswordFile";
 
     @Override
     public String getType()

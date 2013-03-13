@@ -63,7 +63,7 @@ public class PortAdapter extends AbstractAdapter implements Port
         put(WANT_CLIENT_AUTH, Boolean.class);
         put(BINDING_ADDRESS, String.class);
         put(STATE, State.class);
-        put(AUTHENTICATION_MANAGER, String.class);
+        put(AUTHENTICATION_PROVIDER, String.class);
     }});
 
     private final Broker _broker;

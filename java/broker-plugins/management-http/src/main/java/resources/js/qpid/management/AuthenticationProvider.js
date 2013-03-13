@@ -135,7 +135,7 @@ define(["dojo/_base/xhr",
 
                              var editButton = query(".editAuthenticationProviderButton", node)[0];
                              var editWidget = registry.byNode(editButton);
-                             var hideEdit = (that.authProviderData.type === 'AnonymousAuthenticationManager' || that.authProviderData.type === 'ExternalAuthenticationManager')
+                             var hideEdit = (that.authProviderData.type === 'Anonymous' || that.authProviderData.type === 'External' || that.authProviderData.type === 'Kerberos')
                              domStyle.set(editWidget.domNode, "display", hideEdit ? "none": "");
 
                              if (util.isProviderManagingUsers(that.authProviderData.type))

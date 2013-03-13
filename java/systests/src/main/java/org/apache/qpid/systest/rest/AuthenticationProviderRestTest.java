@@ -111,7 +111,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String portName = "test-port";
         Map<String, Object> portAttributes = new HashMap<String, Object>();
         portAttributes.put(Port.NAME, portName);
-        portAttributes.put(Port.AUTHENTICATION_MANAGER, providerName);
+        portAttributes.put(Port.AUTHENTICATION_PROVIDER, providerName);
         portAttributes.put(Port.PORT, findFreePort());
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", portAttributes);
