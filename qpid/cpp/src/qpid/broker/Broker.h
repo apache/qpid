@@ -152,6 +152,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
                       const qpid::types::Variant::Map& properties, bool strict, const ConnectionState* context);
     void deleteObject(const std::string& type, const std::string& name,
                       const qpid::types::Variant::Map& options, const ConnectionState* context);
+    void checkDeleteQueue(boost::shared_ptr<Queue> queue, bool ifUnused, bool ifEmpty);
     Manageable::status_t queryObject(const std::string& type, const std::string& name,
                                      qpid::types::Variant::Map& results, const ConnectionState* context);
     Manageable::status_t queryQueue( const std::string& name,

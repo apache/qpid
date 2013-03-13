@@ -135,6 +135,44 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, False)
 
+    def test_qpid_config_del_nonempty_queue(self):
+        self.startBrokerAccess();
+        qname = "test_qpid_config_del"
+
+        ret = os.system(self.qpid_config_command(" add queue " + qname))
+        self.assertEqual(ret, 0)
+        queues = self.broker_access.getAllQueues()
+        found = False
+        for queue in queues:
+            if queue.name == qname:
+                self.assertEqual(queue.durable, False)
+                found = True
+        self.assertEqual(found, True)
+
+        self.startBrokerAccess()
+
+        sess = self.broker_conn.session()
+        tx = sess.sender(qname)
+        tx.send("MESSAGE")
+
+        ret = os.system(self.qpid_config_command(" del queue " + qname))
+        queues = self.broker_access.getAllQueues()
+        found = False
+        for queue in queues:
+            if queue.name == qname:
+                found = True
+        self.assertEqual(found, True)
+
+        ret = os.system(self.qpid_config_command(" del queue " + qname + " --force"))
+        self.assertEqual(ret, 0)
+        queues = self.broker_access.getAllQueues()
+        found = False
+        for queue in queues:
+            if queue.name == qname:
+                found = True
+        self.assertEqual(found, False)
+
+
     def test_qpid_config_api(self):
         self.startBrokerAccess();
         qname = "test_qpid_config_api"
@@ -221,7 +259,6 @@ class CliTests(TestBase010):
         ret = os.system(foo)
         self.assertEqual(ret, 0)
         self.helper_find_queue(qname, False)
-
 
         # test the bind-queue-to-header-exchange functionality
     def test_qpid_config_headers(self):
