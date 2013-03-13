@@ -676,13 +676,19 @@ public abstract class AMQDestination implements Destination, Referenceable
     public int hashCode()
     {
         int result;
-        result = _exchangeName == null ? "".hashCode() : _exchangeName.hashCode();
-        result = 29 * result + (_exchangeClass == null ? "".hashCode() :_exchangeClass.hashCode());
-        if (_queueName != null)
+        if (_destSyntax == DestSyntax.ADDR)
         {
-            result = 29 * result + _queueName.hashCode();
+            result = 29 * _addressType + _name.hashCode();
         }
-
+        else
+        {
+            result = _exchangeName == null ? "".hashCode() : _exchangeName.hashCode();
+            result = 29 * result + (_exchangeClass == null ? "".hashCode() :_exchangeClass.hashCode());
+            if (_queueName != null)
+            {
+                result = 29 * result + _queueName.hashCode();
+            }
+        }
         return result;
     }
 
