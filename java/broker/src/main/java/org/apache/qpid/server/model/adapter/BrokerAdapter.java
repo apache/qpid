@@ -101,6 +101,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(KEY_STORE_CERT_ALIAS, String.class);
         put(TRUST_STORE_PATH, String.class);
         put(TRUST_STORE_PASSWORD, String.class);
+        put(PEER_STORE_PATH, String.class);
+        put(PEER_STORE_PASSWORD, String.class);
         put(GROUP_FILE, String.class);
     }});
 
@@ -229,6 +231,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             trsustStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
             trsustStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
             TrustStoreAdapter trustStore = new TrustStoreAdapter(_defaultTrustStoreId, this, trsustStoreAttributes);
+            addTrustStore(trustStore);
+        }
+        String peerStorePath = (String) getAttribute(PEER_STORE_PATH);
+        if (peerStorePath != null)
+        {
+            Map<String, Object> peerStoreAttributes = new HashMap<String, Object>();
+            UUID peerStoreId = UUID.randomUUID();
+            peerStoreAttributes.put(TrustStore.NAME, peerStoreId.toString());
+            peerStoreAttributes.put(TrustStore.PATH, peerStorePath);
+            peerStoreAttributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
+            peerStoreAttributes.put(TrustStore.PASSWORD, (String) actualAttributes.get(PEER_STORE_PASSWORD));
+            peerStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
+            peerStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
+            TrustStoreAdapter trustStore = new TrustStoreAdapter(peerStoreId, this, peerStoreAttributes);
             addTrustStore(trustStore);
         }
     }
