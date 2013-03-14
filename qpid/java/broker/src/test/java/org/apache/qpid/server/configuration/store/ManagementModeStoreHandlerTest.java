@@ -5,7 +5,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.any;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -52,46 +50,6 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(_portEntry.getType()).thenReturn(Port.class.getSimpleName());
         _options = new BrokerOptions();
         _handler = new ManagementModeStoreHandler(_store, _options);
-    }
-
-    public void testOpenString()
-    {
-        try
-        {
-            _handler.open(TMP_FOLDER + File.separator + getTestName());
-            fail("Exception should be thrown on attempt to call open method on a handler");
-        }
-        catch (IllegalStateException e)
-        {
-            // pass
-        }
-    }
-
-    public void testOpenStringString()
-    {
-        try
-        {
-            _handler.open(TMP_FOLDER + File.separator + getTestName(),
-                    BrokerConfigurationStoreCreator.DEFAULT_INITIAL_STORE_LOCATION);
-            fail("Exception should be thrown on attempt to call open method on a handler");
-        }
-        catch (IllegalStateException e)
-        {
-            // pass
-        }
-    }
-
-    public void testOpenStringConfigurationEntryStore()
-    {
-        try
-        {
-            _handler.open(TMP_FOLDER + File.separator + getTestName(), _store);
-            fail("Exception should be thrown on attempt to call open method on a handler");
-        }
-        catch (IllegalStateException e)
-        {
-            // pass
-        }
     }
 
     public void testGetRootEntryWithEmptyOptions()

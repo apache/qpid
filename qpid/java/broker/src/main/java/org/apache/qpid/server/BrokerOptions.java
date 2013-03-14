@@ -23,12 +23,16 @@ package org.apache.qpid.server;
 import java.io.File;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 
 public class BrokerOptions
 {
     public static final String DEFAULT_STORE_TYPE = "json";
     public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
+    public static final String DEFAULT_INITIAL_CONFIG_LOCATION =
+        BrokerOptions.class.getClassLoader().getResource("initial-store.json").toExternalForm();
 
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
@@ -36,8 +40,7 @@ public class BrokerOptions
     private String _configurationStoreLocation;
     private String _configurationStoreType;
 
-    private String _initialConfigurationStoreLocation;
-    private String _initialConfigurationStoreType;
+    private String _initialConfigurationLocation;
 
     private boolean _managementMode;
     private int _managementModeRmiPort;
@@ -67,31 +70,6 @@ public class BrokerOptions
     public void setLogWatchFrequency(final int logWatchFrequency)
     {
         _logWatchFrequency = logWatchFrequency;
-    }
-
-    public void setInitialConfigurationStoreLocation(String initialConfigurationStore)
-    {
-        _initialConfigurationStoreLocation = initialConfigurationStore;
-    }
-
-    public void setInitialConfigurationStoreType(String initialConfigurationStoreType)
-    {
-        _initialConfigurationStoreType = initialConfigurationStoreType;
-    }
-
-    public String getInitialConfigurationStoreLocation()
-    {
-        return _initialConfigurationStoreLocation;
-    }
-
-    public String getInitialConfigurationStoreType()
-    {
-        if(_initialConfigurationStoreType == null)
-        {
-            return DEFAULT_STORE_TYPE;
-        }
-
-        return _initialConfigurationStoreType;
     }
 
     public boolean isManagementMode()
@@ -221,5 +199,33 @@ public class BrokerOptions
     public void setWorkDir(String workingDir)
     {
         _workingDir = workingDir;
+    }
+
+    /**
+     * Get the broker initial JSON configuration location.
+     *
+     * Defaults to an internal configuration file within the broker jar, which is loaded with the {@link JsonConfigurationEntryStore}.
+     *
+     * @return the previously set configuration location, or the default location if none was set.
+     */
+    public String getInitialConfigurationLocation()
+    {
+        if(_initialConfigurationLocation == null)
+        {
+            return DEFAULT_INITIAL_CONFIG_LOCATION;
+        }
+
+        return _initialConfigurationLocation;
+    }
+
+    /**
+     * Set the absolute path or URL to use for the initial JSON configuration, which is loaded with the
+     * {@link JsonConfigurationEntryStore} in order to initialise any new {@link ConfigurationEntryStore} for the broker.
+     *
+     * Passing null clears any previously set value and returns to the default.
+     */
+    public void setInitialConfigurationLocation(String initialConfigurationLocation)
+    {
+        _initialConfigurationLocation = initialConfigurationLocation;
     }
 }

@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
@@ -53,14 +53,13 @@ public class TestBrokerConfiguration
     public static final String MANAGEMENT_JMX_PLUGIN_TYPE = "MANAGEMENT-JMX";
     public static final String ENTRY_NAME_ANONYMOUS_PROVIDER = "anonymous";
 
-    private JsonConfigurationEntryStore _store;
+    private MemoryConfigurationEntryStore _store;
     private boolean _saved;
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
         // TODO: add support for DERBY store
-        _store = new JsonConfigurationEntryStore();
-        _store.open(JsonConfigurationEntryStore.IN_MEMORY, intialStoreLocation);
+        _store = new MemoryConfigurationEntryStore(intialStoreLocation, null);
     }
 
     public boolean setBrokerAttribute(String name, Object value)

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -49,6 +50,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         {
             // set the properties in order to resolve the defaults store settings
             setTestSystemProperty("QPID_HOME", TMP_FOLDER);
+            setTestSystemProperty("QPID_WORK", TMP_FOLDER + File.separator + "work");
         }
         _storeCreator = new BrokerConfigurationStoreCreator();
         _userStoreLocation = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
@@ -71,12 +73,11 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
     public void testCreateJsonStore()
     {
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", null, null);
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION);
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore();
-        jsonStore.open(_userStoreLocation.getAbsolutePath());
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null);
         Set<UUID> childrenIds = jsonStore.getRootEntry().getChildrenIds();
         assertFalse("Unexpected children: " + childrenIds, childrenIds.isEmpty());
     }
@@ -98,12 +99,11 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
         File _storeFile = TestFileUtils.createTempFile(this, ".json", brokerJson);
 
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _storeFile.getAbsolutePath(), "json");
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _storeFile.getAbsolutePath());
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore();
-        jsonStore.open(_userStoreLocation.getAbsolutePath());
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null);
         ConfigurationEntry entry = jsonStore.getRootEntry();
         assertEquals("Unexpected root id", brokerId, entry.getId());
         Map<String, Object> attributes = entry.getAttributes();
@@ -118,7 +118,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
     {
         try
         {
-            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", null, null);
+            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", null);
             fail("Store is not yet supported");
         }
         catch(IllegalConfigurationException e)

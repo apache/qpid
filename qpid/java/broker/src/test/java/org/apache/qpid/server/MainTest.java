@@ -46,8 +46,7 @@ public class MainTest extends QpidTestCase
         assertEquals(expectedStorePath, options.getConfigurationStoreLocation());
         assertEquals(null, options.getLogConfigFile());
         assertEquals(0, options.getLogWatchFrequency());
-        assertEquals("json", options.getInitialConfigurationStoreType());
-        assertEquals(null, options.getInitialConfigurationStoreLocation());
+        assertEquals(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, options.getInitialConfigurationLocation());
 
         assertFalse(options.isManagementMode());
         assertEquals(0, options.getManagementModeConnectorPort());
@@ -103,23 +102,13 @@ public class MainTest extends QpidTestCase
         assertTrue("Parsed command line didnt pick up help option", main.getCommandLine().hasOption("h"));
     }
 
-    public void testInitailConfigurationStoreLocation()
+    public void testInitailConfigurationLocation()
     {
-        BrokerOptions options = startDummyMain("-isp abcd/config.xml");
-        assertEquals("abcd/config.xml", options.getInitialConfigurationStoreLocation());
+        BrokerOptions options = startDummyMain("-icp abcd/initial-config.json");
+        assertEquals("abcd/initial-config.json", options.getInitialConfigurationLocation());
 
-        options = startDummyMain("-initial-store-path abcd/config.xml");
-        assertEquals("abcd/config.xml", options.getInitialConfigurationStoreLocation());
-    }
-
-    public void testInitialConfigurationStoreType()
-    {
-        BrokerOptions options = startDummyMain("-ist dby");
-        assertEquals("dby", options.getInitialConfigurationStoreType());
-
-        options = startDummyMain("-initial-store-type bdb");
-        assertEquals("bdb", options.getInitialConfigurationStoreType());
-
+        options = startDummyMain("-initial-config-path abcd/initial-config.json");
+        assertEquals("abcd/initial-config.json", options.getInitialConfigurationLocation());
     }
 
     public void testManagementMode()
