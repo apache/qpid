@@ -32,7 +32,6 @@ class SecurityLayer;
 }
 namespace broker {
 namespace amqp {
-
 /**
  * An AMQP 1.0 SASL Security Layer for authentication and optionally
  * encryption.
@@ -40,7 +39,7 @@ namespace amqp {
 class Sasl : public sys::ConnectionCodec, qpid::amqp::SaslServer
 {
   public:
-    Sasl(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, std::auto_ptr<qpid::SaslServer> authenticator);
+    Sasl(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, Interconnects&, std::auto_ptr<qpid::SaslServer> authenticator);
     ~Sasl();
 
     size_t decode(const char* buffer, size_t size);

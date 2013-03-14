@@ -292,9 +292,13 @@ class BrokerAgent(object):
             'routingKey':   key}
     return self._method('LookupPublish', args, "org.apache.qpid.acl:acl:org.apache.qpid.broker:broker:amqp-broker")
 
-  def create(self, _type, name, properties, strict):
+  def create(self, _type, name, properties={}, strict=False):
     """Create an object of the specified type"""
-    pass
+    args = {'type': _type,
+            'name': name,
+            'properties': properties,
+            'strict': strict}
+    return self._method('create', args)
 
   def delete(self, _type, name, options):
     """Delete an object of the specified type"""

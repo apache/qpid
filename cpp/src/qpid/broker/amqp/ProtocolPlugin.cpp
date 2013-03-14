@@ -27,6 +27,7 @@
 #include "qpid/broker/RecoverableMessage.h"
 #include "qpid/broker/RecoverableMessageImpl.h"
 #include "qpid/broker/amqp/Connection.h"
+#include "qpid/broker/amqp/Interconnects.h"
 #include "qpid/broker/amqp/Message.h"
 #include "qpid/broker/amqp/Sasl.h"
 #include "qpid/broker/amqp/Translation.h"
@@ -43,11 +44,15 @@ namespace amqp {
 class ProtocolImpl : public Protocol
 {
   public:
-    ProtocolImpl(Broker& b) : broker(b) {}
+    ProtocolImpl(Interconnects* i, Broker& b) : interconnects(i), broker(b)
+    {
+        broker.getObjectFactoryRegistry().add(interconnects);//registry deletes on shutdown
+    }
     qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const qpid::broker::Message&);
     boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
   private:
+    Interconnects* interconnects;
     Broker& broker;
 };
 
@@ -58,7 +63,8 @@ struct ProtocolPlugin : public Plugin
         //need to register protocol before recovery from store
         broker::Broker* broker = dynamic_cast<qpid::broker::Broker*>(&target);
         if (broker) {
-            broker->getProtocolRegistry().add("AMQP 1.0", new ProtocolImpl(*broker));
+            ProtocolImpl* impl = new ProtocolImpl(new Interconnects(), *broker);
+            broker->getProtocolRegistry().add("AMQP 1.0", impl);//registry deletes on shutdown
         }
     }
 
@@ -73,18 +79,18 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
         if (v.getProtocol() == qpid::framing::ProtocolVersion::SASL) {
             if (broker.getOptions().auth) {
                 QPID_LOG(info, "Using AMQP 1.0 (with SASL layer)");
-                return new qpid::broker::amqp::Sasl(out, id, broker, qpid::SaslFactory::getInstance().createServer(broker.getOptions().realm, broker.getOptions().requireEncrypted, external));
+                return new qpid::broker::amqp::Sasl(out, id, broker, *interconnects, qpid::SaslFactory::getInstance().createServer(broker.getOptions().realm, broker.getOptions().requireEncrypted, external));
             } else {
                 std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(broker.getOptions().realm));
                 QPID_LOG(info, "Using AMQP 1.0 (with dummy SASL layer)");
-                return new qpid::broker::amqp::Sasl(out, id, broker, authenticator);
+                return new qpid::broker::amqp::Sasl(out, id, broker, *interconnects, authenticator);
             }
         } else {
             if (broker.getOptions().auth) {
                 throw qpid::Exception("SASL layer required!");
             } else {
                 QPID_LOG(info, "Using AMQP 1.0 (no SASL layer)");
-                return new qpid::broker::amqp::Connection(out, id, broker, false);
+                return new qpid::broker::amqp::Connection(out, id, broker, *interconnects, false);
             }
         }
     }

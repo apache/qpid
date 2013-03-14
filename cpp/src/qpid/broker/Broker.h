@@ -28,6 +28,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/broker/DtxManager.h"
 #include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/ObjectFactory.h"
 #include "qpid/broker/Protocol.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/LinkRegistry.h"
@@ -193,6 +194,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConsumerFactories consumerFactories;
     ProtocolRegistry protocolRegistry;
+    ObjectFactoryRegistry objectFactory;
 
     mutable sys::Mutex linkClientPropertiesLock;
     framing::FieldTable linkClientProperties;
@@ -232,6 +234,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DataDir& getDataDir() { return dataDir; }
     Options& getOptions() { return config; }
     ProtocolRegistry& getProtocolRegistry() { return protocolRegistry; }
+    ObjectFactoryRegistry& getObjectFactoryRegistry() { return objectFactory; }
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
@@ -258,6 +261,12 @@ class Broker : public sys::Runnable, public Plugin::Target,
                  const std::string& host, const std::string& port,
                  const std::string& transport,
                  boost::function2<void, int, std::string> failed);
+    QPID_BROKER_EXTERN void connect(const std::string& name,
+                                    const std::string& host, const std::string& port,
+                                    const std::string& transport,
+                                    sys::ConnectionCodec::Factory*,
+                                    boost::function2<void, int, std::string> failed);
+
 
     /** Move messages from one queue to another.
         A zero quantity means to move all messages

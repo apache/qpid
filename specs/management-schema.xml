@@ -379,6 +379,43 @@
     <method name="close"/>
   </class>
 
+
+  <!--
+  ===============================================================
+  AMQP 1.0 link for incoming transfers
+  ===============================================================
+  -->
+  <class name="Incoming">
+    <property name="sessionRef"     type="objId"    references="Session" access="RC" parentRef="y"/>
+    <property name="target"         type="sstr"     access="RC" index="y"/>
+    <property name="name"           type="sstr"     access="RC" index="y"/>
+    <statistic name="transfers"     type="count64"  unit="message" desc="Messages transfered"/>
+  </class>
+  <!--
+  ===============================================================
+  AMQP 1.0 link for outgoing transfers
+  ===============================================================
+  -->
+  <class name="Outgoing">
+    <property name="sessionRef"     type="objId"    references="Session" access="RC" parentRef="y"/>
+    <property name="source"         type="sstr"     access="RC" index="y"/>
+    <property name="name"           type="sstr"     access="RC" index="y"/>
+    <statistic name="transfers"     type="count64"  unit="message" desc="Messages transfered"/>
+  </class>
+  <!--
+  ===============================================================
+  Domain
+  ===============================================================
+  -->
+  <class name="Domain">
+    <property name="name"           type="sstr"   access="RC" index="y"/>
+    <property name="durable"        type="bool"   access="RC"/>
+    <property name="url"            type="sstr"   access="RO"/>
+    <property name="mechanisms"     type="sstr"   access="RO"/>
+    <property name="username"       type="sstr"   access="RO"/>
+    <property name="password"       type="sstr"   access="RO"/>
+  </class>
+
   <!--
   ===============================================================
   Link

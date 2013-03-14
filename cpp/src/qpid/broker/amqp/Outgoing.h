@@ -41,7 +41,7 @@ class Broker;
 class Queue;
 class Selector;
 namespace amqp {
-class ManagedSession;
+class Session;
 template <class T>
 class CircularArray
 {
@@ -56,17 +56,43 @@ class CircularArray
     size_t next;
 };
 
-/**
- *
- */
-class Outgoing : public qpid::broker::Consumer, public boost::enable_shared_from_this<Outgoing>, public ManagedOutgoingLink
+class Outgoing : public ManagedOutgoingLink
 {
   public:
-    Outgoing(Broker&,boost::shared_ptr<Queue> q, pn_link_t* l, ManagedSession&, qpid::sys::OutputControl& o, bool topic);
+    Outgoing(Broker& broker, Session& parent, const std::string& source, const std::string& name);
+    virtual void setSubjectFilter(const std::string&) = 0;
+    virtual void setSelectorFilter(const std::string&) = 0;
+    virtual void init() = 0;
+    /**
+     * Allows the link to initiate any outgoing transfers
+     */
+    virtual bool doWork() = 0;
+    /**
+     * Signals that this link has been detached
+     */
+    virtual void detached() = 0;
+    /**
+     * Called when a delivery is writable
+     */
+    virtual void handle(pn_delivery_t* delivery) = 0;
+    void wakeup();
+    virtual ~Outgoing() {}
+  private:
+    Session& session;
+};
+
+/**
+ * Logic for handling an outgoing link from a queue (even if it is a
+ * subscription pseduo-queue created by the broker)
+ */
+class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public boost::enable_shared_from_this<OutgoingFromQueue>
+{
+  public:
+    OutgoingFromQueue(Broker&, const std::string& source, boost::shared_ptr<Queue> q, pn_link_t* l, Session&, qpid::sys::OutputControl& o, bool topic);
     void setSubjectFilter(const std::string&);
     void setSelectorFilter(const std::string&);
     void init();
-    bool dispatch();
+    bool doWork();
     void write(const char* data, size_t size);
     void handle(pn_delivery_t* delivery);
     bool canDeliver();

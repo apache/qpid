@@ -37,6 +37,7 @@ class Broker;
 
 namespace amqp {
 
+class Interconnects;
 class Session;
 /**
  * AMQP 1.0 protocol support for broker
@@ -44,10 +45,10 @@ class Session;
 class Connection : public sys::ConnectionCodec, public ManagedConnection
 {
   public:
-    Connection(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, bool saslInUse);
-    ~Connection();
+    Connection(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, Interconnects&, bool saslInUse);
+    virtual ~Connection();
     size_t decode(const char* buffer, size_t size);
-    size_t encode(char* buffer, size_t size);
+    virtual size_t encode(char* buffer, size_t size);
     bool canEncode();
 
     void closed();
@@ -55,7 +56,8 @@ class Connection : public sys::ConnectionCodec, public ManagedConnection
 
     framing::ProtocolVersion getVersion() const;
     pn_transport_t* getTransport();
-  private:
+    Interconnects& getInterconnects();
+  protected:
     typedef std::map<pn_session_t*, boost::shared_ptr<Session> > Sessions;
     pn_connection_t* connection;
     pn_transport_t* transport;
@@ -64,9 +66,11 @@ class Connection : public sys::ConnectionCodec, public ManagedConnection
     qpid::broker::Broker& broker;
     bool haveOutput;
     Sessions sessions;
+    Interconnects& interconnects;
 
-    void process();
+    virtual void process();
     std::string getError();
+    void close();
 };
 }}} // namespace qpid::broker::amqp
 
