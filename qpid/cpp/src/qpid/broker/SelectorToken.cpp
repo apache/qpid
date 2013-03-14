@@ -77,7 +77,7 @@ bool tokeniseIdentifier(std::string::const_iterator& s, std::string::const_itera
 
     std::string::const_iterator t = s;
 
-    while ( s!=e && isIdentifierPart(*++s) );
+    while ( ++s!=e && isIdentifierPart(*s) );
 
     tok = Token(T_IDENTIFIER, t, s);
 
@@ -214,7 +214,7 @@ bool tokeniseOperator(std::string::const_iterator& s, std::string::const_iterato
 
     std::string::const_iterator t = s;
 
-    while (s!=e && isOperatorPart(*++s));
+    while (++s!=e && isOperatorPart(*s));
 
     tok = Token(T_OPERATOR, t, s);
     return true;
