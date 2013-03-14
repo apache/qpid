@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_AMQP_MANAGEDOUTGOINGLINK_H
-#define QPID_BROKER_AMQP_MANAGEDOUTGOINGLINK_H
+#ifndef QPID_BROKER_AMQP_MANAGEDINCOMINGLINK_H
+#define QPID_BROKER_AMQP_MANAGEDINCOMINGLINK_H
 
 /*
  *
@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/management/Manageable.h"
-#include "qmf/org/apache/qpid/broker/Outgoing.h"
+#include "qmf/org/apache/qpid/broker/Incoming.h"
 
 namespace qpid {
 namespace management {
@@ -33,20 +33,18 @@ class Broker;
 namespace amqp {
 class ManagedSession;
 
-class ManagedOutgoingLink : public qpid::management::Manageable
+class ManagedIncomingLink : public qpid::management::Manageable
 {
   public:
-    ManagedOutgoingLink(Broker& broker, ManagedSession& parent, const std::string& source, const std::string& name);
-    virtual ~ManagedOutgoingLink();
+    ManagedIncomingLink(Broker& broker, ManagedSession& parent, const std::string& target, const std::string& name);
+    virtual ~ManagedIncomingLink();
     qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
-    void outgoingMessageSent();
-    void outgoingMessageAccepted();
-    void outgoingMessageRejected();
+    void incomingMessageReceived();
   private:
     ManagedSession& parent;
     const std::string name;
-    qmf::org::apache::qpid::broker::Outgoing::shared_ptr outgoing;
+    qmf::org::apache::qpid::broker::Incoming::shared_ptr incoming;
 };
 }}} // namespace qpid::broker::amqp
 
-#endif  /*!QPID_BROKER_AMQP_MANAGEDOUTGOINGLINK_H*/
+#endif  /*!QPID_BROKER_AMQP_MANAGEDINCOMINGLINK_H*/

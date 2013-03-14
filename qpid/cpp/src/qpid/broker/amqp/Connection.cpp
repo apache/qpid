@@ -37,14 +37,15 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::broker::Broker& b, bool saslInUse)
+Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::broker::Broker& b, Interconnects& interconnects_, bool saslInUse)
     : ManagedConnection(b, i),
       connection(pn_connection()),
       transport(pn_transport()),
-      out(o), id(i), broker(b), haveOutput(true)
+      out(o), id(i), broker(b), haveOutput(true), interconnects(interconnects_)
 {
     if (pn_transport_bind(transport, connection)) {
         //error
+        QPID_LOG(error, "Failed to bind transport to connection: " << getError());
     }
     out.activateOutput();
     bool enableTrace(false);
@@ -74,13 +75,18 @@ Connection::~Connection()
     pn_connection_free(connection);
 }
 
+Interconnects& Connection::getInterconnects()
+{
+    return interconnects;
+}
 pn_transport_t* Connection::getTransport()
 {
     return transport;
 }
 size_t Connection::decode(const char* buffer, size_t size)
 {
-    QPID_LOG(trace, id << " decode(" << size << ")")
+    QPID_LOG(trace, id << " decode(" << size << ")");
+    if (size == 0) return 0;
     //TODO: Fix pn_engine_input() to take const buffer
     ssize_t n = pn_transport_input(transport, const_cast<char*>(buffer), size);
     if (n > 0 || n == PN_EOS) {
@@ -88,8 +94,13 @@ size_t Connection::decode(const char* buffer, size_t size)
         //it processed, but can assume none need to be reprocessed so
         //consider them all read:
         if (n == PN_EOS) n = size;
-        QPID_LOG_CAT(debug, network, id << " decoded " << n << " bytes from " << size)
-        process();
+        QPID_LOG_CAT(debug, network, id << " decoded " << n << " bytes from " << size);
+        try {
+            process();
+        } catch (const std::exception& e) {
+            QPID_LOG(error, id << ": " << e.what());
+            close();
+        }
         pn_transport_tick(transport, 0);
         if (!haveOutput) {
             haveOutput = true;
@@ -123,10 +134,15 @@ size_t Connection::encode(char* buffer, size_t size)
 }
 bool Connection::canEncode()
 {
-    for (Sessions::iterator i = sessions.begin();i != sessions.end(); ++i) {
-        if (i->second->dispatch()) haveOutput = true;
+    try {
+        for (Sessions::iterator i = sessions.begin();i != sessions.end(); ++i) {
+            if (i->second->dispatch()) haveOutput = true;
+        }
+        process();
+    } catch (const std::exception& e) {
+        QPID_LOG(error, id << ": " << e.what());
+        close();
     }
-    process();
     //TODO: proper handling of time in and out of tick
     pn_transport_tick(transport, 0);
     QPID_LOG_CAT(trace, network, id << " canEncode(): " << haveOutput)
@@ -134,10 +150,15 @@ bool Connection::canEncode()
 }
 void Connection::closed()
 {
-    //TODO: tear down sessions and associated links
     for (Sessions::iterator i = sessions.begin(); i != sessions.end(); ++i) {
         i->second->close();
     }
+}
+void Connection::close()
+{
+    closed();
+    QPID_LOG_CAT(debug, model, id << " connection closed");
+    pn_connection_close(connection);
 }
 bool Connection::isClosed() const
 {
@@ -191,7 +212,7 @@ void Connection::process()
         if (pn_link_is_receiver(link)) {
             Sessions::iterator i = sessions.find(pn_link_session(link));
             if (i != sessions.end()) {
-                i->second->incoming(link, delivery);
+                i->second->readable(link, delivery);
             } else {
                 pn_delivery_update(delivery, PN_REJECTED);
             }
@@ -199,7 +220,7 @@ void Connection::process()
             Sessions::iterator i = sessions.find(pn_link_session(link));
             if (i != sessions.end()) {
                 QPID_LOG(trace, id << " handling outgoing delivery for " << link << " on session " << pn_link_session(link));
-                i->second->outgoing(link, delivery);
+                i->second->writable(link, delivery);
             } else {
                 QPID_LOG(error, id << " Got delivery for non-existent session: " << pn_link_session(link) << ", link: " << link);
             }
@@ -238,9 +259,9 @@ std::string Connection::getError()
 {
     std::stringstream text;
     pn_error_t* cerror = pn_connection_error(connection);
-    if (cerror) text << "connection error " << pn_error_text(cerror);
+    if (cerror) text << "connection error " << pn_error_text(cerror) << " [" << cerror << "]";
     pn_error_t* terror = pn_transport_error(transport);
-    if (terror) text << "transport error " << pn_error_text(terror);
+    if (terror) text << "transport error " << pn_error_text(terror) << " [" << terror << "]";
     return text.str();
 }
 

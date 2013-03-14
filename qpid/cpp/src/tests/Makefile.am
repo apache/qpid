@@ -297,7 +297,7 @@ TESTS_ENVIRONMENT = \
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest \
   run_msg_group_tests
 TESTS += start_broker $(system_tests) python_tests stop_broker \
-  run_ha_tests run_federation_tests run_federation_sys_tests \
+  run_ha_tests run_interlink_tests run_federation_tests run_federation_sys_tests \
   run_acl_tests run_cli_tests dynamic_log_level_test \
   dynamic_log_hires_timestamp run_queue_flow_limit_tests ipv6_test
 
@@ -346,6 +346,8 @@ EXTRA_DIST +=								\
   run_ha_tests								\
   ha_test.py								\
   ha_tests.py								\
+  run_interlink_tests							\
+  interlink_tests.py							\
   brokertest.py								\
   ha_store_tests.py							\
   test_env.ps1.in

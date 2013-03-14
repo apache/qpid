@@ -427,6 +427,8 @@ class BrokerTest(TestCase):
     qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
     ha_lib = os.getenv("HA_LIB")
     xml_lib = os.getenv("XML_LIB")
+    amqp_lib = os.getenv("AMQP_LIB")
+    amqpc_lib = os.getenv("AMQPC_LIB")
     qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
     qpid_route_exec = os.getenv("QPID_ROUTE_EXEC")
     receiver_exec = os.getenv("RECEIVER_EXEC")

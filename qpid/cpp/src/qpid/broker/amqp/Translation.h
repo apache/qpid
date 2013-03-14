@@ -31,7 +31,7 @@ class MessageTransfer;
 }
 namespace amqp {
 
-class Outgoing;
+class OutgoingFromQueue;
 /**
  *
  */
@@ -49,7 +49,7 @@ class Translation
     /**
      * Writes the AMQP 1.0 bare message and any annotations, translating from 0-10 if necessary
      */
-    void write(Outgoing&);
+    void write(OutgoingFromQueue&);
   private:
     const qpid::broker::Message& original;
 };

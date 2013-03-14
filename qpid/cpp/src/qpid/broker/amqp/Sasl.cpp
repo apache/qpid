@@ -31,8 +31,8 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-Sasl::Sasl(qpid::sys::OutputControl& o, const std::string& id, qpid::broker::Broker& broker, std::auto_ptr<qpid::SaslServer> auth)
-    : qpid::amqp::SaslServer(id), out(o), connection(out, id, broker, true),
+Sasl::Sasl(qpid::sys::OutputControl& o, const std::string& id, qpid::broker::Broker& broker, Interconnects& i, std::auto_ptr<qpid::SaslServer> auth)
+    : qpid::amqp::SaslServer(id), out(o), connection(out, id, broker, i, true),
       authenticator(auth),
       state(INCOMPLETE), writeHeader(true), haveOutput(true)
 {

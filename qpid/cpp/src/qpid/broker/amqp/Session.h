@@ -43,34 +43,45 @@ class Queue;
 
 namespace amqp {
 
-class ManagedConnection;
+class Connection;
+class Incoming;
 class Outgoing;
-class Target;
+class Relay;
 /**
  *
  */
 class Session : public ManagedSession, public boost::enable_shared_from_this<Session>
 {
   public:
-    Session(pn_session_t*, qpid::broker::Broker&, ManagedConnection&, qpid::sys::OutputControl&);
+    Session(pn_session_t*, qpid::broker::Broker&, Connection&, qpid::sys::OutputControl&);
+    /**
+     * called for links initiated by the peer
+     */
     void attach(pn_link_t*);
     void detach(pn_link_t*);
-    void incoming(pn_link_t*, pn_delivery_t*);
-    void outgoing(pn_link_t*, pn_delivery_t*);
+    void readable(pn_link_t*, pn_delivery_t*);
+    void writable(pn_link_t*, pn_delivery_t*);
     bool dispatch();
     void close();
 
+    /**
+     * called for links initiated by the broker
+     */
+    void attach(pn_link_t* link, const std::string& src, const std::string& tgt, boost::shared_ptr<Relay>);
+
     //called when a transfer is completly processed (e.g.including stored on disk)
     void accepted(pn_delivery_t*, bool sync);
+
+    void wakeup();
   private:
-    typedef std::map<pn_link_t*, boost::shared_ptr<Outgoing> > Senders;
-    typedef std::map<pn_link_t*, boost::shared_ptr<Target> > Targets;
+    typedef std::map<pn_link_t*, boost::shared_ptr<Outgoing> > OutgoingLinks;
+    typedef std::map<pn_link_t*, boost::shared_ptr<Incoming> > IncomingLinks;
     pn_session_t* session;
     qpid::broker::Broker& broker;
-    ManagedConnection& connection;
+    Connection& connection;
     qpid::sys::OutputControl& out;
-    Targets targets;
-    Senders senders;
+    IncomingLinks incoming;
+    OutgoingLinks outgoing;
     std::deque<pn_delivery_t*> completed;
     bool deleted;
     qpid::sys::Mutex lock;
@@ -78,9 +89,12 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     {
         boost::shared_ptr<qpid::broker::Exchange> exchange;
         boost::shared_ptr<qpid::broker::Queue> queue;
+        boost::shared_ptr<Relay> relay;
     };
 
-    ResolvedNode resolve(const std::string name, pn_terminus_t* terminus);
+    ResolvedNode resolve(const std::string name, pn_terminus_t* terminus, bool incoming);
+    void setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::string& name);
+    void setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::string& name);
 };
 }}} // namespace qpid::broker::amqp
 

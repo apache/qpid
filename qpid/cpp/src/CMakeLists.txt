@@ -1160,6 +1160,8 @@ set (qpidbroker_SOURCES
      qpid/broker/Fairshare.cpp
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp
+     qpid/broker/ObjectFactory.h
+     qpid/broker/ObjectFactory.cpp
      qpid/broker/PriorityQueue.cpp
      qpid/broker/Protocol.cpp
      qpid/broker/Queue.cpp
