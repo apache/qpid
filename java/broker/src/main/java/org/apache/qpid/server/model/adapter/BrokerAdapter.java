@@ -227,6 +227,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             Map<String, Object> trsustStoreAttributes = new HashMap<String, Object>();
             trsustStoreAttributes.put(TrustStore.NAME, DEFAULT_TRUST_STORE_NAME);
             trsustStoreAttributes.put(TrustStore.PATH, trustStorePath);
+            trsustStoreAttributes.put(TrustStore.PEERS_ONLY, Boolean.FALSE);
             trsustStoreAttributes.put(TrustStore.PASSWORD, (String) actualAttributes.get(TRUST_STORE_PASSWORD));
             trsustStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
             trsustStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
