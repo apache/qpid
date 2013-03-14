@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.codehaus.jackson.JsonGenerationException;
@@ -41,8 +42,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     protected ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
     {
         _storeFile = createStoreFile(brokerId, brokerAttributes);
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(_storeFile.getAbsolutePath());
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null);
         return store;
     }
 
@@ -82,36 +82,33 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
                 attributes, brokerConfigEntry.getChildrenIds(), store);
         store.save(updatedBrokerEntry);
 
-        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore();
-        store2.open(_storeFile.getAbsolutePath());
+        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null);
 
         assertEquals("Unresolved ACL value", aclLocation, store2.getRootEntry().getAttributes().get(Broker.ACL_FILE));
     }
 
-    public void testOpenEmpty()
+    public void testCreateEmptyStore()
     {
         File file = TestFileUtils.createTempFile(this, ".json");
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(file.getAbsolutePath());
-        ConfigurationEntry root = store.getRootEntry();
-        assertNotNull("Root entry is not found", root);
-        store.copyTo(file.getAbsolutePath());
-
-        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore();
-        store2.open(file.getAbsolutePath());
-        ConfigurationEntry root2 = store.getRootEntry();
-        assertEquals("Unexpected root entry", root.getId(), root2.getId());
+        try
+        {
+            new JsonConfigurationEntryStore(file.getAbsolutePath(), null);
+            fail("Cannot create a new store without initial store");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // pass
+        }
     }
 
-    public void testOpenNotEmpty() throws Exception
+    public void testCreateFromExistingLocation() throws Exception
     {
         UUID brokerId = UUID.randomUUID();
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.NAME, getTestName());
         File file = createStoreFile(brokerId, brokerAttributes);
 
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(file.getAbsolutePath());
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(file.getAbsolutePath(), null);
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
         assertEquals("Unexpected root entry", brokerId, root.getId());
@@ -121,25 +118,17 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
     }
 
-    public void testOpenInMemoryEmpty()
-    {
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(JsonConfigurationEntryStore.IN_MEMORY);
-
-        ConfigurationEntry root = store.getRootEntry();
-        assertNotNull("Root entry is not found", root);
-    }
-
-    public void testOpenWithInitialStoreLocation() throws Exception
+    public void testCreateFromInitialStore() throws Exception
     {
         UUID brokerId = UUID.randomUUID();
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.NAME, getTestName());
         File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
+
+        JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore(initialStoreFile.getAbsolutePath(), null);
 
         File storeFile = TestFileUtils.createTempFile(this, ".json");
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(storeFile.getAbsolutePath(), initialStoreFile.getAbsolutePath());
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), initialStore);
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -150,67 +139,4 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
     }
 
-    public void testOpenInMemoryWithInitialStoreLocation() throws Exception
-    {
-        UUID brokerId = UUID.randomUUID();
-        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        brokerAttributes.put(Broker.NAME, getTestName());
-        File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
-
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(JsonConfigurationEntryStore.IN_MEMORY, initialStoreFile.getAbsolutePath());
-
-        ConfigurationEntry root = store.getRootEntry();
-        assertNotNull("Root entry is not found", root);
-        assertEquals("Unexpected root entry", brokerId, root.getId());
-        Map<String, Object> attributes = root.getAttributes();
-        assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 1, attributes.size());
-        assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
-    }
-
-    public void testOpenWithInitialStore() throws Exception
-    {
-        UUID brokerId = UUID.randomUUID();
-        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        brokerAttributes.put(Broker.NAME, getTestName());
-        File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
-
-        JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore();
-        initialStore.open(initialStoreFile.getAbsolutePath());
-
-        File storeFile = TestFileUtils.createTempFile(this, ".json");
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(storeFile.getAbsolutePath(), initialStore);
-
-        ConfigurationEntry root = store.getRootEntry();
-        assertNotNull("Root entry is not found", root);
-        assertEquals("Unexpected root entry", brokerId, root.getId());
-        Map<String, Object> attributes = root.getAttributes();
-        assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 1, attributes.size());
-        assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
-    }
-
-    public void testOpenInMemoryWithInitialStore() throws Exception
-    {
-        UUID brokerId = UUID.randomUUID();
-        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        brokerAttributes.put(Broker.NAME, getTestName());
-        File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
-
-        JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore();
-        initialStore.open(initialStoreFile.getAbsolutePath());
-
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore();
-        store.open(JsonConfigurationEntryStore.IN_MEMORY, initialStore);
-
-        ConfigurationEntry root = store.getRootEntry();
-        assertNotNull("Root entry is not found", root);
-        assertEquals("Unexpected root entry", brokerId, root.getId());
-        Map<String, Object> attributes = root.getAttributes();
-        assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 1, attributes.size());
-        assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
-    }
 }

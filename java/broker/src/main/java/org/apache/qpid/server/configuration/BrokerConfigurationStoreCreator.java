@@ -23,7 +23,8 @@ package org.apache.qpid.server.configuration;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 /**
@@ -31,12 +32,6 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
  */
 public class BrokerConfigurationStoreCreator
 {
-    /**
-     * URL to resource containing broker default configuration
-     */
-    public static final String DEFAULT_INITIAL_STORE_LOCATION = BrokerConfigurationStoreCreator.class.getClassLoader()
-            .getResource("initial-store.json").toExternalForm();
-
     private Map<String, ConfigurationStoreFactory> _factories = new HashMap<String, ConfigurationStoreFactory>();
 
     public BrokerConfigurationStoreCreator()
@@ -58,45 +53,22 @@ public class BrokerConfigurationStoreCreator
     }
 
     /**
-     * Create broker configuration store for a given store location, store type, initial store location and initial store type
+     * Create broker configuration store for a given store location, store type, initial json config location
      *
      * @param storeLocation store location
      * @param storeType store type
-     * @param initialStoreLocation initial store location
-     * @param initialStoreType initial store type
-     * @return store instance opened at given store location
+     * @param initialConfigLocation initial store location
      * @throws IllegalConfigurationException if store type is unknown
      */
-    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialStoreLocation,
-            String initialStoreType)
+    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialConfigLocation)
     {
-        ConfigurationEntryStore store = createStore(storeType);
-        if (initialStoreLocation == null)
-        {
-            initialStoreLocation = DEFAULT_INITIAL_STORE_LOCATION;
-            initialStoreType = JsonConfigurationEntryStore.STORE_TYPE;
-        }
-        if (storeType.equals(initialStoreType))
-        {
-            store.open(storeLocation, initialStoreLocation);
-        }
-        else
-        {
-            ConfigurationEntryStore initialStore = createStore(initialStoreType);
-            initialStore.open(initialStoreLocation);
-            store.open(storeLocation, initialStore);
-        }
-        return store;
-    }
-
-    private ConfigurationEntryStore createStore(String storeType)
-    {
+        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(initialConfigLocation, null);
         ConfigurationStoreFactory factory = _factories.get(storeType.toLowerCase());
         if (factory == null)
         {
             throw new IllegalConfigurationException("Unknown store type: " + storeType);
         }
-        return factory.createStore();
+        return factory.createStore(storeLocation, initialStore);
     }
 
 }

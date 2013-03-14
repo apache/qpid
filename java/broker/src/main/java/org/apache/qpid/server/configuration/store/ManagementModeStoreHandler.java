@@ -42,24 +42,6 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     }
 
     @Override
-    public void open(String storeLocation)
-    {
-        throw new IllegalStateException("The store should be already opened");
-    }
-
-    @Override
-    public void open(String storeLocation, String initialStoreLocation)
-    {
-        throw new IllegalStateException("The store should be already opened");
-    }
-
-    @Override
-    public void open(String storeLocation, ConfigurationEntryStore initialStore)
-    {
-        throw new IllegalStateException("The store should be already opened");
-    }
-
-    @Override
     public ConfigurationEntry getRootEntry()
     {
         return getEntry(_rootId);
@@ -159,6 +141,12 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         {
             _store.copyTo(copyLocation);
         }
+    }
+
+    @Override
+    public String getStoreLocation()
+    {
+        return _store.getStoreLocation();
     }
 
     private Map<UUID, ConfigurationEntry> createPortsFromCommadLineOptions(BrokerOptions options)

@@ -18,7 +18,10 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
+package org.apache.qpid.server.plugin;
+
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 
 
 public interface ConfigurationStoreFactory
@@ -29,7 +32,13 @@ public interface ConfigurationStoreFactory
     public String getStoreType();
 
     /**
-     * Creates the store instance.
+     * Creates and opens the store from a given location using initial store if provided.
+     * <p>
+     * If location does not exists than a new store is created either empty or from the initial store if it is provided
+     *
+     * @param storeLocation store location
+     * @param initialStore initial store
+     * @throws IllegalConfigurationException if store cannot be opened in the given location
      */
-    public ConfigurationEntryStore createStore();
+    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore);
 }

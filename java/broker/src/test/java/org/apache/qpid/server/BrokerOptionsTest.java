@@ -106,28 +106,16 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(myFreq, _options.getLogWatchFrequency());
     }
 
-
-    public void testDefaultInitialConfigurationStoreType()
+    public void testDefaultInitialConfigurationLocation()
     {
-        assertEquals("json", _options.getInitialConfigurationStoreType());
+        assertEquals(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, _options.getInitialConfigurationLocation());
     }
 
-    public void testOverriddenInitialConfigurationStoreType()
+    public void testOverriddenInitialConfigurationLocation()
     {
-        _options.setInitialConfigurationStoreType("dby");
-        assertEquals("dby", _options.getInitialConfigurationStoreType());
-    }
-
-    public void testDefaultInitialConfigurationStoreLocation()
-    {
-        assertNull(_options.getInitialConfigurationStoreLocation());
-    }
-
-    public void testOverriddenInitialConfigurationStoreLocation()
-    {
-        final String testConfigFile = "etc/mytestconfig.xml";
-        _options.setInitialConfigurationStoreLocation(testConfigFile);
-        assertEquals(testConfigFile, _options.getInitialConfigurationStoreLocation());
+        final String testConfigFile = "etc/mytestconfig.json";
+        _options.setInitialConfigurationLocation(testConfigFile);
+        assertEquals(testConfigFile, _options.getInitialConfigurationLocation());
     }
 
     public void testDefaultManagementMode()
