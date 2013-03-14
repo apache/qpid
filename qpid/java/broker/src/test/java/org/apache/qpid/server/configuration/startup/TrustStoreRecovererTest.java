@@ -71,6 +71,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
         attributes.put(TrustStore.PASSWORD, "my-secret-password");
         attributes.put(TrustStore.TYPE, "NON-JKS");
         attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
         attributes.put(TrustStore.DESCRIPTION, "Description");
         return attributes;
     }
