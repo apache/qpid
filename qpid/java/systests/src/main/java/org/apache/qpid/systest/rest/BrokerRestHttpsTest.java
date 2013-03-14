@@ -64,6 +64,6 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES, Broker.BYTES_RETAINED,
                 Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED,
                 Broker.ACL_FILE, Broker.KEY_STORE_CERT_ALIAS, Broker.TRUST_STORE_PATH, Broker.TRUST_STORE_PASSWORD,
-                Broker.GROUP_FILE);
+                Broker.GROUP_FILE, Broker.PEER_STORE_PATH, Broker.PEER_STORE_PASSWORD);
     }
 }
