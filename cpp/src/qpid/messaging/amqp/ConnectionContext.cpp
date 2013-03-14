@@ -140,6 +140,12 @@ bool ConnectionContext::isOpen() const
 void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    //wait for outstanding sends to settle
+    while (!ssn->settled()) {
+        QPID_LOG(debug, "Waiting for sends to settle before closing");
+        wait();//wait until message has been confirmed
+    }
+
     pn_session_close(ssn->session);
     //TODO: need to destroy session and remove context from map
     wakeupDriver();
@@ -166,13 +172,19 @@ void ConnectionContext::close()
         wakeupDriver();
         //wait for close to be confirmed by peer?
         while (!(pn_connection_state(connection) & PN_REMOTE_CLOSED)) {
-            wait();
+            if (state == DISCONNECTED) {
+                QPID_LOG(warning, "Disconnected before close received from peer.");
+                break;
+            }
+            lock.wait();
         }
         sessions.clear();
     }
-    transport->close();
-    while (state != DISCONNECTED) {
-        lock.wait();
+    if (state != DISCONNECTED) {
+        transport->close();
+        while (state != DISCONNECTED) {
+            lock.wait();
+        }
     }
 }
 

@@ -38,7 +38,7 @@ LossyQueue::LossyQueue(const std::string& n, const QueueSettings& s, MessageStor
 
 bool LossyQueue::checkDepth(const QueueDepth& increment, const Message& message)
 {
-    if (increment.getSize() > settings.maxDepth.getSize()) {
+    if (settings.maxDepth.hasSize() && increment.getSize() > settings.maxDepth.getSize()) {
         if (mgmtObject) {
             mgmtObject->inc_discardsOverflow();
             if (brokerMgmtObject)

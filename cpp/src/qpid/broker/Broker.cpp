@@ -707,7 +707,9 @@ void Broker::createObject(const std::string& type, const std::string& name,
     }
     //TODO: implement 'strict' option (check there are no unrecognised properties)
     QPID_LOG (debug, "Broker::create(" << type << ", " << name << "," << properties << ")");
-    if (type == TYPE_QUEUE) {
+    if (objectFactory.createObject(*this, type, name, properties, userId, connectionId)) {
+        QPID_LOG (debug, "Broker::create(" << type << ", " << name << "," << properties << ") handled by registered factory");
+    } else if (type == TYPE_QUEUE) {
         bool durable(false);
         bool autodelete(false);
         std::string alternateExchange;
@@ -1064,8 +1066,16 @@ void Broker::connect(
     const std::string& host, const std::string& port, const std::string& transport,
     boost::function2<void, int, std::string> failed)
 {
+    connect(name, host, port, transport, factory.get(), failed);
+}
+
+void Broker::connect(
+    const std::string& name,
+    const std::string& host, const std::string& port, const std::string& transport,
+    sys::ConnectionCodec::Factory* f, boost::function2<void, int, std::string> failed)
+{
     boost::shared_ptr<TransportConnector> tcf = getTransportInfo(transport).connectorFactory;
-    if (tcf) tcf->connect(poller, name, host, port, factory.get(), failed);
+    if (tcf) tcf->connect(poller, name, host, port, f, failed);
     else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
 }
 

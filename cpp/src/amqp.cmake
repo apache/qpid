@@ -52,14 +52,24 @@ if (BUILD_AMQP)
          qpid/broker/amqp/Connection.cpp
          qpid/broker/amqp/DataReader.h
          qpid/broker/amqp/DataReader.cpp
+         qpid/broker/amqp/Domain.h
+         qpid/broker/amqp/Domain.cpp
          qpid/broker/amqp/Filter.h
          qpid/broker/amqp/Filter.cpp
          qpid/broker/amqp/Header.h
          qpid/broker/amqp/Header.cpp
+         qpid/broker/amqp/Incoming.h
+         qpid/broker/amqp/Incoming.cpp
+         qpid/broker/amqp/Interconnect.h
+         qpid/broker/amqp/Interconnect.cpp
+         qpid/broker/amqp/Interconnects.h
+         qpid/broker/amqp/Interconnects.cpp
          qpid/broker/amqp/ManagedConnection.h
          qpid/broker/amqp/ManagedConnection.cpp
          qpid/broker/amqp/ManagedSession.h
          qpid/broker/amqp/ManagedSession.cpp
+         qpid/broker/amqp/ManagedIncomingLink.h
+         qpid/broker/amqp/ManagedIncomingLink.cpp
          qpid/broker/amqp/ManagedOutgoingLink.h
          qpid/broker/amqp/ManagedOutgoingLink.cpp
          qpid/broker/amqp/Message.h
@@ -69,8 +79,12 @@ if (BUILD_AMQP)
          qpid/broker/amqp/Outgoing.h
          qpid/broker/amqp/Outgoing.cpp
          qpid/broker/amqp/ProtocolPlugin.cpp
+         qpid/broker/amqp/Relay.h
+         qpid/broker/amqp/Relay.cpp
          qpid/broker/amqp/Sasl.h
          qpid/broker/amqp/Sasl.cpp
+         qpid/broker/amqp/SaslClient.h
+         qpid/broker/amqp/SaslClient.cpp
          qpid/broker/amqp/Session.h
          qpid/broker/amqp/Session.cpp
          qpid/broker/amqp/Translation.h

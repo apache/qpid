@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ManagedOutgoingLink.h"
+#include "ManagedIncomingLink.h"
 #include "qpid/broker/amqp/ManagedSession.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
@@ -30,37 +30,27 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-ManagedOutgoingLink::ManagedOutgoingLink(Broker& broker, ManagedSession& p, const std::string& source, const std::string& _name)
+ManagedIncomingLink::ManagedIncomingLink(Broker& broker, ManagedSession& p, const std::string& target, const std::string& _name)
     : parent(p), name(_name)
 {
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent) {
-        outgoing = _qmf::Outgoing::shared_ptr(new _qmf::Outgoing(agent, this, &parent, source, _name));
-        agent->addObject(outgoing);
+        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, target, _name));
+        agent->addObject(incoming);
     }
 }
-ManagedOutgoingLink::~ManagedOutgoingLink()
+ManagedIncomingLink::~ManagedIncomingLink()
 {
-    if (outgoing != 0) outgoing->resourceDestroy();
+    if (incoming != 0) incoming->resourceDestroy();
 }
 
-qpid::management::ManagementObject::shared_ptr ManagedOutgoingLink::GetManagementObject() const
+qpid::management::ManagementObject::shared_ptr ManagedIncomingLink::GetManagementObject() const
 {
-    return outgoing;
+    return incoming;
 }
 
-void ManagedOutgoingLink::outgoingMessageSent()
+void ManagedIncomingLink::incomingMessageReceived()
 {
-    if (outgoing) { outgoing->inc_transfers(); }
-    parent.outgoingMessageSent();
+    if (incoming) { incoming->inc_transfers(); }
 }
-void ManagedOutgoingLink::outgoingMessageAccepted()
-{
-    parent.outgoingMessageAccepted();
-}
-void ManagedOutgoingLink::outgoingMessageRejected()
-{
-    parent.outgoingMessageRejected();
-}
-
 }}} // namespace qpid::broker::amqp

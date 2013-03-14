@@ -30,7 +30,7 @@ class Broker;
 class SecureConnectionFactory : public sys::ConnectionCodec::Factory
 {
   public:
-    SecureConnectionFactory(Broker& b);            
+    SecureConnectionFactory(Broker& b);
 
     sys::ConnectionCodec*
     create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id,
@@ -41,6 +41,9 @@ class SecureConnectionFactory : public sys::ConnectionCodec::Factory
 
   private:
     Broker& broker;
+
+    sys::ConnectionCodec*
+    create_0_10(sys::OutputControl&, const std::string& id, const qpid::sys::SecuritySettings&, bool brokerActsAsClient);
 };
 
 }}

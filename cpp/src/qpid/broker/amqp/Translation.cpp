@@ -202,7 +202,7 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
     }
 }
 
-void Translation::write(Outgoing& out)
+void Translation::write(OutgoingFromQueue& out)
 {
     const Message* message = dynamic_cast<const Message*>(&original.getEncoding());
     if (message) {
