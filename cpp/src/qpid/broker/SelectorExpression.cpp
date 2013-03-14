@@ -25,6 +25,7 @@
 #include "qpid/broker/SelectorToken.h"
 #include "qpid/broker/SelectorValue.h"
 #include "qpid/sys/IntegerTypes.h"
+#include "qpid/sys/regex.h"
 
 #include <string>
 #include <memory>
@@ -65,21 +66,24 @@
  * AndExpression :: = EqualityExpression ( "AND" EqualityExpression  )*
  *
  * ComparisonExpression ::= PrimaryExpression "IS" "NULL" |
- *                        PrimaryExpression "IS" "NOT" "NULL" |
- *                        PrimaryExpression ComparisonOpsOps PrimaryExpression |
- *                        "NOT" ComparisonExpression |
- *                        "(" OrExpression ")"
+ *                          PrimaryExpression "IS" "NOT" "NULL" |
+ *                          PrimaryExpression "LIKE" LiteralString [ "ESCAPE" LiteralString ]
+ *                          PrimaryExpression "NOT" "LIKE" LiteralString [ "ESCAPE" LiteralString ]
+ *                          PrimaryExpression ComparisonOpsOps PrimaryExpression |
+ *                          "NOT" ComparisonExpression |
+ *                          "(" OrExpression ")"
  *
  * PrimaryExpression :: = Identifier |
  *                        Literal
  *
  */
 
-namespace qpid {
-namespace broker {
 
 using std::string;
 using std::ostream;
+
+namespace qpid {
+namespace broker {
 
 class Expression {
 public:
@@ -237,8 +241,80 @@ public:
         os << *op << "(" << *e1 << ")";
     }
 
-    virtual BoolOrNone eval_bool(const SelectorEnv& env) const {
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
         return op->eval(*e1, env);
+    }
+};
+
+class LikeExpression : public BoolExpression {
+    boost::scoped_ptr<Expression> e;
+    string reString;
+    qpid::sys::regex regexBuffer;
+
+    static string toRegex(const string& s, const string& escape) {
+        string regex("^");
+        if (escape.size()>1) throw std::range_error("Illegal escape char");
+        char e = 0;
+        if (escape.size()==1) {
+            e = escape[0];
+        }
+        // Translate % -> .*, _ -> ., . ->\. *->\*
+        bool doEscape = false;
+        for (string::const_iterator i = s.begin(); i!=s.end(); ++i) {
+            if ( e!=0 && *i==e ) {
+                doEscape = true;
+                continue;
+            }
+            switch(*i) {
+                case '%':
+                    if (doEscape) regex += *i;
+                    else regex += ".*";
+                    break;
+                case '_':
+                    if (doEscape) regex += *i;
+                    else regex += ".";
+                    break;
+                case ']':
+                    regex += "[]]";
+                    break;
+                case '-':
+                    regex += "[-]";
+                    break;
+                // Don't add any more cases here: these are sufficient,
+                // adding more might turn on inadvertent matching
+                case '\\':
+                case '^':
+                case '$':
+                case '.':
+                case '*':
+                case '[':
+                    regex += "\\";
+                    // Fallthrough
+                default:
+                    regex += *i;
+                    break;
+            }
+            doEscape = false;
+        }
+        regex += "$";
+        return regex;
+    }
+
+public:
+    LikeExpression(Expression* e_, const string& like, const string& escape="") :
+        e(e_),
+        reString(toRegex(like, escape)),
+        regexBuffer(reString)
+    {}
+
+    void repr(ostream& os) const {
+        os << *e << " REGEX_MATCH '" << reString << "'";
+    }
+
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
+        Value v(e->eval(env));
+        if ( v.type!=Value::T_STRING ) return BN_UNKNOWN;
+        return BoolOrNone(qpid::sys::regex_match(*v.s, regexBuffer));
     }
 };
 
@@ -490,6 +566,32 @@ BoolExpression* parseAndExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
+BoolExpression* parseSpecialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expression> e1) {
+    switch (tokeniser.nextToken().type) {
+        case T_LIKE: {
+            const Token t = tokeniser.nextToken();
+            if ( t.type==T_STRING ) {
+                // Check for "ESCAPE"
+                if ( tokeniser.nextToken().type==T_ESCAPE ) {
+                    const Token e = tokeniser.nextToken();
+                    if ( e.type==T_STRING ) {
+                        return new LikeExpression(e1.release(), t.val, e.val);
+                    } else {
+                        return 0;
+                    }
+                } else {
+                    tokeniser.returnTokens();
+                    return new LikeExpression(e1.release(), t.val);
+                }
+            } else {
+                return 0;
+            }
+        }
+        default:
+            return 0;
+    }
+}
+
 BoolExpression* parseComparisonExpression(Tokeniser& tokeniser)
 {
     const Token t = tokeniser.nextToken();
@@ -508,18 +610,32 @@ BoolExpression* parseComparisonExpression(Tokeniser& tokeniser)
     std::auto_ptr<Expression> e1(parsePrimaryExpression(tokeniser));
     if (!e1.get()) return 0;
 
-    // Check for "IS NULL" and "IS NOT NULL"
-    if ( tokeniser.nextToken().type==T_IS ) {
-        // The rest must be T_NULL or T_NOT, T_NULL
-        switch (tokeniser.nextToken().type) {
-            case T_NULL:
-                return new UnaryBooleanExpression<Expression>(&isNullOp, e1.release());
-            case T_NOT:
-                if ( tokeniser.nextToken().type == T_NULL)
-                    return new UnaryBooleanExpression<Expression>(&isNonNullOp, e1.release());
-            default:
-                return 0;
+    switch (tokeniser.nextToken().type) {
+        // Check for "IS NULL" and "IS NOT NULL"
+        case T_IS:
+            // The rest must be T_NULL or T_NOT, T_NULL
+            switch (tokeniser.nextToken().type) {
+                case T_NULL:
+                    return new UnaryBooleanExpression<Expression>(&isNullOp, e1.release());
+                case T_NOT:
+                    if ( tokeniser.nextToken().type == T_NULL)
+                        return new UnaryBooleanExpression<Expression>(&isNonNullOp, e1.release());
+                default:
+                    return 0;
+            }
+        case T_NOT: {
+            std::auto_ptr<BoolExpression> e(parseSpecialComparisons(tokeniser, e1));
+            if (!e.get()) return 0;
+            return new UnaryBooleanExpression<BoolExpression>(&notOp, e.release());
         }
+        case T_LIKE: {
+            tokeniser.returnTokens();
+            std::auto_ptr<BoolExpression> e(parseSpecialComparisons(tokeniser, e1));
+            if (!e.get()) return 0;
+            return e.release();
+        }
+        default:
+            break;
     }
     tokeniser.returnTokens();
 

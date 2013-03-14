@@ -497,6 +497,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/PollableQueue.h			\
   qpid/sys/Poller.h				\
   qpid/sys/Probes.h				\
+  qpid/sys/regex.h				\
   qpid/sys/Runnable.cpp				\
   qpid/sys/ScopedIncrement.h			\
   qpid/sys/SecurityLayer.h			\

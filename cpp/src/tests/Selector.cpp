@@ -182,6 +182,10 @@ QPID_AUTO_TEST_CASE(parseStringFail)
     BOOST_CHECK_THROW(qb::Selector e("A is null and 'hello out there'"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A is null and (B='hello out there'"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("in='hello kitty'"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A like 234"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A not 234 escape"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape 'happy'"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape happy"), std::range_error);
 }
 
 class TestSelectorEnv : public qpid::broker::SelectorEnv {
@@ -233,6 +237,9 @@ QPID_AUTO_TEST_CASE(parseString)
     BOOST_CHECK_NO_THROW(qb::Selector e("Not A='' or B=z"));
     BOOST_CHECK_NO_THROW(qb::Selector e("Not A=17 or B=5.6"));
     BOOST_CHECK_NO_THROW(qb::Selector e("A<>17 and B=5.6e17"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A LIKE 'excep%ional'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("B NOT LIKE 'excep%ional'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A LIKE 'excep%ional' EScape '\'"));
 }
 
 QPID_AUTO_TEST_CASE(simpleEval)
@@ -267,6 +274,10 @@ QPID_AUTO_TEST_CASE(simpleEval)
     BOOST_CHECK(!qb::Selector("C=D").eval(env));
     BOOST_CHECK(qb::Selector("13 is not null").eval(env));
     BOOST_CHECK(!qb::Selector("'boo!' is null").eval(env));
+    BOOST_CHECK(qb::Selector("A LIKE '%cru_l%'").eval(env));
+    BOOST_CHECK(qb::Selector("'_%%_hello.th_re%' LIKE 'z_%.%z_%z%' escape 'z'").eval(env));
+    BOOST_CHECK(qb::Selector("A NOT LIKE 'z_%.%z_%z%' escape 'z'").eval(env));
+    BOOST_CHECK(qb::Selector("'{}[]<>,.!\"$%^&*()_-+=?/|\\' LIKE '{}[]<>,.!\"$z%^&*()z_-+=?/|\\' escape 'z'").eval(env));
 }
 
 QPID_AUTO_TEST_CASE(numericEval)
