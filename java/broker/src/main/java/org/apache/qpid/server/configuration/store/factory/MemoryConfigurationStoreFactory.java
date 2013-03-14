@@ -21,21 +21,21 @@
 package org.apache.qpid.server.configuration.store.factory;
 
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 
-public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
+public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFactory
 {
     @Override
     public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore)
     {
-        return new JsonConfigurationEntryStore(storeLocation, initialStore);
+        return new MemoryConfigurationEntryStore(null, initialStore);
     }
 
     @Override
     public String getStoreType()
     {
-        return JsonConfigurationEntryStore.STORE_TYPE;
+        return MemoryConfigurationEntryStore.STORE_TYPE;
     }
 
 }

@@ -119,8 +119,7 @@ public class Broker
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
-        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType,
-                options.getInitialConfigurationStoreLocation(), options.getInitialConfigurationStoreLocation());
+        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType, options.getInitialConfigurationLocation());
 
         if (options.isManagementMode())
         {
