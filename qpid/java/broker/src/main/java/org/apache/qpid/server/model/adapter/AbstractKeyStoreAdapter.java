@@ -47,6 +47,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
         _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);
         setMandatoryAttribute(TrustStore.PATH, attributes);
+        setOptionalAttribute(TrustStore.PEERS_ONLY, attributes);
         setOptionalAttribute(TrustStore.TYPE, attributes);
         setOptionalAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes);
         setOptionalAttribute(TrustStore.DESCRIPTION, attributes);
@@ -190,9 +191,17 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
 
     private void setOptionalAttribute(String name, Map<String, Object> attributeValues)
     {
-        if (attributeValues.get(name) != null)
+        Object attrValue = attributeValues.get(name);
+        if (attrValue != null)
         {
-            changeAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
+            if (attrValue instanceof Boolean)
+            {
+                changeAttribute(name, null, MapValueConverter.getBooleanAttribute(name, attributeValues));
+            }
+            else
+            {
+                changeAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
+            }
         }
     }
 }
