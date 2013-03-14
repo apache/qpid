@@ -24,6 +24,7 @@ import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -139,8 +140,8 @@ public class AmqpPortAdapter extends PortAdapter
                     + this.getName() + "' but no key store defined");
         }
 
-        TrustStore trustStore = _broker.getDefaultTrustStore();
-        if (((Boolean)getAttribute(NEED_CLIENT_AUTH) || (Boolean)getAttribute(WANT_CLIENT_AUTH)) && trustStore == null)
+        Collection<TrustStore> trustStores = _broker.getTrustStores();
+        if (((Boolean)getAttribute(NEED_CLIENT_AUTH) || (Boolean)getAttribute(WANT_CLIENT_AUTH)) && trustStores.isEmpty())
         {
             throw new IllegalConfigurationException("Client certificate authentication is enabled on AMQP port '"
                     + this.getName() + "' but no trust store defined");
@@ -155,20 +156,20 @@ public class AmqpPortAdapter extends PortAdapter
         final SSLContext sslContext;
         try
         {
-            if(trustStore != null)
+            if(! trustStores.isEmpty())
             {
-                String trustStorePassword = trustStore.getPassword();
-                String trustStoreType = (String)trustStore.getAttribute(TrustStore.TYPE);
-                String trustManagerFactoryAlgorithm = (String)trustStore.getAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM);
-                String trustStorePath = (String)trustStore.getAttribute(TrustStore.PATH);
-
-                sslContext = SSLContextFactory.buildClientContext(trustStorePath,
-                        trustStorePassword,
-                        trustStoreType,
-                        trustManagerFactoryAlgorithm,
-                        keystorePath,
-                        keystorePassword, keystoreType, keyManagerFactoryAlgorithm,
-                        certAlias);
+                Collection<SSLContextFactory.TrustStoreWrapper> trstWrappers = new ArrayList<SSLContextFactory.TrustStoreWrapper>();
+                for (TrustStore trustStore : trustStores)
+                {
+                    trstWrappers.add(new SSLContextFactory.TrustStoreWrapper((String)trustStore.getAttribute(TrustStore.PATH),
+                                                                             trustStore.getPassword(),
+                                                                             (String)trustStore.getAttribute(TrustStore.TYPE),
+                                                                             (Boolean) trustStore.getAttribute(TrustStore.PEERS_ONLY),
+                                                                             (String)trustStore.getAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM)));
+                }
+                sslContext = SSLContextFactory.buildClientContext(trstWrappers, keystorePath,
+                                                                  keystorePassword, keystoreType,
+                                                                  keyManagerFactoryAlgorithm, certAlias);
             }
             else
             {

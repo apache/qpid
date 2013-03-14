@@ -87,6 +87,8 @@ public interface Broker extends ConfiguredObject
     String KEY_STORE_CERT_ALIAS = "keyStoreCertAlias";
     String TRUST_STORE_PATH = "trustStorePath";
     String TRUST_STORE_PASSWORD = "trustStorePassword";
+    String PEER_STORE_PATH = "peerStorePath";
+    String PEER_STORE_PASSWORD = "peerStorePassword";
 
     /*
      * A temporary attributes to set the broker group file.
@@ -136,6 +138,8 @@ public interface Broker extends ConfiguredObject
                               KEY_STORE_CERT_ALIAS,
                               TRUST_STORE_PATH,
                               TRUST_STORE_PASSWORD,
+                              PEER_STORE_PATH,
+                              PEER_STORE_PASSWORD,
                               GROUP_FILE
                               ));
 
