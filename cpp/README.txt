@@ -13,9 +13,6 @@ Table of Contents
 Qpid/C++ is a C++ implementation of the AMQP protcol described at
 http://amqp.org/
 
-This release of Qpid/C++ implements the AMQP 0-10. 
-It will not inter-operate with AMQP 0-8/0-9 implementations.
-
 For additional software or information on the Qpid project go to:
 
    http://qpid.apache.org
@@ -40,15 +37,9 @@ For documentation, go to:
 
 In C++ distributions:
 
-   ./configure && make - compiles all sources
-
-   make check - runs tests
-
-   make install - installs the client and daemon
-
-In some distributions, no ./configure file is provided. To create the
-./configure file, you must have autotools installed. Run ./bootstrap
-from the qpid/cpp directory, then follow the above instructions.
+   cmake .        # Generates code and makefiles
+   make test      # Runs tests
+   make install   # Installs the client and daemon
 
 The INSTALL notes contain more detailed information on compiling and
 installing this software.

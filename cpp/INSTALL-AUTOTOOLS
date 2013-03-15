@@ -1,3 +1,17 @@
+
+
+   ============================== DEPRECATED ==============================
+
+   This file describes how to use the autotools build system to build Qpid.
+   The autotools build system is *deprecated* and will be removed in a
+   future release. Use the cmake build system instead as described in the
+   INSTALL file.
+
+   You can continue using the autoconf build system until you switch to
+   cmake. Run configure with --enable-deprecated=yes to enable it.
+
+   ========================================================================
+
 		Installing Qpid/C++
 		===================
 
@@ -85,7 +99,6 @@ the following must also be installed:
  * swig       <http://www.swig.org>                     (1.3.35)
 
 UUID problems:
-
 In some earlier Linux releases (such as Fedora 11), the uuid/uuid.h
 file is located in the e2fsprogs-devel package instead of
 libuuid-devel. If you are using an older Linux release and run into a
@@ -160,9 +173,13 @@ For example:
 
 3. Building from a Source Distribution
 ======================================
-In the distribution directory, build and install with:
+In the distribution directory
 
- # cmake .         # Note "." for the current directory
+Build and install with:
+
+ # mkdir build
+ # cd build
+ # cmake ..
  # make all
  # make install
 
@@ -177,8 +194,8 @@ the following to build twice, once for debug, the other with
 optimization:
 
  # mkdir .build-dbg .build-opt
- # (cd .build-dbg; cmake -DCMAKE_CXX_FLAGS=-g .. && make )   # Note ".." for parent dir
- # (cd .build-dbg; cmake -DCMAKE_CXX_FLAGS=-O3 .. && make)
+ # (cd .build-dbg; cmake cmake -DCMAKE_CXX_FLAGS=-g .. && make )
+ # (cd .build-dbg; cmake cmake -DCMAKE_CXX_FLAGS=-O3 .. && make)
 
 
 4. Building a Repository Working Copy
