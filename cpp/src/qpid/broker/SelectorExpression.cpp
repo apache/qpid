@@ -67,8 +67,10 @@
  *
  * ComparisonExpression ::= PrimaryExpression "IS" "NULL" |
  *                          PrimaryExpression "IS" "NOT" "NULL" |
- *                          PrimaryExpression "LIKE" LiteralString [ "ESCAPE" LiteralString ]
- *                          PrimaryExpression "NOT" "LIKE" LiteralString [ "ESCAPE" LiteralString ]
+ *                          PrimaryExpression "LIKE" LiteralString [ "ESCAPE" LiteralString ] |
+ *                          PrimaryExpression "NOT" "LIKE" LiteralString [ "ESCAPE" LiteralString ] |
+ *                          PrimaryExpression "BETWEEN" PrimaryExpression "AND" PrimaryExpression |
+ *                          PrimaryExpression "NOT" "BETWEEN" PrimaryExpression "AND" PrimaryExpression |
  *                          PrimaryExpression ComparisonOpsOps PrimaryExpression |
  *                          "NOT" ComparisonExpression |
  *                          "(" OrExpression ")"
@@ -315,6 +317,34 @@ public:
         Value v(e->eval(env));
         if ( v.type!=Value::T_STRING ) return BN_UNKNOWN;
         return BoolOrNone(qpid::sys::regex_match(*v.s, regexBuffer));
+    }
+};
+
+class BetweenExpression : public BoolExpression {
+    boost::scoped_ptr<Expression> e;
+    boost::scoped_ptr<Expression> l;
+    boost::scoped_ptr<Expression> u;
+
+public:
+    BetweenExpression(Expression* e_, Expression* l_, Expression* u_) :
+        e(e_),
+        l(l_),
+        u(u_)
+    {}
+
+    void repr(ostream& os) const {
+        os << *e << " BETWEEN " << *l << " AND " << *u;
+    }
+
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
+        Value ve(e->eval(env));
+        if (unknown(ve)) return BN_UNKNOWN;
+        Value vl(l->eval(env));
+        if (unknown(vl)) return BN_UNKNOWN;
+        if (ve<vl) return BN_FALSE;
+        Value vu(u->eval(env));
+        if (unknown(vu)) return BN_UNKNOWN;
+        return BoolOrNone(ve<=vu);
     }
 };
 
@@ -570,22 +600,24 @@ BoolExpression* parseSpecialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expr
     switch (tokeniser.nextToken().type) {
         case T_LIKE: {
             const Token t = tokeniser.nextToken();
-            if ( t.type==T_STRING ) {
-                // Check for "ESCAPE"
-                if ( tokeniser.nextToken().type==T_ESCAPE ) {
-                    const Token e = tokeniser.nextToken();
-                    if ( e.type==T_STRING ) {
-                        return new LikeExpression(e1.release(), t.val, e.val);
-                    } else {
-                        return 0;
-                    }
-                } else {
-                    tokeniser.returnTokens();
-                    return new LikeExpression(e1.release(), t.val);
-                }
+            if ( t.type!=T_STRING ) return 0;
+            // Check for "ESCAPE"
+            if ( tokeniser.nextToken().type==T_ESCAPE ) {
+                const Token e = tokeniser.nextToken();
+                if ( e.type!=T_STRING ) return 0;
+                return new LikeExpression(e1.release(), t.val, e.val);
             } else {
-                return 0;
+                tokeniser.returnTokens();
+                return new LikeExpression(e1.release(), t.val);
             }
+        }
+        case T_BETWEEN: {
+            std::auto_ptr<Expression> lower(parsePrimaryExpression(tokeniser));
+            if ( !lower.get() ) return 0;
+            if ( tokeniser.nextToken().type!=T_AND ) return 0;
+            std::auto_ptr<Expression> upper(parsePrimaryExpression(tokeniser));
+            if ( !upper.get() ) return 0;
+            return new BetweenExpression(e1.release(), lower.release(), upper.release());
         }
         default:
             return 0;
@@ -628,11 +660,10 @@ BoolExpression* parseComparisonExpression(Tokeniser& tokeniser)
             if (!e.get()) return 0;
             return new UnaryBooleanExpression<BoolExpression>(&notOp, e.release());
         }
+        case T_BETWEEN:
         case T_LIKE: {
             tokeniser.returnTokens();
-            std::auto_ptr<BoolExpression> e(parseSpecialComparisons(tokeniser, e1));
-            if (!e.get()) return 0;
-            return e.release();
+            return parseSpecialComparisons(tokeniser, e1);
         }
         default:
             break;
