@@ -107,7 +107,8 @@ $(srcdir)/rubygen.cmake: $(rgen_generator) $(specs)
 mgen_dir=$(top_srcdir)/managementgen
 mgen_xml=$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
-	$(srcdir)/qpid/ha/management-schema.xml
+	$(srcdir)/qpid/ha/management-schema.xml \
+	$(srcdir)/qpid/legacystore/management-schema.xml
 mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
 	-c $(srcdir)/managementgen.cmake -q -b -l -o qmf \
 	$(mgen_xml)
@@ -230,6 +231,7 @@ include qmfc.mk
 if HAVE_XML
 include xml.mk
 endif
+include legacystore.mk
 
 if RDMA
 
@@ -304,6 +306,7 @@ EXTRA_DIST +=\
   managementgen.cmake \
   rubygen.cmake \
   versions.cmake \
+  finddb.cmake \
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
@@ -1079,3 +1082,4 @@ install-data-local:
 # Support for pkg-config
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA += qpid.pc
+
