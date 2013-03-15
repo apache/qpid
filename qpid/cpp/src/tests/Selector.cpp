@@ -298,6 +298,11 @@ QPID_AUTO_TEST_CASE(numericEval)
     BOOST_CHECK(!qb::Selector("A<>17 and B=5.6e17").eval(env));
     BOOST_CHECK(qb::Selector("A BETWEEN B and 98.5").eval(env));
     BOOST_CHECK(!qb::Selector("B NOT BETWEEN 35 AND 100").eval(env));
+    BOOST_CHECK(!qb::Selector("A BETWEEN B and 40").eval(env));
+    BOOST_CHECK(!qb::Selector("A BETWEEN C and 40").eval(env));
+    BOOST_CHECK(!qb::Selector("A BETWEEN 45 and C").eval(env));
+    BOOST_CHECK(!qb::Selector("A BETWEEN 40 and C AND A NOT BETWEEN 40 and C").eval(env));
+    BOOST_CHECK(!qb::Selector("A BETWEEN C and 45 AND A NOT BETWEEN C and 45").eval(env));
 }
 
 QPID_AUTO_TEST_CASE(comparisonEval)
