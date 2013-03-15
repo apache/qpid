@@ -184,17 +184,11 @@ public:
 
     BoolOrNone eval_bool(const SelectorEnv& env) const {
         BoolOrNone bn1(e1->eval_bool(env));
-        if (bn1==BN_TRUE) {
-            return BN_TRUE;
-        } else {
-            BoolOrNone bn2(e2->eval_bool(env));
-            if (bn2==BN_TRUE) {
-                return BN_TRUE;
-            } else {
-                if (bn1==BN_FALSE && bn2==BN_FALSE) return BN_FALSE;
-                else return BN_UNKNOWN;
-            }
-        }
+        if (bn1==BN_TRUE) return BN_TRUE;
+        BoolOrNone bn2(e2->eval_bool(env));
+        if (bn2==BN_TRUE) return BN_TRUE;
+        if (bn1==BN_FALSE && bn2==BN_FALSE) return BN_FALSE;
+        else return BN_UNKNOWN;
     }
 };
 
@@ -214,17 +208,11 @@ public:
 
     BoolOrNone eval_bool(const SelectorEnv& env) const {
         BoolOrNone bn1(e1->eval_bool(env));
-        if (bn1==BN_FALSE) {
-            return BN_FALSE;
-        } else {
-            BoolOrNone bn2(e2->eval_bool(env));
-            if (bn2==BN_FALSE) {
-                return BN_FALSE;
-            } else {
-                if (bn1==BN_TRUE && bn2==BN_TRUE) return BN_TRUE;
-                else return BN_UNKNOWN;
-            }
-        }
+        if (bn1==BN_FALSE) return BN_FALSE;
+        BoolOrNone bn2(e2->eval_bool(env));
+        if (bn2==BN_FALSE) return BN_FALSE;
+        if (bn1==BN_TRUE && bn2==BN_TRUE) return BN_TRUE;
+        else return BN_UNKNOWN;
     }
 };
 
@@ -340,11 +328,11 @@ public:
         Value ve(e->eval(env));
         if (unknown(ve)) return BN_UNKNOWN;
         Value vl(l->eval(env));
-        if (unknown(vl)) return BN_UNKNOWN;
-        if (ve<vl) return BN_FALSE;
+        if (!unknown(vl) && ve<vl) return BN_FALSE;
         Value vu(u->eval(env));
-        if (unknown(vu)) return BN_UNKNOWN;
-        return BoolOrNone(ve<=vu);
+        if (!unknown(vu) && ve>vu) return BN_FALSE;
+        if (unknown(vl) || unknown(vu)) return BN_UNKNOWN;
+        return BN_TRUE;
     }
 };
 
