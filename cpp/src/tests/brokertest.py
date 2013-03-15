@@ -28,7 +28,10 @@ from unittest import TestCase
 from copy import copy
 from threading import Thread, Lock, Condition
 from logging import getLogger
-import qmf.console
+
+try: import qmf.console
+except: print "Cannot import module qmf.console, skipping tests"; exit(0);
+
 
 log = getLogger("qpid.brokertest")
 
