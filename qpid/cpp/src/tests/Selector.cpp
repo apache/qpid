@@ -186,6 +186,9 @@ QPID_AUTO_TEST_CASE(parseStringFail)
     BOOST_CHECK_THROW(qb::Selector e("A not 234 escape"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape 'happy'"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape happy"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A BETWEEN AND 'true'"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A NOT BETWEEN (X=Y) AND 3.9"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A NOT BETWEEN 34 OR 3.9"), std::range_error);
 }
 
 class TestSelectorEnv : public qpid::broker::SelectorEnv {
@@ -240,6 +243,8 @@ QPID_AUTO_TEST_CASE(parseString)
     BOOST_CHECK_NO_THROW(qb::Selector e("A LIKE 'excep%ional'"));
     BOOST_CHECK_NO_THROW(qb::Selector e("B NOT LIKE 'excep%ional'"));
     BOOST_CHECK_NO_THROW(qb::Selector e("A LIKE 'excep%ional' EScape '\'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A BETWEEN 13 AND 'true'"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A NOT BETWEEN 100 AND 3.9"));
 }
 
 QPID_AUTO_TEST_CASE(simpleEval)
@@ -291,6 +296,8 @@ QPID_AUTO_TEST_CASE(numericEval)
     BOOST_CHECK(qb::Selector("B=39.0").eval(env));
     BOOST_CHECK(qb::Selector("Not A=17 or B=5.6").eval(env));
     BOOST_CHECK(!qb::Selector("A<>17 and B=5.6e17").eval(env));
+    BOOST_CHECK(qb::Selector("A BETWEEN B and 98.5").eval(env));
+    BOOST_CHECK(!qb::Selector("B NOT BETWEEN 35 AND 100").eval(env));
 }
 
 QPID_AUTO_TEST_CASE(comparisonEval)
