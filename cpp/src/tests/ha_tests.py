@@ -21,13 +21,12 @@
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math, unittest, random
 import traceback
 from qpid.messaging import Message, SessionError, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty
-from qpid.datatypes import uuid4
+from qpid.datatypes import uuid4, UUID
 from brokertest import *
 from ha_test import *
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG, INFO
 from qpidtoollibs import BrokerAgent, EventHelper
-from uuid import UUID
 
 log = getLogger(__name__)
 
