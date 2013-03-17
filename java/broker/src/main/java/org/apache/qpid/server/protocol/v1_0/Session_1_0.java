@@ -598,4 +598,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     {
         return getId().compareTo(o.getId());
     }
+
+    public Connection_1_0 getConnection()
+    {
+        return _connection;
+    }
 }
