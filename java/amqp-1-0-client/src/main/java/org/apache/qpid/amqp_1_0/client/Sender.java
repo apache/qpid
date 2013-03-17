@@ -46,55 +46,55 @@ public class Sender implements DeliveryStateHandler
     private boolean _closed;
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, targetAddr, sourceAddr, false);
     }
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
                   boolean synchronous)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, targetAddr, sourceAddr, synchronous ? 1 : 0);
     }
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
-                  int window) throws SenderCreationException
+                  int window) throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, targetAddr, sourceAddr, window, AcknowledgeMode.ALO);
     }
 
 
     public Sender(final Session session, final String linkName, final org.apache.qpid.amqp_1_0.type.messaging.Target target, final org.apache.qpid.amqp_1_0.type.messaging.Source source,
-                  int window) throws SenderCreationException
+                  int window) throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, target, source, window, AcknowledgeMode.ALO);
     }
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
                   int window, AcknowledgeMode mode)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, targetAddr, sourceAddr, window, mode, null);
     }
 
     public Sender(final Session session, final String linkName, final org.apache.qpid.amqp_1_0.type.messaging.Target target, final org.apache.qpid.amqp_1_0.type.messaging.Source source,
                   int window, AcknowledgeMode mode)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, target, source, window, mode, null);
     }
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
                   int window, AcknowledgeMode mode, Map<Binary, Outcome> unsettled)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, targetAddr, sourceAddr, window, mode, false, unsettled);
     }
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
                   int window, AcknowledgeMode mode, boolean isDurable, Map<Binary, Outcome> unsettled)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
         this(session, linkName, createTarget(targetAddr, isDurable), createSource(sourceAddr), window, mode, unsettled);
     }
@@ -120,10 +120,11 @@ public class Sender implements DeliveryStateHandler
 
     public Sender(final Session session, final String linkName, final org.apache.qpid.amqp_1_0.type.messaging.Target target, final org.apache.qpid.amqp_1_0.type.messaging.Source source,
                   int window, AcknowledgeMode mode, Map<Binary, Outcome> unsettled)
-            throws SenderCreationException
+            throws SenderCreationException, ConnectionClosedException
     {
 
         _session = session;
+        session.getConnection().checkNotClosed();
         _endpoint = session.getEndpoint().createSendingLinkEndpoint(linkName,
                                                                     source, target, unsettled);
 

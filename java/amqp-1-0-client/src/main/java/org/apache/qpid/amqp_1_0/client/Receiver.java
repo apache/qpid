@@ -55,7 +55,7 @@ public class Receiver implements DeliveryStateHandler
                     final String linkName,
                     final Target target,
                     final Source source,
-                    final AcknowledgeMode ackMode) throws AmqpErrorException
+                    final AcknowledgeMode ackMode) throws ConnectionErrorException
     {
         this(session, linkName, target, source, ackMode, false);
     }
@@ -65,7 +65,7 @@ public class Receiver implements DeliveryStateHandler
                     final Target target,
                     final Source source,
                     final AcknowledgeMode ackMode,
-                    boolean isDurable) throws AmqpErrorException
+                    boolean isDurable) throws ConnectionErrorException
     {
         this(session,linkName,target,source,ackMode,isDurable,null);
     }
@@ -76,9 +76,10 @@ public class Receiver implements DeliveryStateHandler
                     final Source source,
                     final AcknowledgeMode ackMode,
                     final boolean isDurable,
-                    final Map<Binary,Outcome> unsettled) throws AmqpErrorException
+                    final Map<Binary,Outcome> unsettled) throws ConnectionErrorException
     {
 
+        session.getConnection().checkNotClosed();
         _session = session;
         if(isDurable)
         {
@@ -162,7 +163,7 @@ public class Receiver implements DeliveryStateHandler
                     }
                 }
             }
-            throw new AmqpErrorException(getError());
+            throw new ConnectionErrorException(getError());
         }
         else
         {

@@ -226,11 +226,7 @@ public class Receive extends Util
             conn.close();
             System.out.println("Total Messages Received: " + receivedCount);
         }
-        catch (Connection.ConnectionException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (AmqpErrorException e)
+        catch (ConnectionException e)
         {
             e.printStackTrace();  //TODO.
         }

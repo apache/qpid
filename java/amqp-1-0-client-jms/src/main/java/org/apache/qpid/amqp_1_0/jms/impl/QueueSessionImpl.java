@@ -26,6 +26,7 @@ import javax.jms.Queue;
 public class QueueSessionImpl extends SessionImpl implements QueueSession
 {
     protected QueueSessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
+            throws JMSException
     {
         super(connection, acknowledgeMode);
         setQueueSession(true);
