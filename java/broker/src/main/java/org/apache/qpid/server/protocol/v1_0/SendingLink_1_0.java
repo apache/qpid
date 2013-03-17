@@ -299,6 +299,43 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 vhost.getBindingFactory().addBinding(binding,queue,exchange,null);
                 source.setDistributionMode(StdDistMode.COPY);
 
+                if(!isDurable)
+                {
+                    final String queueName = name;
+                    final AMQQueue tempQueue = queue;
+
+                    final Connection_1_0.Task deleteQueueTask =
+                                            new Connection_1_0.Task()
+                                            {
+                                                public void doTask(Connection_1_0 session)
+                                                {
+                                                    if (_vhost.getQueueRegistry().getQueue(queueName) == tempQueue)
+                                                    {
+                                                        try
+                                                        {
+                                                            tempQueue.delete();
+                                                        }
+                                                        catch (AMQException e)
+                                                        {
+                                                            e.printStackTrace();  //TODO.
+                                                        }
+                                                    }
+                                                }
+                                            };
+
+                                    getSession().getConnection().addConnectionCloseTask(deleteQueueTask);
+
+                                    queue.addQueueDeleteTask(new AMQQueue.Task()
+                                    {
+                                        public void doTask(AMQQueue queue)
+                                        {
+                                            getSession().getConnection().removeConnectionCloseTask(deleteQueueTask);
+                                        }
+
+
+                                    });
+                }
+
                 qd = new QueueDestination(queue);
             }
             catch (AMQSecurityException e)
