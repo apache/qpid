@@ -20,13 +20,16 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-
+import java.io.EOFException;
+import java.nio.ByteBuffer;
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
-import java.nio.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.typedmessage.TypedBytesContentReader;
+import org.apache.qpid.typedmessage.TypedBytesContentWriter;
+import org.apache.qpid.typedmessage.TypedBytesFormatException;
 
 public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesMessage
 {
@@ -100,7 +103,14 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
 
     private void checkAvailable(final int i) throws MessageEOFException
     {
-        _typedBytesContentReader.checkAvailable(1);
+        try
+        {
+            _typedBytesContentReader.checkAvailable(1);
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
     }
 
     public byte readByte() throws JMSException
@@ -178,7 +188,14 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
         // we check only for one byte since theoretically the string could be only a
         // single byte when using UTF-8 encoding
 
-        return _typedBytesContentReader.readLengthPrefixedUTF();
+        try
+        {
+            return _typedBytesContentReader.readLengthPrefixedUTF();
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public int readBytes(byte[] bytes) throws JMSException
@@ -275,7 +292,14 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
     public void writeUTF(String string) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeLengthPrefixedUTF(string);
+        try
+        {
+            _typedBytesContentWriter.writeLengthPrefixedUTF(string);
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public void writeBytes(byte[] bytes) throws JMSException

@@ -18,10 +18,8 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.message;
+package org.apache.qpid.typedmessage;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,13 +29,13 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
-class TypedBytesContentWriter implements TypedBytesCodes
+public class TypedBytesContentWriter implements TypedBytesCodes
 {
     private final        ByteArrayOutputStream _baos = new ByteArrayOutputStream();
     private final        DataOutputStream      _data = new DataOutputStream(_baos);
     private static final Charset               UTF8 = Charset.forName("UTF-8");
 
-    protected void writeTypeDiscriminator(byte type) throws JMSException
+    protected void writeTypeDiscriminator(byte type)
     {
         try
         {
@@ -49,21 +47,20 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    private JMSException handle(final IOException e)
+    private RuntimeException handle(final IOException e)
     {
-        JMSException jmsEx = new JMSException("Unable to write value: " + e.getMessage());
-        jmsEx.setLinkedException(e);
+        RuntimeException jmsEx = new RuntimeException("Unable to write value: " + e.getMessage());
         return jmsEx;
     }
 
 
-    protected void writeBoolean(boolean b) throws JMSException
+    public void writeBoolean(boolean b)
     {
         writeTypeDiscriminator(BOOLEAN_TYPE);
         writeBooleanImpl(b);
     }
 
-    public void writeBooleanImpl(final boolean b) throws JMSException
+    public void writeBooleanImpl(final boolean b)
     {
         try
         {
@@ -75,13 +72,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeByte(byte b) throws JMSException
+    public void writeByte(byte b)
     {
         writeTypeDiscriminator(BYTE_TYPE);
         writeByteImpl(b);
     }
 
-    public void writeByteImpl(final byte b) throws JMSException
+    public void writeByteImpl(final byte b)
     {
         try
         {
@@ -93,13 +90,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeShort(short i) throws JMSException
+    public void writeShort(short i)
     {
         writeTypeDiscriminator(SHORT_TYPE);
         writeShortImpl(i);
     }
 
-    public void writeShortImpl(final short i) throws JMSException
+    public void writeShortImpl(final short i)
     {
         try
         {
@@ -111,13 +108,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeChar(char c) throws JMSException
+    public void writeChar(char c)
     {
         writeTypeDiscriminator(CHAR_TYPE);
         writeCharImpl(c);
     }
 
-    public void writeCharImpl(final char c) throws JMSException
+    public void writeCharImpl(final char c)
     {
         try
         {
@@ -129,13 +126,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeInt(int i) throws JMSException
+    public void writeInt(int i)
     {
         writeTypeDiscriminator(INT_TYPE);
         writeIntImpl(i);
     }
 
-    protected void writeIntImpl(int i) throws JMSException
+    public void writeIntImpl(int i)
     {
         try
         {
@@ -147,13 +144,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeLong(long l) throws JMSException
+    public void writeLong(long l)
     {
         writeTypeDiscriminator(LONG_TYPE);
         writeLongImpl(l);
     }
 
-    public void writeLongImpl(final long l) throws JMSException
+    public void writeLongImpl(final long l)
     {
         try
         {
@@ -165,13 +162,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeFloat(float v) throws JMSException
+    public void writeFloat(float v)
     {
         writeTypeDiscriminator(FLOAT_TYPE);
         writeFloatImpl(v);
     }
 
-    public void writeFloatImpl(final float v) throws JMSException
+    public void writeFloatImpl(final float v)
     {
         try
         {
@@ -183,13 +180,13 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeDouble(double v) throws JMSException
+    public void writeDouble(double v)
     {
         writeTypeDiscriminator(DOUBLE_TYPE);
         writeDoubleImpl(v);
     }
 
-    public void writeDoubleImpl(final double v) throws JMSException
+    public void writeDoubleImpl(final double v)
     {
         try
         {
@@ -201,7 +198,7 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeString(String string) throws JMSException
+    public void writeString(String string)
     {
         if (string == null)
         {
@@ -214,8 +211,8 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    protected void writeNullTerminatedStringImpl(String string)
-            throws JMSException
+    public void writeNullTerminatedStringImpl(String string)
+
     {
         try
         {
@@ -229,18 +226,18 @@ class TypedBytesContentWriter implements TypedBytesCodes
 
     }
 
-    protected void writeBytes(byte[] bytes) throws JMSException
+    public void writeBytes(byte[] bytes)
     {
         writeBytes(bytes, 0, bytes == null ? 0 : bytes.length);
     }
 
-    protected void writeBytes(byte[] bytes, int offset, int length) throws JMSException
+    public void writeBytes(byte[] bytes, int offset, int length)
     {
         writeTypeDiscriminator(BYTEARRAY_TYPE);
         writeBytesImpl(bytes, offset, length);
     }
 
-    public void writeBytesImpl(final byte[] bytes, final int offset, final int length) throws JMSException
+    public void writeBytesImpl(final byte[] bytes, final int offset, final int length)
     {
         try
         {
@@ -260,7 +257,7 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
     }
 
-    public void writeBytesRaw(final byte[] bytes, final int offset, final int length) throws JMSException
+    public void writeBytesRaw(final byte[] bytes, final int offset, final int length)
     {
         try
         {
@@ -276,7 +273,7 @@ class TypedBytesContentWriter implements TypedBytesCodes
     }
 
 
-    protected void writeObject(Object object) throws JMSException
+    public void writeObject(Object object) throws TypedBytesFormatException
     {
         Class clazz;
 
@@ -332,7 +329,7 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
         else
         {
-            throw new MessageFormatException("Only primitives plus byte arrays and String are valid types");
+            throw new TypedBytesFormatException("Only primitives plus byte arrays and String are valid types");
         }
     }
 
@@ -341,7 +338,7 @@ class TypedBytesContentWriter implements TypedBytesCodes
         return ByteBuffer.wrap(_baos.toByteArray());
     }
 
-    public void writeLengthPrefixedUTF(final String string) throws JMSException
+    public void writeLengthPrefixedUTF(final String string) throws TypedBytesFormatException
     {
         try
         {
@@ -356,8 +353,7 @@ class TypedBytesContentWriter implements TypedBytesCodes
         }
         catch (CharacterCodingException e)
         {
-            JMSException jmse = new JMSException("Unable to encode string: " + e);
-            jmse.setLinkedException(e);
+            TypedBytesFormatException jmse = new TypedBytesFormatException("Unable to encode string: " + e);
             jmse.initCause(e);
             throw jmse;
         }

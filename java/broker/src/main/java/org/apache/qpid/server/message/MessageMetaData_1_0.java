@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
+import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.Symbol;
@@ -59,6 +60,22 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
     private MessageHeader_1_0 _messageHeader;
 
 
+    public MessageMetaData_1_0(List<Section> sections, SectionEncoder encoder)
+    {
+        this(sections, encodeSections(sections, encoder));
+    }
+
+    private static ArrayList<ByteBuffer> encodeSections(final List<Section> sections, final SectionEncoder encoder)
+    {
+        ArrayList<ByteBuffer> encodedSections = new ArrayList<ByteBuffer>(sections.size());
+        for(Section section : sections)
+        {
+            encoder.encodeObject(section);
+            encodedSections.add(encoder.getEncoding().asByteBuffer());
+            encoder.reset();
+        }
+        return encodedSections;
+    }
 
     public MessageMetaData_1_0(ByteBuffer[] fragments, SectionDecoder decoder)
     {

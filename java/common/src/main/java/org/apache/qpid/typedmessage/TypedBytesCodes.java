@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.message;
+package org.apache.qpid.typedmessage;
 
 public interface TypedBytesCodes
 {

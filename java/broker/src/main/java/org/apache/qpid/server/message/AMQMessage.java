@@ -65,7 +65,7 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
     {
         this(handle, null);
     }
-    
+
     public AMQMessage(StoredMessage<MessageMetaData> handle, WeakReference<AMQChannel> channelRef)
     {
         super(handle);
@@ -93,7 +93,7 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
         return getStoredMessage().getMetaData();
     }
 
-    public ContentHeaderBody getContentHeaderBody() throws AMQException
+    public ContentHeaderBody getContentHeaderBody()
     {
         return getMessageMetaData().getContentHeaderBody();
     }
