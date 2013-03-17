@@ -135,6 +135,7 @@ public class Connection
         this(address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,ssl);
     }
 
+
     public Connection(final String address,
                   final int port,
                   final String username,
@@ -273,6 +274,10 @@ public class Connection
 
     }
 
+    private Connection(ConnectionEndpoint endpoint)
+    {
+        _conn = endpoint;
+    }
 
 
     private void doRead(final AMQPTransport transport, final InputStream inputStream)
@@ -314,15 +319,43 @@ public class Connection
 
     }
 
-    public Session createSession()
+    public Session createSession() throws ConnectionException
     {
+        checkNotClosed();
         Session session = new Session(this,String.valueOf(_sessionCount++));
         return session;
+    }
+
+    void checkNotClosed() throws ConnectionClosedException
+    {
+        if(getEndpoint().isClosed())
+        {
+            throw new ConnectionClosedException(getEndpoint().getRemoteError());
+        }
     }
 
     public ConnectionEndpoint getEndpoint()
     {
         return _conn;
+    }
+
+    public void awaitOpen()
+    {
+        synchronized(getEndpoint().getLock())
+        {
+            while(!getEndpoint().isOpen() && !getEndpoint().isClosed())
+            {
+                try
+                {
+                    getEndpoint().getLock().wait();
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+            }
+        }
+
     }
 
     private void doRead(final ConnectionHandler handler, final InputStream inputStream)
@@ -376,15 +409,4 @@ public class Connection
             }
         }
     }
-
-
-    public static class ConnectionException extends Exception
-    {
-        public ConnectionException(Throwable cause)
-        {
-            super(cause);
-        }
-    }
-
-
 }

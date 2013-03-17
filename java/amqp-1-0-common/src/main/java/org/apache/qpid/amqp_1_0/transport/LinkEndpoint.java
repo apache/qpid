@@ -301,7 +301,7 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
 
     public synchronized boolean isDetached()
     {
-        return _state == State.DETACHED;
+        return _state == State.DETACHED || _session.isEnded();
     }
 
     public SessionEndpoint getSession()

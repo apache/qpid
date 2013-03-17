@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import org.apache.qpid.amqp_1_0.client.ConnectionClosedException;
 import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
@@ -54,6 +55,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         {
             throw new InvalidDestinationException("Invalid Destination Class" + destination.getClass().getName());
         }
+
         _session = session;
 
         if(_destination != null)
@@ -64,6 +66,15 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             }
             catch (Sender.SenderCreationException e)
             {
+                // TODO - refine exception
+                JMSException jmsEx = new JMSException(e.getMessage());
+                jmsEx.initCause(e);
+                jmsEx.setLinkedException(e);
+                throw jmsEx;
+            }
+            catch (ConnectionClosedException e)
+            {
+
                 // TODO - refine exception
                 JMSException jmsEx = new JMSException(e.getMessage());
                 jmsEx.initCause(e);
@@ -315,6 +326,14 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             }
             catch (Sender.SenderClosingException e)
             {
+                JMSException jmsEx = new JMSException(e.getMessage());
+                jmsEx.initCause(e);
+                jmsEx.setLinkedException(e);
+                throw jmsEx;
+            }
+            catch (ConnectionClosedException e)
+            {
+
                 JMSException jmsEx = new JMSException(e.getMessage());
                 jmsEx.initCause(e);
                 jmsEx.setLinkedException(e);

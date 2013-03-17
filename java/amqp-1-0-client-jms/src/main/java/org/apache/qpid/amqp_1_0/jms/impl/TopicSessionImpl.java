@@ -26,6 +26,7 @@ import javax.jms.Topic;
 public class TopicSessionImpl extends SessionImpl implements TopicSession
 {
     protected TopicSessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
+            throws JMSException
     {
         super(connection, acknowledgeMode);
         setTopicSession(true);

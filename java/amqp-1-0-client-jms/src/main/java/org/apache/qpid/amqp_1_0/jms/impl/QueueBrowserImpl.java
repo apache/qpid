@@ -18,14 +18,19 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import org.apache.qpid.amqp_1_0.client.AcknowledgeMode;
+import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.QueueBrowser;
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
@@ -107,9 +112,9 @@ public class QueueBrowserImpl implements QueueBrowser
                         _filters, null);
                 _receiver.setCredit(UnsignedInteger.valueOf(100), true);
             }
-            catch(AmqpErrorException e)
+            catch(ConnectionErrorException e)
             {
-                org.apache.qpid.amqp_1_0.type.transport.Error error = e.getError();
+                org.apache.qpid.amqp_1_0.type.transport.Error error = e.getRemoteError();
                 if(AmqpError.INVALID_FIELD.equals(error.getCondition()))
                 {
                     throw new InvalidSelectorException(e.getMessage());

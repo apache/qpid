@@ -37,6 +37,9 @@ import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import org.apache.qpid.amqp_1_0.client.Connection;
+import org.apache.qpid.amqp_1_0.client.ConnectionClosedException;
+import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
+import org.apache.qpid.amqp_1_0.client.ConnectionException;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.client.Sender;
@@ -49,7 +52,6 @@ import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.jms.TopicSession;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
@@ -73,12 +75,21 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     private boolean _isTopicSession;
     private Transaction _txn;
 
-    protected SessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
+    protected SessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode) throws JMSException
     {
         _connection = connection;
         _acknowledgeMode = acknowledgeMode;
         Connection clientConn = _connection.getClientConnection();
-        _session = clientConn.createSession();
+        try
+        {
+            _session = clientConn.createSession();
+        }
+        catch (ConnectionException e)
+        {
+            final JMSException jmsException = new JMSException(e.getMessage());
+            jmsException.setLinkedException(e);
+            throw jmsException;
+        }
         if(_acknowledgeMode == AcknowledgeMode.SESSION_TRANSACTED)
         {
             _txn = _session.createSessionLocalTransaction();
@@ -490,6 +501,10 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         {
             throw new JMSException("Unable to create temporary queue");
         }
+        catch (ConnectionClosedException e)
+        {
+            throw new JMSException("Unable to create temporary queue");
+        }
     }
 
     public TemporaryTopicImpl createTemporaryTopic() throws JMSException
@@ -504,6 +519,10 @@ public class SessionImpl implements Session, QueueSession, TopicSession
             return tempQ;
         }
         catch (Sender.SenderCreationException e)
+        {
+            throw new JMSException("Unable to create temporary queue");
+        }
+        catch (ConnectionClosedException e)
         {
             throw new JMSException("Unable to create temporary queue");
         }
@@ -534,9 +553,9 @@ public class SessionImpl implements Session, QueueSession, TopicSession
             }
             receiver.close();
         }
-        catch(AmqpErrorException e)
+        catch(ConnectionErrorException  e)
         {
-            if(e.getError().getCondition() == AmqpError.NOT_FOUND)
+            if(e.getRemoteError().getCondition() == AmqpError.NOT_FOUND)
             {
                 throw new InvalidDestinationException(s);
             }

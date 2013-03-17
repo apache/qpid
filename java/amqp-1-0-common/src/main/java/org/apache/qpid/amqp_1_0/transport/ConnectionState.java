@@ -26,6 +26,7 @@ public enum ConnectionState
     UNOPENED,
     AWAITING_OPEN,
     OPEN,
+    CLOSE_RECEIVED,
     CLOSE_SENT,
     CLOSED
 }

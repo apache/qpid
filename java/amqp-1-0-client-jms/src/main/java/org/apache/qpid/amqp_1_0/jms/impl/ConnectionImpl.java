@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
+import org.apache.qpid.amqp_1_0.client.ConnectionException;
 import org.apache.qpid.amqp_1_0.jms.Connection;
 import org.apache.qpid.amqp_1_0.jms.ConnectionMetaData;
 import org.apache.qpid.amqp_1_0.jms.Session;
@@ -27,6 +29,9 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.jms.Queue;
 import java.util.*;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
 {
@@ -42,11 +47,11 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private boolean _isQueueConnection;
     private boolean _isTopicConnection;
     private final Collection<CloseTask> _closeTasks = new ArrayList<CloseTask>();
-    private final String _host;
-    private final int _port;
+    private String _host;
+    private int _port;
     private final String _username;
     private final String _password;
-    private final String _remoteHost;
+    private String _remoteHost;
     private final boolean _ssl;
     private String _clientId;
     private String _queuePrefix;
@@ -102,7 +107,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     // TODO - retrieve negotiated AMQP version
                     _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
                 }
-                catch (org.apache.qpid.amqp_1_0.client.Connection.ConnectionException e)
+                catch (ConnectionException e)
                 {
                     JMSException jmsEx = new JMSException(e.getMessage());
                     jmsEx.setLinkedException(e);
@@ -146,21 +151,61 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public SessionImpl createSession(final Session.AcknowledgeMode acknowledgeMode) throws JMSException
     {
+        boolean started = false;
         synchronized(_lock)
         {
             if(_state == State.CLOSED)
             {
                 throw new IllegalStateException("Cannot create a session on a closed connection");
             }
-            connect();
-            SessionImpl session = new SessionImpl(this, acknowledgeMode);
-            session.setQueueSession(_isQueueConnection);
-            session.setTopicSession(_isTopicConnection);
-            _sessions.add(session);
+            else if(_state == State.UNCONNECTED)
+            {
+                connect();
+                started = true;
+            }
+            try
+            {
+                SessionImpl session = new SessionImpl(this, acknowledgeMode);
+                session.setQueueSession(_isQueueConnection);
+                session.setTopicSession(_isTopicConnection);
+                _sessions.add(session);
 
-            return session;
+                return session;
+            }
+            catch(JMSException e)
+            {
+                Error remoteError;
+                if(started
+                   && e.getLinkedException() instanceof ConnectionErrorException
+                   && (remoteError = ((ConnectionErrorException)e.getLinkedException()).getRemoteError()).getCondition() == ConnectionError.REDIRECT)
+                {
+                    String networkHost = (String) remoteError.getInfo().get(Symbol.valueOf("network-host"));
+                    int port = (Integer) remoteError.getInfo().get(Symbol.valueOf("port"));
+                    String hostName = (String) remoteError.getInfo().get(Symbol.valueOf("hostname"));
+                    reconnect(networkHost,port,hostName);
+                    return createSession(acknowledgeMode);
+
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+
         }
 
+    }
+
+    private void reconnect(String networkHost, int port, String hostName)
+    {
+        synchronized(_lock)
+        {
+            _state = State.UNCONNECTED;
+            _host = networkHost;
+            _port = port;
+            _remoteHost = hostName;
+            _conn = null;
+        }
     }
 
     public String getClientID() throws JMSException
@@ -335,7 +380,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         if (_isQueueConnection)
         {
             throw new IllegalStateException("QueueConnection cannot be used to create Pub/Sub based resources.");
-        } 
+        }
         return null;  //TODO
     }
 
