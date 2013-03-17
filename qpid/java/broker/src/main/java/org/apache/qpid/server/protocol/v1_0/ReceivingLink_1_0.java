@@ -214,6 +214,8 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
 
             getEndpoint().updateDisposition(deliveryTag, resultantState, settled);
 
+            getSession().getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
+
             if(!(transaction instanceof AutoCommitTransaction))
             {
                 ServerTransaction.Action a;

@@ -45,6 +45,7 @@ public class Message_1_0 implements ServerMessage, InboundMessage
     private final StoredMessage<MessageMetaData_1_0> _storedMessage;
     private List<ByteBuffer> _fragments;
     private WeakReference<Session_1_0> _session;
+    private long _arrivalTime;
 
 
     public Message_1_0(final StoredMessage<MessageMetaData_1_0> storedMessage)
@@ -81,6 +82,7 @@ public class Message_1_0 implements ServerMessage, InboundMessage
         _storedMessage = storedMessage;
         _fragments = fragments;
         _session = new WeakReference<Session_1_0>(session);
+        _arrivalTime = System.currentTimeMillis();
     }
 
     public String getRoutingKey()
@@ -129,8 +131,16 @@ public class Message_1_0 implements ServerMessage, InboundMessage
 
     public long getSize()
     {
-        // TODO
-        return 0l;
+        long size = 0l;
+        if(_fragments != null)
+        {
+            for(ByteBuffer buf : _fragments)
+            {
+                size += buf.remaining();
+            }
+        }
+
+        return size;
     }
 
     public boolean isImmediate()
@@ -155,7 +165,7 @@ public class Message_1_0 implements ServerMessage, InboundMessage
 
     public long getArrivalTime()
     {
-        return 0;  //TODO
+        return _arrivalTime;
     }
 
     public int getContent(final ByteBuffer buf, final int offset)
