@@ -118,10 +118,10 @@ public class Connection_1_0 implements ConnectionEventListener
 
     private final AMQConnectionModel _model = new AMQConnectionModel()
     {
-        private final StatisticsCounter _messageDeliveryStatistics = new StatisticsCounter();
-        private final StatisticsCounter _messageReceiptStatistics = new StatisticsCounter();
-        private final StatisticsCounter _dataDeliveryStatistics = new StatisticsCounter();
-        private final StatisticsCounter _dataReceiptStatistics = new StatisticsCounter();
+        private StatisticsCounter _messageDeliveryStatistics = new StatisticsCounter();
+        private StatisticsCounter _messageReceiptStatistics = new StatisticsCounter();
+        private StatisticsCounter _dataDeliveryStatistics = new StatisticsCounter();
+        private StatisticsCounter _dataReceiptStatistics = new StatisticsCounter();
 
         private final LogSubject _logSubject = new LogSubject()
         {
@@ -232,19 +232,28 @@ public class Connection_1_0 implements ConnectionEventListener
         @Override
         public void initialiseStatistics()
         {
-            // TODO
+            _messageDeliveryStatistics = new StatisticsCounter("messages-delivered-" + getConnectionId());
+            _dataDeliveryStatistics = new StatisticsCounter("data-delivered-" + getConnectionId());
+            _messageReceiptStatistics = new StatisticsCounter("messages-received-" + getConnectionId());
+            _dataReceiptStatistics = new StatisticsCounter("data-received-" + getConnectionId());
         }
 
         @Override
         public void registerMessageReceived(long messageSize, long timestamp)
         {
-            // TODO
+            _messageReceiptStatistics.registerEvent(1L, timestamp);
+            _dataReceiptStatistics.registerEvent(messageSize, timestamp);
+            _vhost.registerMessageReceived(messageSize,timestamp);
+
         }
 
         @Override
         public void registerMessageDelivered(long messageSize)
         {
-            // TODO
+
+            _messageDeliveryStatistics.registerEvent(1L);
+            _dataDeliveryStatistics.registerEvent(messageSize);
+            _vhost.registerMessageDelivered(messageSize);
         }
 
         @Override
@@ -274,7 +283,10 @@ public class Connection_1_0 implements ConnectionEventListener
         @Override
         public void resetStatistics()
         {
-            // TODO
+            _dataDeliveryStatistics.reset();
+            _dataReceiptStatistics.reset();
+            _messageDeliveryStatistics.reset();
+            _messageReceiptStatistics.reset();
         }
 
 
