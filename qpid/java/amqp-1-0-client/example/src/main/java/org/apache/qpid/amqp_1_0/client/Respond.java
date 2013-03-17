@@ -21,14 +21,18 @@
 
 package org.apache.qpid.amqp_1_0.client;
 
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Random;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
-import org.apache.commons.cli.*;
-
-import java.util.*;
 
 public class Respond extends Util
 {
@@ -270,7 +274,7 @@ public class Respond extends Util
             _conn.close();
             System.out.println("Received: " + receivedCount);
         }
-        catch (Connection.ConnectionException e)
+        catch (ConnectionException e)
         {
             e.printStackTrace();  //TODO.
         }
@@ -282,13 +286,9 @@ public class Respond extends Util
         {
             e.printStackTrace();  //TODO.
         }
-        catch (AmqpErrorException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
     }
 
-    private void respond(Message m) throws Sender.SenderCreationException
+    private void respond(Message m) throws Sender.SenderCreationException, ConnectionClosedException
     {
         List<Section> sections = m.getPayload();
         String replyTo = null;

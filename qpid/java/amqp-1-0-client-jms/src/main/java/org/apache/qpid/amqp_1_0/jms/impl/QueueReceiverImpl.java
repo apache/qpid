@@ -18,12 +18,11 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import javax.jms.JMSException;
+import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
-
-import javax.jms.*;
 
 public class QueueReceiverImpl extends MessageConsumerImpl implements QueueReceiver
 {
@@ -43,9 +42,9 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
         {
             return getSession().getClientSession().createMovingReceiver(getSession().toAddress(getDestination()));
         }
-        catch (AmqpErrorException e)
+        catch (ConnectionErrorException e)
         {
-            throw new JMSException(e.getMessage(), e.getError().getCondition().toString());
+            throw new JMSException(e.getMessage(), e.getRemoteError().getCondition().toString());
         }
     }
 

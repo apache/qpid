@@ -248,7 +248,7 @@ public class Filesender extends Util
             session.close();
             conn.close();
         }
-        catch (Connection.ConnectionException e)
+        catch (ConnectionException e)
         {
             e.printStackTrace();
         }

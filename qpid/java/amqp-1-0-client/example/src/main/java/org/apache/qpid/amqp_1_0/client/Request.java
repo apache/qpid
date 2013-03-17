@@ -216,7 +216,7 @@ public class Request extends Util
                 conn2.close();
             }
         }
-        catch (Connection.ConnectionException e)
+        catch (ConnectionException e)
         {
             e.printStackTrace();  //TODO.
         }

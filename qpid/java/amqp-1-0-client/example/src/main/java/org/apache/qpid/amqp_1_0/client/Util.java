@@ -498,7 +498,7 @@ public abstract class Util
     protected abstract void run();
 
 
-    public Connection newConnection() throws Connection.ConnectionException
+    public Connection newConnection() throws ConnectionException
     {
         Container container = getContainerName() == null ? new Container() : new Container(getContainerName());
         return getUsername() == null ? new Connection(getHost(), getPort(), null, null, _frameSize, container,

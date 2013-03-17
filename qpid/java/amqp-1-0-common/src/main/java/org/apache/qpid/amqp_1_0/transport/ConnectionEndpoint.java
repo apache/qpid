@@ -21,6 +21,7 @@
 
 package org.apache.qpid.amqp_1_0.transport;
 
+import java.util.List;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
@@ -112,6 +113,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private SaslServer _saslServer;
     private boolean _authenticated;
     private String _remoteHostname;
+    private Error _remoteError;
 
     public ConnectionEndpoint(Container container, SaslServerProvider cbs)
     {
@@ -304,6 +306,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
             _state = ConnectionState.OPEN;
         }
 */
+        notifyAll();
     }
 
     public synchronized void receiveClose(short channel, Close close)
@@ -320,12 +323,18 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 connectionError(error);
                 break;
             case OPEN:
+                _state = ConnectionState.CLOSE_RECEIVED;
                 sendClose(new Close());
+                _state = ConnectionState.CLOSED;
                 break;
             case CLOSE_SENT:
+                _state = ConnectionState.CLOSED;
 
             default:
         }
+        _remoteError = close.getError();
+
+        notifyAll();
     }
 
     protected synchronized void connectionError(Error error)
@@ -939,5 +948,22 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     public void setRemoteHostname(final String remoteHostname)
     {
         _remoteHostname = remoteHostname;
+    }
+
+    public boolean isOpen()
+    {
+        return _state == ConnectionState.OPEN;
+    }
+
+    public boolean isClosed()
+    {
+        return _state == ConnectionState.CLOSED
+               || _state == ConnectionState.CLOSE_RECEIVED
+               || _state == ConnectionState.CLOSE_RECEIVED;
+    }
+
+    public Error getRemoteError()
+    {
+        return _remoteError;
     }
 }

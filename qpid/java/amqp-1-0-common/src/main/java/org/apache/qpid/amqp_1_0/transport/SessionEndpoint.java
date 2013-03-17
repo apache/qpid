@@ -326,7 +326,7 @@ public class SessionEndpoint
             {
                 deliveryId = ((ReceivingLinkEndpoint)endpoint).getLastDeliveryId();
             }
-            
+
             Delivery delivery = _incomingUnsettled.get(deliveryId);
             if(delivery == null)
             {
@@ -338,7 +338,7 @@ public class SessionEndpoint
                     _availableIncomingCredit++;
 */
                 }
-                
+
                 if(Boolean.TRUE.equals(transfer.getMore()))
                 {
                     ((ReceivingLinkEndpoint)endpoint).setLastDeliveryId(transfer.getDeliveryId());
@@ -794,4 +794,13 @@ catch(IllegalArgumentException e)
     }
 
 
+    public boolean isEnded()
+    {
+        return _state == SessionState.ENDED || _connection.isClosed();
+    }
+
+    public boolean isActive()
+    {
+        return _state == SessionState.ACTIVE;
+    }
 }

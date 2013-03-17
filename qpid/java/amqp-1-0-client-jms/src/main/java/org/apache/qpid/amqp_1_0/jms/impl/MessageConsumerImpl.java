@@ -18,18 +18,30 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.jms.Destination;
+import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidSelectorException;
+import javax.jms.JMSException;
+import javax.jms.MessageListener;
 import org.apache.qpid.amqp_1_0.client.AcknowledgeMode;
+import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.client.Transaction;
 import org.apache.qpid.amqp_1_0.jms.MessageConsumer;
-import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 import org.apache.qpid.amqp_1_0.jms.Queue;
+import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 import org.apache.qpid.amqp_1_0.jms.Session;
 import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
@@ -39,20 +51,6 @@ import org.apache.qpid.amqp_1_0.type.messaging.Modified;
 import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
-
-
-import javax.jms.Destination;
-import javax.jms.IllegalStateException;
-import javax.jms.InvalidDestinationException;
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
-import javax.jms.MessageListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, TopicSubscriber
 {
@@ -130,9 +128,9 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
             return _session.getClientSession(). createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
                                                                _linkName, _durable, getFilters(), null);
         }
-        catch (AmqpErrorException e)
+        catch (ConnectionErrorException e)
         {
-            Error error = e.getError();
+            Error error = e.getRemoteError();
             if(AmqpError.INVALID_FIELD.equals(error.getCondition()))
             {
                 throw new InvalidSelectorException(e.getMessage());

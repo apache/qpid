@@ -321,7 +321,7 @@ public class Filereceiver extends Util
             session.close();
             conn.close();
         }
-        catch (Connection.ConnectionException e)
+        catch (ConnectionException e)
         {
             e.printStackTrace();
         }
@@ -330,10 +330,6 @@ public class Filereceiver extends Util
             e.printStackTrace();  //TODO.
         }
         catch (IOException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (AmqpErrorException e)
         {
             e.printStackTrace();  //TODO.
         }
