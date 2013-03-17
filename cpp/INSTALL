@@ -14,8 +14,7 @@ Table of Contents
 
 3. Building from a Source Distribution
 4. Building a Repository Working Copy
-5. Portability
-6. Tests
+5. Tests
 
 
 1. Introduction
@@ -125,7 +124,7 @@ Required dependencies can be installed and built from source distributions.
 It is recommended that you create a directory to install them to, for example,
 ~/qpid-tools.
 
- To build and install the dependency pakcages:
+ To build and install the dependency packages:
 
  1. Unzip and untar them and cd to the untared directory.
  2. do:
@@ -135,7 +134,7 @@ It is recommended that you create a directory to install them to, for example,
 The exception is boost.
 
 boost
-========
+=====
  1. Unpack boost-jam.
  2. Add bjam in the unpacked directory to your path.
  3. Unpack boost and cd to the boost untarred directory.
@@ -152,6 +151,13 @@ manually installed to non-standard locations. For example:
 
  # export PATH=~/qpid-tools/bin:$PATH
 
+Ensure that pkg-config is set up correctly. This is especially important
+if you have built the dependencies from source, as they may not be installed
+in the default system location. For example:
+
+ # export PKG_CONFIG_PATH=~/qpid-tools/lib/pkgconfig:/usr/local/pkgconfig
+ # export PKG_CONFIG=~/qpid-tools/bin/pkg-config
+
 Ensure that the boost libraries are made available on the gcc library path.
 For example:
 
@@ -162,7 +168,9 @@ For example:
 ======================================
 In the distribution directory, build and install with:
 
- # cmake .         # Note "." for the current directory
+ # mkdir BLD       # This is just a suggested name for the build directory
+ # cd BLD
+ # cmake ..        # ".." is the path to the distribution directory
  # make all
  # make install
 
@@ -176,9 +184,14 @@ same working copy with different configuration. For example you can do
 the following to build twice, once for debug, the other with
 optimization:
 
- # mkdir .build-dbg .build-opt
- # (cd .build-dbg; cmake -DCMAKE_CXX_FLAGS=-g .. && make )   # Note ".." for parent dir
- # (cd .build-dbg; cmake -DCMAKE_CXX_FLAGS=-O3 .. && make)
+ # mkdir BLD-dbg BLD-opt
+ # (cd BLD-dbg; cmake -DCMAKE_BUILD_TYPE=Debug .. && make )
+ # (cd BLD-opt; cmake -DCMAKE_BUILD_TYPE=Release .. && make)
+
+Note that there are 4 different predefined cmake build types:
+Debug, Release, MinSizeRel, DebWithRelInfo: They each correspond to a different
+set of build flags for respectively debug; release; minimum size release; release
+with debug information.
 
 
 4. Building a Repository Working Copy
@@ -192,16 +205,7 @@ To build, cd to qpid/cpp subdirectory and then follow instruction for building
 from a source distribution in step (3).
 
 
-5. Portability
-==============
-All system calls are abstracted by classes under lib/common/sys. This
-provides an object-oriented C++ API and contains platform-specific
-code.
-
-These wrappers are mainly inline by-value classes so they impose no
-run-time penalty compared do direct system calls.
-
-6. Tests
+5. Tests
 ========
 See src/tests/README.txt for details.
 
