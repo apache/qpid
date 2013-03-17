@@ -20,11 +20,16 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-
-import javax.jms.JMSException;
-import javax.jms.StreamMessage;
+import java.io.EOFException;
 import java.nio.ByteBuffer;
+import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageFormatException;
+import javax.jms.StreamMessage;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.typedmessage.TypedBytesContentReader;
+import org.apache.qpid.typedmessage.TypedBytesContentWriter;
+import org.apache.qpid.typedmessage.TypedBytesFormatException;
 
 /**
  * @author Apache Software Foundation
@@ -95,20 +100,53 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     public boolean readBoolean() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readBoolean();
+        try
+        {
+            return _typedBytesContentReader.readBoolean();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
 
     public byte readByte() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readByte();
+        try
+        {
+            return _typedBytesContentReader.readByte();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public short readShort() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readShort();
+        try
+        {
+            return _typedBytesContentReader.readShort();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     /**
@@ -120,37 +158,103 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     public char readChar() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readChar();
+        try
+        {
+            return _typedBytesContentReader.readChar();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public int readInt() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readInt();
+        try
+        {
+            return _typedBytesContentReader.readInt();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public long readLong() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readLong();
+        try
+        {
+            return _typedBytesContentReader.readLong();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public float readFloat() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readFloat();
+        try
+        {
+            return _typedBytesContentReader.readFloat();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public double readDouble() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readDouble();
+        try
+        {
+            return _typedBytesContentReader.readDouble();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public String readString() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readString();
+        try
+        {
+            return _typedBytesContentReader.readString();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public int readBytes(byte[] bytes) throws JMSException
@@ -161,14 +265,36 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
         }
 
         checkReadable();
-        return _typedBytesContentReader.readBytes(bytes);
+        try
+        {
+            return _typedBytesContentReader.readBytes(bytes);
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
 
     public Object readObject() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.readObject();
+        try
+        {
+            return _typedBytesContentReader.readObject();
+        }
+        catch (EOFException e)
+        {
+            throw new MessageEOFException(e.getMessage());
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 
     public void writeBoolean(boolean b) throws JMSException
@@ -240,6 +366,13 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     public void writeObject(Object object) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeObject(object);
+        try
+        {
+            _typedBytesContentWriter.writeObject(object);
+        }
+        catch (TypedBytesFormatException e)
+        {
+            throw new MessageFormatException(e.getMessage());
+        }
     }
 }

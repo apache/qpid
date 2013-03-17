@@ -18,19 +18,17 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.message;
+package org.apache.qpid.typedmessage;
 
-import javax.jms.JMSException;
-import javax.jms.MessageEOFException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotReadableException;
+
+import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
-class TypedBytesContentReader implements TypedBytesCodes
+public class TypedBytesContentReader implements TypedBytesCodes
 {
 
     private final ByteBuffer _data;
@@ -58,22 +56,21 @@ class TypedBytesContentReader implements TypedBytesCodes
      * @param len the number of bytes
      * @throws javax.jms.MessageEOFException if there are less than len bytes available to read
      */
-    protected void checkAvailable(int len) throws MessageEOFException
+    public void checkAvailable(int len) throws EOFException
     {
         if (_data.remaining() < len)
         {
-            throw new MessageEOFException("Unable to read " + len + " bytes");
+            throw new EOFException("Unable to read " + len + " bytes");
         }
     }
 
-    protected byte readWireType() throws MessageFormatException, MessageEOFException,
-                                         MessageNotReadableException
+    public byte readWireType() throws TypedBytesFormatException, EOFException
     {
         checkAvailable(1);
         return _data.get();
     }
 
-    protected boolean readBoolean() throws JMSException
+    public boolean readBoolean() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -92,7 +89,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a boolean");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a boolean");
             }
             return result;
         }
@@ -103,12 +100,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    boolean readBooleanImpl()
+    public boolean readBooleanImpl()
     {
         return _data.get() != 0;
     }
 
-    protected byte readByte() throws JMSException
+    public byte readByte() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -127,7 +124,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a byte");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a byte");
             }
         }
         catch (RuntimeException e)
@@ -138,12 +135,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         return result;
     }
 
-    byte readByteImpl()
+    public byte readByteImpl()
     {
         return _data.get();
     }
 
-    protected short readShort() throws JMSException
+    public short readShort() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -166,7 +163,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a short");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a short");
             }
         }
         catch (RuntimeException e)
@@ -177,7 +174,7 @@ class TypedBytesContentReader implements TypedBytesCodes
         return result;
     }
 
-    short readShortImpl()
+    public short readShortImpl()
     {
         return _data.getShort();
     }
@@ -188,7 +185,7 @@ class TypedBytesContentReader implements TypedBytesCodes
      * @return the character read from the stream
      * @throws javax.jms.JMSException
      */
-    protected char readChar() throws JMSException
+    public char readChar() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -202,7 +199,7 @@ class TypedBytesContentReader implements TypedBytesCodes
             if (wireType != CHAR_TYPE)
             {
                 _data.position(position);
-                throw new MessageFormatException("Unable to convert " + wireType + " to a char");
+                throw new TypedBytesFormatException("Unable to convert " + wireType + " to a char");
             }
             else
             {
@@ -217,12 +214,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    char readCharImpl()
+    public char readCharImpl()
     {
         return _data.getChar();
     }
 
-    protected int readInt() throws JMSException
+    public int readInt() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -249,7 +246,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to an int");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to an int");
             }
             return result;
         }
@@ -260,12 +257,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    protected int readIntImpl()
+    public int readIntImpl()
     {
         return _data.getInt();
     }
 
-    protected long readLong() throws JMSException
+    public long readLong() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -296,7 +293,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a long");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a long");
             }
             return result;
         }
@@ -307,12 +304,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    long readLongImpl()
+    public long readLongImpl()
     {
         return _data.getLong();
     }
 
-    protected float readFloat() throws JMSException
+    public float readFloat() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -331,7 +328,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a float");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a float");
             }
             return result;
         }
@@ -342,12 +339,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    float readFloatImpl()
+    public float readFloatImpl()
     {
         return _data.getFloat();
     }
 
-    protected double readDouble() throws JMSException
+    public double readDouble() throws TypedBytesFormatException, EOFException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -370,7 +367,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a double");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a double");
             }
             return result;
         }
@@ -381,12 +378,12 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    double readDoubleImpl()
+    public double readDoubleImpl()
     {
         return _data.getDouble();
     }
 
-    protected String readString() throws JMSException
+    public String readString() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -436,7 +433,7 @@ class TypedBytesContentReader implements TypedBytesCodes
                     break;
                 default:
                     _data.position(position);
-                    throw new MessageFormatException("Unable to convert " + wireType + " to a String");
+                    throw new TypedBytesFormatException("Unable to convert " + wireType + " to a String");
             }
             return result;
         }
@@ -447,7 +444,7 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    protected String readStringImpl() throws JMSException
+    public String readStringImpl() throws TypedBytesFormatException
     {
         try
         {
@@ -462,14 +459,13 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
         catch (CharacterCodingException e)
         {
-            JMSException jmse = new JMSException("Error decoding byte stream as a UTF8 string: " + e);
-            jmse.setLinkedException(e);
+            TypedBytesFormatException jmse = new TypedBytesFormatException("Error decoding byte stream as a UTF8 string: " + e);
             jmse.initCause(e);
             throw jmse;
         }
     }
 
-    protected int readBytes(byte[] bytes) throws JMSException
+    public int readBytes(byte[] bytes) throws EOFException, TypedBytesFormatException
     {
         if (bytes == null)
         {
@@ -484,7 +480,7 @@ class TypedBytesContentReader implements TypedBytesCodes
             byte wireType = readWireType();
             if (wireType != BYTEARRAY_TYPE)
             {
-                throw new MessageFormatException("Unable to convert " + wireType + " to a byte array");
+                throw new TypedBytesFormatException("Unable to convert " + wireType + " to a byte array");
             }
             checkAvailable(4);
             int size = _data.getInt();
@@ -497,7 +493,7 @@ class TypedBytesContentReader implements TypedBytesCodes
             {
                 if (size > _data.remaining())
                 {
-                    throw new MessageEOFException("Byte array has stated length "
+                    throw new EOFException("Byte array has stated length "
                                                   + size
                                                   + " but message only contains "
                                                   +
@@ -540,7 +536,7 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
     }
 
-    protected Object readObject() throws JMSException
+    public Object readObject() throws EOFException, TypedBytesFormatException
     {
         int position = _data.position();
         byte wireType = readWireType();
@@ -643,7 +639,7 @@ class TypedBytesContentReader implements TypedBytesCodes
         _data.get(bytes, offset, count);
     }
 
-    public String readLengthPrefixedUTF() throws JMSException
+    public String readLengthPrefixedUTF() throws TypedBytesFormatException
     {
         try
         {
@@ -665,8 +661,7 @@ class TypedBytesContentReader implements TypedBytesCodes
         }
         catch(CharacterCodingException e)
         {
-            JMSException jmse = new JMSException("Error decoding byte stream as a UTF8 string: " + e);
-            jmse.setLinkedException(e);
+            TypedBytesFormatException jmse = new TypedBytesFormatException("Error decoding byte stream as a UTF8 string: " + e);
             jmse.initCause(e);
             throw jmse;
         }

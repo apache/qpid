@@ -20,18 +20,21 @@
  */
 package org.apache.qpid.client.message;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.AMQException;
-
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
+import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageFormatException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.typedmessage.TypedBytesContentReader;
+import org.apache.qpid.typedmessage.TypedBytesContentWriter;
+import org.apache.qpid.typedmessage.TypedBytesFormatException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMessage
 {
@@ -455,9 +458,22 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
             final int entries = reader.readIntImpl();
             for (int i = 0; i < entries; i++)
             {
-                String propName = reader.readStringImpl();
-                Object value = reader.readObject();
-                _map.put(propName, value);
+                String propName = null;
+                try
+                {
+                    propName = reader.readStringImpl();
+                    Object value = reader.readObject();
+                    _map.put(propName, value);
+
+                }
+                catch (TypedBytesFormatException e)
+                {
+                    throw new MessageFormatException(e.getMessage());
+                }
+                catch (EOFException e)
+                {
+                    throw new MessageEOFException(e.getMessage());
+                }
             }
         }
         else
@@ -477,7 +493,14 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
         {
             writer.writeNullTerminatedStringImpl(entry.getKey());
 
-            writer.writeObject(entry.getValue());
+            try
+            {
+                writer.writeObject(entry.getValue());
+            }
+            catch (TypedBytesFormatException e)
+            {
+                throw new MessageFormatException(e.getMessage());
+            }
         }
 
         return writer.getData();
