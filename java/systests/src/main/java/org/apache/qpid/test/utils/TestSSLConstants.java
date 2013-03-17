@@ -21,6 +21,7 @@ package org.apache.qpid.test.utils;
 public interface TestSSLConstants
 {
     String KEYSTORE = "test-profiles/test_resources/ssl/java_client_keystore.jks";
+    String UNTRUSTED_KEYSTORE = "test-profiles/test_resources/ssl/java_client_untrusted_keystore.jks";
     String KEYSTORE_PASSWORD = "password";
     String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
     String TRUSTSTORE_PASSWORD = "password";
