@@ -37,7 +37,9 @@ For documentation, go to:
 
 In C++ distributions:
 
-   cmake .        # Generates code and makefiles
+   mkdir BLD      # The recommended way to use cmake is in a separate build directory
+   cd BLD
+   cmake ..       # Generates code and makefiles
    make test      # Runs tests
    make install   # Installs the client and daemon
 
