@@ -109,13 +109,13 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
         return bind(queueName, queueName, getHeadersMap(bindings));
     }
-    
+
     protected void unbind(TestQueue queue, String... bindings) throws AMQException
     {
         String queueName = queue.getName();
         exchange.onUnbind(new Binding(null, queueName, queue, exchange, getHeadersMap(bindings)));
     }
-    
+
     protected int getCount()
     {
         return count;
@@ -128,7 +128,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
         exchange.onBind(new Binding(null, key, queue, exchange, args));
         return queue;
     }
-    
+
 
     protected int route(Message m) throws AMQException
     {
@@ -183,14 +183,14 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
             }
 
     }
-    
+
     static Map<String,Object> getHeadersMap(String... entries)
     {
         if(entries == null)
         {
             return null;
         }
-        
+
         Map<String,Object> headers = new HashMap<String,Object>();
 
         for (String s : entries)
@@ -393,7 +393,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
                 public void release()
                 {
-                  
+
                 }
 
                 public boolean releaseButRetain()
@@ -408,7 +408,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
                 public void setRedelivered()
                 {
-                  
+
                 }
 
                 public AMQMessageHeader getMessageHeader()
@@ -433,7 +433,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
                 public void reject()
                 {
-                  
+
                 }
 
                 public boolean isRejectedBy(long subscriptionId)
@@ -443,22 +443,22 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
                 public void dequeue()
                 {
-                  
+
                 }
 
                 public void dispose()
                 {
-                  
+
                 }
 
                 public void discard()
                 {
-                  
+
                 }
 
                 public void routeToAlternate()
                 {
-                  
+
                 }
 
                 public boolean isQueueDeleted()
@@ -468,7 +468,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
                 public void addStateChangeListener(StateChangeListener listener)
                 {
-                  
+
                 }
 
                 public boolean removeStateChangeListener(StateChangeListener listener)
@@ -549,14 +549,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
             public ContentHeaderBody getContentHeader()
             {
-                try
-                {
-                    return Message.this.getContentHeaderBody();
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                return Message.this.getContentHeaderBody();
             }
         }
 
