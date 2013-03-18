@@ -895,7 +895,9 @@ void Broker::deleteObject(const std::string& type, const std::string& name,
         connectionId = context->getUrl();
     }
     QPID_LOG (debug, "Broker::delete(" << type << ", " << name << "," << options << ")");
-    if (type == TYPE_QUEUE) {
+    if (objectFactory.deleteObject(*this, type, name, options, userId, connectionId)) {
+        QPID_LOG (debug, "Broker::delete(" << type << ", " << name << "," << options << ") handled by registered factory");
+    } else if (type == TYPE_QUEUE) {
         // extract ifEmpty and ifUnused from options
     	bool ifUnused = false, ifEmpty = false;
         for (Variant::Map::const_iterator i = options.begin(); i != options.end(); ++i) {

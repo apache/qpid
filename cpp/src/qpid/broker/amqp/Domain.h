@@ -49,6 +49,7 @@ class Domain : public qpid::management::Manageable
 {
   public:
     Domain(const std::string& name, const qpid::types::Variant::Map& properties, Broker&);
+    ~Domain();
     void connect(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, Interconnects&);
     void connect(bool incoming, const std::string& name, const std::string& source, const std::string& target, Interconnects&, boost::shared_ptr<Relay>);
     std::auto_ptr<qpid::Sasl> sasl(const std::string& hostname);

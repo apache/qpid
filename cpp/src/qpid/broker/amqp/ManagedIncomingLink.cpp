@@ -30,12 +30,12 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-ManagedIncomingLink::ManagedIncomingLink(Broker& broker, ManagedSession& p, const std::string& target, const std::string& _name)
+ManagedIncomingLink::ManagedIncomingLink(Broker& broker, ManagedSession& p, const std::string& source, const std::string& target, const std::string& _name)
     : parent(p), name(_name)
 {
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent) {
-        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, target, _name));
+        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, source, target, _name));
         agent->addObject(incoming);
     }
 }
