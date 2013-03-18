@@ -59,7 +59,7 @@ class CircularArray
 class Outgoing : public ManagedOutgoingLink
 {
   public:
-    Outgoing(Broker& broker, Session& parent, const std::string& source, const std::string& name);
+    Outgoing(Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name);
     virtual void setSubjectFilter(const std::string&) = 0;
     virtual void setSelectorFilter(const std::string&) = 0;
     virtual void init() = 0;
@@ -88,7 +88,7 @@ class Outgoing : public ManagedOutgoingLink
 class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public boost::enable_shared_from_this<OutgoingFromQueue>
 {
   public:
-    OutgoingFromQueue(Broker&, const std::string& source, boost::shared_ptr<Queue> q, pn_link_t* l, Session&, qpid::sys::OutputControl& o, bool topic);
+    OutgoingFromQueue(Broker&, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session&, qpid::sys::OutputControl& o, bool topic);
     void setSubjectFilter(const std::string&);
     void setSelectorFilter(const std::string&);
     void init();

@@ -36,7 +36,7 @@ class ManagedSession;
 class ManagedOutgoingLink : public qpid::management::Manageable
 {
   public:
-    ManagedOutgoingLink(Broker& broker, ManagedSession& parent, const std::string& source, const std::string& name);
+    ManagedOutgoingLink(Broker& broker, ManagedSession& parent, const std::string& source, const std::string& target, const std::string& name);
     virtual ~ManagedOutgoingLink();
     qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
     void outgoingMessageSent();

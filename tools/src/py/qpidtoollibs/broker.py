@@ -302,7 +302,10 @@ class BrokerAgent(object):
 
   def delete(self, _type, name, options):
     """Delete an object of the specified type"""
-    pass
+    args = {'type': _type,
+            'name': name,
+            'options': options}
+    return self._method('delete', args)
 
   def query(self, _type, oid):
     """Query the current state of an object"""

@@ -88,7 +88,7 @@ bool Interconnects::deleteObject(Broker&, const std::string& type, const std::st
             domains.erase(i);
             return true;
         } else {
-            return false;
+            throw qpid::Exception(QPID_MSG("No such domain: " << name));
         }
     } else if (type == INCOMING_TYPE || type == OUTGOING_TYPE) {
         boost::shared_ptr<Interconnect> interconnect;

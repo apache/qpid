@@ -27,8 +27,8 @@
 namespace qpid {
 namespace broker {
 namespace amqp {
-Incoming::Incoming(pn_link_t* l, Broker& broker, Session& parent, const std::string& target, const std::string& name)
-    : ManagedIncomingLink(broker, parent, target, name), credit(100), window(0), link(l), session(parent) {}
+Incoming::Incoming(pn_link_t* l, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
+    : ManagedIncomingLink(broker, parent, source, target, name), credit(100), window(0), link(l), session(parent) {}
 
 
 Incoming::~Incoming() {}
@@ -77,8 +77,8 @@ namespace {
     };
 }
 
-DecodingIncoming::DecodingIncoming(pn_link_t* link, Broker& broker, Session& parent, const std::string& target, const std::string& name)
-    : Incoming(link, broker, parent, target, name), session(parent.shared_from_this()) {}
+DecodingIncoming::DecodingIncoming(pn_link_t* link, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
+    : Incoming(link, broker, parent, source, target, name), session(parent.shared_from_this()) {}
 DecodingIncoming::~DecodingIncoming() {}
 
 void DecodingIncoming::readable(pn_delivery_t* delivery)
