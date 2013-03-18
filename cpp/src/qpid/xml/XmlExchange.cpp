@@ -321,14 +321,16 @@ void XmlExchange::route(Deliverable& msg)
         {
             RWlock::ScopedRlock l(lock);
             p = bindingsMap[routingKey].snapshot();
-            if (!p.get()) return;
         }
 
-        for (std::vector<XmlBinding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++) {
-            if (matches((*i)->xquery, msg, (*i)->parse_message_content)) { 
-                b->push_back(*i);
-            }
+        if (p.get()) {
+            for (std::vector<XmlBinding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++) {
+                   if (matches((*i)->xquery, msg, (*i)->parse_message_content)) {
+                       b->push_back(*i);
+                }
+             }
         }
+        // else allow stats to be counted, even for non-matched messages
         doRoute(msg, b);
     } catch (...) {
         QPID_LOG(warning, "XMLExchange " << getName() << ": exception routing message with query " << routingKey);
