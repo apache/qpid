@@ -265,6 +265,13 @@ $map = qpid::messaging::decode_map($message);
 ok ($map->{name} eq "Euro=\x{20AC}",
     "Unicode strings encoded correctly.");
 
+# Maps inside maps should work
+$content = { id => 1234, name => { first => "tom" } };
+qpid::messaging::encode($content, $message);
+$map = qpid::messaging::decode_map($message);
+ok ($map->{name}{first} eq "tom",
+    "Map inside map encoded correctly.");
+
 # Setting the content as a hash automatically encodes it
 ($content) = {"id" => "1234", "name" => "qpid"};
 $message->set_content($content);
