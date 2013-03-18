@@ -186,4 +186,15 @@ public class BrokerOptionsTest extends QpidTestCase
         _options.setWorkDir(testWorkDir);
         assertEquals(testWorkDir, _options.getWorkDir());
     }
+
+    public void testDefaultSkipLoggingConfiguration()
+    {
+        assertFalse(_options.isSkipLoggingConfiguration());
+    }
+
+    public void testOverriddenSkipLoggingConfiguration()
+    {
+        _options.setSkipLoggingConfiguration(true);
+        assertTrue(_options.isSkipLoggingConfiguration());
+    }
 }

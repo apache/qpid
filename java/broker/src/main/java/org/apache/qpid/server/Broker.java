@@ -115,8 +115,13 @@ public class Broker
 
         CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
 
-        File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
-        configureLogging(logConfigFile, options.getLogWatchFrequency());
+        //Allow skipping the logging configuration for people who are
+        //embedding the broker and want to configure it themselves.
+        if(!options.isSkipLoggingConfiguration())
+        {
+            File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
+            configureLogging(logConfigFile, options.getLogWatchFrequency());
+        }
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
         ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType, options.getInitialConfigurationLocation());
