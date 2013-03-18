@@ -194,4 +194,17 @@ Value operator/(const Value& v1, const Value& v2)
     return Value();
 }
 
+Value operator-(const Value& v)
+{
+    switch (v.type) {
+    case Value::T_EXACT:
+        return -v.i;
+    case Value::T_INEXACT:
+        return -v.x;
+    default:
+        break;
+    }
+    return Value();
+}
+
 }}
