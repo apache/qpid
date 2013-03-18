@@ -60,11 +60,11 @@
     }
 
     SV* VariantToPerl(const qpid::types::Variant* v) {
-        SV* result = newSV(0);
+        SV* result = 0;
         try {
             switch (v->getType()) {
             case qpid::types::VAR_VOID: {
-                sv_setiv(result, (IV)0);
+                result = newSViv(0);
                 break;
             }
             case qpid::types::VAR_BOOL : {
@@ -74,29 +74,29 @@
             case qpid::types::VAR_UINT8 :
             case qpid::types::VAR_UINT16 :
             case qpid::types::VAR_UINT32 : {
-                sv_setuv(result, (UV)v->asUint32());
+                result = newSVuv((UV)v->asUint32());
                 break;
             }
             case qpid::types::VAR_UINT64 : {
-                sv_setuv(result, (UV)v->asUint64());
+                result = newSVuv((UV)v->asUint64());
                 break;
             }
             case qpid::types::VAR_INT8 : 
             case qpid::types::VAR_INT16 :
             case qpid::types::VAR_INT32 : {
-                sv_setiv(result, (IV)v->asInt32());
+                result = newSViv((IV)v->asInt32());
                 break;
             }
             case qpid::types::VAR_INT64 : {
-                sv_setiv(result, (IV)v->asInt64());
+                result = newSViv((IV)v->asInt64());
                 break;
             }
             case qpid::types::VAR_FLOAT : {
-                sv_setnv(result, (double)v->asFloat());
+                result = newSVnv((double)v->asFloat());
                 break;
             }
             case qpid::types::VAR_DOUBLE : {
-                sv_setnv(result, (double)v->asDouble());
+                result = newSVnv((double)v->asDouble());
                 break;
             }
             case qpid::types::VAR_STRING : {
@@ -122,6 +122,9 @@
             Perl_croak(aTHX_ ex.what());
         }
 
+        if (!result)
+          result = newSV(0);
+
         return result;
     }
 
@@ -133,7 +136,7 @@
             SV* perlval = VariantToPerl(&(iter->second));
             hv_store(hv, key.c_str(), key.size(), perlval, 0);
         }
-        return sv_2mortal(newRV_noinc((SV *)hv));
+        return newRV_noinc((SV *)hv);
     }
 
     SV* ListToPerl(const qpid::types::Variant::List* list) {
@@ -143,7 +146,7 @@
             SV* perlval = VariantToPerl(&(*iter));
             av_push(av, perlval);
         }
-        return sv_2mortal(newRV_noinc((SV *)av));
+        return newRV_noinc((SV *)av);
     }
 
     void PerlToMap(SV* hash, qpid::types::Variant::Map* map) {
@@ -229,27 +232,27 @@
  * Variant types: C++ --> Perl
  */
 %typemap(out) qpid::types::Variant::Map {
-    $result = MapToPerl(&$1);
+    $result = sv_2mortal(MapToPerl(&$1));
     argvi++;
 }
 
 %typemap(out) qpid::types::Variant::Map& {
-    $result = MapToPerl($1);
+    $result = sv_2mortal(MapToPerl($1));
     argvi++;
 }
 
 %typemap(out) qpid::types::Variant::List {
-    $result = ListToPerl(&$1);
+    $result = sv_2mortal(ListToPerl(&$1));
     argvi++;
 }
 
 %typemap(out) qpid::types::Variant::List& {
-    $result = ListToPerl($1);
+    $result = sv_2mortal(ListToPerl($1));
     argvi++;
 }
 
 %typemap(out) qpid::types::Variant& {
-    $result = VariantToPerl($1);
+    $result = sv_2mortal(VariantToPerl($1));
     argvi++;
 }
 
