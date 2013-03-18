@@ -37,7 +37,7 @@ class Session;
 class Incoming : public ManagedIncomingLink
 {
   public:
-    Incoming(pn_link_t*, Broker& broker, Session& parent, const std::string& target, const std::string& name);
+    Incoming(pn_link_t*, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name);
     virtual ~Incoming();
     virtual bool doWork();//do anything that requires output
     virtual bool haveWork();//called when handling input to see whether any output work is needed
@@ -55,7 +55,7 @@ class Incoming : public ManagedIncomingLink
 class DecodingIncoming : public Incoming
 {
   public:
-    DecodingIncoming(pn_link_t*, Broker& broker, Session& parent, const std::string& target, const std::string& name);
+    DecodingIncoming(pn_link_t*, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name);
     virtual ~DecodingIncoming();
     void readable(pn_delivery_t* delivery);
     virtual void handle(qpid::broker::Message&) = 0;

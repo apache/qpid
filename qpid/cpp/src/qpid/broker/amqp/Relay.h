@@ -95,7 +95,7 @@ class OutgoingFromRelay : public Outgoing
 {
   public:
     OutgoingFromRelay(pn_link_t*, Broker&, Session&, const std::string& source,
-                      const std::string& name, boost::shared_ptr<Relay>);
+                      const std::string& target, const std::string& name, boost::shared_ptr<Relay>);
     bool doWork();
     void handle(pn_delivery_t* delivery);
     void detached();
@@ -111,8 +111,8 @@ class OutgoingFromRelay : public Outgoing
 class IncomingToRelay : public Incoming
 {
   public:
-    IncomingToRelay(pn_link_t*, Broker&, Session&, const std::string& target,
-                    const std::string& name, boost::shared_ptr<Relay> r);
+    IncomingToRelay(pn_link_t*, Broker&, Session&, const std::string& source,
+                    const std::string& target, const std::string& name, boost::shared_ptr<Relay> r);
     bool settle();
     bool doWork();
     bool haveWork();

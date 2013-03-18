@@ -229,6 +229,11 @@ Domain::Domain(const std::string& n, const qpid::types::Variant::Map& properties
     }
 }
 
+Domain::~Domain()
+{
+    if (domain != 0) domain->resourceDestroy();
+}
+
 boost::shared_ptr<qpid::management::ManagementObject> Domain::GetManagementObject() const
 {
     return domain;

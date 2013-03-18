@@ -33,15 +33,16 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-Outgoing::Outgoing(Broker& broker, Session& parent, const std::string& source, const std::string& name) : ManagedOutgoingLink(broker, parent, source, name), session(parent) {}
+Outgoing::Outgoing(Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
+    : ManagedOutgoingLink(broker, parent, source, target, name), session(parent) {}
 
 void Outgoing::wakeup()
 {
     session.wakeup();
 }
 
-OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session, qpid::sys::OutputControl& o, bool topic)
-    : Outgoing(broker, session, source, pn_link_name(l)),
+OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session, qpid::sys::OutputControl& o, bool topic)
+    : Outgoing(broker, session, source, target, pn_link_name(l)),
       Consumer(pn_link_name(l), /*FIXME*/CONSUMER),
       exclusive(topic),
       queue(q), deliveries(5000), link(l), out(o),

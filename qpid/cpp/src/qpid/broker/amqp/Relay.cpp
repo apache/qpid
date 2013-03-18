@@ -110,8 +110,8 @@ void Relay::detached(Incoming*)
 }
 
 OutgoingFromRelay::OutgoingFromRelay(pn_link_t* l, Broker& broker, Session& parent, const std::string& source,
-                                     const std::string& name_, boost::shared_ptr<Relay> r)
-    : Outgoing(broker, parent, source, name_), name(name_), link(l), relay(r) {}
+                                     const std::string& target, const std::string& name_, boost::shared_ptr<Relay> r)
+    : Outgoing(broker, parent, source, target, name_), name(name_), link(l), relay(r) {}
 /**
  * Allows the link to initiate any outgoing transfers
  */
@@ -173,9 +173,9 @@ void OutgoingFromRelay::setSelectorFilter(const std::string&)
     //TODO
 }
 
-IncomingToRelay::IncomingToRelay(pn_link_t* link, Broker& broker, Session& parent, const std::string& target,
-                                 const std::string& name, boost::shared_ptr<Relay> r)
-    : Incoming(link, broker, parent, target, name), relay(r)
+IncomingToRelay::IncomingToRelay(pn_link_t* link, Broker& broker, Session& parent, const std::string& source,
+                                 const std::string& target, const std::string& name, boost::shared_ptr<Relay> r)
+    : Incoming(link, broker, parent, source, target, name), relay(r)
 {
     relay->attached(this);
 }
