@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -205,6 +206,29 @@ public class PortFactoryTest extends QpidTestCase
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException e)
+        {
+            // pass
+        }
+    }
+
+    public void testCreateRMIPortWhenAnotherRMIPortAlreadyExists()
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, 1);
+        attributes.put(Port.NAME, getTestName());
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
+        attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
+
+        Port rmiPort = mock(Port.class);
+        when(rmiPort.getProtocols()).thenReturn(Collections.singleton(Protocol.RMI));
+        when(_broker.getPorts()).thenReturn(Collections.singletonList(rmiPort));
+
+        try
+        {
+            _portFactory.createPort(_portId, _broker, attributes);
+            fail("RMI port creation should fail as another one olready exist");
+        }
+        catch(IllegalConfigurationException e)
         {
             // pass
         }

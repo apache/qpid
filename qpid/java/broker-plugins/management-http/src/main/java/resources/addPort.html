@@ -1,0 +1,81 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<div class="dijitHidden">
+    <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'Port'" id="addPort">
+        <form id="formAddPort" method="post" dojoType="dijit.form.Form">
+            <div id="formAddPort:fields">
+                <input type="text" required="true" name="name" id="formAddPort.name" placeholder="Port Name"
+                    data-dojo-props="label: 'Port Name*:'" dojoType="dijit.form.ValidationTextBox"
+                    missingMessage="A name must be supplied" />
+                <input data-dojo-type="dijit.form.NumberSpinner" id="formAddPort.port" data-dojo-props="label: 'Port*:'"
+                     name="port" value="5672" smallDelta="1" constraints="{min:1,max:65535,places:0, pattern: '#####'}" />
+                <select id="formAddPort.transport" data-dojo-type="dijit.form.FilteringSelect"
+                    data-dojo-props="name: 'transport',label: 'Transport:',searchAttr: 'name',required:false,placeHolder: 'Select Transports', value: '' "
+                    style="margin: 0;">
+                    <option value="TCP">TCP</option>
+                    <option value="SSL">SSL</option>
+                </select>
+                <select id="formAddPort.authenticationProvider" data-dojo-type="dijit.form.FilteringSelect" style="margin: 0;"
+                    data-dojo-props="name:'authenticationProvider',label:'Authentication Provider:', searchAttr: 'name', required: false, placeHolder: 'Select Authentication', value: '' "
+                    missingMessage="Transport must be supplied">
+                </select>
+                <select id="formAddPort.type" data-dojo-type="dijit.form.FilteringSelect"
+                    data-dojo-props="name: 'type', value: '',placeHolder: 'Select Port Type', label: 'Port Type:'">
+                    <option value="AMQP" selected="selected">AMQP</option>
+                    <option value="JMX">JMX</option>
+                    <option value="HTTP">HTTP</option>
+                </select>
+            </div>
+            <div id="formAddPort:fieldsAMQP">
+                <input id="formAddPort.bindingAddress" type="text" name="bindingAddress"
+                   dojoType="dijit.form.TextBox" data-dojo-props="label: 'Binding address:'"/>
+                <input id="formAddPort.protocolsDefault" type="checkbox" name="protocolsDefault" checked="checked"
+                   dojoType="dijit.form.CheckBox" data-dojo-props="label: 'Use broker default AMQP protocols:'"/>
+                <select id="formAddPort.protocolsAMQP" name="protocols" data-dojo-type="dijit.form.MultiSelect" multiple="true"
+                    data-dojo-props="name: 'protocols', value: '', placeHolder: 'Select Protocols', label: 'AMQP protocols:'"
+                    missingMessage="AMQP protocol(s) must be supplied">
+                    <option value="AMQP_0_8">AMQP 0.8</option>
+                    <option value="AMQP_0_9">AMQP 0.9</option>
+                    <option value="AMQP_0_9_1">AMQP 0.9.1</option>
+                    <option value="AMQP_0_10">AMQP 0.10</option>
+                    <option value="AMQP_1_0">AMQP 1.0</option>
+                </select>
+            </div>
+            <div id="formAddPort:fieldsJMX">
+                <select id="formAddPort.protocolsJMX" name="protocols" data-dojo-type="dijit.form.FilteringSelect"
+                    data-dojo-props="name: 'protocols', value: '', label: 'JMX protocols*:'" missingMessage="JMX protocol must be supplied">
+                     <option value="RMI">RMI</option>
+                     <option value="JMX_RMI">JMX RMI</option>
+                 </select>
+            </div>
+            <div id="formAddPort:fieldsHTTP">
+                <select id="formAddPort.protocolsHTTP" name="protocols" data-dojo-type="dijit.form.FilteringSelect"
+                    data-dojo-props="name: 'protocols', value: '', label: 'HTTP protocols*:'" missingMessage="HTTP protocol must be supplied">
+                    <option value="HTTP">HTTP</option>
+                    <option value="HTTPS">HTTPS</option>
+                </select>
+            </div>
+            <input type="hidden" id="formAddPort.id" name="id"/>
+            <!-- submit buttons -->
+            <input type="submit" value="Save Port" label="Save Port" dojoType="dijit.form.Button" />
+        </form>
+    </div>
+</div>

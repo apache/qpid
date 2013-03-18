@@ -30,12 +30,13 @@ define(["dojo/_base/xhr",
         "dijit/registry",
         "qpid/management/addAuthenticationProvider",
         "qpid/management/addVirtualHost",
+        "qpid/management/addPort",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dijit/layout/AccordionContainer",
         "dijit/layout/AccordionPane",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -92,6 +93,20 @@ define(["dojo/_base/xhr",
                                                 that.brokerUpdater.vhostsGrid.grid,
                                                 "rest/virtualhost",
                                                 "Deletion of virtual will delete the message store data.\n\n Are you sure you want to delete virtual host");
+                                }
+                            );
+
+                            var addPortButton = query(".addPort", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addPortButton), "onClick", function(evt){ addPort.show(null, that.brokerUpdater.brokerData.authenticationproviders); });
+
+                            var deletePort = query(".deletePort", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deletePort), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.portsGrid.grid,
+                                                "rest/port",
+                                                "Are you sure you want to delete port");
                                 }
                             );
                         }});
@@ -155,9 +170,12 @@ define(["dojo/_base/xhr",
 
                              that.portsGrid =
                                 new UpdatableStore(that.brokerData.ports, query(".broker-ports")[0],
-                                                [ { name: "Address",    field: "bindingAddress",      width: "70px"},
-                                                    { name: "Port", field: "port", width: "70px"},
-                                                    { name: "Transports", field: "transports", width: "150px"},
+                                                [   { name: "Name", field: "name", width: "150px"},
+                                                    { name: "State", field: "state", width: "60px"},
+                                                    { name: "Authentication", field: "authenticationProvider", width: "100px"},
+                                                    { name: "Address",    field: "bindingAddress",      width: "70px"},
+                                                    { name: "Port", field: "port", width: "50px"},
+                                                    { name: "Transports", field: "transports", width: "100px"},
                                                     { name: "Protocols", field: "protocols", width: "100%"}
                                                 ], function(obj) {
                                                         connect.connect(obj.grid, "onRowDblClick", obj.grid,
@@ -165,9 +183,9 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            that.controller.show("port", name, brokerObj);
+                                                            addPort.show(name, that.brokerData.authenticationproviders);
                                                         });
-                                                });
+                                                }, gridProperties, EnhancedGrid);
 
                              gridProperties = {
                                      keepSelection: true,
