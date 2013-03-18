@@ -297,6 +297,7 @@ QPID_AUTO_TEST_CASE(parseString)
     BOOST_CHECK_NO_THROW(qb::Selector e("(354.6)"));
     BOOST_CHECK_NO_THROW(qb::Selector e("A is null and 'hello out there'"));
     BOOST_CHECK_NO_THROW(qb::Selector e("17/4>4"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("A IN ('hello', 'there', 1 , true, (1-17))"));
 }
 
 class TestSelectorEnv : public qpid::broker::SelectorEnv {
@@ -401,6 +402,12 @@ QPID_AUTO_TEST_CASE(comparisonEval)
     BOOST_CHECK(!qb::Selector("'hello'>42 and 'hello'<42 and 'hello'=42 and 'hello'<>42").eval(env));
     BOOST_CHECK(qb::Selector("20 >= 19.0 and 20 > 19").eval(env));
     BOOST_CHECK(qb::Selector("42 <= 42.0 and 37.0 >= 37").eval(env));
+    BOOST_CHECK(qb::Selector("(A IN ('hello', 'there', 1 , true, (1-17))) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("'hello' IN ('hello', 'there', 1 , true, (1-17))").eval(env));
+    BOOST_CHECK(qb::Selector("TRUE IN ('hello', 'there', 1 , true, (1-17))").eval(env));
+    BOOST_CHECK(qb::Selector("-16 IN ('hello', 'there', 1 , true, (1-17))").eval(env));
+    BOOST_CHECK(!qb::Selector("'hell' IN ('hello', 'there', 1 , true, (1-17))").eval(env));
+    BOOST_CHECK(qb::Selector("('hell' IN ('hello', 'there', 1 , true, (1-17), A)) IS NULL").eval(env));
 }
 
 QPID_AUTO_TEST_CASE(NullEval)
