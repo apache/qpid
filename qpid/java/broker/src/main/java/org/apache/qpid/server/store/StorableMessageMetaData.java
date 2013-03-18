@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.nio.ByteBuffer;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 
 public interface StorableMessageMetaData
 {

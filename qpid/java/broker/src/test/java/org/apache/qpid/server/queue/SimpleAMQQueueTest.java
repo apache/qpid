@@ -38,8 +38,9 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
+import org.apache.qpid.server.protocol.v0_8.IncomingMessage;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
@@ -422,7 +423,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals("Unexpected total number of messages sent to both after enqueue", 2, subscription1.getMessages().size() + subscription2.getMessages().size());
 
         /* Now release the first message only, causing it to be requeued */
-        queueEntries.get(0).release();  
+        queueEntries.get(0).release();
 
         Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
 

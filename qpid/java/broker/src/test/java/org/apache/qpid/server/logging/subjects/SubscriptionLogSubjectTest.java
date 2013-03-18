@@ -21,14 +21,14 @@
 package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionFactory;
-import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
+import org.apache.qpid.server.protocol.v0_8.SubscriptionFactory;
+import org.apache.qpid.server.protocol.v0_8.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -102,7 +102,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
         // MESSAGE [Blank][sub:0(vh(/
         //                           test)/
         //                                 qu(SubscriptionLogSubjectTest))]
-        // Take the last bit and drop off the extra )]        
+        // Take the last bit and drop off the extra )]
         String[] parts = message.split("/");
         assertEquals("Message part count wrong", 3, parts.length);
         String subscription = parts[2].substring(0, parts[2].indexOf(")") + 1);

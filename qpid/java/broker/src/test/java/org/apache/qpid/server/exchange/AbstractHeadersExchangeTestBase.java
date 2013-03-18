@@ -41,15 +41,15 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.server.protocol.v0_8.IncomingMessage;
 import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
@@ -629,15 +629,7 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
         private Object getKey()
         {
-            try
-            {
-                return getMessagePublishInfo().getRoutingKey();
-            }
-            catch (AMQException e)
-            {
-                _log.error("Error getting routing key: " + e, e);
-                return null;
-            }
+            return getMessagePublishInfo().getRoutingKey();
         }
     }
 }

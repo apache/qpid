@@ -23,10 +23,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.AMQMessageReference;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.protocol.v0_8.AMQMessageReference;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 

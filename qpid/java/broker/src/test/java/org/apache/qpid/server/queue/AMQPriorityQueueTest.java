@@ -26,7 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 
 import java.util.ArrayList;
 

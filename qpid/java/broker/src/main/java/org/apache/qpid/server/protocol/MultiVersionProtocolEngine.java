@@ -29,8 +29,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.transport.ServerConnection;
-import org.apache.qpid.transport.ConnectionDelegate;
+import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -46,22 +45,14 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
     private final AmqpProtocolVersion _defaultSupportedReply;
+    private final ProtocolEngineCreator[] _creators;
 
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
     public MultiVersionProtocolEngine(final Broker broker,
                                       final Set<AmqpProtocolVersion> supported,
                                       final AmqpProtocolVersion defaultSupportedReply,
-                                      final long id,
-                                      final NetworkConnection network)
-    {
-        this(broker, supported, defaultSupportedReply, id);
-        setNetworkConnection(network);
-    }
-
-    public MultiVersionProtocolEngine(final Broker broker,
-                                      final Set<AmqpProtocolVersion> supported,
-                                      final AmqpProtocolVersion defaultSupportedReply,
+                                      ProtocolEngineCreator[] creators,
                                       final long id)
     {
         if(defaultSupportedReply != null && !supported.contains(defaultSupportedReply))
@@ -74,6 +65,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _broker = broker;
         _supported = supported;
         _defaultSupportedReply = defaultSupportedReply;
+        _creators = creators;
     }
 
 
@@ -130,72 +122,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
     private static final int MINIMUM_REQUIRED_HEADER_BYTES = 8;
 
-    private static final byte[] AMQP_0_8_HEADER =
-            new byte[] { (byte) 'A',
-                         (byte) 'M',
-                         (byte) 'Q',
-                         (byte) 'P',
-                         (byte) 1,
-                         (byte) 1,
-                         (byte) 8,
-                         (byte) 0
-            };
 
-    private static final byte[] AMQP_0_9_HEADER =
-            new byte[] { (byte) 'A',
-                         (byte) 'M',
-                         (byte) 'Q',
-                         (byte) 'P',
-                         (byte) 1,
-                         (byte) 1,
-                         (byte) 0,
-                         (byte) 9
-            };
-
-    private static final byte[] AMQP_0_9_1_HEADER =
-            new byte[] { (byte) 'A',
-                         (byte) 'M',
-                         (byte) 'Q',
-                         (byte) 'P',
-                         (byte) 0,
-                         (byte) 0,
-                         (byte) 9,
-                         (byte) 1
-            };
-
-
-    private static final byte[] AMQP_0_10_HEADER =
-            new byte[] { (byte) 'A',
-                         (byte) 'M',
-                         (byte) 'Q',
-                         (byte) 'P',
-                         (byte) 1,
-                         (byte) 1,
-                         (byte) 0,
-                         (byte) 10
-            };
-
-    private static final byte[] AMQP_1_0_0_HEADER =
-            new byte[] { (byte) 'A',
-                         (byte) 'M',
-                         (byte) 'Q',
-                         (byte) 'P',
-                         (byte) 0,
-                         (byte) 1,
-                         (byte) 0,
-                         (byte) 0
-            };
-
-    private static final byte[] AMQP_SASL_1_0_0_HEADER =
-            new byte[] { (byte) 'A',
-                         (byte) 'M',
-                         (byte) 'Q',
-                         (byte) 'P',
-                         (byte) 3,
-                         (byte) 1,
-                         (byte) 0,
-                         (byte) 0
-            };
 
     public void setNetworkConnection(NetworkConnection networkConnection)
     {
@@ -228,146 +155,6 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     {
         return _delegate.getLastWriteTime();
     }
-
-
-    private static interface DelegateCreator
-    {
-        AmqpProtocolVersion getVersion();
-        byte[] getHeaderIdentifier();
-        ServerProtocolEngine getProtocolEngine();
-    }
-
-    private DelegateCreator creator_0_8 = new DelegateCreator()
-    {
-
-        public AmqpProtocolVersion getVersion()
-        {
-            return AmqpProtocolVersion.v0_8;
-        }
-
-        public byte[] getHeaderIdentifier()
-        {
-            return AMQP_0_8_HEADER;
-        }
-
-        public ServerProtocolEngine getProtocolEngine()
-        {
-            return new AMQProtocolEngine(_broker, _network, _id);
-        }
-    };
-
-    private DelegateCreator creator_0_9 = new DelegateCreator()
-    {
-
-        public AmqpProtocolVersion getVersion()
-        {
-            return AmqpProtocolVersion.v0_9;
-        }
-
-
-        public byte[] getHeaderIdentifier()
-        {
-            return AMQP_0_9_HEADER;
-        }
-
-        public ServerProtocolEngine getProtocolEngine()
-        {
-            return new AMQProtocolEngine(_broker, _network, _id);
-        }
-    };
-
-    private DelegateCreator creator_0_9_1 = new DelegateCreator()
-    {
-
-        public AmqpProtocolVersion getVersion()
-        {
-            return AmqpProtocolVersion.v0_9_1;
-        }
-
-
-        public byte[] getHeaderIdentifier()
-        {
-            return AMQP_0_9_1_HEADER;
-        }
-
-        public ServerProtocolEngine getProtocolEngine()
-        {
-            return new AMQProtocolEngine(_broker, _network, _id);
-        }
-    };
-
-
-    private DelegateCreator creator_0_10 = new DelegateCreator()
-    {
-
-        public AmqpProtocolVersion getVersion()
-        {
-            return AmqpProtocolVersion.v0_10;
-        }
-
-
-        public byte[] getHeaderIdentifier()
-        {
-            return AMQP_0_10_HEADER;
-        }
-
-        public ServerProtocolEngine getProtocolEngine()
-        {
-            final ConnectionDelegate connDelegate = new org.apache.qpid.server.transport.ServerConnectionDelegate(_broker,
-                    _fqdn, _broker.getSubjectCreator(getLocalAddress()));
-
-            ServerConnection conn = new ServerConnection(_id);
-
-            conn.setConnectionDelegate(connDelegate);
-            conn.setRemoteAddress(_network.getRemoteAddress());
-            conn.setLocalAddress(_network.getLocalAddress());
-            return new ProtocolEngine_0_10( conn, _network);
-        }
-    };
-
-    private DelegateCreator creator_1_0_0 = new DelegateCreator()
-    {
-
-        public AmqpProtocolVersion getVersion()
-        {
-            return AmqpProtocolVersion.v1_0_0;
-        }
-
-
-        public byte[] getHeaderIdentifier()
-        {
-            return AMQP_1_0_0_HEADER;
-        }
-
-        public ServerProtocolEngine getProtocolEngine()
-        {
-            return new ProtocolEngine_1_0_0(_network, _broker, _id);
-        }
-    };
-
-    private DelegateCreator creator_1_0_0_SASL = new DelegateCreator()
-    {
-
-        public AmqpProtocolVersion getVersion()
-        {
-            return AmqpProtocolVersion.v1_0_0;
-        }
-
-
-        public byte[] getHeaderIdentifier()
-        {
-            return AMQP_SASL_1_0_0_HEADER;
-        }
-
-        public ServerProtocolEngine getProtocolEngine()
-        {
-            return new ProtocolEngine_1_0_0_SASL(_network, _broker, _id);
-        }
-    };
-
-    private final DelegateCreator[] _creators =
-            new DelegateCreator[] { creator_0_8, creator_0_9, creator_0_9_1, creator_0_10, creator_1_0_0_SASL, creator_1_0_0 };
-
 
     private class ClosedDelegateProtocolEngine implements ServerProtocolEngine
     {
@@ -506,7 +293,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                         }
                         if(equal)
                         {
-                            newDelegate = _creators[i].getProtocolEngine();
+                            newDelegate = _creators[i].newProtocolEngine(_broker, _network, _id);
                         }
                     }
 
@@ -625,4 +412,5 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             return 0;
         }
     }
+
 }

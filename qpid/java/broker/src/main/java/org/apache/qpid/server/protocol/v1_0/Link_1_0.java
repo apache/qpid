@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-public interface Link_1_0
+import org.apache.qpid.server.protocol.LinkModel;
+
+public interface Link_1_0 extends LinkModel
 {
     void start();
 }

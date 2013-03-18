@@ -97,12 +97,12 @@ public class MemoryMessageStore extends NullMessageStore
     public void activate() throws Exception
     {
         _stateManager.attainState(State.ACTIVATING);
-        
+
         _stateManager.attainState(State.ACTIVE);
     }
 
     @Override
-    public StoredMessage addMessage(StorableMessageMetaData metaData)
+    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
     {
         final long id = _messageId.getAndIncrement();
         StoredMemoryMessage message = new StoredMemoryMessage(id, metaData);

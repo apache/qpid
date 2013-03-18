@@ -36,7 +36,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 

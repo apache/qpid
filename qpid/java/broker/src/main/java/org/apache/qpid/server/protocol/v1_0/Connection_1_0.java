@@ -218,6 +218,12 @@ public class Connection_1_0 implements ConnectionEventListener
         }
 
         @Override
+        public String getVirtualHostName()
+        {
+            return _vhost.getName();
+        }
+
+        @Override
         public long getSessionCountLimit()
         {
             return 0;  // TODO

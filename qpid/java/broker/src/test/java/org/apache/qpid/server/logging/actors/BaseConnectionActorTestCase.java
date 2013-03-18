@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class BaseConnectionActorTestCase extends BaseActorTestCase

@@ -55,25 +55,8 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
-import org.apache.qpid.server.store.ConfiguredObjectHelper;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.EventManager;
-import org.apache.qpid.server.store.MessageMetaDataType;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
-import org.apache.qpid.server.store.State;
-import org.apache.qpid.server.store.StateManager;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.StoredMemoryMessage;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.store.*;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
@@ -1232,8 +1215,8 @@ public class DerbyMessageStore implements MessageStore
                         java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
                         buf.position(1);
                         buf = buf.slice();
-                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
                         StoredDerbyMessage message = new StoredDerbyMessage(messageId, metaData, true);
                         messageHandler.message(message);
                     }
@@ -1487,8 +1470,8 @@ public class DerbyMessageStore implements MessageStore
                         java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
                         buf.position(1);
                         buf = buf.slice();
-                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
 
                         return metaData;
                     }

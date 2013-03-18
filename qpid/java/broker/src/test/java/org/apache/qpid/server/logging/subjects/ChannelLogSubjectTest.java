@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 
 /**
  * Validate ChannelLogSubjects are logged as expected

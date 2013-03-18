@@ -23,15 +23,17 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.flow.WindowCreditManager;
+import org.apache.qpid.server.protocol.v0_10.Subscription_0_10;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
+import org.apache.qpid.server.protocol.v0_10.WindowCreditManager;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.ProtocolEngine_0_10;
-import org.apache.qpid.server.transport.ServerConnection;
-import org.apache.qpid.server.transport.ServerSession;
-import org.apache.qpid.server.transport.ServerSessionDelegate;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
+import org.apache.qpid.server.protocol.v0_10.ProtocolEngine_0_10;
+import org.apache.qpid.server.protocol.v0_10.ServerConnection;
+import org.apache.qpid.server.protocol.v0_10.ServerSession;
+import org.apache.qpid.server.protocol.v0_10.ServerSessionDelegate;
+import org.apache.qpid.server.protocol.v0_8.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Binary;
@@ -73,7 +75,7 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
     }
 
     /**
-     * Tests that while creating Subscriptions of various types, the 
+     * Tests that while creating Subscriptions of various types, the
      * ID numbers assigned are allocated from a common sequence
      * (in increasing order).
      */
@@ -110,8 +112,9 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
         Binary name = new Binary(new byte[]{new Byte("1")});
         ServerSession session = new ServerSession(conn, sesDel, name, 0);
 
-        Subscription sub_0_10 = SubscriptionFactoryImpl.INSTANCE.createSubscription(session, "1", MessageAcceptMode.EXPLICIT,
-                MessageAcquireMode.PRE_ACQUIRED, MessageFlowMode.WINDOW, new WindowCreditManager(), null, null);
+        Subscription sub_0_10 =
+                new Subscription_0_10(session, "1", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED,
+                        MessageFlowMode.WINDOW, new WindowCreditManager(), null, null);
         assertEquals("Unexpected Subscription ID allocated", previousId + 1, sub_0_10.getSubscriptionID());
     }
 

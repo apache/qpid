@@ -38,7 +38,7 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
     private final AtomicInteger _messageCount = new AtomicInteger(0);
 
     @Override
-    public StoredMessage addMessage(StorableMessageMetaData metaData)
+    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
     {
         return new TestableStoredMessage(super.addMessage(metaData));
     }

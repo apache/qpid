@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.util.List;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-
-import java.util.List;
-import java.util.UUID;
 
 public interface AMQConnectionModel extends StatisticsGatherer
 {
@@ -78,6 +76,8 @@ public interface AMQConnectionModel extends StatisticsGatherer
     String getClientVersion();
 
     String getPrincipalAsString();
+
+    String getVirtualHostName();
 
     long getSessionCountLimit();
 

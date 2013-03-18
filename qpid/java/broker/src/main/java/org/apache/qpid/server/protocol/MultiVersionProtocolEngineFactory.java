@@ -20,12 +20,15 @@
 */
 package org.apache.qpid.server.protocol;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
@@ -34,6 +37,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private final Broker _broker;
     private final Set<AmqpProtocolVersion> _supported;
     private final AmqpProtocolVersion _defaultSupportedReply;
+    private final ProtocolEngineCreator[] _creators;
 
     public MultiVersionProtocolEngineFactory(Broker broker,
             final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
@@ -47,11 +51,19 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         _broker = broker;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
+
+        List<ProtocolEngineCreator> creators = new ArrayList<ProtocolEngineCreator>();
+
+        for(ProtocolEngineCreator c : new QpidServiceLoader<ProtocolEngineCreator>().instancesOf(ProtocolEngineCreator.class))
+        {
+            creators.add(c);
+        }
+        _creators = creators.toArray(new ProtocolEngineCreator[creators.size()]);
     }
 
     public ServerProtocolEngine newProtocolEngine()
     {
-        return new MultiVersionProtocolEngine(_broker, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_broker, _supported, _defaultSupportedReply, _creators, ID_GENERATOR.getAndIncrement());
     }
 
 }

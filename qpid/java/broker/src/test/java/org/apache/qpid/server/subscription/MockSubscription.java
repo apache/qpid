@@ -536,6 +536,12 @@ public class MockSubscription implements Subscription
         }
 
         @Override
+        public String getVirtualHostName()
+        {
+            return null;
+        }
+
+        @Override
         public long getSessionCountLimit()
         {
             return 0;
