@@ -52,38 +52,6 @@ void skipWS(std::string::const_iterator& s, std::string::const_iterator& e)
     }
 }
 
-bool tokeniseEos(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
-{
-    if ( s!=e ) return false;
-
-    tok = Token(T_EOS, "");
-    return true;
-}
-
-inline bool isIdentifierStart(char c)
-{
-    return std::isalpha(c) || c=='_' || c=='$';
-}
-
-inline bool isIdentifierPart(char c)
-{
-    return std::isalnum(c) || c=='_' || c=='$' || c=='.';
-}
-
-bool tokeniseIdentifier(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
-{
-    // Be sure that first char is alphanumeric or _ or $
-    if ( s==e || !isIdentifierStart(*s) ) return false;
-
-    std::string::const_iterator t = s;
-
-    while ( ++s!=e && isIdentifierPart(*s) );
-
-    tok = Token(T_IDENTIFIER, t, s);
-
-    return true;
-}
-
 // Lexically, reserved words are a subset of identifiers
 // so we parse an identifier first then check if it is a reserved word and
 // convert it if it is a reserved word
@@ -145,27 +113,11 @@ bool tokeniseReservedWord(Token& tok)
     return true;
 }
 
-// This is really only used for testing
-bool tokeniseReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
-{
-    std::string::const_iterator p = s;
-    bool r = tokeniseIdentifier(p, e, tok) && tokeniseReservedWord(tok);
-    if (r) s = p;
-    return r;
-}
-
-bool tokeniseIdentifierOrReservedWord(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
-{
-    bool r = tokeniseIdentifier(s, e, tok);
-    if (r) (void) tokeniseReservedWord(tok);
-    return r;
-}
-
 // parsing strings is complicated by the need to allow "''" as an embedded single quote
-bool tokeniseString(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
+bool processString(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
 {
-    if ( s==e || *s != '\'' ) return false;
-
+    // We only get here once the tokeniser recognises the initial quote for a string
+    // so we don't need to check for it again.
     std::string::const_iterator q = std::find(s+1, e, '\'');
     if ( q==e ) return false;
 
@@ -185,42 +137,17 @@ bool tokeniseString(std::string::const_iterator& s, std::string::const_iterator&
     return true;
 }
 
-bool tokeniseParens(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
+inline bool isIdentifierStart(char c)
 {
-    if ( s==e) return false;
-    if ( *s=='(' ) {
-        tok = Token (T_LPAREN, s, s+1);
-        ++s;
-        return true;
-    }
-    if ( *s==')' ) {
-        tok = Token (T_RPAREN, s, s+1);
-        ++s;
-        return true;
-    }
-    return false;
+    return std::isalpha(c) || c=='_' || c=='$';
 }
 
-inline bool isOperatorPart(char c)
+inline bool isIdentifierPart(char c)
 {
-    return !std::isalnum(c) && !std::isspace(c) && c!='_' && c!='$' && c!='(' && c!=')' && c!= '\'';
+    return std::isalnum(c) || c=='_' || c=='$' || c=='.';
 }
 
-// These lexical tokens contain no alphanumerics - this is broader than actual operators but
-// works.
-bool tokeniseOperator(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
-{
-    if ( s==e || !isOperatorPart(*s) ) return false;
-
-    std::string::const_iterator t = s;
-
-    while (++s!=e && isOperatorPart(*s));
-
-    tok = Token(T_OPERATOR, t, s);
-    return true;
-}
-
-bool tokeniseNumeric(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
+bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
 {
     std::string::const_iterator t = s;
 
@@ -228,65 +155,102 @@ bool tokeniseNumeric(std::string::const_iterator& s, std::string::const_iterator
     enum {
         START,
         REJECT,
+        IDENTIFIER,
         DIGIT,
         DECIMAL_START,
         DECIMAL,
         EXPONENT_SIGN,
         EXPONENT_START,
         EXPONENT,
-        ACCEPT_EXACT,
-        ACCEPT_INEXACT
+        ACCEPT_IDENTIFIER,
+        ACCEPT_INC,
+        ACCEPT_NOINC
     } state = START;
 
+    TokenType tokType = T_EOS;
     while (true)
     switch (state) {
     case START:
-        if (t==e) {state = REJECT;}
+        if (t==e) {tok = Token(T_EOS, ""); return true;}
+        else switch (*t) {
+        case '(': tokType = T_LPAREN; state = ACCEPT_INC; continue;
+        case ')': tokType = T_RPAREN; state = ACCEPT_INC; continue;
+        case ',': tokType = T_COMMA; state = ACCEPT_INC; continue;
+        case '+': tokType = T_PLUS; state = ACCEPT_INC; continue;
+        case '-': tokType = T_MINUS; state = ACCEPT_INC; continue;
+        case '*': tokType = T_MULT; state = ACCEPT_INC; continue;
+        case '/': tokType = T_DIV; state = ACCEPT_INC; continue;
+        case '=': tokType = T_EQUAL; state = ACCEPT_INC; continue;
+        case '<':
+            ++t;
+            if (t==e || (*t!='>' && *t!='='))
+                {tokType = T_LESS; state = ACCEPT_NOINC; continue; }
+            else
+                {tokType = (*t=='>') ? T_NEQ : T_LSEQ; state = ACCEPT_INC; continue; }
+        case '>':
+            ++t;
+            if (t==e || *t!='=')
+                {tokType = T_GRT; state = ACCEPT_NOINC; continue;}
+            else
+                {tokType = T_GREQ; state = ACCEPT_INC; continue;}
+        default:
+            break;
+        }
+        if (isIdentifierStart(*t)) {++t; state = IDENTIFIER;}
+        else if (*t=='\'') {return processString(s, e, tok);}
         else if (std::isdigit(*t)) {++t; state = DIGIT;}
         else if (*t=='.') {++t; state = DECIMAL_START;}
         else state = REJECT;
-        break;
+        continue;
+    case IDENTIFIER:
+        if (t==e) {state = ACCEPT_IDENTIFIER;}
+        else if (isIdentifierPart(*t)) {++t; state = IDENTIFIER;}
+        else state = ACCEPT_IDENTIFIER;
+        continue;
     case DECIMAL_START:
         if (t==e) {state = REJECT;}
         else if (std::isdigit(*t)) {++t; state = DECIMAL;}
         else state = REJECT;
-        break;
+        continue;
     case EXPONENT_SIGN:
         if (t==e) {state = REJECT;}
         else if (*t=='-' || *t=='+') {++t; state = EXPONENT_START;}
         else if (std::isdigit(*t)) {++t; state = EXPONENT;}
         else state = REJECT;
-        break;
+        continue;
     case EXPONENT_START:
         if (t==e) {state = REJECT;}
         else if (std::isdigit(*t)) {++t; state = EXPONENT;}
         else state = REJECT;
-        break;
+        continue;
     case DIGIT:
-        if (t==e) {state = ACCEPT_EXACT;}
+        if (t==e) {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
         else if (std::isdigit(*t)) {++t; state = DIGIT;}
         else if (*t=='.') {++t; state = DECIMAL;}
         else if (*t=='e' || *t=='E') {++t; state = EXPONENT_SIGN;}
-        else state = ACCEPT_EXACT;
-        break;
+        else {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        continue;
     case DECIMAL:
-        if (t==e) {state = ACCEPT_INEXACT;}
+        if (t==e) {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
         else if (std::isdigit(*t)) {++t; state = DECIMAL;}
         else if (*t=='e' || *t=='E') {++t; state = EXPONENT_SIGN;}
-        else state = ACCEPT_INEXACT;
-        break;
+        else {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
+        continue;
     case EXPONENT:
-        if (t==e) {state = ACCEPT_INEXACT;}
+        if (t==e) {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
         else if (std::isdigit(*t)) {++t; state = EXPONENT;}
-        else state = ACCEPT_INEXACT;
-        break;
-    case ACCEPT_EXACT:
-        tok = Token(T_NUMERIC_EXACT, s, t);
+        else {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
+        continue;
+    case ACCEPT_INC:
+        ++t;
+    case ACCEPT_NOINC:
+        tok = Token(tokType, s, t);
         s = t;
         return true;
-    case ACCEPT_INEXACT:
-        tok = Token(T_NUMERIC_APPROX, s, t);
+    case ACCEPT_IDENTIFIER:
+        tok = Token(T_IDENTIFIER, s, t);
         s = t;
+        tokeniseReservedWord(tok);
         return true;
     case REJECT:
         return false;
@@ -319,12 +283,7 @@ const Token& Tokeniser::nextToken()
     tokens.push_back(Token());
     Token& tok = tokens[tokp++];
 
-    if (tokeniseEos(inp, inEnd, tok)) return tok;
-    if (tokeniseIdentifierOrReservedWord(inp, inEnd, tok)) return tok;
-    if (tokeniseNumeric(inp, inEnd, tok)) return tok;
-    if (tokeniseString(inp, inEnd, tok)) return tok;
-    if (tokeniseParens(inp, inEnd, tok)) return tok;
-    if (tokeniseOperator(inp, inEnd, tok)) return tok;
+    if (tokenise(inp, inEnd, tok)) return tok;
 
     throw TokenException("Found illegal character");
 }
