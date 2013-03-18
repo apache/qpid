@@ -40,7 +40,7 @@ public class PortRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("/rest/port/");
         assertNotNull("Port data cannot be null", ports);
-        assertEquals("Unexpected number of ports", 4, ports.size());
+        assertEquals("Unexpected number of ports", 2, ports.size());
 
         String httpPortName = TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT;
         Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);
@@ -57,7 +57,7 @@ public class PortRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("/rest/port/");
         assertNotNull("Ports data cannot be null", ports);
-        assertEquals("Unexpected number of ports", 4, ports.size());
+        assertEquals("Unexpected number of ports", 2, ports.size());
         for (Map<String, Object> portMap : ports)
         {
             String portName = (String) portMap.get(Port.NAME);
@@ -115,6 +115,15 @@ public class PortRestTest extends QpidRestTestCase
         portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
+
+        // try to add a second RMI port
+        attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName + 2);
+        attributes.put(Port.PORT, findFreePort());
+        attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
+
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Adding of a second RMI port should fail", 409, responseCode);
     }
 
     public void testPutCreateAndUpdateAmqpPort() throws Exception
@@ -145,7 +154,13 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.AMQP_0_9_1));
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
-        assertEquals("Unexpected response code for port update", 200, responseCode);
+        assertEquals("Port cannot be updated in non management mode", 409, responseCode);
+
+        stopBroker();
+        startBroker(DEFAULT_PORT, true);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Port should be allwed to update in a management mode", 200, responseCode);
 
         portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);

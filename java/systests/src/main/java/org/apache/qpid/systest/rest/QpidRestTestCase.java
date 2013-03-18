@@ -75,6 +75,8 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         TestBrokerConfiguration config = getBrokerConfiguration();
         config.addHttpManagementConfiguration();
         config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _restTestHelper.getHttpPort());
+        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
+        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
     }
 
     public RestTestHelper getRestTestHelper()

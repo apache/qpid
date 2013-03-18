@@ -41,7 +41,7 @@ public class StructureRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) structure.get("ports");
-        assertEquals("Unexpected number of ports", 4, ports.size());
+        assertEquals("Unexpected number of ports", 2, ports.size());
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> providers = (List<Map<String, Object>>) structure.get("authenticationproviders");

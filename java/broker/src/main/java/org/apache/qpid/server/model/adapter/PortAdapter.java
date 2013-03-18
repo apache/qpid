@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -68,6 +69,7 @@ public class PortAdapter extends AbstractAdapter implements Port
 
     private final Broker _broker;
     private AuthenticationProvider _authenticationProvider;
+    private AtomicReference<State> _state;
 
     /*
      * TODO register PortAceptor as a listener. For supporting multiple
@@ -78,6 +80,8 @@ public class PortAdapter extends AbstractAdapter implements Port
     {
         super(id, defaults, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _broker = broker;
+        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
+        _state = new AtomicReference<State>(state);
         addParent(Broker.class, broker);
     }
 
@@ -173,12 +177,7 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public State getActualState()
     {
-        State state = (State)super.getAttribute(STATE);
-        if (state == null)
-        {
-            return State.ACTIVE;
-        }
-        return state;
+        return _state.get();
     }
 
     @Override
@@ -288,19 +287,41 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public boolean setState(State currentState, State desiredState)
     {
+        State state = _state.get();
         if (desiredState == State.DELETED)
         {
-            return true;
+            if (state == State.STOPPED || state == State.QUIESCED)
+            {
+                return _state.compareAndSet(state, State.DELETED);
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot delete port in " + state + " state");
+            }
         }
         else if (desiredState == State.ACTIVE)
         {
-            onActivate();
-            return true;
+            if ((state == State.INITIALISING || state == State.QUIESCED) && _state.compareAndSet(state, State.ACTIVE))
+            {
+                onActivate();
+                return true;
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot activate port in " + state + " state");
+            }
         }
         else if (desiredState == State.STOPPED)
         {
-            onStop();
-            return true;
+            if (_state.compareAndSet(state, State.STOPPED))
+            {
+                onStop();
+                return true;
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot stop port in " + state + " state");
+            }
         }
         return false;
     }
@@ -329,6 +350,10 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
+        if (getActualState() == State.ACTIVE)
+        {
+            throw new IllegalStateException("Cannot change attributes for an active port");
+        }
         super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
     }
 }

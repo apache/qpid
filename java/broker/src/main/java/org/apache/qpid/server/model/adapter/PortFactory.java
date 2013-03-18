@@ -112,6 +112,15 @@ public class PortFactory
                 throw new IllegalConfigurationException("Only one protocol can be used on non AMQP port");
             }
             Protocol protocol = protocols.iterator().next();
+            Collection<Port> existingPorts = broker.getPorts();
+            for (Port existingPort : existingPorts)
+            {
+                Collection<Protocol> portProtocols = existingPort.getProtocols();
+                if (portProtocols != null && portProtocols.contains(protocol))
+                {
+                    throw new IllegalConfigurationException("Port for protocol " + protocol + " already exist. Only one management port per protocol can be created");
+                }
+            }
             defaults.put(Port.NAME, portValue + "-" + protocol.name());
             port = new PortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
         }
