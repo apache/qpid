@@ -62,7 +62,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) brokerDetails.get(BROKER_PORTS_ATTRIBUTE);
-        assertEquals("Unexpected number of ports", 4, ports.size());
+        assertEquals("Unexpected number of ports", 2, ports.size());
 
         for (Map<String, Object> port : ports)
         {

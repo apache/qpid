@@ -474,6 +474,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     {
         Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
         addPort(port);
+        port.setDesiredState(State.INITIALISING, State.ACTIVE);
         return port;
     }
 
