@@ -31,8 +31,9 @@
 #include <memory>
 #include <ostream>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 /*
  * Syntax for JMS style selector expressions (informal):
@@ -376,6 +377,40 @@ public:
         if (!unknown(vu) && ve>vu) return BN_FALSE;
         if (unknown(vl) || unknown(vu)) return BN_UNKNOWN;
         return BN_TRUE;
+    }
+};
+
+class InExpression : public BoolExpression {
+    boost::scoped_ptr<Expression> e;
+    boost::ptr_vector<Expression> l;
+
+public:
+    InExpression(Expression* e_, boost::ptr_vector<Expression>& l_) :
+        e(e_)
+    {
+        l.swap(l_);
+    }
+
+    void repr(ostream& os) const {
+        os << *e << " IN (";
+        for (std::size_t i = 0; i<l.size(); ++i){
+            os << l[i] << (i<l.size()-1 ? ", " : ")");
+        }
+    }
+
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
+        Value ve(e->eval(env));
+        if (unknown(ve)) return BN_UNKNOWN;
+        BoolOrNone r = BN_FALSE;
+        for (std::size_t i = 0; i<l.size(); ++i){
+            Value li(l[i].eval(env));
+            if (unknown(li)) {
+                r = BN_UNKNOWN;
+                continue;
+            }
+            if (ve==li) return BN_TRUE;
+        }
+        return r;
     }
 };
 
@@ -751,6 +786,18 @@ BoolExpression* parseSpecialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expr
         if ( !upper.get() ) return 0;
         return new BetweenExpression(e1.release(), lower.release(), upper.release());
     }
+    case T_IN: {
+        if ( tokeniser.nextToken().type!=T_LPAREN ) return 0;
+        boost::ptr_vector<Expression> list;
+        do {
+            std::auto_ptr<Expression> e(parseAddExpression(tokeniser));
+            if (!e.get()) return 0;
+            list.push_back(e.release());
+        } while (tokeniser.nextToken().type==T_COMMA);
+        tokeniser.returnTokens();
+        if ( tokeniser.nextToken().type!=T_RPAREN ) return 0;
+        return new InExpression(e1.release(), list);
+    }
     default:
         return 0;
     }
@@ -788,7 +835,8 @@ Expression* parseComparisonExpression(Tokeniser& tokeniser)
         return new UnaryBooleanExpression<Expression>(&notOp, e.release());
     }
     case T_BETWEEN:
-    case T_LIKE: {
+    case T_LIKE:
+    case T_IN: {
         tokeniser.returnTokens();
         return parseSpecialComparisons(tokeniser, e1);
     }
