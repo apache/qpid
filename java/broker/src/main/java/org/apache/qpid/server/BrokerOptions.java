@@ -47,6 +47,7 @@ public class BrokerOptions
     private int _managementModeConnectorPort;
     private int _managementModeHttpPort;
     private String _workingDir;
+    private boolean _skipLoggingConfiguration;
 
     public String getLogConfigFile()
     {
@@ -227,5 +228,15 @@ public class BrokerOptions
     public void setInitialConfigurationLocation(String initialConfigurationLocation)
     {
         _initialConfigurationLocation = initialConfigurationLocation;
+    }
+
+    public boolean isSkipLoggingConfiguration()
+    {
+        return _skipLoggingConfiguration;
+    }
+
+    public void setSkipLoggingConfiguration(boolean skipLoggingConfiguration)
+    {
+        _skipLoggingConfiguration = skipLoggingConfiguration;
     }
 }
