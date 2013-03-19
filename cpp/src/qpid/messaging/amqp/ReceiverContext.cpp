@@ -121,15 +121,15 @@ void ReceiverContext::configure(pn_terminus_t* source) const
     }
 
     // Look specifically for qpid.selector link property and add a filter for it
-    qpid::types::Variant::Map::const_iterator i = helper.getLinkProperties().find("qpid.selector");
+    qpid::types::Variant::Map::const_iterator i = helper.getLinkProperties().find("selector");
     if (i!=helper.getLinkProperties().end()) {
         pn_data_t* filter = pn_terminus_filter(source);
         pn_data_put_map(filter);
         pn_data_enter(filter);
-        pn_data_put_symbol(filter, convert("qpid.selector"));
+        pn_data_put_symbol(filter, convert("selector"));
         pn_data_put_described(filter);
         pn_data_enter(filter);
-        pn_data_put_symbol(filter, convert(qpid::amqp::filters::QPID_SELECTOR_FILTER_SYMBOL));
+        pn_data_put_ulong(filter, qpid::amqp::filters::SELECTOR_FILTER_CODE);
         pn_data_put_string(filter, convert(i->second));
         pn_data_exit(filter);
         pn_data_exit(filter);
