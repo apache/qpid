@@ -61,7 +61,7 @@ void Filter::onStringValue(const qpid::amqp::CharSequence& key, const qpid::amqp
         if (descriptor->match(qpid::amqp::filters::LEGACY_TOPIC_FILTER_SYMBOL, qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE)
             || descriptor->match(qpid::amqp::filters::LEGACY_DIRECT_FILTER_SYMBOL, qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE)) {
             setSubjectFilter(filter);
-        } else if (descriptor->match(qpid::amqp::filters::QPID_SELECTOR_FILTER_SYMBOL, 0)) {
+        } else if (descriptor->match(qpid::amqp::filters::SELECTOR_FILTER_SYMBOL, qpid::amqp::filters::SELECTOR_FILTER_CODE)) {
             setSelectorFilter(filter);
         } else {
             QPID_LOG(notice, "Skipping unrecognised string filter with key " << filter.key << " and descriptor " << filter.descriptor);

@@ -93,7 +93,8 @@ const std::string DURABLE("durable");
 const std::string X_DECLARE("x-declare");
 const std::string X_SUBSCRIBE("x-subscribe");
 const std::string X_BINDINGS("x-bindings");
-const std::string QPID_SELECTOR("qpid.selector");
+const std::string SELECTOR("selector");
+const std::string APACHE_SELECTOR("x-apache-selector");
 const std::string EXCHANGE("exchange");
 const std::string QUEUE("queue");
 const std::string KEY("key");
@@ -477,8 +478,8 @@ QueueSource::QueueSource(const Address& address) :
     //options)
     exclusive = Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE;
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(options);
-    std::string selector = Opt(address)/LINK/QPID_SELECTOR;
-    if (!selector.empty()) options.setString(QPID_SELECTOR, selector);
+    std::string selector = Opt(address)/LINK/SELECTOR;
+    if (!selector.empty()) options.setString(APACHE_SELECTOR, selector);
 }
 
 void QueueSource::subscribe(qpid::client::AsyncSession& session, const std::string& destination)
@@ -990,7 +991,7 @@ Verifier::Verifier()
     link[X_SUBSCRIBE] = true;
     link[X_DECLARE] = true;
     link[X_BINDINGS] = true;
-    link[QPID_SELECTOR] = true;
+    link[SELECTOR] = true;
     defined[LINK] = link;
 }
 void Verifier::verify(const Address& address) const
