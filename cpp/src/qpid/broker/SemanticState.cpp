@@ -286,7 +286,7 @@ void SemanticState::record(const DeliveryRecord& delivery)
 }
 
 const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
-const std::string QPID_SELECTOR("qpid.selector");
+const std::string APACHE_SELECTOR("x-apache-selector");
 
 SemanticStateConsumerImpl::SemanticStateConsumerImpl(SemanticState* _parent,
                                           const string& _name,
@@ -309,7 +309,7 @@ Consumer(_name, type),
     exclusive(_exclusive),
     resumeId(_resumeId),
     tag(_tag),
-    selector(returnSelector(_arguments.getAsString(QPID_SELECTOR))),
+    selector(returnSelector(_arguments.getAsString(APACHE_SELECTOR))),
     resumeTtl(_resumeTtl),
     arguments(_arguments),
     notifyEnabled(true),
