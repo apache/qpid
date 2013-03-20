@@ -341,6 +341,26 @@ public class RestServlet extends AbstractServlet
             }
         }
 
+        if (names.isEmpty())
+        {
+            if (_hierarchy.length == 0)
+            {
+                try
+                {
+                    doUpdate(getBroker(), providedObject);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                }
+                catch(RuntimeException e)
+                {
+                    setResponseStatus(response, e);
+                }
+                return;
+            }
+            else
+            {
+                throw new ServletException("Cannot identify request target object");
+            }
+        }
 
         providedObject.put("name", names.get(names.size()-1));
 
