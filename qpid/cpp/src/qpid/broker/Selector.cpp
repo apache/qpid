@@ -147,7 +147,8 @@ const Value& MessageSelectorEnv::value(const string& identifier) const
     return returnedValues[identifier];
 }
 
-Selector::Selector(const string& e) :
+Selector::Selector(const string& e)
+try :
     parse(TopExpression::parse(e)),
     expression(e)
 {
@@ -158,6 +159,10 @@ Selector::Selector(const string& e) :
         parse->repr(ss);
         QPID_LOG(debug, "Selector parsed[" << e << "] into: " << ss.str());
     }
+}
+catch (std::range_error& ex) {
+    QPID_LOG(debug, "Selector failed[" << e << "] -> " << ex.what());
+    throw;
 }
 
 Selector::~Selector()
