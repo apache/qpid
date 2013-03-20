@@ -132,12 +132,11 @@ public:
     virtual BoolOrNone eval(Expression&, Expression&, const SelectorEnv&) const = 0;
 };
 
-template <typename T>
 class UnaryBooleanOperator {
 public:
     virtual ~UnaryBooleanOperator() {}
     virtual void repr(ostream&) const = 0;
-    virtual BoolOrNone eval(T&, const SelectorEnv&) const = 0;
+    virtual BoolOrNone eval(Expression&, const SelectorEnv&) const = 0;
 };
 
 class ArithmeticOperator {
@@ -170,8 +169,7 @@ ostream& operator<<(ostream& os, const ComparisonOperator& e)
     return os;
 }
 
-template <typename T>
-ostream& operator<<(ostream& os, const UnaryBooleanOperator<T>& e)
+ostream& operator<<(ostream& os, const UnaryBooleanOperator& e)
 {
     e.repr(os);
     return os;
@@ -260,13 +258,12 @@ public:
     }
 };
 
-template <typename T>
 class UnaryBooleanExpression : public BoolExpression {
-    UnaryBooleanOperator<T>* op;
-    boost::scoped_ptr<T> e1;
+    UnaryBooleanOperator* op;
+    boost::scoped_ptr<Expression> e1;
 
 public:
-    UnaryBooleanExpression(UnaryBooleanOperator<T>* o, T* e) :
+    UnaryBooleanExpression(UnaryBooleanOperator* o, Expression* e) :
         op(o),
         e1(e)
     {}
@@ -594,7 +591,7 @@ class Greq : public ComparisonOperator {
 };
 
 // "IS NULL"
-class IsNull : public UnaryBooleanOperator<Expression> {
+class IsNull : public UnaryBooleanOperator {
     void repr(ostream& os) const {
         os << "IsNull";
     }
@@ -605,7 +602,7 @@ class IsNull : public UnaryBooleanOperator<Expression> {
 };
 
 // "IS NOT NULL"
-class IsNonNull : public UnaryBooleanOperator<Expression> {
+class IsNonNull : public UnaryBooleanOperator {
     void repr(ostream& os) const {
         os << "IsNonNull";
     }
@@ -616,7 +613,7 @@ class IsNonNull : public UnaryBooleanOperator<Expression> {
 };
 
 // "NOT"
-class Not : public UnaryBooleanOperator<Expression> {
+class Not : public UnaryBooleanOperator {
     void repr(ostream& os) const {
         os << "NOT";
     }
@@ -824,7 +821,7 @@ Expression* comparisonExpression(Tokeniser& tokeniser)
     if ( t.type==T_NOT ) {
         std::auto_ptr<Expression> e(comparisonExpression(tokeniser));
         if (!e.get()) return 0;
-        return new UnaryBooleanExpression<Expression>(&notOp, e.release());
+        return new UnaryBooleanExpression(&notOp, e.release());
     }
 
     tokeniser.returnTokens();
@@ -837,10 +834,10 @@ Expression* comparisonExpression(Tokeniser& tokeniser)
         // The rest must be T_NULL or T_NOT, T_NULL
         switch (tokeniser.nextToken().type) {
             case T_NULL:
-                return new UnaryBooleanExpression<Expression>(&isNullOp, e1.release());
+                return new UnaryBooleanExpression(&isNullOp, e1.release());
             case T_NOT:
                 if ( tokeniser.nextToken().type == T_NULL)
-                    return new UnaryBooleanExpression<Expression>(&isNonNullOp, e1.release());
+                    return new UnaryBooleanExpression(&isNonNullOp, e1.release());
             default:
                 error = "expected NULL or NOT NULL after IS";
                 return 0;
@@ -848,7 +845,7 @@ Expression* comparisonExpression(Tokeniser& tokeniser)
     case T_NOT: {
         std::auto_ptr<BoolExpression> e(specialComparisons(tokeniser, e1));
         if (!e.get()) return 0;
-        return new UnaryBooleanExpression<Expression>(&notOp, e.release());
+        return new UnaryBooleanExpression(&notOp, e.release());
     }
     case T_BETWEEN:
     case T_LIKE:
