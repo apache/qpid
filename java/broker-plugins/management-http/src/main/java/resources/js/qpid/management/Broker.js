@@ -35,6 +35,11 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dijit/layout/AccordionContainer",
         "dijit/layout/AccordionPane",
+        "dijit/form/FilteringSelect",
+        "dijit/form/NumberSpinner",
+        "dijit/form/ValidationTextBox",
+        "dijit/form/CheckBox",
+        "dojo/store/Memory",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort) {
 
@@ -45,7 +50,301 @@ define(["dojo/_base/xhr",
                if(parent) {
                     this.modelObj.parent = {};
                     this.modelObj.parent[ parent.type] = parent;
-                }
+               }
+               this.attributeWidgetFactories = [{
+                     name: "name",
+                     createWidget: function(brokerData) {
+                        return new dijit.form.ValidationTextBox({
+                          required: true,
+                          value: brokerData.name,
+                          disabled: true,
+                          label: "Name*:",
+                          name: "name"})
+                    }
+               }, {
+                      name: "defaultAuthenticationProvider",
+                      createWidget: function(brokerData) {
+                        var providers = brokerData.authenticationproviders;
+                        var data = [];
+                        if (providers) {
+                           for (var i=0; i< providers.length; i++) {
+                               data.push({id: providers[i].name, name: providers[i].name});
+                           }
+                        }
+                        var providersStore = new dojo.store.Memory({ data: data });
+                        return new dijit.form.FilteringSelect({
+                           required: true,
+                           store: providersStore,
+                           value: brokerData.defaultAuthenticationProvider,
+                           label: "Default Authentication Provider*:",
+                           name: "defaultAuthenticationProvider"})
+                      }
+               }, {
+                       name: "defaultVirtualHost",
+                       createWidget: function(brokerData) {
+                         var hosts = brokerData.virtualhosts;
+                         var data = [];
+                         if (hosts) {
+                           for (var i=0; i< hosts.length; i++) {
+                               data.push({id: hosts[i].name, name: hosts[i].name});
+                           }
+                         }
+                         var hostsStore = new dojo.store.Memory({ data: data });
+                         return new dijit.form.FilteringSelect({
+                           required: true, store: hostsStore,
+                           value: brokerData.defaultVirtualHost,
+                           label: "Default Virtual Host*:",
+                           name: "defaultVirtualHost"})
+                       }
+               }, {
+                       name: "aclFile",
+                       createWidget: function(brokerData) {
+                          return new dijit.form.ValidationTextBox({
+                            required: false,
+                            value: brokerData.aclFile,
+                            label: "ACL file location:",
+                            name: "aclFile"})
+                       }
+               }, {
+                       name: "groupFile",
+                       createWidget: function(brokerData)
+                       {
+                           return new dijit.form.ValidationTextBox({
+                             required: false,
+                             value: brokerData.groupFile,
+                             label: "Group file location:",
+                             name: "groupFile"});
+                       }
+               }, {
+                       name: "keyStorePath",
+                       createWidget: function(brokerData) {
+                           return new dijit.form.ValidationTextBox({
+                             required: false,
+                             value: brokerData.keyStorePath,
+                             label: "Path to keystore:",
+                             name: "keyStorePath"});
+                       }
+               }, {
+                       name: "keyStoreCertAlias",
+                       createWidget: function(brokerData) {
+                           return new dijit.form.ValidationTextBox({
+                             required: false,
+                             value: brokerData.keyStoreCertAlias,
+                             label: "Keystore certificate alias:",
+                             name: "keyStoreCertAlias"});
+                       }
+               }, {
+                       name: "keyStorePassword",
+                       requiredFor: "keyStorePath",
+                       createWidget: function(brokerData) {
+                           return new dijit.form.ValidationTextBox({
+                             required: false,
+                             label: "Keystore password:",
+                             invalidMessage: "Missed keystore password",
+                             name: "keyStorePassword"});
+                       }
+               }, {
+                       name: "trustStorePath",
+                       createWidget: function(brokerData)
+                       {
+                         return new dijit.form.ValidationTextBox({
+                             required: false,
+                             value: brokerData.trustStorePath,
+                             label: "Path to truststore:",
+                             name: "trustStorePath"});
+                       }
+               }, {
+                       name: "trustStorePassword",
+                       requiredFor: "trustStorePath",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           required: false,
+                           label: "Truststore password:",
+                           invalidMessage: "Missed trustore password",
+                           name: "trustStorePassword"});
+                       }
+               }, {
+                       name: "peerStorePath",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           required: false,
+                           value: brokerData.peerStorePath,
+                           label: "Path to peerstore:",
+                           name: "peerStorePath"});
+                       }
+               }, {
+                       name: "peerStorePassword",
+                       requiredFor: "peerStorePath",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           required: false,
+                           label: "Peerstore password:",
+                           invalidMessage: "Missed peerstore password",
+                           name: "peerStorePassword"});
+                       }
+               }, {
+                       name: "alertThresholdQueueDepth",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.alertThresholdQueueDepth,
+                           placeholder: "Count of messages",
+                           label: "Queue depth alert threshold:",
+                           name: "alertThresholdQueueDepth"
+                         });
+                       }
+               }, {
+                       name: "alertThresholdMessageAge",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.alertThresholdMessageAge,
+                           placeholder: "Time in ms",
+                           label: "Queue message age alert threshold:",
+                           name: "alertThresholdMessageAge"
+                         });
+                       }
+               }, {
+                       name: "alertThresholdMessageSize",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.alertThresholdMessageSize,
+                           placeholder: "Size in bytes",
+                           label: "Queue message size alert threshold:",
+                           name: "alertThresholdMessageSize"
+                         });
+                       }
+               }, {
+                       name: "alertRepeatGap",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.alertThresholdMessageSize,
+                           value: brokerData.alertRepeatGap,
+                           placeholder: "Time in ms",
+                           label: "Queue alert repeat gap:",
+                           name: "alertRepeatGap"
+                         });
+                       }
+               }, {
+                       name: "maximumDeliveryAttempts",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.maximumDeliveryAttempts,
+                           placeholder: "Count of messages",
+                           label: "Queue maximum delivery retries:",
+                           name: "maximumDeliveryAttempts"
+                         });
+                       }
+               }, {
+                       name: "deadLetterQueueEnabled",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.CheckBox({
+                           required: false,
+                           checked: brokerData.deadLetterQueueEnabled,
+                           value: "true",
+                           label: "Dead letter queue enabled:",
+                           name: "deadLetterQueueEnabled",
+                         });
+                       }
+               }, {
+                       name: "queueFlowControlSizeBytes",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.queueFlowControlSizeBytes,
+                           placeholder: "Size in bytes",
+                           label: "Queue flow capacity:",
+                           name: "queueFlowControlSizeBytes",
+                         });
+                       }
+               }, {
+                       name: "queueFlowResumeSizeBytes",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.queueFlowResumeSizeBytes,
+                           placeholder: "Size in bytes",
+                           label: "Queue flow resume capacity:",
+                           name: "queueFlowResumeSizeBytes",
+                         });
+                       }
+               }, {
+                       name: "sessionCountLimit",
+                       createWidget: function(brokerData)
+                       {
+                         return new dijit.form.NumberSpinner({
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.sessionCountLimit,
+                           smallDelta: 1,
+                           constraints: {min:1,max:65535,places:0, pattern: "#####"},
+                           label: "Connection session limit:",
+                           name: "sessionCountLimit"
+                         });
+                       }
+               }, {
+                       name: "heartBeatDelay",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.heartBeatDelay,
+                           placeholder: "Time in ms",
+                           label: "Heart beat delay:",
+                           name: "heartBeatDelay"
+                         });
+                       }
+               }, {
+                       name: "statisticsReportingPeriod",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.statisticsReportingPeriod,
+                           placeholder: "Time in ms",
+                           label: "Statistics reporting period:",
+                           name: "statisticsReportingPeriod"
+                         });
+                       }
+               }, {
+                       name: "statisticsReportingResetEnabled",
+                       createWidget: function(brokerData)
+                       {
+                         return new dijit.form.CheckBox({
+                           required: false, checked: brokerData.statisticsReportingResetEnabled, value: "true",
+                           label: "Statistics reporting period enabled:",
+                           name: "statisticsReportingResetEnabled"
+                         });
+                       }
+               } ];
            }
 
            Broker.prototype.getTitle = function()
@@ -62,7 +361,7 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.brokerUpdater = new BrokerUpdater(contentPane.containerNode, that.modelObj, that.controller);
+                            that.brokerUpdater = new BrokerUpdater(contentPane.containerNode, that.modelObj, that.controller, that.attributeWidgetFactories);
 
                             updater.add( that.brokerUpdater );
 
@@ -109,6 +408,18 @@ define(["dojo/_base/xhr",
                                                 "Are you sure you want to delete port");
                                 }
                             );
+
+                            var editButton = query(".editBroker", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(editButton), "onClick",
+                                function(evt){
+                                    util.showSetAttributesDialog(
+                                            that.attributeWidgetFactories,
+                                            that.brokerUpdater.brokerData,
+                                            "rest/broker",
+                                            "Set broker attributes");
+                                }
+                            );
+
                         }});
            };
 
@@ -116,16 +427,11 @@ define(["dojo/_base/xhr",
                updater.remove( this.brokerUpdater );
            };
 
-           function BrokerUpdater(node, brokerObj, controller)
+           function BrokerUpdater(node, brokerObj, controller, attributes)
            {
                this.controller = controller;
-               this.name = query(".broker-name", node)[0];
-               /*this.state = dom.byId("state");
-               this.durable = dom.byId("durable");
-               this.lifetimePolicy = dom.byId("lifetimePolicy");
-               */
                this.query = "rest/broker";
-
+               this.attributes = attributes;
                var that = this;
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
@@ -259,11 +565,28 @@ define(["dojo/_base/xhr",
 
            BrokerUpdater.prototype.updateHeader = function()
            {
-               this.name.innerHTML = this.brokerData[ "name" ];
-    /*           this.state.innerHTML = this.brokerData[ "state" ];
-               this.durable.innerHTML = this.brokerData[ "durable" ];
-               this.lifetimePolicy.innerHTML = this.brokerData[ "lifetimePolicy" ];
-*/
+               var brokerData = this.brokerData;
+               for(var i in this.attributes)
+               {
+                 var propertyName = this.attributes[i].name;
+                 var element = dojo.byId("brokerAttribute." + propertyName);
+                 if (element)
+                 {
+                   if (brokerData.hasOwnProperty(propertyName))
+                   {
+                     var container = dojo.byId("brokerAttribute." + propertyName + ".container");
+                     if (container)
+                     {
+                       container.style.display = "block";
+                     }
+                     element.innerHTML = brokerData [propertyName];
+                   }
+                   else
+                   {
+                     element.innerHTML = "";
+                   }
+                 }
+               }
            };
 
            BrokerUpdater.prototype.update = function()
@@ -294,8 +617,6 @@ define(["dojo/_base/xhr",
                          });
 
            };
-
-
 
            return Broker;
        });

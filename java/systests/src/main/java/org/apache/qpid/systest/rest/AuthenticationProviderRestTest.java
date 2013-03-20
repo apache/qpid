@@ -41,14 +41,21 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider");
         assertNotNull("Providers details cannot be null", providerDetails);
-        assertEquals("Unexpected number of providers", 1, providerDetails.size());
+        assertEquals("Unexpected number of providers", 2, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
         {
-            assertProvider(true, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE, provider);
+            boolean managesPrincipals = true;
+            String type = PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
+            if (ANONYMOUS_AUTHENTICATION_PROVIDER.equals(provider.get(AuthenticationProvider.NAME)))
+            {
+                type = AnonymousAuthenticationManagerFactory.PROVIDER_TYPE;
+                managesPrincipals = false;
+            }
+            assertProvider(managesPrincipals, type , provider);
             Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/"
                     + provider.get(AuthenticationProvider.NAME));
             assertNotNull("Cannot load data for " + provider.get(AuthenticationProvider.NAME), data);
-            assertProvider(true, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE, data);
+            assertProvider(managesPrincipals, type, data);
         }
     }
 

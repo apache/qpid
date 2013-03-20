@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
+import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
+import java.security.cert.Certificate;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
@@ -66,6 +68,7 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
@@ -146,7 +149,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(Broker.NAME, DEFAULT_NAME);
     }});
 
-
+    private String[] POSITIVE_NUMERIC_ATTRIBUTES = { ALERT_THRESHOLD_MESSAGE_AGE, ALERT_THRESHOLD_MESSAGE_COUNT,
+            ALERT_THRESHOLD_QUEUE_DEPTH, ALERT_THRESHOLD_MESSAGE_SIZE, ALERT_REPEAT_GAP, FLOW_CONTROL_SIZE_BYTES,
+            FLOW_CONTROL_RESUME_SIZE_BYTES, MAXIMUM_DELIVERY_ATTEMPTS, HOUSEKEEPING_CHECK_PERIOD, SESSION_COUNT_LIMIT,
+            HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD };
 
 
     private final StatisticsGatherer _statisticsGatherer;
@@ -674,17 +680,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _authenticationProviderFactory.getSupportedAuthenticationProviders();
         }
-        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
+        else if (KEY_STORE_PASSWORD.equals(name) || TRUST_STORE_PASSWORD.equals(name) || PEER_STORE_PASSWORD.equals(name))
         {
-            return _defaultAuthenticationProvider == null ? null : _defaultAuthenticationProvider.getName();
-        }
-        else if (KEY_STORE_PASSWORD.equals(name))
-        {
-            return DUMMY_PASSWORD_MASK;
-        }
-        else if (TRUST_STORE_PASSWORD.equals(name))
-        {
-            return DUMMY_PASSWORD_MASK;
+            if (getActualAttributes().get(name) != null)
+            {
+                return DUMMY_PASSWORD_MASK;
+            }
+            return null;
         }
         return super.getAttribute(name);
     }
@@ -990,6 +992,116 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        //TODO: Add ACL check
+        //TODO: Add management mode check
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+        validateAttributes(convertedAttributes);
+        super.changeAttributes(convertedAttributes);
+    }
+
+    private void validateAttributes(Map<String, Object> convertedAttributes)
+    {
+        String aclFile = (String) convertedAttributes.get(ACL_FILE);
+        if (aclFile != null)
+        {
+            // create a security manager to validate the ACL specified in file
+            new SecurityManager(aclFile);
+        }
+        String groupFile = (String) convertedAttributes.get(GROUP_FILE);
+        if (groupFile != null)
+        {
+            // create a group manager to validate the groups specified in file
+            new FileGroupManager(groupFile);
+        }
+        validateKeyStoreAttributes(convertedAttributes, "key store", KEY_STORE_PATH, KEY_STORE_PASSWORD, KEY_STORE_CERT_ALIAS);
+        validateKeyStoreAttributes(convertedAttributes, "trust store", TRUST_STORE_PATH, TRUST_STORE_PASSWORD, null);
+        validateKeyStoreAttributes(convertedAttributes, "peer store", PEER_STORE_PATH, PEER_STORE_PASSWORD, null);
+        String defaultAuthenticationProvider = (String) convertedAttributes.get(DEFAULT_AUTHENTICATION_PROVIDER);
+        if (defaultAuthenticationProvider != null)
+        {
+            AuthenticationProvider provider = getAuthenticationProviderByName(defaultAuthenticationProvider);
+            if (provider == null)
+            {
+                throw new IllegalConfigurationException("Authentication provider with name " + defaultAuthenticationProvider
+                        + " canot be set as a default as it does not exist");
+            }
+        }
+        String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
+        if (defaultVirtualHost != null)
+        {
+            VirtualHost foundHost = findVirtualHostByName(defaultVirtualHost);
+            if (foundHost == null)
+            {
+                throw new IllegalConfigurationException("Virtual host with name " + defaultVirtualHost
+                        + " cannot be set as a default as it does not exist");
+            }
+        }
+        Long queueFlowControlSize = (Long) convertedAttributes.get(FLOW_CONTROL_SIZE_BYTES);
+        if (queueFlowControlSize != null && queueFlowControlSize > 0)
+        {
+            Long queueFlowControlResumeSize = (Long) convertedAttributes.get(FLOW_CONTROL_RESUME_SIZE_BYTES);
+            if (queueFlowControlResumeSize == null)
+            {
+                throw new IllegalConfigurationException("Flow control resume size attribute is not specified with flow control size attribute");
+            }
+            if (queueFlowControlResumeSize >= queueFlowControlSize)
+            {
+                throw new IllegalConfigurationException("Flow control resume size should be less then flow control size");
+            }
+        }
+        for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)
+        {
+            Number value = (Number) convertedAttributes.get(attributeName);
+            if (value != null && value.longValue() < 0)
+            {
+                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
+                        + attributeName);
+            }
+        }
+    }
+
+    private void validateKeyStoreAttributes(Map<String, Object> convertedAttributes, String type, String pathAttribute,
+            String passwordAttribute, String aliasAttribute)
+    {
+        String keyStoreFile = (String) convertedAttributes.get(pathAttribute);
+        if (keyStoreFile != null)
+        {
+            String password = (String) convertedAttributes.get(passwordAttribute);
+            if (password == null)
+            {
+                password = (String) getActualAttributes().get(passwordAttribute);
+            }
+            java.security.KeyStore keyStore = null;
+            try
+            {
+                keyStore = SSLUtil.getInitializedKeyStore(keyStoreFile, password, java.security.KeyStore.getDefaultType());
+            }
+            catch (Exception e)
+            {
+                throw new IllegalConfigurationException("Cannot instantiate " + type + " at " + keyStoreFile, e);
+            }
+            if (aliasAttribute != null)
+            {
+                String alias = (String) convertedAttributes.get(aliasAttribute);
+                if (alias != null)
+                {
+                    Certificate cert = null;
+                    try
+                    {
+                        cert = keyStore.getCertificate(alias);
+                    }
+                    catch (KeyStoreException e)
+                    {
+                        // key store should be initialized above
+                        throw new RuntimeException("Key store has not been initialized", e);
+                    }
+                    if (cert == null)
+                    {
+                        throw new IllegalConfigurationException("Cannot find a certificate with alias " + alias + "in " + type
+                                + " : " + keyStoreFile);
+                    }
+                }
+            }
+        }
     }
 }

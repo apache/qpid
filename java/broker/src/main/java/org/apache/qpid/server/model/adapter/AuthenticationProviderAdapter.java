@@ -198,7 +198,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        return null;
+        return Collections.emptySet();
     }
 
     @Override
