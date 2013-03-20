@@ -287,7 +287,7 @@ class LikeExpression : public BoolExpression {
 
     static string toRegex(const string& s, const string& escape) {
         string regex("^");
-        if (escape.size()>1) throw std::range_error("Illegal escape char");
+        if (escape.size()>1) throw std::logic_error("Internal error");
         char e = 0;
         if (escape.size()==1) {
             e = escape[0];
@@ -696,14 +696,6 @@ Div div;
 
 ////////////////////////////////////////////////////
 
-Expression* parseOrExpression(Tokeniser&);
-Expression* parseAndExpression(Tokeniser&);
-Expression* parseComparisonExpression(Tokeniser&);
-Expression* parseAddExpression(Tokeniser&);
-Expression* parseMultiplyExpression(Tokeniser&);
-Expression* parseUnaryArithExpression(Tokeniser&);
-Expression* parsePrimaryExpression(Tokeniser&);
-
 // Top level parser
 class TopBoolExpression : public TopExpression {
     boost::scoped_ptr<Expression> expression;
@@ -724,24 +716,28 @@ public:
     {}
 };
 
-TopExpression* TopExpression::parse(const string& exp)
-{
-    string::const_iterator s = exp.begin();
-    string::const_iterator e = exp.end();
-    Tokeniser tokeniser(s,e);
-    std::auto_ptr<Expression> b(parseOrExpression(tokeniser));
-    if (!b.get()) throw std::range_error("Illegal selector: couldn't parse");
-    if (tokeniser.nextToken().type != T_EOS) throw std::range_error("Illegal selector: too much input");
-    return new TopBoolExpression(b.release());
+void throwParseError(Tokeniser& tokeniser, const string& msg) {
+    tokeniser.returnTokens();
+    string error("Illegal selector: '");
+    error += tokeniser.nextToken().val;
+    error += "': ";
+    error += msg;
+    throw std::range_error(error);
 }
 
-Expression* parseOrExpression(Tokeniser& tokeniser)
+class Parse {
+
+friend TopExpression* TopExpression::parse(const string&);
+
+string error;
+
+Expression* orExpression(Tokeniser& tokeniser)
 {
-    std::auto_ptr<Expression> e(parseAndExpression(tokeniser));
+    std::auto_ptr<Expression> e(andExpression(tokeniser));
     if (!e.get()) return 0;
     while ( tokeniser.nextToken().type==T_OR ) {
         std::auto_ptr<Expression> e1(e);
-        std::auto_ptr<Expression> e2(parseAndExpression(tokeniser));
+        std::auto_ptr<Expression> e2(andExpression(tokeniser));
         if (!e2.get()) return 0;
         e.reset(new OrExpression(e1.release(), e2.release()));
     }
@@ -749,13 +745,13 @@ Expression* parseOrExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-Expression* parseAndExpression(Tokeniser& tokeniser)
+Expression* andExpression(Tokeniser& tokeniser)
 {
-    std::auto_ptr<Expression> e(parseComparisonExpression(tokeniser));
+    std::auto_ptr<Expression> e(comparisonExpression(tokeniser));
     if (!e.get()) return 0;
     while ( tokeniser.nextToken().type==T_AND ) {
         std::auto_ptr<Expression> e1(e);
-        std::auto_ptr<Expression> e2(parseComparisonExpression(tokeniser));
+        std::auto_ptr<Expression> e2(comparisonExpression(tokeniser));
         if (!e2.get()) return 0;
         e.reset(new AndExpression(e1.release(), e2.release()));
     }
@@ -763,15 +759,24 @@ Expression* parseAndExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-BoolExpression* parseSpecialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expression> e1) {
+BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expression> e1) {
     switch (tokeniser.nextToken().type) {
     case T_LIKE: {
         const Token t = tokeniser.nextToken();
-        if ( t.type!=T_STRING ) return 0;
+        if ( t.type!=T_STRING ) {
+            error = "expected string after LIKE";
+            return 0;
+        }
         // Check for "ESCAPE"
         if ( tokeniser.nextToken().type==T_ESCAPE ) {
             const Token e = tokeniser.nextToken();
-            if ( e.type!=T_STRING ) return 0;
+            if ( e.type!=T_STRING ) {
+                error = "expected string after ESCAPE";
+                return 0;
+            }
+            if (e.val.size()>1) {
+                throwParseError(tokeniser, "single character string required after ESCAPE");
+            }
             return new LikeExpression(e1.release(), t.val, e.val);
         } else {
             tokeniser.returnTokens();
@@ -779,41 +784,51 @@ BoolExpression* parseSpecialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expr
         }
     }
     case T_BETWEEN: {
-        std::auto_ptr<Expression> lower(parseAddExpression(tokeniser));
+        std::auto_ptr<Expression> lower(addExpression(tokeniser));
         if ( !lower.get() ) return 0;
-        if ( tokeniser.nextToken().type!=T_AND ) return 0;
-        std::auto_ptr<Expression> upper(parseAddExpression(tokeniser));
+        if ( tokeniser.nextToken().type!=T_AND ) {
+            error = "expected AND after BETWEEN";
+            return 0;
+        }
+        std::auto_ptr<Expression> upper(addExpression(tokeniser));
         if ( !upper.get() ) return 0;
         return new BetweenExpression(e1.release(), lower.release(), upper.release());
     }
     case T_IN: {
-        if ( tokeniser.nextToken().type!=T_LPAREN ) return 0;
+        if ( tokeniser.nextToken().type!=T_LPAREN ) {
+            error = "missing '(' after IN";
+            return 0;
+        }
         boost::ptr_vector<Expression> list;
         do {
-            std::auto_ptr<Expression> e(parseAddExpression(tokeniser));
+            std::auto_ptr<Expression> e(addExpression(tokeniser));
             if (!e.get()) return 0;
             list.push_back(e.release());
         } while (tokeniser.nextToken().type==T_COMMA);
         tokeniser.returnTokens();
-        if ( tokeniser.nextToken().type!=T_RPAREN ) return 0;
+        if ( tokeniser.nextToken().type!=T_RPAREN ) {
+            error = "missing ',' or ')' after IN";
+            return 0;
+        }
         return new InExpression(e1.release(), list);
     }
     default:
+        error = "expected LIKE, IN or BETWEEN";
         return 0;
     }
 }
 
-Expression* parseComparisonExpression(Tokeniser& tokeniser)
+Expression* comparisonExpression(Tokeniser& tokeniser)
 {
     const Token t = tokeniser.nextToken();
     if ( t.type==T_NOT ) {
-        std::auto_ptr<Expression> e(parseComparisonExpression(tokeniser));
+        std::auto_ptr<Expression> e(comparisonExpression(tokeniser));
         if (!e.get()) return 0;
         return new UnaryBooleanExpression<Expression>(&notOp, e.release());
     }
 
     tokeniser.returnTokens();
-    std::auto_ptr<Expression> e1(parseAddExpression(tokeniser));
+    std::auto_ptr<Expression> e1(addExpression(tokeniser));
     if (!e1.get()) return 0;
 
     switch (tokeniser.nextToken().type) {
@@ -827,10 +842,11 @@ Expression* parseComparisonExpression(Tokeniser& tokeniser)
                 if ( tokeniser.nextToken().type == T_NULL)
                     return new UnaryBooleanExpression<Expression>(&isNonNullOp, e1.release());
             default:
+                error = "expected NULL or NOT NULL after IS";
                 return 0;
         }
     case T_NOT: {
-        std::auto_ptr<BoolExpression> e(parseSpecialComparisons(tokeniser, e1));
+        std::auto_ptr<BoolExpression> e(specialComparisons(tokeniser, e1));
         if (!e.get()) return 0;
         return new UnaryBooleanExpression<Expression>(&notOp, e.release());
     }
@@ -838,7 +854,7 @@ Expression* parseComparisonExpression(Tokeniser& tokeniser)
     case T_LIKE:
     case T_IN: {
         tokeniser.returnTokens();
-        return parseSpecialComparisons(tokeniser, e1);
+        return specialComparisons(tokeniser, e1);
     }
     default:
         break;
@@ -858,15 +874,15 @@ Expression* parseComparisonExpression(Tokeniser& tokeniser)
         return e1.release();
     }
 
-    std::auto_ptr<Expression> e2(parseAddExpression(tokeniser));
+    std::auto_ptr<Expression> e2(addExpression(tokeniser));
     if (!e2.get()) return 0;
 
     return new ComparisonExpression(op, e1.release(), e2.release());
 }
 
-Expression* parseAddExpression(Tokeniser& tokeniser)
+Expression* addExpression(Tokeniser& tokeniser)
 {
-    std::auto_ptr<Expression> e(parseMultiplyExpression(tokeniser));
+    std::auto_ptr<Expression> e(multiplyExpression(tokeniser));
     if (!e.get()) return 0;
 
     Token t = tokeniser.nextToken();
@@ -876,10 +892,11 @@ Expression* parseAddExpression(Tokeniser& tokeniser)
         case T_PLUS: op = &add; break;
         case T_MINUS: op = &sub; break;
         default:
+            error = "internal error processing binary + or -";
             return 0;
         }
         std::auto_ptr<Expression> e1(e);
-        std::auto_ptr<Expression> e2(parseMultiplyExpression(tokeniser));
+        std::auto_ptr<Expression> e2(multiplyExpression(tokeniser));
         if (!e2.get()) return 0;
         e.reset(new ArithmeticExpression(op, e1.release(), e2.release()));
         t = tokeniser.nextToken();
@@ -889,9 +906,9 @@ Expression* parseAddExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-Expression* parseMultiplyExpression(Tokeniser& tokeniser)
+Expression* multiplyExpression(Tokeniser& tokeniser)
 {
-    std::auto_ptr<Expression> e(parseUnaryArithExpression(tokeniser));
+    std::auto_ptr<Expression> e(unaryArithExpression(tokeniser));
     if (!e.get()) return 0;
 
     Token t = tokeniser.nextToken();
@@ -901,10 +918,11 @@ Expression* parseMultiplyExpression(Tokeniser& tokeniser)
         case T_MULT: op = &mult; break;
         case T_DIV: op = &div; break;
         default:
+            error = "internal error processing * or /";
             return 0;
         }
         std::auto_ptr<Expression> e1(e);
-        std::auto_ptr<Expression> e2(parseMultiplyExpression(tokeniser));
+        std::auto_ptr<Expression> e2(unaryArithExpression(tokeniser));
         if (!e2.get()) return 0;
         e.reset(new ArithmeticExpression(op, e1.release(), e2.release()));
         t = tokeniser.nextToken();
@@ -914,20 +932,23 @@ Expression* parseMultiplyExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-Expression* parseUnaryArithExpression(Tokeniser& tokeniser)
+Expression* unaryArithExpression(Tokeniser& tokeniser)
 {
     const Token t = tokeniser.nextToken();
     switch (t.type) {
     case T_LPAREN: {
-        std::auto_ptr<Expression> e(parseOrExpression(tokeniser));
+        std::auto_ptr<Expression> e(orExpression(tokeniser));
         if (!e.get()) return 0;
-        if ( tokeniser.nextToken().type!=T_RPAREN ) return 0;
+        if ( tokeniser.nextToken().type!=T_RPAREN ) {
+            error = "missing ')' after '('";
+            return 0;
+        }
         return e.release();
     }
     case T_PLUS:
         break; // Unary + is no op
     case T_MINUS: {
-        std::auto_ptr<Expression> e(parseUnaryArithExpression(tokeniser));
+        std::auto_ptr<Expression> e(unaryArithExpression(tokeniser));
         if (!e.get()) return 0;
         return new UnaryArithExpression(&negate, e.release());
     }
@@ -936,11 +957,11 @@ Expression* parseUnaryArithExpression(Tokeniser& tokeniser)
     }
 
     tokeniser.returnTokens();
-    std::auto_ptr<Expression> e(parsePrimaryExpression(tokeniser));
+    std::auto_ptr<Expression> e(primaryExpression(tokeniser));
     return e.release();
 }
 
-Expression* parsePrimaryExpression(Tokeniser& tokeniser)
+Expression* primaryExpression(Tokeniser& tokeniser)
 {
     const Token& t = tokeniser.nextToken();
     switch (t.type) {
@@ -957,8 +978,27 @@ Expression* parsePrimaryExpression(Tokeniser& tokeniser)
         case T_NUMERIC_APPROX:
             return new Literal(boost::lexical_cast<double>(t.val));
         default:
+            error = "expected literal or identifier";
             return 0;
     }
+}
+
+};
+
+TopExpression* TopExpression::parse(const string& exp)
+{
+    string::const_iterator s = exp.begin();
+    string::const_iterator e = exp.end();
+    Tokeniser tokeniser(s,e);
+    Parse parse;
+    std::auto_ptr<Expression> b(parse.orExpression(tokeniser));
+    if (!b.get()) {
+        throwParseError(tokeniser, parse.error);
+    }
+    if (tokeniser.nextToken().type != T_EOS) {
+        throwParseError(tokeniser, "extra input");
+    }
+    return new TopBoolExpression(b.release());
 }
 
 }}

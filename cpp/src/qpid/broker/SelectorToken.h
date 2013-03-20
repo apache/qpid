@@ -67,6 +67,7 @@ typedef enum {
 struct Token {
     TokenType type;
     std::string val;
+    std::string::const_iterator tokenStart;
 
     Token()
     {}
@@ -76,14 +77,23 @@ struct Token {
         val(v)
     {}
 
+    Token(TokenType t, const std::string::const_iterator& s, const std::string& v) :
+        type(t),
+        val(v),
+        tokenStart(s)
+    {}
+
     Token(TokenType t, const std::string::const_iterator& s, const std::string::const_iterator& e) :
         type(t),
-        val(std::string(s,e))
+        val(std::string(s,e)),
+        tokenStart(s)
     {}
 
     bool operator==(const Token& r) const
     {
-        return type == r.type && val == r.val;
+        return
+            (type == T_EOS && r.type == T_EOS) ||
+            (type == r.type && val == r.val);
     }
 };
 
@@ -100,6 +110,7 @@ class Tokeniser {
     std::vector<Token> tokens;
     unsigned int tokp;
 
+    std::string::const_iterator inStart;
     std::string::const_iterator inp;
     std::string::const_iterator inEnd;
 
@@ -107,6 +118,7 @@ public:
     QPID_BROKER_EXTERN Tokeniser(const std::string::const_iterator& s, const std::string::const_iterator& e);
     QPID_BROKER_EXTERN void returnTokens(unsigned int n = 1);
     QPID_BROKER_EXTERN const Token& nextToken();
+    QPID_BROKER_EXTERN std::string remaining();
 };
 
 }}

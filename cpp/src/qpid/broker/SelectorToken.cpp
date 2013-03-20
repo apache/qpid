@@ -132,8 +132,8 @@ bool processString(std::string::const_iterator& s, std::string::const_iterator& 
         ++q;
     }
 
+    tok = Token(T_STRING, s, content);
     s = q;
-    tok = Token(T_STRING, content);
     return true;
 }
 
@@ -171,7 +171,7 @@ bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, To
     while (true)
     switch (state) {
     case START:
-        if (t==e) {tok = Token(T_EOS, ""); return true;}
+        if (t==e) {tok = Token(T_EOS, s, "<END>"); return true;}
         else switch (*t) {
         case '(': tokType = T_LPAREN; state = ACCEPT_INC; continue;
         case ')': tokType = T_RPAREN; state = ACCEPT_INC; continue;
@@ -259,6 +259,7 @@ bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, To
 
 Tokeniser::Tokeniser(const std::string::const_iterator& s, const std::string::const_iterator& e) :
     tokp(0),
+    inStart(s),
     inp(s),
     inEnd(e)
 {
@@ -292,6 +293,12 @@ void Tokeniser::returnTokens(unsigned int n)
 {
     assert( n<=tokp );
     tokp-=n;
+}
+
+std::string Tokeniser::remaining()
+{
+    Token& currentTok = tokens[tokp];
+    return std::string(currentTok.tokenStart, inEnd);
 }
 
 
