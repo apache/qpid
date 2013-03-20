@@ -100,6 +100,8 @@ NumericPairBase* promoteNumeric(const Value& v1, const Value& v2)
             assert(false);
         }
     }
+    // Can never get here - but this stops a warning
+    return 0;
 }
 
 bool operator==(const Value& v1, const Value& v2)
