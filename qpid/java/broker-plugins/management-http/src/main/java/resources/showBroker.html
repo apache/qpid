@@ -21,9 +21,37 @@
 <div class="broker">
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Broker Attributes',  open: false">
         <div id="brokerAttributes" style="clear:both">
-             <div id="brokerAttribute.name.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker Name:</div>
+             <div id="brokerAttribute.name.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker name:</div>
                 <div id="brokerAttribute.name" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.operatingSystem.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Operation system:</div>
+                <div id="brokerAttribute.operatingSystem" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.platform.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Platform:</div>
+                <div id="brokerAttribute.platform" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.productVersion.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker version:</div>
+                <div id="brokerAttribute.productVersion" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.managementVersion.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker management version:</div>
+                <div id="brokerAttribute.managementVersion" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.storeType.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store type:</div>
+                <div id="brokerAttribute.storeType" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.storeVersion.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store version:</div>
+                <div id="brokerAttribute.storeVersion" style="float:left;"></div>
+            </div>
+            <div id="brokerAttribute.storePath.container" style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store location:</div>
+                <div id="brokerAttribute.storePath" style="float:left;"></div>
             </div>
             <div id="brokerAttribute.defaultAuthenticationProvider.container" style="display: none; clear:both">
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Default authentication provider:</div>
@@ -79,7 +107,7 @@
                     <div id="brokerAttribute.alertThresholdMessageSize" style="float:left;"></div>
                 </div>
                 <div id="brokerAttribute.alertRepeatGap.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 250px;">Queue alert alert repeat gap:</div>
+                    <div class="formLabel-labelCell" style="float:left; width: 250px;">Queue alert repeat gap:</div>
                     <div id="brokerAttribute.alertRepeatGap" style="float:left;"></div> ms
                 </div>
                 <div id="brokerAttribute.maximumDeliveryAttempts.container" style="clear:both">
