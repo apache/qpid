@@ -71,6 +71,10 @@ public interface Broker extends ConfiguredObject
     String HEART_BEAT_DELAY = "heartBeatDelay";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
+    String STORE_TYPE = "storeType";
+    String STORE_VERSION = "storeVersion";
+    String STORE_PATH = "storePath";
+    String MANAGEMENT_VERSION = "managementVersion";
 
     /*
      * A temporary attribute to pass the path to ACL file.
@@ -131,6 +135,10 @@ public interface Broker extends ConfiguredObject
                               HEART_BEAT_DELAY,
                               STATISTICS_REPORTING_PERIOD,
                               STATISTICS_REPORTING_RESET_ENABLED,
+                              STORE_TYPE,
+                              STORE_VERSION,
+                              STORE_PATH,
+                              MANAGEMENT_VERSION,
 
                               ACL_FILE,
                               KEY_STORE_PATH,

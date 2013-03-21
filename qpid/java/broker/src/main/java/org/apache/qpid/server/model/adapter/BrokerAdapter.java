@@ -37,6 +37,7 @@ import java.security.cert.Certificate;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -49,6 +50,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -178,11 +180,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final UUID _defaultKeyStoreId;
     private final UUID _defaultTrustStoreId;
 
-    private Collection<String> _supportedStoreTypes;
+    private final Collection<String> _supportedStoreTypes;
+    private final ConfigurationEntryStore _brokerStore;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            PortFactory portFactory, TaskExecutor taskExecutor)
+            PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -198,6 +201,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _defaultTrustStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_TRUST_STORE_NAME);
         createBrokerChildrenFromAttributes();
         _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _brokerStore = brokerStore;
     }
 
     /*
@@ -704,6 +708,22 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 return DUMMY_PASSWORD_MASK;
             }
             return null;
+        }
+        else if (MANAGEMENT_VERSION.equals(name))
+        {
+            return Model.MANAGEMENT_API_MAJOR_VERSION + "." + Model.MANAGEMENT_API_MINOR_VERSION;
+        }
+        else if (STORE_VERSION.equals(name))
+        {
+            return _brokerStore.getVersion();
+        }
+        else if (STORE_TYPE.equals(name))
+        {
+            return _brokerStore.getType();
+        }
+        else if (STORE_PATH.equals(name))
+        {
+            return _brokerStore.getStoreLocation();
         }
         return super.getAttribute(name);
     }

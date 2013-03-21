@@ -66,6 +66,8 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     private static final String ID = "id";
     private static final String TYPE = "@type";
 
+    private static final int STORE_VERSION = 1;
+
     private final ObjectMapper _objectMapper;
     private final Map<UUID, ConfigurationEntry> _entries;
     private final Map<String, Class<? extends ConfiguredObject>> _relationshipClasses;
@@ -189,6 +191,18 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     }
 
     @Override
+    public int getVersion()
+    {
+        return STORE_VERSION;
+    }
+
+    @Override
+    public String getType()
+    {
+        return STORE_TYPE;
+    }
+
+    @Override
     public String toString()
     {
         return "MemoryConfigurationEntryStore [_rootId=" + _rootId + "]";
@@ -215,12 +229,13 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     protected void saveAsTree(File file)
     {
-        saveAsTree(_rootId, _entries, _objectMapper, file);
+        saveAsTree(_rootId, _entries, _objectMapper, file, STORE_VERSION);
     }
 
-    protected void saveAsTree(UUID rootId, Map<UUID, ConfigurationEntry> entries, ObjectMapper mapper, File file)
+    protected void saveAsTree(UUID rootId, Map<UUID, ConfigurationEntry> entries, ObjectMapper mapper, File file, int version)
     {
         Map<String, Object> tree = toTree(rootId, entries);
+        tree.put(Broker.STORE_VERSION, version);
         try
         {
             mapper.writeValue(file, tree);
@@ -317,8 +332,11 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 throw new IllegalConfigurationException("Duplicate id is found: " + entryId
                         + "! The following configuration entries have the same id: " + entries.get(entryId) + ", " + entry);
             }
-            entries.put(entryId, entry);
+
             Set<UUID> children = entry.getChildrenIds();
+            Set<UUID> childrenCopy = children == null? null : new HashSet<UUID>(children);
+            ConfigurationEntry copy = new ConfigurationEntry(entryId, entry.getType(), new HashMap<String, Object>(entry.getAttributes()), childrenCopy, this);
+            entries.put(entryId, copy);
             if (children != null)
             {
                 for (UUID uuid : children)
