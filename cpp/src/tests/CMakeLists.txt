@@ -293,6 +293,8 @@ install (TARGETS
          qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
          qpid-txtest
          RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
+install (PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/qpidt
+         DESTINATION ${QPID_INSTALL_TESTDIR})
 
 # This should ideally be done as part of the test run, but I don't know a way
 # to get these arguments and the working directory set like Makefile.am does,
