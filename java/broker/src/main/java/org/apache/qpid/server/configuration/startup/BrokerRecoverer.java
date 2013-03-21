@@ -128,7 +128,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
     private AuthenticationProvider getAuthenticationProviderByName(BrokerAdapter broker, String authenticationProviderName)
     {
-        AuthenticationProvider provider = broker.getAuthenticationProviderByName(authenticationProviderName);
+        AuthenticationProvider provider = broker.findAuthenticationProviderByName(authenticationProviderName);
         if (provider == null)
         {
             throw new IllegalConfigurationException("Cannot find the authentication provider with name: "
