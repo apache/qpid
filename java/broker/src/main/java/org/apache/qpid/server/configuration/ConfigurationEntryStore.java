@@ -62,12 +62,26 @@ public interface ConfigurationEntryStore
      * @param target location to copy store into
      * @throws IllegalConfigurationException if store cannot be copied into given location
      */
-    public void copyTo(String copyLocation);
+    void copyTo(String copyLocation);
 
     /**
      * Return the store location for the opened store or null if store has not been opened.
      *
      * @return store location for the opened store or null if store has not been opened
      */
-    public String getStoreLocation();
+    String getStoreLocation();
+
+    /**
+     * Returns the version of the store
+     *
+     * @return store version
+     */
+    int getVersion();
+
+    /**
+     * Returns the type of the store
+     *
+     * @return store type
+     */
+    String getType();
 }

@@ -110,7 +110,10 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         assertEquals("Unexpected type ", Broker.class.getSimpleName(), brokerConfigEntry.getType());
         Map<String, Object> attributes = brokerConfigEntry.getAttributes();
         assertNotNull("Attributes cannot be null", attributes);
-        assertEquals("Unexpected attributes", _brokerAttributes, attributes);
+        for (Map.Entry<String, Object> attribute : _brokerAttributes.entrySet())
+        {
+            assertEquals("Unexpected attribute " + attribute.getKey(), attribute.getValue(), attributes.get(attribute.getKey()));
+        }
     }
 
     public void testGetEntry()
