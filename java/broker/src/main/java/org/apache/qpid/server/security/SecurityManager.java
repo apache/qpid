@@ -23,6 +23,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -46,9 +50,11 @@ import static org.apache.qpid.server.security.access.Operation.UNBIND;
 
 import javax.security.auth.Subject;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @see AccessControl
  */
-public class SecurityManager
+public class SecurityManager implements ConfigurationChangeListener
 {
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
 
@@ -69,8 +75,9 @@ public class SecurityManager
 
     public static final ThreadLocal<Boolean> _accessChecksDisabled = new ClearingThreadLocal(false);
 
-    private Map<String, AccessControl> _globalPlugins = new HashMap<String, AccessControl>();
-    private Map<String, AccessControl> _hostPlugins = new HashMap<String, AccessControl>();
+    private Map<String, AccessControl> _globalPlugins = new ConcurrentHashMap<String, AccessControl>();
+    private Map<String, AccessControl> _hostPlugins = new ConcurrentHashMap<String, AccessControl>();
+    private Map<String, List<String>> _aclConfigurationToPluginNamesMapping = new ConcurrentHashMap<String, List<String>>();
 
     /**
      * A special ThreadLocal, which calls remove() on itself whenever the value is
@@ -130,14 +137,22 @@ public class SecurityManager
 
     public SecurityManager(String aclFile)
     {
+        configureACLPlugin(aclFile);
+    }
+
+    private void configureACLPlugin(String aclFile)
+    {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("aclFile", aclFile);
+
         for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
         {
             AccessControl accessControl = provider.createInstance(attributes);
             if(accessControl != null)
             {
                 addHostPlugin(accessControl);
+
+                mapAclConfigurationToPluginName(aclFile, accessControl.getClass().getName());
             }
         }
 
@@ -145,6 +160,17 @@ public class SecurityManager
         {
             _logger.debug("Configured " + _hostPlugins.size() + " access control plugins");
         }
+    }
+
+    private void mapAclConfigurationToPluginName(String aclFile, String pluginName)
+    {
+         List<String> pluginNames =  _aclConfigurationToPluginNamesMapping.get(aclFile);
+        if (pluginNames == null)
+        {
+            pluginNames = new ArrayList<String>();
+            _aclConfigurationToPluginNamesMapping.put(aclFile, pluginNames);
+        }
+        pluginNames.add(pluginName);
     }
 
     public static Subject getThreadSubject()
@@ -475,6 +501,52 @@ public class SecurityManager
     public void addHostPlugin(AccessControl plugin)
     {
         _hostPlugins.put(plugin.getClass().getName(), plugin);
+    }
+
+    @Override
+    public void stateChanged(ConfiguredObject object, State oldState, State newState)
+    {
+        // no op
+    }
+
+    @Override
+    public void childAdded(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no op
+    }
+
+    @Override
+    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no op
+    }
+
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+    {
+        if (object instanceof Broker && Broker.ACL_FILE.equals(attributeName))
+        {
+            // the code below is not thread safe, however, it should be fine in a management mode
+            // as there will be no user connected
+
+            if (oldAttributeValue != null)
+            {
+                List<String> pluginNames = _aclConfigurationToPluginNamesMapping.remove(oldAttributeValue);
+                if (pluginNames != null)
+                {
+                    for (String name : pluginNames)
+                    {
+                        _hostPlugins.remove(name);
+                    }
+                }
+            }
+            if (newAttributeValue != null)
+            {
+                configureACLPlugin((String)newAttributeValue);
+            }
+            _immediatePublishPropsCache.clear();
+            _publishPropsCache.clear();
+        }
     }
 
 }

@@ -127,6 +127,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private static final String DEFAULT_KEY_STORE_NAME = "defaultKeyStore";
     private static final String DEFAULT_TRUST_STORE_NAME = "defaultTrustStore";
     private static final String DEFAULT_GROUP_PROFIDER_NAME = "defaultGroupProvider";
+    private static final String DEFAULT_PEER_STORE_NAME = "defaultPeerStore";
 
     private static final String DUMMY_PASSWORD_MASK = "********";
 
@@ -192,7 +193,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _authenticationProviderFactory = authenticationProviderFactory;
         _portFactory = portFactory;
         _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
-
+        addChangeListener(_securityManager);
         _defaultKeyStoreId = UUIDGenerator.generateBrokerChildUUID(KeyStore.class.getSimpleName(), DEFAULT_KEY_STORE_NAME);
         _defaultTrustStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_TRUST_STORE_NAME);
         createBrokerChildrenFromAttributes();
@@ -211,7 +212,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             UUID groupProviderId = UUIDGenerator.generateBrokerChildUUID(GroupProvider.class.getSimpleName(),
                     DEFAULT_GROUP_PROFIDER_NAME);
             GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(groupProviderId, groupManager, this);
-            addGroupProvider(groupProviderAdapter);
+            _groupProviders.put(DEFAULT_GROUP_PROFIDER_NAME, groupProviderAdapter);
+        }
+        else
+        {
+            _groupProviders.remove(DEFAULT_GROUP_PROFIDER_NAME);
         }
         Map<String, Object> actualAttributes = getActualAttributes();
         String keyStorePath = (String) getAttribute(KEY_STORE_PATH);
@@ -224,8 +229,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             keyStoreAttributes.put(KeyStore.TYPE, java.security.KeyStore.getDefaultType());
             keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, getAttribute(KEY_STORE_CERT_ALIAS));
             keyStoreAttributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            KeyStoreAdapter KeyStoreAdapter = new KeyStoreAdapter(_defaultKeyStoreId, this, keyStoreAttributes);
-            addKeyStore(KeyStoreAdapter);
+            KeyStoreAdapter keyStoreAdapter = new KeyStoreAdapter(_defaultKeyStoreId, this, keyStoreAttributes);
+            _keyStores.put(keyStoreAdapter.getId(), keyStoreAdapter);
+        }
+        else
+        {
+            _keyStores.remove(_defaultKeyStoreId);
         }
         String trustStorePath = (String) getAttribute(TRUST_STORE_PATH);
         if (trustStorePath != null)
@@ -238,13 +247,17 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             trsustStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
             trsustStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
             TrustStoreAdapter trustStore = new TrustStoreAdapter(_defaultTrustStoreId, this, trsustStoreAttributes);
-            addTrustStore(trustStore);
+            _trustStores.put(trustStore.getId(), trustStore);
+        }
+        else
+        {
+            _trustStores.remove(_defaultTrustStoreId);
         }
         String peerStorePath = (String) getAttribute(PEER_STORE_PATH);
+        UUID peerStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_PEER_STORE_NAME);
         if (peerStorePath != null)
         {
             Map<String, Object> peerStoreAttributes = new HashMap<String, Object>();
-            UUID peerStoreId = UUID.randomUUID();
             peerStoreAttributes.put(TrustStore.NAME, peerStoreId.toString());
             peerStoreAttributes.put(TrustStore.PATH, peerStorePath);
             peerStoreAttributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
@@ -252,7 +265,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             peerStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
             peerStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
             TrustStoreAdapter trustStore = new TrustStoreAdapter(peerStoreId, this, peerStoreAttributes);
-            addTrustStore(trustStore);
+            _trustStores.put(trustStore.getId(), trustStore);
+        }
+        else
+        {
+            _trustStores.remove(peerStoreId);
         }
     }
 
@@ -282,7 +299,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    public AuthenticationProvider getAuthenticationProviderByName(String authenticationProviderName)
+    public AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName)
     {
         Collection<AuthenticationProvider> providers = getAuthenticationProviders();
         for (AuthenticationProvider authenticationProvider : providers)
@@ -997,6 +1014,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
         validateAttributes(convertedAttributes);
         super.changeAttributes(convertedAttributes);
+
+        // the calls below are not thread safe but they should be fine in a management mode
+        // as there will be no user connected
+        createBrokerChildrenFromAttributes();
+        String defaultProviderName = (String)getAttribute(DEFAULT_AUTHENTICATION_PROVIDER);
+        if (!_defaultAuthenticationProvider.getName().equals(defaultProviderName))
+        {
+            _defaultAuthenticationProvider = findAuthenticationProviderByName(defaultProviderName);
+        }
     }
 
     private void validateAttributes(Map<String, Object> convertedAttributes)
@@ -1019,7 +1045,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         String defaultAuthenticationProvider = (String) convertedAttributes.get(DEFAULT_AUTHENTICATION_PROVIDER);
         if (defaultAuthenticationProvider != null)
         {
-            AuthenticationProvider provider = getAuthenticationProviderByName(defaultAuthenticationProvider);
+            AuthenticationProvider provider = findAuthenticationProviderByName(defaultAuthenticationProvider);
             if (provider == null)
             {
                 throw new IllegalConfigurationException("Authentication provider with name " + defaultAuthenticationProvider
