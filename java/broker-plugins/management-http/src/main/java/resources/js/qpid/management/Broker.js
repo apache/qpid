@@ -441,6 +441,7 @@ define(["dojo/_base/xhr",
 
                              util.flattenStatistics( that.brokerData);
 
+                             that.showReadOnlyAttributes();
                              that.updateHeader();
 
                              var gridProperties = {
@@ -617,6 +618,19 @@ define(["dojo/_base/xhr",
                          });
 
            };
+
+           BrokerUpdater.prototype.showReadOnlyAttributes = function()
+           {
+               var brokerData = this.brokerData;
+               dojo.byId("brokerAttribute.name").innerHTML = brokerData.name;
+               dojo.byId("brokerAttribute.operatingSystem").innerHTML = brokerData.operatingSystem;
+               dojo.byId("brokerAttribute.platform").innerHTML = brokerData.platform;
+               dojo.byId("brokerAttribute.productVersion").innerHTML = brokerData.productVersion;
+               dojo.byId("brokerAttribute.managementVersion").innerHTML = brokerData.managementVersion;
+               dojo.byId("brokerAttribute.storeType").innerHTML = brokerData.storeType;
+               dojo.byId("brokerAttribute.storeVersion").innerHTML = brokerData.storeVersion;
+               dojo.byId("brokerAttribute.storePath").innerHTML = brokerData.storePath;
+           }
 
            return Broker;
        });
