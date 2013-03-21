@@ -149,6 +149,18 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         return _store.getStoreLocation();
     }
 
+    @Override
+    public int getVersion()
+    {
+        return _store.getVersion();
+    }
+
+    @Override
+    public String getType()
+    {
+        return _store.getType();
+    }
+
     private Map<UUID, ConfigurationEntry> createPortsFromCommadLineOptions(BrokerOptions options)
     {
         int managementModeRmiPort = options.getManagementModeRmiPort();
@@ -312,4 +324,5 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         }
         return new ConfigurationEntry(entry.getId(), entry.getType(), attributes, children, entry.getStore());
     }
+
 }

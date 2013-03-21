@@ -57,6 +57,12 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
     }
 
     @Override
+    public String getType()
+    {
+        return STORE_TYPE;
+    }
+
+    @Override
     public String toString()
     {
         return "JsonConfigurationEntryStore [_storeFile=" + _storeFile + ", _rootId=" + getRootEntry().getId() + "]";
@@ -81,7 +87,7 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
                 ConfigurationEntry rootEntry = initialStore.getRootEntry();
                 Map<UUID, ConfigurationEntry> entries = new HashMap<UUID, ConfigurationEntry>();
                 copyEntry(rootEntry.getId(), initialStore, entries);
-                saveAsTree(rootEntry.getId(), entries, getObjectMapper(), storeFile);
+                saveAsTree(rootEntry.getId(), entries, getObjectMapper(), storeFile, getVersion());
             }
         }
     }

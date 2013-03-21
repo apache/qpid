@@ -29,6 +29,12 @@ import java.util.Map;
 
 public class Model
 {
+    /*
+     * API version for the broker management interfaces
+     */
+    public static final int MANAGEMENT_API_MAJOR_VERSION = 1;
+    public static final int MANAGEMENT_API_MINOR_VERSION = 0;
+
     private static final Model MODEL_INSTANCE = new Model();
 
     private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>

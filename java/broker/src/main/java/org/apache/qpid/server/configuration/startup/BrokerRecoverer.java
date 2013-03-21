@@ -50,7 +50,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     {
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor);
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor, entry.getStore());
 
         broker.addChangeListener(storeChangeListener);
         Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();

@@ -94,4 +94,14 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         assertEquals("Unexpected broker attributes", initialStoreRoot.getAttributes(), root.getAttributes());
         assertEquals("Unexpected broker children", initialStoreRoot.getChildrenIds(), root.getChildrenIds());
     }
+
+    public void testGetVersion()
+    {
+        assertEquals("Unexpected version", 1, getStore().getVersion());
+    }
+
+    public void testGetType()
+    {
+        assertEquals("Unexpected type", "memory", getStore().getType());
+    }
 }
