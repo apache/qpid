@@ -22,33 +22,82 @@
 # Run a simple test over SSL
 source ./test_env.sh
 
+#set -x
+
 CONFIG=$(dirname $0)/config.null
-CERT_DIR=`pwd`/test_cert_db
+TEST_CERT_DIR=`pwd`/test_cert_dir
+SERVER_CERT_DIR=${TEST_CERT_DIR}/test_cert_db
+CA_CERT_DIR=${TEST_CERT_DIR}/ca_cert_db
+OTHER_CA_CERT_DIR=${TEST_CERT_DIR}/x_ca_cert_db
 CERT_PW_FILE=`pwd`/cert.password
 TEST_HOSTNAME=127.0.0.1
 TEST_CLIENT_CERT=rumplestiltskin
+CA_PEM_FILE=${TEST_CERT_DIR}/ca_cert.pem
+OTHER_CA_PEM_FILE=${TEST_CERT_DIR}/other_ca_cert.pem
+PY_PING_BROKER=$top_srcdir/src/tests/ping_broker
 COUNT=10
 
 trap cleanup EXIT
 
 error() { echo $*; exit 1; }
 
-create_certs() {
-    #create certificate and key databases with single, simple, self-signed certificate in it
-    mkdir ${CERT_DIR}
-    certutil -N -d ${CERT_DIR} -f ${CERT_PW_FILE}
-    certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
-    certutil -S -d ${CERT_DIR} -n ${TEST_CLIENT_CERT} -s "CN=${TEST_CLIENT_CERT}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
+create_ca_certs() {
+
+    # Set Up the CA DB and self-signed Certificate
+    #
+    mkdir -p ${CA_CERT_DIR}
+    certutil -N -d ${CA_CERT_DIR} -f ${CERT_PW_FILE}
+    certutil -S -d ${CA_CERT_DIR} -n "Test-CA" -s "CN=Test-CA,O=MyCo,ST=Massachusetts,C=US" -t "CT,," -x -f ${CERT_PW_FILE} -z /bin/sh >/dev/null 2>&1
+    certutil -L -d ${CA_CERT_DIR} -n "Test-CA" -a -o ${CA_CERT_DIR}/rootca.crt -f ${CERT_PW_FILE}
+    #certutil -L -d ${CA_CERT_DIR} -f ${CERT_PW_FILE}
+
+    # Set Up another CA DB for testing failure to validate scenario
+    #
+    mkdir -p ${OTHER_CA_CERT_DIR}
+    certutil -N -d ${OTHER_CA_CERT_DIR} -f ${CERT_PW_FILE}
+    certutil -S -d ${OTHER_CA_CERT_DIR} -n "Other-Test-CA" -s "CN=Another Test CA,O=MyCo,ST=Massachusetts,C=US" -t "CT,," -x -f ${CERT_PW_FILE} -z /bin/sh >/dev/null 2>&1
+    certutil -L -d ${OTHER_CA_CERT_DIR} -n "Other-Test-CA" -a -o ${OTHER_CA_CERT_DIR}/rootca.crt -f ${CERT_PW_FILE}
+    #certutil -L -d ${OTHER_CA_CERT_DIR} -f ${CERT_PW_FILE}
+}
+
+# create server certificate signed by Test-CA
+#    $1 = string used as Subject in certificate
+#    $2 = string used as SubjectAlternateName (SAN) in certificate
+create_server_cert() {
+    mkdir -p ${SERVER_CERT_DIR}
+    rm -rf ${SERVER_CERT_DIR}/*
+
+    local CERT_SUBJECT=${1:-"CN=${TEST_HOSTNAME},O=MyCo,ST=Massachusetts,C=US"}
+    local CERT_SAN=${2:-"*.server.com"}
+
+    # create database
+    certutil -N -d ${SERVER_CERT_DIR} -f ${CERT_PW_FILE}
+    # create certificate request
+    certutil -R -d ${SERVER_CERT_DIR} -s "${CERT_SUBJECT}" -8 "${CERT_SAN}" -o server.req -f ${CERT_PW_FILE} -z /bin/sh > /dev/null 2>&1
+    # have CA sign it
+    certutil -C -d ${CA_CERT_DIR} -c "Test-CA" -i server.req -o server.crt -f ${CERT_PW_FILE} -m ${RANDOM}
+    # add it to the database
+    certutil -A -d ${SERVER_CERT_DIR} -n ${TEST_HOSTNAME} -i server.crt -t "Pu,,"
+    rm server.req server.crt
+
+    # now create a certificate for the client
+    certutil -R -d ${SERVER_CERT_DIR} -s "CN=${TEST_CLIENT_CERT}" -8 "*.client.com" -o client.req -f ${CERT_PW_FILE} -z /bin/sh > /dev/null 2>&1
+    certutil -C -d ${CA_CERT_DIR} -c "Test-CA" -i client.req -o client.crt -f ${CERT_PW_FILE} -m ${RANDOM}
+    certutil -A -d ${SERVER_CERT_DIR} -n ${TEST_CLIENT_CERT} -i client.crt -t "Pu,,"
+    ###
+    #certutil -N -d ${SERVER_CERT_DIR} -f ${CERT_PW_FILE}
+    #certutil -S -d ${SERVER_CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
+    #certutil -S -d ${SERVER_CERT_DIR} -n ${TEST_CLIENT_CERT} -s "CN=${TEST_CLIENT_CERT}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
 }
 
 delete_certs() {
-    if [[ -e ${CERT_DIR} ]] ;  then
-        rm -rf ${CERT_DIR}
+    if [[ -e ${TEST_CERT_DIR} ]] ;  then
+        rm -rf ${TEST_CERT_DIR}
     fi
 }
 
 # Don't need --no-module-dir or --no-data-dir as they are set as env vars in test_env.sh
-COMMON_OPTS="--daemon --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
+COMMON_OPTS="--daemon --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $SERVER_CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
 
 # Start new brokers:
 #   $1 must be integer
@@ -89,6 +138,7 @@ pick_port() {
 cleanup() {
     stop_brokers
     delete_certs
+    rm -f ${CERT_PW_FILE}
 }
 
 start_ssl_broker() {
@@ -123,14 +173,15 @@ if [[ !(-e ${CERT_PW_FILE}) ]] ;  then
     echo password > ${CERT_PW_FILE}
 fi
 delete_certs
-create_certs || error "Could not create test certificate"
+create_ca_certs || error "Could not create test certificate"
+create_server_cert || error "Could not create server test certificate"
 
 start_ssl_broker
 PORT=${PORTS[0]}
 echo "Running SSL test on port $PORT"
 export QPID_NO_MODULE_DIR=1
 export QPID_LOAD_MODULE=$SSLCONNECTOR_LIB
-export QPID_SSL_CERT_DB=${CERT_DIR}
+export QPID_SSL_CERT_DB=${SERVER_CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 
 ## Test connection via connection settings
@@ -193,3 +244,72 @@ echo "Running SSL/TCP mux test on random port $PORT"
 ./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary || error "TCP connection failed!"
 
 stop_brokers
+
+### Additional tests that require 'openssl' and 'pk12util' to be installed (optional)
+
+PK12UTIL=$(type -p pk12util)
+if [[ !(-x $PK12UTIL) ]] ; then
+    echo >&2 "'pk12util' command not available, skipping remaining tests"
+    exit 0
+fi
+
+OPENSSL=$(type -p openssl)
+if [[ !(-x $OPENSSL) ]] ; then
+    echo >&2 "'openssl' command not available, skipping remaining tests"
+    exit 0
+fi
+
+## verify python version > 2.5 (only 2.6+ does certificate checking)
+py_major=$(python -c "import sys; print sys.version_info[0]")
+py_minor=$(python -c "import sys; print sys.version_info[1]")
+if (( py_major < 2 || ( py_major == 2 &&  py_minor < 6 ) )); then
+    echo >&2 "Detected python version < 2.6 - skipping certificate verification tests"
+    exit 0
+fi
+
+echo "Testing Certificate validation and Authentication with the Python Client..."
+
+# extract the CA's certificate as a PEM file
+
+$PK12UTIL -o ${TEST_CERT_DIR}/CA_pk12.out -d ${CA_CERT_DIR} -n "Test-CA"  -w ${CERT_PW_FILE} -k ${CERT_PW_FILE} > /dev/null
+$OPENSSL pkcs12 -in ${TEST_CERT_DIR}/CA_pk12.out -out ${CA_PEM_FILE} -nokeys -passin file:${CERT_PW_FILE} >/dev/null
+$PK12UTIL -o ${TEST_CERT_DIR}/other_CA_pk12.out -d ${OTHER_CA_CERT_DIR} -n "Other-Test-CA" -w ${CERT_PW_FILE} -k ${CERT_PW_FILE} > /dev/null
+$OPENSSL pkcs12 -in ${TEST_CERT_DIR}/other_CA_pk12.out -out ${OTHER_CA_PEM_FILE} -nokeys -passin file:${CERT_PW_FILE} >/dev/null
+
+start_ssl_broker
+PORT=${PORTS[0]}
+URL=amqps://$TEST_HOSTNAME:$PORT
+# verify the python client can authenticate the broker using the CA
+if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+# verify the python client fails to authenticate the broker when using the other CA
+if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${OTHER_CA_PEM_FILE} > /dev/null 2>&1`; then { echo "    Failed"; exit 1; }; else echo "    Passed"; fi
+stop_brokers
+
+# create a certificate with TEST_HOSTNAME only in SAN, should verify OK
+
+create_server_cert "O=MyCo" "*.foo.com,${TEST_HOSTNAME},*xyz.com" || error "Could not create server test certificate"
+start_ssl_broker
+PORT=${PORTS[0]}
+URL=amqps://$TEST_HOSTNAME:$PORT
+if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+stop_brokers
+
+create_server_cert "O=MyCo" "*${TEST_HOSTNAME}" || error "Could not create server test certificate"
+start_ssl_broker
+PORT=${PORTS[0]}
+URL=amqps://$TEST_HOSTNAME:$PORT
+if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+stop_brokers
+
+# create a certificate without matching TEST_HOSTNAME, should fail to verify
+
+create_server_cert "O=MyCo" "*.${TEST_HOSTNAME}.com" || error "Could not create server test certificate"
+start_ssl_broker
+PORT=${PORTS[0]}
+URL=amqps://$TEST_HOSTNAME:$PORT
+if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE} > /dev/null 2>&1`; then { echo "    Failed"; exit 1; }; else echo "    Passed"; fi
+# but disabling the check for the hostname should pass
+if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE} --ssl-skip-hostname-check`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+stop_brokers
+
+
