@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -68,6 +70,21 @@ public class AuthenticationProviderFactory
                 AuthenticationProviderAdapter<?> authenticationProvider;
                 if (manager instanceof PrincipalDatabaseAuthenticationManager)
                 {
+                    // a temporary restriction to prevent creation of several instances
+                    // of PlainPasswordFileAuthenticationProvider/Base64MD5PasswordFileAuthenticationProvider
+                    // due to current limitation of JMX management which cannot cope
+                    // with several user management MBeans as MBean type is used as a name.
+
+                    // TODO: Remove this check after fixing of JMX management
+                    for (AuthenticationProvider provider : broker.getAuthenticationProviders())
+                    {
+                        if (provider instanceof PasswordCredentialManagingAuthenticationProvider)
+                        {
+                            throw new IllegalConfigurationException("An authentication provider which can manage users alredy exists ["
+                                    + provider.getName() + "]. Only one instance is allowed.");
+                        }
+                    }
+
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
                             (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
                 }
