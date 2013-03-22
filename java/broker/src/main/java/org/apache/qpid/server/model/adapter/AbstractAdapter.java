@@ -27,12 +27,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.ChangeStateTask;
 import org.apache.qpid.server.configuration.updater.CreateChildTask;
 import org.apache.qpid.server.configuration.updater.SetAttributeTask;
@@ -56,7 +56,14 @@ abstract class AbstractAdapter implements ConfiguredObject
         _id = id;
         if (attributes != null)
         {
-            _attributes.putAll(attributes);
+            Collection<String> names = getAttributeNames();
+            for (String name : names)
+            {
+                if (attributes.containsKey(name))
+                {
+                    _attributes.put(name, attributes.get(name));
+                }
+            }
         }
         if (defaults != null)
         {
@@ -88,13 +95,17 @@ abstract class AbstractAdapter implements ConfiguredObject
             if (setState(currentState, desiredState))
             {
                 notifyStateChanged(currentState, desiredState);
+                return desiredState;
+            }
+            else
+            {
+                return getActualState();
             }
         }
         else
         {
-            _taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
+            return (State)_taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
         }
-        return getActualState();
     }
 
     /**
@@ -218,13 +229,17 @@ abstract class AbstractAdapter implements ConfiguredObject
             if (changeAttribute(name, expected, desired))
             {
                 attributeSet(name, expected, desired);
+                return desired;
+            }
+            else
+            {
+                return getAttribute(name);
             }
         }
         else
         {
-            _taskExecutor.submitAndWait(new SetAttributeTask(this, name, expected, desired));
+            return _taskExecutor.submitAndWait(new SetAttributeTask(this, name, expected, desired));
         }
-        return getAttribute(name);
     }
 
     protected boolean changeAttribute(final String name, final Object expected, final Object desired)
@@ -322,30 +337,23 @@ abstract class AbstractAdapter implements ConfiguredObject
         }
         else
         {
-            getTaskExecutor().submitAndWait(new Callable<Void>()
-            {
-
-                @Override
-                public Void call() throws Exception
-                {
-                    AbstractAdapter.this.setAttributes(attributes);
-                    return null;
-                }
-            });
+            getTaskExecutor().submitAndWait(new ChangeAttributesTask(this, attributes));
         }
-
     }
 
     protected void changeAttributes(final Map<String, Object> attributes)
     {
-        for (Map.Entry<String, Object> attributeEntry : attributes.entrySet())
+        Collection<String> names = getAttributeNames();
+        for (String name : names)
         {
-            String name = attributeEntry.getKey();
-            Object desired = attributeEntry.getValue();
-            Object expected = getAttribute(name);
-            if (changeAttribute(name, expected, desired))
+            if (attributes.containsKey(name))
             {
-                attributeSet(name, expected, desired);
+                Object desired = attributes.get(name);
+                Object expected = getAttribute(name);
+                if (changeAttribute(name, expected, desired))
+                {
+                    attributeSet(name, expected, desired);
+                }
             }
         }
     }
