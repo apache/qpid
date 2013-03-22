@@ -84,7 +84,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         _database = new Base64MD5PasswordFilePrincipalDatabase();
         _pwdFile = File.createTempFile(this.getClass().getName(), "pwd");
         _pwdFile.deleteOnExit();
-        _database.setPasswordFile(_pwdFile.getAbsolutePath());
+        _database.open(_pwdFile);
         _testPwdFiles.clear();
     }
     
@@ -153,7 +153,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
     {
         try
         {
-            _database.setPasswordFile(file.toString());
+            _database.open(file);
         }
         catch (IOException e)
         {
@@ -392,7 +392,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
     {
         try
         {
-            _database.setPasswordFile("DoesntExist");
+            _database.open(new File("DoesntExist"));
         }
         catch (FileNotFoundException fnfe)
         {
@@ -414,7 +414,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
         try
         {
-            _database.setPasswordFile(testFile.toString());
+            _database.open(testFile);
         }
         catch (FileNotFoundException fnfe)
         {

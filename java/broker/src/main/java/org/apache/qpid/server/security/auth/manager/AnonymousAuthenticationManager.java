@@ -113,4 +113,16 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
     public void close()
     {
     }
+
+    @Override
+    public void onCreate()
+    {
+        // nothing to do, no external resource is required
+    }
+
+    @Override
+    public void onDelete()
+    {
+        // nothing to do, no external resource is used
+    }
 }

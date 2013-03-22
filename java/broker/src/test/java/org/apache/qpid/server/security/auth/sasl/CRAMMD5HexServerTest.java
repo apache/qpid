@@ -186,7 +186,7 @@ public class CRAMMD5HexServerTest extends TestCase
         Base64MD5PasswordFilePrincipalDatabase db = new Base64MD5PasswordFilePrincipalDatabase();
         File file = File.createTempFile("passwd", "db");
         file.deleteOnExit();
-        db.setPasswordFile(file.getCanonicalPath());
+        db.open(file);
         db.createPrincipal( createTestPrincipal("knownuser"), "guest".toCharArray());
         db.createPrincipal( createTestPrincipal("qpid3158user"), "guest2".toCharArray());
         return db;

@@ -24,6 +24,8 @@ import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialis
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
@@ -32,7 +34,7 @@ import java.util.Map;
 /** Represents a "user database" which is really a way of storing principals (i.e. usernames) and passwords. */
 public interface PrincipalDatabase
 {
-    void setPasswordFile(String passwordFile) throws IOException;
+    void open(File passwordFile) throws IOException;
 
     /**
      * Set the password for a given principal in the specified callback. This is used for certain SASL providers. The

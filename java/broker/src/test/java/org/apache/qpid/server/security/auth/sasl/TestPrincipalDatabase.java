@@ -25,6 +25,8 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
@@ -87,7 +89,7 @@ public class TestPrincipalDatabase implements PrincipalDatabase
     }
 
     @Override
-    public void setPasswordFile(String passwordFile) throws IOException
+    public void open(File passwordFile) throws IOException
     {
         // TODO Auto-generated method stub
     }
