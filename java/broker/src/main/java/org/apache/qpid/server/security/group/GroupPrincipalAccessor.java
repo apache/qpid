@@ -25,8 +25,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.adapter.GroupProviderAdapter;
-
 
 public class GroupPrincipalAccessor
 {

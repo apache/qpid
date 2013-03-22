@@ -33,7 +33,6 @@ import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.PrincipalDatabaseAuthenticationManagerAdapter;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
 
@@ -58,9 +57,8 @@ public class AuthenticationProviderFactory
      * <p>
      * The configured {@link AuthenticationManagerFactory}'s are used to try to create the {@link AuthenticationProvider}.
      * The first non-null instance is returned. The factories are used in non-deterministic order.
-     * @param groupPrincipalAccessor TODO
      */
-    public AuthenticationProvider create(UUID id, Broker broker, Map<String, Object> attributes, GroupPrincipalAccessor groupPrincipalAccessor)
+    public AuthenticationProvider create(UUID id, Broker broker, Map<String, Object> attributes)
     {
         for (AuthenticationManagerFactory factory : _factories)
         {
@@ -77,7 +75,6 @@ public class AuthenticationProviderFactory
                 {
                     authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
                 }
-                authenticationProvider.setGroupAccessor(groupPrincipalAccessor);
                 return authenticationProvider;
             }
         }

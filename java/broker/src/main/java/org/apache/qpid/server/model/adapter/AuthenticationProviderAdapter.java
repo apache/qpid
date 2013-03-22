@@ -36,6 +36,7 @@ import javax.security.auth.login.AccountNotFoundException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.IntegrityViolationException;
@@ -66,8 +67,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     protected T _authManager;
     protected final Broker _broker;
-
-    private GroupPrincipalAccessor _groupAccessor;
 
     protected Collection<String> _supportedAttributes;
     Map<String, AuthenticationManagerFactory> _factories;
@@ -238,10 +237,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
         else if(desiredState == State.ACTIVE)
         {
-            if (_groupAccessor == null)
-            {
-                throw new IllegalStateTransitionException("Cannot transit into ACTIVE state with null group accessor!");
-            }
             _authManager.initialise();
             return true;
         }
@@ -256,12 +251,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public SubjectCreator getSubjectCreator()
     {
-        return new SubjectCreator(_authManager, _groupAccessor);
-    }
-
-    public void setGroupAccessor(GroupPrincipalAccessor groupAccessor)
-    {
-        _groupAccessor = groupAccessor;
+        return new SubjectCreator(_authManager, new GroupPrincipalAccessor(_broker.getGroupProviders()));
     }
 
     @Override
@@ -341,7 +331,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             throw new UnsupportedOperationException();
         }
-
 
 
     }
