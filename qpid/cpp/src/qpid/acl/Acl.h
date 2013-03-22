@@ -61,6 +61,7 @@ private:
     acl::AclValues                       aclValues;
     broker::Broker*                      broker;
     bool                                 transferAcl;
+    bool                                 createlinkAcl;
     boost::shared_ptr<AclData>           data;
     qmf::org::apache::qpid::acl::Acl::shared_ptr mgmtObject;
     qpid::management::ManagementAgent*   agent;
@@ -79,6 +80,10 @@ public:
 
     inline virtual bool doTransferAcl() {
         return transferAcl;
+    };
+
+    inline virtual bool isCreatelinkAcl() {
+        return createlinkAcl;
     };
 
     inline virtual uint16_t getMaxConnectTotal() {

@@ -53,7 +53,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
-Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false),
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), createlinkAcl(false),
     connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal)),
     resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)){
 
@@ -254,10 +254,15 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
         Mutex::ScopedLock locker(dataLock);
         data = d;
     }
-    transferAcl = data->transferAcl; // any transfer ACL
+    transferAcl = data->transferAcl; // any PUBLISH EXCHANGE transfer ACL
+    createlinkAcl = data->createlinkAcl; // any CREATE LINK ACL
 
     if (data->transferAcl){
         QPID_LOG(debug,"ACL: Transfer ACL is Enabled!");
+    }
+
+    if (data->createlinkAcl){
+        QPID_LOG(debug,"ACL: CREATE LINK ACL is Enabled!");
     }
 
     if (data->enforcingConnectionQuotas()){
@@ -271,6 +276,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     data->aclSource = aclFile;
     if (mgmtObject!=0){
         mgmtObject->set_transferAcl(transferAcl?1:0);
+        mgmtObject->set_createLinkAcl(createlinkAcl?1:0);
         mgmtObject->set_policyFile(aclFile);
         sys::AbsTime now = sys::AbsTime::now();
         int64_t ns = sys::Duration(sys::EPOCH, now);
