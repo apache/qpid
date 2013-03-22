@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.io.File;
+import java.io.IOException;
 import java.security.Principal;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
@@ -66,10 +69,12 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     private final Map<String, Map<String, ?>> _serverCreationProperties = new HashMap<String, Map<String, ?>>();
 
     private final PrincipalDatabase _principalDatabase;
+    private final String _passwordFile;
 
-    public PrincipalDatabaseAuthenticationManager(PrincipalDatabase pd)
+    public PrincipalDatabaseAuthenticationManager(PrincipalDatabase pd, String passwordFile)
     {
         _principalDatabase = pd;
+        _passwordFile = passwordFile;
     }
 
     public void initialise()
@@ -203,5 +208,38 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     public PrincipalDatabase getPrincipalDatabase()
     {
         return _principalDatabase;
+    }
+
+    @Override
+    public void onCreate()
+    {
+        try
+        {
+            File passwordFile = new File(_passwordFile);
+            if (!passwordFile.exists())
+            {
+                passwordFile.createNewFile();
+            }
+            else if (!passwordFile.canRead())
+            {
+                throw new IllegalConfigurationException("Cannot read password file" + _passwordFile + ". Check permissions.");
+            }
+
+            _principalDatabase.open(passwordFile);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot use password database at :" + _passwordFile, e);
+        }
+    }
+
+    @Override
+    public void onDelete()
+    {
+        File file = new File(_passwordFile);
+        if (file.exists() && file.isFile())
+        {
+            file.delete();
+        }
     }
 }

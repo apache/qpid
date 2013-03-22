@@ -27,6 +27,8 @@ import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslServerFactory;
+
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
@@ -141,7 +143,7 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         }
 
         @Override
-        public void setPasswordFile(String passwordFile) throws IOException
+        public void open(File passwordFile) throws IOException
         {
             throw new UnsupportedOperationException();
         }

@@ -36,7 +36,6 @@ import javax.security.auth.login.AccountNotFoundException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.IntegrityViolationException;
@@ -69,7 +68,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     protected final Broker _broker;
 
     protected Collection<String> _supportedAttributes;
-    Map<String, AuthenticationManagerFactory> _factories;
+    protected Map<String, AuthenticationManagerFactory> _factories;
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
@@ -233,6 +232,8 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }
             }
+            _authManager.close();
+            _authManager.onDelete();
             return true;
         }
         else if(desiredState == State.ACTIVE)

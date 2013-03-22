@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,16 +61,7 @@ public abstract class AbstractPrincipalDatabaseAuthManagerFactory implements Aut
         }
 
         PrincipalDatabase principalDatabase = createPrincipalDatabase();
-        try
-        {
-            principalDatabase.setPasswordFile(passwordFile);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-
-        return new PrincipalDatabaseAuthenticationManager(principalDatabase);
+        return new PrincipalDatabaseAuthenticationManager(principalDatabase, passwordFile);
     }
 
     abstract PrincipalDatabase createPrincipalDatabase();
