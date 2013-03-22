@@ -284,7 +284,7 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
     {
         try
         {
-            _database.setPasswordFile("DoesntExist");
+            _database.open(new File("DoesntExist"));
         }
         catch (FileNotFoundException fnfe)
         {
@@ -306,7 +306,7 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
 
         try
         {
-            _database.setPasswordFile(testFile.toString());
+            _database.open(testFile);
         }
         catch (FileNotFoundException fnfe)
         {
@@ -403,7 +403,7 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
     {
         try
         {
-            _database.setPasswordFile(file.toString());
+            _database.open(file);
         }
         catch (IOException e)
         {

@@ -24,6 +24,7 @@ import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHel
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
@@ -54,13 +55,29 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 
     private AuthenticationManager _manager = null; // Class under test
     private PrincipalDatabase _principalDatabase;
+    private String _passwordFileLocation;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _passwordFileLocation = TMP_FOLDER + File.separator + PrincipalDatabaseAuthenticationManagerTest.class.getSimpleName() + "-" + getName();
+        deletePasswordFileIfExists();
+    }
 
     @Override
     public void tearDown() throws Exception
     {
-        if (_manager != null)
+        try
         {
-            _manager.close();
+            if (_manager != null)
+            {
+                _manager.close();
+            }
+        }
+        finally
+        {
+            deletePasswordFileIfExists();
         }
         super.tearDown();
     }
@@ -74,7 +91,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 
         when(_principalDatabase.getMechanisms()).thenReturn(_initialisers);
 
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase);
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
         _manager.initialise();
     }
 
@@ -104,7 +121,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 
         usernamePasswordInitialiser.initialise(_principalDatabase);
 
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase);
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, null);
         _manager.initialise();
     }
 
@@ -230,6 +247,34 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         assertNull(_manager.getMechanisms());
         assertNull(Security.getProvider(AuthenticationManager.PROVIDER_NAME));
         _manager = null;
+    }
+
+    public void testOnCreate() throws Exception
+    {
+        setupMocks();
+
+        _manager.onCreate();
+        assertTrue("Password file was not created", new File(_passwordFileLocation).exists());
+    }
+
+    public void testOnDelete() throws Exception
+    {
+        setupMocks();
+
+        _manager.onCreate();
+        assertTrue("Password file was not created", new File(_passwordFileLocation).exists());
+
+        _manager.onDelete();
+        assertFalse("Password file was not deleted", new File(_passwordFileLocation).exists());
+    }
+
+    private void deletePasswordFileIfExists()
+    {
+        File passwordFile = new File(_passwordFileLocation);
+        if (passwordFile.exists())
+        {
+            passwordFile.delete();
+        }
     }
 
     /**

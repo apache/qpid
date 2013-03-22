@@ -85,11 +85,13 @@ public class AuthenticationProviderFactory
                         }
                     }
 
+                    manager.onCreate();
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
                             (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
                 }
                 else
                 {
+                    manager.onCreate();
                     authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
                 }
                 return authenticationProvider;
