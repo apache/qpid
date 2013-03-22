@@ -23,17 +23,21 @@ define(["dojo/_base/xhr",
         "dojo/_base/event",
         "dojo/_base/json",
         "dojo/_base/lang",
+        "dojo/dom-construct",
+        "dojo/dom-geometry",
+        "dojo/window",
         "dijit/Dialog",
         "dijit/form/Form",
         "dijit/form/Button",
         "dijit/form/RadioButton",
         "dijit/form/CheckBox",
         "dojox/layout/TableContainer",
+        "dojox/layout/ScrollPane",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"
         ],
-       function (xhr, event, json, lang) {
+       function (xhr, event, json, lang, dom, geometry, win) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -147,8 +151,16 @@ define(["dojo/_base/xhr",
               });
               var submitButton = new dijit.form.Button({label: "Submit", type: "submit"});
               var form = new dijit.form.Form();
-              form.domNode.appendChild(layout.domNode);
-              form.domNode.appendChild(submitButton.domNode);
+
+              var dialogContent = dom.create("div");
+              var dialogContentArea = dom.create("div", { "class": "dijitDialogPaneContentArea"});
+              var dialogActionBar = dom.create("div", { "class": "dijitDialogPaneActionBar"} );
+              dialogContent.appendChild(dialogContentArea);
+              dialogContent.appendChild(dialogActionBar);
+              dialogContentArea.appendChild(layout.domNode)
+              dialogActionBar.appendChild(submitButton.domNode);
+              form.domNode.appendChild(dialogContent);
+
               var widgets = {};
               var requiredFor ={};
               for(var i in attributeWidgetFactories)
@@ -170,10 +182,6 @@ define(["dojo/_base/xhr",
               {
                 var dependent = requiredFor[widgetName];
                 var widget = widgets[widgetName];
-                if (widget.value)
-                {
-                  dependent.set("required", true);
-                }
                 if (widget)
                 {
                   widget.dependent = dependent;
@@ -185,7 +193,7 @@ define(["dojo/_base/xhr",
               var setAttributesDialog = new dijit.Dialog({
                  title: dialogTitle,
                  content: form,
-                 style: "width: 600px"
+                 style: "width: 600px; max-height: 80%"
              });
              form.on("submit", function(e)
              {
@@ -204,7 +212,7 @@ define(["dojo/_base/xhr",
                        {
                          values[ propName ] = widget.checked;
                        }
-                       else if (value != "" || (widget.initialValue && value != widget.initialValue))
+                       else if (value != widget.initialValue)
                        {
                          values[ propName ] = value ? value: null;
                        }
@@ -239,8 +247,17 @@ define(["dojo/_base/xhr",
                }
              });
              form.connectChildren(true);
+             setAttributesDialog.startup();
+             setAttributesDialog.on("show", function(){
+               var data = geometry.position(layout.domNode);
+               var maxHeight = win.getBox().h * 0.6;
+               if (data.h > maxHeight)
+               {
+                 dialogContentArea.style.height = maxHeight + "px";
+                 dialogContentArea.style.overflow= "auto";
+               }
+             })
              setAttributesDialog.show();
-
            };
 
            return util;
