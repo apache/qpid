@@ -74,12 +74,24 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, null, attributes, broker.getTaskExecutor());
+        super(id, null, null, broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
         _supportedAttributes = createSupportedAttributes(attributeNames);
         _factories = getAuthenticationManagerFactories();
         addParent(Broker.class, broker);
+
+        // set attributes now after all attribute names are known
+        if (attributes != null)
+        {
+            for (String name : _supportedAttributes)
+            {
+                if (attributes.containsKey(name))
+                {
+                    changeAttribute(name, null, attributes.get(name));
+                }
+            }
+        }
     }
 
     T getAuthManager()
