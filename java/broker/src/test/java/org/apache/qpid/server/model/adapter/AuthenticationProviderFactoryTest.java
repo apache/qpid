@@ -74,7 +74,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
         when(authenticationManagerFactory.createInstance(attributes)).thenReturn(authenticationManager);
 
         AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(authManagerFactoryServiceLoader);
-        AuthenticationProvider provider = providerFactory.create(id, broker, attributes, null);
+        AuthenticationProvider provider = providerFactory.create(id, broker, attributes);
 
         assertNotNull("Provider is not created", provider);
         assertEquals("Unexpected ID", id, provider.getId());

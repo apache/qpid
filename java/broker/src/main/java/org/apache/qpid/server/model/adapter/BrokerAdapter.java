@@ -63,7 +63,6 @@ import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthent
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -209,6 +208,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
      */
     private void createBrokerChildrenFromAttributes()
     {
+        createGroupProvider();
+        createKeyStore();
+        createTrustStore();
+        createPeerStore();
+    }
+
+    private void createGroupProvider()
+    {
         String groupFile = (String) getAttribute(GROUP_FILE);
         if (groupFile != null)
         {
@@ -222,6 +229,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             _groupProviders.remove(DEFAULT_GROUP_PROFIDER_NAME);
         }
+    }
+
+    private void createKeyStore()
+    {
         Map<String, Object> actualAttributes = getActualAttributes();
         String keyStorePath = (String) getAttribute(KEY_STORE_PATH);
         if (keyStorePath != null)
@@ -240,6 +251,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             _keyStores.remove(_defaultKeyStoreId);
         }
+    }
+
+    private void createTrustStore()
+    {
+        Map<String, Object> actualAttributes = getActualAttributes();
         String trustStorePath = (String) getAttribute(TRUST_STORE_PATH);
         if (trustStorePath != null)
         {
@@ -257,6 +273,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             _trustStores.remove(_defaultTrustStoreId);
         }
+    }
+
+    private void createPeerStore()
+    {
+        Map<String, Object> actualAttributes = getActualAttributes();
         String peerStorePath = (String) getAttribute(PEER_STORE_PATH);
         UUID peerStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_PEER_STORE_NAME);
         if (peerStorePath != null)
@@ -539,11 +560,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
             }
 
-            // it's cheap to create the groupPrincipalAccessor on the fly
-            GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(_groupProviders.values());
-
-            authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes,
-                    groupPrincipalAccessor);
+            authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
             addAuthenticationProvider(authenticationProvider);
         }
         authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
@@ -1033,15 +1050,63 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         //TODO: Add management mode check
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
         validateAttributes(convertedAttributes);
-        super.changeAttributes(convertedAttributes);
+
+        boolean keyStoreChanged = false;
+        boolean trustStoreChanged = false;
+        boolean peerStoreChanged = false;
+        Collection<String> names = AVAILABLE_ATTRIBUTES;
+        for (String name : names)
+        {
+            if (attributes.containsKey(name))
+            {
+                Object desired = attributes.get(name);
+                Object expected = getAttribute(name);
+                if (changeAttribute(name, expected, desired))
+                {
+                    if (GROUP_FILE.equals(name))
+                    {
+                        createGroupProvider();
+                    }
+                    else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
+                    {
+                        if (!_defaultAuthenticationProvider.getName().equals(desired))
+                        {
+                            _defaultAuthenticationProvider = findAuthenticationProviderByName((String)desired);
+                        }
+                    }
+                    else if (KEY_STORE_PATH.equals(name) || KEY_STORE_PASSWORD.equals(name) || KEY_STORE_CERT_ALIAS.equals(name))
+                    {
+                        keyStoreChanged = true;
+                    }
+                    else if (TRUST_STORE_PATH.equals(name) || TRUST_STORE_PASSWORD.equals(name))
+                    {
+                        trustStoreChanged = true;
+                    }
+                    else if (PEER_STORE_PATH.equals(name) || PEER_STORE_PASSWORD.equals(name))
+                    {
+                        peerStoreChanged = true;
+                    }
+                    attributeSet(name, expected, desired);
+                }
+            }
+        }
 
         // the calls below are not thread safe but they should be fine in a management mode
         // as there will be no user connected
-        createBrokerChildrenFromAttributes();
-        String defaultProviderName = (String)getAttribute(DEFAULT_AUTHENTICATION_PROVIDER);
-        if (!_defaultAuthenticationProvider.getName().equals(defaultProviderName))
+        // The new keystore/trustore/peerstore will be only used with new ports
+        // At the moment we cannot restart ports with new keystore/trustore/peerstore
+
+        if (keyStoreChanged)
         {
-            _defaultAuthenticationProvider = findAuthenticationProviderByName(defaultProviderName);
+            createKeyStore();
+        }
+        if (trustStoreChanged)
+        {
+            createTrustStore();
+        }
+        if (peerStoreChanged)
+        {
+            createPeerStore();
         }
     }
 

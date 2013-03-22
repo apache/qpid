@@ -53,7 +53,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -300,9 +299,6 @@ public class BrokerRecovererTest extends TestCase
         assertNotNull(broker);
         assertEquals("Unexpected number of authentication providers", 2, broker.getAuthenticationProviders().size());
 
-        //verify that a GroupAcessor was added to the AuthenticationProviders
-        verify(_authenticationProvider1).setGroupAccessor(any(GroupPrincipalAccessor.class));
-        verify(authenticationProvider2).setGroupAccessor(any(GroupPrincipalAccessor.class));
     }
 
     public void testCreateBrokerWithGroupProvider()

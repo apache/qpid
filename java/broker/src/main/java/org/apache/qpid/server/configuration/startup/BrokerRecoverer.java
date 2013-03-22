@@ -18,7 +18,6 @@ import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -102,12 +101,6 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
             defaultAuthenticationProvider = getAuthenticationProviderByName(broker, name);
         }
         broker.setDefaultAuthenticationProvider(defaultAuthenticationProvider);
-
-        GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(broker.getGroupProviders());
-        for (AuthenticationProvider authenticationProvider : authenticationProviders)
-        {
-            authenticationProvider.setGroupAccessor(groupPrincipalAccessor);
-        }
 
         Collection<Port> ports = broker.getPorts();
         for (Port port : ports)
