@@ -53,7 +53,7 @@ TRANSPORTS["tcp"] = tcp
 
 try:
   from ssl import wrap_socket, SSLError, SSL_ERROR_WANT_READ, \
-      SSL_ERROR_WANT_WRITE
+      SSL_ERROR_WANT_WRITE, CERT_REQUIRED, CERT_NONE
 except ImportError:
 
   ## try the older python SSL api:
@@ -69,6 +69,15 @@ except ImportError:
       ssl_certfile = conn.ssl_certfile
       if ssl_certfile and not ssl_keyfile:
         ssl_keyfile = ssl_certfile
+
+      # this version of SSL does NOT perform certificate validation.  If the
+      # connection has been configured with CA certs (via ssl_trustfile), then
+      # the application expects the certificate to be validated against the
+      # supplied CA certs. Since this version cannot validate, the peer cannot
+      # be trusted.
+      if conn.ssl_trustfile:
+        raise SSLError("This version of Python does not support verification of the peer's certificate.")
+
       self.ssl = ssl(self.socket, keyfile=ssl_keyfile, certfile=ssl_certfile)
       self.socket.setblocking(1)
 
@@ -95,7 +104,39 @@ else:
 
     def __init__(self, conn, host, port):
       SocketTransport.__init__(self, conn, host, port)
-      self.tls = wrap_socket(self.socket, keyfile=conn.ssl_keyfile, certfile=conn.ssl_certfile, ca_certs=conn.ssl_trustfile)
+      if conn.ssl_trustfile:
+        validate = CERT_REQUIRED
+      else:
+        validate = CERT_NONE
+
+      self.tls = wrap_socket(self.socket, keyfile=conn.ssl_keyfile,
+                             certfile=conn.ssl_certfile,
+                             ca_certs=conn.ssl_trustfile,
+                             cert_reqs=validate)
+
+      if validate == CERT_REQUIRED and not conn.ssl_skip_hostname_check:
+        match_found = False
+        peer_cert = self.tls.getpeercert()
+        if peer_cert:
+          peer_names = []
+          if 'subjectAltName' in peer_cert:
+            for san in peer_cert['subjectAltName']:
+              if san[0] == 'DNS':
+                peer_names.append(san[1].lower())
+          if 'subject' in peer_cert:
+            for sub in peer_cert['subject']:
+              while isinstance(sub, tuple) and isinstance(sub[0],tuple):
+                sub = sub[0]   # why the extra level of indirection???
+              if sub[0] == 'commonName':
+                peer_names.append(sub[1].lower())
+          for pattern in peer_names:
+            if _match_dns_pattern( host.lower(), pattern ):
+              #print "Match found %s" % pattern
+              match_found = True
+              break
+        if not match_found:
+          raise SSLError("Connection hostname '%s' does not match names from peer certificate: %s" % (host, peer_names))
+
       self.socket.setblocking(0)
       self.state = None
 
@@ -145,6 +186,32 @@ else:
       self.socket.setblocking(1)
       # this closes the underlying socket
       self.tls.close()
+
+  def _match_dns_pattern( hostname, pattern ):
+    """ For checking the hostnames provided by the peer's certificate
+    """
+    if pattern.find("*") == -1:
+      return hostname == pattern
+
+    # DNS wildcarded pattern - see RFC2818
+    h_labels = hostname.split(".")
+    p_labels = pattern.split(".")
+
+    while h_labels and p_labels:
+      if p_labels[0].find("*") == -1:
+        if p_labels[0] != h_labels[0]:
+          return False
+      else:
+        p = p_labels[0].split("*")
+        if not h_labels[0].startswith(p[0]):
+          return False
+        if not h_labels[0].endswith(p[1]):
+          return False
+      h_labels.pop(0)
+      p_labels.pop(0)
+
+    return not h_labels and not p_labels
+
 
   TRANSPORTS["ssl"] = tls
   TRANSPORTS["tcp+tls"] = tls
