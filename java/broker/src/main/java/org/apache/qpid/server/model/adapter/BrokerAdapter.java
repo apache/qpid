@@ -531,35 +531,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         AuthenticationProvider authenticationProvider = null;
         synchronized (_authenticationProviders)
         {
-            String type = (String)attributes.get(AuthenticationProvider.TYPE);
-            if (type == null)
-            {
-                throw new IllegalConfigurationException("Authentication provider type is not specified");
-            }
-
-            // a temporary restriction to prevent creation of several instances
-            // of PlainPasswordFileAuthenticationProvider/Base64MD5PasswordFileAuthenticationProvider
-            // due to current limitation of JMX management which cannot cope
-            // with several user management MBeans as MBean type is used as a name.
-
-            // TODO: Remove this check after fixing of JMX management
-            if (type.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
-                    || type.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
-            {
-
-                for (AuthenticationProvider provider : _authenticationProviders.values())
-                {
-                    String providerType = (String) provider.getAttribute(AuthenticationProvider.TYPE);
-                    if (providerType.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
-                            || providerType.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
-                    {
-                        throw new IllegalConfigurationException("An authentication provider which can manage users alredy exists ["
-                                + provider.getName() + "]. Only one instance is allowed.");
-                    }
-                }
-
-            }
-
             authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
             addAuthenticationProvider(authenticationProvider);
         }
