@@ -122,6 +122,10 @@ class Connection(Endpoint):
     @param ssl_certfile: file with client's public (eventually priv+pub) key (PEM format)
     @type ssl_trustfile: str
     @param ssl_trustfile: file trusted certificates to validate the server
+    @type ssl_skip_hostname_check: bool
+    @param ssl_skip_hostname_check: disable verification of hostname in
+    certificate. Use with caution - disabling hostname checking leaves you
+    vulnerable to Man-in-the-Middle attacks.
 
     @rtype: Connection
     @return: a disconnected Connection
@@ -170,6 +174,7 @@ class Connection(Endpoint):
     self.ssl_keyfile = options.get("ssl_keyfile", None)
     self.ssl_certfile = options.get("ssl_certfile", None)
     self.ssl_trustfile = options.get("ssl_trustfile", None)
+    self.ssl_skip_hostname_check = options.get("ssl_skip_hostname_check", False)
     self.client_properties = options.get("client_properties", {})
 
     self.options = options
