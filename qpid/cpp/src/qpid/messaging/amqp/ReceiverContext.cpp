@@ -20,9 +20,11 @@
  */
 #include "qpid/messaging/amqp/ReceiverContext.h"
 #include "qpid/messaging/amqp/AddressHelper.h"
+#include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/log/Statement.h"
 extern "C" {
 #include <proton/engine.h>
 }
@@ -38,7 +40,7 @@ ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, co
     capacity(0) {}
 ReceiverContext::~ReceiverContext()
 {
-    pn_link_free(receiver);
+    //pn_link_free(receiver);
 }
 
 void ReceiverContext::setCapacity(uint32_t c)
@@ -76,7 +78,7 @@ uint32_t ReceiverContext::getUnsettled()
 
 void ReceiverContext::close()
 {
-
+    pn_link_close(receiver);
 }
 
 const std::string& ReceiverContext::getName() const
@@ -113,11 +115,18 @@ void ReceiverContext::configure() const
 }
 void ReceiverContext::configure(pn_terminus_t* source) const
 {
-    pn_terminus_set_address(source, address.getName().c_str());
     //dynamic create:
     AddressHelper helper(address);
-    if (helper.createEnabled(AddressHelper::FOR_RECEIVER)) {
-        helper.setNodeProperties(source);
+    if (AddressImpl::isTemporary(address)) {
+        //application expects a name to be generated
+        QPID_LOG(debug, "source is dynamic");
+        helper.setNodeProperties(source, true);
+    } else {
+        pn_terminus_set_address(source, address.getName().c_str());
+        if (helper.createEnabled(AddressHelper::FOR_RECEIVER)) {
+            //application expects name of node to be as specified
+            helper.setNodeProperties(source, false);
+        }
     }
 
     // Look specifically for qpid.selector link property and add a filter for it
@@ -147,6 +156,11 @@ void ReceiverContext::configure(pn_terminus_t* source) const
         pn_data_exit(filter);
         pn_data_exit(filter);
     }
+}
+
+Address ReceiverContext::getAddress() const
+{
+    return address;
 }
 
 bool ReceiverContext::isClosed() const

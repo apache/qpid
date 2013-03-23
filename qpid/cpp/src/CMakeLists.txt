@@ -1063,6 +1063,7 @@ install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
 set (qpidmessaging_SOURCES_hidden
      qpid/messaging/AddressParser.h
+     qpid/messaging/AddressImpl.h
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/SessionImpl.h

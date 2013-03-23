@@ -37,11 +37,11 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::broker::Broker& b, Interconnects& interconnects_, bool saslInUse)
+Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::broker::Broker& b, Interconnects& interconnects_, bool saslInUse, const std::string& d)
     : ManagedConnection(b, i),
       connection(pn_connection()),
       transport(pn_transport()),
-      out(o), id(i), broker(b), haveOutput(true), interconnects(interconnects_)
+      out(o), id(i), broker(b), haveOutput(true), interconnects(interconnects_), domain(d)
 {
     if (pn_transport_bind(transport, connection)) {
         //error
@@ -265,4 +265,8 @@ std::string Connection::getError()
     return text.str();
 }
 
+std::string Connection::getDomain() const
+{
+    return domain;
+}
 }}} // namespace qpid::broker::amqp
