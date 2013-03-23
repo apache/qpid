@@ -935,6 +935,7 @@ libqpidtypes_la_LDFLAGS = -version-info $(QPIDTYPES_VERSION_INFO)
 libqpidmessaging_la_LIBADD = libqpidclient.la libqpidtypes.la
 libqpidmessaging_la_SOURCES =			\
   qpid/messaging/Address.cpp			\
+  qpid/messaging/AddressImpl.h			\
   qpid/messaging/AddressParser.h		\
   qpid/messaging/AddressParser.cpp		\
   qpid/messaging/Connection.cpp			\

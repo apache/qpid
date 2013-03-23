@@ -41,7 +41,7 @@ namespace amqp {
 
 Interconnect::Interconnect(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, bool saslInUse,
                            bool i, const std::string& n, const std::string& s, const std::string& t, Domain& d, Interconnects& r)
-    : Connection(out, id, broker, r, saslInUse), incoming(i), name(n), source(s), target(t), domain(d), registry(r), headerDiscarded(false),
+    : Connection(out, id, broker, r, saslInUse, std::string()), incoming(i), name(n), source(s), target(t), domain(d), registry(r), headerDiscarded(false),
       closeRequested(false), isTransportDeleted(false)
 {}
 

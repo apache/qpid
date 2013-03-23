@@ -45,7 +45,7 @@ class Session;
 class Connection : public sys::ConnectionCodec, public ManagedConnection
 {
   public:
-    Connection(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, Interconnects&, bool saslInUse);
+    Connection(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, Interconnects&, bool saslInUse, const std::string& domain);
     virtual ~Connection();
     size_t decode(const char* buffer, size_t size);
     virtual size_t encode(char* buffer, size_t size);
@@ -57,6 +57,7 @@ class Connection : public sys::ConnectionCodec, public ManagedConnection
     framing::ProtocolVersion getVersion() const;
     pn_transport_t* getTransport();
     Interconnects& getInterconnects();
+    std::string getDomain() const;
   protected:
     typedef std::map<pn_session_t*, boost::shared_ptr<Session> > Sessions;
     pn_connection_t* connection;
@@ -67,6 +68,7 @@ class Connection : public sys::ConnectionCodec, public ManagedConnection
     bool haveOutput;
     Sessions sessions;
     Interconnects& interconnects;
+    std::string domain;
 
     virtual void process();
     std::string getError();

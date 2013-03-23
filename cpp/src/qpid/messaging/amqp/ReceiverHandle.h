@@ -53,6 +53,7 @@ class ReceiverHandle : public qpid::messaging::ReceiverImpl
     const std::string& getName() const;
     qpid::messaging::Session getSession() const;
     bool isClosed() const;
+    Address getAddress() const;
   private:
     boost::shared_ptr<ConnectionContext> connection;
     boost::shared_ptr<SessionContext> session;

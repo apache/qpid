@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_AMQP_ADDRESSHELPER_H
-#define QPID_MESSAGING_AMQP_ADDRESSHELPER_H
+#ifndef QPID_MESSAGING_ADDRESSIMPL_H
+#define QPID_MESSAGING_ADDRESSIMPL_H
 
 /*
  *
@@ -22,37 +22,23 @@
  *
  */
 #include "qpid/types/Variant.h"
-
-struct pn_terminus_t;
-
 namespace qpid {
 namespace messaging {
-class Address;
-namespace amqp {
 
-class AddressHelper
+class AddressImpl
 {
   public:
-    enum CheckMode {FOR_RECEIVER, FOR_SENDER};
-
-    AddressHelper(const Address& address);
-    bool createEnabled(CheckMode mode) const;
-    bool deleteEnabled(CheckMode mode) const;
-    bool assertEnabled(CheckMode mode) const;
-
-    void setNodeProperties(pn_terminus_t*, bool dynamic);
-    const qpid::types::Variant::Map& getNodeProperties() const;
-    const qpid::types::Variant::Map& getLinkProperties() const;
-  private:
-    std::string createPolicy;
-    std::string assertPolicy;
-    std::string deletePolicy;
-    qpid::types::Variant::Map node;
-    qpid::types::Variant::Map link;
     std::string name;
+    std::string subject;
+    qpid::types::Variant::Map options;
+    bool temporary;
 
-    bool enabled(const std::string& policy, CheckMode mode) const;
+    AddressImpl() : temporary(false) {}
+    AddressImpl(const std::string& n, const std::string& s, const qpid::types::Variant::Map& o) :
+        name(n), subject(s), options(o), temporary(false) {}
+    static void setTemporary(Address& a, bool value) { a.impl->temporary = value; }
+    static bool isTemporary(const Address& a) { return a.impl->temporary; }
 };
-}}} // namespace qpid::messaging::amqp
+}} // namespace qpid::messaging
 
-#endif  /*!QPID_MESSAGING_AMQP_ADDRESSHELPER_H*/
+#endif  /*!QPID_MESSAGING_ADDRESSIMPL_H*/

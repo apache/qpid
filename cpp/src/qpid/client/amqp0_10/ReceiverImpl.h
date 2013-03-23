@@ -66,6 +66,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     void received(qpid::messaging::Message& message);
     qpid::messaging::Session getSession() const;
     bool isClosed() const;
+    qpid::messaging::Address getAddress() const;
 
   private:
     mutable sys::Mutex lock;

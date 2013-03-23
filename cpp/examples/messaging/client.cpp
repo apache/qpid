@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
         Sender sender = session.createSender("service_queue");
 
         //create temp queue & receiver...
-        Address responseQueue("#response-queue; {create:always, delete:always}");
-        Receiver receiver = session.createReceiver(responseQueue);
+        Receiver receiver = session.createReceiver("#");
+        Address responseQueue = receiver.getAddress();
 
 	// Now send some messages ...
 	string s[] = {

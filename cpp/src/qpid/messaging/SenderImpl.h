@@ -27,6 +27,7 @@
 namespace qpid {
 namespace messaging {
 
+class Address;
 class Message;
 class Session;
 
@@ -41,6 +42,7 @@ class SenderImpl : public virtual qpid::RefCounted
     virtual uint32_t getUnsettled() = 0;
     virtual const std::string& getName() const = 0;
     virtual Session getSession() const = 0;
+    virtual Address getAddress() const = 0;
   private:
 };
 }} // namespace qpid::messaging

@@ -48,6 +48,7 @@ class SenderHandle : public qpid::messaging::SenderImpl
     uint32_t getUnsettled();
     const std::string& getName() const;
     Session getSession() const;
+    Address getAddress() const;
   private:
     boost::shared_ptr<ConnectionContext> connection;
     boost::shared_ptr<SessionContext> session;

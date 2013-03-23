@@ -34,6 +34,7 @@ namespace messaging {
 #ifndef SWIG
 template <class> class PrivateImplRef;
 #endif
+class Address;
 class Message;
 class SenderImpl;
 class Session;
@@ -89,6 +90,11 @@ class QPID_MESSAGING_CLASS_EXTERN Sender : public qpid::messaging::Handle<Sender
      * Returns a handle to the session associated with this sender.
      */
     QPID_MESSAGING_EXTERN Session getSession() const;
+
+    /**
+     * Returns an address for this sender.
+     */
+    QPID_MESSAGING_EXTERN Address getAddress() const;
 #ifndef SWIG
   private:
   friend class qpid::messaging::PrivateImplRef<Sender>;
