@@ -153,6 +153,7 @@ class QPID_MESSAGING_CLASS_EXTERN Address
     QPID_MESSAGING_EXTERN bool operator !() const;
   private:
     AddressImpl* impl;
+    friend class AddressImpl;
 };
 
 #ifndef SWIG

@@ -20,6 +20,7 @@
  */
 #include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/log/Statement.h"
 #include <vector>
 #include <boost/assign.hpp>
 extern "C" {
@@ -56,7 +57,9 @@ const std::string MOVE("move");
 const std::string COPY("copy");
 
 const std::string SUPPORTED_DIST_MODES("supported-dist-modes");
+const std::string CREATE_ON_DEMAND("create-on-demand");
 
+const std::string DUMMY(".");
 
 const std::vector<std::string> RECEIVER_MODES = boost::assign::list_of<std::string>(ALWAYS) (RECEIVER);
 const std::vector<std::string> SENDER_MODES = boost::assign::list_of<std::string>(ALWAYS) (SENDER);
@@ -155,26 +158,33 @@ const qpid::types::Variant::Map& AddressHelper::getLinkProperties() const
     return link;
 }
 
-void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
+void AddressHelper::setNodeProperties(pn_terminus_t* terminus, bool dynamic)
 {
-    pn_terminus_set_dynamic(terminus, true);
+    if (dynamic) {
+        pn_terminus_set_address(terminus, DUMMY.c_str());//Workaround for proton bug
+        pn_terminus_set_dynamic(terminus, true);
+    } else {
+        pn_data_t* capabilities = pn_terminus_capabilities(terminus);
+        if (!capabilities) {
+            QPID_LOG(error, "!!!No capabilities!!!");
+        }
+        pn_data_put_symbol(capabilities, convert(CREATE_ON_DEMAND));
+    }
 
     //properties for dynamically created node:
-    pn_data_t* data = pn_terminus_properties(terminus);
     if (node.size()) {
+        pn_data_t* data = pn_terminus_properties(terminus);
         pn_data_put_map(data);
         pn_data_enter(data);
-    }
-    for (qpid::types::Variant::Map::const_iterator i = node.begin(); i != node.end(); ++i) {
-        if (i->first == TYPE) {
-            pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
-            pn_data_put_string(data, convert(i->second == TOPIC ? COPY : MOVE));
-        } else {
-            pn_data_put_symbol(data, convert(i->first));
-            pn_data_put_string(data, convert(i->second.asString()));
+        for (qpid::types::Variant::Map::const_iterator i = node.begin(); i != node.end(); ++i) {
+            if (i->first == TYPE) {
+                pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
+                pn_data_put_string(data, convert(i->second == TOPIC ? COPY : MOVE));
+            } else {
+                pn_data_put_symbol(data, convert(i->first));
+                pn_data_put_string(data, convert(i->second.asString()));
+            }
         }
-    }
-    if (node.size()) {
         pn_data_exit(data);
     }
 }

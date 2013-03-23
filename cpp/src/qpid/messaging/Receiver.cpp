@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/messaging/Receiver.h"
+#include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ReceiverImpl.h"
 #include "qpid/messaging/Session.h"
@@ -45,4 +46,5 @@ void Receiver::close() { impl->close(); }
 const std::string& Receiver::getName() const { return impl->getName(); }
 Session Receiver::getSession() const { return impl->getSession(); }
 bool Receiver::isClosed() const { return impl->isClosed(); }
+Address Receiver::getAddress() const { return impl->getAddress(); }
 }} // namespace qpid::messaging

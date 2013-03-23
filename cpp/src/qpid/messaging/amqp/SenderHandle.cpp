@@ -72,4 +72,9 @@ qpid::messaging::Session SenderHandle::getSession() const
     return qpid::messaging::Session(new SessionHandle(connection, session));
 }
 
+Address SenderHandle::getAddress() const
+{
+    return sender->getAddress();
+}
+
 }}} // namespace qpid::messaging::amqp

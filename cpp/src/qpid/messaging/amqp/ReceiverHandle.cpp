@@ -103,4 +103,9 @@ bool ReceiverHandle::isClosed() const
     return receiver->isClosed();
 }
 
+Address ReceiverHandle::getAddress() const
+{
+    return receiver->getAddress();
+}
+
 }}} // namespace qpid::messaging::amqp

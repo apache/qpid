@@ -143,6 +143,11 @@ uint32_t ReceiverImpl::getUnsettled()
     return parent->getUnsettledAcks(destination);
 }
 
+qpid::messaging::Address ReceiverImpl::getAddress() const
+{
+    return address;
+}
+
 ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
                            const qpid::messaging::Address& a) :
 

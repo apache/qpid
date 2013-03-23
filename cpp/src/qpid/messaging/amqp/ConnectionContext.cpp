@@ -26,6 +26,7 @@
 #include "SessionContext.h"
 #include "Transport.h"
 #include "qpid/messaging/exceptions.h"
+#include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
@@ -285,34 +286,45 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
 {
     lnk->configure();
     attach(ssn->session, (pn_link_t*) lnk->sender);
-    if (!pn_link_remote_target((pn_link_t*) lnk->sender)) {
+    pn_terminus_t* t = pn_link_remote_target(lnk->sender);
+    if (!pn_terminus_get_address(t)) {
         std::string msg("No such target : ");
         msg += lnk->getTarget();
+        QPID_LOG(debug, msg);
         throw qpid::messaging::NotFound(msg);
+    } else if (AddressImpl::isTemporary(lnk->address)) {
+        lnk->address.setName(pn_terminus_get_address(t));
+        QPID_LOG(debug, "Dynamic target name set to " << lnk->address.getName());
     }
+    QPID_LOG(debug, "Attach succeeded to " << lnk->getTarget());
 }
 
 void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
     lnk->configure();
     attach(ssn->session, lnk->receiver, lnk->capacity);
-    if (!pn_link_remote_source(lnk->receiver)) {
+    pn_terminus_t* s = pn_link_remote_source(lnk->receiver);
+    if (!pn_terminus_get_address(s)) {
         std::string msg("No such source : ");
         msg += lnk->getSource();
+        QPID_LOG(debug, msg);
         throw qpid::messaging::NotFound(msg);
+    } else if (AddressImpl::isTemporary(lnk->address)) {
+        lnk->address.setName(pn_terminus_get_address(s));
+        QPID_LOG(debug, "Dynamic source name set to " << lnk->address.getName());
     }
+    QPID_LOG(debug, "Attach succeeded from " << lnk->getSource());
 }
 
 void ConnectionContext::attach(pn_session_t* /*session*/, pn_link_t* link, int credit)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    QPID_LOG(debug, "Attaching link " << link << ", state=" << pn_link_state(link));
     pn_link_open(link);
-    QPID_LOG(debug, "Link attached " << link << ", state=" << pn_link_state(link));
+    QPID_LOG(debug, "Link attach sent for " << link << ", state=" << pn_link_state(link));
     if (credit) pn_link_flow(link, credit);
     wakeupDriver();
     while (pn_link_state(link) & PN_REMOTE_UNINIT) {
-        QPID_LOG(debug, "waiting for confirmation of link attach for " << link << ", state=" << pn_link_state(link));
+        QPID_LOG(debug, "Waiting for confirmation of link attach for " << link << ", state=" << pn_link_state(link) << "...");
         wait();
     }
 }

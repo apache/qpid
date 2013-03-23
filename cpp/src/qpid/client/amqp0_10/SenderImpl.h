@@ -56,6 +56,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     void init(qpid::client::AsyncSession, AddressResolution&);
     const std::string& getName() const;
     qpid::messaging::Session getSession() const;
+    qpid::messaging::Address getAddress() const;
 
   private:
     mutable sys::Mutex lock;

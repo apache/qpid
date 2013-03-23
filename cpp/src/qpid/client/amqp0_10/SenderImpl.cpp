@@ -34,6 +34,11 @@ SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name,
     parent(&_parent), name(_name), address(_address), state(UNRESOLVED),
     capacity(50), window(0), flushed(false), unreliable(AddressResolution::is_unreliable(address)) {}
 
+qpid::messaging::Address SenderImpl::getAddress() const
+{
+    return address;
+}
+
 void SenderImpl::send(const qpid::messaging::Message& message, bool sync) 
 {
     if (unreliable) {           // immutable, don't need lock
