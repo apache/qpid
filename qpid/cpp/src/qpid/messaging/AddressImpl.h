@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/messaging/Address.h"
 #include "qpid/types/Variant.h"
 namespace qpid {
 namespace messaging {
