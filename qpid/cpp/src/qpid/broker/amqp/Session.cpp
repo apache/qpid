@@ -53,6 +53,20 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
+namespace {
+bool is_capability_requested(const std::string& name, pn_data_t* capabilities)
+{
+    while (pn_data_next(capabilities)) {
+        pn_bytes_t c = pn_data_get_symbol(capabilities);
+        std::string s(c.start, c.size);
+        if (s == name) return true;
+    }
+    return false;
+}
+
+const std::string CREATE_ON_DEMAND("create-on-demand");
+}
+
 class IncomingToQueue : public DecodingIncoming
 {
   public:
@@ -81,7 +95,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     node.exchange = broker.getExchanges().find(name);
     node.queue = broker.getQueues().find(name);
     if (!node.queue && !node.exchange) {
-        if (pn_terminus_is_dynamic(terminus)) {
+        if (pn_terminus_is_dynamic(terminus)  || is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
             //is it a queue or an exchange?
             NodeProperties properties;
             properties.read(pn_terminus_properties(terminus));
@@ -117,25 +131,43 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     return node;
 }
 
+std::string Session::generateName(pn_link_t* link)
+{
+    std::stringstream s;
+    s << qpid::types::Uuid(true) << "::" << pn_link_name(link);
+    if (!connection.getDomain().empty()) {
+        s << "@" << connection.getDomain();
+    }
+    return s.str();
+}
+
 void Session::attach(pn_link_t* link)
 {
     if (pn_link_is_sender(link)) {
         pn_terminus_t* source = pn_link_remote_source(link);
         //i.e a subscription
+        std::string name;
         if (pn_terminus_get_type(source) == PN_UNSPECIFIED) {
             throw qpid::Exception("No source specified!");/*invalid-field?*/
+        } else if (pn_terminus_is_dynamic(source)) {
+            name = generateName(link);
+        } else {
+            name = pn_terminus_get_address(source);
         }
-        std::string name = pn_terminus_get_address(source);
         QPID_LOG(debug, "Received attach request for outgoing link from " << name);
         pn_terminus_set_address(pn_link_source(link), name.c_str());
 
         setupOutgoing(link, source, name);
     } else {
         pn_terminus_t* target = pn_link_remote_target(link);
+        std::string name;
         if (pn_terminus_get_type(target) == PN_UNSPECIFIED) {
             throw qpid::Exception("No target specified!");/*invalid field?*/
+        } else if (pn_terminus_is_dynamic(target)) {
+            name = generateName(link);
+        } else {
+            name  = pn_terminus_get_address(target);
         }
-        std::string name = pn_terminus_get_address(target);
         QPID_LOG(debug, "Received attach request for incoming link to " << name);
         pn_terminus_set_address(pn_link_target(link), name.c_str());
 

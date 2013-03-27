@@ -65,19 +65,17 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
         }
     }
 
-    public final void setPasswordFile(String passwordFile) throws IOException
+    public final void open(File passwordFile) throws IOException
     {
-        File f = new File(passwordFile);
-        getLogger().info("PasswordFile using file " + f.getAbsolutePath());
-        _passwordFile = f;
-        if (!f.exists())
+        getLogger().info("PasswordFile using file " + passwordFile.getAbsolutePath());
+        _passwordFile = passwordFile;
+        if (!passwordFile.exists())
         {
-            throw new FileNotFoundException("Cannot find password file " + f);
+            throw new FileNotFoundException("Cannot find password file " + passwordFile);
         }
-        if (!f.canRead())
+        if (!passwordFile.canRead())
         {
-            throw new FileNotFoundException("Cannot read password file " + f +
-                                            ". Check permissions.");
+            throw new FileNotFoundException("Cannot read password file " + passwordFile + ". Check permissions.");
         }
 
         loadPasswordFile();

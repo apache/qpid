@@ -60,6 +60,9 @@ def OptionsAndArguments(argv):
                       help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
     parser.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
+    parser.add_option("--ssl-trustfile", action="store", type="string", metavar="<CA>", help="List of trusted CAs (PEM Format)")
+    parser.add_option("--ssl-skip-hostname-check", action="store_true",
+                      help="Do not validate hostname in peer certificate")
     parser.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
 
     opts, args = parser.parse_args(args=argv)
@@ -73,6 +76,10 @@ def OptionsAndArguments(argv):
         conn_options['ssl_certfile'] = opts.ssl_certificate
     if opts.ssl_key:
         conn_options['ssl_key'] = opts.ssl_key
+    if opts.ssl_trustfile:
+        conn_options['ssl_trustfile'] = opts.ssl_trustfile
+    if opts.ssl_skip_hostname_check:
+        conn_options['ssl_skip_hostname_check'] = True
     if opts.ha_admin:
         conn_options['client_properties'] = {'qpid.ha-admin' : 1}
     return args

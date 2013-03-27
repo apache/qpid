@@ -107,6 +107,8 @@ class XmlExchange : public virtual Exchange {
         bool operator()(XmlBinding::shared_ptr b);
     };
 
+  private:
+    bool unbindLH(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 };
 
 

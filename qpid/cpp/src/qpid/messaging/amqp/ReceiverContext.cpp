@@ -20,9 +20,11 @@
  */
 #include "qpid/messaging/amqp/ReceiverContext.h"
 #include "qpid/messaging/amqp/AddressHelper.h"
+#include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/log/Statement.h"
 extern "C" {
 #include <proton/engine.h>
 }
@@ -38,7 +40,7 @@ ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, co
     capacity(0) {}
 ReceiverContext::~ReceiverContext()
 {
-    pn_link_free(receiver);
+    //pn_link_free(receiver);
 }
 
 void ReceiverContext::setCapacity(uint32_t c)
@@ -76,7 +78,7 @@ uint32_t ReceiverContext::getUnsettled()
 
 void ReceiverContext::close()
 {
-
+    pn_link_close(receiver);
 }
 
 const std::string& ReceiverContext::getName() const
@@ -113,23 +115,30 @@ void ReceiverContext::configure() const
 }
 void ReceiverContext::configure(pn_terminus_t* source) const
 {
-    pn_terminus_set_address(source, address.getName().c_str());
     //dynamic create:
     AddressHelper helper(address);
-    if (helper.createEnabled(AddressHelper::FOR_RECEIVER)) {
-        helper.setNodeProperties(source);
+    if (AddressImpl::isTemporary(address)) {
+        //application expects a name to be generated
+        QPID_LOG(debug, "source is dynamic");
+        helper.setNodeProperties(source, true);
+    } else {
+        pn_terminus_set_address(source, address.getName().c_str());
+        if (helper.createEnabled(AddressHelper::FOR_RECEIVER)) {
+            //application expects name of node to be as specified
+            helper.setNodeProperties(source, false);
+        }
     }
 
     // Look specifically for qpid.selector link property and add a filter for it
-    qpid::types::Variant::Map::const_iterator i = helper.getLinkProperties().find("qpid.selector");
+    qpid::types::Variant::Map::const_iterator i = helper.getLinkProperties().find("selector");
     if (i!=helper.getLinkProperties().end()) {
         pn_data_t* filter = pn_terminus_filter(source);
         pn_data_put_map(filter);
         pn_data_enter(filter);
-        pn_data_put_symbol(filter, convert("qpid.selector"));
+        pn_data_put_symbol(filter, convert("selector"));
         pn_data_put_described(filter);
         pn_data_enter(filter);
-        pn_data_put_symbol(filter, convert(qpid::amqp::filters::QPID_SELECTOR_FILTER_SYMBOL));
+        pn_data_put_ulong(filter, qpid::amqp::filters::SELECTOR_FILTER_CODE);
         pn_data_put_string(filter, convert(i->second));
         pn_data_exit(filter);
         pn_data_exit(filter);
@@ -147,6 +156,11 @@ void ReceiverContext::configure(pn_terminus_t* source) const
         pn_data_exit(filter);
         pn_data_exit(filter);
     }
+}
+
+Address ReceiverContext::getAddress() const
+{
+    return address;
 }
 
 bool ReceiverContext::isClosed() const

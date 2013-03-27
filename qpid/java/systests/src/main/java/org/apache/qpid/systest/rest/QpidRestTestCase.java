@@ -21,14 +21,21 @@
 package org.apache.qpid.systest.rest;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QpidRestTestCase extends QpidBrokerTestCase
 {
+    public static final String ANONYMOUS_AUTHENTICATION_PROVIDER = "testAnonymous";
     public static final String TEST1_VIRTUALHOST = "test";
     public static final String TEST2_VIRTUALHOST = "test2";
     public static final String TEST3_VIRTUALHOST = "test3";
@@ -77,6 +84,11 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _restTestHelper.getHttpPort());
         config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
         config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
+
+        Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
+        anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        config.addAuthenticationProviderConfiguration(anonymousProviderAttributes);
     }
 
     public RestTestHelper getRestTestHelper()

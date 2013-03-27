@@ -55,10 +55,11 @@ class ReceiverContext
     const std::string& getSource() const;
     bool isClosed() const;
     void configure() const;
+    Address getAddress() const;
   private:
     friend class ConnectionContext;
     const std::string name;
-    const Address address;
+    Address address;
     pn_link_t* receiver;
     uint32_t capacity;
     void configure(pn_terminus_t*) const;

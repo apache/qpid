@@ -19,6 +19,7 @@
  *
  */
 #include "AddressParser.h"
+#include "AddressImpl.h"
 #include "qpid/framing/Uuid.h"
 #include <boost/format.hpp>
 
@@ -38,7 +39,10 @@ bool AddressParser::parse(Address& address)
 {
     std::string name;
     if (readName(name)) {
-        if (name.find('#') == 0) name = qpid::framing::Uuid(true).str() + name;
+        if (name.find('#') == 0) {
+            name = qpid::framing::Uuid(true).str() + name;
+            AddressImpl::setTemporary(address, true);
+        }
         address.setName(name);
         if (readChar('/')) {
             std::string subject;

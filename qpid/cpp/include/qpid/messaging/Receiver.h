@@ -34,6 +34,7 @@ namespace messaging {
 template <class> class PrivateImplRef;
 #endif
 
+class Address;
 class Message;
 class ReceiverImpl;
 class Session;
@@ -133,6 +134,11 @@ class QPID_MESSAGING_CLASS_EXTERN Receiver : public qpid::messaging::Handle<Rece
      * Returns a handle to the session associated with this receiver.
      */
     QPID_MESSAGING_EXTERN Session getSession() const;
+
+    /**
+     * Returns an address for this receiver.
+     */
+    QPID_MESSAGING_EXTERN Address getAddress() const;
 
 #ifndef SWIG
   private:

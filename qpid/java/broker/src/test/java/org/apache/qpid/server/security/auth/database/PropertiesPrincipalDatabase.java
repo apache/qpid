@@ -27,6 +27,8 @@ import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
@@ -151,7 +153,7 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
     }
 
     @Override
-    public void setPasswordFile(String passwordFile)
+    public void open(File passwordFile)
     {
         throw new UnsupportedOperationException();
     }

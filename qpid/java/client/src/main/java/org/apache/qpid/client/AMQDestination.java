@@ -653,6 +653,17 @@ public abstract class AMQDestination implements Destination, Referenceable
             {
                 return false;
             }
+            if (_subject == null)
+            {
+                if (that.getSubject() != null)
+                {
+                    return false;
+                }
+            }
+            else if (!_subject.equals(that.getSubject()))
+            {
+                return false;
+            }
         }
         else
         {
@@ -679,6 +690,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         if (_destSyntax == DestSyntax.ADDR)
         {
             result = 29 * _addressType + _name.hashCode();
+            if (_subject != null)
+            {
+                result = 29 * result + _subject.hashCode();
+            }
         }
         else
         {

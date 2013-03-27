@@ -21,6 +21,7 @@
 #include "qpid/messaging/amqp/SenderContext.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
 #include "qpid/messaging/amqp/AddressHelper.h"
+#include "qpid/messaging/AddressImpl.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
 #include "qpid/messaging/exceptions.h"
@@ -44,12 +45,12 @@ SenderContext::SenderContext(pn_session_t* session, const std::string& n, const 
 
 SenderContext::~SenderContext()
 {
-    pn_link_free(sender);
+    //pn_link_free(sender);
 }
 
 void SenderContext::close()
 {
-
+    pn_link_close(sender);
 }
 
 void SenderContext::setCapacity(uint32_t c)
@@ -347,17 +348,27 @@ void SenderContext::configure() const
 }
 void SenderContext::configure(pn_terminus_t* target) const
 {
-    pn_terminus_set_address(target, address.getName().c_str());
-    //dynamic create:
     AddressHelper helper(address);
-    if (helper.createEnabled(AddressHelper::FOR_SENDER)) {
-        helper.setNodeProperties(target);
+    if (AddressImpl::isTemporary(address)) {
+        //application expects a name to be generated
+        helper.setNodeProperties(target, true);
+    } else {
+        pn_terminus_set_address(target, address.getName().c_str());
+        if (helper.createEnabled(AddressHelper::FOR_SENDER)) {
+            //application expects name of node to be as specified
+            helper.setNodeProperties(target, false);
+        }
     }
 }
 
 bool SenderContext::settled()
 {
     return processUnsettled() == 0;
+}
+
+Address SenderContext::getAddress() const
+{
+    return address;
 }
 
 }}} // namespace qpid::messaging::amqp

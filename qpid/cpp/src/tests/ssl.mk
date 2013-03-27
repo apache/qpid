@@ -19,4 +19,4 @@
 
 TESTS+=ssl_test
 EXTRA_DIST+=ssl_test
-CLEAN_LOCAL += test_cert_db cert.password
+CLEAN_LOCAL += test_cert_dir cert.password

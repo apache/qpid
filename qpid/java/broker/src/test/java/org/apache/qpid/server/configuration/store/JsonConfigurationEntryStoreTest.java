@@ -52,6 +52,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();
         brokerObjectMap.put(Broker.ID, brokerId);
         brokerObjectMap.put("@type", Broker.class.getSimpleName());
+        brokerObjectMap.put("storeVersion", 1);
         brokerObjectMap.putAll(brokerAttributes);
 
         StringWriter sw = new StringWriter();
@@ -114,8 +115,9 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected root entry", brokerId, root.getId());
         Map<String, Object> attributes = root.getAttributes();
         assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 1, attributes.size());
+        assertEquals("Unexpected number of attriburtes", 2, attributes.size());
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
+        assertEquals("Unexpected version attribute", 1, attributes.get(Broker.STORE_VERSION));
     }
 
     public void testCreateFromInitialStore() throws Exception
@@ -135,8 +137,18 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected root entry", brokerId, root.getId());
         Map<String, Object> attributes = root.getAttributes();
         assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 1, attributes.size());
+        assertEquals("Unexpected number of attriburtes", 2, attributes.size());
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
+        assertEquals("Unexpected version attribute", 1, attributes.get(Broker.STORE_VERSION));
     }
 
+    public void testGetVersion()
+    {
+        assertEquals("Unexpected version", 1, getStore().getVersion());
+    }
+
+    public void testGetType()
+    {
+        assertEquals("Unexpected type", "json", getStore().getType());
+    }
 }

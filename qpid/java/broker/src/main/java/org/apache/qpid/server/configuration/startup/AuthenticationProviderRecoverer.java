@@ -47,7 +47,7 @@ public class AuthenticationProviderRecoverer implements ConfiguredObjectRecovere
         AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(
                 configurationEntry.getId(),
                 broker,
-                attributes, null);
+                attributes);
 
         return authenticationProvider;
     }

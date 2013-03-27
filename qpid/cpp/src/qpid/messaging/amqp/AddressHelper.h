@@ -40,7 +40,7 @@ class AddressHelper
     bool deleteEnabled(CheckMode mode) const;
     bool assertEnabled(CheckMode mode) const;
 
-    void setNodeProperties(pn_terminus_t*);
+    void setNodeProperties(pn_terminus_t*, bool dynamic);
     const qpid::types::Variant::Map& getNodeProperties() const;
     const qpid::types::Variant::Map& getLinkProperties() const;
   private:
@@ -49,6 +49,7 @@ class AddressHelper
     std::string deletePolicy;
     qpid::types::Variant::Map node;
     qpid::types::Variant::Map link;
+    std::string name;
 
     bool enabled(const std::string& policy, CheckMode mode) const;
 };

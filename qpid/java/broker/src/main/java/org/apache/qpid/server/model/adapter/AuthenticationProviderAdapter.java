@@ -67,19 +67,29 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     protected T _authManager;
     protected final Broker _broker;
 
-    private GroupPrincipalAccessor _groupAccessor;
-
     protected Collection<String> _supportedAttributes;
-    Map<String, AuthenticationManagerFactory> _factories;
+    protected Map<String, AuthenticationManagerFactory> _factories;
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, null, attributes, broker.getTaskExecutor());
+        super(id, null, null, broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
         _supportedAttributes = createSupportedAttributes(attributeNames);
         _factories = getAuthenticationManagerFactories();
         addParent(Broker.class, broker);
+
+        // set attributes now after all attribute names are known
+        if (attributes != null)
+        {
+            for (String name : _supportedAttributes)
+            {
+                if (attributes.containsKey(name))
+                {
+                    changeAttribute(name, null, attributes.get(name));
+                }
+            }
+        }
     }
 
     T getAuthManager()
@@ -198,7 +208,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        return null;
+        return Collections.emptySet();
     }
 
     @Override
@@ -222,14 +232,12 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }
             }
+            _authManager.close();
+            _authManager.onDelete();
             return true;
         }
         else if(desiredState == State.ACTIVE)
         {
-            if (_groupAccessor == null)
-            {
-                throw new IllegalStateTransitionException("Cannot transit into ACTIVE state with null group accessor!");
-            }
             _authManager.initialise();
             return true;
         }
@@ -244,12 +252,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public SubjectCreator getSubjectCreator()
     {
-        return new SubjectCreator(_authManager, _groupAccessor);
-    }
-
-    public void setGroupAccessor(GroupPrincipalAccessor groupAccessor)
-    {
-        _groupAccessor = groupAccessor;
+        return new SubjectCreator(_authManager, new GroupPrincipalAccessor(_broker.getGroupProviders()));
     }
 
     @Override
@@ -329,7 +332,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             throw new UnsupportedOperationException();
         }
-
 
 
     }

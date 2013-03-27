@@ -1,0 +1,55 @@
+PATH
+  remote: .
+  specs:
+    qpid_management (1.0)
+      qpid_messaging
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    binding_of_caller (0.7.1)
+      debug_inspector (>= 0.0.1)
+    coderay (1.0.9)
+    columnize (0.3.6)
+    debug_inspector (0.0.2)
+    debugger (1.4.0)
+      columnize (>= 0.3.1)
+      debugger-linecache (~> 1.1.1)
+      debugger-ruby_core_source (~> 1.2.0)
+    debugger-linecache (1.1.2)
+      debugger-ruby_core_source (>= 1.1.1)
+    debugger-ruby_core_source (1.2.0)
+    diff-lcs (1.2.1)
+    method_source (0.8.1)
+    pry (0.9.12)
+      coderay (~> 1.0.5)
+      method_source (~> 0.8)
+      slop (~> 3.4)
+    pry-debugger (0.2.2)
+      debugger (~> 1.3)
+      pry (~> 0.9.10)
+    pry-stack_explorer (0.4.9)
+      binding_of_caller (>= 0.7)
+      pry (~> 0.9.11)
+    qpid_messaging (0.20.2)
+    rspec (2.13.0)
+      rspec-core (~> 2.13.0)
+      rspec-expectations (~> 2.13.0)
+      rspec-mocks (~> 2.13.0)
+    rspec-core (2.13.0)
+    rspec-expectations (2.13.0)
+      diff-lcs (>= 1.1.3, < 2.0)
+    rspec-mocks (2.13.0)
+    slop (3.4.3)
+    yard (0.8.5.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  pry
+  pry-debugger
+  pry-stack_explorer
+  qpid_management!
+  rspec
+  yard

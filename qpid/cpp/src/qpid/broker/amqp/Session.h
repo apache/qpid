@@ -95,6 +95,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     ResolvedNode resolve(const std::string name, pn_terminus_t* terminus, bool incoming);
     void setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::string& name);
     void setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::string& name);
+    std::string generateName(pn_link_t*);
 };
 }}} // namespace qpid::broker::amqp
 

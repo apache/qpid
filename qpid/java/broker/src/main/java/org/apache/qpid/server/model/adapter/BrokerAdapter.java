@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
+import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,9 +33,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
+import java.security.cert.Certificate;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -47,6 +50,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -59,13 +63,13 @@ import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthent
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
@@ -124,6 +128,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private static final String DEFAULT_KEY_STORE_NAME = "defaultKeyStore";
     private static final String DEFAULT_TRUST_STORE_NAME = "defaultTrustStore";
     private static final String DEFAULT_GROUP_PROFIDER_NAME = "defaultGroupProvider";
+    private static final String DEFAULT_PEER_STORE_NAME = "defaultPeerStore";
 
     private static final String DUMMY_PASSWORD_MASK = "********";
 
@@ -146,7 +151,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(Broker.NAME, DEFAULT_NAME);
     }});
 
-
+    private String[] POSITIVE_NUMERIC_ATTRIBUTES = { ALERT_THRESHOLD_MESSAGE_AGE, ALERT_THRESHOLD_MESSAGE_COUNT,
+            ALERT_THRESHOLD_QUEUE_DEPTH, ALERT_THRESHOLD_MESSAGE_SIZE, ALERT_REPEAT_GAP, FLOW_CONTROL_SIZE_BYTES,
+            FLOW_CONTROL_RESUME_SIZE_BYTES, MAXIMUM_DELIVERY_ATTEMPTS, HOUSEKEEPING_CHECK_PERIOD, SESSION_COUNT_LIMIT,
+            HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD };
 
 
     private final StatisticsGatherer _statisticsGatherer;
@@ -171,11 +179,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final UUID _defaultKeyStoreId;
     private final UUID _defaultTrustStoreId;
 
-    private Collection<String> _supportedStoreTypes;
+    private final Collection<String> _supportedStoreTypes;
+    private final ConfigurationEntryStore _brokerStore;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            PortFactory portFactory, TaskExecutor taskExecutor)
+            PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -186,17 +195,26 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _authenticationProviderFactory = authenticationProviderFactory;
         _portFactory = portFactory;
         _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
-
+        addChangeListener(_securityManager);
         _defaultKeyStoreId = UUIDGenerator.generateBrokerChildUUID(KeyStore.class.getSimpleName(), DEFAULT_KEY_STORE_NAME);
         _defaultTrustStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_TRUST_STORE_NAME);
         createBrokerChildrenFromAttributes();
         _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _brokerStore = brokerStore;
     }
 
     /*
      * A temporary method to create broker children that can be only configured via broker attributes
      */
     private void createBrokerChildrenFromAttributes()
+    {
+        createGroupProvider();
+        createKeyStore();
+        createTrustStore();
+        createPeerStore();
+    }
+
+    private void createGroupProvider()
     {
         String groupFile = (String) getAttribute(GROUP_FILE);
         if (groupFile != null)
@@ -205,8 +223,16 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             UUID groupProviderId = UUIDGenerator.generateBrokerChildUUID(GroupProvider.class.getSimpleName(),
                     DEFAULT_GROUP_PROFIDER_NAME);
             GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(groupProviderId, groupManager, this);
-            addGroupProvider(groupProviderAdapter);
+            _groupProviders.put(DEFAULT_GROUP_PROFIDER_NAME, groupProviderAdapter);
         }
+        else
+        {
+            _groupProviders.remove(DEFAULT_GROUP_PROFIDER_NAME);
+        }
+    }
+
+    private void createKeyStore()
+    {
         Map<String, Object> actualAttributes = getActualAttributes();
         String keyStorePath = (String) getAttribute(KEY_STORE_PATH);
         if (keyStorePath != null)
@@ -218,9 +244,18 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             keyStoreAttributes.put(KeyStore.TYPE, java.security.KeyStore.getDefaultType());
             keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, getAttribute(KEY_STORE_CERT_ALIAS));
             keyStoreAttributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            KeyStoreAdapter KeyStoreAdapter = new KeyStoreAdapter(_defaultKeyStoreId, this, keyStoreAttributes);
-            addKeyStore(KeyStoreAdapter);
+            KeyStoreAdapter keyStoreAdapter = new KeyStoreAdapter(_defaultKeyStoreId, this, keyStoreAttributes);
+            _keyStores.put(keyStoreAdapter.getId(), keyStoreAdapter);
         }
+        else
+        {
+            _keyStores.remove(_defaultKeyStoreId);
+        }
+    }
+
+    private void createTrustStore()
+    {
+        Map<String, Object> actualAttributes = getActualAttributes();
         String trustStorePath = (String) getAttribute(TRUST_STORE_PATH);
         if (trustStorePath != null)
         {
@@ -232,13 +267,22 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             trsustStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
             trsustStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
             TrustStoreAdapter trustStore = new TrustStoreAdapter(_defaultTrustStoreId, this, trsustStoreAttributes);
-            addTrustStore(trustStore);
+            _trustStores.put(trustStore.getId(), trustStore);
         }
+        else
+        {
+            _trustStores.remove(_defaultTrustStoreId);
+        }
+    }
+
+    private void createPeerStore()
+    {
+        Map<String, Object> actualAttributes = getActualAttributes();
         String peerStorePath = (String) getAttribute(PEER_STORE_PATH);
+        UUID peerStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_PEER_STORE_NAME);
         if (peerStorePath != null)
         {
             Map<String, Object> peerStoreAttributes = new HashMap<String, Object>();
-            UUID peerStoreId = UUID.randomUUID();
             peerStoreAttributes.put(TrustStore.NAME, peerStoreId.toString());
             peerStoreAttributes.put(TrustStore.PATH, peerStorePath);
             peerStoreAttributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
@@ -246,7 +290,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             peerStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
             peerStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
             TrustStoreAdapter trustStore = new TrustStoreAdapter(peerStoreId, this, peerStoreAttributes);
-            addTrustStore(trustStore);
+            _trustStores.put(trustStore.getId(), trustStore);
+        }
+        else
+        {
+            _trustStores.remove(peerStoreId);
         }
     }
 
@@ -276,7 +324,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    public AuthenticationProvider getAuthenticationProviderByName(String authenticationProviderName)
+    public AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName)
     {
         Collection<AuthenticationProvider> providers = getAuthenticationProviders();
         for (AuthenticationProvider authenticationProvider : providers)
@@ -483,40 +531,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         AuthenticationProvider authenticationProvider = null;
         synchronized (_authenticationProviders)
         {
-            String type = (String)attributes.get(AuthenticationProvider.TYPE);
-            if (type == null)
-            {
-                throw new IllegalConfigurationException("Authentication provider type is not specified");
-            }
-
-            // a temporary restriction to prevent creation of several instances
-            // of PlainPasswordFileAuthenticationProvider/Base64MD5PasswordFileAuthenticationProvider
-            // due to current limitation of JMX management which cannot cope
-            // with several user management MBeans as MBean type is used as a name.
-
-            // TODO: Remove this check after fixing of JMX management
-            if (type.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
-                    || type.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
-            {
-
-                for (AuthenticationProvider provider : _authenticationProviders.values())
-                {
-                    String providerType = (String) provider.getAttribute(AuthenticationProvider.TYPE);
-                    if (providerType.equals(PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE)
-                            || providerType.equals(Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE))
-                    {
-                        throw new IllegalConfigurationException("An authentication provider which can manage users alredy exists ["
-                                + provider.getName() + "]. Only one instance is allowed.");
-                    }
-                }
-
-            }
-
-            // it's cheap to create the groupPrincipalAccessor on the fly
-            GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(_groupProviders.values());
-
-            authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes,
-                    groupPrincipalAccessor);
+            authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
             addAuthenticationProvider(authenticationProvider);
         }
         authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
@@ -674,17 +689,29 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _authenticationProviderFactory.getSupportedAuthenticationProviders();
         }
-        else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
+        else if (KEY_STORE_PASSWORD.equals(name) || TRUST_STORE_PASSWORD.equals(name) || PEER_STORE_PASSWORD.equals(name))
         {
-            return _defaultAuthenticationProvider == null ? null : _defaultAuthenticationProvider.getName();
+            if (getActualAttributes().get(name) != null)
+            {
+                return DUMMY_PASSWORD_MASK;
+            }
+            return null;
         }
-        else if (KEY_STORE_PASSWORD.equals(name))
+        else if (MANAGEMENT_VERSION.equals(name))
         {
-            return DUMMY_PASSWORD_MASK;
+            return Model.MANAGEMENT_API_MAJOR_VERSION + "." + Model.MANAGEMENT_API_MINOR_VERSION;
         }
-        else if (TRUST_STORE_PASSWORD.equals(name))
+        else if (STORE_VERSION.equals(name))
         {
-            return DUMMY_PASSWORD_MASK;
+            return _brokerStore.getVersion();
+        }
+        else if (STORE_TYPE.equals(name))
+        {
+            return _brokerStore.getType();
+        }
+        else if (STORE_PATH.equals(name))
+        {
+            return _brokerStore.getStoreLocation();
         }
         return super.getAttribute(name);
     }
@@ -990,6 +1017,173 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        //TODO: Add ACL check
+        //TODO: Add management mode check
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+        validateAttributes(convertedAttributes);
+
+        boolean keyStoreChanged = false;
+        boolean trustStoreChanged = false;
+        boolean peerStoreChanged = false;
+        Collection<String> names = AVAILABLE_ATTRIBUTES;
+        for (String name : names)
+        {
+            if (attributes.containsKey(name))
+            {
+                Object desired = attributes.get(name);
+                Object expected = getAttribute(name);
+                if (changeAttribute(name, expected, desired))
+                {
+                    if (GROUP_FILE.equals(name))
+                    {
+                        createGroupProvider();
+                    }
+                    else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
+                    {
+                        if (!_defaultAuthenticationProvider.getName().equals(desired))
+                        {
+                            _defaultAuthenticationProvider = findAuthenticationProviderByName((String)desired);
+                        }
+                    }
+                    else if (KEY_STORE_PATH.equals(name) || KEY_STORE_PASSWORD.equals(name) || KEY_STORE_CERT_ALIAS.equals(name))
+                    {
+                        keyStoreChanged = true;
+                    }
+                    else if (TRUST_STORE_PATH.equals(name) || TRUST_STORE_PASSWORD.equals(name))
+                    {
+                        trustStoreChanged = true;
+                    }
+                    else if (PEER_STORE_PATH.equals(name) || PEER_STORE_PASSWORD.equals(name))
+                    {
+                        peerStoreChanged = true;
+                    }
+                    attributeSet(name, expected, desired);
+                }
+            }
+        }
+
+        // the calls below are not thread safe but they should be fine in a management mode
+        // as there will be no user connected
+        // The new keystore/trustore/peerstore will be only used with new ports
+        // At the moment we cannot restart ports with new keystore/trustore/peerstore
+
+        if (keyStoreChanged)
+        {
+            createKeyStore();
+        }
+        if (trustStoreChanged)
+        {
+            createTrustStore();
+        }
+        if (peerStoreChanged)
+        {
+            createPeerStore();
+        }
+    }
+
+    private void validateAttributes(Map<String, Object> convertedAttributes)
+    {
+        String aclFile = (String) convertedAttributes.get(ACL_FILE);
+        if (aclFile != null)
+        {
+            // create a security manager to validate the ACL specified in file
+            new SecurityManager(aclFile);
+        }
+        String groupFile = (String) convertedAttributes.get(GROUP_FILE);
+        if (groupFile != null)
+        {
+            // create a group manager to validate the groups specified in file
+            new FileGroupManager(groupFile);
+        }
+        validateKeyStoreAttributes(convertedAttributes, "key store", KEY_STORE_PATH, KEY_STORE_PASSWORD, KEY_STORE_CERT_ALIAS);
+        validateKeyStoreAttributes(convertedAttributes, "trust store", TRUST_STORE_PATH, TRUST_STORE_PASSWORD, null);
+        validateKeyStoreAttributes(convertedAttributes, "peer store", PEER_STORE_PATH, PEER_STORE_PASSWORD, null);
+        String defaultAuthenticationProvider = (String) convertedAttributes.get(DEFAULT_AUTHENTICATION_PROVIDER);
+        if (defaultAuthenticationProvider != null)
+        {
+            AuthenticationProvider provider = findAuthenticationProviderByName(defaultAuthenticationProvider);
+            if (provider == null)
+            {
+                throw new IllegalConfigurationException("Authentication provider with name " + defaultAuthenticationProvider
+                        + " canot be set as a default as it does not exist");
+            }
+        }
+        String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
+        if (defaultVirtualHost != null)
+        {
+            VirtualHost foundHost = findVirtualHostByName(defaultVirtualHost);
+            if (foundHost == null)
+            {
+                throw new IllegalConfigurationException("Virtual host with name " + defaultVirtualHost
+                        + " cannot be set as a default as it does not exist");
+            }
+        }
+        Long queueFlowControlSize = (Long) convertedAttributes.get(FLOW_CONTROL_SIZE_BYTES);
+        if (queueFlowControlSize != null && queueFlowControlSize > 0)
+        {
+            Long queueFlowControlResumeSize = (Long) convertedAttributes.get(FLOW_CONTROL_RESUME_SIZE_BYTES);
+            if (queueFlowControlResumeSize == null)
+            {
+                throw new IllegalConfigurationException("Flow control resume size attribute is not specified with flow control size attribute");
+            }
+            if (queueFlowControlResumeSize >= queueFlowControlSize)
+            {
+                throw new IllegalConfigurationException("Flow control resume size should be less then flow control size");
+            }
+        }
+        for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)
+        {
+            Number value = (Number) convertedAttributes.get(attributeName);
+            if (value != null && value.longValue() < 0)
+            {
+                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
+                        + attributeName);
+            }
+        }
+    }
+
+    private void validateKeyStoreAttributes(Map<String, Object> convertedAttributes, String type, String pathAttribute,
+            String passwordAttribute, String aliasAttribute)
+    {
+        String keyStoreFile = (String) convertedAttributes.get(pathAttribute);
+        if (keyStoreFile != null)
+        {
+            String password = (String) convertedAttributes.get(passwordAttribute);
+            if (password == null)
+            {
+                password = (String) getActualAttributes().get(passwordAttribute);
+            }
+            java.security.KeyStore keyStore = null;
+            try
+            {
+                keyStore = SSLUtil.getInitializedKeyStore(keyStoreFile, password, java.security.KeyStore.getDefaultType());
+            }
+            catch (Exception e)
+            {
+                throw new IllegalConfigurationException("Cannot instantiate " + type + " at " + keyStoreFile, e);
+            }
+            if (aliasAttribute != null)
+            {
+                String alias = (String) convertedAttributes.get(aliasAttribute);
+                if (alias != null)
+                {
+                    Certificate cert = null;
+                    try
+                    {
+                        cert = keyStore.getCertificate(alias);
+                    }
+                    catch (KeyStoreException e)
+                    {
+                        // key store should be initialized above
+                        throw new RuntimeException("Key store has not been initialized", e);
+                    }
+                    if (cert == null)
+                    {
+                        throw new IllegalConfigurationException("Cannot find a certificate with alias " + alias + "in " + type
+                                + " : " + keyStoreFile);
+                    }
+                }
+            }
+        }
     }
 }

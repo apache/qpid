@@ -27,10 +27,10 @@ public class AMQDestinationTest extends TestCase
     public void testEqaulsAndHashCodeForAddressBasedDestinations() throws Exception
     {
         AMQDestination dest = new AMQQueue("ADDR:Foo; {node :{type:queue}}");
-        AMQDestination dest1 = new AMQQueue("ADDR:Foo; {node :{type:topic}}");
+        AMQDestination dest1 = new AMQTopic("ADDR:Foo; {node :{type:topic}}");
         AMQDestination dest2 = new AMQQueue(
                 "ADDR:Foo; {create:always,node :{type:queue}}");
-        String bUrl = "direct://amq.direct/test-route/Foo?routingkey='Foo'";
+        String bUrl = "BURL:direct://amq.direct/test-route/Foo?routingkey='Foo'";
         AMQDestination dest3 = new AMQQueue(bUrl);
 
         assertTrue(dest.equals(dest));
@@ -42,5 +42,9 @@ public class AMQDestinationTest extends TestCase
         assertTrue(dest.hashCode() != dest1.hashCode());
         assertTrue(dest.hashCode() == dest2.hashCode());
         assertTrue(dest.hashCode() != dest3.hashCode());
+
+        AMQDestination dest4 = new AMQQueue("ADDR:Foo/Bar; {node :{type:queue}}");
+        AMQDestination dest5 = new AMQQueue("ADDR:Foo/Bar2; {node :{type:queue}}");
+        assertTrue(dest4.hashCode() != dest5.hashCode());
     }
 }

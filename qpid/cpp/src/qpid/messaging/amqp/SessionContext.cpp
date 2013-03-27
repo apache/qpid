@@ -138,9 +138,13 @@ void SessionContext::acknowledge()
 
 void SessionContext::acknowledge(const qpid::framing::SequenceNumber& id, bool cumulative)
 {
+    QPID_LOG(debug, "acknowledging selected messages, id=" << id << ", cumulative=" << cumulative);
     DeliveryMap::iterator i = unacked.find(id);
     if (i != unacked.end()) {
-        acknowledge(cumulative ? unacked.begin() : i, ++i);
+        DeliveryMap::iterator start = cumulative ? unacked.begin() : i;
+        acknowledge(start, ++i);
+    } else {
+        QPID_LOG(debug, "selective acknowledgement failed; message not found for id " << id);
     }
 }
 

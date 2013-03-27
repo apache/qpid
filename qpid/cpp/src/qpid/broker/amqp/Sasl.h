@@ -39,7 +39,7 @@ namespace amqp {
 class Sasl : public sys::ConnectionCodec, qpid::amqp::SaslServer
 {
   public:
-    Sasl(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, Interconnects&, std::auto_ptr<qpid::SaslServer> authenticator);
+    Sasl(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, Interconnects&, std::auto_ptr<qpid::SaslServer> authenticator, const std::string& domain);
     ~Sasl();
 
     size_t decode(const char* buffer, size_t size);

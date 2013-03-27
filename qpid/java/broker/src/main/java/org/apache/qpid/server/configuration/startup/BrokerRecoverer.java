@@ -18,7 +18,6 @@ import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -50,7 +49,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     {
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor);
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor, entry.getStore());
 
         broker.addChangeListener(storeChangeListener);
         Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
@@ -103,12 +102,6 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         }
         broker.setDefaultAuthenticationProvider(defaultAuthenticationProvider);
 
-        GroupPrincipalAccessor groupPrincipalAccessor = new GroupPrincipalAccessor(broker.getGroupProviders());
-        for (AuthenticationProvider authenticationProvider : authenticationProviders)
-        {
-            authenticationProvider.setGroupAccessor(groupPrincipalAccessor);
-        }
-
         Collection<Port> ports = broker.getPorts();
         for (Port port : ports)
         {
@@ -128,7 +121,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
     private AuthenticationProvider getAuthenticationProviderByName(BrokerAdapter broker, String authenticationProviderName)
     {
-        AuthenticationProvider provider = broker.getAuthenticationProviderByName(authenticationProviderName);
+        AuthenticationProvider provider = broker.findAuthenticationProviderByName(authenticationProviderName);
         if (provider == null)
         {
             throw new IllegalConfigurationException("Cannot find the authentication provider with name: "

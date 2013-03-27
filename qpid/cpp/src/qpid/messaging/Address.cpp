@@ -19,6 +19,8 @@
  *
  */
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/AddressImpl.h"
+#include "qpid/messaging/AddressParser.h"
 #include "qpid/framing/Uuid.h"
 #include <sstream>
 #include <boost/format.hpp>
@@ -34,51 +36,9 @@ const std::string OPTIONS_DIVIDER = ";";
 const std::string SPACE = " ";
 const std::string TYPE = "type";
 }
-class AddressImpl
-{
-  public:
-    std::string name;
-    std::string subject;
-    Variant::Map options;
- 
-    AddressImpl() {}
-    AddressImpl(const std::string& n, const std::string& s, const Variant::Map& o) :
-        name(n), subject(s), options(o) {}
-};
-
-class AddressParser
-{
-  public:
-    AddressParser(const std::string&);
-    bool parse(Address& address);
-  private:
-    const std::string& input;
-    std::string::size_type current;
-    static const std::string RESERVED;
-
-    bool readChar(char c);
-    bool readQuotedString(std::string& s);
-    bool readQuotedValue(Variant& value);
-    bool readString(std::string& value, char delimiter);
-    bool readWord(std::string& word, const std::string& delims = RESERVED);
-    bool readSimpleValue(Variant& word);
-    bool readKey(std::string& key);
-    bool readValue(Variant& value);
-    bool readKeyValuePair(Variant::Map& map);
-    bool readMap(Variant& value);
-    bool readList(Variant& value);
-    bool readName(std::string& name);
-    bool readSubject(std::string& subject);
-    bool error(const std::string& message);
-    bool eos();
-    bool iswhitespace();
-    bool in(const std::string& delims);
-    bool isreserved();
-};
-
 Address::Address() : impl(new AddressImpl()) {}
 Address::Address(const std::string& address) : impl(new AddressImpl())
-{ 
+{
     AddressParser parser(address);
     parser.parse(*this);
 }
@@ -86,7 +46,7 @@ Address::Address(const std::string& name, const std::string& subject, const Vari
                  const std::string& type)
     : impl(new AddressImpl(name, subject, options)) { setType(type); }
 Address::Address(const Address& a) :
-    impl(new AddressImpl(a.impl->name, a.impl->subject, a.impl->options)) {}
+    impl(new AddressImpl(a.impl->name, a.impl->subject, a.impl->options)) { impl->temporary = a.impl->temporary; }
 Address::~Address() { delete impl; }
 
 Address& Address::operator=(const Address& a) { *impl = *a.impl; return *this; }

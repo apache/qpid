@@ -71,12 +71,13 @@ class SenderContext
     Delivery* send(const qpid::messaging::Message& message);
     void configure() const;
     bool settled();
+    Address getAddress() const;
   private:
     friend class ConnectionContext;
     typedef std::deque<Delivery> Deliveries;
 
     const std::string name;
-    const qpid::messaging::Address address;
+    qpid::messaging::Address address;
     pn_link_t* sender;
     int32_t nextId;
     Deliveries deliveries;
