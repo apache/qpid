@@ -28,10 +28,12 @@ import org.apache.qpid.server.store.StoredMessage;
 public class MessageMetaDataType_1_0 implements MessageMetaDataType<MessageMetaData_1_0>
 {
 
+    public static final int TYPE = 2;
+
     @Override
     public int ordinal()
     {
-        return 2;
+        return TYPE;
     }
 
     @Override

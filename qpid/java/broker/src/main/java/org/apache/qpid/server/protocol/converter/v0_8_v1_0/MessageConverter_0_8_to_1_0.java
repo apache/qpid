@@ -51,6 +51,16 @@ public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMess
 
         Properties props = new Properties();
 
+        /*
+            TODO: The following properties are not currently set:
+
+            creationTime
+            groupId
+            groupSequence
+            replyToGroupId
+            to
+        */
+
         props.setContentEncoding(Symbol.valueOf(contentHeader.getEncodingAsString()));
 
         props.setContentType(Symbol.valueOf(contentHeader.getContentTypeAsString()));
@@ -66,9 +76,7 @@ public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMess
         {
             props.setCorrelationId(new Binary(correlationId.getBytes()));
         }
-        //        props.setCreationTime();
-        //        props.setGroupId();
-        //        props.setGroupSequence();
+
         final AMQShortString messageId = contentHeader.getMessageId();
         if(messageId != null)
         {
@@ -76,13 +84,12 @@ public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMess
         }
         props.setReplyTo(String.valueOf(contentHeader.getReplyTo()));
 
-        //        props.setReplyToGroupId();
         props.setSubject(serverMessage.getRoutingKey());
-        //        props.setTo();
         if(contentHeader.getUserId() != null)
         {
             props.setUserId(new Binary(contentHeader.getUserId().getBytes()));
         }
+
         sections.add(props);
 
         sections.add(new ApplicationProperties(FieldTable.convertToMap(contentHeader.getHeaders())));

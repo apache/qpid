@@ -51,9 +51,20 @@ public class MessageConverter_0_10_to_1_0  extends MessageConverter_to_1_0<Messa
         }
 
         Properties props = new Properties();
+
+        /*
+            TODO: the current properties are not currently set:
+
+            absoluteExpiryTime
+            creationTime
+            groupId
+            groupSequence
+            replyToGroupId
+            to
+        */
+
         if(msgProps != null)
         {
-        //        props.setAbsoluteExpiryTime();
             if(msgProps.hasContentEncoding())
             {
                 props.setContentEncoding(Symbol.valueOf(msgProps.getContentEncoding()));
@@ -63,9 +74,7 @@ public class MessageConverter_0_10_to_1_0  extends MessageConverter_to_1_0<Messa
             {
                 props.setCorrelationId(msgProps.getCorrelationId());
             }
-        //        props.setCreationTime();
-        //        props.setGroupId();
-        //        props.setGroupSequence();
+
             if(msgProps.hasMessageId())
             {
                 props.setMessageId(msgProps.getMessageId());
@@ -84,9 +93,9 @@ public class MessageConverter_0_10_to_1_0  extends MessageConverter_to_1_0<Messa
                     props.setContentType(Symbol.valueOf("application/x-java-serialized-object"));
                 }
             }
-        //        props.setReplyToGroupId();
+
             props.setSubject(serverMessage.getRoutingKey());
-        //        props.setTo();
+
             if(msgProps.hasUserId())
             {
                 props.setUserId(new Binary(msgProps.getUserId()));

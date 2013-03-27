@@ -469,7 +469,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     @Override
     public String getVirtualHostName()
     {
-        return _virtualHost.getName();
+        return _virtualHost == null ? null : _virtualHost.getName();
     }
 
     public long getSessionCountLimit()

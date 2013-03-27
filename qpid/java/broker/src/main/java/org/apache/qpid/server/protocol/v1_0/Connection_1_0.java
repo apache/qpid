@@ -220,7 +220,7 @@ public class Connection_1_0 implements ConnectionEventListener
         @Override
         public String getVirtualHostName()
         {
-            return _vhost.getName();
+            return _vhost == null ? null : _vhost.getName();
         }
 
         @Override

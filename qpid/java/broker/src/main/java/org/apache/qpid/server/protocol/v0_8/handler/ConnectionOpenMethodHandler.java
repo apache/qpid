@@ -78,8 +78,6 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         }
         else
         {
-            session.setVirtualHost(virtualHost);
-
             // Check virtualhost access
             if (!virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress()))
             {
@@ -90,6 +88,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
                 throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
             }
 
+            session.setVirtualHost(virtualHost);
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
             if (session.getContextKey() == null)
