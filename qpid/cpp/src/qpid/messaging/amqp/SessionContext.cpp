@@ -156,5 +156,4 @@ bool SessionContext::settled()
     }
     return result;
 }
-
 }}} // namespace qpid::messaging::amqp
