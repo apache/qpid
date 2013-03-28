@@ -72,7 +72,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void endSession(boost::shared_ptr<SessionContext>);
     void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
-    void send(boost::shared_ptr<SenderContext> ctxt, const qpid::messaging::Message& message, bool sync);
+    void send(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext> ctxt, const qpid::messaging::Message& message, bool sync);
     bool fetch(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::messaging::Message& message, qpid::messaging::Duration timeout);
     bool get(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::messaging::Message& message, qpid::messaging::Duration timeout);
     void acknowledge(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message* message, bool cumulative);
@@ -136,6 +136,13 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     CodecSwitch codecSwitch;
 
     void wait();
+    void wait(boost::shared_ptr<SessionContext>);
+    void wait(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
+    void wait(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
+    void checkClosed(boost::shared_ptr<SessionContext>);
+    void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
+    void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
+    void checkClosed(boost::shared_ptr<SessionContext>, pn_link_t*);
     void wakeupDriver();
     void attach(pn_session_t*, pn_link_t*, int credit=0);
 
