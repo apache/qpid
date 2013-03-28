@@ -179,17 +179,24 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const std::string& bindingKey, c
 
 bool XmlExchange::unbind(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
 {
+    RWlock::ScopedWlock l(lock);
+    return unbindLH(queue, bindingKey, args);
+}
+
+bool XmlExchange::unbindLH(Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
+{
     /*
      *  When called directly, no qpidFedOrigin argument will be
      *  present. When called from federation, it will be present. 
      *
      *  This is a bit of a hack - the binding needs the origin, but
      *  this interface, as originally defined, would not supply one.
+     *
+     *  Note: caller must hold Wlock
      */
     std::string fedOrigin;
     if (args) fedOrigin = args->getAsString(qpidFedOrigin);
 
-    RWlock::ScopedWlock l(lock);
     if (bindingsMap[bindingKey].remove_if(MatchQueueAndOrigin(queue, fedOrigin))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
@@ -389,9 +396,9 @@ void XmlExchange::propagateFedOp(const std::string& bindingKey, const std::strin
 
 bool XmlExchange::fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const FieldTable* args)
 {
-    RWlock::ScopedRlock l(lock);
+    RWlock::ScopedWlock l(lock);
 
-    if (unbind(queue, bindingKey, args)) {
+    if (unbindLH(queue, bindingKey, args)) {
         propagateFedOp(bindingKey, fedTags, fedOpUnbind, fedOrigin); 
         return true;
     }
