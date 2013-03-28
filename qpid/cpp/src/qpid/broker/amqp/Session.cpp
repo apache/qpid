@@ -235,12 +235,10 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         if (filter.hasSubjectFilter()) {
             filter.bind(node.exchange, queue);
             filter.write(pn_terminus_filter(pn_link_source(link)));
-        } else if (node.exchange->getType() == FanOutExchange::typeName) {
-            node.exchange->bind(queue, std::string(), 0);
         } else if (node.exchange->getType() == TopicExchange::typeName) {
             node.exchange->bind(queue, "#", 0);
         } else {
-            throw qpid::Exception("Exchange type requires a filter: " + node.exchange->getType());/*not-supported?*/
+            node.exchange->bind(queue, std::string(), 0);
         }
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, queue, link, *this, out, true));
         outgoing[link] = q;
