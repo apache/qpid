@@ -36,22 +36,29 @@ class AddressHelper
     enum CheckMode {FOR_RECEIVER, FOR_SENDER};
 
     AddressHelper(const Address& address);
-    bool createEnabled(CheckMode mode) const;
-    bool deleteEnabled(CheckMode mode) const;
-    bool assertEnabled(CheckMode mode) const;
+    void configure(pn_terminus_t* terminus, CheckMode mode);
+    void checkAssertion(pn_terminus_t* terminus, CheckMode mode);
 
-    void setNodeProperties(pn_terminus_t*, bool dynamic);
     const qpid::types::Variant::Map& getNodeProperties() const;
     const qpid::types::Variant::Map& getLinkProperties() const;
   private:
+    bool isTemporary;
     std::string createPolicy;
     std::string assertPolicy;
     std::string deletePolicy;
     qpid::types::Variant::Map node;
     qpid::types::Variant::Map link;
+    qpid::types::Variant::Map properties;
+    qpid::types::Variant::List capabilities;
     std::string name;
+    std::string type;
+    bool durableNode;
 
     bool enabled(const std::string& policy, CheckMode mode) const;
+    bool createEnabled(CheckMode mode) const;
+    bool assertEnabled(CheckMode mode) const;
+    void setCapabilities(pn_terminus_t* terminus, bool create);
+    void setNodeProperties(pn_terminus_t* terminus);
 };
 }}} // namespace qpid::messaging::amqp
 
