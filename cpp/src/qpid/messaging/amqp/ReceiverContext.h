@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/amqp/AddressHelper.h"
 #include <string>
 #include "qpid/sys/IntegerTypes.h"
 
@@ -54,15 +55,17 @@ class ReceiverContext
     const std::string& getName() const;
     const std::string& getSource() const;
     bool isClosed() const;
-    void configure() const;
+    void configure();
+    void verify(pn_terminus_t*);
     Address getAddress() const;
   private:
     friend class ConnectionContext;
     const std::string name;
     Address address;
+    AddressHelper helper;
     pn_link_t* receiver;
     uint32_t capacity;
-    void configure(pn_terminus_t*) const;
+    void configure(pn_terminus_t*);
 };
 }}} // namespace qpid::messaging::amqp
 

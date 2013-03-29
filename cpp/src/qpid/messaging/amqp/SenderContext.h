@@ -26,6 +26,7 @@
 #include <vector>
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
 
 struct pn_delivery_t;
@@ -69,7 +70,8 @@ class SenderContext
     const std::string& getName() const;
     const std::string& getTarget() const;
     Delivery* send(const qpid::messaging::Message& message);
-    void configure() const;
+    void configure();
+    void verify(pn_terminus_t*);
     bool settled();
     Address getAddress() const;
   private:
@@ -78,13 +80,14 @@ class SenderContext
 
     const std::string name;
     qpid::messaging::Address address;
+    AddressHelper helper;
     pn_link_t* sender;
     int32_t nextId;
     Deliveries deliveries;
     uint32_t capacity;
 
     uint32_t processUnsettled();
-    void configure(pn_terminus_t*) const;
+    void configure(pn_terminus_t*);
 };
 }}} // namespace qpid::messaging::amqp
 

@@ -19,7 +19,6 @@
  *
  */
 #include "qpid/messaging/amqp/ReceiverContext.h"
-#include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
@@ -36,6 +35,7 @@ namespace amqp {
 ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, const qpid::messaging::Address& a)
   : name(n),
     address(a),
+    helper(address),
     receiver(pn_receiver(session, name.c_str())),
     capacity(0) {}
 ReceiverContext::~ReceiverContext()
@@ -108,26 +108,17 @@ uint64_t getFilterDescriptor(const std::string& key)
     return hasWildcards(key) ? qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE : qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE;
 }
 }
-
-void ReceiverContext::configure() const
+void ReceiverContext::verify(pn_terminus_t* source)
+{
+    helper.checkAssertion(source, AddressHelper::FOR_RECEIVER);
+}
+void ReceiverContext::configure()
 {
     configure(pn_link_source(receiver));
 }
-void ReceiverContext::configure(pn_terminus_t* source) const
+void ReceiverContext::configure(pn_terminus_t* source)
 {
-    //dynamic create:
-    AddressHelper helper(address);
-    if (AddressImpl::isTemporary(address)) {
-        //application expects a name to be generated
-        QPID_LOG(debug, "source is dynamic");
-        helper.setNodeProperties(source, true);
-    } else {
-        pn_terminus_set_address(source, address.getName().c_str());
-        if (helper.createEnabled(AddressHelper::FOR_RECEIVER)) {
-            //application expects name of node to be as specified
-            helper.setNodeProperties(source, false);
-        }
-    }
+    helper.configure(source, AddressHelper::FOR_RECEIVER);
 
     // Look specifically for qpid.selector link property and add a filter for it
     qpid::types::Variant::Map::const_iterator i = helper.getLinkProperties().find("selector");

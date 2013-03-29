@@ -20,7 +20,6 @@
  */
 #include "qpid/messaging/amqp/SenderContext.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
-#include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
@@ -41,6 +40,7 @@ namespace amqp {
 SenderContext::SenderContext(pn_session_t* session, const std::string& n, const qpid::messaging::Address& a)
   : name(n),
     address(a),
+    helper(address),
     sender(pn_sender(session, n.c_str())), capacity(1000) {}
 
 SenderContext::~SenderContext()
@@ -342,23 +342,17 @@ void SenderContext::Delivery::settle()
 {
     pn_delivery_settle(token);
 }
-void SenderContext::configure() const
+void SenderContext::verify(pn_terminus_t* target)
+{
+    helper.checkAssertion(target, AddressHelper::FOR_SENDER);
+}
+void SenderContext::configure()
 {
     configure(pn_link_target(sender));
 }
-void SenderContext::configure(pn_terminus_t* target) const
+void SenderContext::configure(pn_terminus_t* target)
 {
-    AddressHelper helper(address);
-    if (AddressImpl::isTemporary(address)) {
-        //application expects a name to be generated
-        helper.setNodeProperties(target, true);
-    } else {
-        pn_terminus_set_address(target, address.getName().c_str());
-        if (helper.createEnabled(AddressHelper::FOR_SENDER)) {
-            //application expects name of node to be as specified
-            helper.setNodeProperties(target, false);
-        }
-    }
+    helper.configure(target, AddressHelper::FOR_SENDER);
 }
 
 bool SenderContext::settled()
