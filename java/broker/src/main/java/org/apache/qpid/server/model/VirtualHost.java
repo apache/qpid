@@ -57,16 +57,16 @@ public interface VirtualHost extends ConfiguredObject
                             XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS, XA_TRANSACTION_BRANCH_SUSPENDS,
                             QUEUE_COUNT, EXCHANGE_COUNT, CONNECTION_COUNT));
 
-    String ALERT_REPEAT_GAP = "alertRepeatGap";
-    String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
-    String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
-    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "alertThresholdQueueDepthBytes";
-    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "alertThresholdQueueDepthMessages";
-    String DEAD_LETTER_QUEUE_ENABLED            = "deadLetterQueueEnabled";
+    String ALERT_REPEAT_GAP                     = "queue.alertRepeatGap";
+    String ALERT_THRESHOLD_MESSAGE_AGE          = "queue.alertThresholdMessageAge";
+    String ALERT_THRESHOLD_MESSAGE_SIZE         = "queue.alertThresholdMessageSize";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES    = "queue.alertThresholdQueueDepthBytes";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
+    String DEAD_LETTER_QUEUE_ENABLED            = "queue.deadLetterQueueEnabled";
     String HOUSEKEEPING_CHECK_PERIOD            = "housekeepingCheckPeriod";
-    String MAXIMUM_DELIVERY_ATTEMPTS            = "maximumDeliveryAttempts";
-    String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queueFlowControlSizeBytes";
-    String QUEUE_FLOW_RESUME_SIZE_BYTES         = "queueFlowResumeSizeBytes";
+    String MAXIMUM_DELIVERY_ATTEMPTS            = "queue.maximumDeliveryAttempts";
+    String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queue.flowControlSizeBytes";
+    String QUEUE_FLOW_RESUME_SIZE_BYTES         = "queue.flowResumeSizeBytes";
     String STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "storeTransactionIdleTimeoutClose";
     String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
     String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";

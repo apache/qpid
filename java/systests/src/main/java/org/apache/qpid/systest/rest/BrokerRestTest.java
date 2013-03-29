@@ -130,8 +130,8 @@ public class BrokerRestTest extends QpidRestTestCase
         invalidAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "non-existing-provider");
         invalidAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "non-existing-host");
         invalidAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, -1000);
-        invalidAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, -2000);
-        invalidAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, -3000);
+        invalidAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, -2000);
+        invalidAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, -3000);
         invalidAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, -4000);
         invalidAttributes.put(Broker.ALERT_REPEAT_GAP, -5000);
         invalidAttributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, -7000);
@@ -173,8 +173,8 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
         brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, 1000);
-        brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, 2000);
-        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, 3000);
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 2000);
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 3000);
         brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, 4000);
         brokerAttributes.put(Broker.ALERT_REPEAT_GAP, 5000);
         brokerAttributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, 7000);

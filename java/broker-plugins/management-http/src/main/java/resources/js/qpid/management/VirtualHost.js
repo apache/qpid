@@ -263,28 +263,28 @@ define(["dojo/_base/xhr",
 
 
                        // update alerting info
-                       var alertRepeatGap = formatter.formatTime( thisObj.vhostData["alertRepeatGap"] );
+                       var alertRepeatGap = formatter.formatTime( thisObj.vhostData["queue.alertRepeatGap"] );
 
                        thisObj.alertRepeatGap.innerHTML = alertRepeatGap.value;
                        thisObj.alertRepeatGapUnits.innerHTML = alertRepeatGap.units;
 
 
-                       var alertMsgAge = formatter.formatTime( thisObj.vhostData["alertThresholdMessageAge"] );
+                       var alertMsgAge = formatter.formatTime( thisObj.vhostData["queue.alertThresholdMessageAge"] );
 
                        thisObj.alertThresholdMessageAge.innerHTML = alertMsgAge.value;
                        thisObj.alertThresholdMessageAgeUnits.innerHTML = alertMsgAge.units;
 
-                       var alertMsgSize = formatter.formatBytes( thisObj.vhostData["alertThresholdMessageSize"] );
+                       var alertMsgSize = formatter.formatBytes( thisObj.vhostData["queue.alertThresholdMessageSize"] );
 
                        thisObj.alertThresholdMessageSize.innerHTML = alertMsgSize.value;
                        thisObj.alertThresholdMessageSizeUnits.innerHTML = alertMsgSize.units;
 
-                       var alertQueueDepth = formatter.formatBytes( thisObj.vhostData["alertThresholdQueueDepthBytes"] );
+                       var alertQueueDepth = formatter.formatBytes( thisObj.vhostData["queue.alertThresholdQueueDepthBytes"] );
 
                        thisObj.alertThresholdQueueDepthBytes.innerHTML = alertQueueDepth.value;
                        thisObj.alertThresholdQueueDepthBytesUnits.innerHTML = alertQueueDepth.units;
 
-                       thisObj.alertThresholdQueueDepthMessages.innerHTML = thisObj.vhostData["alertThresholdQueueDepthMessages"];
+                       thisObj.alertThresholdQueueDepthMessages.innerHTML = thisObj.vhostData["queue.alertThresholdQueueDepthMessages"];
 
                        var stats = thisObj.vhostData[ "statistics" ];
 
