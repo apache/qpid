@@ -316,6 +316,36 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         return manager;
     }
 
+    @Override
+    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.DELETE))
+            {
+                throw new AccessControlException("Deletion of authentication provider is denied");
+            }
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of authentication provider attributes is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of authentication provider attributes is denied");
+        }
+    }
+
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
 
