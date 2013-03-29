@@ -76,6 +76,10 @@ public interface Broker extends ConfiguredObject
     String STORE_PATH = "storePath";
     String MANAGEMENT_VERSION = "managementVersion";
 
+    String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "virtualhost.storeTransactionIdleTimeoutClose";
+    String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "virtualhost.storeTransactionIdleTimeoutWarn";
+    String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
+    String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
     /*
      * A temporary attribute to pass the path to ACL file.
      * TODO: It should be a part of AuthorizationProvider.
@@ -139,6 +143,10 @@ public interface Broker extends ConfiguredObject
                               STORE_VERSION,
                               STORE_PATH,
                               MANAGEMENT_VERSION,
+                              VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
+                              VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
+                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
+                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
 
                               ACL_FILE,
                               KEY_STORE_PATH,
