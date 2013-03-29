@@ -357,4 +357,52 @@ public class VirtualHostConfigurationTest extends QpidTestCase
          // Check, that the property stored within the <dot.in.a.name> tag has been properly loaded
          assertEquals("virtual host with dots in the name has been properly loaded", TestableMemoryMessageStore.class.getName(), test.getMessageStore().getClass().getName());
      }
+
+     public void testStoreTransactionIdleTimeoutClose() throws Exception
+     {
+         VirtualHost vhost = createVirtualHost(getName());
+         assertEquals("Unexpected StoreTransactionIdleTimeoutClose value", 0, vhost.getConfiguration().getTransactionTimeoutIdleClose());
+
+         when(_broker.getAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE)).thenReturn(1000l);
+         assertEquals("Unexpected StoreTransactionIdleTimeoutClose value", 1000l, vhost.getConfiguration().getTransactionTimeoutIdleClose());
+
+         vhost.getConfiguration().getConfig().setProperty("transactionTimeout.idleClose", 2000l);
+         assertEquals("Unexpected StoreTransactionIdleTimeoutClose value", 2000l, vhost.getConfiguration().getTransactionTimeoutIdleClose());
+     }
+
+     public void testStoreTransactionIdleTimeoutWarn() throws Exception
+     {
+         VirtualHost vhost = createVirtualHost(getName());
+         assertEquals("Unexpected StoreTransactionIdleTimeoutWarn value", 0, vhost.getConfiguration().getTransactionTimeoutIdleWarn());
+
+         when(_broker.getAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN)).thenReturn(1000l);
+         assertEquals("Unexpected StoreTransactionIdleTimeoutWarn value", 1000l, vhost.getConfiguration().getTransactionTimeoutIdleWarn());
+
+         vhost.getConfiguration().getConfig().setProperty("transactionTimeout.idleWarn", 2000l);
+         assertEquals("Unexpected StoreTransactionIdleTimeoutWarn value", 2000l, vhost.getConfiguration().getTransactionTimeoutIdleWarn());
+     }
+
+     public void testStoreTransactionOpenTimeoutClose() throws Exception
+     {
+         VirtualHost vhost = createVirtualHost(getName());
+         assertEquals("Unexpected StoreTransactionOpenTimeoutClose value", 0, vhost.getConfiguration().getTransactionTimeoutOpenClose());
+
+         when(_broker.getAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE)).thenReturn(1000l);
+         assertEquals("Unexpected StoreTransactionOpenTimeoutClose value", 1000l, vhost.getConfiguration().getTransactionTimeoutOpenClose());
+
+         vhost.getConfiguration().getConfig().setProperty("transactionTimeout.openClose", 2000l);
+         assertEquals("Unexpected StoreTransactionOpenTimeoutClose value", 2000l, vhost.getConfiguration().getTransactionTimeoutOpenClose());
+     }
+
+     public void testStoreTransactionOpenTimeoutWarn() throws Exception
+     {
+         VirtualHost vhost = createVirtualHost(getName());
+         assertEquals("Unexpected StoreTransactionOpenTimeoutWarn value", 0, vhost.getConfiguration().getTransactionTimeoutOpenWarn());
+
+         when(_broker.getAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN)).thenReturn(1000l);
+         assertEquals("Unexpected StoreTransactionOpenTimeoutWarn value", 1000l, vhost.getConfiguration().getTransactionTimeoutOpenWarn());
+
+         vhost.getConfiguration().getConfig().setProperty("transactionTimeout.openWarn", 2000l);
+         assertEquals("Unexpected StoreTransactionOpenTimeoutWarn value", 2000l, vhost.getConfiguration().getTransactionTimeoutOpenWarn());
+     }
 }

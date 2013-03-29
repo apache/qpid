@@ -371,6 +371,62 @@ define(["dojo/_base/xhr",
                            name: "virtualhost.housekeepingCheckPeriod"
                          });
                        }
+               }, {
+                       name: "virtualhost.storeTransactionIdleTimeoutClose",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData["virtualhost.storeTransactionIdleTimeoutClose"],
+                           placeholder: "Time in ms",
+                           label: "Idle store transaction close timeout:",
+                           name: "virtualhost.storeTransactionIdleTimeoutClose"
+                         });
+                       }
+               }, {
+                       name: "virtualhost.storeTransactionIdleTimeoutWarn",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData["virtualhost.storeTransactionIdleTimeoutWarn"],
+                           placeholder: "Time in ms",
+                           label: "Idle store transaction warn timeout:",
+                           name: "virtualhost.storeTransactionIdleTimeoutWarn"
+                         });
+                       }
+               }, {
+                       name: "virtualhost.storeTransactionOpenTimeoutClose",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData["virtualhost.storeTransactionOpenTimeoutClose"],
+                           placeholder: "Time in ms",
+                           label: "Open store transaction close timeout:",
+                           name: "virtualhost.storeTransactionOpenTimeoutClose"
+                         });
+                       }
+               }, {
+                       name: "virtualhost.storeTransactionOpenTimeoutWarn",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData["virtualhost.storeTransactionOpenTimeoutWarn"],
+                           placeholder: "Time in ms",
+                           label: "Open store transaction warn timeout:",
+                           name: "virtualhost.storeTransactionOpenTimeoutWarn"
+                         });
+                       }
                } ];
            }
 
