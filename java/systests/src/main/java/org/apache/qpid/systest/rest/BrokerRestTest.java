@@ -34,7 +34,6 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
@@ -101,6 +100,28 @@ public class BrokerRestTest extends QpidRestTestCase
         restartBroker();
         Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
         assertBrokerAttributes(brokerAttributes, brokerDetails);
+    }
+
+    public void testPutUpdateWhereNumericAttributesAreSetAsStringValues() throws Exception
+    {
+        Map<String, Object> validAttributes = getValidBrokerAttributes();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+
+        for (Map.Entry<String, Object> entry : validAttributes.entrySet())
+        {
+            Object value = entry.getValue();
+            if (value instanceof Number)
+            {
+                value = String.valueOf(value);
+            }
+            attributes.put(entry.getKey(), value);
+        }
+
+        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", attributes);
+        assertEquals("Unexpected update response", 200, response);
+
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        assertBrokerAttributes(validAttributes, brokerDetails);
     }
 
     public void testPutToUpdateWithInvalidAttributeValues() throws Exception
