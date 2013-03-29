@@ -63,8 +63,44 @@ bool is_capability_requested(const std::string& name, pn_data_t* capabilities)
     }
     return false;
 }
-
+//capabilities
 const std::string CREATE_ON_DEMAND("create-on-demand");
+const std::string DURABLE("durable");
+const std::string QUEUE("queue");
+const std::string TOPIC("topic");
+const std::string DIRECT_FILTER("legacy-amqp-direct-binding");
+const std::string TOPIC_FILTER("legacy-amqp-topic-binding");
+
+void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Queue> node)
+{
+    while (pn_data_next(in)) {
+        pn_bytes_t c = pn_data_get_symbol(in);
+        std::string s(c.start, c.size);
+        if (s == DURABLE) {
+            if (node->isDurable()) pn_data_put_symbol(out, c);
+        } else if (s == CREATE_ON_DEMAND || s == QUEUE || s == DIRECT_FILTER || s == TOPIC_FILTER) {
+            pn_data_put_symbol(out, c);
+        }
+    }
+}
+
+void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Exchange> node)
+{
+    while (pn_data_next(in)) {
+        pn_bytes_t c = pn_data_get_symbol(in);
+        std::string s(c.start, c.size);
+        if (s == DURABLE) {
+            if (node->isDurable()) pn_data_put_symbol(out, c);
+        } else if (s == CREATE_ON_DEMAND || s == TOPIC) {
+            pn_data_put_symbol(out, c);
+        } else if (s == DIRECT_FILTER) {
+            if (node->getType() == DirectExchange::typeName) pn_data_put_symbol(out, c);
+        } else if (s == TOPIC_FILTER) {
+            if (node->getType() == TopicExchange::typeName) pn_data_put_symbol(out, c);
+        }
+    }
+}
+
 }
 
 class IncomingToQueue : public DecodingIncoming
@@ -178,6 +214,10 @@ void Session::attach(pn_link_t* link)
 void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::string& name)
 {
     ResolvedNode node = resolve(name, target, true);
+    //set capabilities
+    if (node.queue) setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.queue);
+    else if (node.exchange) setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.exchange);
+
     const char* sourceAddress = pn_terminus_get_address(pn_link_remote_source(link));
     if (!sourceAddress) {
         sourceAddress = pn_terminus_get_address(pn_link_source(link));
@@ -205,6 +245,9 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
 void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::string& name)
 {
     ResolvedNode node = resolve(name, source, false);
+    if (node.queue) setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.queue);
+    else if (node.exchange) setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.exchange);
+
     Filter filter;
     filter.read(pn_terminus_filter(source));
     const char* targetAddress = pn_terminus_get_address(pn_link_remote_target(link));
