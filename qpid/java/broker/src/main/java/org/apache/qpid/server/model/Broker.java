@@ -56,19 +56,19 @@ public interface Broker extends ConfiguredObject
     String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
 
-    String ALERT_THRESHOLD_MESSAGE_AGE = "queue.alertThresholdMessageAge";
-    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
-    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "queue.alertThresholdQueueDepthBytes";
-    String ALERT_THRESHOLD_MESSAGE_SIZE = "queue.alertThresholdMessageSize";
-    String ALERT_REPEAT_GAP = "queue.alertRepeatGap";
-    String FLOW_CONTROL_SIZE_BYTES = "queue.flowControlSizeBytes";
-    String FLOW_CONTROL_RESUME_SIZE_BYTES = "queue.flowResumeSizeBytes";
-    String MAXIMUM_DELIVERY_ATTEMPTS = "queue.maximumDeliveryAttempts";
-    String DEAD_LETTER_QUEUE_ENABLED = "queue.deadLetterQueueEnabled";
-    String HOUSEKEEPING_CHECK_PERIOD = "virtualhost.housekeepingCheckPeriod";
+    String QUEUE_ALERT_THRESHOLD_MESSAGE_AGE = "queue.alertThresholdMessageAge";
+    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
+    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "queue.alertThresholdQueueDepthBytes";
+    String QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE = "queue.alertThresholdMessageSize";
+    String QUEUE_ALERT_REPEAT_GAP = "queue.alertRepeatGap";
+    String QUEUE_FLOW_CONTROL_SIZE_BYTES = "queue.flowControlSizeBytes";
+    String QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES = "queue.flowResumeSizeBytes";
+    String QUEUE_MAXIMUM_DELIVERY_ATTEMPTS = "queue.maximumDeliveryAttempts";
+    String QUEUE_DEAD_LETTER_QUEUE_ENABLED = "queue.deadLetterQueueEnabled";
+    String VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD = "virtualhost.housekeepingCheckPeriod";
 
-    String SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
-    String HEART_BEAT_DELAY = "connection.heartBeatDelay";
+    String CONNECTION_SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
+    String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
     String STORE_TYPE = "storeType";
@@ -125,18 +125,18 @@ public interface Broker extends ConfiguredObject
                               UPDATED,
                               DEFAULT_AUTHENTICATION_PROVIDER,
                               DEFAULT_VIRTUAL_HOST,
-                              ALERT_THRESHOLD_MESSAGE_AGE,
-                              ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                              ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                              ALERT_THRESHOLD_MESSAGE_SIZE,
-                              ALERT_REPEAT_GAP,
-                              FLOW_CONTROL_SIZE_BYTES,
-                              FLOW_CONTROL_RESUME_SIZE_BYTES,
-                              MAXIMUM_DELIVERY_ATTEMPTS,
-                              DEAD_LETTER_QUEUE_ENABLED,
-                              HOUSEKEEPING_CHECK_PERIOD,
-                              SESSION_COUNT_LIMIT,
-                              HEART_BEAT_DELAY,
+                              QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
+                              QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                              QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                              QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
+                              QUEUE_ALERT_REPEAT_GAP,
+                              QUEUE_FLOW_CONTROL_SIZE_BYTES,
+                              QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES,
+                              QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
+                              QUEUE_DEAD_LETTER_QUEUE_ENABLED,
+                              VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD,
+                              CONNECTION_SESSION_COUNT_LIMIT,
+                              CONNECTION_HEART_BEAT_DELAY,
                               STATISTICS_REPORTING_PERIOD,
                               STATISTICS_REPORTING_RESET_ENABLED,
                               STORE_TYPE,

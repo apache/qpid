@@ -45,7 +45,7 @@ public class VirtualHostRecovererTest extends TestCase
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
-        when(parent.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
+        when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
         when(parent.getSecurityManager()).thenReturn(securityManager);
 
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
@@ -69,7 +69,7 @@ public class VirtualHostRecovererTest extends TestCase
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
-        when(parent.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
+        when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
         when(parent.getSecurityManager()).thenReturn(securityManager);
 
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
