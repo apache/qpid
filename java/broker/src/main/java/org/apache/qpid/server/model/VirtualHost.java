@@ -57,12 +57,12 @@ public interface VirtualHost extends ConfiguredObject
                             XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS, XA_TRANSACTION_BRANCH_SUSPENDS,
                             QUEUE_COUNT, EXCHANGE_COUNT, CONNECTION_COUNT));
 
-    String ALERT_REPEAT_GAP                     = "queue.alertRepeatGap";
-    String ALERT_THRESHOLD_MESSAGE_AGE          = "queue.alertThresholdMessageAge";
-    String ALERT_THRESHOLD_MESSAGE_SIZE         = "queue.alertThresholdMessageSize";
-    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES    = "queue.alertThresholdQueueDepthBytes";
-    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
-    String DEAD_LETTER_QUEUE_ENABLED            = "queue.deadLetterQueueEnabled";
+    String QUEUE_ALERT_REPEAT_GAP                     = "queue.alertRepeatGap";
+    String QUEUE_ALERT_THRESHOLD_MESSAGE_AGE          = "queue.alertThresholdMessageAge";
+    String QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE         = "queue.alertThresholdMessageSize";
+    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES    = "queue.alertThresholdQueueDepthBytes";
+    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
+    String QUEUE_DEAD_LETTER_QUEUE_ENABLED            = "queue.deadLetterQueueEnabled";
     String HOUSEKEEPING_CHECK_PERIOD            = "housekeepingCheckPeriod";
     String MAXIMUM_DELIVERY_ATTEMPTS            = "queue.maximumDeliveryAttempts";
     String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queue.flowControlSizeBytes";
@@ -99,7 +99,7 @@ public interface VirtualHost extends ConfiguredObject
                             UPDATED,
                             SUPPORTED_EXCHANGE_TYPES,
                             SUPPORTED_QUEUE_TYPES,
-                            DEAD_LETTER_QUEUE_ENABLED,
+                            QUEUE_DEAD_LETTER_QUEUE_ENABLED,
                             HOUSEKEEPING_CHECK_PERIOD,
                             MAXIMUM_DELIVERY_ATTEMPTS,
                             QUEUE_FLOW_CONTROL_SIZE_BYTES,
@@ -110,11 +110,11 @@ public interface VirtualHost extends ConfiguredObject
                             STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                             STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
                             STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-                            ALERT_REPEAT_GAP,
-                            ALERT_THRESHOLD_MESSAGE_AGE,
-                            ALERT_THRESHOLD_MESSAGE_SIZE,
-                            ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                            ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                            QUEUE_ALERT_REPEAT_GAP,
+                            QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
+                            QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
+                            QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                            QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                             CONFIG_PATH));
 
     //children
