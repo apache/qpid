@@ -182,7 +182,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public Long getMaximumQueueDepth()
     {
-        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH));
+        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES));
     }
 
     public Long getMaximumMessageSize()
@@ -192,7 +192,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public Long getMaximumMessageCount()
     {
-        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_MESSAGE_COUNT));
+        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
     }
 
     public Long getMinimumAlertRepeatGap()

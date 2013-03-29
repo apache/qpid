@@ -91,8 +91,8 @@ public class BrokerRecovererTest extends TestCase
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
         attributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, 9l);
-        attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, 8l);
-        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, 7l);
+        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 8l);
+        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 7l);
         attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, 6l);
         attributes.put(Broker.ALERT_REPEAT_GAP, 5l);
         attributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, 5l);
