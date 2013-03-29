@@ -1028,9 +1028,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         Collection<String> names = AVAILABLE_ATTRIBUTES;
         for (String name : names)
         {
-            if (attributes.containsKey(name))
+            if (convertedAttributes.containsKey(name))
             {
-                Object desired = attributes.get(name);
+                Object desired = convertedAttributes.get(name);
                 Object expected = getAttribute(name);
                 if (changeAttribute(name, expected, desired))
                 {
