@@ -150,6 +150,10 @@ public class BrokerRestTest extends QpidRestTestCase
         invalidAttributes.put(Broker.PEER_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-peerstore.jks");
         invalidAttributes.put(Broker.PEER_STORE_PASSWORD, "password3");
         invalidAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups-non-existing");
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, -13000);
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, -14000);
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, -15000);
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, -16000);
 
         for (Map.Entry<String, Object> entry : invalidAttributes.entrySet())
         {
@@ -195,6 +199,10 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.PEER_STORE_PATH, TestSSLConstants.TRUSTSTORE);
         brokerAttributes.put(Broker.PEER_STORE_PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
         brokerAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups");
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 13000);
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 14000);
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 15000);
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, 16000);
         return brokerAttributes;
     }
 
