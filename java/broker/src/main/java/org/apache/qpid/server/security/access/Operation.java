@@ -32,8 +32,9 @@ public enum Operation
     UNBIND,
     DELETE,
     PURGE,
-    UPDATE;
-    
+    UPDATE,
+    CONFIGURE;
+
     public static Operation parse(String text)
     {
         for (Operation operation : values())

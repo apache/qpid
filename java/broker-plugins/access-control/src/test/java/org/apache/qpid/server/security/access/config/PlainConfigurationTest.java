@@ -447,6 +447,13 @@ public class PlainConfigurationTest extends TestCase
                 "user1", Operation.ACCESS, ObjectType.MANAGEMENT, ObjectProperties.EMPTY);
     }
 
+    public void testBrokerRuleParsing() throws Exception
+    {
+        validateRule(writeACLConfig("ACL ALLOW user1 CONFIGURE BROKER"), "user1", Operation.CONFIGURE, ObjectType.BROKER,
+                ObjectProperties.EMPTY);
+        validateRule(writeACLConfig("ACL ALLOW user1 ALL BROKER"), "user1", Operation.ALL, ObjectType.BROKER, ObjectProperties.EMPTY);
+    }
+
     private void validateRule(final PlainConfiguration config, String username, Operation operation, ObjectType objectType, ObjectProperties objectProperties)
     {
         final RuleSet rs = config.getConfiguration();

@@ -20,6 +20,7 @@ package org.apache.qpid.server.security.access;
 
 import static org.apache.qpid.server.security.access.Operation.ACCESS;
 import static org.apache.qpid.server.security.access.Operation.BIND;
+import static org.apache.qpid.server.security.access.Operation.CONFIGURE;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
 import static org.apache.qpid.server.security.access.Operation.CREATE;
 import static org.apache.qpid.server.security.access.Operation.DELETE;
@@ -48,7 +49,8 @@ public enum ObjectType
     ROUTE, // Not allowed in the Java broker
     METHOD(Operation.ALL, ACCESS, UPDATE),
     USER(Operation.ALL, CREATE, DELETE, UPDATE),
-    GROUP(Operation.ALL, CREATE, DELETE, UPDATE);
+    GROUP(Operation.ALL, CREATE, DELETE, UPDATE),
+    BROKER(Operation.ALL, CONFIGURE);
 
     private EnumSet<Operation> _actions;
     

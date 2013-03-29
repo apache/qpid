@@ -33,7 +33,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.access.OperationLoggingDetails;
 
+import static org.apache.qpid.server.security.access.ObjectType.BROKER;
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
 import static org.apache.qpid.server.security.access.ObjectType.GROUP;
 import static org.apache.qpid.server.security.access.ObjectType.METHOD;
@@ -41,6 +43,7 @@ import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
 import static org.apache.qpid.server.security.access.Operation.BIND;
+import static org.apache.qpid.server.security.access.Operation.CONFIGURE;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
 import static org.apache.qpid.server.security.access.Operation.CREATE;
 import static org.apache.qpid.server.security.access.Operation.DELETE;
@@ -547,6 +550,22 @@ public class SecurityManager implements ConfigurationChangeListener
             _immediatePublishPropsCache.clear();
             _publishPropsCache.clear();
         }
+    }
+
+    public boolean authoriseConfiguringBroker(String configuredObjectName, Class<? extends ConfiguredObject> configuredObjectType, Operation configuredObjectOperation)
+    {
+        String description = String.format("%s %s '%s'",
+                configuredObjectOperation == null? null : configuredObjectOperation.name().toLowerCase(),
+                configuredObjectType == null ? null : configuredObjectType.getSimpleName().toLowerCase(),
+                configuredObjectName);
+        final OperationLoggingDetails properties = new OperationLoggingDetails(description);
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(CONFIGURE, BROKER, properties);
+            }
+        });
     }
 
 }
