@@ -56,19 +56,19 @@ public interface Broker extends ConfiguredObject
     String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
 
-    String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
-    String ALERT_THRESHOLD_MESSAGE_COUNT = "alertThresholdMessageCount";
-    String ALERT_THRESHOLD_QUEUE_DEPTH = "alertThresholdQueueDepth";
-    String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
-    String ALERT_REPEAT_GAP = "alertRepeatGap";
-    String FLOW_CONTROL_SIZE_BYTES = "queueFlowControlSizeBytes";
-    String FLOW_CONTROL_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
-    String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
-    String DEAD_LETTER_QUEUE_ENABLED = "deadLetterQueueEnabled";
-    String HOUSEKEEPING_CHECK_PERIOD = "housekeepingCheckPeriod";
+    String ALERT_THRESHOLD_MESSAGE_AGE = "queue.alertThresholdMessageAge";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "queue.alertThresholdQueueDepthBytes";
+    String ALERT_THRESHOLD_MESSAGE_SIZE = "queue.alertThresholdMessageSize";
+    String ALERT_REPEAT_GAP = "queue.alertRepeatGap";
+    String FLOW_CONTROL_SIZE_BYTES = "queue.flowControlSizeBytes";
+    String FLOW_CONTROL_RESUME_SIZE_BYTES = "queue.flowResumeSizeBytes";
+    String MAXIMUM_DELIVERY_ATTEMPTS = "queue.maximumDeliveryAttempts";
+    String DEAD_LETTER_QUEUE_ENABLED = "queue.deadLetterQueueEnabled";
+    String HOUSEKEEPING_CHECK_PERIOD = "virtualhost.housekeepingCheckPeriod";
 
-    String SESSION_COUNT_LIMIT = "sessionCountLimit";
-    String HEART_BEAT_DELAY = "heartBeatDelay";
+    String SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
+    String HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
     String STORE_TYPE = "storeType";
@@ -122,8 +122,8 @@ public interface Broker extends ConfiguredObject
                               DEFAULT_AUTHENTICATION_PROVIDER,
                               DEFAULT_VIRTUAL_HOST,
                               ALERT_THRESHOLD_MESSAGE_AGE,
-                              ALERT_THRESHOLD_MESSAGE_COUNT,
-                              ALERT_THRESHOLD_QUEUE_DEPTH,
+                              ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                              ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                               ALERT_THRESHOLD_MESSAGE_SIZE,
                               ALERT_REPEAT_GAP,
                               FLOW_CONTROL_SIZE_BYTES,

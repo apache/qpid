@@ -62,8 +62,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
         _brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         _brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, 9);
-        _brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, 8);
-        _brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, 7);
+        _brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 8);
+        _brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 7);
         _brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, 6);
         _brokerAttributes.put(Broker.ALERT_REPEAT_GAP, 5);
         _brokerAttributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, 5);
@@ -173,8 +173,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
         attributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, 19);
-        attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, 18);
-        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, 17);
+        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 18);
+        attributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 17);
         attributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, 16);
         attributes.put(Broker.ALERT_REPEAT_GAP, 15);
         attributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, 15);
