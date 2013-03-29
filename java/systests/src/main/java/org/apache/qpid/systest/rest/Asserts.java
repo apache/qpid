@@ -60,8 +60,8 @@ public class Asserts
                 virtualHost.get(VirtualHost.DURABLE));
         assertEquals("Unexpected value of attribute " + VirtualHost.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                 virtualHost.get(VirtualHost.LIFETIME_POLICY));
-        assertEquals("Unexpected value of attribute " + VirtualHost.DEAD_LETTER_QUEUE_ENABLED, Boolean.FALSE,
-                virtualHost.get(VirtualHost.DEAD_LETTER_QUEUE_ENABLED));
+        assertEquals("Unexpected value of attribute " + VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED, Boolean.FALSE,
+                virtualHost.get(VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED));
 
         @SuppressWarnings("unchecked")
         Collection<String> exchangeTypes = (Collection<String>) virtualHost.get(VirtualHost.SUPPORTED_EXCHANGE_TYPES);

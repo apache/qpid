@@ -48,7 +48,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         _broker = broker;
 
         // store value of this attribute for running life of virtual host since updating of this value has no run-time effect
-        _defaultHouseKeepingCheckPeriod = ((Number)_broker.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).longValue();
+        _defaultHouseKeepingCheckPeriod = ((Number)_broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).longValue();
         setConfiguration(config);
     }
 
@@ -177,37 +177,37 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public int getMaximumMessageAge()
     {
-        return getIntValue("queues.maximumMessageAge", getBrokerAttributeAsInt(Broker.ALERT_THRESHOLD_MESSAGE_AGE));
+        return getIntValue("queues.maximumMessageAge", getBrokerAttributeAsInt(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE));
     }
 
     public Long getMaximumQueueDepth()
     {
-        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES));
+        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES));
     }
 
     public Long getMaximumMessageSize()
     {
-        return getLongValue("queues.maximumMessageSize", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_MESSAGE_SIZE));
+        return getLongValue("queues.maximumMessageSize", getBrokerAttributeAsLong(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE));
     }
 
     public Long getMaximumMessageCount()
     {
-        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
+        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
     }
 
     public Long getMinimumAlertRepeatGap()
     {
-        return getLongValue("queues.minimumAlertRepeatGap", getBrokerAttributeAsLong(Broker.ALERT_REPEAT_GAP));
+        return getLongValue("queues.minimumAlertRepeatGap", getBrokerAttributeAsLong(Broker.QUEUE_ALERT_REPEAT_GAP));
     }
 
     public long getCapacity()
     {
-        return getLongValue("queues.capacity", getBrokerAttributeAsLong(Broker.FLOW_CONTROL_SIZE_BYTES));
+        return getLongValue("queues.capacity", getBrokerAttributeAsLong(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES));
     }
 
     public long getFlowResumeCapacity()
     {
-        return getLongValue("queues.flowResumeCapacity", getBrokerAttributeAsLong(Broker.FLOW_CONTROL_RESUME_SIZE_BYTES));
+        return getLongValue("queues.flowResumeCapacity", getBrokerAttributeAsLong(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES));
     }
 
     public String[] getElementsProcessed()
@@ -267,7 +267,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public int getMaxDeliveryCount()
     {
-        return getIntValue("queues.maximumDeliveryCount", getBrokerAttributeAsInt(Broker.MAXIMUM_DELIVERY_ATTEMPTS));
+        return getIntValue("queues.maximumDeliveryCount", getBrokerAttributeAsInt(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS));
     }
 
     /**
@@ -275,7 +275,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
      */
     public boolean isDeadLetterQueueEnabled()
     {
-        return getBooleanValue("queues.deadLetterQueues", getBrokerAttributeAsBoolean(Broker.DEAD_LETTER_QUEUE_ENABLED));
+        return getBooleanValue("queues.deadLetterQueues", getBrokerAttributeAsBoolean(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED));
     }
 
     private long getBrokerAttributeAsLong(String name)
