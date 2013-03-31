@@ -63,10 +63,11 @@ public interface VirtualHost extends ConfiguredObject
     String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES    = "queue.alertThresholdQueueDepthBytes";
     String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
     String QUEUE_DEAD_LETTER_QUEUE_ENABLED            = "queue.deadLetterQueueEnabled";
+    String QUEUE_MAXIMUM_DELIVERY_ATTEMPTS            = "queue.maximumDeliveryAttempts";
+    String QUEUE_FLOW_CONTROL_SIZE_BYTES              = "queue.flowControlSizeBytes";
+    String QUEUE_FLOW_RESUME_SIZE_BYTES               = "queue.flowResumeSizeBytes";
+
     String HOUSEKEEPING_CHECK_PERIOD            = "housekeepingCheckPeriod";
-    String MAXIMUM_DELIVERY_ATTEMPTS            = "queue.maximumDeliveryAttempts";
-    String QUEUE_FLOW_CONTROL_SIZE_BYTES        = "queue.flowControlSizeBytes";
-    String QUEUE_FLOW_RESUME_SIZE_BYTES         = "queue.flowResumeSizeBytes";
     String STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "storeTransactionIdleTimeoutClose";
     String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
     String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";
@@ -101,7 +102,7 @@ public interface VirtualHost extends ConfiguredObject
                             SUPPORTED_QUEUE_TYPES,
                             QUEUE_DEAD_LETTER_QUEUE_ENABLED,
                             HOUSEKEEPING_CHECK_PERIOD,
-                            MAXIMUM_DELIVERY_ATTEMPTS,
+                            QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
                             QUEUE_FLOW_CONTROL_SIZE_BYTES,
                             QUEUE_FLOW_RESUME_SIZE_BYTES,
                             STORE_TYPE,
