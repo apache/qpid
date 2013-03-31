@@ -312,6 +312,13 @@ public class PortAdapter extends AbstractAdapter implements Port
                 throw new IllegalStateException("Cannot activate port in " + state + " state");
             }
         }
+        else if (desiredState == State.QUIESCED)
+        {
+            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
+            {
+                return true;
+            }
+        }
         else if (desiredState == State.STOPPED)
         {
             if (_state.compareAndSet(state, State.STOPPED))
@@ -351,9 +358,9 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        if (getActualState() == State.ACTIVE)
+        if (getActualState() == State.ACTIVE && !_broker.isManagementMode())
         {
-            throw new IllegalStateException("Cannot change attributes for an active port");
+            throw new IllegalStateException("Cannot change attributes for an active port outside of Management Mode");
         }
         super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
     }
