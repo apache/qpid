@@ -30,10 +30,10 @@ import java.util.Map;
 public class Model
 {
     /*
-     * API version for the broker management interfaces
+     * API version for the broker model
      */
-    public static final int MANAGEMENT_API_MAJOR_VERSION = 1;
-    public static final int MANAGEMENT_API_MINOR_VERSION = 0;
+    public static final int MODEL_MAJOR_VERSION = 1;
+    public static final int MODEL_MINOR_VERSION = 0;
 
     private static final Model MODEL_INSTANCE = new Model();
 

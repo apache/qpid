@@ -74,7 +74,7 @@ public interface Broker extends ConfiguredObject
     String STORE_TYPE = "storeType";
     String STORE_VERSION = "storeVersion";
     String STORE_PATH = "storePath";
-    String MANAGEMENT_VERSION = "managementVersion";
+    String MODEL_VERSION = "modelVersion";
 
     String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "virtualhost.storeTransactionIdleTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "virtualhost.storeTransactionIdleTimeoutWarn";
@@ -142,7 +142,7 @@ public interface Broker extends ConfiguredObject
                               STORE_TYPE,
                               STORE_VERSION,
                               STORE_PATH,
-                              MANAGEMENT_VERSION,
+                              MODEL_VERSION,
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
