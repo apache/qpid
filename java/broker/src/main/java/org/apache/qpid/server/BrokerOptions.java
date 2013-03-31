@@ -43,6 +43,7 @@ public class BrokerOptions
     private String _initialConfigurationLocation;
 
     private boolean _managementMode;
+    private boolean _managementModeQuiesceVhosts;
     private int _managementModeRmiPort;
     private int _managementModeConnectorPort;
     private int _managementModeHttpPort;
@@ -81,6 +82,16 @@ public class BrokerOptions
     public void setManagementMode(boolean managementMode)
     {
         _managementMode = managementMode;
+    }
+
+    public boolean isManagementModeQuiesceVirtualHosts()
+    {
+        return _managementModeQuiesceVhosts;
+    }
+
+    public void setManagementModeQuiesceVirtualHosts(boolean managementModeQuiesceVhosts)
+    {
+        _managementModeQuiesceVhosts = managementModeQuiesceVhosts;
     }
 
     public int getManagementModeRmiPort()
