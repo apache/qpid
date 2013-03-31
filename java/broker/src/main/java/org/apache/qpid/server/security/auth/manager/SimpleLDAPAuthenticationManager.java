@@ -21,7 +21,6 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.Hashtable;
 
 import javax.naming.AuthenticationException;
@@ -37,7 +36,6 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
-import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
@@ -45,6 +43,7 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
+import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 
 public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 {
@@ -83,9 +82,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
         if(PLAIN_MECHANISM.equals(mechanism))
         {
-            return Sasl.createSaslServer(PLAIN_MECHANISM, "AMQP", localFQDN,
-                                     new HashMap<String, Object>(), new PlainCallbackHandler());
-
+            return new PlainSaslServer(new SimpleLDAPPlainCallbackHandler());
         }
         else
         {
@@ -214,7 +211,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         }
     }
 
-    private class PlainCallbackHandler implements CallbackHandler
+    private class SimpleLDAPPlainCallbackHandler implements CallbackHandler
     {
 
         @Override
