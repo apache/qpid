@@ -104,6 +104,18 @@ public class PortFactory
             defaults.put(Port.RECEIVE_BUFFER_SIZE, DEFAULT_AMQP_RECEIVE_BUFFER_SIZE);
             defaults.put(Port.SEND_BUFFER_SIZE, DEFAULT_AMQP_SEND_BUFFER_SIZE);
             port = new AmqpPortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
+
+            boolean useClientAuth = (Boolean) port.getAttribute(Port.NEED_CLIENT_AUTH) || (Boolean) port.getAttribute(Port.WANT_CLIENT_AUTH);
+            if(useClientAuth && broker.getTrustStores().isEmpty())
+            {
+                throw new IllegalConfigurationException("Cant create port which requests SSL client certificates as the broker has no trust/peer stores configured.");
+            }
+
+            boolean doesntUseSSL = port.getTransports().isEmpty() || !port.getTransports().contains(Transport.SSL);
+            if(useClientAuth && doesntUseSSL)
+            {
+                throw new IllegalConfigurationException("Cant create port which requests SSL client certificates but doesnt use SSL transport.");
+            }
         }
         else
         {
@@ -112,18 +124,35 @@ public class PortFactory
                 throw new IllegalConfigurationException("Only one protocol can be used on non AMQP port");
             }
             Protocol protocol = protocols.iterator().next();
-            Collection<Port> existingPorts = broker.getPorts();
-            for (Port existingPort : existingPorts)
+
+            if(!broker.isManagementMode())
             {
-                Collection<Protocol> portProtocols = existingPort.getProtocols();
-                if (portProtocols != null && portProtocols.contains(protocol))
+                //ManagementMode needs this relaxed to allow its overriding management ports to be inserted.
+
+                //Enforce only a single port of each management protocol, as the plugins will only use one.
+                Collection<Port> existingPorts = broker.getPorts();
+                for (Port existingPort : existingPorts)
                 {
-                    throw new IllegalConfigurationException("Port for protocol " + protocol + " already exist. Only one management port per protocol can be created");
+                    Collection<Protocol> portProtocols = existingPort.getProtocols();
+                    if (portProtocols != null && portProtocols.contains(protocol))
+                    {
+                        throw new IllegalConfigurationException("Port for protocol " + protocol + " already exist. Only one management port per protocol can be created");
+                    }
                 }
             }
+
             defaults.put(Port.NAME, portValue + "-" + protocol.name());
             port = new PortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
         }
+
+        if(port.getTransports().contains(Transport.SSL) || port.getProtocols().contains(Protocol.HTTPS))
+        {
+            if(broker.getKeyStores().isEmpty())
+            {
+                throw new IllegalConfigurationException("Cant create port which requires SSL as the broker has no keystore configured.");
+            }
+        }
+
         return port;
     }
 
