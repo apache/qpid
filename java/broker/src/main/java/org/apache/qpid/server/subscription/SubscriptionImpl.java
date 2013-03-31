@@ -42,6 +42,8 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 
 import java.util.Map;
 import java.util.UUID;
@@ -92,7 +94,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
 
     private long _createTime = System.currentTimeMillis();
-    
+
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -146,6 +148,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public static class NoAckSubscription extends SubscriptionImpl
     {
+        private volatile AutoCommitTransaction _txn;
+
         public NoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                  AMQShortString consumerTag, FieldTable filters,
                                  boolean noLocal, FlowCreditManager creditManager,
@@ -190,8 +194,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             // The send may of course still fail, in which case, as
             // the message is unacked, it will be lost.
-            entry.dequeue();
+            if(_txn == null)
+            {
+                _txn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore());
+            }
+            _txn.dequeue(getQueue(), entry.getMessage(), NOOP);
 
+            entry.dequeue();
 
             synchronized (getChannel())
             {
@@ -212,6 +221,19 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             return false;
         }
 
+        private static final ServerTransaction.Action NOOP =
+                new ServerTransaction.Action()
+                {
+                    @Override
+                    public void postCommit()
+                    {
+                    }
+
+                    @Override
+                    public void onRollback()
+                    {
+                    }
+                };
     }
 
     /**
@@ -275,7 +297,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         public void send(QueueEntry entry, boolean batch) throws AMQException
         {
 
-            
+
             synchronized (getChannel())
             {
                 getChannel().getProtocolSession().setDeferFlush(batch);
@@ -576,7 +598,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return _consumerTag == null ? null : _consumerTag.asString();
     }
-    
+
     public long getSubscriptionID()
     {
         return _subscriptionID;
@@ -821,7 +843,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             }
         });
     }
-    
+
     public long getUnacknowledgedBytes()
     {
         return _unacknowledgedBytes.longValue();
