@@ -176,7 +176,17 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         assertEquals("Unexpected state", State.QUIESCED, portEntry.getAttributes().get(Port.STATE));
     }
 
-    public void testVirtualHostEntryIsQuiesced()
+    public void testVirtualHostEntryIsNotQuiescedByDefault()
+    {
+        virtualHostEntryQuiescedStatusTestImpl(false);
+    }
+
+    public void testVirtualHostEntryIsQuiescedWhenRequested()
+    {
+        virtualHostEntryQuiescedStatusTestImpl(true);
+    }
+
+    private void virtualHostEntryQuiescedStatusTestImpl(boolean mmQuiesceVhosts)
     {
         UUID virtualHostId = UUID.randomUUID();
         ConfigurationEntry virtualHost = mock(ConfigurationEntry.class);
@@ -188,11 +198,17 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(_store.getEntry(virtualHostId)).thenReturn(virtualHost);
         when(_root.getChildrenIds()).thenReturn(new HashSet<UUID>(Arrays.asList(_portEntryId, virtualHostId)));
 
+        State expectedState = mmQuiesceVhosts ? State.QUIESCED : null;
+        if(mmQuiesceVhosts)
+        {
+            _options.setManagementModeQuiesceVirtualHosts(mmQuiesceVhosts);
+        }
+
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         ConfigurationEntry hostEntry = _handler.getEntry(virtualHostId);
         Map<String, Object> hostAttributes = hostEntry.getAttributes();
-        assertEquals("Unexpected state", State.QUIESCED, hostAttributes.get(VirtualHost.STATE));
+        assertEquals("Unexpected state", expectedState, hostAttributes.get(VirtualHost.STATE));
         hostAttributes.remove(VirtualHost.STATE);
         assertEquals("Unexpected attributes", attributes, hostAttributes);
     }

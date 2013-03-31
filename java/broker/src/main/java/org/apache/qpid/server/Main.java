@@ -64,12 +64,14 @@ public class Main
 
     private static final Option OPTION_MANAGEMENT_MODE = OptionBuilder.withDescription("start broker in a management mode")
             .withLongOpt("management-mode").create("mm");
-    private static final Option OPTION_RMI_PORT = OptionBuilder.withArgName("port").hasArg()
-            .withDescription("override jmx rmi port in management mode").withLongOpt("jmxregistryport").create("rmi");
-    private static final Option OPTION_CONNECTOR_PORT = OptionBuilder.withArgName("port").hasArg()
-            .withDescription("override jmx connector port in management mode").withLongOpt("jmxconnectorport").create("jmxrmi");
-    private static final Option OPTION_HTTP_PORT = OptionBuilder.withArgName("port").hasArg()
-            .withDescription("override web management port in management mode").withLongOpt("httpport").create("http");
+    private static final Option OPTION_MM_QUIESCE_VHOST = OptionBuilder.withDescription("make virtualhosts stay in the quiesced state during management mode.")
+            .withLongOpt("management-mode-quiesce-virtualhosts").create("mmqv");
+    private static final Option OPTION_MM_RMI_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override jmx rmi registry port in management mode").withLongOpt("management-mode-rmi-registry-port").create("mmrmi");
+    private static final Option OPTION_MM_CONNECTOR_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override jmx connector port in management mode").withLongOpt("management-mode-jmx-connector-port").create("mmjmx");
+    private static final Option OPTION_MM_HTTP_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override http management port in management mode").withLongOpt("management-mode-http-port").create("mmhttp");
 
     private static final Options OPTIONS = new Options();
 
@@ -83,9 +85,10 @@ public class Main
         OPTIONS.addOption(OPTION_LOG_WATCH);
         OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_PATH);
         OPTIONS.addOption(OPTION_MANAGEMENT_MODE);
-        OPTIONS.addOption(OPTION_RMI_PORT);
-        OPTIONS.addOption(OPTION_CONNECTOR_PORT);
-        OPTIONS.addOption(OPTION_HTTP_PORT);
+        OPTIONS.addOption(OPTION_MM_QUIESCE_VHOST);
+        OPTIONS.addOption(OPTION_MM_RMI_PORT);
+        OPTIONS.addOption(OPTION_MM_CONNECTOR_PORT);
+        OPTIONS.addOption(OPTION_MM_HTTP_PORT);
     }
 
     protected CommandLine _commandLine;
@@ -200,20 +203,25 @@ public class Main
             if (managmentMode)
             {
                 options.setManagementMode(true);
-                String rmiPort = _commandLine.getOptionValue(OPTION_RMI_PORT.getOpt());
+                String rmiPort = _commandLine.getOptionValue(OPTION_MM_RMI_PORT.getOpt());
                 if (rmiPort != null)
                 {
                     options.setManagementModeRmiPort(Integer.parseInt(rmiPort));
                 }
-                String connectorPort = _commandLine.getOptionValue(OPTION_CONNECTOR_PORT.getOpt());
+                String connectorPort = _commandLine.getOptionValue(OPTION_MM_CONNECTOR_PORT.getOpt());
                 if (connectorPort != null)
                 {
                     options.setManagementModeConnectorPort(Integer.parseInt(connectorPort));
                 }
-                String httpPort = _commandLine.getOptionValue(OPTION_HTTP_PORT.getOpt());
+                String httpPort = _commandLine.getOptionValue(OPTION_MM_HTTP_PORT.getOpt());
                 if (httpPort != null)
                 {
                     options.setManagementModeHttpPort(Integer.parseInt(httpPort));
+                }
+                boolean quiesceVhosts = _commandLine.hasOption(OPTION_MM_QUIESCE_VHOST.getOpt());
+                if (quiesceVhosts)
+                {
+                    options.setManagementModeQuiesceVirtualHosts(true);
                 }
             }
             setExceptionHandler();
