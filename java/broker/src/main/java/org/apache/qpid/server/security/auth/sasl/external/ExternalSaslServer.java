@@ -19,19 +19,27 @@
 package org.apache.qpid.server.security.auth.sasl.external;
 
 import java.security.Principal;
+
+import javax.security.auth.x500.X500Principal;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 public class ExternalSaslServer implements SaslServer
 {
+    private static final Logger LOGGER = Logger.getLogger(ExternalSaslServer.class);
+
     public static final String MECHANISM = "EXTERNAL";
 
     private boolean _complete = false;
     private final Principal _externalPrincipal;
+    private boolean _useFullDN = false;
 
-    public ExternalSaslServer(Principal externalPrincipal)
+    public ExternalSaslServer(Principal externalPrincipal, boolean useFullDN)
     {
+        _useFullDN = useFullDN;
         _externalPrincipal = externalPrincipal;
     }
 
@@ -77,6 +85,83 @@ public class ExternalSaslServer implements SaslServer
 
     public Principal getAuthenticatedPrincipal()
     {
-        return _externalPrincipal;
+        if (_externalPrincipal instanceof X500Principal && !_useFullDN)
+        {
+            // Construct username as <CN>@<DC1>.<DC2>.<DC3>....<DCN>
+
+            String username;
+            String dn = ((X500Principal) _externalPrincipal).getName(X500Principal.RFC2253);
+
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Parsing username from Principal DN: " + dn);
+            }
+
+            if (dn.contains("CN="))
+            {
+                username = dn.substring(dn.indexOf("CN=") + 3, (dn.indexOf(",", dn.indexOf("CN=")) != -1) ? dn.indexOf(",", dn.indexOf("CN=")) : dn.length());
+
+                if (username.isEmpty())
+                {
+                    // CN is empty => Cannot construct username => Authentication failed => return null
+                    if(LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("CN value was empty in Principal name, unable to construct username");
+                    }
+                    return null;
+                }
+                else
+                {
+                    if (dn.contains("DC="))
+                    {
+                        int start = 0;
+                        String dc = "";
+
+                        while (dn.indexOf("DC=", start) != -1)
+                        {
+                            int dcStart = dn.indexOf("DC=", start) + 3;
+                            int dcEnd = (dn.indexOf(",", dn.indexOf("DC=", start)) != -1) ? dn.indexOf(",", dn.indexOf("DC=", start)) : dn.length();
+
+                            if (dc.isEmpty())
+                            {
+                                dc = dn.substring(dcStart, dcEnd);
+                            }
+                            else
+                            {
+                                dc = dc.concat(".").concat(dn.substring(dcStart, dcEnd));
+                            }
+
+                            start = dn.indexOf("DC=", start) + 1;
+                        }
+
+                        username = username.concat("@").concat(dc);
+                    }
+                }
+
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Constructing Principal with username: " + username);
+                }
+                return new UsernamePrincipal(username);
+            }
+            else
+            {
+                // No CN => Cannot construct username => Authentication failed => return null
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("No CN= present in DN, unable to construct username");
+                }
+                return null;
+            }
+        }
+        else
+        {
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Using external Principal: " + _externalPrincipal);
+            }
+
+            return _externalPrincipal;
+        }
     }
 }

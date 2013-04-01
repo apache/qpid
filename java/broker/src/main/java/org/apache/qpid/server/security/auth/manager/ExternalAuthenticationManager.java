@@ -31,8 +31,11 @@ public class ExternalAuthenticationManager implements AuthenticationManager
 {
     private static final String EXTERNAL = "EXTERNAL";
 
-    ExternalAuthenticationManager()
+    private boolean _useFullDN = false;
+
+    ExternalAuthenticationManager(boolean useFullDN)
     {
+        _useFullDN = useFullDN;
     }
 
     @Override
@@ -52,7 +55,7 @@ public class ExternalAuthenticationManager implements AuthenticationManager
     {
         if(EXTERNAL.equals(mechanism))
         {
-            return new ExternalSaslServer(externalPrincipal);
+            return new ExternalSaslServer(externalPrincipal, _useFullDN);
         }
         else
         {
