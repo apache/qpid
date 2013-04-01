@@ -299,6 +299,7 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
         lnk->address.setName(pn_terminus_get_address(t));
         QPID_LOG(debug, "Dynamic target name set to " << lnk->address.getName());
     }
+    lnk->verify(t);
     QPID_LOG(debug, "Attach succeeded to " << lnk->getTarget());
 }
 
@@ -316,6 +317,7 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
         lnk->address.setName(pn_terminus_get_address(s));
         QPID_LOG(debug, "Dynamic source name set to " << lnk->address.getName());
     }
+    lnk->verify(s);
     QPID_LOG(debug, "Attach succeeded from " << lnk->getSource());
 }
 
