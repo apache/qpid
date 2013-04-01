@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
@@ -216,13 +217,27 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public boolean equals(Object o)
     {
-        return (o instanceof AMQTopic)
+        if (getDestSyntax() == DestSyntax.ADDR)
+        {
+            return super.equals(o);
+        }
+        else
+        {
+            return (o instanceof AMQTopic)
                && ((AMQTopic)o).getExchangeName().equals(getExchangeName())
                && ((AMQTopic)o).getRoutingKey().equals(getRoutingKey());
+        }
     }
 
     public int hashCode()
     {
-        return getExchangeName().hashCode() + getRoutingKey().hashCode();
+        if (getDestSyntax() == DestSyntax.ADDR)
+        {
+            return super.hashCode();
+        }
+        else
+        {
+            return getExchangeName().hashCode() + getRoutingKey().hashCode();
+        }
     }
 }
