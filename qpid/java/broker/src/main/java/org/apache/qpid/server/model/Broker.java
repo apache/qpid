@@ -55,6 +55,12 @@ public interface Broker extends ConfiguredObject
     String UPDATED = "updated";
     String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
+    String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
+    String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
+    String STORE_TYPE = "storeType";
+    String STORE_VERSION = "storeVersion";
+    String STORE_PATH = "storePath";
+    String MODEL_VERSION = "modelVersion";
 
     String QUEUE_ALERT_THRESHOLD_MESSAGE_AGE = "queue.alertThresholdMessageAge";
     String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
@@ -65,21 +71,16 @@ public interface Broker extends ConfiguredObject
     String QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES = "queue.flowResumeSizeBytes";
     String QUEUE_MAXIMUM_DELIVERY_ATTEMPTS = "queue.maximumDeliveryAttempts";
     String QUEUE_DEAD_LETTER_QUEUE_ENABLED = "queue.deadLetterQueueEnabled";
-    String VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD = "virtualhost.housekeepingCheckPeriod";
 
     String CONNECTION_SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
-    String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
-    String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
-    String STORE_TYPE = "storeType";
-    String STORE_VERSION = "storeVersion";
-    String STORE_PATH = "storePath";
-    String MODEL_VERSION = "modelVersion";
 
+    String VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD            = "virtualhost.housekeepingCheckPeriod";
     String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "virtualhost.storeTransactionIdleTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "virtualhost.storeTransactionIdleTimeoutWarn";
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
+
     /*
      * A temporary attribute to pass the path to ACL file.
      * TODO: It should be a part of AuthorizationProvider.
