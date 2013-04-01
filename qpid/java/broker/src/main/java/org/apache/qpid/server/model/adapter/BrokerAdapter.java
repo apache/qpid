@@ -734,9 +734,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             }
             return null;
         }
-        else if (MANAGEMENT_VERSION.equals(name))
+        else if (MODEL_VERSION.equals(name))
         {
-            return Model.MANAGEMENT_API_MAJOR_VERSION + "." + Model.MANAGEMENT_API_MINOR_VERSION;
+            return Model.MODEL_MAJOR_VERSION + "." + Model.MODEL_MINOR_VERSION;
         }
         else if (STORE_VERSION.equals(name))
         {
