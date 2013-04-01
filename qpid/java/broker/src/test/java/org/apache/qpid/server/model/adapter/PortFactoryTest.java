@@ -151,7 +151,7 @@ public class PortFactoryTest extends QpidTestCase
         }
     }
 
-    public void testCreateAmqpPortUsingSsslSucceedsWithKeyStore()
+    public void testCreateAmqpPortUsingSslSucceedsWithKeyStore()
     {
         when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
 
