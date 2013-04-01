@@ -835,7 +835,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             return _virtualHost.getConfiguration().getHousekeepingCheckPeriod();
         }
-        else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+        else if(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
         {
             return _virtualHost.getConfiguration().getMaxDeliveryCount();
         }
