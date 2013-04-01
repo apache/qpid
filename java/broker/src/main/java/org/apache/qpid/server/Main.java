@@ -218,11 +218,9 @@ public class Main
                 {
                     options.setManagementModeHttpPort(Integer.parseInt(httpPort));
                 }
+
                 boolean quiesceVhosts = _commandLine.hasOption(OPTION_MM_QUIESCE_VHOST.getOpt());
-                if (quiesceVhosts)
-                {
-                    options.setManagementModeQuiesceVirtualHosts(true);
-                }
+                options.setManagementModeQuiesceVirtualHosts(quiesceVhosts);
             }
             setExceptionHandler();
 
