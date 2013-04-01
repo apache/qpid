@@ -244,7 +244,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
             String entryType = entry.getType();
             Map<String, Object> attributes = entry.getAttributes();
             boolean quiesce = false;
-            if (VIRTUAL_HOST_TYPE.equals(entryType))
+            if (VIRTUAL_HOST_TYPE.equals(entryType) && options.isManagementModeQuiesceVirtualHosts())
             {
                 quiesce = true;
             }
