@@ -39,7 +39,7 @@ SenderHandle::SenderHandle(boost::shared_ptr<ConnectionContext> c,
 
 void SenderHandle::send(const Message& message, bool sync)
 {
-    connection->send(sender, message, sync);
+    connection->send(session, sender, message, sync);
 }
 
 void SenderHandle::close()
