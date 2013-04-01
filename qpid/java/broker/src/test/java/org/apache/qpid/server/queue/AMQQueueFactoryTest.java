@@ -58,8 +58,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
         Broker broker = BrokerTestHelper.createBrokerMock();
         if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
         {
-            when(broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
-            when(broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
+            when(broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
+            when(broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
         }
 
         _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, broker));
