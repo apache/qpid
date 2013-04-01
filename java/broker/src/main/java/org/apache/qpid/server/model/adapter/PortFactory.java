@@ -113,7 +113,7 @@ public class PortFactory
 
             if(useClientAuth && !port.getTransports().contains(Transport.SSL))
             {
-                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesnt use SSL transport.");
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
             }
         }
         else
@@ -135,7 +135,7 @@ public class PortFactory
                     Collection<Protocol> portProtocols = existingPort.getProtocols();
                     if (portProtocols != null && portProtocols.contains(protocol))
                     {
-                        throw new IllegalConfigurationException("Port for protocol " + protocol + " already exist. Only one management port per protocol can be created");
+                        throw new IllegalConfigurationException("Port for protocol " + protocol + " already exists. Only one management port per protocol can be created.");
                     }
                 }
             }
@@ -148,7 +148,7 @@ public class PortFactory
         {
             if(broker.getKeyStores().isEmpty())
             {
-                throw new IllegalConfigurationException("Cant create port which requires SSL as the broker has no keystore configured.");
+                throw new IllegalConfigurationException("Can't create port which requires SSL as the broker has no keystore configured.");
             }
         }
 
