@@ -108,13 +108,12 @@ public class PortFactory
             boolean useClientAuth = (Boolean) port.getAttribute(Port.NEED_CLIENT_AUTH) || (Boolean) port.getAttribute(Port.WANT_CLIENT_AUTH);
             if(useClientAuth && broker.getTrustStores().isEmpty())
             {
-                throw new IllegalConfigurationException("Cant create port which requests SSL client certificates as the broker has no trust/peer stores configured.");
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates as the broker has no trust/peer stores configured.");
             }
 
-            boolean doesntUseSSL = port.getTransports().isEmpty() || !port.getTransports().contains(Transport.SSL);
-            if(useClientAuth && doesntUseSSL)
+            if(useClientAuth && !port.getTransports().contains(Transport.SSL))
             {
-                throw new IllegalConfigurationException("Cant create port which requests SSL client certificates but doesnt use SSL transport.");
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesnt use SSL transport.");
             }
         }
         else
