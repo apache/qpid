@@ -90,6 +90,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
+        authoriseSetDesiredState(currentState, desiredState);
         if (_taskExecutor.isTaskExecutorThread())
         {
             if (setState(currentState, desiredState))
@@ -224,6 +225,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
+        authoriseSetAttribute(name, expected, desired);
         if (_taskExecutor.isTaskExecutorThread())
         {
             if (changeAttribute(name, expected, desired))
@@ -302,6 +304,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
+        authoriseCreateChild(childClass, attributes, otherParents);
         if (_taskExecutor.isTaskExecutorThread())
         {
             C child = addChild(childClass, attributes, otherParents);
@@ -331,6 +334,7 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
+        authoriseSetAttributes(attributes);
         if (getTaskExecutor().isTaskExecutorThread())
         {
             changeAttributes(attributes);
@@ -356,5 +360,25 @@ abstract class AbstractAdapter implements ConfiguredObject
                 }
             }
         }
+    }
+
+    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    {
+        // allowed by default
+    }
+
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        // allowed by default
+    }
+
+    protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents) throws AccessControlException
+    {
+        // allowed by default
+    }
+
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        // allowed by default
     }
 }

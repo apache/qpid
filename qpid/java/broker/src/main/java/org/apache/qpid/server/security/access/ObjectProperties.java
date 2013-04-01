@@ -350,4 +350,9 @@ public class ObjectProperties
     {
         return _properties.toString();
     }
+
+    public boolean isEmpty()
+    {
+        return _properties.isEmpty();
+    }
 }
