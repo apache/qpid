@@ -28,26 +28,36 @@ swig_link_libraries(cqmf2_python qmf2 ${PYTHON_LIBRARIES})
 
 set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${PYTHON_INCLUDE_PATH} -I${qpid-cpp_SOURCE_DIR}/include")
 
+# Move source into binary dir so compiled .pyc,pyo files will be in binary dir.
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/qmf2.py"
+  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+# Python compile the modules
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile cqmf2.py
+                              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile cqmf2.py
+                              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile qmf2.py
+                              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile qmf2.py
+                              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
 ##------------------------------------
 ## Install the complete Python binding
 ##------------------------------------
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqmf2.py
-              ${CMAKE_CURRENT_SOURCE_DIR}/qmf2.py
-        DESTINATION ${PYTHON_SITEARCH_PACKAGES}
-        COMPONENT ${QPID_COMPONENT_CLIENT}
-        )
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/cqmf2.py
+  ${CMAKE_CURRENT_BINARY_DIR}/cqmf2.pyc
+  ${CMAKE_CURRENT_BINARY_DIR}/cqmf2.pyo
+  ${CMAKE_CURRENT_SOURCE_DIR}/qmf2.py
+  ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pyc
+  ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pyo
+  DESTINATION ${PYTHON_SITEARCH_PACKAGES}
+  COMPONENT ${QPID_COMPONENT_CLIENT}
+  )
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_cqmf2_python.so
         RENAME _cqmf2.so
         DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
-# Python compile the installed modules
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile cqmf2.py
-                              WORKING_DIRECTORY ${PYTHON_SITEARCH_PACKAGES})")
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile cqmf2.py
-                              WORKING_DIRECTORY ${PYTHON_SITEARCH_PACKAGES})")
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile qmf2.py
-                              WORKING_DIRECTORY ${PYTHON_SITEARCH_PACKAGES})")
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile qmf2.py
-                              WORKING_DIRECTORY ${PYTHON_SITEARCH_PACKAGES})")
 
