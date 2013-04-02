@@ -33,9 +33,8 @@ set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_F
 ##------------------------------------
 
 # Copy py source to binary dir so pyc/pyo will be generated in binary dir.
-file(COPY
-  "${CMAKE_CURRENT_SOURCE_DIR}/qmf.py"
-  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+# NOTE: not using the file(COPY) command as it is not available in cmake 2.6
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/qmf.py" "${CMAKE_CURRENT_BINARY_DIR}" COPYONLY)
 
 # Python compile the modules
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile qmfengine.py
