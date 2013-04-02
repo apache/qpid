@@ -166,23 +166,28 @@ For example:
 
 3. Building from a Source Distribution
 ======================================
-In the distribution directory, build and install with:
+In the cpp distribution directory, build the code with:
 
  # mkdir BLD       # This is just a suggested name for the build directory
  # cd BLD
  # cmake ..        # ".." is the path to the distribution directory
  # make all
- # make install
 
-To build and test everything:
+To run the tests:
 
- # make
  # make test
 
-This builds in the source tree. You can have multiple builds in the
-same working copy with different configuration. For example you can do
-the following to build twice, once for debug, the other with
-optimization:
+To install:
+
+ # make install
+
+When installing in Unix system directories (/usr/lib, /usr/local/lib) also do:
+
+ # ldconfig
+
+You can have multiple builds in the same working copy with different
+configuration. For example you can do the following to build twice, once for
+debug, the other with optimization:
 
  # mkdir BLD-dbg BLD-opt
  # (cd BLD-dbg; cmake -DCMAKE_BUILD_TYPE=Debug .. && make )
@@ -193,6 +198,9 @@ Debug, Release, MinSizeRel, DebWithRelInfo: They each correspond to a different
 set of build flags for respectively debug; release; minimum size release; release
 with debug information.
 
+To see and edit all the available cmake options:
+
+ # cmake-gui ..    # ".." is the path to the distribution directory
 
 4. Building a Repository Working Copy
 =====================================
