@@ -21,16 +21,20 @@
 package org.apache.qpid.systest.rest;
 
 import java.net.URLDecoder;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -159,8 +163,7 @@ public class PortRestTest extends QpidRestTestCase
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("Port cannot be updated in non management mode", 409, responseCode);
 
-        stopBroker();
-        startBroker(DEFAULT_PORT, true);
+        restartBrokerInManagementMode();
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("Port should be allwed to update in a management mode", 200, responseCode);
@@ -192,5 +195,134 @@ public class PortRestTest extends QpidRestTestCase
 
         port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT);
         assertEquals("Port has been changed", portValue, port.get(Port.PORT));
+    }
+
+    public void testUpdatePortTransportFromTCPToSSLWhenKeystoreIsConfigured() throws Exception
+    {
+        restartBrokerInManagementMode();
+
+        String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Transport has not been changed to SSL " , 200, responseCode);
+
+        restartBroker();
+
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+
+        @SuppressWarnings("unchecked")
+        Collection<String> transports = (Collection<String>) port.get(Port.TRANSPORTS);
+        assertEquals("Unexpected auth provider", new HashSet<String>(Arrays.asList(Transport.SSL.name())),
+                new HashSet<String>(transports));
+    }
+
+    public void testUpdateTransportFromTCPToSSLWithoutKeystoreConfiguredFails() throws Exception
+    {
+        getBrokerConfiguration().setBrokerAttribute(Broker.KEY_STORE_PATH, null);
+        getBrokerConfiguration().setSaved(false);
+        restartBrokerInManagementMode();
+
+        String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Creation of SSL port without keystore should fail", 409, responseCode);
+    }
+
+    public void testUpdateWantNeedClientAuth() throws Exception
+    {
+        String portName = TestBrokerConfiguration.ENTRY_NAME_SSL_PORT;
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.PORT, DEFAULT_SSL_PORT);
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("SSL port was not added", 201, responseCode);
+
+        restartBrokerInManagementMode();
+
+        attributes.put(Port.NEED_CLIENT_AUTH, true);
+        attributes.put(Port.WANT_CLIENT_AUTH, true);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Attributes for need/want client auth are not set", 200, responseCode);
+
+        restartBroker();
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, true, port.get(Port.NEED_CLIENT_AUTH));
+        assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, true, port.get(Port.WANT_CLIENT_AUTH));
+
+        restartBrokerInManagementMode();
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
+
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Should not be able to change transport to SSL without reseting of attributes for need/want client auth", 409, responseCode);
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
+        attributes.put(Port.NEED_CLIENT_AUTH, false);
+        attributes.put(Port.WANT_CLIENT_AUTH, false);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Should be able to change transport to TCP ", 200, responseCode);
+
+        restartBroker();
+        port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, false, port.get(Port.NEED_CLIENT_AUTH));
+        assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, false, port.get(Port.WANT_CLIENT_AUTH));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> transports = (Collection<String>) port.get(Port.TRANSPORTS);
+        assertEquals("Unexpected auth provider", new HashSet<String>(Arrays.asList(Transport.TCP.name())),
+                new HashSet<String>(transports));
+    }
+
+    public void testUpdateSettingWantNeedCertificateFailsForNonSSLPort() throws Exception
+    {
+        restartBrokerInManagementMode();
+
+        String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.NEED_CLIENT_AUTH, true);
+        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Unexpected response when trying to set 'needClientAuth' on non-SSL port", 409, responseCode);
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.WANT_CLIENT_AUTH, true);
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Unexpected response when trying to set 'wantClientAuth' on non-SSL port", 409, responseCode);
+    }
+
+    public void testUpdatePortAuthenticationProvider() throws Exception
+    {
+        restartBrokerInManagementMode();
+
+        String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, "non-existing");
+        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Unexpected response when trying to change auth provider to non-existing one", 409, responseCode);
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portName);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        assertEquals("Unexpected response when trying to change auth provider to existing one", 200, responseCode);
+
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        assertEquals("Unexpected auth provider", ANONYMOUS_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
     }
 }
