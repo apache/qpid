@@ -171,7 +171,7 @@ define(["dojo/_base/xhr",
                  widgets[name] = widget;
                  widget.initialValue = widget.value;
                  layout.addChild(widget);
-                 if (attributeWidgetFactory.hasOwnProperty("requiredFor"))
+                 if (attributeWidgetFactory.hasOwnProperty("requiredFor") && !data[name])
                  {
                    requiredFor[attributeWidgetFactory.requiredFor] = widget;
                  }

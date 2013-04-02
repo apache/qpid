@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 public class PortAdapter extends AbstractAdapter implements Port
@@ -362,7 +363,67 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
             throw new IllegalStateException("Cannot change attributes for an active port outside of Management Mode");
         }
-        super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        Map<String, Object> converted = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+
+        Map<String, Object> merged =  new HashMap<String, Object>(getDefaultAttributes());
+        merged.putAll(getActualAttributes());
+        merged.putAll(converted);
+
+        @SuppressWarnings("unchecked")
+        Collection<Transport> transports = (Collection<Transport>)merged.get(TRANSPORTS);
+        @SuppressWarnings("unchecked")
+        Collection<Protocol> protocols = (Collection<Protocol>)merged.get(PROTOCOLS);
+        Boolean needClientCertificate = (Boolean)merged.get(NEED_CLIENT_AUTH);
+        Boolean wantClientCertificate = (Boolean)merged.get(WANT_CLIENT_AUTH);
+        boolean requiresCertificate = (needClientCertificate != null && needClientCertificate.booleanValue())
+                || (wantClientCertificate != null && wantClientCertificate.booleanValue());
+
+        if (transports != null && transports.contains(Transport.SSL))
+        {
+            if (_broker.getKeyStores().isEmpty())
+            {
+                throw new IllegalConfigurationException("Can't create port which requires SSL as the broker has no keystore configured.");
+            }
+
+            if (_broker.getTrustStores().isEmpty() && requiresCertificate)
+            {
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates as the broker has no trust/peer stores configured.");
+            }
+        }
+        else
+        {
+            if (requiresCertificate)
+            {
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
+            }
+        }
+
+        if (protocols != null && protocols.contains(Protocol.HTTPS) && _broker.getKeyStores().isEmpty())
+        {
+            throw new IllegalConfigurationException("Can't create port which requires SSL as the broker has no keystore configured.");
+        }
+
+        String authenticationProviderName = (String)merged.get(AUTHENTICATION_PROVIDER);
+        if (authenticationProviderName != null)
+        {
+            Collection<AuthenticationProvider> providers = _broker.getAuthenticationProviders();
+            AuthenticationProvider provider = null;
+            for (AuthenticationProvider p : providers)
+            {
+                if (p.getName().equals(authenticationProviderName))
+                {
+                    provider = p;
+                    break;
+                }
+            }
+
+            if (provider == null)
+            {
+                throw new IllegalConfigurationException("Cannot find authentication provider with name '"
+                        + authenticationProviderName + "'");
+            }
+        }
+        super.changeAttributes(converted);
     }
 
     @Override
