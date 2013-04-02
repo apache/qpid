@@ -21,6 +21,7 @@
 
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/AclModule.h"
 #include "qpid/broker/QueueCursor.h"
 #include "qpid/broker/QueueDepth.h"
 #include "qpid/broker/QueueSettings.h"
@@ -1170,6 +1171,9 @@ void tryAutoDeleteImpl(Broker& broker, Queue::shared_ptr queue, const std::strin
 {
     if (broker.getQueues().destroyIf(queue->getName(),
                                      boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue))) {
+        if (broker.getAcl())
+            broker.getAcl()->recordDestroyQueue(queue->getName());
+
         QPID_LOG_CAT(debug, model, "Auto-delete queue: " << queue->getName()
             << " user:" << userId
             << " rhost:" << connectionId );
