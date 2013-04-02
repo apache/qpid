@@ -181,9 +181,9 @@ To install:
 
  # make install
 
-When installing in Unix system directories (/usr/lib, /usr/local/lib) also do:
+To uninstall:
 
- # ldconfig
+ # make uninstall
 
 You can have multiple builds in the same working copy with different
 configuration. For example you can do the following to build twice, once for
