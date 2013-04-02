@@ -29,8 +29,8 @@ swig_link_libraries(cqmf2_python qmf2 ${PYTHON_LIBRARIES})
 set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${PYTHON_INCLUDE_PATH} -I${qpid-cpp_SOURCE_DIR}/include")
 
 # Move source into binary dir so compiled .pyc,pyo files will be in binary dir.
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/qmf2.py"
-  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+# NOTE: not using the file(COPY) command as it is not available in cmake 2.6
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/qmf2.py" "${CMAKE_CURRENT_BINARY_DIR}" COPYONLY)
 
 # Python compile the modules
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile cqmf2.py
