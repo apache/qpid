@@ -1182,9 +1182,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             String passwordAttribute, String aliasAttribute)
     {
         String keyStoreFile = (String) convertedAttributes.get(pathAttribute);
-        if (keyStoreFile != null)
+        String password = (String) convertedAttributes.get(passwordAttribute);
+        String alias = aliasAttribute!= null? (String) convertedAttributes.get(aliasAttribute) : null;
+        if (keyStoreFile != null || password != null || alias != null)
         {
-            String password = (String) convertedAttributes.get(passwordAttribute);
+            if (keyStoreFile == null)
+            {
+                keyStoreFile  = (String) getActualAttributes().get(pathAttribute);
+            }
             if (password == null)
             {
                 password = (String) getActualAttributes().get(passwordAttribute);
@@ -1200,7 +1205,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             }
             if (aliasAttribute != null)
             {
-                String alias = (String) convertedAttributes.get(aliasAttribute);
+                if (alias == null)
+                {
+                    alias  = (String) getActualAttributes().get(aliasAttribute);
+                }
                 if (alias != null)
                 {
                     Certificate cert = null;

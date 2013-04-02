@@ -141,7 +141,9 @@ define(["dojo/_base/xhr",
                              required: false,
                              label: "Keystore password:",
                              invalidMessage: "Missed keystore password",
-                             name: "keyStorePassword"});
+                             name: "keyStorePassword",
+                             placeholder: brokerData["keyStorePassword"] ? brokerData["keyStorePassword"] : ""
+                             });
                        }
                }, {
                        name: "trustStorePath",
@@ -161,7 +163,9 @@ define(["dojo/_base/xhr",
                            required: false,
                            label: "Truststore password:",
                            invalidMessage: "Missed trustore password",
-                           name: "trustStorePassword"});
+                           name: "trustStorePassword",
+                           placeholder: brokerData["trustStorePassword"] ? brokerData["trustStorePassword"] : ""
+                           });
                        }
                }, {
                        name: "peerStorePath",
@@ -180,7 +184,9 @@ define(["dojo/_base/xhr",
                            required: false,
                            label: "Peerstore password:",
                            invalidMessage: "Missed peerstore password",
-                           name: "peerStorePassword"});
+                           name: "peerStorePassword",
+                           placeholder: brokerData["peerStorePassword"] ? brokerData["peerStorePassword"] : ""
+                         });
                        }
                }, {
                        name: "queue.alertThresholdQueueDepthMessages",

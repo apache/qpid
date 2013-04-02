@@ -381,4 +381,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     {
         // allowed by default
     }
+
+    protected Map<String, Object> getDefaultAttributes()
+    {
+        return _defaultAttributes;
+    }
 }

@@ -21,6 +21,7 @@
 <div class="dijitHidden">
     <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'Port'" id="addPort">
         <form id="formAddPort" method="post" dojoType="dijit.form.Form">
+            <div class="dijitDialogPaneContentArea">
             <div id="formAddPort:fields">
                 <input type="text" required="true" name="name" id="formAddPort.name" placeholder="Name"
                     data-dojo-props="label: 'Name*:'" dojoType="dijit.form.ValidationTextBox"
@@ -53,7 +54,7 @@
             <div id="formAddPort:fieldsAMQP">
                 <input id="formAddPort.bindingAddress" type="text" name="bindingAddress" placeholder="*"
                    dojoType="dijit.form.TextBox" data-dojo-props="label: 'Binding address:'"/>
-                <input id="formAddPort.protocolsDefault" type="checkbox" name="protocolsDefault" checked="checked"
+                <input id="formAddPort.protocolsDefault" type="checkbox" checked="checked"
                    dojoType="dijit.form.CheckBox" data-dojo-props="label: 'Support broker default AMQP versions:'"/>
                 <select id="formAddPort.protocolsAMQP" name="protocols" data-dojo-type="dijit.form.MultiSelect" multiple="true"
                     data-dojo-props="name: 'protocols', value: '', placeHolder: 'Select AMQP versions', label: 'AMQP versions:'"
@@ -80,8 +81,11 @@
                 </select>
             </div>
             <input type="hidden" id="formAddPort.id" name="id"/>
+            </div>
+            <div class="dijitDialogPaneActionBar">
             <!-- submit buttons -->
             <input type="submit" value="Save Port" label="Save Port" dojoType="dijit.form.Button" />
+            </div>
         </form>
     </div>
 </div>
