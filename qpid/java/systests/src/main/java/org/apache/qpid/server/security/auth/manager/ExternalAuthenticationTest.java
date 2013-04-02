@@ -21,13 +21,14 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
-import static org.apache.qpid.test.utils.TestSSLConstants.UNTRUSTED_KEYSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
+import static org.apache.qpid.test.utils.TestSSLConstants.UNTRUSTED_KEYSTORE;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.Connection;
@@ -35,11 +36,13 @@ import javax.jms.JMSException;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -191,6 +194,75 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         {
             // expected
         }
+    }
+
+    /**
+     * Tests the creation of usernames when EXTERNAL authentication is used.
+     * The username should be created as CN@DC1.DC2...DCn by default.
+     */
+    public void testExternalAuthenticationManagerUsernameAsCN() throws Exception
+    {
+        JMXTestUtils jmxUtils = new JMXTestUtils(this);
+        jmxUtils.setUp();
+
+        setCommonBrokerSSLProperties(true);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+
+        super.setUp();
+
+        setClientKeystoreProperties();
+        setClientTrustoreProperties();
+
+        try
+        {
+            getExternalSSLConnection(false);
+        }
+        catch (JMSException e)
+        {
+            fail("Should be able to create a connection to the SSL port: " + e.getMessage());
+        }
+
+        // Getting the used username using JMX
+        jmxUtils.open();
+        List<ManagedConnection> connections = jmxUtils.getManagedConnections("test");
+        assertNotNull("Connections are null", connections);
+        assertEquals("Unexpected number of connections", 1, connections.size());
+        assertEquals("Wrong authorized ID", "app2@acme.org", connections.get(0).getAuthorizedId());
+    }
+
+    /**
+     * Tests the creation of usernames when EXTERNAL authentication is used.
+     * The username should be created as full DN when the useFullDN option is used.
+     */
+    public void testExternalAuthenticationManagerUsernameAsDN() throws Exception
+    {
+        JMXTestUtils jmxUtils = new JMXTestUtils(this);
+        jmxUtils.setUp();
+
+        setCommonBrokerSSLProperties(true);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN, "true");
+
+        super.setUp();
+
+        setClientKeystoreProperties();
+        setClientTrustoreProperties();
+
+        try
+        {
+            getExternalSSLConnection(false);
+        }
+        catch (JMSException e)
+        {
+            fail("Should be able to create a connection to the SSL port: " + e.getMessage());
+        }
+
+        // Getting the used username using JMX
+        jmxUtils.open();
+        List<ManagedConnection> connections = jmxUtils.getManagedConnections("test");
+        assertNotNull("Connections are null", connections);
+        assertEquals("Unexpected number of connections", 1, connections.size());
+        assertEquals("Wrong authorized ID", "CN=app2@acme.org,OU=art,O=acme,L=Toronto,ST=ON,C=CA", connections.get(0).getAuthorizedId());
     }
 
     private Connection getExternalSSLConnection(boolean includeUserNameAndPassword) throws Exception
