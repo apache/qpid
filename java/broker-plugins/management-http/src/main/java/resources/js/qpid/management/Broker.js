@@ -125,15 +125,6 @@ define(["dojo/_base/xhr",
                              name: "keyStorePath"});
                        }
                }, {
-                       name: "keyStoreCertAlias",
-                       createWidget: function(brokerData) {
-                           return new dijit.form.ValidationTextBox({
-                             required: false,
-                             value: brokerData.keyStoreCertAlias,
-                             label: "Keystore certificate alias:",
-                             name: "keyStoreCertAlias"});
-                       }
-               }, {
                        name: "keyStorePassword",
                        requiredFor: "keyStorePath",
                        createWidget: function(brokerData) {
@@ -144,6 +135,15 @@ define(["dojo/_base/xhr",
                              name: "keyStorePassword",
                              placeholder: brokerData["keyStorePassword"] ? brokerData["keyStorePassword"] : ""
                              });
+                       }
+               }, {
+                       name: "keyStoreCertAlias",
+                       createWidget: function(brokerData) {
+                           return new dijit.form.ValidationTextBox({
+                             required: false,
+                             value: brokerData.keyStoreCertAlias,
+                             label: "Keystore certificate alias:",
+                             name: "keyStoreCertAlias"});
                        }
                }, {
                        name: "trustStorePath",
@@ -189,7 +189,32 @@ define(["dojo/_base/xhr",
                          });
                        }
                }, {
+                       name: "statisticsReportingPeriod",
+                       createWidget: function(brokerData) {
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regexp: "[0-9]+",
+                           invalidMessage: "Invalid value",
+                           required: false,
+                           value: brokerData.statisticsReportingPeriod,
+                           placeholder: "Time in ms",
+                           label: "Statistics reporting period (ms):",
+                           name: "statisticsReportingPeriod"
+                         });
+                       }
+               }, {
+                       name: "statisticsReportingResetEnabled",
+                       createWidget: function(brokerData)
+                       {
+                         return new dijit.form.CheckBox({
+                           required: false, checked: brokerData.statisticsReportingResetEnabled, value: "true",
+                           label: "Statistics reporting period enabled:",
+                           name: "statisticsReportingResetEnabled"
+                         });
+                       }
+               }, {
                        name: "queue.alertThresholdQueueDepthMessages",
+                       groupName: "Global Queue Defaults",
                        createWidget: function(brokerData) {
                          return new dijit.form.ValidationTextBox({
                            trim: "true",
@@ -197,8 +222,8 @@ define(["dojo/_base/xhr",
                            invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData["queue.alertThresholdQueueDepthMessages"],
-                           placeholder: "Count of messages",
-                           label: "Queue depth messages alert threshold:",
+                           placeholder: "Number of messages",
+                           label: "Depth alert threshold (messages):",
                            name: "queue.alertThresholdQueueDepthMessages"
                          });
                        }
@@ -212,7 +237,7 @@ define(["dojo/_base/xhr",
                          required: false,
                          value: brokerData["queue.alertThresholdQueueDepthBytes"],
                          placeholder: "Number of bytes",
-                         label: "Queue depth bytes alert threshold:",
+                         label: "Depth alert threshold (bytes):",
                          name: "queue.alertThresholdQueueDepthBytes"
                        });
                      }
@@ -226,7 +251,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["queue.alertThresholdMessageAge"],
                            placeholder: "Time in ms",
-                           label: "Queue message age alert threshold:",
+                           label: "Message age alert threshold (ms):",
                            name: "queue.alertThresholdMessageAge"
                          });
                        }
@@ -240,7 +265,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["queue.alertThresholdMessageSize"],
                            placeholder: "Size in bytes",
-                           label: "Queue message size alert threshold:",
+                           label: "Message size alert threshold (bytes):",
                            name: "queue.alertThresholdMessageSize"
                          });
                        }
@@ -254,7 +279,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["queue.alertRepeatGap"],
                            placeholder: "Time in ms",
-                           label: "Queue alert repeat gap:",
+                           label: "Alert repeat gap (ms):",
                            name: "queue.alertRepeatGap"
                          });
                        }
@@ -267,8 +292,8 @@ define(["dojo/_base/xhr",
                            invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData["queue.maximumDeliveryAttempts"],
-                           placeholder: "Count of messages",
-                           label: "Queue maximum delivery retries:",
+                           placeholder: "Number of messages",
+                           label: "Maximum delivery retries (messages):",
                            name: "queue.maximumDeliveryAttempts"
                          });
                        }
@@ -293,7 +318,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["queue.flowControlSizeBytes"],
                            placeholder: "Size in bytes",
-                           label: "Queue flow capacity:",
+                           label: "Flow control threshold (bytes):",
                            name: "queue.flowControlSizeBytes",
                          });
                        }
@@ -307,12 +332,13 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["queue.flowResumeSizeBytes"],
                            placeholder: "Size in bytes",
-                           label: "Queue flow resume capacity:",
+                           label: "Flow resume threshold (bytes):",
                            name: "queue.flowResumeSizeBytes",
                          });
                        }
                }, {
                        name: "connection.sessionCountLimit",
+                       groupName: "Global Connection Defaults",
                        createWidget: function(brokerData)
                        {
                          return new dijit.form.NumberSpinner({
@@ -321,7 +347,7 @@ define(["dojo/_base/xhr",
                            value: brokerData["connection.sessionCountLimit"],
                            smallDelta: 1,
                            constraints: {min:1,max:65535,places:0, pattern: "#####"},
-                           label: "Connection session limit:",
+                           label: "Maximum number of sessions:",
                            name: "connection.sessionCountLimit"
                          });
                        }
@@ -335,36 +361,13 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["connection.heartBeatDelay"],
                            placeholder: "Time in ms",
-                           label: "Heart beat delay:",
+                           label: "Heart beat delay (ms):",
                            name: "connection.heartBeatDelay"
                          });
                        }
                }, {
-                       name: "statisticsReportingPeriod",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData.statisticsReportingPeriod,
-                           placeholder: "Time in ms",
-                           label: "Statistics reporting period:",
-                           name: "statisticsReportingPeriod"
-                         });
-                       }
-               }, {
-                       name: "statisticsReportingResetEnabled",
-                       createWidget: function(brokerData)
-                       {
-                         return new dijit.form.CheckBox({
-                           required: false, checked: brokerData.statisticsReportingResetEnabled, value: "true",
-                           label: "Statistics reporting period enabled:",
-                           name: "statisticsReportingResetEnabled"
-                         });
-                       }
-               }, {
                        name: "virtualhost.housekeepingCheckPeriod",
+                       groupName: "Global Virtual Host defaults",
                        createWidget: function(brokerData) {
                          return new dijit.form.ValidationTextBox({
                            trim: "true",
@@ -373,7 +376,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["virtualhost.housekeepingCheckPeriod"],
                            placeholder: "Time in ms",
-                           label: "House keeping check period:",
+                           label: "House keeping check period (ms):",
                            name: "virtualhost.housekeepingCheckPeriod"
                          });
                        }
@@ -387,7 +390,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["virtualhost.storeTransactionIdleTimeoutClose"],
                            placeholder: "Time in ms",
-                           label: "Idle store transaction close timeout:",
+                           label: "Idle store transaction close timeout (ms):",
                            name: "virtualhost.storeTransactionIdleTimeoutClose"
                          });
                        }
@@ -401,7 +404,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["virtualhost.storeTransactionIdleTimeoutWarn"],
                            placeholder: "Time in ms",
-                           label: "Idle store transaction warn timeout:",
+                           label: "Idle store transaction warn timeout (ms):",
                            name: "virtualhost.storeTransactionIdleTimeoutWarn"
                          });
                        }
@@ -415,7 +418,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["virtualhost.storeTransactionOpenTimeoutClose"],
                            placeholder: "Time in ms",
-                           label: "Open store transaction close timeout:",
+                           label: "Open store transaction close timeout (ms):",
                            name: "virtualhost.storeTransactionOpenTimeoutClose"
                          });
                        }
@@ -429,7 +432,7 @@ define(["dojo/_base/xhr",
                            required: false,
                            value: brokerData["virtualhost.storeTransactionOpenTimeoutWarn"],
                            placeholder: "Time in ms",
-                           label: "Open store transaction warn timeout:",
+                           label: "Open store transaction warn timeout (ms):",
                            name: "virtualhost.storeTransactionOpenTimeoutWarn"
                          });
                        }
@@ -530,7 +533,6 @@ define(["dojo/_base/xhr",
 
                              util.flattenStatistics( that.brokerData);
 
-                             that.showReadOnlyAttributes();
                              that.updateHeader();
 
                              var gridProperties = {
@@ -655,6 +657,7 @@ define(["dojo/_base/xhr",
 
            BrokerUpdater.prototype.updateHeader = function()
            {
+               showReadOnlyAttributes();
                var brokerData = this.brokerData;
                for(var i in this.attributes)
                {
@@ -715,7 +718,7 @@ define(["dojo/_base/xhr",
                dojo.byId("brokerAttribute.operatingSystem").innerHTML = brokerData.operatingSystem;
                dojo.byId("brokerAttribute.platform").innerHTML = brokerData.platform;
                dojo.byId("brokerAttribute.productVersion").innerHTML = brokerData.productVersion;
-               dojo.byId("brokerAttribute.managementVersion").innerHTML = brokerData.managementVersion;
+               dojo.byId("brokerAttribute.modelVersion").innerHTML = brokerData.managementVersion;
                dojo.byId("brokerAttribute.storeType").innerHTML = brokerData.storeType;
                dojo.byId("brokerAttribute.storeVersion").innerHTML = brokerData.storeVersion;
                dojo.byId("brokerAttribute.storePath").innerHTML = brokerData.storePath;

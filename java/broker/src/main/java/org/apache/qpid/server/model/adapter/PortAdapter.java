@@ -73,11 +73,6 @@ public class PortAdapter extends AbstractAdapter implements Port
     private AuthenticationProvider _authenticationProvider;
     private AtomicReference<State> _state;
 
-    /*
-     * TODO register PortAceptor as a listener. For supporting multiple
-     * protocols on the same port we need to introduce a special entity like
-     * PortAceptor which will be responsible for port binding/unbinding
-     */
     public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults, TaskExecutor taskExecutor)
     {
         super(id, defaults, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
