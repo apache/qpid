@@ -25,7 +25,7 @@
                 <tr>
                     <td valign="top"><strong>Queue Name*: </strong></td>
                     <td><input type="text" required="true" name="name" id="formAddQueue.name" placeholder="Queue Name"
-                        dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" /></td>
+                        dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"/></td>
                 </tr>
                 <tr>
                     <td valign="top"><strong>Durable? </strong></td>
