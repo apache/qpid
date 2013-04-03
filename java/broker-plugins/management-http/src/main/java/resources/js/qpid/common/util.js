@@ -26,6 +26,7 @@ define(["dojo/_base/xhr",
         "dojo/dom-construct",
         "dojo/dom-geometry",
         "dojo/window",
+        "dijit/TitlePane",
         "dijit/Dialog",
         "dijit/form/Form",
         "dijit/form/Button",
@@ -163,6 +164,7 @@ define(["dojo/_base/xhr",
 
               var widgets = {};
               var requiredFor ={};
+              var groups = {};
               for(var i in attributeWidgetFactories)
               {
                  var attributeWidgetFactory = attributeWidgetFactories[i];
@@ -170,7 +172,37 @@ define(["dojo/_base/xhr",
                  var name = attributeWidgetFactory.name ? attributeWidgetFactory.name : widget.name;
                  widgets[name] = widget;
                  widget.initialValue = widget.value;
-                 layout.addChild(widget);
+                 var dotPos = name.indexOf(".");
+                 if (dotPos == -1)
+                 {
+                   layout.addChild(widget);
+                 }
+                 else
+                 {
+                   var groupName = name.substring(0, dotPos);
+                   var groupFieldContainer = null;
+                   if (groups.hasOwnProperty(groupName))
+                   {
+                       groupFieldContainer = groups[groupName];
+                   }
+                   else
+                   {
+                     groupFieldContainer = new dojox.layout.TableContainer({
+                           cols: 1,
+                           "labelWidth": "290",
+                           showLabels: true,
+                           orientation: "horiz",
+                           customClass: "formLabel"
+                      });
+                     groups[groupName] = groupFieldContainer;
+                     var groupTitle = attributeWidgetFactory.groupName ? attributeWidgetFactory.groupName :
+                                         groupName.charAt(0).toUpperCase() + groupName.slice(1);
+                     var panel = new dijit.TitlePane({title: groupTitle, toggleable: false, content: groupFieldContainer.domNode});
+                     dialogContentArea.appendChild(dom.create("br"));
+                     dialogContentArea.appendChild(panel.domNode);
+                   }
+                   groupFieldContainer.addChild(widget);
+                 }
                  if (attributeWidgetFactory.hasOwnProperty("requiredFor") && !data[name])
                  {
                    requiredFor[attributeWidgetFactory.requiredFor] = widget;
@@ -249,7 +281,7 @@ define(["dojo/_base/xhr",
              form.connectChildren(true);
              setAttributesDialog.startup();
              setAttributesDialog.on("show", function(){
-               var data = geometry.position(layout.domNode);
+               var data = geometry.position(dialogContentArea);
                var maxHeight = win.getBox().h * 0.6;
                if (data.h > maxHeight)
                {

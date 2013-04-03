@@ -135,7 +135,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
     private static final String DEFAULT_KEY_STORE_NAME = "defaultKeyStore";
     private static final String DEFAULT_TRUST_STORE_NAME = "defaultTrustStore";
-    private static final String DEFAULT_GROUP_PROFIDER_NAME = "defaultGroupProvider";
+    private static final String DEFAULT_GROUP_PROVIDER_NAME = "defaultGroupProvider";
     private static final String DEFAULT_PEER_STORE_NAME = "defaultPeerStore";
 
     private static final String DUMMY_PASSWORD_MASK = "********";
@@ -238,13 +238,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             GroupManager groupManager = new FileGroupManager(groupFile);
             UUID groupProviderId = UUIDGenerator.generateBrokerChildUUID(GroupProvider.class.getSimpleName(),
-                    DEFAULT_GROUP_PROFIDER_NAME);
+                    DEFAULT_GROUP_PROVIDER_NAME);
             GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(groupProviderId, groupManager, this);
-            _groupProviders.put(DEFAULT_GROUP_PROFIDER_NAME, groupProviderAdapter);
+            _groupProviders.put(DEFAULT_GROUP_PROVIDER_NAME, groupProviderAdapter);
         }
         else
         {
-            _groupProviders.remove(DEFAULT_GROUP_PROFIDER_NAME);
+            _groupProviders.remove(DEFAULT_GROUP_PROVIDER_NAME);
         }
     }
 
@@ -1097,12 +1097,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 }
             }
         }
-
-        // the calls below are not thread safe but they should be fine in a management mode
-        // as there will be no user connected
-        // The new keystore/trustore/peerstore will be only used with new ports
-        // At the moment we cannot restart ports with new keystore/trustore/peerstore
-
         if (keyStoreChanged)
         {
             createKeyStore();
@@ -1155,16 +1149,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             }
         }
         Long queueFlowControlSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_SIZE_BYTES);
-        if (queueFlowControlSize != null && queueFlowControlSize > 0)
+        Long queueFlowControlResumeSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
+        if (queueFlowControlSize != null || queueFlowControlResumeSize != null )
         {
-            Long queueFlowControlResumeSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
+            if (queueFlowControlSize == null)
+            {
+                queueFlowControlSize = (Long)getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES);
+            }
             if (queueFlowControlResumeSize == null)
             {
-                throw new IllegalConfigurationException("Flow control resume size attribute is not specified with flow control size attribute");
+                queueFlowControlResumeSize = (Long)getAttribute(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
             }
-            if (queueFlowControlResumeSize >= queueFlowControlSize)
+            if (queueFlowControlResumeSize > queueFlowControlSize)
             {
-                throw new IllegalConfigurationException("Flow control resume size should be less then flow control size");
+                throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
             }
         }
         for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)

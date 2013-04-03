@@ -57,7 +57,6 @@ import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 import org.apache.qpid.server.security.SecurityManager;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
@@ -252,7 +251,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public SubjectCreator getSubjectCreator()
     {
-        return new SubjectCreator(_authManager, new GroupPrincipalAccessor(_broker.getGroupProviders()));
+        return new SubjectCreator(_authManager, _broker.getGroupProviders());
     }
 
     @Override
