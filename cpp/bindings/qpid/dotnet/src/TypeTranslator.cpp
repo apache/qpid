@@ -65,7 +65,7 @@ namespace Messaging {
                 std::string entryName = QpidMarshal::ToNative(kvp.Key);
 
                 // Add inner map to outer map
-                qpidMap.insert(std::make_pair<std::string, ::qpid::types::Variant>(entryName, *newVariantp));
+                qpidMap.insert(std::make_pair(entryName, *newVariantp));
             }
             else if (QpidTypeCheck::ObjectIsList(kvp.Value))
             {
@@ -85,7 +85,7 @@ namespace Messaging {
                 std::string entryName = QpidMarshal::ToNative(kvp.Key);
 
                 // Add inner list to outer map
-                qpidMap.insert(std::make_pair<std::string, ::qpid::types::Variant>(entryName, newVariant));
+                qpidMap.insert(std::make_pair(entryName, newVariant));
             }
             else
             {
@@ -96,7 +96,7 @@ namespace Messaging {
                     ManagedToNativeObject(kvp.Value, entryValue);
                 }
                 std::string entryName = QpidMarshal::ToNative(kvp.Key);
-                qpidMap.insert(std::make_pair<std::string, ::qpid::types::Variant>(entryName, entryValue));
+                qpidMap.insert(std::make_pair(entryName, entryValue));
             }
         }
     }
