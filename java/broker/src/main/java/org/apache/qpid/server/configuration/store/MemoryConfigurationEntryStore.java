@@ -75,6 +75,8 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     private String _storeLocation;
     private UUID _rootId;
 
+    private boolean _generatedObjectIdDuringLoad;
+
     protected MemoryConfigurationEntryStore()
     {
         _objectMapper = new ObjectMapper();
@@ -592,6 +594,8 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             {
                 id = UUIDGenerator.generateBrokerChildUUID(type, name);
             }
+
+            _generatedObjectIdDuringLoad = true;
         }
         else
         {
@@ -683,4 +687,8 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         return array;
     }
 
+    protected boolean isGeneratedObjectIdDuringLoad()
+    {
+        return _generatedObjectIdDuringLoad;
+    }
 }
