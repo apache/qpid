@@ -23,19 +23,21 @@ import static org.mockito.Mockito.when;
 
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 public class SubjectCreatorTest extends TestCase
 {
@@ -43,13 +45,15 @@ public class SubjectCreatorTest extends TestCase
     private static final String PASSWORD = "password";
 
     private AuthenticationManager _authenticationManager = mock(AuthenticationManager.class);
-    private GroupPrincipalAccessor _groupPrincipalAccessor = mock(GroupPrincipalAccessor.class);
-    private SubjectCreator _subjectCreator = new SubjectCreator(_authenticationManager, _groupPrincipalAccessor);
+
+    private GroupProvider _groupManager1 = mock(GroupProvider.class);
+    private GroupProvider _groupManager2 = mock(GroupProvider.class);
 
     private Principal _userPrincipal = mock(Principal.class);
     private Principal _group1 = mock(Principal.class);
     private Principal _group2 = mock(Principal.class);
 
+    private SubjectCreator _subjectCreator;
     private AuthenticationResult _authenticationResult;
     private SaslServer _testSaslServer = mock(SaslServer.class);
     private byte[] _saslResponseBytes = PASSWORD.getBytes();
@@ -57,11 +61,12 @@ public class SubjectCreatorTest extends TestCase
     @Override
     public void setUp()
     {
+        when(_groupManager1.getGroupPrincipalsForUser(USERNAME)).thenReturn(Collections.singleton(_group1));
+        when(_groupManager2.getGroupPrincipalsForUser(USERNAME)).thenReturn(Collections.singleton(_group2));
+
+        _subjectCreator = new SubjectCreator(_authenticationManager, new HashSet<GroupProvider>(Arrays.asList(_groupManager1, _groupManager2)));
         _authenticationResult = new AuthenticationResult(_userPrincipal);
         when(_authenticationManager.authenticate(USERNAME, PASSWORD)).thenReturn(_authenticationResult);
-
-        when(_groupPrincipalAccessor.getGroupPrincipals(USERNAME))
-            .thenReturn(new HashSet<Principal>(Arrays.asList(_group1, _group2)));
     }
 
     public void testAuthenticateUsernameAndPasswordReturnsSubjectWithUserAndGroupPrincipals()
@@ -134,5 +139,31 @@ public class SubjectCreatorTest extends TestCase
 
         assertSame(expectedStatus, subjectAuthenticationResult.getStatus());
         assertNull(subjectAuthenticationResult.getSubject());
+    }
+
+    public void testGetGroupPrincipals()
+    {
+        getAndAssertGroupPrincipals(_group1, _group2);
+    }
+
+    public void testGetGroupPrincipalsWhenAGroupManagerReturnsNull()
+    {
+        when(_groupManager1.getGroupPrincipalsForUser(USERNAME)).thenReturn(null);
+
+        getAndAssertGroupPrincipals(_group2);
+    }
+
+    public void testGetGroupPrincipalsWhenAGroupManagerReturnsEmptySet()
+    {
+        when(_groupManager2.getGroupPrincipalsForUser(USERNAME)).thenReturn(new HashSet<Principal>());
+
+        getAndAssertGroupPrincipals(_group1);
+    }
+
+    private void getAndAssertGroupPrincipals(Principal... expectedGroups)
+    {
+        Set<Principal> actualGroupPrincipals = _subjectCreator.getGroupPrincipals(USERNAME);
+        Set<Principal> expectedGroupPrincipals = new HashSet<Principal>(Arrays.asList(expectedGroups));
+        assertEquals(expectedGroupPrincipals, actualGroupPrincipals);
     }
 }

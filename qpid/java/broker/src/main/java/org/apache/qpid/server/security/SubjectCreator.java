@@ -21,17 +21,21 @@
 package org.apache.qpid.server.security;
 
 import java.security.Principal;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 
 /**
  * Creates a {@link Subject} formed by the {@link Principal}'s returned from:
@@ -48,12 +52,12 @@ import org.apache.qpid.server.security.group.GroupPrincipalAccessor;
 public class SubjectCreator
 {
     private AuthenticationManager _authenticationManager;
-    private GroupPrincipalAccessor _groupAccessor;
+    private Collection<GroupProvider> _groupProviders;
 
-    public SubjectCreator(AuthenticationManager authenticationManager, GroupPrincipalAccessor groupAccessor)
+    public SubjectCreator(AuthenticationManager authenticationManager, Collection<GroupProvider> groupProviders)
     {
         _authenticationManager = authenticationManager;
-        _groupAccessor = groupAccessor;
+        _groupProviders = groupProviders;
     }
 
    /**
@@ -112,7 +116,7 @@ public class SubjectCreator
             final Subject authenticationSubject = new Subject();
 
             authenticationSubject.getPrincipals().addAll(authenticationResult.getPrincipals());
-            authenticationSubject.getPrincipals().addAll(_groupAccessor.getGroupPrincipals(username));
+            authenticationSubject.getPrincipals().addAll(getGroupPrincipals(username));
 
             authenticationSubject.setReadOnly();
 
@@ -129,9 +133,24 @@ public class SubjectCreator
         Subject authenticationSubject = new Subject();
 
         authenticationSubject.getPrincipals().add(new AuthenticatedPrincipal(username));
-        authenticationSubject.getPrincipals().addAll(_groupAccessor.getGroupPrincipals(username));
+        authenticationSubject.getPrincipals().addAll(getGroupPrincipals(username));
         authenticationSubject.setReadOnly();
 
         return authenticationSubject;
+    }
+
+    public Set<Principal> getGroupPrincipals(String username)
+    {
+        Set<Principal> principals = new HashSet<Principal>();
+        for (GroupProvider groupProvider : _groupProviders)
+        {
+            Set<Principal> groups = groupProvider.getGroupPrincipalsForUser(username);
+            if (groups != null)
+            {
+                principals.addAll(groups);
+            }
+        }
+
+        return Collections.unmodifiableSet(principals);
     }
 }
