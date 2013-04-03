@@ -101,7 +101,7 @@ COMMON_OPTS="--daemon --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CER
 start_brokers() {
     local -a ports
     for (( i=0; $i<$1; i++)) do
-        ports[$i]=$($QPIDD_EXEC --port 0 $COMMON_OPTS $2) || error "Could not start broker $i"
+    ports[$i]=$($QPIDD_EXEC --port 0 $COMMON_OPTS $2) || error "Could not start broker $i"
     done
     PORTS=( ${PORTS[@]} ${ports[@]} )
 }
@@ -194,9 +194,13 @@ MSG=`./qpid-receive -b $URL --connection-options '{transport:ssl,heartbeat:2}' -
 test "$MSG" = "hello again" || { echo "receive failed '$MSG' != 'hello again'"; exit 1; }
 
 ## Test using the Python client
-echo "Testing Non-Authenticating with Python Client..."
-URL=amqps://$TEST_HOSTNAME:$PORT
-if `$top_srcdir/src/tests/ping_broker -b $URL`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+if test -d $PYTHON_DIR; then
+    echo "Testing Non-Authenticating with Python Client..."
+    URL=amqps://$TEST_HOSTNAME:$PORT
+    if `$PY_PING_BROKER -b $URL`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+else
+    echo "Skipping python part of ssl_test, no python dir."
+fi
 
 #### Client Authentication tests
 
@@ -253,66 +257,67 @@ if [[ !(-x $OPENSSL) ]] ; then
     exit 0
 fi
 
+if test -d $PYTHON_DIR; then
 ## verify python version > 2.5 (only 2.6+ does certificate checking)
-PY_VERSION=$(python -c "import sys; print hex(sys.hexversion)")
-if (( PY_VERSION < 0x02060000 )); then
-    echo >&2 "Detected python version < 2.6 - skipping certificate verification tests"
-    exit 0
-fi
+    PY_VERSION=$(python -c "import sys; print hex(sys.hexversion)")
+    if (( PY_VERSION < 0x02060000 )); then
+	echo >&2 "Detected python version < 2.6 - skipping certificate verification tests"
+	exit 0
+    fi
 
-echo "Testing Certificate validation and Authentication with the Python Client..."
+    echo "Testing Certificate validation and Authentication with the Python Client..."
 
 # extract the CA's certificate as a PEM file
-get_ca_certs() {
-    $PK12UTIL -o ${TEST_CERT_DIR}/CA_pk12.out -d ${CERT_DB} -n "Test-CA"  -w ${CERT_PW_FILE} -k ${CERT_PW_FILE} > /dev/null
-    $OPENSSL pkcs12 -in ${TEST_CERT_DIR}/CA_pk12.out -out ${CA_PEM_FILE} -nokeys -passin file:${CERT_PW_FILE} >/dev/null
-    $PK12UTIL -o ${TEST_CERT_DIR}/other_CA_pk12.out -d ${OTHER_CA_CERT_DB} -n "Other-Test-CA" -w ${CERT_PW_FILE} -k ${CERT_PW_FILE} > /dev/null
-    $OPENSSL pkcs12 -in ${TEST_CERT_DIR}/other_CA_pk12.out -out ${OTHER_CA_PEM_FILE} -nokeys -passin file:${CERT_PW_FILE} >/dev/null
-}
+    get_ca_certs() {
+	$PK12UTIL -o ${TEST_CERT_DIR}/CA_pk12.out -d ${CERT_DB} -n "Test-CA"  -w ${CERT_PW_FILE} -k ${CERT_PW_FILE} > /dev/null
+	$OPENSSL pkcs12 -in ${TEST_CERT_DIR}/CA_pk12.out -out ${CA_PEM_FILE} -nokeys -passin file:${CERT_PW_FILE} >/dev/null
+	$PK12UTIL -o ${TEST_CERT_DIR}/other_CA_pk12.out -d ${OTHER_CA_CERT_DB} -n "Other-Test-CA" -w ${CERT_PW_FILE} -k ${CERT_PW_FILE} > /dev/null
+	$OPENSSL pkcs12 -in ${TEST_CERT_DIR}/other_CA_pk12.out -out ${OTHER_CA_PEM_FILE} -nokeys -passin file:${CERT_PW_FILE} >/dev/null
+    }
 
-get_ca_certs || error "Could not extract CA certificates as PEM files"
-start_ssl_broker
-PORT=${PORTS[0]}
-URL=amqps://$TEST_HOSTNAME:$PORT
+    get_ca_certs || error "Could not extract CA certificates as PEM files"
+    start_ssl_broker
+    PORT=${PORTS[0]}
+    URL=amqps://$TEST_HOSTNAME:$PORT
 # verify the python client can authenticate the broker using the CA
-if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+    if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
 # verify the python client fails to authenticate the broker when using the other CA
-if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${OTHER_CA_PEM_FILE} > /dev/null 2>&1`; then { echo "    Failed"; exit 1; }; else echo "    Passed"; fi
-stop_brokers
+    if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${OTHER_CA_PEM_FILE} > /dev/null 2>&1`; then { echo "    Failed"; exit 1; }; else echo "    Passed"; fi
+    stop_brokers
 
 # create a certificate without matching TEST_HOSTNAME, should fail to verify
 
-create_certs "O=MyCo" "*.${TEST_HOSTNAME}.com" || error "Could not create server test certificate"
-get_ca_certs || error "Could not extract CA certificates as PEM files"
-start_ssl_broker
-PORT=${PORTS[0]}
-URL=amqps://$TEST_HOSTNAME:$PORT
-if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE} > /dev/null 2>&1`; then { echo "    Failed"; exit 1; }; else echo "    Passed"; fi
+    create_certs "O=MyCo" "*.${TEST_HOSTNAME}.com" || error "Could not create server test certificate"
+    get_ca_certs || error "Could not extract CA certificates as PEM files"
+    start_ssl_broker
+    PORT=${PORTS[0]}
+    URL=amqps://$TEST_HOSTNAME:$PORT
+    if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE} > /dev/null 2>&1`; then { echo "    Failed"; exit 1; }; else echo "    Passed"; fi
 # but disabling the check for the hostname should pass
-if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE} --ssl-skip-hostname-check`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
-stop_brokers
+    if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE} --ssl-skip-hostname-check`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+    stop_brokers
 
 # test SubjectAltName parsing
 
-if (( PY_VERSION >= 0x02070300 )); then
+    if (( PY_VERSION >= 0x02070300 )); then
     # python 2.7.3+ supports SubjectAltName extraction
     # create a certificate with TEST_HOSTNAME only in SAN, should verify OK
-    create_certs "O=MyCo" "*.foo.com,${TEST_HOSTNAME},*xyz.com" || error "Could not create server test certificate"
-    get_ca_certs || error "Could not extract CA certificates as PEM files"
-    start_ssl_broker
-    PORT=${PORTS[0]}
-    URL=amqps://$TEST_HOSTNAME:$PORT
-    if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
-    stop_brokers
+	create_certs "O=MyCo" "*.foo.com,${TEST_HOSTNAME},*xyz.com" || error "Could not create server test certificate"
+	get_ca_certs || error "Could not extract CA certificates as PEM files"
+	start_ssl_broker
+	PORT=${PORTS[0]}
+	URL=amqps://$TEST_HOSTNAME:$PORT
+	if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+	stop_brokers
 
-    create_certs "O=MyCo" "*${TEST_HOSTNAME}" || error "Could not create server test certificate"
-    get_ca_certs || error "Could not extract CA certificates as PEM files"
-    start_ssl_broker
-    PORT=${PORTS[0]}
-    URL=amqps://$TEST_HOSTNAME:$PORT
-    if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
-    stop_brokers
+	create_certs "O=MyCo" "*${TEST_HOSTNAME}" || error "Could not create server test certificate"
+	get_ca_certs || error "Could not extract CA certificates as PEM files"
+	start_ssl_broker
+	PORT=${PORTS[0]}
+	URL=amqps://$TEST_HOSTNAME:$PORT
+	if `${PY_PING_BROKER} -b $URL --ssl-trustfile=${CA_PEM_FILE}`; then echo "    Passed"; else { echo "    Failed"; exit 1; }; fi
+	stop_brokers
+    fi
+
 fi
-
-
 

@@ -25,7 +25,7 @@ generated_file_list = \
 	qmfengine.cpp \
 	qmfengine.py
 
-EXTRA_DIST = CMakeLists.txt python.i
+EXTRA_DIST = CMakeLists.txt python.i qmfengine.py
 BUILT_SOURCES = $(generated_file_list)
 SWIG_FLAGS = -w362,401
 
