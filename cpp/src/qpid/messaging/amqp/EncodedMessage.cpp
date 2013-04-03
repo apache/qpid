@@ -120,7 +120,7 @@ void EncodedMessage::populate(qpid::types::Variant::Map& map) const
         map["x-amqp-delivery-count"] = deliveryCount.get();
     }
     if (to) {
-        map["x-amqp-delivery-count"] = to.str();
+        map["x-amqp-to"] = to.str();
     }
     if (!!absoluteExpiryTime) {
         map["x-amqp-absolute-expiry-time"] = absoluteExpiryTime.get();
