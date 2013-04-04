@@ -657,7 +657,7 @@ define(["dojo/_base/xhr",
 
            BrokerUpdater.prototype.updateHeader = function()
            {
-               showReadOnlyAttributes();
+               this.showReadOnlyAttributes();
                var brokerData = this.brokerData;
                for(var i in this.attributes)
                {
