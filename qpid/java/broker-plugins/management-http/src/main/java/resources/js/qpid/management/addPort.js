@@ -71,7 +71,7 @@ define(["dojo/_base/xhr",
                 {
                     if(formValues.hasOwnProperty(propName))
                     {
-                        if (propName === "type" || propName === "protocolsDefault")
+                        if (propName == "needClientAuth" || propName == "wantClientAuth")
                         {
                             continue;
                         }
@@ -107,18 +107,37 @@ define(["dojo/_base/xhr",
                     }
                 }
 
-                var needClientAuth = dijit.byId("formAddPort.needClientAuth");
-                var wantClientAuth = dijit.byId("formAddPort.wantClientAuth");
-                if(!needClientAuth.disabled)
+                var type = dijit.byId("formAddPort.type").value;
+                if (type == "AMQP")
                 {
-                    newPort.needClientAuth = needClientAuth.checked;
+                    var needClientAuth = dijit.byId("formAddPort.needClientAuth");
+                    var wantClientAuth = dijit.byId("formAddPort.wantClientAuth");
+                    newPort.needClientAuth = needClientAuth.disabled ? false : needClientAuth.checked;
+                    newPort.wantClientAuth = wantClientAuth.disabled ? false : wantClientAuth.checked
                 }
-                if(!wantClientAuth.disabled)
-                {
-                    newPort.wantClientAuth = wantClientAuth.checked;
-                }
-
                 return newPort;
+            };
+
+            var toggleCertificateWidgets = function toggleCertificateWidgets(protocolType, transportType)
+            {
+                var clientAuthPanel = registry.byId("formAddPort:fieldsClientAuth");
+                var display = clientAuthPanel.domNode.style.display;
+                if (transportType == "SSL" && protocolType == "AMQP")
+                {
+                    clientAuthPanel.domNode.style.display = "block";
+                    registry.byId("formAddPort.needClientAuth").set("disabled", false);
+                    registry.byId("formAddPort.wantClientAuth").set("disabled", false);
+                }
+                else
+                {
+                    clientAuthPanel.domNode.style.display = "none";
+                    registry.byId("formAddPort.needClientAuth").set("disabled", true);
+                    registry.byId("formAddPort.wantClientAuth").set("disabled", true);
+                }
+                if (clientAuthPanel.domNode.style.display != display)
+                {
+                    clientAuthPanel.resize();
+                }
             };
 
 
@@ -134,6 +153,11 @@ define(["dojo/_base/xhr",
                                 dijit.byId("formAddPort.protocolsAMQP").set("disabled", isChecked);
                             });
 
+                            registry.byId("formAddPort.transports").on("change", function(newValue){
+                                var protocolType = registry.byId("formAddPort.type").value;
+                                toggleCertificateWidgets(protocolType, newValue);
+                            });
+
                             registry.byId("formAddPort.type").on("change", function(newValue) {
                                 var typeWidget = registry.byId("formAddPort.type");
                                 var store = typeWidget.store;
@@ -142,20 +166,8 @@ define(["dojo/_base/xhr",
                                     registry.byId("formAddPort:fields" + option.value).domNode.style.display = "none";
                                 });
 
-                                if ("AMQP" == newValue)
-                                {
-                                    registry.byId("formAddPort:fieldsClientAuth").domNode.style.display = "block";
-                                    registry.byId("formAddPort.needClientAuth").set("disabled", false);
-                                    registry.byId("formAddPort.wantClientAuth").set("disabled", false);
-                                }
-                                else
-                                {
-                                    registry.byId("formAddPort:fieldsClientAuth").domNode.style.display = "none";
-                                    registry.byId("formAddPort.needClientAuth").set("checked", false);
-                                    registry.byId("formAddPort.wantClientAuth").set("checked", false);
-                                    registry.byId("formAddPort.needClientAuth").set("disabled", true);
-                                    registry.byId("formAddPort.wantClientAuth").set("disabled", true);
-                                }
+                                registry.byId("formAddPort.needClientAuth").set("enabled", ("AMQP" == newValue));
+                                registry.byId("formAddPort.wantClientAuth").set("enabled", ("AMQP" == newValue));
 
                                 registry.byId("formAddPort:fields" + newValue).domNode.style.display = "block";
                                 var defaultsAMQPProtocols = registry.byId("formAddPort.protocolsDefault");
@@ -163,20 +175,10 @@ define(["dojo/_base/xhr",
                                 var protocolsWidget = registry.byId("formAddPort.protocols" + newValue);
                                 if (protocolsWidget)
                                 {
-                                    if ("AMQP" == newValue && defaultsAMQPProtocols.checked)
-                                    {
-                                        protocolsWidget.set("disabled", true);
-                                    }
-                                    else
-                                    {
-                                        protocolsWidget.set("disabled", false);
-                                    }
+                                    protocolsWidget.set("disabled", ("AMQP" == newValue && defaultsAMQPProtocols.checked));
                                 }
-                                var transportsWidget = registry.byId("formAddPort.transports");
-                                if (transportsWidget)
-                                {
-                                    transportsWidget.startup();
-                                }
+                                var transport = registry.byId("formAddPort.transports").value;
+                                toggleCertificateWidgets(newValue, transport);
                             });
                             theForm = registry.byId("formAddPort");
 
@@ -289,7 +291,8 @@ define(["dojo/_base/xhr",
                        nameField.set("disabled", true);
                        dom.byId("formAddPort.id").value=port.id;
                        providerWidget.set("value", port.authenticationProvider ? port.authenticationProvider : "");
-                       registry.byId("formAddPort.transports").set("value", port.transports ? port.transports[0] : "");
+                       var transportWidget = registry.byId("formAddPort.transports");
+                       transportWidget.set("value", port.transports ? port.transports[0] : "");
                        registry.byId("formAddPort.port").set("value", port.port);
                        var protocols = port.protocols;
                        var typeWidget = registry.byId("formAddPort.type");
@@ -298,12 +301,6 @@ define(["dojo/_base/xhr",
                            registry.byId("formAddPort.protocols" + option.value).set("disabled", true);
                            registry.byId("formAddPort:fields" + option.value).domNode.style.display = "none";
                        });
-
-                       registry.byId("formAddPort.needClientAuth").set("checked", false);
-                       registry.byId("formAddPort.wantClientAuth").set("checked", false);
-                       registry.byId("formAddPort.needClientAuth").set("disabled", true);
-                       registry.byId("formAddPort.wantClientAuth").set("disabled", true);
-                       registry.byId("formAddPort:fieldsClientAuth").domNode.style.display = "none";
 
                        // identify the type of port using first protocol specified in protocol field if provided
                        if ( !protocols || protocols.length == 0 || protocols[0].indexOf("AMQP") == 0)
@@ -326,11 +323,8 @@ define(["dojo/_base/xhr",
                                amqpProtocolsWidget.set("disabled", true)
                            }
 
-                           registry.byId("formAddPort.needClientAuth").set("disabled", false);
-                           registry.byId("formAddPort.wantClientAuth").set("disabled", false);
                            registry.byId("formAddPort.needClientAuth").set("checked", port.needClientAuth);
                            registry.byId("formAddPort.wantClientAuth").set("checked", port.wantClientAuth);
-                           registry.byId("formAddPort:fieldsClientAuth").domNode.style.display = "block";
                        }
                        else if (protocols[0].indexOf("RMI") != -1)
                        {
@@ -348,6 +342,8 @@ define(["dojo/_base/xhr",
                        }
                        registry.byId("formAddPort:fields" + typeWidget.value).domNode.style.display = "block";
                        typeWidget.set("disabled", true);
+
+                       toggleCertificateWidgets(typeWidget.value, transportWidget.value);
                        registry.byId("addPort").show();
                });
             }
