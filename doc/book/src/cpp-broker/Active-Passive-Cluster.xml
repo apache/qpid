@@ -20,11 +20,10 @@ under the License.
 
 -->
 
-<section id="chap-Messaging_User_Guide-Active_Passive_Cluster">
+<section id="chapter-ha">
+  <title>Active-Passive Messaging Clusters</title>
 
-  <title>Active-passive Messaging Clusters</title>
-
-  <section>
+  <section id="ha-overview">
     <title>Overview</title>
     <para>
 
@@ -51,7 +50,7 @@ under the License.
       url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is supported
       initially, but others may be supported in the future.
     </para>
-    <section>
+    <section id="ha-at-least-once">
       <title>Avoiding message loss</title>
       <para>
 	In order to avoid message loss, the primary broker <emphasis>delays
@@ -153,11 +152,11 @@ under the License.
 	</varlistentry>
       </variablelist>
     </section>
-    <section>
+    <section id="limitations">
       <title>Limitations</title>
       <para>
 	There are a some known limitations in the current implementation. These
-	will be fixed in furture versions.
+	will be fixed in future versions.
       </para>
       <itemizedlist>
 	<listitem>
@@ -188,7 +187,7 @@ under the License.
     </section>
   </section>
 
-  <section>
+  <section id="ha-virtual-ip">
     <title>Virtual IP Addresses</title>
     <para>
       Some resource managers (including <command>rgmanager</command>) support
@@ -200,13 +199,13 @@ under the License.
       than a list.
     </para>
     <para>
-      A virtual IP address can be used by clients and backup brokers to connect
-      to the primary. The following sections will explain how to configure
-      virtual IP addresses for clients or brokers.
+      A virtual IP address can be used by clients to connect to the primary. The
+      following sections will explain how to configure virtual IP addresses for
+      clients or brokers.
     </para>
   </section>
 
-  <section>
+  <section id="ha-broker-config">
     <title>Configuring the Brokers</title>
     <para>
       The broker must load the <filename>ha</filename> module, it is loaded by
@@ -300,7 +299,7 @@ ssl_addr = "ssl:" host [":" port]'
 	    <entry>
 	      <para><literal>ha-username <replaceable>USER</replaceable></literal></para>
 	      <para><literal>ha-password <replaceable>PASS</replaceable></literal></para>
-	      <para><literal>ha-mechanism <replaceable>MECH</replaceable></literal></para>
+	      <para><literal>ha-mechanism <replaceable>MECHANISM</replaceable></literal></para>
 	    </entry>
 	    <entry>
 	      Authentication settings used by HA brokers to connect to each other.
@@ -346,7 +345,7 @@ ssl_addr = "ssl:" host [":" port]'
     </para>
   </section>
 
-  <section>
+  <section id="ha-rm">
     <title>The Cluster Resource Manager</title>
     <para>
       Broker fail-over is managed by a <firstterm>cluster resource
@@ -382,7 +381,7 @@ ssl_addr = "ssl:" host [":" port]'
     </para>
   </section>
 
-  <section>
+  <section id="ha-rm-config">
     <title>Configuring <command>rgmanager</command> as resource manager</title>
     <para>
       This section assumes that you are already familiar with setting up and configuring
@@ -439,10 +438,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <!-- This script promotes the qpidd broker on this node to primary. -->
       <script file="/etc/init.d/qpidd-primary" name="qpidd-primary"/>
 
-      <!-- This is a virtual IP address for broker replication traffic. -->
-      <ip address="20.0.10.200" monitor_link="1"/>
-
-      <!-- This is a virtual IP address on a seprate network for client traffic. -->
+      <!-- This is a virtual IP address for client traffic. -->
       <ip address="20.0.20.200" monitor_link="1"/>
     </resources>
 
@@ -461,7 +457,6 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <service name="qpidd-primary-service" autostart="1" exclusive="0" recovery="relocate">
       <script ref="qpidd-primary"/>
       <!-- The primary has the IP addresses for brokers and clients to connect. -->
-      <ip ref="20.0.10.200"/>
       <ip ref="20.0.20.200"/>
     </service>
   </rm>
@@ -492,13 +487,14 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
     <programlisting>
       ha-cluster=yes
-      ha-brokers-url=20.0.20.200
       ha-public-url=20.0.10.200
+      ha-brokers-url=20.0.20.1,20.0.20.2,20.0.20.3
     </programlisting>
     <para>
-      This configuration specifies that backup brokers will use 20.0.20.200
-      to connect to the primary and will advertise 20.0.10.200 to clients.
-      Clients should connect to 20.0.10.200.
+      This configuration allows clients to connect to a single address:
+      20.0.10.200.  The brokers connect to each other directly via the addresses
+      listed in <command>ha-brokers-url</command>. Note the client and broker
+      addresses are on separate sub-nets, this is recommended but not required.
     </para>
     <para>
       The <literal>service</literal> section defines 3 <literal>qpidd</literal>
@@ -519,7 +515,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
   </section>
 
-  <section>
+  <section id="ha-broker-admin">
     <title>Broker Administration Tools</title>
     <para>
       Normally, clients are not allowed to connect to a backup broker. However
@@ -538,7 +534,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
   </section>
 
-  <section id="ha-creating-replicated">
+  <section id="ha-replicate-values">
     <title>Controlling replication of queues and exchanges</title>
     <para>
       By default, queues and exchanges are not replicated automatically. You can change
@@ -590,23 +586,24 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </programlisting>
     <para>
       There are some built-in exchanges created automatically by the broker, these
-      exchangs are never replicated. The built-in exchanges are the default (nameless)
+      exchanges are never replicated. The built-in exchanges are the default (nameless)
       exchange, the AMQP standard exchanges (<literal>amq.direct, amq.topic, amq.fanout</literal> and
       <literal>amq.match</literal>) and the management exchanges (<literal>qpid.management, qmf.default.direct</literal> and
       <literal>qmf.default.topic</literal>)
     </para>
     <para>
       Note that if you bind a replicated queue to one of these exchanges, the
-      binding wil <emphasis>not</emphasis> be replicated, so the queue will not
+      binding will <emphasis>not</emphasis> be replicated, so the queue will not
       have the binding after a fail-over.
     </para>
   </section>
 
-  <section>
+  <section id="ha-failover">
     <title>Client Connection and Fail-over</title>
     <para>
-      Clients can only connect to the primary broker. Backup brokers
-      automatically reject any connection attempt by a client.
+      Clients can only connect to the primary broker. Backup brokers reject any
+      connection attempt by a client. Clients rejected by a backup broker will
+      simply fail-over until they connect to the primary.
     </para>
     <para>
       Clients are configured with the URL for the cluster (details below for
@@ -621,8 +618,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	  <para>
 	    The URL contains a single <firstterm>virtual IP address</firstterm>
 	    that is assigned to the primary broker by the resource manager.
-	    <footnote><para>Only if the resource manager supports virtual IP
-	    addresses</para></footnote>
+	    This is the recommended configuration.
 	  </para>
 	</listitem>
       </itemizedlist>
@@ -647,9 +643,10 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       client.
     </para>
     <para>
-      See &#34;Cluster Failover&#34; in <citetitle>Programming in Apache
-      Qpid</citetitle> for details on how to keep the client aware of cluster
-      membership.
+      Note: the following sections explain how to configure clients with
+      multiple dresses, but if you are using a virtual IP address you only need
+      to configure that one address for clients, you don't need to list all the
+      addresses.
     </para>
     <para>
       Suppose your cluster has 3 nodes: <literal>node1</literal>,
@@ -659,7 +656,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <literal>reconnect</literal> property to <literal>true</literal>. The
       following sub-sections show how to connect each type of client.
     </para>
-    <section>
+    <section id="ha-clients">
       <title>C++ clients</title>
       <para>
 	With the C++ client, you specify multiple cluster addresses in a single URL
@@ -690,7 +687,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	</programlisting>
       </para>
     </section>
-    <section>
+    <section id="ha-python-client">
       <title>Python clients</title>
       <para>
 	With the python client, you specify <literal>reconnect=True</literal>
@@ -711,7 +708,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"], heartbeat=10)
       </programlisting>
     </section>
-    <section>
+    <section id="ha-jms-client">
       <title>Java JMS Clients</title>
       <para>
 	In Java JMS clients, client fail-over is handled automatically if it is
@@ -769,7 +766,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </section>
   </section>
 
-  <section>
+  <section id="ha-security">
     <title>Security.</title>
     <para>
       You can secure your cluster using the authentication and authorization features
@@ -815,7 +812,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
   </section>
 
-  <section>
+  <section id="ha-other-rm">
     <title>Integrating with other Cluster Resource Managers</title>
     <para>
       To integrate with a different resource manager you must configure it to:
@@ -875,7 +872,19 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       need to run a cluster.
     </para>
   </section>
+
+  <section id ="ha-store">
+    <title>Using a message store in a  cluster</title>
+    <para>
+      If you use a persistent store for your messages then each broker in a
+      cluster will have its own store. If the entire cluster fails and is
+      restarted, the *first* broker that becomes primary will recover from its
+      store. All the other brokers will clear their stores and get an update
+      from the primary to ensure consistency.
+    </para>
+  </section>
+
 </section>
 
-<!-- LocalWords:  scalability rgmanager multicast RGManager mailto LVQ qpidd IP dequeued Transactional username
+<!-- LocalWords:  scalability rgmanager multicast RGManager mailto LVQ qpidd IP dequeued Transactional username API
 -->
