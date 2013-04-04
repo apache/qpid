@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.ChangeStateTask;
 import org.apache.qpid.server.configuration.updater.CreateChildTask;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 abstract class AbstractAdapter implements ConfiguredObject
 {
+    private static final Object ID = "id";
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
     private final Map<Class<? extends ConfiguredObject>, ConfiguredObject> _parents =
             new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject>();
@@ -347,6 +349,15 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected void changeAttributes(final Map<String, Object> attributes)
     {
+        if (attributes.containsKey(ID))
+        {
+            UUID id = getId();
+            Object idAttributeValue = attributes.get(ID);
+            if (idAttributeValue != null && !idAttributeValue.equals(id))
+            {
+                throw new IllegalConfigurationException("Cannot change existing configured object id");
+            }
+        }
         Collection<String> names = getAttributeNames();
         for (String name : names)
         {
