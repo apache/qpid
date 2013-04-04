@@ -3,28 +3,41 @@
 
 Table of Contents
 =================
-1. How to Build and Install Qpid from a Source Distribution
-2. Building a Repository Working Copy
-3. Tests
+1. Introduction
+2. How to Build and Install Qpid from a Source Distribution
+3. Building a Repository Working Copy
+4. Tests
 
-4. Prerequisites
-   4.1. What Prerequisite Libraries to Install
-   4.2. How to Install Prerequisite Libraries
-      4.2.1. Using Package Management Tools
-      4.2.2. Building Prerequisites From Source
-   4.3. Important Environment Variable Settings
+5. Prerequisites
+   5.1. What Prerequisite Libraries to Install
+   5.2. How to Install Prerequisite Libraries
+      5.2.1. Using Package Management Tools
+      5.2.2. Building Prerequisites From Source
+   5.3. Important Environment Variable Settings
 
 
-1. How to Build and Install Qpid from a Source Distribution
+1. Introduction
+===============
+This document describes how to build the Qpid/C++ broker and client, either
+from a checkout of the source or from a source distribution, on Linux/UNIX.
+
+Please see INSTALL-WINDOWS for information on building on Windows.
+
+There are a number of prerequisite libraries that may need to be installed.
+If this is the first time that you have built Qpid please check the prerequisites
+section 5. below and/or check the output from running cmake for any errors.
+
+As of Qpid 0.22 cmake is the preferred way to build Qpid.
+
+*******************************************************************
+*      N.B. The automake build method is NOW DEPRECATED!!         *
+*   IT WILL BE DISABLED BY DEFAULT IN 0.24 AND REMOVED IN 0.26    *
+*    Please flag any cmake issues with: users@qpid.apache.org     *
+*******************************************************************
+
+
+2. How to Build and Install Qpid from a Source Distribution
 ===========================================================
-Note 1: There are a number of prerequisite libraries that may need to be installed.
-    If this is the first time that you have built Qpid please check the prerequisites
-    section 4. below and/or check the output from running cmake for any errors.
-
-Note 2: As of Qpid 0.22 cmake is the preferred way to build Qpid
-    ***** The automake build method is DEPRECATED AND WILL BE REMOVED IN QPID 0.24 *****
-
-
 In the cpp distribution directory (<qpid>/cpp), build the code with:
 
  # mkdir bld       # This is just a suggested name for the build directory
@@ -75,26 +88,25 @@ To see and edit all the available cmake options:
  # cmake-gui ..    # ".." is the path to the distribution directory
 
 
-2. Building a Repository Working Copy
+3. Building a Repository Working Copy
 =====================================
 To get the source code from the subversion repository (trunk) do:
 
  # svn checkout http://svn.apache.org/repos/asf/qpid/trunk/qpid/.
 
 To build, cd to <qpid>/cpp subdirectory and then follow the instructions for building
-from a Source Distribution in step (1).
+from a Source Distribution in step (2).
 
 
-3. Tests
+4. Tests
 ========
 See <qpid>/cpp/src/tests/README.txt for details.
-
 
 
 ======================================================================================
 
 
-4. Prerequisites
+5. Prerequisites
 ================
 We prefer to avoid spending time accommodating older versions of these
 packages, so please make sure that you have the latest stable versions.
@@ -102,7 +114,7 @@ Known version numbers for a succesful build are given in brackets, take
 these as a recommended minimum version.
 
 
-4.1. What Prerequisite Libraries to Install
+5.1. What Prerequisite Libraries to Install
 ===========================================
 The following libraries and header files must be installed to build
 a source distribution:
@@ -157,10 +169,10 @@ libuuid-devel. If you are using an older Linux release and run into a
 problem during configure in which uuid.h cannot be found, install the
 e2fsprogs-devel package.
 
-4.2. How to Install Prerequisite Libraries
+5.2. How to Install Prerequisite Libraries
 ==========================================
 
-4.2.1. Using Package Management Tools
+5.2.1. Using Package Management Tools
 =====================================
 On linux most packages can be installed using your distribution's
 package management tool. For example on Fedora:
@@ -183,7 +195,7 @@ Optional legacystore store module.
 Follow the manual installation instruction below for any packages not
 available through your distributions packaging tool.
 
-4.2.2. Building Prerequisites From Source
+5.2.2. Building Prerequisites From Source
 =========================================
 Required dependencies can be installed and built from source distributions.
 It is recommended that you create a directory to install them to, for example,
@@ -209,7 +221,7 @@ boost
     --layout=system --prefix=~/qpid-tools install
 
 
-4.3. Important Environment Variable Settings
+5.3. Important Environment Variable Settings
 ============================================
 Note that the following is generally not necessary if dependency packages have been
 installed using Package Management Tools such as yum or apt.
