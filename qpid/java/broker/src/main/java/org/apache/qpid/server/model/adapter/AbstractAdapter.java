@@ -92,9 +92,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-        authoriseSetDesiredState(currentState, desiredState);
         if (_taskExecutor.isTaskExecutorThread())
         {
+            authoriseSetDesiredState(currentState, desiredState);
             if (setState(currentState, desiredState))
             {
                 notifyStateChanged(currentState, desiredState);
@@ -227,9 +227,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        authoriseSetAttribute(name, expected, desired);
         if (_taskExecutor.isTaskExecutorThread())
         {
+            authoriseSetAttribute(name, expected, desired);
             if (changeAttribute(name, expected, desired))
             {
                 attributeSet(name, expected, desired);
@@ -306,9 +306,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
-        authoriseCreateChild(childClass, attributes, otherParents);
         if (_taskExecutor.isTaskExecutorThread())
         {
+            authoriseCreateChild(childClass, attributes, otherParents);
             C child = addChild(childClass, attributes, otherParents);
             if (child != null)
             {
@@ -336,9 +336,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        authoriseSetAttributes(attributes);
         if (getTaskExecutor().isTaskExecutorThread())
         {
+            authoriseSetAttributes(attributes);
             changeAttributes(attributes);
         }
         else
