@@ -538,8 +538,6 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             return true;
         }
         // TODO: DELETE state is ignored for now
-        // in case if we need to delete group provider, then we need AuthenticationProvider to be a change listener of it
-        // in order to remove deleted group provider from its group provider list
         return false;
     }
 
