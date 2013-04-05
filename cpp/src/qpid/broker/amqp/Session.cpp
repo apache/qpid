@@ -275,6 +275,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         //TODO: populate settings from source details when available from engine
         boost::shared_ptr<qpid::broker::Queue> queue
             = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
+        queue->setExclusiveOwner(this);
         if (filter.hasSubjectFilter()) {
             filter.bind(node.exchange, queue);
             filter.write(pn_terminus_filter(pn_link_source(link)));
