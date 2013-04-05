@@ -51,6 +51,9 @@ const std::string NODE("node");
 const std::string LINK("link");
 const std::string CAPABILITIES("capabilities");
 const std::string PROPERTIES("properties");
+const std::string MODE("mode");
+const std::string BROWSE("browse");
+const std::string CONSUME("consume");
 
 const std::string TYPE("type");
 const std::string TOPIC("topic");
@@ -166,7 +169,13 @@ void flatten(Variant::Map& base, const std::string& nested)
 }
 }
 
-AddressHelper::AddressHelper(const Address& address) : isTemporary(AddressImpl::isTemporary(address)), name(address.getName()), type(address.getType())
+AddressHelper::AddressHelper(const Address& address) :
+    isTemporary(AddressImpl::isTemporary(address)),
+    name(address.getName()),
+    type(address.getType()),
+    durableNode(false),
+    durableLink(false),
+    browse(false)
 {
     bind(address, CREATE, createPolicy);
     bind(address, DELETE, deletePolicy);
@@ -177,6 +186,15 @@ AddressHelper::AddressHelper(const Address& address) : isTemporary(AddressImpl::
     bind(node, PROPERTIES, properties);
     bind(node, CAPABILITIES, capabilities);
     durableNode = test(node, DURABLE);
+    durableLink = test(link, DURABLE);
+    std::string mode;
+    if (bind(address, MODE, mode)) {
+        if (mode == BROWSE) {
+            browse = true;
+        } else if (mode != CONSUME) {
+            throw qpid::messaging::AddressError("Invalid value for mode; must be 'browse' or 'consume'.");
+        }
+    }
 
     if (!deletePolicy.empty()) {
         throw qpid::messaging::AddressError("Delete policies not supported over AMQP 1.0.");
@@ -289,6 +307,12 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
         }
     }
     setCapabilities(terminus, createOnDemand);
+    if (durableLink) {
+        pn_terminus_set_durability(terminus, PN_DELIVERIES);
+    }
+    if (mode == FOR_RECEIVER && browse) {
+        //when PROTON-139 is resolved, set the required delivery-mode
+    }
 }
 
 void AddressHelper::setCapabilities(pn_terminus_t* terminus, bool create)
