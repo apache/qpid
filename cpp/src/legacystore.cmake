@@ -132,17 +132,16 @@ if (BUILD_LEGACYSTORE)
              "#include <${DB_INCLUDE_DIR}/db_cxx.h>")
     endif()
 
-    add_library (legacystore SHARED
+    add_library (legacystore MODULE
         ${legacy_jrnl_SOURCES}
         ${legacy_store_SOURCES}
         ${legacy_qmf_SOURCES}
     )
-        
+
     set_target_properties (legacystore PROPERTIES
         PREFIX ""
         COMPILE_DEFINITIONS _IN_QPID_BROKER
         OUTPUT_NAME legacystore
-        SOVERSION ${legacystore_version}
         INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
     )
 
@@ -152,6 +151,11 @@ if (BUILD_LEGACYSTORE)
         qpidcommon qpidtypes qpidbroker
         ${DB_LIBRARY}
     )
+
+install(TARGETS legacystore
+        DESTINATION ${QPIDD_MODULE_DIR}
+        COMPONENT ${QPID_COMPONENT_BROKER})
+
 else (BUILD_LEGACYSTORE)
     message(STATUS "Legacystore is excluded from build.")
 endif (BUILD_LEGACYSTORE)
