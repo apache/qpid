@@ -1241,14 +1241,6 @@ class Session:
     except Exception,e:
       return
 
-    ##
-    ## For now, ignore heartbeats from messaging brokers.  We already have the "local-broker"
-    ## agent in our list.
-    ##
-    if '_vendor' in values and values['_vendor'] == 'apache.org' and \
-          '_product' in values and values['_product'] == 'qpidd':
-      return
-
     if self.agent_filter:
       # only allow V2 agents that satisfy the filter
       v = agentName.split(":", 2)
@@ -1257,7 +1249,14 @@ class Session:
                          and (v[0], v[1], v[2]) not in self.agent_filter):
         return
 
-    agent = broker.getAgent(1, agentName)
+    ##
+    ## We already have the "local-broker" agent in our list as ['0'].
+    ##
+    if '_vendor' in values and values['_vendor'] == 'apache.org' and \
+          '_product' in values and values['_product'] == 'qpidd':
+        agent = broker.getBrokerAgent()
+    else:
+        agent = broker.getAgent(1, agentName)
     if agent == None:
       agent = Agent(broker, agentName, "QMFv2 Agent", True, interval)
       agent.setEpoch(epoch)
@@ -2928,11 +2927,14 @@ class Broker(Thread):
             ## All other opcodes are agent-scope and are forwarded to the agent proxy representing the sender
             ## of the message.
             ##
-            agent_addr = ah['qmf.agent']
-            if agent_addr == 'broker':
-              agent_addr = '0'
-            if agent_addr in self.agents:
-              agent = self.agents[agent_addr]
+            # the broker's agent is mapped to index ['0']
+            agentName = ah['qmf.agent']
+            v = agentName.split(":")
+            if agentName == 'broker' or (len(v) >= 2 and v[0] == 'apache.org'
+                                         and v[1] == 'qpidd'):
+                agentName = '0'
+            if agentName in self.agents:
+              agent = self.agents[agentName]
               agent._handleQmfV2Message(opcode, mp, ah, content)
               agent.touch()
 
