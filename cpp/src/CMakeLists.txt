@@ -283,7 +283,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                    OUTPUT_VARIABLE GCC_VERSION)
    if (GCC_VERSION VERSION_EQUAL 4.1.2)
-     set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden -Wno-attributes")
+     message (STATUS "Cannot use -fvisibility=hidden on gcc 4.1.2")
    else (GCC_VERSION VERSION_EQUAL 4.1.2)
      set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
    endif (GCC_VERSION VERSION_EQUAL 4.1.2)
