@@ -152,6 +152,8 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
             eStats->msgRoutes += count;
             eStats->byteRoutes += count * contentSize;
         }
+
+        mgmtExchange->statisticsUpdated();
     }
 }
 
