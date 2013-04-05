@@ -53,6 +53,8 @@ class AddressHelper
     std::string name;
     std::string type;
     bool durableNode;
+    bool durableLink;
+    bool browse;
 
     bool enabled(const std::string& policy, CheckMode mode) const;
     bool createEnabled(CheckMode mode) const;
