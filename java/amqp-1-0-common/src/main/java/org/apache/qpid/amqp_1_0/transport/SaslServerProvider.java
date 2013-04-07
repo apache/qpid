@@ -20,10 +20,12 @@
 package org.apache.qpid.amqp_1_0.transport;
 
 
+import java.security.Principal;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 public interface SaslServerProvider
 {
     SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException;
+    Principal getAuthenticatedPrincipal(SaslServer server);
 }
