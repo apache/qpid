@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -169,6 +171,12 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
             public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
                 return subjectCreator.createSaslServer(mechanism, fqdn, null);
+            }
+
+            @Override
+            public Principal getAuthenticatedPrincipal(SaslServer server)
+            {
+                return new UsernamePrincipal(server.getAuthorizationID());
             }
         };
     }
