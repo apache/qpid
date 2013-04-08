@@ -1,0 +1,4 @@
+The org.apache.qpid.restapi.HttpTransaction and org.apache.qpid.restapi.Server interfaces are intended to
+provide abstractions to the underlying HTTP Server technology and thus should make it fairly easy to do
+a Servlet based implementation without having to rewrite the core REST API code. A Servlet implementation
+is still on the "TODO" list though.
