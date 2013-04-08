@@ -1,0 +1,120 @@
+<!DOCTYPE HTML>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Qpid Management Login</title>
+    <link rel="stylesheet" href="dojo/dojo/resources/dojo.css">
+    <link rel="stylesheet" href="dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="css/common.css" media="screen">
+    <script>
+        function getContextPath()
+        {
+            var contextPath = "/";
+            var documentURL = document.URL;
+            var managementPageStart = documentURL.lastIndexOf("/");
+            var firstSlashPos = documentURL.indexOf("/", documentURL.indexOf("//") + 2);
+            if (managementPageStart > firstSlashPos)
+            {
+                contextPath = documentURL.substring(firstSlashPos, managementPageStart);
+            }
+            return contextPath;
+        }
+
+        var dojoConfig = {
+            tlmSiblingOfDojo:false,
+            parseOnLoad:true,
+            async:true,
+            baseUrl: getContextPath(),
+            packages:[
+                { name:"dojo", location:"dojo/dojo" },
+                { name:"dijit", location:"dojo/dijit" },
+                { name:"dojox", location:"dojo/dojox" },
+                { name:"qpid", location:"js/qpid" }
+            ]
+        };
+
+    </script>
+    <script src="dojo/dojo/dojo.js">
+    </script>
+
+    <script>
+          require(["dojo/_base/xhr",
+                   "dojo/parser",
+                   "dijit/form/Form",
+                   "dijit/form/Button",
+                   "dijit/form/TextBox",
+                   "dijit/form/ValidationTextBox",
+                   "dijit/layout/BorderContainer",
+                   "dijit/layout/ContentPane",
+                   "dijit/TitlePane",
+                   "dojox/layout/TableContainer",
+                   "dojox/validate/us",
+                   "dojox/validate/web",
+                   "qpid/common/footer"]);
+    </script>
+
+</head>
+<body class="claro">
+
+<div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline', gutters: false">
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
+        <div id="header" class="header" style="float: left; width: 300px"></div>
+        <div id="login" style="float: right"></div>
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+        <div style="width:350px; margin-left: auto; margin-right: auto;">
+            <div data-dojo-type="dijit.form.Form" method="POST" id="loginForm">
+                <script type="dojo/on" data-dojo-event="submit" data-dojo-args="e">
+                    e.preventDefault()
+                    if(this.validate()){
+                        require(["qpid/authorization/sasl"], function(sasl){
+                            var redirectIfAuthenticated = function redirectIfAuthenticated(){
+                                sasl.getUser(function(data){
+                                    if(data.user){
+                                        window.location = "index.html";
+                                    }
+                                });
+                            };
+
+                            sasl.authenticate(dijit.byId("username").value, dijit.byId("password").value, redirectIfAuthenticated);
+                        });
+                    }
+                    return false;
+                </script>
+                <div data-dojo-type="dijit.TitlePane" data-dojo-props="title:'Login', toggleable: false" >
+                    <div class="dijitDialogPaneContentArea">
+                        <div data-dojo-type="dojox.layout.TableContainer" data-dojo-props="cols:1,labelWidth:'100',showLabels:true,orientation:'horiz',customClass:'formLabel'">
+                            <div data-dojo-type="dijit.form.ValidationTextBox" id="username" name="username" data-dojo-props="label:'User name:',required:true, intermediateChanges:true"></div>
+                            <div data-dojo-type="dijit.form.ValidationTextBox" type="password" id="password" name="password" data-dojo-props="label:'Password:',required:true, intermediateChanges:true"></div>
+                        </div>
+                    </div>
+                    <div class="dijitDialogPaneActionBar">
+                         <button data-dojo-type="dijit.form.Button" type="submit" id="loginButton">Login</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">
+        <div qpid-type="footer"></div>
+    </div>
+</div>
+
+</body>
+</html>

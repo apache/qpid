@@ -24,6 +24,7 @@ import java.io.File;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,9 +34,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
+import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.AbstractServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
@@ -66,15 +68,17 @@ import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-public class HttpManagement extends AbstractPluginAdapter
+public class HttpManagement extends AbstractPluginAdapter implements HttpManagementConfiguration
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
 
@@ -104,8 +108,6 @@ public class HttpManagement extends AbstractPluginAdapter
         add(TIME_OUT);
         add(PluginFactory.PLUGIN_TYPE);
     }});
-
-    public static final String ENTRY_POINT_PATH = "/management";
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
@@ -266,8 +268,14 @@ public class HttpManagement extends AbstractPluginAdapter
         server.setHandler(root);
 
         // set servlet context attributes for broker and configuration
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_BROKER, _broker);
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_MANAGEMENT, this);
+        root.getServletContext().setAttribute(HttpManagementUtil.ATTR_BROKER, _broker);
+        root.getServletContext().setAttribute(HttpManagementUtil.ATTR_MANAGEMENT_CONFIGURATION, this);
+
+        FilterHolder restAuthorizationFilter = new FilterHolder(new ForbiddingAuthorisationFilter());
+        restAuthorizationFilter.setInitParameter(ForbiddingAuthorisationFilter.INIT_PARAM_ALLOWED, "/rest/sasl");
+        root.addFilter(restAuthorizationFilter, "/rest/*", EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), HttpManagementUtil.ENTRY_POINT_PATH, EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/index.html", EnumSet.of(DispatcherType.REQUEST));
 
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
@@ -291,7 +299,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
         root.addServlet(new ServletHolder(new SaslServlet()), "/rest/sasl");
 
-        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), ENTRY_POINT_PATH);
+        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), HttpManagementUtil.ENTRY_POINT_PATH);
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");

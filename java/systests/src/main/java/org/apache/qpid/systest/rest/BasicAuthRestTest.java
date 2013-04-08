@@ -68,7 +68,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
         assertEquals(responseCode, conn.getResponseCode());
     }
 
-    public void testDefaultEnabledWithHttps() throws Exception
+    public void testBasicAuthWhenEnabledWithHttps() throws Exception
     {
         configure(true);
         super.setUp();
@@ -81,15 +81,16 @@ public class BasicAuthRestTest extends QpidRestTestCase
         verifyGetBrokerAttempt(HttpServletResponse.SC_OK);
     }
 
-    public void testDefaultDisabledWithHttp() throws Exception
+    public void testBasicAuthWhenDisabledWithHttp() throws Exception
     {
         configure(false);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpBasicAuthenticationEnabled", false);
         super.setUp();
 
         // Try the attempt with authentication, it should fail because
         // BASIC auth is disabled by default on non-secure connections.
         getRestTestHelper().setUsernameAndPassword(USERNAME, USERNAME);
-        verifyGetBrokerAttempt(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        verifyGetBrokerAttempt(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public void testEnablingForHttp() throws Exception
@@ -116,6 +117,6 @@ public class BasicAuthRestTest extends QpidRestTestCase
         // Try the attempt with authentication, it should fail because
         // BASIC auth is now disabled on secure connections.
         getRestTestHelper().setUsernameAndPassword(USERNAME, USERNAME);
-        verifyGetBrokerAttempt(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        verifyGetBrokerAttempt(HttpServletResponse.SC_UNAUTHORIZED);
     }
 }
