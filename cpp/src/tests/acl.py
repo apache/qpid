@@ -1532,6 +1532,7 @@ class ACLTests(TestBase010):
         aclf.write('acl deny bob@QPID publish exchange name=amq.direct routingkey=rk1\n')
         aclf.write('acl deny bob@QPID publish exchange name=amq.topic\n')
         aclf.write('acl deny bob@QPID publish exchange name=myEx routingkey=rk2\n')
+        aclf.write("acl deny bob@QPID publish exchange name=amq.default routingkey=restricted\n")
         aclf.write('acl allow all all')
         aclf.close()
 
@@ -1572,6 +1573,10 @@ class ACLTests(TestBase010):
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow message transfer to exchange amq.direct with routing key rk2");
 
+        self.LookupPublish("bob@QPID", "", "restricted", "deny")
+        self.LookupPublish("bob@QPID", "", "another",    "allow")
+        self.LookupPublish("joe@QPID", "", "restricted", "allow")
+
 
     def test_publish_acl_deny_mode(self):
         """
@@ -1582,6 +1587,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID publish exchange name=amq.topic\n')
         aclf.write('acl allow bob@QPID publish exchange name=myEx routingkey=rk2\n')
         aclf.write('acl allow bob@QPID create exchange\n')
+        aclf.write("acl allow bob@QPID publish exchange name=amq.default routingkey=unrestricted\n")
         aclf.write('acl allow anonymous all all \n')
         aclf.write('acl deny all all')
         aclf.close()
@@ -1628,6 +1634,11 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow message transfer to exchange amq.direct with routing key rk1");
+
+        self.LookupPublish("bob@QPID", "", "unrestricted", "allow")
+        self.LookupPublish("bob@QPID", "", "another",      "deny")
+        self.LookupPublish("joe@QPID", "", "unrestricted", "deny")
+
 
    #=====================================
    # ACL broker configuration tests

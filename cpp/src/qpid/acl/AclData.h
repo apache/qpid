@@ -56,11 +56,13 @@ public:
 
         int                   rawRuleNum;   // rule number in ACL file
         qpid::acl::AclResult  ruleMode;     // combined allow/deny log/nolog
-        specPropertyMap       props;        //
+        specPropertyMap       props;        // properties to be matched
+                                            // pubXxx for publish exchange fastpath
         bool                  pubRoutingKeyInRule;
         std::string           pubRoutingKey;
         boost::shared_ptr<topicTester> pTTest;
         bool                  pubExchNameInRule;
+        bool                  pubExchNameMatchesBlank;
         std::string           pubExchName;
         std::vector<bool>     ruleHasUserSub;
 
@@ -72,6 +74,7 @@ public:
             pubRoutingKey(),
             pTTest(boost::shared_ptr<topicTester>(new topicTester())),
             pubExchNameInRule(false),
+            pubExchNameMatchesBlank(false),
             pubExchName(),
             ruleHasUserSub(PROPERTYSIZE, false)
             {}
@@ -148,6 +151,7 @@ public:
     static const char        ACL_SYMBOL_WILDCARD;
     static const std::string ACL_KEYWORD_WILDCARD;
     static const char        ACL_SYMBOL_LINE_CONTINUATION;
+    static const std::string ACL_KEYWORD_DEFAULT_EXCHANGE;
 
     void substituteString(std::string& targetString,
                           const std::string& placeholder,
