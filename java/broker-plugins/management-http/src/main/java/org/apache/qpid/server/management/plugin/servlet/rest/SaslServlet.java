@@ -25,7 +25,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
+import org.apache.qpid.server.management.plugin.HttpManagementUtil;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
@@ -38,7 +41,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -80,7 +82,7 @@ public class SaslServlet extends AbstractServlet
         String[] mechanisms = subjectCreator.getMechanisms().split(" ");
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
 
-        final Subject subject = getAuthorisedSubjectFromSession(session);
+        final Subject subject = getAuthorisedSubject(request);
         if(subject != null)
         {
             Principal principal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
@@ -195,8 +197,8 @@ public class SaslServlet extends AbstractServlet
 
     private void checkSaslAuthEnabled(HttpServletRequest request)
     {
-        boolean saslAuthEnabled;
-        HttpManagement management = getManagement();
+        boolean saslAuthEnabled = false;
+        HttpManagementConfiguration management = getManagementConfiguration();
         if (request.isSecure())
         {
             saslAuthEnabled = management.isHttpsSaslAuthenticationEnabled();
@@ -205,7 +207,6 @@ public class SaslServlet extends AbstractServlet
         {
             saslAuthEnabled = management.isHttpSaslAuthenticationEnabled();
         }
-
         if (!saslAuthEnabled)
         {
             throw new RuntimeException("Sasl authentication disabled.");
@@ -227,7 +228,7 @@ public class SaslServlet extends AbstractServlet
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
             return;
         }
@@ -236,17 +237,15 @@ public class SaslServlet extends AbstractServlet
         {
             Subject subject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
 
-            try
-            {
-                authoriseManagement(request, subject);
-            }
-            catch (AccessControlException ace)
+            Broker broker = getBroker();
+            LogActor actor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, broker);
+            if (!HttpManagementUtil.hasAccessToManagement(broker.getSecurityManager(), subject, actor))
             {
                 sendError(response, HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
 
-            setAuthorisedSubjectInSession(subject, request, session);
+            HttpManagementUtil.saveAuthorisedSubject(request.getSession(), subject, actor);
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
@@ -273,5 +272,16 @@ public class SaslServlet extends AbstractServlet
             mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
             mapper.writeValue(writer, outputObject);
         }
+    }
+
+    private SubjectCreator getSubjectCreator(HttpServletRequest request)
+    {
+        return getBroker().getSubjectCreator(HttpManagementUtil.getSocketAddress(request));
+    }
+
+    @Override
+    protected Subject getAuthorisedSubject(HttpServletRequest request)
+    {
+        return HttpManagementUtil.getAuthorisedSubject(request.getSession());
     }
 }
