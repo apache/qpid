@@ -17,8 +17,18 @@
 # under the License.
 #
 
+set (sysconfdir ${SYSCONF_INSTALL_DIR})
+
+configure_file(qpidd-primary.in
+        ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
+        @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
+        DESTINATION ${QPID_INSTALL_CONFDIR}/rc.d/init.d
+        COMPONENT ${QPID_COMPONENT_BROKER})
+
 install(FILES qpidc.conf
-        DESTINATION ${QPID_INSTALL_CONFDIR}
+        DESTINATION ${QPID_INSTALL_CONFDIR}/qpid
         COMPONENT ${QPID_COMPONENT_CLIENT})
 install(FILES qpidd.conf
         DESTINATION ${QPID_INSTALL_CONFDIR}

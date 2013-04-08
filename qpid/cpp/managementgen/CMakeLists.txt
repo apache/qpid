@@ -19,8 +19,15 @@
 project(qpidc-qmfgen)
 cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 
-install(PROGRAMS qmf-gen DESTINATION managementgen
+find_package(PythonInterp 2.7 REQUIRED)
+
+execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False)"
+                OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+install(PROGRAMS qmf-gen DESTINATION ${QPID_INSTALL_BINDIR}
         COMPONENT ${QPID_COMPONENT_QMF})
-install(DIRECTORY qmfgen DESTINATION managementgen
+install(DIRECTORY qmfgen DESTINATION ${PYTHON_SITEARCH_PACKAGES}/qmfgen
         COMPONENT ${QPID_COMPONENT_QMF}
         PATTERN ".svn" EXCLUDE PATTERN "*.pyc" EXCLUDE)

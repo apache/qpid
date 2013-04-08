@@ -40,8 +40,8 @@ prog=qpidd
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-if [ -f !!sysconfdir!!/sysconfig/$prog ] ; then
-    . !!sysconfdir!!/sysconfig/$prog
+if [ -f @sysconfdir@/sysconfig/$prog ] ; then
+    . @sysconfdir@/sysconfig/$prog
 fi
 
 # The following variables can be overridden in !!sysconfdir!!/sysconfig/$prog
