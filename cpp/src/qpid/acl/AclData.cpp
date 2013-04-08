@@ -39,6 +39,7 @@ namespace acl {
     const char        AclData::ACL_SYMBOL_WILDCARD           = '*';
     const std::string AclData::ACL_KEYWORD_WILDCARD          = "*";
     const char        AclData::ACL_SYMBOL_LINE_CONTINUATION  = '\\';
+    const std::string AclData::ACL_KEYWORD_DEFAULT_EXCHANGE  = "amq.default";
 
     //
     // constructor
@@ -432,7 +433,13 @@ namespace acl {
                             std::string sName(rsItr->pubExchName);
                             substituteUserId(sName, id);
                             result = matchProp(sName, name);
-                        } else {
+                        } 
+                        else if (rsItr->pubExchNameMatchesBlank) 
+                        {
+                            result = name.empty();
+                        }
+                        else
+                        {
                             result = matchProp(rsItr->pubExchName, name);
                         }
 
@@ -441,7 +448,6 @@ namespace acl {
                             QPID_LOG(debug, "ACL: Rule: " << rsItr->rawRuleNum << " lookup exchange name '"
                                 << name << "' matched with rule name '"
                                 << rsItr->pubExchName << "'");
-
                         }
                         else
                         {
