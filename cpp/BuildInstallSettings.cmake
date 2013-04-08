@@ -171,15 +171,15 @@ if (UNIX)
   set (QPID_INSTALL_BINDIR bin)
   set (QPID_INSTALL_SBINDIR sbin)
   set (QPID_INSTALL_TESTDIR libexec/qpid/tests) # Directory for test executables
-  set (QPID_INSTALL_CONFDIR ${SYSCONF_INSTALL_DIR}/qpid)
-  set (QPID_INSTALL_SASLDIR ${SYSCONF_INSTALL_DIR}/sasl2)
+  set (QPID_INSTALL_CONFDIR ${SYSCONF_INSTALL_DIR})
+  set (QPID_INSTALL_SASLDIR ${SYSCONF_INSTALL_DIR}/qpid/sasl2)
   set (QPID_INSTALL_DATADIR ${SHARE_INSTALL_DIR}/qpid)
   set (QPID_INSTALL_EXAMPLESDIR ${SHARE_INSTALL_DIR}/examples)
   set (QPID_INSTALL_DOCDIR ${DOC_INSTALL_DIR}) # Directory to install documentation
   set (QPID_INSTALL_INCLUDEDIR ${INCLUDE_INSTALL_DIR})
   set (QPID_INSTALL_LIBDIR ${LIB_INSTALL_DIR})
   set (QPID_LOCALSTATE_DIR var) # Directory to store local state data
-  set (QPID_MAN_DIR man) # Directory to install manual files
+  set (QPID_MAN_DIR share/man) # Directory to install manual files
   set (QPID_INSTALL_SYSTEMDDIR usr/lib/systemd/system) # Systemd service files
 
   set_absolute_install_path (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client) # Directory to load client plug-in modules from
