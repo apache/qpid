@@ -17,6 +17,7 @@
  */
 
 #include "qpid/acl/AclReader.h"
+#include "qpid/acl/AclData.h"
 
 #include <cctype>
 #include <cstring>
@@ -141,6 +142,7 @@ namespace acl {
                             {
                                 rule.pubExchNameInRule = true;
                                 rule.pubExchName = pItr->second;
+                                rule.pubExchNameMatchesBlank = rule.pubExchName.compare(AclData::ACL_KEYWORD_DEFAULT_EXCHANGE) == 0;
                             }
                         }
                     }
