@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAuthenticationProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListMessageStoreTypes;
-import org.apache.qpid.server.model.Broker;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -96,7 +95,7 @@ public class HelperServlet extends AbstractServlet
             }
         }
 
-        Object output = action.perform(parameters, (Broker) getServletContext().getAttribute(ATTR_BROKER));
+        Object output = action.perform(parameters, getBroker());
         if (output == null)
         {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);

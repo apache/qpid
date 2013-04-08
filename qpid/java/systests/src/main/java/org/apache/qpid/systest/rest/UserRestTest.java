@@ -34,6 +34,7 @@ public class UserRestTest extends QpidRestTestCase
         getRestTestHelper().configureTemporaryPasswordFile(this, "user1", "user2");
 
         super.setUp(); // do this last because it starts the broker, using the modified config
+        getRestTestHelper().setUsernameAndPassword("user1", "user1");
     }
 
     public void testGet() throws Exception

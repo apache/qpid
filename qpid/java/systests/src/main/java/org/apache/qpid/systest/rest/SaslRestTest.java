@@ -131,7 +131,7 @@ public class SaslRestTest extends QpidRestTestCase
         os.flush();
 
         int code = connection.getResponseCode();
-        assertEquals("Unexpected response code", 403, code);
+        assertEquals("Unexpected response code", 401, code);
 
         List<String> cookies = connection.getHeaderFields().get("Set-Cookie");
 
@@ -156,7 +156,7 @@ public class SaslRestTest extends QpidRestTestCase
         os.flush();
 
         int code = connection.getResponseCode();
-        assertEquals("Unexpected response code", 403, code);
+        assertEquals("Unexpected response code", 401, code);
 
         List<String> cookies = connection.getHeaderFields().get("Set-Cookie");
 
@@ -196,7 +196,7 @@ public class SaslRestTest extends QpidRestTestCase
 
         // authenticate user with correct credentials
         int code = authenticateUser(connection, "admin", "incorrect", "CRAM-MD5");
-        assertEquals("Unexpected response code", 403, code);
+        assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
         connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
@@ -215,7 +215,7 @@ public class SaslRestTest extends QpidRestTestCase
 
         // authenticate user with correct credentials
         int code = authenticateUser(connection, "nonexisting", "admin", "CRAM-MD5");
-        assertEquals("Unexpected response code", 403, code);
+        assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
         connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
@@ -254,7 +254,7 @@ public class SaslRestTest extends QpidRestTestCase
 
         // try to authenticate user with incorrect passowrd
         int code = authenticateUser(connection, "admin", "incorrect", "CRAM-MD5-HEX");
-        assertEquals("Unexpected response code", 403, code);
+        assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
         connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
@@ -273,7 +273,7 @@ public class SaslRestTest extends QpidRestTestCase
 
         // try to authenticate non-existing user
         int code = authenticateUser(connection, "nonexisting", "admin", "CRAM-MD5-HEX");
-        assertEquals("Unexpected response code", 403, code);
+        assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
         connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
