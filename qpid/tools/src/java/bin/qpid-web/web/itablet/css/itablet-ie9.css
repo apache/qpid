@@ -1,0 +1,24 @@
+/**
+ * Stylesheet to sort out IE9 specific quirks.......
+ */
+
+/**
+ * For some reason radiused borders cause IE9 to eat CPU when scrolling or animating in the popup window so remove them.
+ */
+
+.popup, .popup-container
+{
+	border-radius: 0;
+}
+
+.popup .scroll-area
+{
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+input
+{
+    padding: 12px 0 12px 0; /* top right bottom left */
+}
+
