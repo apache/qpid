@@ -25,6 +25,7 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = \
   LICENSE NOTICE README.txt SSL RELEASE_NOTES DESIGN \
   INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
+  cmake_uninstall.cmake.in \
   packaging/NSIS QPID_VERSION.txt bindings/CMakeLists.txt \
   include/qpid/swig_python_typemaps.i include/qpid/swig_ruby_typemaps.i include/qpid/swig_perl_typemaps.i \
   include/qpid/qpid.i include/qmf/qmfengine.i include/qmf/qmf2.i
