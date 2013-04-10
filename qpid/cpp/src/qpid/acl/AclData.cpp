@@ -254,10 +254,11 @@ namespace acl {
                                     case acl::SPECPROP_MAXFILECOUNTUPPERLIMIT:
                                     case acl::SPECPROP_MAXFILESIZEUPPERLIMIT:
                                         limitChecked &=
-                                            compareIntMax(
+                                            compareInt(
                                                 rulePropMapItr->first,
                                                 boost::lexical_cast<std::string>(rulePropMapItr->second),
-                                                boost::lexical_cast<std::string>(lookupParamItr->second));
+                                                boost::lexical_cast<std::string>(lookupParamItr->second),
+                                                true);
                                         break;
 
                                     case acl::SPECPROP_MAXQUEUECOUNTLOWERLIMIT:
@@ -265,10 +266,11 @@ namespace acl {
                                     case acl::SPECPROP_MAXFILECOUNTLOWERLIMIT:
                                     case acl::SPECPROP_MAXFILESIZELOWERLIMIT:
                                         limitChecked &=
-                                            compareIntMin(
+                                            compareInt(
                                                 rulePropMapItr->first,
                                                 boost::lexical_cast<std::string>(rulePropMapItr->second),
-                                                boost::lexical_cast<std::string>(lookupParamItr->second));
+                                                boost::lexical_cast<std::string>(lookupParamItr->second),
+                                                false);
                                         break;
 
                                     default:
@@ -635,18 +637,26 @@ namespace acl {
 
 
     //
-    // Limit check a MAX int limit
+    // Limit check an int limit
     //
-    bool AclData::compareIntMax(const qpid::acl::SpecProperty theProperty,
-                                const std::string             theAclValue,
-                                const std::string             theLookupValue)
+    bool AclData::compareInt(const qpid::acl::SpecProperty theProperty,
+                             const std::string             theAclValue,
+                             const std::string             theLookupValue,
+                             bool                          theMaxFlag)
     {
-        uint64_t aclMax   (0);
-        uint64_t paramMax (0);
+        uint64_t aclRuleValue (0);
+        uint64_t lookupValue  (0);
+
+        QPID_LOG(debug, "ACL: "
+            << (theMaxFlag ? "Upper" : "Lower") << "-limit comparison for property "
+            << AclHelper::getPropertyStr(theProperty)
+            << ". Success if lookup(" << theLookupValue
+            << ") "
+            << (theMaxFlag ? "<=" : ">=") << " rule(" << theAclValue << ")");
 
         try
         {
-            aclMax = boost::lexical_cast<uint64_t>(theAclValue);
+            aclRuleValue = boost::lexical_cast<uint64_t>(theAclValue);
         }
         catch(const boost::bad_lexical_cast&)
         {
@@ -654,76 +664,29 @@ namespace acl {
             return false;
         }
 
+        if (aclRuleValue == 0)
+        {
+            QPID_LOG(debug, "ACL: Comparison is always true when ACL rule value is zero");
+            return true;
+        }
+
         try
         {
-            paramMax = boost::lexical_cast<uint64_t>(theLookupValue);
+            lookupValue = boost::lexical_cast<uint64_t>(theLookupValue);
         }
         catch(const boost::bad_lexical_cast&)
         {
-            QPID_LOG(error,"ACL: Error evaluating rule. "
-                << "Illegal value given in lookup for property '"
+            QPID_LOG(error,"ACL: Illegal value given in lookup for property '"
                 << AclHelper::getPropertyStr(theProperty)
                 << "' : " << theLookupValue);
             return false;
         }
 
-        QPID_LOG(debug, "ACL: Numeric greater-than comparison for property "
-            << AclHelper::getPropertyStr(theProperty)
-            << " (value given in lookup = " << theLookupValue
-            << ", value give in rule = " << theAclValue << " )");
-
-        if (( aclMax ) && ( paramMax == 0 || paramMax > aclMax))
+        bool result =
+        (theMaxFlag ? lookupValue > aclRuleValue : lookupValue < aclRuleValue);
+        if ( result )
         {
-            QPID_LOG(debug, "ACL: Max limit exceeded for property '"
-                << AclHelper::getPropertyStr(theProperty) << "'");
-            return false;
-        }
-
-        return true;
-    }
-
-
-    //
-    // limit check a MIN int limit
-    //
-    bool AclData::compareIntMin(const qpid::acl::SpecProperty theProperty,
-                                const std::string             theAclValue,
-                                const std::string             theLookupValue)
-    {
-        uint64_t aclMin   (0);
-        uint64_t paramMin (0);
-
-        try
-        {
-            aclMin = boost::lexical_cast<uint64_t>(theAclValue);
-        }
-        catch(const boost::bad_lexical_cast&)
-        {
-            assert (false);
-            return false;
-        }
-
-        try
-        {
-            paramMin = boost::lexical_cast<uint64_t>(theLookupValue);
-        }
-        catch(const boost::bad_lexical_cast&)
-        {
-            QPID_LOG(error,"ACL: Error evaluating rule. "
-                << "Illegal value given in lookup for property '"
-                << AclHelper::getPropertyStr(theProperty)
-                << "' : " << theLookupValue);
-            return false;
-        }
-
-        QPID_LOG(debug, "ACL: Numeric less-than comparison for property "
-            << AclHelper::getPropertyStr(theProperty)
-            << " (value given in lookup = " << theLookupValue
-            << ", value give in rule = " << theAclValue << " )");
-
-        if (( aclMin ) && ( paramMin == 0 || paramMin < aclMin))
-        {
-            QPID_LOG(debug, "ACL: Min limit exceeded for property '"
+            QPID_LOG(debug, "ACL: Limit exceeded for property '"
                 << AclHelper::getPropertyStr(theProperty) << "'");
             return false;
         }
