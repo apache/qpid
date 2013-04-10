@@ -204,13 +204,11 @@ public:
     virtual ~AclData();
 
 private:
-    bool compareIntMax(const qpid::acl::SpecProperty theProperty,
-                       const std::string             theAclValue,
-                       const std::string             theLookupValue);
 
-    bool compareIntMin(const qpid::acl::SpecProperty theProperty,
-                       const std::string             theAclValue,
-                       const std::string             theLookupValue);
+    bool compareInt(const qpid::acl::SpecProperty theProperty,
+                    const std::string             theAclValue,
+                    const std::string             theLookupValue,
+                    bool                          theMaxFlag);
 
     // Per-user connection quota
     bool connQuotaRulesExist;

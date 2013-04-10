@@ -976,6 +976,7 @@ class ACLTests(TestBase010):
         aclf.write('acl deny bob@QPID purge queue name=qf3\n')
         aclf.write('acl deny bob@QPID delete queue name=qf4\n')
         aclf.write('acl deny bob@QPID create queue name=qf5 filemaxsizeupperlimit=1000 filemaxcountupperlimit=100\n')
+        aclf.write('acl deny bob@QPID create queue name=ABCDE queuemaxsizelowerlimit=900000 queuemaxsizeupperlimit=1024000 queuemaxcountlowerlimit=900 queuemaxcountupperlimit=2000 filemaxsizelowerlimit=0 filemaxsizeupperlimit=32 filemaxcountlowerlimit=0 filemaxcountupperlimit=4 policytype=ring durable=false autodelete=true\n')
         aclf.write('acl allow all all')
         aclf.close()
 
@@ -984,6 +985,16 @@ class ACLTests(TestBase010):
             self.fail(result)
 
         session = self.get_session('bob','bob')
+
+        self.Lookup("bob@QPID", "create", "queue", "ABCDE", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"0",
+                                                             "maxfilecount":"0" }, "deny")
 
         try:
             queue_options = {}
@@ -1020,6 +1031,9 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID delete queue name=qfd4\n')
         aclf.write('acl allow bob@QPID create queue name=qfd5 filemaxsizeupperlimit=1000 filemaxcountupperlimit=100\n')
         aclf.write('acl allow bob@QPID create queue name=qfd6 filemaxsizelowerlimit=50 filemaxsizeupperlimit=100 filemaxcountlowerlimit=50 filemaxcountupperlimit=100\n')
+        aclf.write('acl allow bob@QPID create queue name=ABCDE queuemaxsizelowerlimit=900000 queuemaxsizeupperlimit=1024000 queuemaxcountlowerlimit=900 queuemaxcountupperlimit=2000 filemaxsizelowerlimit=0 filemaxsizeupperlimit=32 filemaxcountlowerlimit=0 filemaxcountupperlimit=4 policytype=ring durable=false autodelete=true\n')
+        aclf.write('acl allow bob@QPID create queue name=FGHIJ queuemaxsizelowerlimit=900000 queuemaxsizeupperlimit=1024000 queuemaxcountlowerlimit=900 queuemaxcountupperlimit=2000 filemaxsizelowerlimit=2 filemaxsizeupperlimit=32 filemaxcountlowerlimit=0 filemaxcountupperlimit=4 policytype=ring durable=false autodelete=true\n')
+        aclf.write('acl allow bob@QPID create queue name=KLMNO queuemaxsizelowerlimit=900000 queuemaxsizeupperlimit=1024000 queuemaxcountlowerlimit=900 queuemaxcountupperlimit=2000 filemaxsizelowerlimit=0 filemaxsizeupperlimit=0 filemaxcountlowerlimit=0 filemaxcountupperlimit=4 policytype=ring durable=false autodelete=true\n')
         aclf.write('acl allow anonymous all all\n')
         aclf.write('acl deny all all')
         aclf.close()
@@ -1029,6 +1043,86 @@ class ACLTests(TestBase010):
             self.fail(result)
 
         session = self.get_session('bob','bob')
+
+        self.Lookup("bob@QPID", "create", "queue", "ABCDE", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"0",
+                                                             "maxfilecount":"0" }, "allow")
+
+        self.Lookup("bob@QPID", "create", "queue", "FGHIJ", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"1",
+                                                             "maxfilecount":"0" }, "deny")
+
+        self.Lookup("bob@QPID", "create", "queue", "FGHIJ", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"2",
+                                                             "maxfilecount":"0" }, "allow")
+
+        self.Lookup("bob@QPID", "create", "queue", "FGHIJ", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"32",
+                                                             "maxfilecount":"0" }, "allow")
+
+        self.Lookup("bob@QPID", "create", "queue", "FGHIJ", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"33",
+                                                             "maxfilecount":"0" }, "deny")
+
+        self.Lookup("bob@QPID", "create", "queue", "KLMNO", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"0",
+                                                             "maxfilecount":"0" }, "allow")
+
+        self.Lookup("bob@QPID", "create", "queue", "KLMNO", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"17",
+                                                             "maxfilecount":"0" }, "allow")
+
+        self.Lookup("bob@QPID", "create", "queue", "KLMNO", {"durable":"false",
+                                                             "autodelete":"true",
+                                                             "exclusive":"false",
+                                                             "alternate":"",
+                                                             "policytype":"ring",
+                                                             "maxqueuesize":"1024000",
+                                                             "maxqueuecount":"1000",
+                                                             "maxfilesize":"33",
+                                                             "maxfilecount":"0" }, "allow")
 
         try:
             session.queue_declare(queue="qfd1", durable=True)
@@ -1778,7 +1872,6 @@ class ACLTests(TestBase010):
 
         for u in g_admins:
             self.Lookup(u, "create", "queue", "anything", {"durable":"true"}, "allow-log")
-
         uInTest = g_auditors + g_admins
         uOutTest = self.AllBut(g_all, uInTest)
 
