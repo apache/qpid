@@ -18,6 +18,11 @@
  * under the License.
  *
  */
+// Turn off unintialised warnings as errors when compiling under Red Enterprise Linux 6
+// as an unitialised variable warning is unavoidable there.
+#if __GNUC__ == 4 && __GNUC_MINOR__ == 4 && __GNUC_PATCHLEVEL__ == 7
+#pragma GCC diagnostic warning "-Wuninitialized"
+#endif
 
 #include "qpid/sys/SocketTransport.h"
 
