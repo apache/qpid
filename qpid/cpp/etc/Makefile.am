@@ -40,7 +40,7 @@ endif
 # We can't use autoconf substitution directly because it leaves
 #  ${prefix} and ${exec_prefix} unexpanded. Substitute with sed
 #  scripts.
-SUBST="s|!!sysconfdir!!|${sysconfdir}|;s|!!sbindir!!|${sbindir}|;s|!!bindir!!|${bindir}|"
+SUBST="s|@sysconfdir[@]|${sysconfdir}|;s|@sbindir[@]|${sbindir}|;s|@bindir[@]|${bindir}|"
 qpidd: qpidd.in
 	sed $(SUBST) $< > $@
 qpidd-primary: qpidd-primary.in

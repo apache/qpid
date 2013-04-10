@@ -40,13 +40,13 @@ prog=qpidd
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-if [ -f /@sysconfdir@/sysconfig/$prog ] ; then
-    . /@sysconfdir@/sysconfig/$prog
+if [ -f @sysconfdir@/sysconfig/$prog ] ; then
+    . @sysconfdir@/sysconfig/$prog
 fi
 
 # The following variables can be overridden in @sysconfdir@/sysconfig/$prog
 [[ $QPID_PORT ]] || QPID_PORT=5672
-[[ $QPID_HA ]]   || QPID_HA=/@bindir@/qpid-ha
+[[ $QPID_HA ]]   || QPID_HA=@bindir@/qpid-ha
 export QPID_PORT
 
 RETVAL=0
