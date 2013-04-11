@@ -54,10 +54,16 @@ under the License.
       <title>Avoiding message loss</title>
       <para>
 	In order to avoid message loss, the primary broker <emphasis>delays
-	acknowledgment</emphasis> of messages received from clients until the message has
-	been replicated to and acknowledged by all of the back-up brokers. This means that
-	all <emphasis>acknowledged</emphasis> messages are safely stored on all the backup
-	brokers.
+	acknowledgment</emphasis> of messages received from clients until the
+	message has been replicated and acknowledged by all of the back-up
+	brokers, or has been consumed from the primary queue.
+      </para>
+      <para>
+	This ensures that all acknowledged messages are safe: they have either
+	been consumed or backed up to all backup brokers.  Messages that are
+	consumed <emphasis>before</emphasis> they are replicated do not need to
+	be replicated. This reduces the work load when replicating a queue with
+	active consumers.
       </para>
       <para>
 	Clients keep <emphasis>unacknowledged</emphasis> messages in a buffer
@@ -82,10 +88,10 @@ under the License.
 	</footnote>
       </para>
       <para>
-	  So if the primary crashes, all the <emphasis>acknowledged</emphasis>
-	  messages will be available on the backup that takes over as the new
-	  primary. The <emphasis>unacknowledged</emphasis> messages will be
-	  re-sent by the clients.  Thus no messages are lost.
+	If the primary crashes, all the <emphasis>acknowledged</emphasis>
+	messages will be available on the backup that takes over as the new
+	primary. The <emphasis>unacknowledged</emphasis> messages will be
+	re-sent by the clients.  Thus no messages are lost.
       </para>
       <para>
 	Note that this means it is possible for messages to be
@@ -177,10 +183,12 @@ under the License.
 	</listitem>
 	<listitem>
 	  <para>
-	    Federated links <emphasis>from</emphasis> the primary will be lost
-	    in fail over, they will not be re-connected to the new
-	    primary. Federation links <emphasis>to</emphasis> the primary will
-	    fail over.
+	    Federation links <emphasis>to</emphasis> the primary will fail over
+	    correctly.  Federated links <emphasis>from</emphasis> the primary
+	    will be lost in fail over, they will not be re-connected to the new
+	    primary. It is possible to work around this by replacing the
+	    <literal>qpidd-primary</literal> start up script with a script that
+	    re-creates federation links when the primary is promoted.
 	  </para>
 	</listitem>
       </itemizedlist>
