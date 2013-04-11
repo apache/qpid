@@ -82,7 +82,7 @@ if (WIN32)
 endif (WIN32)
 
 # set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
+set(CPACK_SET_DESTDIR ON)
 set(CPACK_PACKAGE_NAME "qpid-cpp")
 set(CPACK_PACKAGE_VENDOR "Apache Software Foundation")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apache Qpid C++")
