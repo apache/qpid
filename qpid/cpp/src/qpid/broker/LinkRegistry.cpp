@@ -168,6 +168,7 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& name,
                                                      const std::string& excludes,
                                                      bool         dynamic,
                                                      uint16_t     sync,
+                                                     uint32_t     credit,
                                                      Bridge::InitializeCallback init,
                                                      const std::string& queueName,
                                                      const std::string& altExchange
@@ -209,6 +210,7 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& name,
         args.i_excludes   = excludes;
         args.i_dynamic    = dynamic;
         args.i_sync       = sync;
+        args.i_credit     = credit;
 
         bridge = Bridge::shared_ptr
           (new Bridge (name, &link, link.nextChannel(),

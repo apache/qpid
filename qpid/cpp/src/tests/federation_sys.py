@@ -462,7 +462,7 @@ class QmfTestBase010(TestBase010):
         if b is not None:
             return b
         # Does not exist, so create it
-        self._check_qmf_return(qmf_link.bridge(bridge_durable_flag, src, dest, key, "", "", queue_route_type_flag, False, False, 1))
+        self._check_qmf_return(qmf_link.bridge(bridge_durable_flag, src, dest, key, "", "", queue_route_type_flag, False, False, 1, 0))
         b = self._find_qmf_bridge(qmf_broker_proxy, qmf_link, src, dest, key)
         self.assertNotEqual(b, None, "Bridge creation failed: src=%s dest=%s key=%s" % (src, dest, key))
         return b
