@@ -79,11 +79,14 @@ will be assumed broken if there is no heartbeat for twice the interval.
 Configuring rgmanager
 ---------------------
 
-The new HA module requires an external cluster resource manager, `rgmanager`
-provided by the `cman` package.  `rgmanager` is responsible for stopping and
-starting brokers and determining which broker is promoted to primary. It is also
-responsible for detecting primary failures and promoting a new primary.  See
-["Configuring rgmanager as resource manager"][ha-rm-config]
+The new HA module requires an external cluster resource manager.  Initially it
+supports `rgmanager` provided by the `cman` package.  `rgmanager` is responsible
+for stopping and starting brokers and determining which broker is promoted to
+primary. It is also responsible for detecting primary failures and promoting a
+new primary.  See ["Configuring rgmanager as resource manager"][ha-rm-config]
+
+It is relatively easy to integrate with a new resource manager, see
+["Integrating with other Cluster Resource Managers"][ha-other-rm]
 
 Broker Administration Tools
 ---------------------------
