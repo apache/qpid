@@ -19,7 +19,7 @@
 project(qpidc-qmfgen)
 cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 
-find_package(PythonInterp 2.7 REQUIRED)
+find_package(PythonInterp REQUIRED)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
                 -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False)"
