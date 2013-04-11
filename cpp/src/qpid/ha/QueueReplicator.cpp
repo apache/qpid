@@ -137,6 +137,7 @@ void QueueReplicator::activate() {
         "",                 // excludes
         false,              // dynamic
         0,                  // sync?
+        LinkRegistry::INFINITE_CREDIT,
         // Include shared_ptr to self to ensure we are not deleted
         // before initializeBridge is called.
         boost::bind(&QueueReplicator::initializeBridge, shared_from_this(), _1, _2)
