@@ -19,8 +19,9 @@ Client connections and fail-over
 The old cluster module was active-active: clients could connect to any broker in
 the cluster. The new ha module is active-passive. Exactly 1 broker acts as
 *primary* the other brokers act as *backup*. Only the primary accepts client
-connections. If a client attempts to connect to a *backup* broker, the connection
-will be aborted and the client will fail-over until it connects to the primary. See
+connections. If a client attempts to connect to a *backup* broker, the
+connection will be aborted and the client will fail-over until it connects to
+the primary. This failover is transparent to the client. See
 ["Client Connections and Failover"][ha-failover].
 
 The new cluster module also supports a [virtual IP address][ha-virtual-ip].
@@ -46,15 +47,18 @@ Configuration options for new HA module
 
 `ha-cluster`: set to `yes` to enable clustering.
 
-`ha-brokers-url`: set to a URL listing each node in the cluster. For example
-`amqp:node1.exaple.com,node2.exaple.com,node3.exaple.com`. The set of addresses
-for the cluster is fixed, you can't add new members with different addresses
-while the cluster is running. You can shut-down and re-start a broker on the
-same address.
+`ha-brokers-url`: A URL listing each node in the cluster. For example
+`amqp:node1.example.com,node2.example.com,node3.example.com`. If you have separate
+client and broker networks, the addresses in `ha-brokers-url` should be on the
+broker network. Note this URL must list all nodes in the cluster, you cannot use
+a [Virtual IP address][ha-virtual-ip] here.
 
-`ha-public-url`: URL used by clients to connect to the cluster. It is
-recommended to set this to the [Virtual IP address][ha-virtual-ip] of the
-cluster.
+`ha-public-url`: URL used by clients to connect to the cluster. 
+This can be one of:
+
+- A [virtual IP address][ha-virtual-ip] configured for your client network.
+- A list of broker addresses on the client network. If you don't have a separate
+  client network then this is the same as the `ha-brokers-url`
 
 `ha-replicate`: Set to `all` to replicate everything like the old cluster does.
 New HA provides more flexibility over what is replicated, see ["Controlling replication of queues and exchanges"][ha-replicate-values].
@@ -88,7 +92,7 @@ Broker Administration Tools
  management tools are allowed to connect to a backup brokers. If you use these
  tools you must not add or remove messages from replicated queues, nor create or
  delete replicated queues or exchanges as this will disrupt the replication
- process and may cause message loss.
+ process and may cause message loss or other unpredictable behavior.
 
 qpid-ha allows you to view and change HA configuration settings.
 
@@ -112,7 +116,7 @@ consistency. See ["Using a message store in a cluster"][ha-store].
 
 [chapter-ha]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html
 [ha-failover]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-failover
-[ha-failover]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
+[ha-virtual-ip]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
 [ha-replicate-values]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-replicate-values
 [ha-rm-config]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-rm-config
 

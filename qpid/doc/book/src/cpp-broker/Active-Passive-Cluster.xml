@@ -603,7 +603,10 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       Clients can only connect to the primary broker. Backup brokers reject any
       connection attempt by a client. Clients rejected by a backup broker will
-      simply fail-over until they connect to the primary.
+      automatically fail-over until they connect to the primary. if
+      <literal>ha-public-url</literal> contains multiple addresses, the client
+      will them all in rotation. If it is a virtual IP address the clients will
+      retry on the same address until it is reconnected.
     </para>
     <para>
       Clients are configured with the URL for the cluster (details below for
@@ -874,7 +877,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   </section>
 
   <section id ="ha-store">
-    <title>Using a message store in a  cluster</title>
+    <title>Using a message store in a cluster</title>
     <para>
       If you use a persistent store for your messages then each broker in a
       cluster will have its own store. If the entire cluster fails and is
