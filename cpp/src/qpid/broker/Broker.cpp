@@ -624,6 +624,7 @@ const std::string SRC_IS_QUEUE("srcIsQueue");
 const std::string SRC_IS_LOCAL("srcIsLocal");
 const std::string DYNAMIC("dynamic");
 const std::string SYNC("sync");
+const std::string CREDIT("credit");
 
 // parameters for deleting a Queue object
 const std::string IF_EMPTY("if_empty");
@@ -840,6 +841,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
         bool srcIsLocal = false;
         bool dynamic = false;
         uint16_t sync = 0;
+        uint32_t credit = LinkRegistry::INFINITE_CREDIT;
 
         for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
 
@@ -853,6 +855,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
             else if (i->first == SRC_IS_LOCAL) srcIsLocal = bool(i->second);
             else if (i->first == DYNAMIC) dynamic = bool(i->second);
             else if (i->first == SYNC) sync = i->second.asUint16();
+            else if (i->first == CREDIT) credit = i->second.asUint32();
             else if (i->first == DURABLE) durable = bool(i->second);
             else if (i->first == QUEUE_NAME) queueName = i->second.asString();
             else {
@@ -867,7 +870,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
         }
         std::pair<Bridge::shared_ptr, bool> rc =
           links.declare(name, *link, durable, src, dest, key, srcIsQueue, srcIsLocal, id, excludes,
-                        dynamic, sync,
+                        dynamic, sync, credit,
                         0,
                         queueName);
 

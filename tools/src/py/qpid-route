@@ -60,6 +60,7 @@ class Config:
         self._srclocal     = False
         self._transport    = "tcp"
         self._ack          = 0
+        self._credit       = 0xFFFFFFFF  # unlimited
         self._connTimeout  = 10
         self._conn_options = {}
 
@@ -93,6 +94,8 @@ def OptionsAndArguments(argv):
     parser.add_option("-s", "--src-local", action="store_true", help="Make connection to source broker (push route)")
 
     parser.add_option("--ack", action="store", type="int", metavar="<n>", help="Acknowledge transfers over the bridge in batches of N")
+    parser.add_option("--credit", action="store", type="int", default=0xFFFFFFFF, metavar="<msgs>",
+                      help="Maximum number of messages a sender can have outstanding (0=unlimited)")
     parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
 
     parser.add_option("--client-sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). Used when the client connects to the destination broker (not for authentication between the source and destination brokers - that is specified using the [mechanisms] argument to 'add route'). SASL automatically picks the most secure available mechanism - use this option to override.")
@@ -135,6 +138,8 @@ def OptionsAndArguments(argv):
 
     if opts.ack:
         config._ack = opts.ack
+
+    config._credit = opts.credit
 
     if opts.client_sasl_mechanism:
         config._conn_options['mechanisms'] = opts.client_sasl_mechanism
@@ -327,7 +332,9 @@ class RouteManager:
 
         if config._verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(config._durable, exchange, exchange, routingKey, tag, excludes, False, config._srclocal, dynamic, config._ack)
+        res = link.bridge(config._durable, exchange, exchange, routingKey, tag,
+                          excludes, False, config._srclocal, dynamic,
+                          config._ack, config._credit)
         if res.status != 0:
             raise Exception(res.text)
         if config._verbose:
@@ -349,7 +356,8 @@ class RouteManager:
 
         if config._verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(config._durable, queue, exchange, "", "", "", True, config._srclocal, False, config._ack)
+        res = link.bridge(config._durable, queue, exchange, "", "", "", True,
+                          config._srclocal, False, config._ack, config._credit)
         if res.status != 0:
             raise Exception(res.text)
         if config._verbose:

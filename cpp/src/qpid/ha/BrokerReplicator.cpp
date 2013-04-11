@@ -326,6 +326,7 @@ void BrokerReplicator::initialize() {
         "",                 // excludes
         false,              // dynamic
         0,                  // sync?
+        LinkRegistry::INFINITE_CREDIT,
         // shared_ptr keeps this in memory until outstanding connected
         // calls are run.
         boost::bind(&BrokerReplicator::connected, shared_from_this(), _1, _2)
