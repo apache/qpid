@@ -17,18 +17,23 @@
 # under the License.
 #
 
-# Use automake variable names as these files are also configured by automake.
-set_absolute_install_path (bindir ${QPID_INSTALL_BINDIR})
-set_absolute_install_path (sysconfdir ${SYSCONF_INSTALL_DIR})
-set_absolute_install_path (sbindir ${QPID_INSTALL_SBINDIR})
+if (UNIX)
 
-configure_file(qpidd.in
-        ${CMAKE_CURRENT_BINARY_DIR}/qpidd
-        @ONLY)
+  # Use automake variable names as these files are also configured by automake.
+  # Use absolute paths as these are substituted into init scripts.
+  set_absolute_install_path (bindir ${QPID_INSTALL_BINDIR})
+  set_absolute_install_path (sysconfdir ${SYSCONF_INSTALL_DIR})
+  set_absolute_install_path (sbindir ${QPID_INSTALL_SBINDIR})
 
-configure_file(qpidd-primary.in
-        ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
-        @ONLY)
+  configure_file(qpidd.in
+    ${CMAKE_CURRENT_BINARY_DIR}/qpidd
+    @ONLY)
+
+  configure_file(qpidd-primary.in
+    ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
+    @ONLY)
+
+endif (UNIX)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qpidd ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
