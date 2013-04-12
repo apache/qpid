@@ -31,8 +31,6 @@ import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.plugin.PluginFactory;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
@@ -47,9 +45,7 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**

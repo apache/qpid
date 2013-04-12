@@ -365,6 +365,8 @@ public class SSLTest extends QpidBrokerTestCase
             sslPortAttributes.put(Port.NEED_CLIENT_AUTH, needClientAuth);
             sslPortAttributes.put(Port.WANT_CLIENT_AUTH, wantClientAuth);
             sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
+            sslPortAttributes.put(Port.TRUST_STORES, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
             getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
         }
     }

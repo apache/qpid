@@ -22,8 +22,8 @@ package org.apache.qpid.server.model.adapter;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,8 +47,6 @@ import org.apache.qpid.test.utils.QpidTestCase;
 public class PortFactoryTest extends QpidTestCase
 {
     private UUID _portId = UUID.randomUUID();
-    private UUID _keyStoreId = UUID.randomUUID();
-    private UUID _trustStoreId = UUID.randomUUID();
     private int _portNumber = 123;
     private Set<String> _tcpStringSet = Collections.singleton(Transport.TCP.name());
     private Set<Transport> _tcpTransportSet = Collections.singleton(Transport.TCP);
@@ -134,15 +132,14 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateAmqpPort()
     {
-        createAmqpPortTestImpl(false,false,false);
+        createAmqpPortTestImpl(false, false, false, null, null);
     }
 
     public void testCreateAmqpPortUsingSslFailsWithoutKeyStore()
     {
-        when(_broker.getKeyStores()).thenReturn(new ArrayList<KeyStore>());
         try
         {
-            createAmqpPortTestImpl(true,false,false);
+            createAmqpPortTestImpl(true, false, false, null, null);
             fail("expected exception due to lack of SSL keystore");
         }
         catch(IllegalConfigurationException e)
@@ -153,18 +150,22 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateAmqpPortUsingSslSucceedsWithKeyStore()
     {
-        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
+        String keyStoreName = "myKeyStore";
+        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
 
-        createAmqpPortTestImpl(true,false,false);
+        createAmqpPortTestImpl(true, false, false, keyStoreName, null);
     }
 
     public void testCreateAmqpPortNeedingClientAuthFailsWithoutTrustStore()
     {
-        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
-        when(_broker.getTrustStores()).thenReturn(new ArrayList<TrustStore>());
+        String keyStoreName = "myKeyStore";
+        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+
+        when(_broker.findTrustStoreByName(any(String.class))).thenReturn(null);
+
         try
         {
-            createAmqpPortTestImpl(true,true,false);
+            createAmqpPortTestImpl(true, true, false, keyStoreName, null);
             fail("expected exception due to lack of SSL truststore");
         }
         catch(IllegalConfigurationException e)
@@ -175,19 +176,23 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateAmqpPortNeedingClientAuthSucceedsWithTrustStore()
     {
-        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
-        when(_broker.getTrustStores()).thenReturn(Collections.singleton(_trustStore));
+        String keyStoreName = "myKeyStore";
+        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
 
-        createAmqpPortTestImpl(true,true,false);
+        String trustStoreName = "myTrustStore";
+        when(_broker.findTrustStoreByName(trustStoreName)).thenReturn(_trustStore);
+
+        createAmqpPortTestImpl(true, true, false, keyStoreName, new String[]{trustStoreName});
     }
 
     public void testCreateAmqpPortWantingClientAuthFailsWithoutTrustStore()
     {
-        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
-        when(_broker.getTrustStores()).thenReturn(new ArrayList<TrustStore>());
+        String keyStoreName = "myKeyStore";
+        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+
         try
         {
-            createAmqpPortTestImpl(true,false,true);
+            createAmqpPortTestImpl(true, false, true, keyStoreName, null);
             fail("expected exception due to lack of SSL truststore");
         }
         catch(IllegalConfigurationException e)
@@ -198,13 +203,17 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateAmqpPortWantingClientAuthSucceedsWithTrustStore()
     {
-        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
-        when(_broker.getTrustStores()).thenReturn(Collections.singleton(_trustStore));
+        String keyStoreName = "myKeyStore";
+        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
 
-        createAmqpPortTestImpl(true,false,true);
+        String trustStoreName = "myTrustStore";
+        when(_broker.findTrustStoreByName(trustStoreName)).thenReturn(_trustStore);
+
+        createAmqpPortTestImpl(true, false, true, keyStoreName, new String[]{trustStoreName});
     }
 
-    public void createAmqpPortTestImpl(boolean useSslTransport, boolean needClientAuth, boolean wantClientAuth)
+    public void createAmqpPortTestImpl(boolean useSslTransport, boolean needClientAuth, boolean wantClientAuth,
+                                       String keystoreName, String[] trustStoreNames)
     {
         Set<Protocol> amqp010ProtocolSet = Collections.singleton(Protocol.AMQP_0_10);
         Set<String> amqp010StringSet = Collections.singleton(Protocol.AMQP_0_10.name());
@@ -223,6 +232,16 @@ public class PortFactoryTest extends QpidTestCase
         if(wantClientAuth)
         {
             _attributes.put(Port.WANT_CLIENT_AUTH, "true");
+        }
+
+        if(keystoreName != null)
+        {
+            _attributes.put(Port.KEY_STORE, keystoreName);
+        }
+
+        if(trustStoreNames != null)
+        {
+            _attributes.put(Port.TRUST_STORES, Arrays.asList(trustStoreNames));
         }
 
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
@@ -332,6 +351,31 @@ public class PortFactoryTest extends QpidTestCase
         }
         catch(IllegalConfigurationException e)
         {
+            // pass
+        }
+    }
+
+    public void testCreateRMIPortRequestingSslFails()
+    {
+        String keyStoreName = "myKeyStore";
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, 1);
+        attributes.put(Port.NAME, getTestName());
+        attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+        attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
+        _attributes.put(Port.KEY_STORE, keyStoreName);
+
+        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+
+        try
+        {
+            _portFactory.createPort(_portId, _broker, attributes);
+            fail("RMI port creation should fail due to requesting SSL");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            e.printStackTrace();
             // pass
         }
     }

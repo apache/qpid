@@ -15,15 +15,16 @@
   ~ limitations under the License.
   -->
 <div class="dijitHidden">
-    <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'Authentication Provider'" id="addAuthenticationProvider">
+    <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Authentication Provider'" id="addAuthenticationProvider">
         <form id="formAddAuthenticationProvider" method="post" dojoType="dijit.form.Form">
+            <div style="height:100px; width:420px; overflow: auto">
                 <table class="tableContainer-table tableContainer-table-horiz" width="100%" cellspacing="1">
                 <tr>
-                    <td class="tableContainer-labelCell" style="width: 300px;">Type*:</td>
+                    <td class="tableContainer-labelCell" style="width: 200px;">Type*:</td>
                     <td class="tableContainer-valueCell"><div id="addAuthenticationProvider.selectAuthenticationProviderDiv"></div></td>
                 </tr>
                 <tr>
-                    <td class="tableContainer-labelCell" style="width: 300px;">Name*:</td>
+                    <td class="tableContainer-labelCell" style="width: 200px;">Name*:</td>
                     <td class="tableContainer-valueCell"><input type="text" required="true" name="name"
                         id="formAddAuthenticationProvider.name" placeholder="Name" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"
                         dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" /></div></td>
@@ -31,8 +32,11 @@
                 </table>
                 <input type="hidden" id="formAddAuthenticationProvider.id" name="id"/>
                 <div id="addAuthenticationProvider.fieldSets"></div>
+            </div>
+            <div class="dijitDialogPaneActionBar">
                 <!-- submit buttons -->
                 <input type="submit" value="Save Authentication Provider" label="Save Authentication Provider" dojoType="dijit.form.Button" />
+            </div>
         </form>
     </div>
 </div>

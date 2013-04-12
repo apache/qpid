@@ -69,20 +69,6 @@
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Group file location:</div>
                 <div id="brokerAttribute.groupFile" style="float:left;"></div>
             </div>
-            <div id="brokerAttribute.keyStorePath.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Path to keystore:</div>
-                <div id="brokerAttribute.keyStorePath" style="float:left;"></div><br/>
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Keystore certificate alias:</div>
-                <div id="brokerAttribute.keyStoreCertAlias" style="float:left;"></div>
-            </div>
-            <div id="brokerAttribute.trustStorePath.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Path to truststore:</div>
-                <div id="brokerAttribute.trustStorePath" style="float:left;"></div>
-            </div>
-            <div id="brokerAttribute.peerStorePath.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Path to peerstore:</div>
-                <div id="brokerAttribute.peerStorePath" style="float:left;"></div>
-            </div>
             <div id="brokerAttribute.statisticsReportingPeriod.container" style="display: none; clear:both">
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Statistics reporting period:</div>
                 <div id="brokerAttribute.statisticsReportingPeriod" style="float:left;"></div>
@@ -189,6 +175,18 @@
         <div class="broker-authentication-providers"></div>
         <button data-dojo-type="dijit.form.Button" class="addAuthenticationProvider">Add Provider</button>
         <button data-dojo-type="dijit.form.Button" class="deleteAuthenticationProvider">Delete Provider</button>
+    </div>
+    <br/>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Key stores'">
+        <div class="broker-key-stores"></div>
+        <button data-dojo-type="dijit.form.Button" class="addKeystore">Add Key Store</button>
+        <button data-dojo-type="dijit.form.Button" class="deleteKeystore">Delete Key Store</button>
+    </div>
+    <br/>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Trust stores'">
+        <div class="broker-trust-stores"></div>
+        <button data-dojo-type="dijit.form.Button" class="addTruststore">Add Trust Store</button>
+        <button data-dojo-type="dijit.form.Button" class="deleteTruststore">Delete Trust Store</button>
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Log File',  open: false">

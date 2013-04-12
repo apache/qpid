@@ -38,9 +38,9 @@ public interface TrustStore extends ConfiguredObject
 
     String PATH = "path";
     String PASSWORD = "password";
-    String PEERS_ONLY = "peersOnly";
     String TYPE = "type";
-    String KEY_MANAGER_FACTORY_ALGORITHM = "keyManagerFactoryAlgorithm";
+    String PEERS_ONLY = "peersOnly";
+    String TRUST_MANAGER_FACTORY_ALGORITHM = "trustManagerFactoryAlgorithm";
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -56,9 +56,9 @@ public interface TrustStore extends ConfiguredObject
                               DESCRIPTION,
                               PATH,
                               PASSWORD,
-                              PEERS_ONLY,
                               TYPE,
-                              KEY_MANAGER_FACTORY_ALGORITHM
+                              PEERS_ONLY,
+                              TRUST_MANAGER_FACTORY_ALGORITHM
                               ));
 
     public String getPassword();

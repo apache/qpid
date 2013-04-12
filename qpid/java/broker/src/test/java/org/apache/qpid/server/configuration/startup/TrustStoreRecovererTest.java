@@ -27,16 +27,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.TrustManagerFactory;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.adapter.AbstractKeyStoreAdapter;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestSSLConstants;
 
 public class TrustStoreRecovererTest extends QpidTestCase
 {
     public void testCreateWithAllAttributesProvided()
     {
         Map<String, Object> attributes = getTrustStoreAttributes();
+        Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
@@ -44,36 +49,27 @@ public class TrustStoreRecovererTest extends QpidTestCase
         when(entry.getAttributes()).thenReturn(attributes);
         when(entry.getId()).thenReturn(id);
 
-        TrustStoreRecoverer recovever = new TrustStoreRecoverer();
+        TrustStoreRecoverer recoverer = new TrustStoreRecoverer();
 
-        TrustStore trustStore = recovever.create(null, entry, broker);
+        TrustStore trustStore = recoverer.create(null, entry, broker);
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
-        assertEquals("my-secret-password", trustStore.getPassword());
 
-        assertNull("Password was unexpectedly returned from configured object", trustStore.getAttribute(TrustStore.PASSWORD));
+        //verify we can retrieve the actual password using the method
+        assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, trustStore.getPassword());
+        assertNotNull(trustStore.getPassword());
 
-        // password attribute should not be exposed by a trust store configured object
-        // so, we should set password value to null in the map being used to create the trust store configured object
-        attributes.put(TrustStore.PASSWORD, null);
-        for (Map.Entry<String, Object> attribute : attributes.entrySet())
+        //verify that we havent configured the trust store with the actual dummy password value
+        assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(trustStore.getPassword()));
+
+        // Verify the remaining attributes, including that the password value returned
+        // via getAttribute is actually the dummy value and not the real password
+        attributesCopy.put(TrustStore.PASSWORD, AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK);
+        for (Map.Entry<String, Object> attribute : attributesCopy.entrySet())
         {
             Object attributeValue = trustStore.getAttribute(attribute.getKey());
             assertEquals("Unexpected value of attribute '" + attribute.getKey() + "'", attribute.getValue(), attributeValue);
         }
-    }
-
-    private Map<String, Object> getTrustStoreAttributes()
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(TrustStore.NAME, getName());
-        attributes.put(TrustStore.PATH, "/path/to/truststore");
-        attributes.put(TrustStore.PASSWORD, "my-secret-password");
-        attributes.put(TrustStore.TYPE, "NON-JKS");
-        attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
-        attributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
-        attributes.put(TrustStore.DESCRIPTION, "Description");
-        return attributes;
     }
 
     public void testCreateWithMissedRequiredAttributes()
@@ -104,6 +100,18 @@ public class TrustStoreRecovererTest extends QpidTestCase
                 // pass
             }
         }
+    }
+
+    private Map<String, Object> getTrustStoreAttributes()
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(TrustStore.NAME, getName());
+        attributes.put(TrustStore.PATH, TestSSLConstants.BROKER_TRUSTSTORE);
+        attributes.put(TrustStore.PASSWORD, TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD);
+        attributes.put(TrustStore.TYPE, "jks");
+        attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
+        attributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
+        return attributes;
     }
 
 }

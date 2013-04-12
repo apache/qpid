@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -205,6 +204,7 @@ public class PortRestTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+        attributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("Transport has not been changed to SSL " , 200, responseCode);
@@ -217,12 +217,13 @@ public class PortRestTest extends QpidRestTestCase
         Collection<String> transports = (Collection<String>) port.get(Port.TRANSPORTS);
         assertEquals("Unexpected auth provider", new HashSet<String>(Arrays.asList(Transport.SSL.name())),
                 new HashSet<String>(transports));
+
+        String keyStore = (String) port.get(Port.KEY_STORE);
+        assertEquals("Unexpected auth provider", TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, keyStore);
     }
 
     public void testUpdateTransportFromTCPToSSLWithoutKeystoreConfiguredFails() throws Exception
     {
-        getBrokerConfiguration().setBrokerAttribute(Broker.KEY_STORE_PATH, null);
-        getBrokerConfiguration().setSaved(false);
         restartBrokerInManagementMode();
 
         String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
@@ -241,6 +242,8 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.NAME, portName);
         attributes.put(Port.PORT, DEFAULT_SSL_PORT);
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+        attributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
+        attributes.put(Port.TRUST_STORES, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
 
         int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("SSL port was not added", 201, responseCode);
@@ -257,6 +260,11 @@ public class PortRestTest extends QpidRestTestCase
         Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
         assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, true, port.get(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, true, port.get(Port.WANT_CLIENT_AUTH));
+        assertEquals("Unexpected " + Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, port.get(Port.KEY_STORE));
+        @SuppressWarnings("unchecked")
+        Collection<String> trustStores = (Collection<String>) port.get(Port.TRUST_STORES);
+        assertEquals("Unexpected auth provider", new HashSet<String>(Arrays.asList(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE)),
+                new HashSet<String>(trustStores));
 
         restartBrokerInManagementMode();
 
@@ -265,7 +273,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
-        assertEquals("Should not be able to change transport to SSL without reseting of attributes for need/want client auth", 409, responseCode);
+        assertEquals("Should not be able to change transport to TCP without reseting of attributes for need/want client auth", 409, responseCode);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);

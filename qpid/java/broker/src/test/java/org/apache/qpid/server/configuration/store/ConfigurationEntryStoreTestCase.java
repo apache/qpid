@@ -284,7 +284,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(TrustStore.PATH, "/path/to/truststore");
         attributes.put(TrustStore.PASSWORD, "my-secret-password");
         attributes.put(TrustStore.TYPE, "NON-JKS");
-        attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(TrustStore.DESCRIPTION, "Description");
 
         ConfigurationEntry trustStoreEntry = new ConfigurationEntry(trustStoreId, TrustStore.class.getSimpleName(), attributes,
