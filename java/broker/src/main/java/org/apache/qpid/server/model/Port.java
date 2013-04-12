@@ -45,6 +45,8 @@ public interface Port extends ConfiguredObject
     String NEED_CLIENT_AUTH                     = "needClientAuth";
     String WANT_CLIENT_AUTH                     = "wantClientAuth";
     String AUTHENTICATION_PROVIDER              = "authenticationProvider";
+    String KEY_STORE                            = "keyStore";
+    String TRUST_STORES                         = "trustStores";
 
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
@@ -67,13 +69,19 @@ public interface Port extends ConfiguredObject
                             RECEIVE_BUFFER_SIZE,
                             NEED_CLIENT_AUTH,
                             WANT_CLIENT_AUTH,
-                            AUTHENTICATION_PROVIDER
+                            AUTHENTICATION_PROVIDER,
+                            KEY_STORE,
+                            TRUST_STORES
                                  ));
 
 
     String getBindingAddress();
 
     int getPort();
+
+    KeyStore getKeyStore();
+
+    Collection<TrustStore> getTrustStores();
 
     Collection<Transport> getTransports();
 

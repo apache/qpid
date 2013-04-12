@@ -33,7 +33,7 @@ define(["dojo/_base/xhr",
         "dijit/form/RadioButton",
         "dijit/form/CheckBox",
         "dojox/layout/TableContainer",
-        "dojox/layout/ScrollPane",
+        "dijit/layout/ContentPane",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"
@@ -141,7 +141,7 @@ define(["dojo/_base/xhr",
                return (type === "PlainPasswordFile" || type === "Base64MD5PasswordFile");
            };
 
-           util.showSetAttributesDialog = function(attributeWidgetFactories, data, putURL, dialogTitle)
+           util.showSetAttributesDialog = function(attributeWidgetFactories, data, putURL, dialogTitle, appendNameToUrl)
            {
               var layout = new dojox.layout.TableContainer({
                    cols: 1,
@@ -154,7 +154,7 @@ define(["dojo/_base/xhr",
               var form = new dijit.form.Form();
 
               var dialogContent = dom.create("div");
-              var dialogContentArea = dom.create("div", { "class": "dijitDialogPaneContentArea"});
+              var dialogContentArea = dom.create("div", {"style": {width: 600}});
               var dialogActionBar = dom.create("div", { "class": "dijitDialogPaneActionBar"} );
               dialogContent.appendChild(dialogContentArea);
               dialogContent.appendChild(dialogActionBar);
@@ -171,11 +171,17 @@ define(["dojo/_base/xhr",
                  var widget = attributeWidgetFactory.createWidget(data);
                  var name = attributeWidgetFactory.name ? attributeWidgetFactory.name : widget.name;
                  widgets[name] = widget;
-                 widget.initialValue = widget.value;
                  var dotPos = name.indexOf(".");
                  if (dotPos == -1)
                  {
-                   layout.addChild(widget);
+                   if (widget instanceof dijit.layout.ContentPane)
+                   {
+                     dialogContentArea.appendChild(widget.domNode);
+                   }
+                   else
+                   {
+                     layout.addChild(widget);
+                   }
                  }
                  else
                  {
@@ -197,7 +203,7 @@ define(["dojo/_base/xhr",
                      groups[groupName] = groupFieldContainer;
                      var groupTitle = attributeWidgetFactory.groupName ? attributeWidgetFactory.groupName :
                                          groupName.charAt(0).toUpperCase() + groupName.slice(1);
-                     var panel = new dijit.TitlePane({title: groupTitle, toggleable: false, content: groupFieldContainer.domNode});
+                     var panel = new dijit.TitlePane({title: groupTitle, content: groupFieldContainer.domNode});
                      dialogContentArea.appendChild(dom.create("br"));
                      dialogContentArea.appendChild(panel.domNode);
                    }
@@ -224,8 +230,7 @@ define(["dojo/_base/xhr",
               }
               var setAttributesDialog = new dijit.Dialog({
                  title: dialogTitle,
-                 content: form,
-                 style: "width: 600px; max-height: 80%"
+                 content: form
              });
              form.on("submit", function(e)
              {
@@ -235,23 +240,29 @@ define(["dojo/_base/xhr",
                  if(form.validate())
                  {
                    var values = {};
-                   for(var i in widgets)
+                   var formWidgets = form.getDescendants();
+                   for(var i in formWidgets)
                    {
-                       var widget = widgets[i];
+                       var widget = formWidgets[i];
                        var value = widget.value;
                        var propName = widget.name;
-                       if ((widget instanceof dijit.form.CheckBox || widget instanceof dijit.form.RadioButton))
-                       {
-                         values[ propName ] = widget.checked;
-                       }
-                       else if (value != widget.initialValue)
-                       {
-                         values[ propName ] = value ? value: null;
+                       if (propName && !widget.disabled){
+                           if ((widget instanceof dijit.form.CheckBox || widget instanceof dijit.form.RadioButton)) {
+                               if (widget.checked != widget.initialValue) {
+                                   values[ propName ] = widget.checked;
+                               }
+                           } else if (value != widget.initialValue) {
+                               values[ propName ] = value ? value: null;
+                           }
                        }
                    }
 
                      var that = this;
-                     xhr.put({url: putURL, sync: true, handleAs: "json",
+                     var url = putURL;
+                     if (appendNameToUrl){
+                       url = url + "/" + encodeURIComponent(values["name"]);
+                     }
+                     xhr.put({url: url , sync: true, handleAs: "json",
                               headers: { "Content-Type": "application/json"},
                               putData: json.toJson(values),
                               load: function(x) {that.success = true; },
@@ -280,15 +291,24 @@ define(["dojo/_base/xhr",
              });
              form.connectChildren(true);
              setAttributesDialog.startup();
-             setAttributesDialog.on("show", function(){
-               var data = geometry.position(dialogContentArea);
-               var maxHeight = win.getBox().h * 0.6;
-               if (data.h > maxHeight)
-               {
-                 dialogContentArea.style.height = maxHeight + "px";
-                 dialogContentArea.style.overflow= "auto";
-               }
-             })
+             var formWidgets = form.getDescendants();
+             var aproximateHeight = 0;
+             for(var i in formWidgets){
+                 var widget = formWidgets[i];
+                 var propName = widget.name;
+                 if (propName) {
+                     if ((widget instanceof dijit.form.CheckBox || widget instanceof dijit.form.RadioButton)) {
+                         widget.initialValue = widget.checked;
+                     } else {
+                         widget.initialValue = widget.value;
+                     }
+                     aproximateHeight += 30;
+                 }
+             }
+             var viewport = win.getBox();
+             var maxHeight = Math.max(Math.floor(viewport.h * 0.6), 100);
+             dialogContentArea.style.overflow= "auto";
+             dialogContentArea.style.height = Math.min(aproximateHeight, maxHeight ) + "px";
              setAttributesDialog.show();
            };
 

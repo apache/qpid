@@ -37,20 +37,21 @@ import org.apache.qpid.server.util.MapValueConverter;
 
 public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
 {
+    public static final String DUMMY_PASSWORD_MASK = "********";
+    public static final String DEFAULT_KEYSTORE_TYPE = java.security.KeyStore.getDefaultType();
+
     private String _name;
     private String _password;
 
-    protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
+    protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> defaults,
+                                      Map<String, Object> attributes)
     {
-        super(id, broker.getTaskExecutor());
+        super(id, defaults, attributes, broker.getTaskExecutor());
         addParent(Broker.class, broker);
+
         _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
         _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);
-        setMandatoryAttribute(TrustStore.PATH, attributes);
-        setOptionalAttribute(TrustStore.PEERS_ONLY, attributes);
-        setOptionalAttribute(TrustStore.TYPE, attributes);
-        setOptionalAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, attributes);
-        setOptionalAttribute(TrustStore.DESCRIPTION, attributes);
+        MapValueConverter.assertMandatoryAttribute(KeyStore.PATH, attributes);
     }
 
     @Override
@@ -163,15 +164,16 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         }
         else if(KeyStore.PASSWORD.equals(name))
         {
-            return null; // for security reasons we don't expose the password
-        }
-        return super.getAttribute(name);
-    }
+            // For security reasons we don't expose the password
+            if (getPassword() != null)
+            {
+                return DUMMY_PASSWORD_MASK;
+            }
 
-    @Override
-    protected boolean setState(State currentState, State desiredState)
-    {
-        return false;
+            return null;
+        }
+
+        return super.getAttribute(name);
     }
 
     public String getPassword()
@@ -182,26 +184,5 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
     public void setPassword(String password)
     {
         _password = password;
-    }
-
-    private void setMandatoryAttribute(String name, Map<String, Object> attributeValues)
-    {
-        changeAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
-    }
-
-    private void setOptionalAttribute(String name, Map<String, Object> attributeValues)
-    {
-        Object attrValue = attributeValues.get(name);
-        if (attrValue != null)
-        {
-            if (attrValue instanceof Boolean)
-            {
-                changeAttribute(name, null, MapValueConverter.getBooleanAttribute(name, attributeValues));
-            }
-            else
-            {
-                changeAttribute(name, null, MapValueConverter.getStringAttribute(name, attributeValues));
-            }
-        }
     }
 }

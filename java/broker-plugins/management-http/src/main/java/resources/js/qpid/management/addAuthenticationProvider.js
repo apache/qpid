@@ -207,7 +207,7 @@ define(["dojo/_base/xhr",
                                var layout = new dojox.layout.TableContainer( {
                                    id: providerType + "FieldSet",
                                    cols: 1,
-                                   "labelWidth": "300",
+                                   "labelWidth": "200",
                                    showLabels: true,
                                    orientation: "horiz"
                                });
