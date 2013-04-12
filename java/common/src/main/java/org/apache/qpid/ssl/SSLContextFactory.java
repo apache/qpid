@@ -31,7 +31,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.security.cert.X509Certificate;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -39,7 +38,6 @@ import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Factory used to create SSLContexts. SSL needs to be configured

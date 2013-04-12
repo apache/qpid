@@ -24,10 +24,23 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-public interface KeyStore extends TrustStore
+public interface KeyStore extends ConfiguredObject
 {
+    String ID = "id";
+    String NAME = "name";
+    String DURABLE = "durable";
+    String LIFETIME_POLICY = "lifetimePolicy";
+    String STATE = "state";
+    String TIME_TO_LIVE = "timeToLive";
+    String CREATED = "created";
+    String UPDATED = "updated";
+    String DESCRIPTION = "description";
 
+    String PATH = "path";
+    String PASSWORD = "password";
+    String TYPE = "type";
     String CERTIFICATE_ALIAS = "certificateAlias";
+    String KEY_MANAGER_FACTORY_ALGORITHM = "keyManagerFactoryAlgorithm";
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -44,8 +57,11 @@ public interface KeyStore extends TrustStore
                               PATH,
                               PASSWORD,
                               TYPE,
-                              KEY_MANAGER_FACTORY_ALGORITHM,
-                              CERTIFICATE_ALIAS
+                              CERTIFICATE_ALIAS,
+                              KEY_MANAGER_FACTORY_ALGORITHM
                               ));
 
+    public String getPassword();
+
+    public void setPassword(String password);
 }

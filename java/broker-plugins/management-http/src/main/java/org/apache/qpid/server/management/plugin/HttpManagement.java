@@ -62,6 +62,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
@@ -240,7 +241,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             else if (protocols.contains(Protocol.HTTPS))
             {
-                KeyStore keyStore = _broker.getDefaultKeyStore();
+                KeyStore keyStore = port.getKeyStore();
                 if (keyStore == null)
                 {
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
@@ -290,6 +291,8 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
         addRestServlet(root, "port", Port.class);
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
+        addRestServlet(root, "keystore", KeyStore.class);
+        addRestServlet(root, "truststore", TrustStore.class);
 
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");

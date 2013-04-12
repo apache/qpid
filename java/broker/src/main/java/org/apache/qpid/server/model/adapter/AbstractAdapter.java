@@ -63,6 +63,7 @@ abstract class AbstractAdapter implements ConfiguredObject
             {
                 if (attributes.containsKey(name))
                 {
+                    //TODO: dont put nulls
                     _attributes.put(name, attributes.get(name));
                 }
             }
@@ -254,6 +255,7 @@ abstract class AbstractAdapter implements ConfiguredObject
             if((currentValue == null && expected == null)
                || (currentValue != null && currentValue.equals(expected)))
             {
+                //TODO: dont put nulls
                 _attributes.put(name, desired);
                 return true;
             }
@@ -396,5 +398,52 @@ abstract class AbstractAdapter implements ConfiguredObject
     protected Map<String, Object> getDefaultAttributes()
     {
         return _defaultAttributes;
+    }
+
+    /**
+     * Returns a map of effective attribute values that would result
+     * if applying the supplied changes. Does not apply the changes.
+     */
+    protected Map<String, Object> generateEffectiveAttributes(Map<String,Object> changedValues)
+    {
+        //Build a new set of effective attributes that would be
+        //the result of applying the attribute changes, so we
+        //can validate the configuration that would result
+
+        Map<String, Object> defaultValues = getDefaultAttributes();
+        Map<String, Object> existingActualValues = getActualAttributes();
+
+        //create a new merged map, starting with the defaults
+        Map<String, Object> merged =  new HashMap<String, Object>(defaultValues);
+
+        for(String name : getAttributeNames())
+        {
+            if(changedValues.containsKey(name))
+            {
+                Object changedValue = changedValues.get(name);
+                if(changedValue != null)
+                {
+                    //use the new non-null value for the merged values
+                    merged.put(name, changedValue);
+                }
+                else
+                {
+                    //we just use the default (if there was one) since the changed
+                    //value is null and effectively clears any existing actual value
+                }
+            }
+            else if(existingActualValues.get(name) != null)
+            {
+                //Use existing non-null actual value for the merge
+                merged.put(name, existingActualValues.get(name));
+            }
+            else
+            {
+                //There was neither a change or an existing non-null actual
+                //value, so just use the default value (if there was one).
+            }
+        }
+
+        return merged;
     }
 }

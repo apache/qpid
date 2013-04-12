@@ -142,13 +142,6 @@ public class BrokerRestTest extends QpidRestTestCase
         invalidAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, -11000);
         invalidAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, -12000);
         invalidAttributes.put(Broker.ACL_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-acl.acl");
-        invalidAttributes.put(Broker.KEY_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-keystore.jks");
-        invalidAttributes.put(Broker.KEY_STORE_PASSWORD, "password1");
-        invalidAttributes.put(Broker.KEY_STORE_CERT_ALIAS, "java-broker1");
-        invalidAttributes.put(Broker.TRUST_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-truststore.jks");
-        invalidAttributes.put(Broker.TRUST_STORE_PASSWORD, "password2");
-        invalidAttributes.put(Broker.PEER_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-peerstore.jks");
-        invalidAttributes.put(Broker.PEER_STORE_PASSWORD, "password3");
         invalidAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups-non-existing");
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, -13000);
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, -14000);
@@ -191,13 +184,6 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 12000);
         brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
         brokerAttributes.put(Broker.ACL_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "broker_example.acl");
-        brokerAttributes.put(Broker.KEY_STORE_PATH, TestSSLConstants.BROKER_KEYSTORE);
-        brokerAttributes.put(Broker.KEY_STORE_PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        brokerAttributes.put(Broker.KEY_STORE_CERT_ALIAS, "java-broker");
-        brokerAttributes.put(Broker.TRUST_STORE_PATH, TestSSLConstants.TRUSTSTORE);
-        brokerAttributes.put(Broker.TRUST_STORE_PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
-        brokerAttributes.put(Broker.PEER_STORE_PATH, TestSSLConstants.TRUSTSTORE);
-        brokerAttributes.put(Broker.PEER_STORE_PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
         brokerAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups");
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 13000);
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 14000);
@@ -212,10 +198,7 @@ public class BrokerRestTest extends QpidRestTestCase
         {
             String attributeName = entry.getKey();
             Object attributeValue = entry.getValue();
-            if (attributeName.equals(Broker.KEY_STORE_PASSWORD) || attributeName.equals(Broker.TRUST_STORE_PASSWORD) || attributeName.equals(Broker.PEER_STORE_PASSWORD))
-            {
-                attributeValue = "********";
-            }
+
             Object currentValue = actualAttributes.get(attributeName);
             assertEquals("Unexpected attribute " + attributeName + " value:", attributeValue, currentValue);
         }
@@ -225,10 +208,7 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES,
                 Broker.BYTES_RETAINED, Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES,
-                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE,
-                Broker.KEY_STORE_PATH, Broker.KEY_STORE_PASSWORD, Broker.KEY_STORE_CERT_ALIAS,
-                Broker.TRUST_STORE_PATH, Broker.TRUST_STORE_PASSWORD, Broker.GROUP_FILE,
-                Broker.PEER_STORE_PATH, Broker.PEER_STORE_PASSWORD);
+                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE, Broker.GROUP_FILE);
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));

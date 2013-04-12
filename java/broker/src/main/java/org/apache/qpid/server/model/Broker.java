@@ -88,18 +88,6 @@ public interface Broker extends ConfiguredObject
     String ACL_FILE = "aclFile";
 
     /*
-     * A temporary attributes to set the broker default key/trust stores.
-     * TODO: Remove them after adding a full support to configure KeyStore/TrustStore via management layers.
-     */
-    String KEY_STORE_PATH = "keyStorePath";
-    String KEY_STORE_PASSWORD = "keyStorePassword";
-    String KEY_STORE_CERT_ALIAS = "keyStoreCertAlias";
-    String TRUST_STORE_PATH = "trustStorePath";
-    String TRUST_STORE_PASSWORD = "trustStorePassword";
-    String PEER_STORE_PATH = "peerStorePath";
-    String PEER_STORE_PASSWORD = "peerStorePassword";
-
-    /*
      * A temporary attributes to set the broker group file.
      * TODO: Remove them after adding a full support to configure authorization providers via management layers.
      */
@@ -148,16 +136,8 @@ public interface Broker extends ConfiguredObject
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-
-                              ACL_FILE,
-                              KEY_STORE_PATH,
-                              KEY_STORE_PASSWORD,
-                              KEY_STORE_CERT_ALIAS,
-                              TRUST_STORE_PATH,
-                              TRUST_STORE_PASSWORD,
-                              PEER_STORE_PATH,
-                              PEER_STORE_PASSWORD,
-                              GROUP_FILE
+                              GROUP_FILE,
+                              ACL_FILE
                               ));
 
     //children
@@ -194,6 +174,10 @@ public interface Broker extends ConfiguredObject
 
     VirtualHost findVirtualHostByName(String name);
 
+    KeyStore findKeyStoreByName(String name);
+
+    TrustStore findTrustStoreByName(String name);
+
     /**
      * Get the SubjectCreator for the given socket address.
      * TODO: move the authentication related functionality into host aliases and AuthenticationProviders
@@ -210,10 +194,6 @@ public interface Broker extends ConfiguredObject
      * TODO: Remove this method. Eventually the broker will become a registry.
      */
     VirtualHostRegistry getVirtualHostRegistry();
-
-    KeyStore getDefaultKeyStore();
-
-    TrustStore getDefaultTrustStore();
 
     TaskExecutor getTaskExecutor();
 
