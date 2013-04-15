@@ -51,8 +51,10 @@ public class ConnectionManagementTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp(); // modifies broker config therefore must be done before super.setUp()
+
         super.setUp();
         _jmxUtils.open();
     }

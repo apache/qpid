@@ -47,8 +47,9 @@ public class LoggingManagementTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp();
 
         // System test normally run with log for4j test config from beneath test-profiles.   We need to
         // copy it as some of our tests write to this file.

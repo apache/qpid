@@ -265,10 +265,10 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerUsernameAsCN() throws Exception
     {
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
-        jmxUtils.setUp();
 
         setCommonBrokerSSLProperties(true);
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
 
@@ -299,11 +299,11 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerUsernameAsDN() throws Exception
     {
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
-        jmxUtils.setUp();
 
         setCommonBrokerSSLProperties(true);
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN, "true");
+        getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
 
