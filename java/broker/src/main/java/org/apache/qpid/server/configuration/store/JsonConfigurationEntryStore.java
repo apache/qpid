@@ -21,8 +21,27 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 
     public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore)
     {
+        this(storeLocation, initialStore, false);
+    }
+
+    public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite)
+    {
         super();
         _storeFile = new File(storeLocation);
+
+        if(_storeFile.isDirectory())
+        {
+            throw new IllegalConfigurationException("A directory exists at the location for the broker configuration store file: " + storeLocation);
+        }
+
+        if(overwrite && _storeFile.exists())
+        {
+            if(!_storeFile.delete())
+            {
+                throw new RuntimeException("Unable to overwrite existing configuration store file as requested: " + storeLocation);
+            }
+        }
+
         if ((!_storeFile.exists() || _storeFile.length() == 0))
         {
            initialiseStore(_storeFile, initialStore);

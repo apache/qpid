@@ -27,9 +27,9 @@ import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
 {
     @Override
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore)
+    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite)
     {
-        return new JsonConfigurationEntryStore(storeLocation, initialStore);
+        return new JsonConfigurationEntryStore(storeLocation, initialStore, overwrite);
     }
 
     @Override

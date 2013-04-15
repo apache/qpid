@@ -25,6 +25,7 @@ import java.io.File;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 
 public class BrokerOptions
 {
@@ -49,6 +50,7 @@ public class BrokerOptions
     private int _managementModeHttpPort;
     private String _workingDir;
     private boolean _skipLoggingConfiguration;
+    private boolean _overwriteConfigurationStore;
 
     public String getLogConfigFile()
     {
@@ -180,6 +182,24 @@ public class BrokerOptions
     }
 
     /**
+     * Returns whether the existing broker configuration store should be overwritten with the current
+     * initial configuration file (see {@link BrokerOptions#getInitialConfigurationLocation()}).
+     */
+    public boolean isOverwriteConfigurationStore()
+    {
+        return _overwriteConfigurationStore;
+    }
+
+    /**
+     * Sets whether the existing broker configuration store should be overwritten with the current
+     * initial configuration file (see {@link BrokerOptions#getInitialConfigurationLocation()}).
+     */
+    public void setOverwriteConfigurationStore(boolean overwrite)
+    {
+        _overwriteConfigurationStore = overwrite;
+    }
+
+    /**
      * Get the broker work directory location.
      *
      * Defaults to the location set in the "QPID_WORK" system property if it is set, or the 'work' sub-directory
@@ -216,7 +236,7 @@ public class BrokerOptions
     /**
      * Get the broker initial JSON configuration location.
      *
-     * Defaults to an internal configuration file within the broker jar, which is loaded with the {@link JsonConfigurationEntryStore}.
+     * Defaults to an internal configuration file within the broker jar.
      *
      * @return the previously set configuration location, or the default location if none was set.
      */
@@ -232,7 +252,7 @@ public class BrokerOptions
 
     /**
      * Set the absolute path or URL to use for the initial JSON configuration, which is loaded with the
-     * {@link JsonConfigurationEntryStore} in order to initialise any new {@link ConfigurationEntryStore} for the broker.
+     * {@link MemoryConfigurationEntryStore} in order to initialise any new {@link ConfigurationEntryStore} for the broker.
      *
      * Passing null clears any previously set value and returns to the default.
      */
