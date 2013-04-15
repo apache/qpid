@@ -26,7 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,6 +70,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     private final ObjectMapper _objectMapper;
     private final Map<UUID, ConfigurationEntry> _entries;
     private final Map<String, Class<? extends ConfiguredObject>> _relationshipClasses;
+    private final ConfigurationEntryStoreUtil _util = new ConfigurationEntryStoreUtil();
 
     private String _storeLocation;
     private UUID _rootId;
@@ -119,7 +119,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         else
         {
             _storeLocation = initialStoreLocation;
-            load(toURL(_storeLocation));
+            load(_util.toURL(_storeLocation));
         }
     }
 
@@ -289,21 +289,6 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         }
     }
 
-    protected URL toURL(String location)
-    {
-        URL url = null;
-        try
-        {
-            url = new URL(location);
-        }
-        catch (MalformedURLException e)
-        {
-            File locationFile = new File(location);
-            url = fileToURL(locationFile);
-        }
-        return url;
-    }
-
     protected void createFileIfNotExist(File file)
     {
         File parent = file.getParentFile();
@@ -347,20 +332,6 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 }
             }
         }
-    }
-
-    protected URL fileToURL(File storeFile)
-    {
-        URL storeURL = null;
-        try
-        {
-            storeURL = storeFile.toURI().toURL();
-        }
-        catch (MalformedURLException e)
-        {
-            throw new IllegalConfigurationException("Cannot create URL for file " + storeFile, e);
-        }
-        return storeURL;
     }
 
     private void loadFromJson(String json)
@@ -690,5 +661,10 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     protected boolean isGeneratedObjectIdDuringLoad()
     {
         return _generatedObjectIdDuringLoad;
+    }
+
+    protected ConfigurationEntryStoreUtil getConfigurationEntryStoreUtil()
+    {
+        return _util;
     }
 }
