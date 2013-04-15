@@ -49,8 +49,10 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     @Override
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp();
+
         super.setUp();
         _jmxUtils.open();
     }

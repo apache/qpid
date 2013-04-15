@@ -557,14 +557,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         UUID id = null;
         if (idAsString == null)
         {
-            if (expectedConfiguredObjectClass == Broker.class)
-            {
-                id = UUIDGenerator.generateRandomUUID();
-            }
-            else
-            {
-                id = UUIDGenerator.generateBrokerChildUUID(type, name);
-            }
+            id = UUIDGenerator.generateRandomUUID();
 
             _generatedObjectIdDuringLoad = true;
         }

@@ -87,8 +87,9 @@ public class QueueManagementTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp();
 
         super.setUp();
         _sourceQueueName = getTestQueueName() + "_src";

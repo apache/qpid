@@ -65,9 +65,10 @@ public class ModelTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         // Create a JMX Helper
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp();
         super.setUp();
 
         // Open the JMX Connection
