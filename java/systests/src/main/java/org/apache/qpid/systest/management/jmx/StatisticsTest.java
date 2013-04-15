@@ -56,8 +56,9 @@ public class StatisticsTest extends QpidBrokerTestCase
         createTestVirtualHost(0, TEST_VIRTUALHOST1);
         createTestVirtualHost(0, TEST_VIRTUALHOST2);
 
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this, TEST_USER, TEST_PASSWORD);
-        _jmxUtils.setUp();
 
         super.setUp();
 

@@ -849,7 +849,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         attributes.put(VirtualHost.NAME, virtualHostName);
         attributes.put(VirtualHost.CONFIG_PATH,  System.getProperty("broker.virtualhosts-config"));
         int port = getPort(brokerPort);
-        getBrokerConfiguration(port).addHostConfiguration(attributes);
+        getBrokerConfiguration(port).addVirtualHostConfiguration(attributes);
     }
 
     /**

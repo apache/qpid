@@ -40,8 +40,10 @@ public class BrokerManagementTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp();
+
         super.setUp();
         _jmxUtils.open();
         _managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);

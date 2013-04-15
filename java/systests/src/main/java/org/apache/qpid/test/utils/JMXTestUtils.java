@@ -21,7 +21,6 @@
 package org.apache.qpid.test.utils;
 
 import junit.framework.TestCase;
-import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
@@ -73,11 +72,6 @@ public class JMXTestUtils
     public JMXTestUtils(QpidBrokerTestCase test)
     {
         this(test, DEFAULT_USERID, DEFAULT_PASSWORD);
-    }
-
-    public void setUp() throws IOException, ConfigurationException, Exception
-    {
-        _test.getBrokerConfiguration().addJmxManagementConfiguration();
     }
 
     public void open() throws Exception
