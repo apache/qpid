@@ -34,11 +34,12 @@ public interface ConfigurationStoreFactory
     /**
      * Creates and opens the store from a given location using initial store if provided.
      * <p>
-     * If location does not exists than a new store is created either empty or from the initial store if it is provided
+     * If location does not exist, or the overwrite option is specified, then a new store is created from the initial store if it is provided
      *
      * @param storeLocation store location
      * @param initialStore initial store
+     * @param overwrite overwrite existing store with initial store
      * @throws IllegalConfigurationException if store cannot be opened in the given location
      */
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore);
+    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite);
 }
