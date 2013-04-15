@@ -24,11 +24,11 @@ import java.io.File;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 
 public class BrokerOptions
 {
+    public static final String DEFAULT_INITIAL_CONFIG_NAME = "initial-config.json";
     public static final String DEFAULT_STORE_TYPE = "json";
     public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
