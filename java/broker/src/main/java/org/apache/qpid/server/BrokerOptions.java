@@ -33,7 +33,7 @@ public class BrokerOptions
     public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String DEFAULT_INITIAL_CONFIG_LOCATION =
-        BrokerOptions.class.getClassLoader().getResource("initial-store.json").toExternalForm();
+        BrokerOptions.class.getClassLoader().getResource(DEFAULT_INITIAL_CONFIG_NAME).toExternalForm();
 
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
