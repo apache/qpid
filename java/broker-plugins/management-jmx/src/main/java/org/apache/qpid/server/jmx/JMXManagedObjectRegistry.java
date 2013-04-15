@@ -22,7 +22,6 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.model.Broker;
@@ -43,9 +42,6 @@ import javax.management.remote.MBeanServerForwarder;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.net.ssl.SSLContext;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -140,11 +136,11 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
             catch (GeneralSecurityException e)
             {
-                throw new RuntimeException("Unable to create SSLContext for key or trust store", e);
+                throw new RuntimeException("Unable to create SSLContext for key store", e);
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Unable to create SSLContext - unable to load key/trust store", e);
+                throw new RuntimeException("Unable to create SSLContext for key store", e);
             }
 
             CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStorePath));

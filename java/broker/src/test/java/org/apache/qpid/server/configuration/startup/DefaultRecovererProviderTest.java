@@ -29,8 +29,10 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -42,7 +44,8 @@ public class DefaultRecovererProviderTest extends TestCase
     {
         String[] supportedTypes = {Broker.class.getSimpleName(),
                 VirtualHost.class.getSimpleName(), AuthenticationProvider.class.getSimpleName(),
-                GroupProvider.class.getSimpleName(), Plugin.class.getSimpleName(), Port.class.getSimpleName()};
+                GroupProvider.class.getSimpleName(), Plugin.class.getSimpleName(), Port.class.getSimpleName(),
+                KeyStore.class.getSimpleName(), TrustStore.class.getSimpleName()};
 
         // mocking the required object
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
