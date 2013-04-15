@@ -73,7 +73,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
     public void testCreateJsonStore()
     {
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION);
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, false);
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
@@ -84,41 +84,73 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
     public void testCreateJsonStoreFromInitialStore() throws Exception
     {
+        createJsonStoreFromInitialStoreTestImpl(false);
+    }
+
+    public void testOverwriteExistingJsonStoreWithInitialConfig() throws Exception
+    {
+        createJsonStoreFromInitialStoreTestImpl(true);
+    }
+
+    public void createJsonStoreFromInitialStoreTestImpl(boolean overwrite) throws Exception
+    {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
 
+        String defaultBrokerName = "QpidBroker";
+        String testBrokerName = getTestName();
+
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();
-        UUID brokerId = UUID.randomUUID();
-        brokerObjectMap.put(Broker.ID, brokerId);
-        brokerObjectMap.put("name", "Test");
+        UUID testBrokerId = UUID.randomUUID();
+        brokerObjectMap.put(Broker.ID, testBrokerId);
+        brokerObjectMap.put("name", testBrokerName);
 
         StringWriter sw = new StringWriter();
         objectMapper.writeValue(sw, brokerObjectMap);
 
         String brokerJson = sw.toString();
 
-        File _storeFile = TestFileUtils.createTempFile(this, ".json", brokerJson);
+        File _initialStoreFile = TestFileUtils.createTempFile(this, ".json", brokerJson);
 
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _storeFile.getAbsolutePath());
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _initialStoreFile.getAbsolutePath(), false);
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
         JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null);
         ConfigurationEntry entry = jsonStore.getRootEntry();
-        assertEquals("Unexpected root id", brokerId, entry.getId());
+        assertEquals("Unexpected root id", testBrokerId, entry.getId());
         Map<String, Object> attributes = entry.getAttributes();
         assertNotNull("Unexpected attributes: " + attributes, attributes);
         assertEquals("Unexpected attributes size: " + attributes.size(), 1, attributes.size());
-        assertEquals("Unexpected attribute name: " + attributes.get("name"), "Test", attributes.get("name"));
+        assertEquals("Unexpected attribute name: " + attributes.get("name"), testBrokerName, attributes.get(Broker.NAME));
         Set<UUID> childrenIds = entry.getChildrenIds();
         assertTrue("Unexpected children: " + childrenIds, childrenIds.isEmpty());
+
+        if(overwrite)
+        {
+            ConfigurationEntryStore overwrittenStore = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, true);
+            assertNotNull("Store was not created", overwrittenStore);
+            assertTrue("File should exists", _userStoreLocation.exists());
+            assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
+
+            //check the contents reflect the test store content having been overwritten with the default store
+            JsonConfigurationEntryStore reopenedOverwrittenStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null, false);
+            entry = reopenedOverwrittenStore.getRootEntry();
+            assertFalse("Root id did not change, store content was not overwritten", testBrokerId.equals(entry.getId()));
+            attributes = entry.getAttributes();
+            assertNotNull("No attributes found", attributes);
+            assertFalse("Test name should not equal default broker name", testBrokerName.equals(defaultBrokerName));
+            assertEquals("Unexpected broker name value" , defaultBrokerName, attributes.get(Broker.NAME));
+            childrenIds = entry.getChildrenIds();
+            assertFalse("Expected children were not found" + childrenIds, childrenIds.isEmpty());
+        }
     }
 
     public void testCreateStoreWithUnknownType()
     {
         try
         {
-            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", null);
+            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", null, false);
             fail("Store is not yet supported");
         }
         catch(IllegalConfigurationException e)

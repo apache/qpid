@@ -124,7 +124,7 @@ public class Broker
         }
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
-        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType, options.getInitialConfigurationLocation());
+        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType, options.getInitialConfigurationLocation(), options.isOverwriteConfigurationStore());
 
         if (options.isManagementMode())
         {

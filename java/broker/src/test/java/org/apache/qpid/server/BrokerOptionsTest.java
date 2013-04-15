@@ -28,8 +28,9 @@ public class BrokerOptionsTest extends QpidTestCase
 {
     private BrokerOptions _options;
 
-    protected void setUp()
+    protected void setUp() throws Exception
     {
+        super.setUp();
         _options = new BrokerOptions();
     }
 
@@ -207,5 +208,16 @@ public class BrokerOptionsTest extends QpidTestCase
     {
         _options.setSkipLoggingConfiguration(true);
         assertTrue(_options.isSkipLoggingConfiguration());
+    }
+
+    public void testDefaultOverwriteConfigurationStore()
+    {
+        assertFalse(_options.isOverwriteConfigurationStore());
+    }
+
+    public void testOverriddenOverwriteConfigurationStore()
+    {
+        _options.setOverwriteConfigurationStore(true);
+        assertTrue(_options.isOverwriteConfigurationStore());
     }
 }

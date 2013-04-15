@@ -37,7 +37,6 @@ import org.apache.qpid.framing.ProtocolVersion;
  */
 public class Main
 {
-
     private static final Option OPTION_HELP = new Option("h", "help", false, "print this message");
 
     private static final Option OPTION_VERSION = new Option("v", "version", false, "print the version information and exit");
@@ -46,10 +45,13 @@ public class Main
             .withDescription("use given configuration store location").withLongOpt("store-path").create("sp");
 
     private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
-            .withDescription("use given store type").withLongOpt("store-type").create("st");
+            .withDescription("use given broker configuration store type").withLongOpt("store-type").create("st");
 
     private static final Option OPTION_INITIAL_CONFIGURATION_PATH = OptionBuilder.withArgName("path").hasArg()
-            .withDescription("pass the location of initial JSON config to use when creating a new configuration store").withLongOpt("initial-config-path").create("icp");
+            .withDescription("set the location of initial JSON config to use when creating/overwriting a broker configuration store").withLongOpt("initial-config-path").create("icp");
+
+    private static final Option OPTION_OVERWRITE_CONFIGURATION_STORE = OptionBuilder.withDescription("overwrite the broker configuration store with the current initial configuration")
+            .withLongOpt("overwrite-store").create("os");
 
     private static final Option OPTION_LOG_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg()
@@ -81,6 +83,7 @@ public class Main
         OPTIONS.addOption(OPTION_VERSION);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_PATH);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
+        OPTIONS.addOption(OPTION_OVERWRITE_CONFIGURATION_STORE);
         OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_WATCH);
         OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_PATH);
@@ -199,8 +202,11 @@ public class Main
                 options.setInitialConfigurationLocation(initialConfigLocation);
             }
 
-            boolean managmentMode = _commandLine.hasOption(OPTION_MANAGEMENT_MODE.getOpt());
-            if (managmentMode)
+            boolean overwriteConfigurationStore = _commandLine.hasOption(OPTION_OVERWRITE_CONFIGURATION_STORE.getOpt());
+            options.setOverwriteConfigurationStore(overwriteConfigurationStore);
+
+            boolean managementMode = _commandLine.hasOption(OPTION_MANAGEMENT_MODE.getOpt());
+            if (managementMode)
             {
                 options.setManagementMode(true);
                 String rmiPort = _commandLine.getOptionValue(OPTION_MM_RMI_PORT.getOpt());
