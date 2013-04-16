@@ -23,6 +23,7 @@ import os
 import optparse
 import sys
 import socket
+import locale
 from types       import *
 from cmd         import Cmd
 from shlex       import split
@@ -173,11 +174,11 @@ class Mcli(Cmd):
 class QmfData(Console):
   """
   """
-  def __init__(self, disp, url, cert):
+  def __init__(self, disp, url, conn_options):
     self.disp = disp
     self.url = url
     self.session = Session(self, manageConnections=True)
-    self.broker = self.session.addBroker(self.url, ssl_certfile=cert)
+    self.broker = self.session.addBroker(self.url, **conn_options)
     self.lock = Lock()
     self.connected = None
     self.closing = None
@@ -701,36 +702,66 @@ class IdRegistry(object):
       agent = 'Broker'
     return (displayId, bootSeq, agent, oid.getObject())
 
+#=========================================================
+# Option Parsing
+#=========================================================
 
-def Usage():
-  print "Usage:  qpid-tool [[<username>/<password>@]<target-host>[:<tcp-port>]]"
-  print
+def parse_options( argv ):
+    _usage = """qpid-tool [OPTIONS] [[<username>/<password>@]<target-host>[:<tcp-port>]]
+  --ssl-certificate <path> - Client's SSL certificate (PEM Format file)
+  --ssl-key <path> - Client's SSL private key (PEM Format file)"""
+
+    parser = optparse.OptionParser(usage=_usage)
+    parser.add_option("--ssl-certificate",
+                      action="store", type="string", metavar="<path>",
+                      help="SSL certificate for client authentication")
+    parser.add_option("--ssl-key",
+                      action="store", type="string", metavar="<path>",
+                      help="Private key (if not contained in certificate)")
+
+    opts, encArgs = parser.parse_args(args=argv)
+    try:
+        encoding = locale.getpreferredencoding()
+        args = [a.decode(encoding) for a in encArgs]
+    except:
+        args = encArgs
+
+    conn_options = {}
+    if opts.ssl_certificate:
+        conn_options['ssl_certfile'] = opts.ssl_certificate
+    if opts.ssl_key:
+        if not opts.ssl_certificate:
+            parser.error("missing '--ssl-certificate' (required by '--ssl-key')")
+        conn_options['ssl_keyfile'] = opts.ssl_key
+    return conn_options, encArgs[1:]
+
 
 #=========================================================
 # Main Program
 #=========================================================
 
 # Get host name and port if specified on the command line
-cargs = sys.argv[1:]
+conn_options, cargs = parse_options(sys.argv)
 _host = "localhost"
 
 if len(cargs) > 0:
   _host = cargs[0]
 
-if _host[0] == '-':
-  Usage()
-  if _host != '-h' and _host != "--help":
-    print "qpid-tool: error: no such option:", _host
-  sys.exit(1)
+# note: prior to supporting options, qpid-tool assumed positional parameters.
+# the first argument was assumed to be the broker address.  The second argument
+# was optional, and, if supplied, was assumed to be the path to the
+# certificate.  To preserve backward compatibility, accept the certificate if
+# supplied via the second parameter.
+#
+if 'ssl_certfile' not in conn_options:
+    if len(cargs) > 1:
+        conn_options['ssl_certfile'] = cargs[1]
 
 disp = Display()
-cert = None
-if len(cargs) > 1:
-  cert = cargs[1]
 
 # Attempt to make a connection to the target broker
 try:
-  data = QmfData(disp, _host, cert)
+  data = QmfData(disp, _host, conn_options)
 except Exception, e:
   if str(e).find("Exchange not found") != -1:
     print "Management not enabled on broker:  Use '-m yes' option on broker startup."
