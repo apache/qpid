@@ -21,6 +21,7 @@
 #include <boost/bind.hpp>
 #include <stdexcept>
 #include <algorithm>
+#include <list>
 #include <ctype.h>
 
 namespace qpid {
@@ -53,8 +54,64 @@ std::string quote(const std::string& str) {
 //
 // Instance of name hints
 //
-static CategoryFileNameHints filenameHints;
+class CategoryFileNameHints {
+public:
+    CategoryFileNameHints(){
+        hintList.push_back(std::make_pair("AsynchIo",    network));
+        hintList.push_back(std::make_pair("TCP",         network));
+        hintList.push_back(std::make_pair("epoll",       network));
+        hintList.push_back(std::make_pair("Pollable",    network));
+        hintList.push_back(std::make_pair("Socket",      network));
 
+        hintList.push_back(std::make_pair("Sasl",        security));
+        hintList.push_back(std::make_pair("Ssl",         security));
+        hintList.push_back(std::make_pair("Acl",         security));
+        hintList.push_back(std::make_pair("acl",         security));
+        hintList.push_back(std::make_pair("cyrus",       security));
+
+        hintList.push_back(std::make_pair("amqp_",       protocol));
+        hintList.push_back(std::make_pair("framing",     protocol));
+
+        hintList.push_back(std::make_pair("management",  management));
+        hintList.push_back(std::make_pair("qmf",         management));
+        hintList.push_back(std::make_pair("console",     management));
+        hintList.push_back(std::make_pair("Management",  management));
+
+        hintList.push_back(std::make_pair("cluster",     ha));
+        hintList.push_back(std::make_pair("qpid/ha",     ha));
+        hintList.push_back(std::make_pair("qpid\\ha",    ha));
+        hintList.push_back(std::make_pair("replication", ha));
+        hintList.push_back(std::make_pair("ClusterSafe", ha));
+
+        hintList.push_back(std::make_pair("broker",      broker));
+        hintList.push_back(std::make_pair("SessionState",broker));
+        hintList.push_back(std::make_pair("DataDir",     broker));
+        hintList.push_back(std::make_pair("qpidd",       broker));
+        hintList.push_back(std::make_pair("xml",         broker));
+        hintList.push_back(std::make_pair("QpidBroker",  broker));
+
+        hintList.push_back(std::make_pair("store",       store));
+
+        hintList.push_back(std::make_pair("assert",      system));
+        hintList.push_back(std::make_pair("Exception",   system));
+        hintList.push_back(std::make_pair("sys",         system));
+        hintList.push_back(std::make_pair("SCM",         system));
+
+        hintList.push_back(std::make_pair("tests",       test));
+
+        hintList.push_back(std::make_pair("messaging",   messaging));
+        hintList.push_back(std::make_pair("types",       messaging));
+
+        hintList.push_back(std::make_pair("client",      client));
+    }
+
+    static Category categoryOf(const char*const fName);
+
+private:
+    std::list<std::pair<const char* const, Category> > hintList;
+};
+
+static CategoryFileNameHints filenameHints;
 
 Category CategoryFileNameHints::categoryOf(const char* const fName) {
     for (std::list<std::pair<const char* const, Category> >::iterator
