@@ -293,7 +293,9 @@ class FederationTests(TestBase010):
         #setup queue on remote broker and add some messages
         r_conn = self.connect(host=self.remote_host(), port=self.remote_port())
         r_session = r_conn.session("test_pull_from_queue_recovery")
-        r_session.queue_declare(queue="my-bridge-queue", auto_delete=True)
+        # disable auto-delete otherwise the detach of the fed session may
+        # delete the queue right after this test re-creates it.
+        r_session.queue_declare(queue="my-bridge-queue", auto_delete=False)
         for i in range(1, 6):
             dp = r_session.delivery_properties(routing_key="my-bridge-queue")
             r_session.message_transfer(message=Message(dp, "Message %d" % i))
@@ -316,10 +318,10 @@ class FederationTests(TestBase010):
 
         bridge = qmf.getObjects(_class="bridge")[0]
         sleep(5)
-        
+
         #recreate the remote bridge queue to invalidate the bridge session
         r_session.queue_delete (queue="my-bridge-queue", if_empty=False, if_unused=False)
-        r_session.queue_declare(queue="my-bridge-queue", auto_delete=True)
+        r_session.queue_declare(queue="my-bridge-queue", auto_delete=False)
 
         #add some more messages (i.e. after bridge was created)
         for i in range(6, 11):
@@ -341,8 +343,8 @@ class FederationTests(TestBase010):
         self.assertEqual(result.status, 0)
         result = link.close()
         self.assertEqual(result.status, 0)
-
         self.verify_cleanup()
+        r_session.queue_delete (queue="my-bridge-queue", if_empty=False, if_unused=False)
 
     def test_tracing_automatic(self):
         remoteUrl = "%s:%d" % (self.remote_host(), self.remote_port())
