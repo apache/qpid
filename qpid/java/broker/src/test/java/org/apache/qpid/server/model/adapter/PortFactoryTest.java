@@ -36,6 +36,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
@@ -58,19 +59,22 @@ public class PortFactoryTest extends QpidTestCase
     private Broker _broker = mock(Broker.class);
     private KeyStore _keyStore = mock(KeyStore.class);
     private TrustStore _trustStore = mock(TrustStore.class);
-
+    private String _authProviderName = "authProvider";
+    private AuthenticationProvider _authProvider = mock(AuthenticationProvider.class);
     private PortFactory _portFactory;
 
     @Override
     protected void setUp() throws Exception
     {
+        when(_broker.findAuthenticationProviderByName(_authProviderName)).thenReturn(_authProvider);
+
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
         _portFactory = new PortFactory();
 
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
-
+        _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.TCP_NO_DELAY, "true");
         _attributes.put(Port.RECEIVE_BUFFER_SIZE, "1");
         _attributes.put(Port.SEND_BUFFER_SIZE, "2");
@@ -111,6 +115,7 @@ public class PortFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         Port port = _portFactory.createPort(_portId, _broker, attributes);
 
         assertNotNull(port);
@@ -273,6 +278,7 @@ public class PortFactoryTest extends QpidTestCase
         Set<String> nonAmqpStringSet = Collections.singleton(Protocol.JMX_RMI.name());
         _attributes = new HashMap<String, Object>();
         _attributes.put(Port.PROTOCOLS, nonAmqpStringSet);
+        _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
 
@@ -298,6 +304,7 @@ public class PortFactoryTest extends QpidTestCase
         Set<String> nonAmqpStringSet = Collections.singleton(Protocol.JMX_RMI.name());
         _attributes = new HashMap<String, Object>();
         _attributes.put(Port.PROTOCOLS, nonAmqpStringSet);
+        _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.PORT, _portNumber);
 
         Port port = _portFactory.createPort(_portId, _broker, _attributes);

@@ -126,7 +126,6 @@ public class BrokerRestTest extends QpidRestTestCase
     public void testPutToUpdateWithInvalidAttributeValues() throws Exception
     {
         Map<String, Object> invalidAttributes = new HashMap<String, Object>();
-        invalidAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "non-existing-provider");
         invalidAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "non-existing-host");
         invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, -1000);
         invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, -2000);
@@ -166,7 +165,6 @@ public class BrokerRestTest extends QpidRestTestCase
     private Map<String, Object> getValidBrokerAttributes()
     {
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
         brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 1000);
         brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 2000);

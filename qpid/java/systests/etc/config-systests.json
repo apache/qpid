@@ -20,7 +20,6 @@
  */
 {
   "name": "QpidBroker",
-  "defaultAuthenticationProvider" : "plain",
   "defaultVirtualHost" : "test",
   "authenticationproviders" : [ {
     "name" : "plain",
@@ -39,9 +38,11 @@
   } ],
   "ports" : [  {
     "name" : "amqp",
+    "authenticationProvider" : "plain",
     "port" : "${test.port}"
   }, {
     "name" : "http",
+    "authenticationProvider" : "plain",
     "port" : "${test.hport}",
     "protocols" : [ "HTTP" ]
   }, {
@@ -50,6 +51,7 @@
     "protocols" : [ "RMI" ]
   }, {
     "name" : "jmx",
+    "authenticationProvider" : "plain",
     "port" : "${test.cport}",
     "protocols" : [ "JMX_RMI" ]
   }],

@@ -53,7 +53,6 @@ public interface Broker extends ConfiguredObject
     String STATE = "state";
     String TIME_TO_LIVE = "timeToLive";
     String UPDATED = "updated";
-    String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
@@ -112,7 +111,6 @@ public interface Broker extends ConfiguredObject
                               STATE,
                               TIME_TO_LIVE,
                               UPDATED,
-                              DEFAULT_AUTHENTICATION_PROVIDER,
                               DEFAULT_VIRTUAL_HOST,
                               QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
                               QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
@@ -151,8 +149,6 @@ public interface Broker extends ConfiguredObject
                                   LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
-    AuthenticationProvider getDefaultAuthenticationProvider();
-
     Collection<GroupProvider> getGroupProviders();
 
     /**
@@ -171,6 +167,8 @@ public interface Broker extends ConfiguredObject
      * TODO: A temporary hack to expose log recorder via broker instance.
      */
     LogRecorder getLogRecorder();
+
+    AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName);
 
     VirtualHost findVirtualHostByName(String name);
 

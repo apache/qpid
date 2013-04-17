@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -55,10 +56,11 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final PortFactory _portFactory;
     private final TaskExecutor _taskExecutor;
+    private final BrokerOptions _brokerOptions;
 
     public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
             StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder,
-            RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor)
+            RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions)
     {
         _portFactory = portFactory;
         _authenticationProviderFactory = authenticationProviderFactory;
@@ -67,6 +69,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         _logRecorder = logRecorder;
         _rootMessageLogger = rootMessageLogger;
         _taskExecutor = taskExecutor;
+        _brokerOptions = brokerOptions;
     }
 
     @Override
@@ -74,37 +77,36 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     {
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor, entry.getStore());
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
 
         broker.addChangeListener(storeChangeListener);
 
         //Recover the SSL keystores / truststores first, then others that depend on them
         Map<String, Collection<ConfigurationEntry>> childEntries = new HashMap<String, Collection<ConfigurationEntry>>(entry.getChildren());
-        Map<String, Collection<ConfigurationEntry>> sslChildEntries = new HashMap<String, Collection<ConfigurationEntry>>(childEntries);
+        Map<String, Collection<ConfigurationEntry>> priorityChildEntries = new HashMap<String, Collection<ConfigurationEntry>>(childEntries);
         List<String> types = new ArrayList<String>(childEntries.keySet());
 
         for(String type : types)
         {
-            if(KeyStore.class.getSimpleName().equals(type) || TrustStore.class.getSimpleName().equals(type))
+            if(KeyStore.class.getSimpleName().equals(type) || TrustStore.class.getSimpleName().equals(type)
+                        || AuthenticationProvider.class.getSimpleName().equals(type))
             {
                 childEntries.remove(type);
             }
             else
             {
-                sslChildEntries.remove(type);
+                priorityChildEntries.remove(type);
             }
         }
 
-        for (String type : sslChildEntries.keySet())
+        for (String type : priorityChildEntries.keySet())
         {
-            recoverType(recovererProvider, storeChangeListener, broker, sslChildEntries, type);
+            recoverType(recovererProvider, storeChangeListener, broker, priorityChildEntries, type);
         }
         for (String type : childEntries.keySet())
         {
             recoverType(recovererProvider, storeChangeListener, broker, childEntries, type);
         }
-
-        wireUpConfiguredObjects(broker, entry.getAttributes());
 
         return broker;
     }
@@ -132,58 +134,4 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
             object.addChangeListener(storeChangeListener);
         }
     }
-
-    private void wireUpConfiguredObjects(BrokerAdapter broker, Map<String, Object> brokerAttributes)
-    {
-        AuthenticationProvider defaultAuthenticationProvider = null;
-        Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
-        int numberOfAuthenticationProviders = authenticationProviders.size();
-        if (numberOfAuthenticationProviders == 0)
-        {
-            throw new IllegalConfigurationException("No authentication provider was configured");
-        }
-        else if (numberOfAuthenticationProviders == 1)
-        {
-            defaultAuthenticationProvider = authenticationProviders.iterator().next();
-        }
-        else
-        {
-            String name = (String) brokerAttributes.get(Broker.DEFAULT_AUTHENTICATION_PROVIDER);
-            if (name == null)
-            {
-                throw new IllegalConfigurationException("Multiple authentication providers defined, but no default was configured.");
-            }
-
-            defaultAuthenticationProvider = getAuthenticationProviderByName(broker, name);
-        }
-        broker.setDefaultAuthenticationProvider(defaultAuthenticationProvider);
-
-        Collection<Port> ports = broker.getPorts();
-        for (Port port : ports)
-        {
-            String authenticationProviderName = (String) port.getAttribute(Port.AUTHENTICATION_PROVIDER);
-            AuthenticationProvider provider = null;
-            if (authenticationProviderName != null)
-            {
-                provider = getAuthenticationProviderByName(broker, authenticationProviderName);
-            }
-            else
-            {
-                provider = defaultAuthenticationProvider;
-            }
-            port.setAuthenticationProvider(provider);
-        }
-    }
-
-    private AuthenticationProvider getAuthenticationProviderByName(BrokerAdapter broker, String authenticationProviderName)
-    {
-        AuthenticationProvider provider = broker.findAuthenticationProviderByName(authenticationProviderName);
-        if (provider == null)
-        {
-            throw new IllegalConfigurationException("Cannot find the authentication provider with name: "
-                    + authenticationProviderName);
-        }
-        return provider;
-    }
-
 }

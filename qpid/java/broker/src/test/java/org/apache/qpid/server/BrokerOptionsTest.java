@@ -220,4 +220,10 @@ public class BrokerOptionsTest extends QpidTestCase
         _options.setOverwriteConfigurationStore(true);
         assertTrue(_options.isOverwriteConfigurationStore());
     }
+
+    public void testManagementModePassword()
+    {
+        _options.setManagementModePassword("test");
+        assertEquals("Unexpected management mode password", "test", _options.getManagementModePassword());
+    }
 }

@@ -233,7 +233,7 @@ define(["dojo/_base/xhr",
                            checked: brokerData["queue.deadLetterQueueEnabled"],
                            value: "true",
                            label: "Dead letter queue enabled:",
-                           name: "queue.deadLetterQueueEnabled",
+                           name: "queue.deadLetterQueueEnabled"
                          });
                        }
                }, {
@@ -247,7 +247,7 @@ define(["dojo/_base/xhr",
                            value: brokerData["queue.flowControlSizeBytes"],
                            placeholder: "Size in bytes",
                            label: "Flow control threshold (bytes):",
-                           name: "queue.flowControlSizeBytes",
+                           name: "queue.flowControlSizeBytes"
                          });
                        }
                }, {
@@ -261,7 +261,7 @@ define(["dojo/_base/xhr",
                            value: brokerData["queue.flowResumeSizeBytes"],
                            placeholder: "Size in bytes",
                            label: "Flow resume threshold (bytes):",
-                           name: "queue.flowResumeSizeBytes",
+                           name: "queue.flowResumeSizeBytes"
                          });
                        }
                }, {
@@ -530,7 +530,7 @@ define(["dojo/_base/xhr",
                                 new UpdatableStore(that.brokerData.ports, query(".broker-ports")[0],
                                                 [   { name: "Name", field: "name", width: "150px"},
                                                     { name: "State", field: "state", width: "60px"},
-                                                    { name: "Authentication", field: "authenticationProvider", width: "100px"},
+                                                    { name: "Auth Provider", field: "authenticationProvider", width: "100px"},
                                                     { name: "Address",    field: "bindingAddress",      width: "70px"},
                                                     { name: "Port", field: "port", width: "50px"},
                                                     { name: "Transports", field: "transports", width: "100px"},

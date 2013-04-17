@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.rmi;
+package org.apache.qpid.server.security.auth.jmx;
 
 import java.net.SocketAddress;
 
@@ -31,7 +31,7 @@ import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import javax.management.remote.JMXAuthenticator;
 import javax.security.auth.Subject;
 
-public class RMIPasswordAuthenticator implements JMXAuthenticator
+public class JMXPasswordAuthenticator implements JMXAuthenticator
 {
     static final String UNABLE_TO_LOOKUP = "The broker was unable to lookup the user details";
     static final String SHOULD_BE_STRING_ARRAY = "User details should be String[]";
@@ -45,7 +45,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     private final Broker _broker;
     private final SocketAddress _address;
 
-    public RMIPasswordAuthenticator(Broker broker, SocketAddress address)
+    public JMXPasswordAuthenticator(Broker broker, SocketAddress address)
     {
         _broker = broker;
         _address = address;

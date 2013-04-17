@@ -23,6 +23,7 @@ package org.apache.qpid.server.configuration.startup;
 import static org.mockito.Mockito.mock;
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -54,7 +55,7 @@ public class DefaultRecovererProviderTest extends TestCase
         RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
 
-        DefaultRecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger, taskExecutor);
+        DefaultRecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger, taskExecutor, mock(BrokerOptions.class));
         for (String configuredObjectType : supportedTypes)
         {
             ConfiguredObjectRecoverer<?> recovever = provider.getRecoverer(configuredObjectType);

@@ -224,25 +224,47 @@ define(["dojo/_base/xhr",
                                 {
                                     protocolsWidget.set("disabled", (isAMQP && defaultsAMQPProtocols.checked));
                                 }
+
                                 var transportWidget = registry.byId("formAddPort.transports");
-
-                                var disabled = (newValue == "JMX" && registry.byId("formAddPort.protocolsJMX").value == "RMI");
-                                if (disabled && transportWidget.value != "TCP")
+                                var disableTransportWidget = false;
+                                var toggleSsl = true;
+                                var isRMI = (newValue == "JMX" && registry.byId("formAddPort.protocolsJMX").value == "RMI");
+                                if (isRMI)
                                 {
-                                    transportWidget.set("value", "TCP");
-                                }
-                                else
-                                {
-                                    toggleSslWidgets(newValue, transportWidget.value);
-                                }
-                                transportWidget.set("disabled", disabled);
+                                    if  (transportWidget.value != "TCP")
+                                    {
+                                      transportWidget.set("value", "TCP");
 
+                                      // changing of transport widget value will cause the call to toggleSslWidgets
+                                      toggleSsl = false;
+                                    }
+                                    disableTransportWidget = true;
+                                }
+                                else if (newValue == "HTTP" && registry.byId("formAddPort.protocolsHTTP").value == "HTTPS")
+                                {
+                                    if  (transportWidget.value != "SSL")
+                                    {
+                                      transportWidget.set("value", "SSL");
+
+                                      // changing of transport widget value will cause the call to toggleSslWidgets
+                                      toggleSsl = false;
+                                    }
+                                    disableTransportWidget = true;
+                                }
+                                if (toggleSsl)
+                                {
+                                  toggleSslWidgets(newValue, transportWidget.value);
+                                }
+                                transportWidget.set("disabled", disableTransportWidget);
+                                registry.byId("formAddPort.authenticationProvider").set("disabled", isRMI);
+                                registry.byId("formAddPort:fieldsAuthenticationProvider").domNode.style.display = isRMI? "none" : "block";
                             });
 
                             theForm = registry.byId("formAddPort");
 
                             var containers = ["formAddPort:fields", "formAddPort:fieldsTransportSSL", "formAddPort:fieldsAMQP",
-                                              "formAddPort:fieldsJMX", "formAddPort:fieldsHTTP", "formAddPort:transport", "formAddPort:fieldsClientAuth2"];
+                                              "formAddPort:fieldsJMX", "formAddPort:fieldsHTTP", "formAddPort:transport",
+                                              "formAddPort:fieldsClientAuthCheckboxes", "formAddPort:fieldsAuthenticationProvider"];
                             var labelWidthValue = "200";
                             for(var i = 0; i < containers.length; i++)
                             {
@@ -258,9 +280,24 @@ define(["dojo/_base/xhr",
                             }
 
                             registry.byId("formAddPort.protocolsJMX").on("change", function(newValue){
+                                var isRMI = newValue == "RMI";
                                 var transportWidget = registry.byId("formAddPort.transports");
-                                transportWidget.set("value", "TCP");
-                                transportWidget.set("disabled", newValue == "RMI");
+                                if (isRMI && transportWidget.value != "TCP")
+                                {
+                                    transportWidget.set("value", "TCP");
+                                }
+                                transportWidget.set("disabled", isRMI);
+                                registry.byId("formAddPort:fieldsAuthenticationProvider").domNode.style.display = isRMI? "none" : "block";
+                                registry.byId("formAddPort.authenticationProvider").set("disabled", isRMI);
+                            });
+
+                            registry.byId("formAddPort.protocolsHTTP").on("change", function(newValue){
+                                var isHTTPS = newValue == "HTTPS";
+                                var transportWidget = registry.byId("formAddPort.transports");
+                                if (isHTTPS && transportWidget.value != "SSL") {
+                                    transportWidget.set("value", "SSL");
+                                }
+                                transportWidget.set("disabled", isHTTPS);
                             });
 
                             theForm.on("submit", function(e) {

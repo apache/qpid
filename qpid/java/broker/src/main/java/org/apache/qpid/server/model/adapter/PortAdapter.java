@@ -82,6 +82,24 @@ public class PortAdapter extends AbstractAdapter implements Port
         super(id, defaults, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _broker = broker;
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
+
+        Collection<Protocol> protocols = getProtocols();
+        boolean rmiRegistry = protocols != null && protocols.contains(Protocol.RMI);
+        if (!rmiRegistry)
+        {
+            String authProvider = (String)getAttribute(Port.AUTHENTICATION_PROVIDER);
+            if (authProvider == null)
+            {
+                throw new IllegalConfigurationException("An authentication provider must be specified for port : " + getName());
+            }
+            _authenticationProvider = broker.findAuthenticationProviderByName(authProvider);
+
+            if(_authenticationProvider == null)
+            {
+                throw new IllegalConfigurationException("The authentication provider '" + authProvider + "' could not be found for port : " + getName());
+            }
+        }
+
         _state = new AtomicReference<State>(state);
         addParent(Broker.class, broker);
     }
@@ -350,11 +368,6 @@ public class PortAdapter extends AbstractAdapter implements Port
         return _authenticationProvider;
     }
 
-    public void setAuthenticationProvider(AuthenticationProvider authenticationProvider)
-    {
-        _authenticationProvider = authenticationProvider;
-    }
-
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
@@ -451,6 +464,14 @@ public class PortAdapter extends AbstractAdapter implements Port
                         + authenticationProviderName + "'");
             }
         }
+        else
+        {
+            if (protocols != null && !protocols.contains(Protocol.RMI))
+            {
+                throw new IllegalConfigurationException("An authentication provider must be specified");
+            }
+        }
+
         super.changeAttributes(converted);
     }
 

@@ -26,6 +26,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     private static final String PORT_TYPE = Port.class.getSimpleName();
     private static final String VIRTUAL_HOST_TYPE = VirtualHost.class.getSimpleName();
     private static final String ATTRIBUTE_STATE = VirtualHost.STATE;
+    private static final Object MANAGEMENT_MODE_AUTH_PROVIDER = "mm-auth";
 
     private final ConfigurationEntryStore _store;
     private final Map<UUID, ConfigurationEntry> _cliEntries;
@@ -208,6 +209,10 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         attributes.put(Port.PORT, port);
         attributes.put(Port.PROTOCOLS, Collections.singleton(protocol));
         attributes.put(Port.NAME, MANAGEMENT_MODE_PORT_PREFIX + protocol.name());
+        if (protocol != Protocol.RMI)
+        {
+            attributes.put(Port.AUTHENTICATION_PROVIDER, MANAGEMENT_MODE_AUTH_PROVIDER);
+        }
         ConfigurationEntry portEntry = new ConfigurationEntry(UUID.randomUUID(), PORT_TYPE, attributes,
                 Collections.<UUID> emptySet(), this);
         if (LOGGER.isDebugEnabled())
