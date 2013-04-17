@@ -37,7 +37,7 @@ ConnectionSettings::ConnectionSettings() :
     maxChannels(32767),
     maxFrameSize(65535),
     bounds(2),
-    tcpNoDelay(false),
+    tcpNoDelay(true),
     service(qpid::saslName),
     minSsf(0),
     maxSsf(256),

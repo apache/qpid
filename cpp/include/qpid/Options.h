@@ -90,7 +90,13 @@ po::value_semantic* optValue(std::vector<T>& value, const char* name) {
 }
 
 /** Create a boolean switch value. Presence of the option sets the value. */
-inline po::value_semantic* optValue(bool& value) { return po::bool_switch(&value); }
+inline po::value_semantic* optValue(bool& value) {
+#if (BOOST_VERSION >= 103500)
+    return (new OptionValue<bool>(value, ""))->implicit_value(true);
+#else
+    return po::bool_switch(&value);
+#endif
+}
 
 /**
  * Base class for options.
