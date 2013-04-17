@@ -22,6 +22,7 @@ package org.apache.qpid.server.management.plugin;
 
 import java.io.File;
 import java.lang.reflect.Type;
+import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -67,6 +68,7 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DispatcherType;
@@ -407,24 +409,34 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
     }
 
+    @Override
     public boolean isHttpsSaslAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTPS_SASL_AUTHENTICATION_ENABLED);
     }
 
+    @Override
     public boolean isHttpSaslAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTP_SASL_AUTHENTICATION_ENABLED);
     }
 
+    @Override
     public boolean isHttpsBasicAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTPS_BASIC_AUTHENTICATION_ENABLED);
     }
 
+    @Override
     public boolean isHttpBasicAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTP_BASIC_AUTHENTICATION_ENABLED);
+    }
+
+    @Override
+    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
+    {
+        return _broker.getSubjectCreator(localAddress);
     }
 
 }

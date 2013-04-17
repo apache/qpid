@@ -184,6 +184,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
     public static final String TOPIC = "topic";
+    public static final String MANAGEMENT_MODE_PASSWORD = "mm_password";
 
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
@@ -467,6 +468,10 @@ public class QpidBrokerTestCase extends QpidTestCase
             options.setConfigurationStoreType(_brokerStoreType);
             options.setConfigurationStoreLocation(testConfig);
             options.setManagementMode(managementMode);
+            if (managementMode)
+            {
+                options.setManagementModePassword(MANAGEMENT_MODE_PASSWORD);
+            }
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.
@@ -486,9 +491,11 @@ public class QpidBrokerTestCase extends QpidTestCase
             String[] cmd = _brokerCommandHelper.getBrokerCommand(port, testConfig, _brokerStoreType, _logConfigFile);
             if (managementMode)
             {
-                String[] newCmd = new String[cmd.length + 1];
+                String[] newCmd = new String[cmd.length + 3];
                 System.arraycopy(cmd, 0, newCmd, 0, cmd.length);
                 newCmd[cmd.length] = "-mm";
+                newCmd[cmd.length + 1] = "-mmpass";
+                newCmd[cmd.length + 2] = MANAGEMENT_MODE_PASSWORD;
                 cmd = newCmd;
             }
             _logger.info("Starting spawn broker using command: " + StringUtils.join(cmd, ' '));

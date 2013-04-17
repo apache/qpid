@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.server.registry;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
 public interface IApplicationRegistry extends StatisticsGatherer
 {
-    /**
-     * Initialise the application registry. All initialisation must be done in this method so that any components
-     * that need access to the application registry itself for initialisation are able to use it. Attempting to
-     * initialise in the constructor will lead to failures since the registry reference will not have been set.
-     */
-    void initialise() throws Exception;
+
+    void initialise(BrokerOptions brokerOptions) throws Exception;
 
     /**
      * Shutdown this Registry

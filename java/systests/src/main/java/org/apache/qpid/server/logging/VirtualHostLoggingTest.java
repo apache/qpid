@@ -105,22 +105,25 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
      */
     public void testVirtualhostClosure() throws Exception
     {
-        stopBroker();
-
-        // Wait for the correct VHT message to arrive.                                 
-        waitForMessage(VHT_PREFIX + "1002");
-
-        // Validate each vhost logs a closure
-        List<String> results = findMatches(VHT_PREFIX + "1002");
-
-        try
+        if (isJavaBroker() && isInternalBroker())
         {
-            assertEquals("Each vhost did not close their store.", 1, results.size());
-        }
-        catch (AssertionFailedError afe)
-        {
-            dumpLogs(results, _monitor);
-            throw afe;
+            stopBroker();
+
+            // Wait for the correct VHT message to arrive.
+            waitForMessage(VHT_PREFIX + "1002");
+
+            // Validate each vhost logs a closure
+            List<String> results = findMatches(VHT_PREFIX + "1002");
+
+            try
+            {
+                assertEquals("Each vhost did not close their store.", 1, results.size());
+            }
+            catch (AssertionFailedError afe)
+            {
+                dumpLogs(results, _monitor);
+                throw afe;
+            }
         }
     }
 

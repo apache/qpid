@@ -27,6 +27,7 @@ import java.util.TimerTask;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
@@ -89,7 +90,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         initialiseStatistics();
     }
 
-    public void initialise() throws Exception
+    public void initialise(BrokerOptions brokerOptions) throws Exception
     {
         // Create the RootLogger to be used during broker operation
         boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
@@ -112,7 +113,7 @@ public class ApplicationRegistry implements IApplicationRegistry
             _taskExecutor = new TaskExecutor();
             _taskExecutor.start();
 
-            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor);
+            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, brokerOptions);
             ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 

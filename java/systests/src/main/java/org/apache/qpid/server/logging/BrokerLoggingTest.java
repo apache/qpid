@@ -95,9 +95,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
     {
         String TESTID="BRK-1006";
 
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker())
         {
             startBroker();
 
@@ -165,8 +163,6 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerStartupDefaultLog4j() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
         if (isJavaBroker() && isExternalBroker() && !isInternalBroker())
         {
             String TESTID = "BRK-1007";
@@ -256,7 +252,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
     public void testBrokerStartupCustomLog4j() throws Exception
     {
         // This logging startup code only occurs when you run a Java broker
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker())
         {
             String customLog4j = getBrokerCommandLog4JFile().getAbsolutePath();
 
@@ -344,7 +340,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
     {
         // This logging startup code only occurs when you run a Java broker,
         // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker())
         {
             String TESTID = "BRK-1001";
 
@@ -426,9 +422,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerStartupListeningTCPDefault() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker())
         {
             String TESTID = "BRK-1002";
 
@@ -484,7 +478,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //3
                     String message = getMessageString(log);
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on [TCP] port " + getPort()));
+                               message.endsWith("Listening on TCP port " + getPort()));
 
                     validation = true;
                 }
@@ -534,9 +528,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerStartupListeningTCPSSL() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker())
         {
             String TESTID = "BRK-1002";
 
@@ -545,6 +537,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
             sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
             sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+            sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
             getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 
             startBroker();
@@ -599,12 +593,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //Check the first
                     String message = getMessageString(getLog(listenMessages .get(0)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on [TCP] port " + getPort()));
+                               message.endsWith("Listening on TCP port " + getPort()));
 
                     // Check the third, ssl listen.
                     message = getMessageString(getLog(listenMessages .get(2)));
                     assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on [SSL] port " + DEFAULT_SSL_PORT));
+                               message.endsWith("Listening on SSL port " + DEFAULT_SSL_PORT));
 
                     //4 Test ports open
                     testSocketOpen(getPort());
@@ -643,9 +637,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerStartupReady() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker())
         {
             String TESTID = "BRK-1004";
 
@@ -731,9 +723,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerShutdownListeningTCPDefault() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker() && isInternalBroker())
         {
             String TESTID = "BRK-1003";
 
@@ -825,9 +815,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerShutdownListeningTCPSSL() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker() && isInternalBroker())
         {
             String TESTID = "BRK-1003";
 
@@ -836,6 +824,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
             sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
             sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+            sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+            sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
             getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 
             startBroker();
@@ -877,7 +867,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 // Check second, ssl, listen.
                 message = getMessageString(getLog(listenMessages.get(1)));
                 assertTrue("Expected shutdown log not correct" + message,
-                           message.endsWith("TCP/SSL port " + DEFAULT_SSL_PORT));
+                           message.endsWith("SSL port " + DEFAULT_SSL_PORT));
 
                 //4
                 //Test Port closed
@@ -913,9 +903,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerShutdownStopped() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker())
+        if (isJavaBroker() && isInternalBroker())
         {
             String TESTID = "BRK-1005";
 
