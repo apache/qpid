@@ -33,14 +33,15 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
@@ -56,9 +57,12 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -92,7 +96,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(ACL_FILE, String.class);
         put(NAME, String.class);
         put(DEFAULT_VIRTUAL_HOST, String.class);
-        put(DEFAULT_AUTHENTICATION_PROVIDER, String.class);
 
         put(GROUP_FILE, String.class);
         put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
@@ -168,7 +171,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Map<String, TrustStore> _trustStores = new HashMap<String, TrustStore>();
 
     private final AuthenticationProviderFactory _authenticationProviderFactory;
-    private AuthenticationProvider _defaultAuthenticationProvider;
 
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
@@ -176,11 +178,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Collection<String> _supportedStoreTypes;
     private final ConfigurationEntryStore _brokerStore;
 
-    private boolean _managementMode;
+    private AuthenticationProvider _managementAuthenticationProvider;
+    private BrokerOptions _brokerOptions;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore)
+            PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -195,7 +198,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         createBrokerChildrenFromAttributes();
         _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
-        _managementMode =  brokerStore instanceof ManagementModeStoreHandler;
+        _brokerOptions = brokerOptions;
+        createBrokerChildrenFromAttributes();
+        if (_brokerOptions.isManagementMode())
+        {
+            AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
+            AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
+                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
+            _managementAuthenticationProvider = authenticationProvider;
+        }
     }
 
     /*
@@ -204,6 +215,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private void createBrokerChildrenFromAttributes()
     {
         createGroupProvider();
+
     }
 
     private void createGroupProvider()
@@ -250,6 +262,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName)
     {
+        if (isManagementMode())
+        {
+            return _managementAuthenticationProvider;
+        }
         Collection<AuthenticationProvider> providers = getAuthenticationProviders();
         for (AuthenticationProvider authenticationProvider : providers)
         {
@@ -275,17 +291,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _trustStores.get(trustStoreName);
         }
-    }
-
-    @Override
-    public AuthenticationProvider getDefaultAuthenticationProvider()
-    {
-        return _defaultAuthenticationProvider;
-    }
-
-    public void setDefaultAuthenticationProvider(AuthenticationProvider provider)
-    {
-        _defaultAuthenticationProvider = provider;
     }
 
     @Override
@@ -766,6 +771,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
             changeState(_portAdapters, currentState,State.ACTIVE, false);
             changeState(_plugins, currentState,State.ACTIVE, false);
+
+            if (isManagementMode())
+            {
+                CurrentActor.get().message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword()));
+            }
             return true;
         }
         else if (desiredState == State.STOPPED)
@@ -956,7 +966,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
         InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
-        AuthenticationProvider provider = _defaultAuthenticationProvider;
+        AuthenticationProvider provider = null;
         Collection<Port> ports = getPorts();
         for (Port p : ports)
         {
@@ -966,6 +976,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 break;
             }
         }
+
+        if(provider == null)
+        {
+            throw new IllegalConfigurationException("Unable to determine authentication provider for address: " + localAddress);
+        }
+
         return provider.getSubjectCreator();
     }
 
@@ -1002,7 +1018,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        //TODO: Add management mode check
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
         validateAttributes(convertedAttributes);
 
@@ -1018,13 +1033,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                     if (GROUP_FILE.equals(name))
                     {
                         createGroupProvider();
-                    }
-                    else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
-                    {
-                        if (!_defaultAuthenticationProvider.getName().equals(desired))
-                        {
-                            _defaultAuthenticationProvider = findAuthenticationProviderByName((String)desired);
-                        }
                     }
 
                     attributeSet(name, expected, desired);
@@ -1048,16 +1056,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             new FileGroupManager(groupFile);
         }
 
-        String defaultAuthenticationProvider = (String) convertedAttributes.get(DEFAULT_AUTHENTICATION_PROVIDER);
-        if (defaultAuthenticationProvider != null)
-        {
-            AuthenticationProvider provider = findAuthenticationProviderByName(defaultAuthenticationProvider);
-            if (provider == null)
-            {
-                throw new IllegalConfigurationException("Authentication provider with name " + defaultAuthenticationProvider
-                        + " canot be set as a default as it does not exist");
-            }
-        }
         String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
         if (defaultVirtualHost != null)
         {
@@ -1127,6 +1125,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public boolean isManagementMode()
     {
-        return _managementMode;
+        return _brokerOptions.isManagementMode();
     }
 }

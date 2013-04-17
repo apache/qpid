@@ -81,6 +81,8 @@ public class Main
             .withDescription("override jmx connector port in management mode").withLongOpt("management-mode-jmx-connector-port").create("mmjmx");
     private static final Option OPTION_MM_HTTP_PORT = OptionBuilder.withArgName("port").hasArg()
             .withDescription("override http management port in management mode").withLongOpt("management-mode-http-port").create("mmhttp");
+    private static final Option OPTION_MM_PASSWORD = OptionBuilder.withArgName("password").hasArg()
+            .withDescription("Set the password for the management mode user " + BrokerOptions.MANAGEMENT_MODE_USER_NAME).withLongOpt("management-mode-password").create("mmpass");
 
     private static final Options OPTIONS = new Options();
 
@@ -100,6 +102,7 @@ public class Main
         OPTIONS.addOption(OPTION_MM_RMI_PORT);
         OPTIONS.addOption(OPTION_MM_CONNECTOR_PORT);
         OPTIONS.addOption(OPTION_MM_HTTP_PORT);
+        OPTIONS.addOption(OPTION_MM_PASSWORD);
     }
 
     protected CommandLine _commandLine;
@@ -256,6 +259,12 @@ public class Main
 
                 boolean quiesceVhosts = _commandLine.hasOption(OPTION_MM_QUIESCE_VHOST.getOpt());
                 options.setManagementModeQuiesceVirtualHosts(quiesceVhosts);
+
+                String password = _commandLine.getOptionValue(OPTION_MM_PASSWORD.getOpt());
+                if (password != null)
+                {
+                    options.setManagementModePassword(password);
+                }
             }
             setExceptionHandler();
 

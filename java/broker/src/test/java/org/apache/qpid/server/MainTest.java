@@ -171,6 +171,28 @@ public class MainTest extends QpidTestCase
         assertEquals(0, options.getManagementModeHttpPort());
     }
 
+    public void testManagementModePassword()
+    {
+        String password = getTestName();
+        BrokerOptions options = startDummyMain("-mm -mmpass " + password);
+        assertTrue(options.isManagementMode());
+        assertEquals(password, options.getManagementModePassword());
+
+        options = startDummyMain("-mm --management-mode-password " + password);
+        assertTrue(options.isManagementMode());
+        assertEquals(password, options.getManagementModePassword());
+
+        options = startDummyMain("-mmpass " + password);
+        assertNotNull(options.getManagementModePassword());
+    }
+
+    public void testDefaultManagementModePassword()
+    {
+        BrokerOptions options = startDummyMain("-mm");
+        assertTrue(options.isManagementMode());
+        assertNotNull(options.getManagementModePassword());
+    }
+
     private BrokerOptions startDummyMain(String commandLine)
     {
         return (new TestMain(commandLine.split("\\s"))).getOptions();

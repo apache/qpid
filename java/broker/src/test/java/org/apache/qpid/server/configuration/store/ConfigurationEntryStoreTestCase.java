@@ -60,7 +60,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _brokerId = UUID.randomUUID();
         _brokerAttributes = new HashMap<String, Object>();
         _brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
-        _brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         _brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 9);
         _brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 8);
         _brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 7);
@@ -171,7 +170,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         ConfigurationEntry brokerConfigEntry = _store.getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
-        attributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 19);
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 18);
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 17);

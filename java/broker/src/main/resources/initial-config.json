@@ -21,7 +21,6 @@
 {
   "name": "QpidBroker",
   "storeVersion": 1,
-  "defaultAuthenticationProvider" : "passwordFile",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
     "name" : "passwordFile",
@@ -30,10 +29,12 @@
   } ],
   "ports" : [  {
     "name" : "AMQP",
-    "port" : 5672
+    "port" : 5672,
+    "authenticationProvider" : "passwordFile"
   }, {
     "name" : "HTTP",
     "port" : 8080,
+    "authenticationProvider" : "passwordFile",
     "protocols" : [ "HTTP" ]
   }, {
     "name" : "RMI_REGISTRY",
@@ -42,6 +43,7 @@
   }, {
     "name" : "JMX_CONNECTOR",
     "port" : 9099,
+    "authenticationProvider" : "passwordFile",
     "protocols" : [ "JMX_RMI" ]
   }],
   "virtualhosts" : [ {

@@ -115,6 +115,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
         sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
         sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+        sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
         sslPortAttributes.put(Port.KEY_STORE, name);
         getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
 

@@ -93,7 +93,6 @@ public interface Port extends ConfiguredObject
                                                           AccessControlException,
                                                           IllegalArgumentException;
 
-
     Collection<Protocol> getProtocols();
 
     void addProtocol(Protocol protocol) throws IllegalStateException,
@@ -104,12 +103,9 @@ public interface Port extends ConfiguredObject
                                                       AccessControlException,
                                                       IllegalArgumentException;
 
+    AuthenticationProvider getAuthenticationProvider();
 
     //children
     Collection<VirtualHostAlias> getVirtualHostBindings();
     Collection<Connection> getConnections();
-
-    AuthenticationProvider getAuthenticationProvider();
-
-    void setAuthenticationProvider(AuthenticationProvider authenticationProvider);
 }

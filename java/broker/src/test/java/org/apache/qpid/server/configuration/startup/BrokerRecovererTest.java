@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,9 +33,9 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -73,7 +71,7 @@ public class BrokerRecovererTest extends TestCase
         super.setUp();
 
         _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(PortFactory.class), mock(StatisticsGatherer.class),
-                mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class));
+                mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class), mock(BrokerOptions.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
 
@@ -89,7 +87,6 @@ public class BrokerRecovererTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
-        attributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 9l);
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 8l);
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 7l);
@@ -172,24 +169,6 @@ public class BrokerRecovererTest extends TestCase
         assertEquals(Collections.singletonList(port), broker.getPorts());
     }
 
-    public void testCreateBrokerWithoutAuthenticationProviderThrowsException()
-    {
-        assertNotNull("expected to remove the base entry", _brokerEntryChildren.remove(AuthenticationProvider.class.getSimpleName()));
-        assertTrue("should be empty", _brokerEntryChildren.isEmpty());
-
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[0], new ConfiguredObject[0]);
-
-        try
-        {
-            _brokerRecoverer.create(recovererProvider, _brokerEntry);
-            fail("should have thrown an exception due to missing authentication provider configuration");
-        }
-        catch(IllegalConfigurationException e)
-        {
-            //expected
-        }
-    }
-
     public void testCreateBrokerWithOneAuthenticationProvider()
     {
         RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{_authenticationProviderEntry1},
@@ -202,29 +181,6 @@ public class BrokerRecovererTest extends TestCase
         assertEquals(Collections.singletonList(_authenticationProvider1), broker.getAuthenticationProviders());
     }
 
-    public void testCreateBrokerWithMultipleAuthenticationProvidersAndNoDefaultThrowsException()
-    {
-        AuthenticationProvider authenticationProvider2 = mock(AuthenticationProvider.class);
-        when(authenticationProvider2.getName()).thenReturn("authenticationProvider2");
-        ConfigurationEntry authenticationProviderEntry2 = mock(ConfigurationEntry.class);
-        _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1, authenticationProviderEntry2));
-
-        Map<String,Object> emptyBrokerAttributes = new HashMap<String,Object>();
-        when(_brokerEntry.getAttributes()).thenReturn(emptyBrokerAttributes);
-
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{authenticationProviderEntry2, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{authenticationProvider2, _authenticationProvider1});
-        try
-        {
-            _brokerRecoverer.create(recovererProvider, _brokerEntry);
-            fail("should have thrown an exception due to missing authentication provider default");
-        }
-        catch(IllegalConfigurationException e)
-        {
-            //expected
-        }
-    }
-
     public void testCreateBrokerWithMultipleAuthenticationProvidersAndPorts()
     {
         //Create a second authentication provider
@@ -233,13 +189,10 @@ public class BrokerRecovererTest extends TestCase
         ConfigurationEntry authenticationProviderEntry2 = mock(ConfigurationEntry.class);
         _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1, authenticationProviderEntry2));
 
-        //Set the default authentication provider
         Map<String,Object> brokerAtttributes = new HashMap<String,Object>();
         when(_brokerEntry.getAttributes()).thenReturn(brokerAtttributes);
-        brokerAtttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider2");
 
-        //Add a couple ports, one with a defined authentication provider and
-        //one without (which should then use the default)
+        //Add a couple ports
         ConfigurationEntry portEntry1 = mock(ConfigurationEntry.class);
         Port port1 = mock(Port.class);
         when(port1.getName()).thenReturn("port1");
@@ -249,6 +202,7 @@ public class BrokerRecovererTest extends TestCase
         Port port2 = mock(Port.class);
         when(port2.getName()).thenReturn("port2");
         when(port2.getPort()).thenReturn(5672);
+        when(port2.getAttribute(Port.AUTHENTICATION_PROVIDER)).thenReturn("authenticationProvider2");
         _brokerEntryChildren.put(Port.class.getSimpleName(), Arrays.asList(portEntry1, portEntry2));
 
         RecovererProvider recovererProvider = createRecoveryProvider(
@@ -258,47 +212,12 @@ public class BrokerRecovererTest extends TestCase
         Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
 
         assertNotNull(broker);
-        assertEquals("Unexpected number of authentication providers", 2,broker.getAuthenticationProviders().size());
+        assertEquals("Unexpected number of authentication providers", 2, broker.getAuthenticationProviders().size());
 
         Collection<Port> ports = broker.getPorts();
         assertEquals("Unexpected number of ports", 2, ports.size());
         assertTrue(ports.contains(port1));
         assertTrue(ports.contains(port2));
-
-        verify(port1).setAuthenticationProvider(any(AuthenticationProvider.class));
-        verify(port1).setAuthenticationProvider(_authenticationProvider1);
-
-        verify(port2).setAuthenticationProvider(any(AuthenticationProvider.class));
-        verify(port2).setAuthenticationProvider(authenticationProvider2);
-    }
-
-    public void testCreateBrokerAssignsGroupAccessorToAuthenticationProviders()
-    {
-        //Create a second authentication provider
-        AuthenticationProvider authenticationProvider2 = mock(AuthenticationProvider.class);
-        when(authenticationProvider2.getName()).thenReturn("authenticationProvider2");
-        ConfigurationEntry authenticationProviderEntry2 = mock(ConfigurationEntry.class);
-        _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1, authenticationProviderEntry2));
-
-        //Set the default authentication provider
-        Map<String,Object> brokerAtttributes = new HashMap<String,Object>();
-        when(_brokerEntry.getAttributes()).thenReturn(brokerAtttributes);
-        brokerAtttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider2");
-
-        //Create a group provider
-        ConfigurationEntry groupProviderEntry = mock(ConfigurationEntry.class);
-        GroupProvider groupProvider = mock(GroupProvider.class);
-        _brokerEntryChildren.put(GroupProvider.class.getSimpleName(), Arrays.asList(groupProviderEntry));
-
-        RecovererProvider recovererProvider = createRecoveryProvider(
-                new ConfigurationEntry[]{groupProviderEntry, authenticationProviderEntry2, _authenticationProviderEntry1},
-                new ConfiguredObject[]{groupProvider, authenticationProvider2, _authenticationProvider1});
-
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
-
-        assertNotNull(broker);
-        assertEquals("Unexpected number of authentication providers", 2, broker.getAuthenticationProviders().size());
-
     }
 
     public void testCreateBrokerWithGroupProvider()

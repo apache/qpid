@@ -26,17 +26,19 @@
                 <input type="text" required="true" name="name" id="formAddPort.name" placeholder="Name"
                     data-dojo-props="label: 'Name*:'" dojoType="dijit.form.ValidationTextBox"
                     missingMessage="A name must be supplied" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"/>
-                <input data-dojo-type="dijit.form.NumberSpinner" id="formAddPort.port" required="true" data-dojo-props="label: 'Port Number*:'"
+                <input data-dojo-type="dijit.form.NumberSpinner" id="formAddPort.port" required="true" data-dojo-props="label: 'Port Number*:', placeHolder: 'Enter port number'"
                      name="port" smallDelta="1" constraints="{min:1,max:65535,places:0, pattern: '#####'}"
                      missingMessage="A port number must be supplied"  />
-                <select id="formAddPort.authenticationProvider" data-dojo-type="dijit.form.FilteringSelect"
-                    data-dojo-props="name:'authenticationProvider',label:'Authentication Provider:', searchAttr: 'name', required: false, placeHolder: 'Default', value: '' ">
-                </select>
                 <select id="formAddPort.type" data-dojo-type="dijit.form.FilteringSelect"
-                    data-dojo-props="name: 'type', value: '',placeHolder: 'Select Port Type', label: 'Port Type:'">
+                    data-dojo-props="name: 'type', value: '',placeHolder: 'Select Port Type', label: 'Port Type*:'">
                     <option value="AMQP" selected="selected">AMQP</option>
                     <option value="JMX">JMX</option>
                     <option value="HTTP">HTTP</option>
+                </select>
+            </div>
+            <div id="formAddPort:fieldsAuthenticationProvider">
+                <select id="formAddPort.authenticationProvider" data-dojo-type="dijit.form.FilteringSelect"
+                    data-dojo-props="name:'authenticationProvider',label:'Authentication Provider*:', searchAttr: 'name', required: true, placeHolder: 'Select Provider'">
                 </select>
             </div>
             <div id="formAddPort:fieldsAMQP">
@@ -82,7 +84,7 @@
                 </select>
             </div>
             <div id="formAddPort:fieldsClientAuth">
-                <div id="formAddPort:fieldsClientAuth2">
+                <div id="formAddPort:fieldsClientAuthCheckboxes">
                  <input id="formAddPort.needClientAuth" type="checkbox" name="needClientAuth"
                     dojoType="dijit.form.CheckBox" data-dojo-props="label: 'Need SSL Client Certificate:'" />
                  <input id="formAddPort.wantClientAuth" type="checkbox" name="wantClientAuth"

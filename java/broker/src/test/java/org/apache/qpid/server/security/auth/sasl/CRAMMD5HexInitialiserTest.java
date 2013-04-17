@@ -20,88 +20,94 @@
  */
 package org.apache.qpid.server.security.auth.sasl;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Properties;
+
+import junit.framework.TestCase;
+
+import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.tools.security.Passwd;
 
 /**
  * These tests ensure that the Hex wrapping that the initialiser performs does actually operate when the handle method is called.
  */
 public class CRAMMD5HexInitialiserTest extends TestCase
 {
-    public void testHex()
-    {
-        //Create User details for testing
-        String user = "testUser";
-        String password = "testPassword";
+    private static final String TEST_PASSWORD = "testPassword";
+    private static final String TEST_USER = "testUser";
+    private File _file;
 
-        perform(user, password);
+    public void testHashedHex() throws Exception
+    {
+        perform(TEST_USER, getHash(TEST_PASSWORD));
     }
 
-    public void testHashedHex()
-    {
-        //Create User details for testing
-        String user = "testUser";
-        String password = "testPassword";
-
-        //Create a hashed password that we then attempt to put through the call back mechanism.
-        try
-        {
-            password = new String(MessageDigest.getInstance("MD5").digest(password.getBytes()));
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            fail(e.getMessage());
-        }
-
-        perform(user, password);
-    }
-
-    public void perform(String user, String password)
+    public void perform(String user, char[] password) throws Exception
     {
         CRAMMD5HexInitialiser initialiser = new CRAMMD5HexInitialiser();
 
-        //Use properties to create a PrincipalDatabase
-        Properties users = new Properties();
-        users.put(user, password);
-
-        PropertiesPrincipalDatabase db = new PropertiesPrincipalDatabase(users);
-
+        PrincipalDatabase db = new Base64MD5PasswordFilePrincipalDatabase();
+        db.open(_file);
         initialiser.initialise(db);
 
-        //setup the callbacks
         PasswordCallback passwordCallback = new PasswordCallback("password:", false);
         NameCallback usernameCallback = new NameCallback("user:", user);
 
         Callback[] callbacks = new Callback[]{usernameCallback, passwordCallback};
 
-        //Check the
-        try
+        assertNull("The password was not null before the handle call.", passwordCallback.getPassword());
+        initialiser.getCallbackHandler().handle(callbacks);
+
+        assertArrayEquals(toHex(password), passwordCallback.getPassword());
+    }
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _file = TestFileUtils.createTempFile(this, "password-file", new Passwd().getOutput(TEST_USER , TEST_PASSWORD));
+    }
+
+    public void tearDown() throws Exception
+    {
+        if (_file != null)
         {
-            assertNull("The password was not null before the handle call.", passwordCallback.getPassword());
-            initialiser.getCallbackHandler().handle(callbacks);
+            _file.delete();
         }
-        catch (IOException e)
+        super.tearDown();
+    }
+
+    private char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+
+        byte[] data = text.getBytes("utf-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        for (byte b : data)
         {
-            fail(e.getMessage());
-        }
-        catch (UnsupportedCallbackException e)
-        {
-            fail(e.getMessage());
+            md.update(b);
         }
 
-        //Hex the password we initialised with and compare it with the passwordCallback
-        assertArrayEquals(toHex(password.toCharArray()), passwordCallback.getPassword());
+        byte[] digest = md.digest();
+
+        char[] hash = new char[digest.length];
+
+        int index = 0;
+        for (byte b : digest)
+        {
+            hash[index++] = (char) b;
+        }
+
+        return hash;
     }
 
     private void assertArrayEquals(char[] expected, char[] actual)
@@ -135,4 +141,5 @@ public class CRAMMD5HexInitialiserTest extends TestCase
 
         return hex;
     }
+
 }

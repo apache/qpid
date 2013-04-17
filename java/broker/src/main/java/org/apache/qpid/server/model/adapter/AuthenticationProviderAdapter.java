@@ -219,10 +219,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             String providerName = getName();
 
             // verify that provider is not in use
-            if (providerName.equals(_broker.getAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER)))
-            {
-                throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set as default and cannot be deleted");
-            }
             Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
             for (Port port : ports)
             {
