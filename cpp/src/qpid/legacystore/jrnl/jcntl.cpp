@@ -563,7 +563,7 @@ jcntl::rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_p
         std::ostringstream oss;
         oss << "Recovery found " << ji.num_jfiles() <<
                 " files (different from --num-jfiles value of " << rd._njf << ").";
-        this->log(LOG_WARN, oss.str());
+        this->log(LOG_INFO, oss.str());
         rd._njf = ji.num_jfiles();
         _rcvdat._enq_cnt_list.resize(rd._njf);
     }
@@ -575,7 +575,7 @@ jcntl::rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_p
         oss << "Recovery found file size = " << (ji.jfsize_sblks() / JRNL_RMGR_PAGE_SIZE) <<
                 " (different from --jfile-size-pgs value of " <<
                 (_jfsize_sblks / JRNL_RMGR_PAGE_SIZE) << ").";
-        this->log(LOG_WARN, oss.str());
+        this->log(LOG_INFO, oss.str());
         _jfsize_sblks = ji.jfsize_sblks();
     }
     if (_jdir.dirname().compare(ji.jdir()))
