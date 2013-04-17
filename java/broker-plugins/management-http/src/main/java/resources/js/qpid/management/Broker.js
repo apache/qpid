@@ -63,24 +63,6 @@ define(["dojo/_base/xhr",
                           name: "name"})
                     }
                }, {
-                      name: "defaultAuthenticationProvider",
-                      createWidget: function(brokerData) {
-                        var providers = brokerData.authenticationproviders;
-                        var data = [];
-                        if (providers) {
-                           for (var i=0; i< providers.length; i++) {
-                               data.push({id: providers[i].name, name: providers[i].name});
-                           }
-                        }
-                        var providersStore = new dojo.store.Memory({ data: data });
-                        return new dijit.form.FilteringSelect({
-                           required: true,
-                           store: providersStore,
-                           value: brokerData.defaultAuthenticationProvider,
-                           label: "Default Authentication Provider*:",
-                           name: "defaultAuthenticationProvider"})
-                      }
-               }, {
                        name: "defaultVirtualHost",
                        createWidget: function(brokerData) {
                          var hosts = brokerData.virtualhosts;
