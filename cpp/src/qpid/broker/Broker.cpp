@@ -133,7 +133,7 @@ Broker::Options::Options(const std::string& name) :
     replayFlushLimit(0),
     replayHardLimit(0),
     queueLimit(100*1048576/*100M default limit*/),
-    tcpNoDelay(false),
+    tcpNoDelay(true),
     requireEncrypted(false),
     knownHosts(knownHostsNone),
     qmf2Support(true),
