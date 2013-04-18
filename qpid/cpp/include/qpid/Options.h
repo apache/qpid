@@ -98,6 +98,10 @@ inline po::value_semantic* optValue(bool& value) {
 #endif
 }
 
+inline po::value_semantic* pure_switch(bool& value) {
+    return po::bool_switch(&value);
+}
+
 /**
  * Base class for options.
  * Example of use:
