@@ -118,7 +118,6 @@ public:
     aclAction*           actionList[qpid::acl::ACTIONSIZE];
     qpid::acl::AclResult decisionMode;  // allow/deny[-log] if no matching rule found
     bool                 transferAcl;
-    bool                 createlinkAcl;
     std::string          aclSource;
 
     AclResult lookup(

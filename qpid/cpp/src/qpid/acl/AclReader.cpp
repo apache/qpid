@@ -160,10 +160,6 @@ namespace acl {
                         ocnt < acl::OBJECTSIZE;
                     (*i)->objStatus != aclRule::VALUE ? ocnt++ : ocnt = acl::OBJECTSIZE) {
 
-                        // Observe existance of CREATE LINK rules
-                        if (acnt == acl::ACT_CREATE && ocnt == acl::OBJ_LINK)
-                            d->createlinkAcl = true;
-
                         //find the Object, create if not exist
                         if (d->actionList[acnt][ocnt] == NULL)
                             d->actionList[acnt][ocnt] =

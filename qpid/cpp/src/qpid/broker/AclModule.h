@@ -132,11 +132,6 @@ namespace broker {
         // doTransferAcl pervents time consuming ACL calls on a per-message basis.
         virtual bool doTransferAcl()=0;
 
-        // Federation link creation is denied unless ACL module is loaded and
-        // at least one CREATE LINK rule is specified.
-        // This flag indicates that a CREATE LINK rule was processed.
-        virtual bool isCreatelinkAcl()=0;
-
         virtual uint16_t getMaxConnectTotal()=0;
 
         virtual bool authorise(

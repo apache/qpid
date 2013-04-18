@@ -47,8 +47,7 @@ tmp_root=/tmp/sasl_fed_$my_random_number
 mkdir -p $tmp_root
 
 # create ACL file to allow links
-echo acl allow all create link  > $tmp_root/sasl_fed.acl
-echo acl allow all all         >> $tmp_root/sasl_fed.acl
+echo acl allow all all > $tmp_root/sasl_fed.acl
 
 
 #--------------------------------------------------

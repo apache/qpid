@@ -79,12 +79,11 @@ class HaBroker(Broker):
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]
         if brokers_url: args += [ "--ha-brokers-url", brokers_url ]
-        # Set up default ACL file to allow all create link
+        # Set up default ACL
         acl=os.path.join(os.getcwd(), "unrestricted.acl")
         if not os.path.exists(acl):
             aclf=file(acl,"w")
             aclf.write("""
-acl allow all create link
 acl allow all all
  """)
             aclf.close()

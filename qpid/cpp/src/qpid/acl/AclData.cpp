@@ -46,7 +46,6 @@ namespace acl {
     AclData::AclData():
         decisionMode(qpid::acl::DENY),
         transferAcl(false),
-        createlinkAcl(false),
         aclSource("UNKNOWN"),
         connQuotaRulesExist(false),
         connQuotaRuleSettings(new quotaRuleSet),
@@ -75,7 +74,6 @@ namespace acl {
             delete[] actionList[cnt];
         }
         transferAcl = false;
-        createlinkAcl = false;
         connQuotaRulesExist = false;
         connQuotaRuleSettings->clear();
         queueQuotaRulesExist = false;
