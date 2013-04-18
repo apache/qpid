@@ -87,7 +87,7 @@ try:
     if snd is not None:
       snd.close()
     ssn.acknowledge()
-except ReceiveError, e:
+except ReceiverError, e:
   print e
 except KeyboardInterrupt:
   pass
