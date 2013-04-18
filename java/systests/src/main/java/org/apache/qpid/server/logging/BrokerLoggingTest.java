@@ -589,16 +589,23 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertEquals("Four listen messages should be found.",
                                  4, listenMessages .size());
 
-                    //3
-                    //Check the first
-                    String message = getMessageString(getLog(listenMessages .get(0)));
-                    assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on TCP port " + getPort()));
+                    int tcpStarted = 0;
+                    int sslStarted = 0;
 
-                    // Check the third, ssl listen.
-                    message = getMessageString(getLog(listenMessages .get(2)));
-                    assertTrue("Expected Listen log not correct" + message,
-                               message.endsWith("Listening on SSL port " + DEFAULT_SSL_PORT));
+                    for (String message : listenMessages)
+                    {
+                        if (message.endsWith("Listening on TCP port " + getPort()))
+                        {
+                            tcpStarted++;
+                        }
+                        if (message.endsWith("Listening on SSL port " + DEFAULT_SSL_PORT))
+                        {
+                            sslStarted++;
+                        }
+                    }
+
+                    assertEquals("Unexpected number of logs 'Listening on TCP port'", 2, tcpStarted);
+                    assertEquals("Unexpected number of logs 'Listening on SSL port'", 2, sslStarted);
 
                     //4 Test ports open
                     testSocketOpen(getPort());
@@ -859,15 +866,23 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 assertEquals("Two shutdown messages should be found.",
                              2, listenMessages.size());
 
-                //3
-                String message = getMessageString(getLog(listenMessages.get(0)));
-                assertTrue("Expected shutdown log not correct" + message,
-                           message.endsWith("TCP port " + getPort()));
+                int tcpShuttingDown = 0;
+                int sslShuttingDown = 0;
 
-                // Check second, ssl, listen.
-                message = getMessageString(getLog(listenMessages.get(1)));
-                assertTrue("Expected shutdown log not correct" + message,
-                           message.endsWith("SSL port " + DEFAULT_SSL_PORT));
+                for (String m : listenMessages)
+                {
+                    if (m.endsWith("Shutting down : TCP port " + getPort()))
+                    {
+                        tcpShuttingDown++;
+                    }
+                    if (m.endsWith("Shutting down : SSL port " + DEFAULT_SSL_PORT))
+                    {
+                        sslShuttingDown++;
+                    }
+                }
+
+                assertEquals("Unexpected number of logs 'Shutting down : TCP port'", 1, tcpShuttingDown);
+                assertEquals("Unexpected number of logs 'Shutting down : SSL port'", 1, sslShuttingDown);
 
                 //4
                 //Test Port closed
