@@ -85,13 +85,13 @@ public class HttpManagementUtil
     }
 
     public static void checkRequestAuthenticatedAndAccessAuthorized(HttpServletRequest request, Broker broker,
-            HttpManagementConfiguration management)
+            HttpManagementConfiguration managementConfig)
     {
         HttpSession session = request.getSession();
         Subject subject = getAuthorisedSubject(session);
         if (subject == null)
         {
-            subject = tryToAuthenticate(request, broker, management);
+            subject = tryToAuthenticate(request, managementConfig);
             if (subject == null)
             {
                 throw new SecurityException("Only authenticated users can access the management interface");
@@ -164,11 +164,11 @@ public class HttpManagementUtil
         session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER, new LoginLogoutReporter(logActor, subject));
     }
 
-    private static Subject tryToAuthenticate(HttpServletRequest request, Broker broker, HttpManagementConfiguration management)
+    private static Subject tryToAuthenticate(HttpServletRequest request, HttpManagementConfiguration managementConfig)
     {
         Subject subject = null;
         SocketAddress localAddress = getSocketAddress(request);
-        SubjectCreator subjectCreator = broker.getSubjectCreator(localAddress);
+        SubjectCreator subjectCreator = managementConfig.getSubjectCreator(localAddress);
         String remoteUser = request.getRemoteUser();
 
         if (remoteUser != null || subjectCreator.isAnonymousAuthenticationAllowed())
@@ -186,11 +186,11 @@ public class HttpManagementUtil
                     boolean isBasicAuthSupported = false;
                     if (request.isSecure())
                     {
-                        isBasicAuthSupported = management.isHttpsBasicAuthenticationEnabled();
+                        isBasicAuthSupported = managementConfig.isHttpsBasicAuthenticationEnabled();
                     }
                     else
                     {
-                        isBasicAuthSupported = management.isHttpBasicAuthenticationEnabled();
+                        isBasicAuthSupported = managementConfig.isHttpBasicAuthenticationEnabled();
                     }
                     if (isBasicAuthSupported)
                     {

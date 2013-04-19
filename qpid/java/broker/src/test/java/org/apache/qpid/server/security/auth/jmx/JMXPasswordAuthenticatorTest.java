@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.rmi;
+package org.apache.qpid.server.security.auth.jmx;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.any;
@@ -38,14 +38,15 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.SecurityManager;
 
 /**
- * Tests the RMIPasswordAuthenticator and its collaboration with the AuthenticationManager.
+ * Tests the JMXPasswordAuthenticator and its collaboration with the AuthenticationManager.
  *
  */
-public class RMIPasswordAuthenticatorTest extends TestCase
+public class JMXPasswordAuthenticatorTest extends TestCase
 {
     private static final String USERNAME = "guest";
     private static final String PASSWORD = "password";
@@ -55,7 +56,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     private final Subject _loginSubject = new Subject();
     private final String[] _credentials = new String[] {USERNAME, PASSWORD};
 
-    private RMIPasswordAuthenticator _rmipa;
+    private JMXPasswordAuthenticator _rmipa;
 
     private SubjectCreator _usernamePasswordOkaySuvjectCreator = createMockSubjectCreator(true, null);
     private SubjectCreator _badPasswordSubjectCreator = createMockSubjectCreator(false, null);
@@ -63,7 +64,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     protected void setUp() throws Exception
     {
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
-        _rmipa = new RMIPasswordAuthenticator(_broker, new InetSocketAddress(8999));
+        _rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(8999));
     }
 
     /**
@@ -93,7 +94,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.INVALID_CREDENTIALS, se.getMessage());
+                    JMXPasswordAuthenticator.INVALID_CREDENTIALS, se.getMessage());
         }
     }
 
@@ -110,7 +111,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.USER_NOT_AUTHORISED_FOR_MANAGEMENT, se.getMessage());
+                    JMXPasswordAuthenticator.USER_NOT_AUTHORISED_FOR_MANAGEMENT, se.getMessage());
         }
     }
 
@@ -164,7 +165,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.SHOULD_BE_STRING_ARRAY, se.getMessage());
+                    JMXPasswordAuthenticator.SHOULD_BE_STRING_ARRAY, se.getMessage());
         }
     }
 
@@ -185,7 +186,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.SHOULD_HAVE_2_ELEMENTS, se.getMessage());
+                    JMXPasswordAuthenticator.SHOULD_HAVE_2_ELEMENTS, se.getMessage());
         }
 
         // Test handling of null credentials
@@ -199,7 +200,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.CREDENTIALS_REQUIRED, se.getMessage());
+                    JMXPasswordAuthenticator.CREDENTIALS_REQUIRED, se.getMessage());
         }
 
         try
@@ -212,7 +213,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.SHOULD_BE_NON_NULL, se.getMessage());
+                    JMXPasswordAuthenticator.SHOULD_BE_NON_NULL, se.getMessage());
         }
 
         try
@@ -225,7 +226,7 @@ public class RMIPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    RMIPasswordAuthenticator.SHOULD_BE_NON_NULL, se.getMessage());
+                    JMXPasswordAuthenticator.SHOULD_BE_NON_NULL, se.getMessage());
         }
     }
 

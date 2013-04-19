@@ -25,6 +25,7 @@ import java.io.File;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
 {
@@ -34,6 +35,8 @@ public class BrokerOptions
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String DEFAULT_INITIAL_CONFIG_LOCATION =
         BrokerOptions.class.getClassLoader().getResource(DEFAULT_INITIAL_CONFIG_NAME).toExternalForm();
+    public static final String MANAGEMENT_MODE_USER_NAME = "mm_admin";
+    private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
 
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
@@ -48,6 +51,7 @@ public class BrokerOptions
     private int _managementModeRmiPort;
     private int _managementModeConnectorPort;
     private int _managementModeHttpPort;
+    private String _managementModePassword;
     private String _workingDir;
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
@@ -55,6 +59,21 @@ public class BrokerOptions
     public String getLogConfigFile()
     {
         return _logConfigFile;
+    }
+
+    public String getManagementModePassword()
+    {
+        if(_managementModePassword == null)
+        {
+            _managementModePassword = new StringUtil().randomAlphaNumericString(MANAGEMENT_MODE_PASSWORD_LENGTH);
+        }
+
+        return _managementModePassword;
+    }
+
+    public void setManagementModePassword(String managementModePassword)
+    {
+        _managementModePassword = managementModePassword;
     }
 
     public void setLogConfigFile(final String logConfigFile)

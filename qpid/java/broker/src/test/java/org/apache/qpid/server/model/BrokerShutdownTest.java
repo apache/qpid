@@ -23,6 +23,7 @@ package org.apache.qpid.server.model;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
@@ -121,7 +122,7 @@ public class BrokerShutdownTest extends QpidTestCase
         RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
 
         // recover the broker from the store
-        RecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger, _taskExecutor);
+        RecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger, _taskExecutor, mock(BrokerOptions.class));
         ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer = provider.getRecoverer(Broker.class.getSimpleName());
 
         Broker broker = (Broker) brokerRecoverer.create(provider, store.getRootEntry());

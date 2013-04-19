@@ -18,21 +18,27 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.management.plugin;
+package org.apache.qpid.server.util;
 
-import java.net.SocketAddress;
+import java.util.Random;
 
-import org.apache.qpid.server.security.SubjectCreator;
-
-public interface HttpManagementConfiguration
+public class StringUtil
 {
-    boolean isHttpsSaslAuthenticationEnabled();
+    private static final String NUMBERS = "0123456789";
+    private static final String LETTERS = "abcdefghijklmnopqrstuvwxwy";
+    private static final String OTHERS = "_-";
+    private static final char[] CHARACTERS = (NUMBERS + LETTERS + LETTERS.toUpperCase() + OTHERS).toCharArray();
 
-    boolean isHttpSaslAuthenticationEnabled();
+    private Random _random = new Random();
 
-    boolean isHttpsBasicAuthenticationEnabled();
+    public String randomAlphaNumericString(int maxLength)
+    {
+        char[] result = new char[maxLength];
+        for (int i = 0; i < maxLength; i++)
+        {
+            result[i] = (char) CHARACTERS[_random.nextInt(CHARACTERS.length)];
+        }
+        return new String(result);
+    }
 
-    boolean isHttpBasicAuthenticationEnabled();
-
-    SubjectCreator getSubjectCreator(SocketAddress localAddress);
 }

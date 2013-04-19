@@ -134,7 +134,7 @@ public class Broker
         _applicationRegistry = new ApplicationRegistry(store);
         try
         {
-            _applicationRegistry.initialise();
+            _applicationRegistry.initialise(options);
         }
         catch(Exception e)
         {

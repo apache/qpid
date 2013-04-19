@@ -29,7 +29,7 @@ import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 
-import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
 import org.apache.qpid.ssl.SSLContextFactory;
 
 import javax.management.JMException;
@@ -160,7 +160,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         int jmxPortConnectorServer = _connectorPort.getPort();
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer));
+        JMXPasswordAuthenticator rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer));
         HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
