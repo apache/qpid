@@ -124,8 +124,8 @@ public:
     inline operator int64_t() const;
 };
 
-std::ostream& operator << (std::ostream&, const Duration&);
-std::istream& operator >> (std::istream&, Duration&);
+QPID_COMMON_EXTERN std::ostream& operator << (std::ostream&, const Duration&);
+QPID_COMMON_EXTERN std::istream& operator >> (std::istream&, Duration&);
 
 inline AbsTime now() { return AbsTime::now(); }
 
