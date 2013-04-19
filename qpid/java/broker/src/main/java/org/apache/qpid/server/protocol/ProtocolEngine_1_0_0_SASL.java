@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.security.sasl.SaslException;
@@ -42,6 +43,7 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -162,7 +164,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         Container container = new Container(_broker.getId().toString());
 
         VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(getLocalAddress())));
+        SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress());
+        _conn = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
         _conn.setRemoteAddress(getRemoteAddress());
         _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
         _conn.setFrameOutputHandler(this);
@@ -189,7 +192,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _sender.send(HEADER.duplicate());
         _sender.flush();
 
-        _conn.initiateSASL();
+        _conn.initiateSASL(subjectCreator.getMechanisms().split(" "));
 
 
     }
@@ -201,7 +204,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
             @Override
             public SaslServer getSaslServer(String mechanism, String fqdn) throws SaslException
             {
-                return subjectCreator.createSaslServer(mechanism, fqdn, null);
+                return subjectCreator.createSaslServer(mechanism, fqdn, _network.getPeerPrincipal());
+            }
+
+            @Override
+            public Principal getAuthenticatedPrincipal(SaslServer server)
+            {
+                return new UsernamePrincipal(server.getAuthorizationID());
             }
         };
     }
@@ -230,7 +239,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
             Binary bin = new Binary(data);
             RAW_LOGGER.fine("RECV[" + getRemoteAddress() + "] : " + bin.toString());
         }
-         _readBytes += msg.remaining();
+        _readBytes += msg.remaining();
              switch(_state)
              {
                  case A:
@@ -391,7 +400,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                  Binary bin = new Binary(data);
                  RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
               }
-
 
              _sender.send(dup);
              _sender.flush();
