@@ -225,17 +225,33 @@
 	<!-- =================================================================== -->
 	<!-- Removes everything except the sources enabling clean build.         -->
 	<!-- =================================================================== -->
-	<target name="cleanall" depends="clean">
+	<target name="cleanall" depends="clean, cleanplugin">
 		<delete includeemptydirs="true">
 			<fileset dir="." includes="**/*.*~ **/*~" defaultexcludes="no"/>
-
-			<fileset dir="${qpid.lib.plugins}" includes="qpid-broker-plugins-management-qmf2.jar qmf2.jar" 
-                     defaultexcludes="no"/>
 		</delete>
 
 		<delete dir="build"/>
 		<delete dir="docs"/>
 	</target>
+
+	<!-- =================================================================== -->
+	<!-- If plugins directory exists delete the plugin jars.                 -->
+	<!-- =================================================================== -->
+	<target name="cleanplugin" depends="test-for-plugin" if="dir.exists">
+		<delete includeemptydirs="true">
+			<fileset dir="${qpid.lib.plugins}" includes="qpid-broker-plugins-management-qmf2.jar qmf2.jar" 
+                     defaultexcludes="no"/>
+		</delete>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Test for the presence of the plugins directory.                     -->
+	<!-- =================================================================== -->
+    <target name="test-for-plugin">
+        <condition property="dir.exists">
+            <available file="${qpid.lib.plugins}" type="dir"/>
+        </condition>
+    </target>
 
 </project>
 
