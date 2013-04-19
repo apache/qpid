@@ -29,25 +29,25 @@
     "path" : "${QPID_HOME}/etc/passwd"
   } ],
   "ports" : [  {
-    "name" : "5672-AMQP",
+    "name" : "AMQP",
     "port" : 5672
   }, {
-    "name" : "8080-HTTP",
+    "name" : "HTTP",
     "port" : 8080,
     "protocols" : [ "HTTP" ]
   }, {
-    "name" : "8999-RMI",
+    "name" : "RMI_REGISTRY",
     "port" : 8999,
     "protocols" : [ "RMI" ]
   }, {
-    "name" : "9099-JMX_RMI",
+    "name" : "JMX_CONNECTOR",
     "port" : 9099,
     "protocols" : [ "JMX_RMI" ]
   }],
   "virtualhosts" : [ {
     "name" : "default",
     "storeType" : "DERBY",
-    "storePath" : "${QPID_WORK}/store"
+    "storePath" : "${QPID_WORK}/derbystore/default"
   } ],
   "plugins" : [ {
     "pluginType" : "MANAGEMENT-HTTP",
