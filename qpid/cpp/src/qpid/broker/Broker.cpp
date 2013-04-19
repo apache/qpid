@@ -126,8 +126,8 @@ Broker::Options::Options(const std::string& name) :
     connectionBacklog(10),
     enableMgmt(1),
     mgmtPublish(1),
-    mgmtPubInterval(10),
-    queueCleanInterval(60*10),//10 minutes
+    mgmtPubInterval(10*sys::TIME_SEC),
+    queueCleanInterval(60*sys::TIME_SEC*10),//10 minutes
     auth(SaslAuthenticator::available()),
     realm("QPID"),
     replayFlushLimit(0),
@@ -143,8 +143,8 @@ Broker::Options::Options(const std::string& name) :
     queueThresholdEventRatio(80),
     defaultMsgGroup("qpid.no-group"),
     timestampRcvMsgs(false),    // set the 0.10 timestamp delivery property
-    linkMaintenanceInterval(2),
-    linkHeartbeatInterval(120),
+    linkMaintenanceInterval(2*sys::TIME_SEC),
+    linkHeartbeatInterval(120*sys::TIME_SEC),
     maxNegotiateTime(10000)     // 10s
 {
     int c = sys::SystemInfo::concurrency();
@@ -168,8 +168,6 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt-publish", optValue(mgmtPublish,"yes|no"), "Enable Publish of Management Data ('no' implies query-only)")
         ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Enable broadcast of management information over QMF v2")
         ("mgmt-qmf1", optValue(qmf1Support,"yes|no"), "Enable broadcast of management information over QMF v1")
-        // FIXME aconway 2012-02-13: consistent treatment of values in SECONDS
-        // allow sub-second intervals.
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"),
          "Interval between attempts to purge any expired messages from queues")
@@ -232,7 +230,7 @@ Broker::Broker(const Broker::Options& conf) :
     if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
         managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(), conf.mgmtPublish,
-                                   conf.mgmtPubInterval, this, conf.workerThreads + 3);
+                                   conf.mgmtPubInterval/sys::TIME_SEC, this, conf.workerThreads + 3);
         managementAgent->setName("apache.org", "qpidd");
         _qmf::Package packageInitializer(managementAgent.get());
 
@@ -244,7 +242,7 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_port(conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
-        mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval);
+        mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval/sys::TIME_SEC);
         mgmtObject->set_mgmtPublish(conf.mgmtPublish);
         mgmtObject->set_version(qpid::version);
         if (dataDir.isEnabled())
@@ -356,7 +354,7 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     if (conf.queueCleanInterval) {
-        queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
+        queueCleaner.start(conf.queueCleanInterval);
     }
 
     if (!conf.knownHosts.empty() && conf.knownHosts != knownHostsNone) {

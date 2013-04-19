@@ -21,6 +21,7 @@
  */
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/Options.h"
 #include "unit_test.h"
 #include <math.h>
 #include <iostream>
@@ -125,6 +126,49 @@ QPID_AUTO_TEST_CASE(testGeneral)
     dynamic_pointer_cast<TestTask>(task2)->check(1);
     dynamic_pointer_cast<TestTask>(task3)->check(4);
     dynamic_pointer_cast<TestTask>(task4)->check(2);
+}
+
+std::string toString(Duration d) { return boost::lexical_cast<std::string>(d); }
+Duration fromString(const std::string& str) { return boost::lexical_cast<Duration>(str); }
+
+QPID_AUTO_TEST_CASE(testOstreamInOut) {
+    std::string empty;
+    BOOST_CHECK_EQUAL(toString(Duration(TIME_SEC)), "1s");
+    BOOST_CHECK_EQUAL(toString(Duration(TIME_SEC*123.4)), "123.4s");
+    BOOST_CHECK_EQUAL(toString(Duration(TIME_MSEC*123.4)), "123.4ms");
+    BOOST_CHECK_EQUAL(toString(Duration(TIME_USEC*123.4)), "123.4us");
+    BOOST_CHECK_EQUAL(toString(Duration(TIME_NSEC*123)), "123ns");
+
+    BOOST_CHECK_EQUAL(fromString("123.4"), Duration(TIME_SEC*123.4));
+    BOOST_CHECK_EQUAL(fromString("123.4s"), Duration(TIME_SEC*123.4));
+    BOOST_CHECK_EQUAL(fromString("123ms"), Duration(TIME_MSEC*123));
+    BOOST_CHECK_EQUAL(fromString("123us"), Duration(TIME_USEC*123));
+    BOOST_CHECK_EQUAL(fromString("123ns"), Duration(TIME_NSEC*123));
+
+    Duration d = 0;
+    std::istringstream i;
+    std::string s;
+
+    i.str("123x");
+    i >> d;
+    BOOST_CHECK(i.fail());
+    BOOST_CHECK_EQUAL(d, 0);
+    BOOST_CHECK_EQUAL(i.str(), "123x");
+
+    i.str("xxx");
+    i >> d;
+    BOOST_CHECK(i.fail());
+    BOOST_CHECK_EQUAL(d, 0);
+    BOOST_CHECK_EQUAL(i.str(), "xxx");
+}
+
+QPID_AUTO_TEST_CASE(testOptionParse) {
+    Options opts;
+    Duration interval;
+    opts.addOptions()("interval", optValue(interval, "I"), "blah");
+    const char *args[] = { "fakeexe", "--interval", "123.4" };
+    opts.parse(sizeof(args)/sizeof(args[0]), args);
+    BOOST_CHECK_EQUAL(interval, Duration(TIME_SEC * 123.4));
 }
 
 QPID_AUTO_TEST_SUITE_END()

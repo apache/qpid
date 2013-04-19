@@ -23,11 +23,13 @@
 
 #include "qpid/sys/Time.h"
 #include <ostream>
+#include <istream>
 #include <time.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <iomanip>
+#include <cctype>
 
 namespace {
 int64_t max_abstime() { return std::numeric_limits<int64_t>::max(); }
@@ -73,19 +75,36 @@ struct timespec& toTimespec(struct timespec& ts, const Duration& t) {
     return ts; 
 }
 
-struct timeval& toTimeval(struct timeval& tv, const Duration& t) {
-    Duration secs = t / TIME_SEC;
-    tv.tv_sec = (secs > TIME_T_MAX) ? TIME_T_MAX : static_cast<time_t>(secs);
-    tv.tv_usec = static_cast<suseconds_t>((t%TIME_SEC)/TIME_USEC);
-    return tv;
-}
-
 Duration toTime(const struct timespec& ts) {
     return ts.tv_sec*TIME_SEC + ts.tv_nsec;
 }
 
 std::ostream& operator<<(std::ostream& o, const Duration& d) {
-    return o << int64_t(d) << "ns";   
+    if (d >= TIME_SEC) return o << (double(d)/TIME_SEC) << "s";
+    if (d >= TIME_MSEC) return o << (double(d)/TIME_MSEC) << "ms";
+    if (d >= TIME_USEC) return o << (double(d)/TIME_USEC) << "us";
+    return o << int64_t(d) << "ns";
+}
+
+std::istream& operator>>(std::istream& i, Duration& d) {
+    // Don't throw, let the istream throw if it's configured to do so.
+    double number;
+    i >> number;
+    if (i.fail()) return i;
+
+    if (i.eof() || std::isspace(i.peek())) // No suffix
+        d = number*TIME_SEC;
+    else {
+        std::string suffix;
+        i >> suffix;
+        if (i.fail()) return i;
+        if (suffix.compare("s") == 0) d = number*TIME_SEC;
+        else if (suffix.compare("ms") == 0) d = number*TIME_MSEC;
+        else if (suffix.compare("us") == 0) d = number*TIME_USEC;
+        else if (suffix.compare("ns") == 0) d = number*TIME_NSEC;
+        else i.setstate(std::ios::failbit);
+    }
+    return i;
 }
 
 namespace {

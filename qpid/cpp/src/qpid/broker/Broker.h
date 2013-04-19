@@ -98,8 +98,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
         int connectionBacklog;
         bool enableMgmt;
         bool mgmtPublish;
-        uint16_t mgmtPubInterval;
-        uint16_t queueCleanInterval;
+        sys::Duration mgmtPubInterval;
+        sys::Duration queueCleanInterval;
         bool auth;
         std::string realm;
         size_t replayFlushLimit;
@@ -116,8 +116,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint16_t queueThresholdEventRatio;
         std::string defaultMsgGroup;
         bool timestampRcvMsgs;
-        double linkMaintenanceInterval; // FIXME aconway 2012-02-13: consistent parsing of SECONDS values.
-        uint16_t linkHeartbeatInterval;
+        sys::Duration linkMaintenanceInterval;
+        sys::Duration linkHeartbeatInterval;
         uint32_t maxNegotiateTime;  // Max time in ms for connection with no negotiation
         std::string fedTag;
 
@@ -350,7 +350,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
     QPID_BROKER_EXTERN void setLinkClientProperties(const framing::FieldTable&);
 
-    QPID_BROKER_EXTERN uint16_t getLinkHearbeatInterval() { return config.linkHeartbeatInterval; }
     /** Information identifying this system */
     boost::shared_ptr<const System> getSystem() const { return systemObject; }
   friend class StatusCheckThread;

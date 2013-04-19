@@ -34,6 +34,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/sys/SecurityLayer.h"
+#include "qpid/sys/Time.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qmf/org/apache/qpid/broker/EventClientConnectFail.h"
@@ -401,7 +402,9 @@ void ConnectionHandler::Handler::tune(uint16_t channelMax,
     // this method is only ever called when this Connection
     // is a federation link where this Broker is acting as
     // a client to another Broker
-    uint16_t hb = std::min(connection.getBroker().getOptions().linkHeartbeatInterval, heartbeatMax);
+    sys::Duration interval = connection.getBroker().getOptions().linkHeartbeatInterval;
+    uint16_t intervalSec = static_cast<uint16_t>(interval/sys::TIME_SEC);
+    uint16_t hb = std::min(intervalSec, heartbeatMax);
     connection.setHeartbeat(hb);
     connection.startLinkHeartbeatTimeoutTask();
 
