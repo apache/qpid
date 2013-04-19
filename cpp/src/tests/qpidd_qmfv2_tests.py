@@ -88,8 +88,7 @@ class ConsoleTest(BrokerTest):
                 self.newclass = []
                 self.agents = []
                 self.events = []
-                self.props = []
-                self.stats = []
+                self.updates = {}  # holds the objects by OID
                 self.heartbeats = []
 
             def brokerInfo(self, broker):
@@ -111,17 +110,19 @@ class ConsoleTest(BrokerTest):
                 #print "EVENT %s" % event
                 self.events.append(event)
             def objectProps(self, broker, record):
-                #print "ObjProps PROPS=[%s]" % str(record.getProperties())
-                #print "ObjProps STATS=[%s]" % str(record.getStatistics())
-                # Both statistics and properties are available:
-                props = record.getProperties()
-                if props:
-                    self.props.append(record)
-                stats = record.getStatistics()
-                if stats:
-                    self.stats.append(record)
+                #print "ObjProps %s" % record
+                oid = record.getObjectId()
+                if oid not in self.updates:
+                    self.updates[oid] = record
+                else:
+                    self.updates[oid].mergeUpdate( record )
             def objectStats(self, broker, record):
-                assert  False, "objectStats() not called if QMFv2"
+                #print "ObjStats %s" % record
+                oid = record.getObjectId()
+                if oid not in self.updates:
+                    self.updates[oid] = record
+                else:
+                    self.updates[oid].mergeUpdate( record )
             def heartbeat(self, agent, timestamp):
                 #print "Heartbeat %s" % agent
                 self.heartbeats.append( (agent, timestamp) )
@@ -133,7 +134,11 @@ class ConsoleTest(BrokerTest):
         # this should force objectStats callback
         self.broker.send_message( "fleabag", Message("Hi") )
         # and we should get a few heartbeats
-        sleep(self.PUB_INTERVAL * 3)
+        sleep(self.PUB_INTERVAL)
+        self.broker.send_message( "fleabag", Message("Hi") )
+        sleep(self.PUB_INTERVAL)
+        self.broker.send_message( "fleabag", Message("Hi") )
+        sleep(self.PUB_INTERVAL * 2)
 
         assert handler.broker_info, "No BrokerInfo callbacks received"
         assert handler.broker_conn, "No BrokerConnected callbacks received"
@@ -141,9 +146,20 @@ class ConsoleTest(BrokerTest):
         assert handler.newclass, "No NewClass callbacks received"
         assert handler.agents, "No NewAgent callbacks received"
         assert handler.events, "No event callbacks received"
-        assert handler.props, "No properties updates received"
-        assert handler.stats, "No statistics received"
+        assert handler.updates, "No updates received"
         assert handler.heartbeats, "No heartbeat callbacks received"
+
+        # now verify updates for queue "fleabag" were received, and the
+        # msgDepth statistic is correct
+
+        msgs = 0
+        for o in handler.updates.itervalues():
+            key = o.getClassKey()
+            if key and key.getClassName() == "queue" and o.name == "fleabag":
+                assert o.msgDepth, "No update to msgDepth statistic!"
+                msgs = o.msgDepth
+                break
+        assert msgs == 3, "msgDepth statistics not accurate!"
 
     def test_async_method(self):
         class Handler (qmf.console.Console):
