@@ -63,8 +63,6 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
-import org.apache.qpid.server.security.group.FileGroupManager;
-import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -97,7 +95,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(NAME, String.class);
         put(DEFAULT_VIRTUAL_HOST, String.class);
 
-        put(GROUP_FILE, String.class);
         put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
         put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
         put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
@@ -123,7 +120,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
-    private static final String DEFAULT_GROUP_PROVIDER_NAME = "defaultGroupProvider";
 
     @SuppressWarnings("serial")
     private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
@@ -170,6 +166,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Map<String, KeyStore> _keyStores = new HashMap<String, KeyStore>();
     private final Map<String, TrustStore> _trustStores = new HashMap<String, TrustStore>();
 
+    private final GroupProviderFactory _groupProviderFactory;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
 
     private final PortFactory _portFactory;
@@ -183,7 +180,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
+            GroupProviderFactory groupProviderFactory, PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore,
+            BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -192,46 +190,19 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _rootMessageLogger = rootMessageLogger;
         _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
+        _groupProviderFactory = groupProviderFactory;
         _portFactory = portFactory;
         _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
         addChangeListener(_securityManager);
-        createBrokerChildrenFromAttributes();
         _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
         _brokerOptions = brokerOptions;
-        createBrokerChildrenFromAttributes();
         if (_brokerOptions.isManagementMode())
         {
             AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
                     authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
             _managementAuthenticationProvider = authenticationProvider;
-        }
-    }
-
-    /*
-     * A temporary method to create broker children that can be only configured via broker attributes
-     */
-    private void createBrokerChildrenFromAttributes()
-    {
-        createGroupProvider();
-
-    }
-
-    private void createGroupProvider()
-    {
-        String groupFile = (String) getAttribute(GROUP_FILE);
-        if (groupFile != null)
-        {
-            GroupManager groupManager = new FileGroupManager(groupFile);
-            UUID groupProviderId = UUIDGenerator.generateBrokerChildUUID(GroupProvider.class.getSimpleName(),
-                    DEFAULT_GROUP_PROVIDER_NAME);
-            GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(groupProviderId, groupManager, this);
-            _groupProviders.put(DEFAULT_GROUP_PROVIDER_NAME, groupProviderAdapter);
-        }
-        else
-        {
-            _groupProviders.remove(DEFAULT_GROUP_PROVIDER_NAME);
         }
     }
 
@@ -462,6 +433,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return (C) createTrustStore(attributes);
         }
+        else if(childClass == GroupProvider.class)
+        {
+            return (C) createGroupProvider(attributes);
+        }
         else
         {
             throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
@@ -535,6 +510,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         authenticationProvider.addChangeListener(this);
     }
 
+    private GroupProvider createGroupProvider(Map<String, Object> attributes)
+    {
+        GroupProvider groupProvider = _groupProviderFactory.create(UUID.randomUUID(), this, attributes);
+        groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        addGroupProvider(groupProvider);
+        return groupProvider;
+    }
+
     private void addGroupProvider(GroupProvider groupProvider)
     {
         synchronized (_groupProviders)
@@ -549,9 +532,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         groupProvider.addChangeListener(this);
     }
 
-    private boolean deleteGroupProvider(GroupProvider object)
+    private boolean deleteGroupProvider(GroupProvider groupProvider)
     {
-        throw new UnsupportedOperationException("Not implemented yet!");
+        GroupProvider removedGroupProvider = null;
+        synchronized (_groupProviders)
+        {
+            removedGroupProvider = _groupProviders.remove(groupProvider.getName());
+        }
+
+        if(removedGroupProvider != null)
+        {
+            removedGroupProvider.removeChangeListener(this);
+        }
+
+        return removedGroupProvider != null;
     }
 
     private KeyStore createKeyStore(Map<String, Object> attributes)
@@ -724,6 +718,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             removedPort = _portAdapters.remove(portAdapter.getPort());
         }
+
+        if (removedPort != null)
+        {
+            removedPort.removeChangeListener(this);
+        }
+
         return removedPort != null;
     }
 
@@ -734,6 +734,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getId());
         }
+
+        if(removedAuthenticationProvider != null)
+        {
+            removedAuthenticationProvider.removeChangeListener(this);
+        }
+
         return removedAuthenticationProvider != null;
     }
 
@@ -1030,11 +1036,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 Object expected = getAttribute(name);
                 if (changeAttribute(name, expected, desired))
                 {
-                    if (GROUP_FILE.equals(name))
-                    {
-                        createGroupProvider();
-                    }
-
                     attributeSet(name, expected, desired);
                 }
             }
@@ -1048,12 +1049,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             // create a security manager to validate the ACL specified in file
             new SecurityManager(aclFile);
-        }
-        String groupFile = (String) convertedAttributes.get(GROUP_FILE);
-        if (groupFile != null)
-        {
-            // create a group manager to validate the groups specified in file
-            new FileGroupManager(groupFile);
         }
 
         String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);

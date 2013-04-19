@@ -39,11 +39,19 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestTest extends QpidRestTestCase
 {
-
     private static final String BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE = "authenticationproviders";
     private static final String BROKER_PORTS_ATTRIBUTE = "ports";
     private static final String BROKER_VIRTUALHOSTS_ATTRIBUTE = "virtualhosts";
     private static final String BROKER_STATISTICS_ATTRIBUTE = "statistics";
+
+    @Override
+    public void setUp() throws Exception
+    {
+        //Some of the tests manipulate the ACL config, which means the groups need to be in place to make the ACL work
+        getBrokerConfiguration().addGroupFileConfiguration(QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups");
+
+        super.setUp();
+    }
 
     public void testGet() throws Exception
     {
@@ -140,7 +148,6 @@ public class BrokerRestTest extends QpidRestTestCase
         invalidAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, -11000);
         invalidAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, -12000);
         invalidAttributes.put(Broker.ACL_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-acl.acl");
-        invalidAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups-non-existing");
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, -13000);
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, -14000);
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, -15000);
@@ -181,7 +188,6 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 12000);
         brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
         brokerAttributes.put(Broker.ACL_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "broker_example.acl");
-        brokerAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups");
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 13000);
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 14000);
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 15000);
@@ -205,7 +211,7 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES,
                 Broker.BYTES_RETAINED, Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES,
-                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE, Broker.GROUP_FILE);
+                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE);
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));

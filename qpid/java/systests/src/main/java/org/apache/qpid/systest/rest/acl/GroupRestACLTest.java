@@ -29,14 +29,13 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class GroupRestACLTest extends QpidRestTestCase
 {
-    private static final String FILE_GROUP_MANAGER = "FileGroupManager";
+    private static final String FILE_GROUP_MANAGER = TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE;
 
     private static final String ALLOWED_GROUP = "allowedGroup";
     private static final String DENIED_GROUP = "deniedGroup";
@@ -52,7 +51,7 @@ public class GroupRestACLTest extends QpidRestTestCase
     public void setUp() throws Exception
     {
         _groupFile = createTemporaryGroupFile();
-        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
+        getBrokerConfiguration().addGroupFileConfiguration(_groupFile.getAbsolutePath());
 
         //DONT call super.setUp(), the tests will start the broker after configuring it
     }
@@ -191,7 +190,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
     private void assertNumberOfGroupMembers(String groupName, int expectedNumberOfMembers) throws IOException
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/FileGroupManager/" + groupName);
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/" + groupName);
         getRestTestHelper().assertNumberOfGroupMembers(group, expectedNumberOfMembers);
     }
 }

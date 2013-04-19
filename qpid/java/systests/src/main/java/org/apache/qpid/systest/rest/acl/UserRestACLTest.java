@@ -29,7 +29,6 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -52,7 +51,7 @@ public class UserRestACLTest extends QpidRestTestCase
     public void setUp() throws Exception
     {
         _groupFile = createTemporaryGroupFile();
-        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
+        getBrokerConfiguration().addGroupFileConfiguration(_groupFile.getAbsolutePath());
 
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER, OTHER_USER);
 

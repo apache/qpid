@@ -24,6 +24,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -48,9 +49,11 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 {
     private final GroupManager _groupManager;
     private final Broker _broker;
-    public GroupProviderAdapter(UUID id, GroupManager groupManager, Broker broker)
+    private Collection<String> _supportedAttributes;
+
+    public GroupProviderAdapter(UUID id, Broker broker, GroupManager groupManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, broker.getTaskExecutor());
+        super(id, null, null, broker.getTaskExecutor());
 
         if (groupManager == null)
         {
@@ -58,13 +61,37 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
         _groupManager = groupManager;
         _broker = broker;
+        _supportedAttributes = createSupportedAttributes(attributeNames);
        addParent(Broker.class, broker);
+
+       // set attributes now after all attribute names are known
+       if (attributes != null)
+       {
+           for (String name : _supportedAttributes)
+           {
+               if (attributes.containsKey(name))
+               {
+                   changeAttribute(name, null, attributes.get(name));
+               }
+           }
+       }
+    }
+
+    protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
+    {
+        List<String> attributesNames = new ArrayList<String>(AVAILABLE_ATTRIBUTES);
+        if (factoryAttributes != null)
+        {
+            attributesNames.addAll(factoryAttributes);
+        }
+
+        return Collections.unmodifiableCollection(attributesNames);
     }
 
     @Override
     public String getName()
     {
-        return _groupManager.getClass().getSimpleName();
+        return (String)getAttribute(NAME);
     }
 
     @Override
@@ -129,17 +156,13 @@ public class GroupProviderAdapter extends AbstractAdapter implements
     @Override
     public Collection<String> getAttributeNames()
     {
-        return GroupProvider.AVAILABLE_ATTRIBUTES;
+        return _supportedAttributes;
     }
 
     @Override
     public Object getAttribute(String name)
     {
-        if (TYPE.equals(name))
-        {
-            return getName();
-        }
-        else if (CREATED.equals(name))
+        if (CREATED.equals(name))
         {
             // TODO
         }
@@ -154,10 +177,6 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         else if (LIFETIME_POLICY.equals(name))
         {
             return LifetimePolicy.PERMANENT;
-        }
-        else if (NAME.equals(name))
-        {
-            return getName();
         }
         else if (STATE.equals(name))
         {
@@ -220,9 +239,89 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
     }
 
+    public GroupManager getGroupManager()
+    {
+        return _groupManager;
+    }
+
     private SecurityManager getSecurityManager()
     {
         return _broker.getSecurityManager();
+    }
+
+    @Override
+    protected boolean setState(State currentState, State desiredState)
+    {
+        if (desiredState == State.ACTIVE)
+        {
+            _groupManager.open();
+            return true;
+        }
+        else if (desiredState == State.STOPPED)
+        {
+            _groupManager.close();
+            return true;
+        }
+        else if (desiredState == State.DELETED)
+        {
+            _groupManager.close();
+            _groupManager.onDelete();
+            return true;
+        }
+        return false;
+    }
+
+    public Set<Principal> getGroupPrincipalsForUser(String username)
+    {
+        return _groupManager.getGroupPrincipalsForUser(username);
+    }
+
+    @Override
+    protected void childAdded(ConfiguredObject child)
+    {
+        // no-op, prevent storing groups in the broker store
+    }
+
+    @Override
+    protected void childRemoved(ConfiguredObject child)
+    {
+        // no-op, as per above, groups are not in the store
+    }
+
+    @Override
+    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), GroupProvider.class, Operation.DELETE))
+            {
+                throw new AccessControlException("Deletion of groups provider is denied");
+            }
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), GroupProvider.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of group provider attributes is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), GroupProvider.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of group provider attributes is denied");
+        }
+    }
+
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        throw new UnsupportedOperationException("Changing attributes on group providers is not supported.");
     }
 
     private class GroupAdapter extends AbstractAdapter implements Group
@@ -526,23 +625,5 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
     }
 
-    @Override
-    protected boolean setState(State currentState, State desiredState)
-    {
-        if (desiredState == State.ACTIVE)
-        {
-            return true;
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            return true;
-        }
-        // TODO: DELETE state is ignored for now
-        return false;
-    }
 
-    public Set<Principal> getGroupPrincipalsForUser(String username)
-    {
-        return _groupManager.getGroupPrincipalsForUser(username);
-    }
 }

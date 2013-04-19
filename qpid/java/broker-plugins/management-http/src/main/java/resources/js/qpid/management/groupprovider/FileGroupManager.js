@@ -82,11 +82,12 @@ define(["dojo/_base/xhr",
 
             xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                .then(function(data) {
+                     that.path = query(".path", node)[0];
                      that.groupProviderData = data[0];
 
                      util.flattenStatistics( that.groupProviderData );
 
-                     var groupDiv = query(".groups")[0];
+                     var groupDiv = query(".groups", node)[0];
 
                      var gridProperties = {
                                             height: 400,
@@ -109,7 +110,15 @@ define(["dojo/_base/xhr",
                      that.groupsGrid =
                         new UpdatableStore(that.groupProviderData.groups, groupDiv,
                                         [ { name: "Group Name",    field: "name",      width: "100%" }
-                                        ], null, gridProperties, EnhancedGrid);
+                                        ], function(obj) {
+                                          connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                              function(evt){
+                                                  var idx = evt.rowIndex,
+                                                      theItem = this.getItem(idx);
+                                                  var name = obj.dataStore.getValue(theItem,"name");
+                                                  that.controller.show("group", name, groupProviderObj);
+                                              });
+                                      }, gridProperties, EnhancedGrid);
 
 
                      var addGroupButton = query(".addGroupButton", node)[0];
@@ -167,6 +176,7 @@ define(["dojo/_base/xhr",
             xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                 .then(function(data) {
                     that.groupProviderData = data[0];
+                    that.path.innerHTML = that.groupProviderData.path;
                     util.flattenStatistics( that.groupProviderData );
 
                     that.groupsGrid.update(that.groupProviderData.groups);
