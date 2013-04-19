@@ -20,13 +20,11 @@
 package org.apache.qpid.server.security.group;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -62,17 +60,26 @@ public class FileGroupManagerTest extends QpidTestCase
 
     public void testNonExistentGroupFile() throws Exception
     {
-        final String filePath = "/does.not.exist/";
-
+        final String filePath = TMP_FOLDER + File.separator + "non.existing";
+        File file = new File(filePath);
+        if (file.exists())
+        {
+            file.delete();
+        }
+        assertFalse("File should not exist", file.exists());
         try
         {
             _manager = new FileGroupManager(filePath);
-            fail("expected exception was not thrown");
+            assertFalse("File should be created", file.exists());
+            _manager.onCreate();
+            assertTrue("File should be created", file.exists());
+            _manager.open();
+            Set<Principal> groups = _manager.getGroupPrincipals();
+            assertTrue("No group should exist", groups.isEmpty());
         }
-        catch(IllegalConfigurationException ce)
+        finally
         {
-            assertNotNull(ce.getCause());
-            assertTrue(ce.getCause() instanceof FileNotFoundException);
+            file.delete();
         }
     }
 
@@ -80,7 +87,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile();
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getGroupPrincipalsForUser("user1");
         assertEquals(1, principals.size());
         assertTrue(principals.contains(new GroupPrincipal("myGroup")));
@@ -90,7 +97,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile();
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(1, principals.size());
         assertTrue(principals.contains(new UsernamePrincipal("user1")));
@@ -100,7 +107,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS, MY_GROUP2, MYGROUP_USERS);
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getGroupPrincipals();
         assertEquals(2, principals.size());
         assertTrue(principals.contains(new GroupPrincipal("myGroup")));
@@ -111,7 +118,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile();
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getGroupPrincipals();
         assertEquals(1, principals.size());
 
@@ -126,7 +133,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS);
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getGroupPrincipals();
         assertEquals(1, principals.size());
 
@@ -140,7 +147,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS);
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(1, principals.size());
         assertFalse(principals.contains(new UsernamePrincipal("user2")));
@@ -156,7 +163,7 @@ public class FileGroupManagerTest extends QpidTestCase
     {
         final String groupFileName = writeGroupFile(MY_GROUP, MYGROUP_USERS);
         _manager = new FileGroupManager(groupFileName);
-
+        _manager.open();
         Set<Principal> principals = _manager.getUserPrincipalsForGroup("myGroup");
         assertEquals(1, principals.size());
         assertTrue(principals.contains(new UsernamePrincipal("user1")));

@@ -26,13 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupMember;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class GroupRestTest extends QpidRestTestCase
 {
     private static final String GROUP_NAME = "myGroup";
-    private static final String FILE_GROUP_MANAGER = "FileGroupManager";
+    private static final String FILE_GROUP_MANAGER = TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE;
     private static final String EXISTING_MEMBER = "user1";
     private static final String NEW_MEMBER = "user2";
 
@@ -43,7 +43,7 @@ public class GroupRestTest extends QpidRestTestCase
     {
         _groupFile = createTemporaryGroupFile();
 
-        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
+        getBrokerConfiguration().addGroupFileConfiguration(_groupFile.getAbsolutePath());
 
         super.setUp();
     }
@@ -64,7 +64,7 @@ public class GroupRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/FileGroupManager/myGroup");
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
         List<Map<String, Object>> groupmembers = (List<Map<String, Object>>) group.get("groupmembers");
         assertEquals(1, groupmembers.size());
 
@@ -74,23 +74,23 @@ public class GroupRestTest extends QpidRestTestCase
 
     public void testCreateNewMemberOfGroup() throws Exception
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/FileGroupManager/myGroup");
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
 
         getRestTestHelper().createNewGroupMember(FILE_GROUP_MANAGER, GROUP_NAME, NEW_MEMBER);
 
-        group = getRestTestHelper().getJsonAsSingletonList("/rest/group/FileGroupManager/myGroup");
+        group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 2);
     }
 
     public void testRemoveMemberFromGroup() throws Exception
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/FileGroupManager/myGroup");
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
 
         getRestTestHelper().removeMemberFromGroup(FILE_GROUP_MANAGER, GROUP_NAME, EXISTING_MEMBER);
 
-        group = getRestTestHelper().getJsonAsSingletonList("/rest/group/FileGroupManager/myGroup");
+        group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 0);
     }
 

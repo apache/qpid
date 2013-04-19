@@ -32,6 +32,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addVirtualHost",
         "qpid/management/addPort",
         "qpid/management/addKeystore",
+        "qpid/management/addGroupProvider",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dijit/layout/AccordionContainer",
@@ -42,7 +43,7 @@ define(["dojo/_base/xhr",
         "dijit/form/CheckBox",
         "dojo/store/Memory",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort, addKeystore) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort, addKeystore, addGroupProvider) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -86,16 +87,6 @@ define(["dojo/_base/xhr",
                             value: brokerData.aclFile,
                             label: "ACL file location:",
                             name: "aclFile"})
-                       }
-               }, {
-                       name: "groupFile",
-                       createWidget: function(brokerData)
-                       {
-                           return new dijit.form.ValidationTextBox({
-                             required: false,
-                             value: brokerData.groupFile,
-                             label: "Group file location:",
-                             name: "groupFile"});
                        }
                }, {
                        name: "statisticsReportingPeriod",
@@ -453,6 +444,35 @@ define(["dojo/_base/xhr",
                                                 "Are you sure you want to delete trust store");
                                 }
                             );
+
+                            var addGroupProviderButton = query(".addGroupProvider", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addGroupProviderButton), "onClick",
+                                function(evt){addGroupProvider.show();});
+
+                            var deleteGroupProvider = query(".deleteGroupProvider", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteGroupProvider), "onClick",
+                                    function(evt){
+                                        var warning = "";
+                                        var data = that.brokerUpdater.groupProvidersGrid.grid.selection.getSelected();
+                                        if(data.length && data.length > 0)
+                                        {
+                                          for(var i = 0; i<data.length; i++)
+                                          {
+                                              if (data[i].type.indexOf("File") != -1)
+                                              {
+                                                warning = "NOTE: provider deletion will also remove the group file on disk.\n\n"
+                                                break;
+                                              }
+                                          }
+                                        }
+
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.groupProvidersGrid.grid,
+                                                "rest/groupprovider",
+                                                warning + "Are you sure you want to delete group provider");
+                                }
+                            );
                         }});
            };
 
@@ -559,7 +579,7 @@ define(["dojo/_base/xhr",
                              that.keyStoresGrid =
                                new UpdatableStore(that.brokerData.keystores, query(".broker-key-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
-                                                 { name: "Path", field: "path", width: "50%"},
+                                                 { name: "Path", field: "path", width: "40%"},
                                                  { name: "Type", field: "type", width: "5%"},
                                                  { name: "Key Manager Algorithm", field: "keyManagerFactoryAlgorithm", width: "20%"},
                                                  { name: "Alias", field: "certificateAlias", width: "15%"}
@@ -576,10 +596,10 @@ define(["dojo/_base/xhr",
                              that.trustStoresGrid =
                                new UpdatableStore(that.brokerData.truststores, query(".broker-trust-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
-                                                 { name: "Path", field: "path", width: "50%"},
+                                                 { name: "Path", field: "path", width: "40%"},
                                                  { name: "Type", field: "type", width: "5%"},
-                                                 { name: "Trust Manager Algorithm", field: "trustManagerFactoryAlgorithm", width: "20%"},
-                                                 { name: "Peers only", field: "peersOnly", width: "15%",
+                                                 { name: "Trust Manager Algorithm", field: "trustManagerFactoryAlgorithm", width: "25%"},
+                                                 { name: "Peers only", field: "peersOnly", width: "10%",
                                                    formatter: function(val){
                                                      return "<input type='radio' disabled='disabled' "+(val ? "checked='checked'": "")+" />";
                                                    }
@@ -591,6 +611,19 @@ define(["dojo/_base/xhr",
                                                                theItem = this.getItem(idx);
                                                            var name = obj.dataStore.getValue(theItem,"name");
                                                            that.controller.show("truststore", name, brokerObj);
+                                                       });
+                                               }, gridProperties, EnhancedGrid);
+                             that.groupProvidersGrid =
+                               new UpdatableStore(that.brokerData.groupproviders, query(".broker-group-providers")[0],
+                                               [ { name: "Name",    field: "name",      width: "50%"},
+                                                 { name: "Type", field: "type", width: "50%"}
+                                               ], function(obj) {
+                                                       connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                       function(evt){
+                                                           var idx = evt.rowIndex,
+                                                               theItem = this.getItem(idx);
+                                                           var name = obj.dataStore.getValue(theItem,"name");
+                                                           that.controller.show("groupprovider", name, brokerObj);
                                                        });
                                                }, gridProperties, EnhancedGrid);
 
@@ -687,6 +720,10 @@ define(["dojo/_base/xhr",
                                                                                        if (that.trustStoresGrid)
                                                                                        {
                                                                                          that.trustStoresGrid.update(that.brokerData.truststores);
+                                                                                       }
+                                                                                       if (that.groupProvidersGrid)
+                                                                                       {
+                                                                                         that.groupProvidersGrid.update(that.brokerData.groupproviders);
                                                                                        }
                                                                                    });
 
