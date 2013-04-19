@@ -34,6 +34,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -172,7 +173,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
 
-    private final Collection<String> _supportedStoreTypes;
+    private final Collection<String> _supportedVirtualHostStoreTypes;
+    private Collection<String> _supportedBrokerStoreTypes;
     private final ConfigurationEntryStore _brokerStore;
 
     private AuthenticationProvider _managementAuthenticationProvider;
@@ -194,7 +196,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _portFactory = portFactory;
         _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
         addChangeListener(_securityManager);
-        _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _supportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _supportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
         _brokerOptions = brokerOptions;
         if (_brokerOptions.isManagementMode())
@@ -684,9 +687,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return QpidProperties.getReleaseVersion();
         }
-        else if(SUPPORTED_STORE_TYPES.equals(name))
+        else if(SUPPORTED_BROKER_STORE_TYPES.equals(name))
         {
-            return _supportedStoreTypes;
+            return _supportedBrokerStoreTypes;
+        }
+        else if(SUPPORTED_VIRTUALHOST_STORE_TYPES.equals(name))
+        {
+            return _supportedVirtualHostStoreTypes;
         }
         else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
         {

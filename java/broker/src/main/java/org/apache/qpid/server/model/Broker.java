@@ -43,7 +43,8 @@ public interface Broker extends ConfiguredObject
     String PLATFORM = "platform";
     String PROCESS_PID = "processPid";
     String PRODUCT_VERSION = "productVersion";
-    String SUPPORTED_STORE_TYPES = "supportedStoreTypes";
+    String SUPPORTED_BROKER_STORE_TYPES = "supportedBrokerStoreTypes";
+    String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
     String CREATED = "created";
     String DURABLE = "durable";
@@ -95,7 +96,8 @@ public interface Broker extends ConfiguredObject
                               PLATFORM,
                               PROCESS_PID,
                               PRODUCT_VERSION,
-                              SUPPORTED_STORE_TYPES,
+                              SUPPORTED_BROKER_STORE_TYPES,
+                              SUPPORTED_VIRTUALHOST_STORE_TYPES,
                               SUPPORTED_AUTHENTICATION_PROVIDERS,
                               CREATED,
                               DURABLE,
