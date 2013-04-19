@@ -47,7 +47,7 @@ public class MainTest extends QpidTestCase
         assertEquals(null, options.getLogConfigFile());
         assertEquals(0, options.getLogWatchFrequency());
         assertEquals(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, options.getInitialConfigurationLocation());
-
+        assertFalse(options.isOverwriteConfigurationStore());
         assertFalse(options.isManagementMode());
         assertEquals(0, options.getManagementModeConnectorPort());
         assertEquals(0, options.getManagementModeRmiPort());
@@ -70,6 +70,15 @@ public class MainTest extends QpidTestCase
 
         options = startDummyMain("-store-type bdb");
         assertEquals("bdb", options.getConfigurationStoreType());
+    }
+
+    public void testOverwriteConfigurationStore()
+    {
+        BrokerOptions options = startDummyMain("-os");
+        assertTrue(options.isOverwriteConfigurationStore());
+
+        options = startDummyMain("-overwrite-store");
+        assertTrue(options.isOverwriteConfigurationStore());
     }
 
     public void testLogConfig()
