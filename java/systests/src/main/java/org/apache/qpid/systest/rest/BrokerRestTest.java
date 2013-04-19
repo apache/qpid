@@ -29,11 +29,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -210,7 +212,7 @@ public class BrokerRestTest extends QpidRestTestCase
     protected void assertBrokerAttributes(Map<String, Object> brokerDetails)
     {
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES,
-                Broker.BYTES_RETAINED, Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES,
+                Broker.BYTES_RETAINED, Broker.PROCESS_PID,
                 Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE);
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
@@ -234,6 +236,16 @@ public class BrokerRestTest extends QpidRestTestCase
         assertNotNull("Unexpected value of attribute virtualhosts", brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute ports", brokerDetails.get(BROKER_PORTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute authenticationproviders", brokerDetails.get(BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> supportedBrokerStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_BROKER_STORE_TYPES);
+        Collection<String> expectedSupportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
+        assertEquals("Unexpected supported broker store types",  new HashSet<String>(expectedSupportedBrokerStoreTypes), new HashSet<String>(supportedBrokerStoreTypes));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> supportedVirtualHostStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES);
+        Collection<String> expectedSupportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
+        assertEquals("Unexpected supported virtual host store types",  new HashSet<String>(expectedSupportedVirtualHostStoreTypes), new HashSet<String>(supportedVirtualHostStoreTypes));
     }
 
 }

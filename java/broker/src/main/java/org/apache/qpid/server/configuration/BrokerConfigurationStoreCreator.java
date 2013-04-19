@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,4 +74,8 @@ public class BrokerConfigurationStoreCreator
         return factory.createStore(storeLocation, initialStore, overwrite);
     }
 
+    public Collection<String> getStoreTypes()
+    {
+        return Collections.unmodifiableCollection(_factories.keySet());
+    }
 }

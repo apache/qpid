@@ -17,7 +17,7 @@ public class ListMessageStoreTypes implements Action
     @Override
     public Object perform(Map<String, Object> request, Broker broker)
     {
-        return broker.getAttribute(Broker.SUPPORTED_STORE_TYPES);
+        return broker.getAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES);
     }
 
 }
