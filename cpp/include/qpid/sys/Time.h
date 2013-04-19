@@ -125,6 +125,7 @@ public:
 };
 
 std::ostream& operator << (std::ostream&, const Duration&);
+std::istream& operator >> (std::istream&, Duration&);
 
 inline AbsTime now() { return AbsTime::now(); }
 

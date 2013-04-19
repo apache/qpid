@@ -23,6 +23,7 @@
  */
 
 #include "types.h"
+#include "qpid/sys/Time.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <string>
 
@@ -36,7 +37,7 @@ class Settings
 {
   public:
     Settings() : cluster(false), queueReplication(false),
-                 replicateDefault(NONE), backupTimeout(5),
+                 replicateDefault(NONE), backupTimeout(5*sys::TIME_SEC),
                  flowMessages(100), flowBytes(0)
     {}
 
@@ -46,7 +47,7 @@ class Settings
     std::string brokerUrl;
     Enum<ReplicateLevel> replicateDefault;
     std::string username, password, mechanism;
-    double backupTimeout;
+    sys::Duration backupTimeout;
 
     uint32_t flowMessages, flowBytes;
 
