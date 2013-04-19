@@ -39,10 +39,10 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -57,11 +57,13 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final PortFactory _portFactory;
     private final TaskExecutor _taskExecutor;
     private final BrokerOptions _brokerOptions;
+    private final GroupProviderFactory _groupProviderFactory;
 
-    public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
-            StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder,
-            RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions)
+    public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, GroupProviderFactory groupProviderFactory,
+            PortFactory portFactory, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
+            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions)
     {
+        _groupProviderFactory = groupProviderFactory;
         _portFactory = portFactory;
         _authenticationProviderFactory = authenticationProviderFactory;
         _statisticsGatherer = statisticsGatherer;
@@ -77,7 +79,8 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     {
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _groupProviderFactory, _portFactory,
+                _taskExecutor, entry.getStore(), _brokerOptions);
 
         broker.addChangeListener(storeChangeListener);
 

@@ -86,12 +86,6 @@ public interface Broker extends ConfiguredObject
      */
     String ACL_FILE = "aclFile";
 
-    /*
-     * A temporary attributes to set the broker group file.
-     * TODO: Remove them after adding a full support to configure authorization providers via management layers.
-     */
-    String GROUP_FILE = "groupFile";
-
     // Attributes
     Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -134,7 +128,6 @@ public interface Broker extends ConfiguredObject
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-                              GROUP_FILE,
                               ACL_FILE
                               ));
 

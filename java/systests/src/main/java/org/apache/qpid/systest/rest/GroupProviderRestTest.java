@@ -22,20 +22,23 @@ package org.apache.qpid.systest.rest;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.security.group.FileGroupManagerFactory;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.test.utils.TestFileUtils;
 
 public class GroupProviderRestTest extends QpidRestTestCase
 {
-    private static final String FILE_GROUP_MANAGER = "FileGroupManager";
+    private static final String FILE_GROUP_MANAGER = TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE;
     private File _groupFile;
 
     @Override
@@ -43,7 +46,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
     {
         _groupFile = createTemporaryGroupFile();
 
-        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, _groupFile.getAbsolutePath());
+        getBrokerConfiguration().addGroupFileConfiguration(_groupFile.getAbsolutePath());
 
         super.setUp();
     }
@@ -69,11 +72,11 @@ public class GroupProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
         {
-            assertProvider(FILE_GROUP_MANAGER, provider);
+            assertProvider(FILE_GROUP_MANAGER, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE, provider);
             Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/"
                     + provider.get(GroupProvider.NAME));
             assertNotNull("Cannot load data for " + provider.get(GroupProvider.NAME), data);
-            assertProvider(FILE_GROUP_MANAGER, data);
+            assertProvider(FILE_GROUP_MANAGER, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE, data);
         }
     }
 
@@ -111,8 +114,178 @@ public class GroupProviderRestTest extends QpidRestTestCase
         getRestTestHelper().assertNumberOfGroups(data, 0);
     }
 
+    public void testCreateNewFileGroupProviderFromExistingGroupFile() throws Exception
+    {
+        String[] groupMemberNames = {"test1","test2"};
+        File groupFile = TestFileUtils.createTempFile(this, ".groups", "testusers.users=" + groupMemberNames[0] + "," + groupMemberNames[1]);
+        try
+        {
+            String providerName = getTestName();
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(GroupProvider.NAME, providerName);
+            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
 
-    private void assertProvider(String type, Map<String, Object> provider)
+            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            assertEquals("Group provider was not created", 201, responseCode);
+
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + providerName + "?depth=2");
+            assertProvider(providerName, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE, data);
+            assertEquals("Unexpected name", providerName, data.get(GroupProvider.NAME));
+            assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileGroupManagerFactory.PATH));
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> groups = (List<Map<String, Object>>) data.get("groups");
+            assertEquals("Unexpected group size", 1, groups.size());
+            Map<String, Object> group = groups.get(0);
+            assertEquals("Unexpected group name", "testusers",group.get("name"));
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> groupMemberList = (List<Map<String, Object>>) group.get("groupmembers");
+            assertEquals("Unexpected group members size", 2, groupMemberList.size());
+
+            for (String memberName : groupMemberNames)
+            {
+                boolean found = false;
+                for (Map<String, Object> memberData : groupMemberList)
+                {
+                    Object name = memberData.get("name");
+                    if (memberName.equals(name))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                assertTrue("Cannot find group member " + memberName + " in " + groupMemberList , found);
+            }
+        }
+        finally
+        {
+            groupFile.delete();
+        }
+    }
+
+    public void testCreationOfNewFileGroupProviderFailsWhenPathIsMissed() throws Exception
+    {
+        String providerName = getTestName();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, providerName);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+        assertEquals("Group provider was created", 409, responseCode);
+    }
+
+    public void testCreateNewFileGroupProviderFromNonExistingGroupFile() throws Exception
+    {
+        File groupFile = new File(TMP_FOLDER + File.separator + getTestName() + File.separator + "groups");
+        assertFalse("Group file should not exist", groupFile.exists());
+        try
+        {
+            String providerName = getTestName();
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(GroupProvider.NAME, providerName);
+            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+
+            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            assertEquals("Group provider was not created", 201, responseCode);
+
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + providerName);
+            assertEquals("Unexpected name", providerName, data.get(GroupProvider.NAME));
+            assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileGroupManagerFactory.PATH));
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> groups = (List<Map<String, Object>>) data.get("groups");
+            assertNull("Unexpected groups", groups);
+
+            assertTrue("Group file has not been created", groupFile.exists());
+        }
+        finally
+        {
+            groupFile.delete();
+            groupFile.getParentFile().delete();
+        }
+    }
+
+    public void testCreateNewFileGroupProviderForTheSameGroupFileFails() throws Exception
+    {
+        File groupFile = TestFileUtils.createTempFile(this, ".groups", "testusers.users=test1,test2");
+        String providerName = getTestName();
+        try
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(GroupProvider.NAME, providerName);
+            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+
+            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            assertEquals("Group provider was not created", 201, responseCode);
+
+            attributes.put(GroupProvider.NAME, providerName + 2);
+            responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName + 2, "PUT", attributes);
+            assertEquals("Group provider for the same group file was created", 409, responseCode);
+        }
+        finally
+        {
+            groupFile.delete();
+        }
+    }
+
+    public void testDeleteGroupProvider() throws Exception
+    {
+        File groupFile = TestFileUtils.createTempFile(this, ".groups", "testusers.users=test1,test2");
+        String providerName = getTestName();
+        try
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(GroupProvider.NAME, providerName);
+            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+
+            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
+
+            responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName , "DELETE", null);
+            assertEquals("Group provider was not deleted", 200, responseCode);
+
+            List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/groupprovider/" + providerName);
+            assertEquals("Provider was not deleted", 0, providerDetails.size());
+            assertFalse("Groups file should be deleted", groupFile.exists());
+        }
+        finally
+        {
+            groupFile.delete();
+        }
+    }
+
+    public void testUpdateGroupProviderAttributesFails() throws Exception
+    {
+        File groupFile = TestFileUtils.createTempFile(this, ".groups", "testusers.users=test1,test2");
+        String providerName = getTestName();
+        try
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(GroupProvider.NAME, providerName);
+            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+
+            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
+
+            File newGroupFile = new File(TMP_FOLDER + File.separator + getTestName() + File.separator + "groups");
+            attributes.put(FileGroupManagerFactory.PATH, newGroupFile.getAbsolutePath());
+
+            responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            assertEquals("Expected to fail because we can have only one password provider", 409, responseCode);
+        }
+        finally
+        {
+            groupFile.delete();
+        }
+    }
+
+    private void assertProvider(String name, String type, Map<String, Object> provider)
     {
         Asserts.assertAttributesPresent(provider, GroupProvider.AVAILABLE_ATTRIBUTES,
                 GroupProvider.CREATED, GroupProvider.UPDATED, GroupProvider.DESCRIPTION,
@@ -126,9 +299,8 @@ public class GroupProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected value of provider attribute " + GroupProvider.TYPE, type,
                 provider.get(GroupProvider.TYPE));
 
-        final String name = (String) provider.get(GroupProvider.NAME);
-        assertEquals("Unexpected value of provider attribute " + GroupProvider.NAME, type,
-                name);
+        assertEquals("Unexpected value of provider attribute " + GroupProvider.NAME, name,
+                (String) provider.get(GroupProvider.NAME));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> groups = (List<Map<String, Object>>) provider.get("groups");

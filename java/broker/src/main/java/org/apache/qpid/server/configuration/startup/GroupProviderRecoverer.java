@@ -24,24 +24,20 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.adapter.GroupProviderAdapter;
-import org.apache.qpid.server.plugin.GroupManagerFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.security.group.GroupManager;
+import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 
 public class GroupProviderRecoverer implements ConfiguredObjectRecoverer<GroupProvider>
 {
-    private QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader;
+    private GroupProviderFactory _groupProviderFactory;
 
-    public GroupProviderRecoverer(QpidServiceLoader<GroupManagerFactory> groupManagerServiceLoader)
+    public GroupProviderRecoverer(GroupProviderFactory groupProviderFactory)
     {
         super();
-        _groupManagerServiceLoader = groupManagerServiceLoader;
+        _groupProviderFactory = groupProviderFactory;
     }
 
     @Override
@@ -49,26 +45,9 @@ public class GroupProviderRecoverer implements ConfiguredObjectRecoverer<GroupPr
     {
         Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         Map<String, Object> attributes = configurationEntry.getAttributes();
-        GroupManager groupManager = createGroupManager(attributes);
-        if (groupManager == null)
-        {
-            throw new IllegalConfigurationException("Cannot create GroupManager from attributes : " + attributes);
-        }
-        GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(configurationEntry.getId(), groupManager, broker);
-        return groupProviderAdapter;
-    }
 
-    private GroupManager createGroupManager(Map<String, Object> attributes)
-    {
-        for(GroupManagerFactory factory : _groupManagerServiceLoader.instancesOf(GroupManagerFactory.class))
-        {
-            GroupManager groupManager = factory.createInstance(attributes);
-            if (groupManager != null)
-            {
-               return groupManager;
-            }
-        }
-        return null;
-    }
+        GroupProvider groupProvider = _groupProviderFactory.recover(configurationEntry.getId(), broker, attributes);
 
+        return groupProvider;
+    }
 }

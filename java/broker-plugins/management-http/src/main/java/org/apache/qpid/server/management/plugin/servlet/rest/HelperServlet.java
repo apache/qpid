@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAuthenticationProviderAttributes;
+import org.apache.qpid.server.management.plugin.servlet.rest.action.ListGroupProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListMessageStoreTypes;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -52,6 +53,8 @@ public class HelperServlet extends AbstractServlet
         _actions.put(listProviderAttributes.getName(), listProviderAttributes);
         Action listMessageStoreTypes = new ListMessageStoreTypes();
         _actions.put(listMessageStoreTypes.getName(), listMessageStoreTypes);
+        Action groupProviderAttributes = new ListGroupProviderAttributes();
+        _actions.put(groupProviderAttributes.getName(), groupProviderAttributes);
     }
 
     @Override

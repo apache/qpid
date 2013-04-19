@@ -30,6 +30,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.group.GroupManager;
@@ -46,6 +47,7 @@ public class GroupProviderRecovererTest extends TestCase
     private QpidServiceLoader<GroupManagerFactory> _groupManagerServiceLoader;
     private Broker _broker;
     private ConfigurationEntry _configurationEntry;
+    private GroupProviderFactory _groupProviderFactory;
 
     @SuppressWarnings("unchecked")
     protected void setUp() throws Exception
@@ -58,6 +60,7 @@ public class GroupProviderRecovererTest extends TestCase
 
         _groupManagerServiceLoader = mock(QpidServiceLoader.class);
         when(_groupManagerServiceLoader.instancesOf(GroupManagerFactory.class)).thenReturn(Collections.singletonList(_factory ));
+        _groupProviderFactory = new GroupProviderFactory(_groupManagerServiceLoader);
 
         _broker = mock(Broker.class);
 
@@ -70,8 +73,9 @@ public class GroupProviderRecovererTest extends TestCase
     {
         GroupManager groupManager = mock(GroupManager.class);
         String name = groupManager.getClass().getSimpleName();
+        _attributes.put(GroupProvider.NAME, name);
         when(_factory.createInstance(_attributes)).thenReturn(groupManager);
-        GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(_groupManagerServiceLoader);
+        GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(_groupProviderFactory);
         GroupProvider groupProvider = groupProviderRecoverer.create(null, _configurationEntry, _broker);
         assertNotNull("Null group provider", groupProvider);
         assertEquals("Unexpected name", name, groupProvider.getName());
@@ -82,7 +86,7 @@ public class GroupProviderRecovererTest extends TestCase
     {
         when(_factory.createInstance(_attributes)).thenReturn(null);
 
-        GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(_groupManagerServiceLoader);
+        GroupProviderRecoverer groupProviderRecoverer = new GroupProviderRecoverer(_groupProviderFactory);
         try
         {
             groupProviderRecoverer.create(null, _configurationEntry, _broker);
