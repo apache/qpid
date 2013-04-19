@@ -267,7 +267,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
     private Connection getExternalSSLConnection(boolean includeUserNameAndPassword) throws Exception
     {
-        String url = "amqp://%s@test/?brokerlist='tcp://localhost:%s?ssl='true'&sasl_mechs='EXTERNAL''";
+        String url = "amqp://%s@test/?brokerlist='tcp://localhost:%s?ssl='true'&sasl_mechs='EXTERNAL'&ssl_cert_alias='app2''";
         if (includeUserNameAndPassword)
         {
             url = String.format(url, "guest:guest", String.valueOf(QpidBrokerTestCase.DEFAULT_SSL_PORT));
