@@ -19,7 +19,7 @@
  *
  */
 {
-  "name": "QpidBroker",
+  "name": "Broker",
   "defaultVirtualHost" : "test",
   "authenticationproviders" : [ {
     "name" : "plain",

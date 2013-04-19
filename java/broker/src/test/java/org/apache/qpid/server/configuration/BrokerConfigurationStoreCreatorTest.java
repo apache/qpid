@@ -97,7 +97,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
 
-        String defaultBrokerName = "QpidBroker";
+        String defaultBrokerName = "Broker";
         String testBrokerName = getTestName();
 
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();

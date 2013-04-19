@@ -58,7 +58,6 @@ define(["dojo/_base/xhr",
                         return new dijit.form.ValidationTextBox({
                           required: true,
                           value: brokerData.name,
-                          disabled: true,
                           label: "Name*:",
                           name: "name"})
                     }
@@ -639,6 +638,7 @@ define(["dojo/_base/xhr",
            {
                this.showReadOnlyAttributes();
                var brokerData = this.brokerData;
+               window.document.title = "Qpid: " + brokerData.name + " Management";
                for(var i in this.attributes)
                {
                  var propertyName = this.attributes[i].name;
