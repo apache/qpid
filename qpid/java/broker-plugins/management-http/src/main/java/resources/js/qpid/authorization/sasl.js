@@ -18,10 +18,7 @@
  * under the License.
  *
  */
-require(["dijit/form/DropDownButton", "dijit/TooltipDialog", "dijit/form/TextBox",
-                     "dojo/_base/xhr", "dojox/encoding/base64", "dojox/encoding/digests/_base", "dojox/encoding/digests/MD5"]);
-var button;
-var usernameSpan;
+define(["dojo/_base/xhr", "dojox/encoding/base64", "dojox/encoding/digests/_base", "dojox/encoding/digests/MD5"], function () {
 
 var encodeUTF8 = function encodeUTF8(str) {
     var byteArray = [];
@@ -49,8 +46,23 @@ var decodeUTF8 = function decodeUTF8(byteArray)
     return decodeURIComponent(str);
 };
 
+var errorHandler = function errorHandler(error)
+{
+    if(error.status == 401)
+    {
+        alert("Authentication Failed");
+    }
+    else if(error.status == 403)
+    {
+        alert("Authorization Failed");
+    }
+    else
+    {
+        alert(error);
+    }
+}
 
-var saslPlain = function saslPlain(user, password)
+var saslPlain = function saslPlain(user, password, callbackFunction)
 {
     var responseArray = [ 0 ].concat(encodeUTF8( user )).concat( [ 0 ] ).concat( encodeUTF8( password ) );
     var plainResponse = dojox.encoding.base64.encode(responseArray);
@@ -65,25 +77,10 @@ var saslPlain = function saslPlain(user, password)
         },
         handleAs: "json",
         failOk: true
-    }).then(function()
-            {
-                updateAuthentication();
-            },
-            function(error)
-            {
-                if(error.status == 403)
-                {
-                    alert("Authentication Failed");
-                }
-                else
-                {
-                    alert(error);
-                }
-                updateAuthentication();
-            });
+    }).then(callbackFunction, errorHandler);
 };
 
-var saslCramMD5 = function saslCramMD5(user, password)
+var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFunction)
 {
 
     // Using dojo.xhrGet, as very little information is being sent
@@ -91,7 +88,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
         // The URL of the request
         url: "rest/sasl",
         content: {
-            mechanism: "CRAM-MD5"
+            mechanism: saslMechanism
         },
         handleAs: "json",
         failOk: true
@@ -121,22 +118,7 @@ var saslCramMD5 = function saslCramMD5(user, password)
                         },
                         handleAs: "json",
                         failOk: true
-                    }).then(function()
-                                        {
-                                            updateAuthentication();
-                                        },
-                                        function(error)
-                                        {
-                                            if(error.status == 403)
-                                            {
-                                                alert("Authentication Failed");
-                                            }
-                                            else
-                                            {
-                                                alert(error);
-                                            }
-                                            updateAuthentication();
-                                        });
+                    }).then(callbackFunction, errorHandler);
 
             },
             function(error)
@@ -163,86 +145,45 @@ var containsMechanism = function containsMechanism(mechanisms, mech)
     return false;
 };
 
-var doAuthenticate = function doAuthenticate()
+var SaslClient = {};
+
+SaslClient.authenticate = function(username, password, callbackFunction)
 {
     dojo.xhrGet({
-        // The URL of the request
         url: "rest/sasl",
-        handleAs: "json"
+        handleAs: "json",
+        failOk: true
     }).then(function(data)
             {
-                var mechMap = data.mechanisms;
-
-                if (containsMechanism(mechMap, "CRAM-MD5"))
-                {
-                    saslCramMD5(dojo.byId("username").value, dojo.byId("pass").value);
-                    updateAuthentication();
-                }
-                else if (containsMechanism(mechMap, "PLAIN"))
-                {
-                    saslPlain(dojo.byId("username").value, dojo.byId("pass").value);
-                    updateAuthentication();
-                }
-                else
-                {
-                    alert("No supported SASL mechanism offered: " + mechMap);
-                }
-            }
-        );
-
-
+               var mechMap = data.mechanisms;
+               if (containsMechanism(mechMap, "CRAM-MD5"))
+               {
+                   saslCramMD5(username, password, "CRAM-MD5", callbackFunction);
+               }
+               else if (containsMechanism(mechMap, "CRAM-MD5-HEX"))
+               {
+                   var hashedPassword = dojox.encoding.digests.MD5(password, dojox.encoding.digests.outputTypes.Hex);
+                   saslCramMD5(username, hashedPassword, "CRAM-MD5-HEX", callbackFunction);
+               }
+               else if (containsMechanism(mechMap, "PLAIN"))
+               {
+                   saslPlain(username, password, callbackFunction);
+               }
+               else
+               {
+                   alert("No supported SASL mechanism offered: " + mechMap);
+               }
+            }, errorHandler);
 };
 
-
-var updateAuthentication = function updateAuthentication()
+SaslClient.getUser = function(callbackFunction)
 {
     dojo.xhrGet({
-        // The URL of the request
         url: "rest/sasl",
-        handleAs: "json"
-    }).then(function(data)
-            {
-                if(data.user)
-                {
-                    dojo.byId("authenticatedUser").innerHTML = data.user;
-                    dojo.style(button.domNode, {display: 'none'});
-                    dojo.style(usernameSpan, {display: 'block'});
-                }
-                else
-                {
-                    dojo.style(button.domNode, {display: 'block'});
-                    dojo.style(usernameSpan, {display: 'none'});
-                }
-            }
-        );
+        handleAs: "json",
+        failOk: true
+    }).then(callbackFunction, errorHandler);
 };
 
-require(["dijit/form/DropDownButton", "dijit/TooltipDialog", "dijit/form/TextBox", "dojo/_base/xhr", "dojo/dom", "dojo/dom-construct", "dojo/domReady!"],
-        function(DropDownButton, TooltipDialog, TextBox, xhr, dom, domConstruct){
-    var dialog = new TooltipDialog({
-        content:
-            '<strong><label for="username" style="display:inline-block;width:100px;">Username:</label></strong>' +
-            '<div data-dojo-type="dijit.form.TextBox" id="username"></div><br/>' +
-        	'<strong><label for="pass" style="display:inline-block;width:100px;">Password:</label></strong>' +
-        	'<div data-dojo-type="dijit.form.TextBox" type="password" id="pass"></div><br/>' +
-            '<button data-dojo-type="dijit.form.Button" data-dojo-props="onClick:doAuthenticate" type="submit">Login</button>'
-    });
-
-    button = new DropDownButton({
-        label: "Login",
-        dropDown: dialog
-    });
-
-    usernameSpan = domConstruct.create("span", { innerHTML: '<strong>User: </strong> <span id="authenticatedUser"></span><a href="logout">[logout]</a>',
-                                                     style: { display: "none" }});
-
-
-    var loginDiv = dom.byId("login");
-    loginDiv.appendChild(usernameSpan);
-    loginDiv.appendChild(button.domNode);
-
-
-
-
-    updateAuthentication();
+return SaslClient;
 });

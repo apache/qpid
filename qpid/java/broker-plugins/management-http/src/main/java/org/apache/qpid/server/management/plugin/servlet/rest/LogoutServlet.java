@@ -29,13 +29,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 
 @SuppressWarnings("serial")
 public class LogoutServlet extends HttpServlet
 {
     public static final String RETURN_URL_INIT_PARAM = "qpid.webui_logout_redirect";
-    private String _returnUrl = HttpManagement.ENTRY_POINT_PATH;
+    private String _returnUrl = HttpManagementUtil.ENTRY_POINT_PATH;
 
     @Override
     public void init(ServletConfig config) throws ServletException
