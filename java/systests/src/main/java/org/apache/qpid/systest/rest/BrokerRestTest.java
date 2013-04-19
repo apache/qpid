@@ -220,7 +220,7 @@ public class BrokerRestTest extends QpidRestTestCase
         assertEquals("Unexpected value of attribute " + Broker.DURABLE, Boolean.TRUE, brokerDetails.get(Broker.DURABLE));
         assertEquals("Unexpected value of attribute " + Broker.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                 brokerDetails.get(Broker.LIFETIME_POLICY));
-        assertEquals("Unexpected value of attribute " + Broker.NAME, "QpidBroker", brokerDetails.get(Broker.NAME));
+        assertEquals("Unexpected value of attribute " + Broker.NAME, "Broker", brokerDetails.get(Broker.NAME));
         assertEquals("Unexpected value of attribute " + Broker.STATE, State.ACTIVE.name(), brokerDetails.get(Broker.STATE));
 
         assertNotNull("Unexpected value of attribute " + Broker.ID, brokerDetails.get(Broker.ID));
