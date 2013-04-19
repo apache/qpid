@@ -86,7 +86,31 @@ Duration::Duration(const AbsTime& start, const AbsTime& finish) {
 }
 
 std::ostream& operator<<(std::ostream& o, const Duration& d) {
-    return o << int64_t(d) << "ns";   
+    if (d >= TIME_SEC) return o << (double(d)/TIME_SEC) << "s";
+    if (d >= TIME_MSEC) return o << (double(d)/TIME_MSEC) << "ms";
+    if (d >= TIME_USEC) return o << (double(d)/TIME_USEC) << "us";
+    return o << int64_t(d) << "ns";
+}
+
+std::istream& operator>>(std::istream& i, Duration& d) {
+    // Don't throw, let the istream throw if it's configured to do so.
+    double number;
+    i >> number;
+    if (i.fail()) return i;
+
+    if (i.eof() || std::isspace(i.peek())) // No suffix
+        d = number*TIME_SEC;
+    else {
+        std::string suffix;
+        i >> suffix;
+        if (i.fail()) return i;
+        if (suffix.compare("s") == 0) d = number*TIME_SEC;
+        else if (suffix.compare("ms") == 0) d = number*TIME_MSEC;
+        else if (suffix.compare("us") == 0) d = number*TIME_USEC;
+        else if (suffix.compare("ns") == 0) d = number*TIME_NSEC;
+        else i.setstate(std::ios::failbit);
+    }
+    return i;
 }
 
 std::ostream& operator<<(std::ostream& o, const AbsTime& t) {
