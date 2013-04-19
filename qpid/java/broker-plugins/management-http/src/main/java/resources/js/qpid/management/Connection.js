@@ -85,6 +85,7 @@ define(["dojo/_base/xhr",
                storeNodes(["name",
                            "state",
                            "durable",
+                           "principal",
                            "lifetimePolicy",
                            "msgInRate",
                            "bytesInRate",
@@ -123,6 +124,7 @@ define(["dojo/_base/xhr",
               this.name.innerHTML = this.connectionData[ "name" ];
               this.state.innerHTML = this.connectionData[ "state" ];
               this.durable.innerHTML = this.connectionData[ "durable" ];
+              this.principal.innerHTML = this.connectionData[ "principal" ];
               this.lifetimePolicy.innerHTML = this.connectionData[ "lifetimePolicy" ];
 
            };
