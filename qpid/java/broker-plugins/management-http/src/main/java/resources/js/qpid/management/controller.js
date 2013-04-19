@@ -31,15 +31,17 @@ define(["dojo/dom",
         "qpid/management/group/Group",
         "qpid/management/KeyStore",
         "qpid/management/TrustStore",
+        "qpid/management/AccessControlProvider",
         "dojo/ready",
         "dojo/domReady!"],
-       function (dom, registry, ContentPane, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider, GroupProvider, Group, KeyStore, TrustStore, ready) {
+       function (dom, registry, ContentPane, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider, GroupProvider, Group, KeyStore, TrustStore, AccessControlProvider, ready) {
            var controller = {};
 
            var constructors = { broker: Broker, virtualhost: VirtualHost, exchange: Exchange,
                                 queue: Queue, connection: Connection,
                                 authenticationprovider: AuthProvider, groupprovider: GroupProvider,
-                                group: Group, keystore: KeyStore, truststore: TrustStore };
+                                group: Group, keystore: KeyStore, truststore: TrustStore,
+                                accesscontrolprovider: AccessControlProvider};
 
            var tabDiv = dom.byId("managedViews");
 

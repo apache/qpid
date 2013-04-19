@@ -70,7 +70,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _brokerAttributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 2);
         _brokerAttributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
         _brokerAttributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 1);
-        _brokerAttributes.put(Broker.ACL_FILE, "/path/to/acl");
         _brokerAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 1000);
         _brokerAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
         _brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
@@ -180,7 +179,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 12);
         attributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, false);
         attributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 11);
-        attributes.put(Broker.ACL_FILE, "/path/to/acl1");
         attributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 11000);
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 12000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 14000);

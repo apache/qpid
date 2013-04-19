@@ -53,17 +53,9 @@
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store location:</div>
                 <div id="brokerAttribute.storePath" style="float:left;"></div>
             </div>
-            <div id="brokerAttribute.defaultAuthenticationProvider.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Default authentication provider:</div>
-                <div id="brokerAttribute.defaultAuthenticationProvider" style="float:left;"></div>
-            </div>
             <div id="brokerAttribute.defaultVirtualHost.container" style="display: none; clear:both; clear:both;">
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Default virtual host:</div>
                 <div id="brokerAttribute.defaultVirtualHost" style="float:left;"></div>
-            </div>
-            <div id="brokerAttribute.aclFile.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">ACL file location:</div>
-                <div id="brokerAttribute.aclFile" style="float:left;"></div>
             </div>
             <div id="brokerAttribute.statisticsReportingPeriod.container" style="display: none; clear:both">
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Statistics reporting period:</div>
@@ -189,6 +181,12 @@
         <div class="broker-group-providers"></div>
         <button data-dojo-type="dijit.form.Button" class="addGroupProvider">Add Group Provider</button>
         <button data-dojo-type="dijit.form.Button" class="deleteGroupProvider">Delete Group Provider</button>
+    </div>
+    <br/>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Access Control Providers'">
+        <div class="broker-access-control-providers"></div>
+        <button data-dojo-type="dijit.form.Button" class="addAccessControlProvider">Add Access Control Provider</button>
+        <button data-dojo-type="dijit.form.Button" class="deleteAccessControlProvider">Delete Access Control Provider</button>
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Log File',  open: false">

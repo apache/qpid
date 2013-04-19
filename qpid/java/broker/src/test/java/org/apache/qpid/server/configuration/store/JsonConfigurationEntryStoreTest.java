@@ -72,20 +72,20 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
 
     public void testAttributeIsResolvedFromSystemProperties()
     {
-        String aclLocation = "path/to/acl/" + getTestName();
-        setTestSystemProperty("my.test.property", aclLocation);
+        String defaultVhost = getTestName();
+        setTestSystemProperty("my.test.property", defaultVhost);
 
         ConfigurationEntryStore store = getStore();
         ConfigurationEntry brokerConfigEntry = store.getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>(brokerConfigEntry.getAttributes());
-        attributes.put(Broker.ACL_FILE, "${my.test.property}");
+        attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "${my.test.property}");
         ConfigurationEntry updatedBrokerEntry = new ConfigurationEntry(brokerConfigEntry.getId(), Broker.class.getSimpleName(),
                 attributes, brokerConfigEntry.getChildrenIds(), store);
         store.save(updatedBrokerEntry);
 
         JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null);
 
-        assertEquals("Unresolved ACL value", aclLocation, store2.getRootEntry().getAttributes().get(Broker.ACL_FILE));
+        assertEquals("Unresolved default virtualhost  value", defaultVhost, store2.getRootEntry().getAttributes().get(Broker.DEFAULT_VIRTUAL_HOST));
     }
 
     public void testCreateEmptyStore()

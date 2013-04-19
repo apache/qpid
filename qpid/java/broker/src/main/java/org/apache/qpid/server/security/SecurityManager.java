@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -30,6 +31,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
@@ -53,22 +55,13 @@ import static org.apache.qpid.server.security.access.Operation.UNBIND;
 
 import javax.security.auth.Subject;
 import java.net.SocketAddress;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * The security manager contains references to all loaded {@link AccessControl}s and delegates security decisions to them based
- * on virtual host name. The plugins can be external <em>OSGi</em> .jar files that export the required classes or just internal
- * objects for simpler plugins.
- *
- * @see AccessControl
- */
 public class SecurityManager implements ConfigurationChangeListener
 {
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
@@ -78,9 +71,12 @@ public class SecurityManager implements ConfigurationChangeListener
 
     public static final ThreadLocal<Boolean> _accessChecksDisabled = new ClearingThreadLocal(false);
 
-    private Map<String, AccessControl> _globalPlugins = new ConcurrentHashMap<String, AccessControl>();
-    private Map<String, AccessControl> _hostPlugins = new ConcurrentHashMap<String, AccessControl>();
-    private Map<String, List<String>> _aclConfigurationToPluginNamesMapping = new ConcurrentHashMap<String, List<String>>();
+    private ConcurrentHashMap<String, AccessControl> _globalPlugins = new ConcurrentHashMap<String, AccessControl>();
+    private ConcurrentHashMap<String, AccessControl> _hostPlugins = new ConcurrentHashMap<String, AccessControl>();
+
+    private boolean _managementMode;
+
+    private Broker _broker;
 
     /**
      * A special ThreadLocal, which calls remove() on itself whenever the value is
@@ -128,34 +124,53 @@ public class SecurityManager implements ConfigurationChangeListener
     }
 
     /*
+     * Used by the Broker.
+     */
+    public SecurityManager(Broker broker, boolean managementMode)
+    {
+        _managementMode = managementMode;
+        _broker = broker;
+    }
+
+    /*
      * Used by the VirtualHost to allow deferring to the broker level security plugins if required.
      */
-    public SecurityManager(SecurityManager parent, String aclFile)
+    public SecurityManager(SecurityManager parent, String aclFile, String vhostName)
     {
-        this(aclFile);
-
-        // our global plugins are the parent's host plugins
-        _globalPlugins = parent._hostPlugins;
-    }
-
-    public SecurityManager(String aclFile)
-    {
-        configureACLPlugin(aclFile);
-    }
-
-    private void configureACLPlugin(String aclFile)
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("aclFile", aclFile);
-
-        for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
+        if(!_managementMode)
         {
-            AccessControl accessControl = provider.createInstance(attributes);
-            if(accessControl != null)
-            {
-                addHostPlugin(accessControl);
+            configureVirtualHostAclPlugin(aclFile, vhostName);
 
-                mapAclConfigurationToPluginName(aclFile, accessControl.getClass().getName());
+            // our global plugins are the parent's host plugins
+            _globalPlugins = parent._hostPlugins;
+        }
+    }
+
+    private void configureVirtualHostAclPlugin(String aclFile, String vhostName)
+    {
+        if(aclFile != null)
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+
+            attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+            attributes.put(FileAccessControlProviderConstants.PATH, aclFile);
+
+            for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
+            {
+                AccessControl accessControl = provider.createInstance(attributes);
+                accessControl.open();
+                if(accessControl != null)
+                {
+                    String pluginTypeName = getPluginTypeName(accessControl);
+                    _hostPlugins.put(pluginTypeName, accessControl);
+                    
+                    if(_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Added access control to host plugins with name: " + vhostName);
+                    }
+                    
+                    break;
+                }
             }
         }
 
@@ -165,15 +180,9 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    private void mapAclConfigurationToPluginName(String aclFile, String pluginName)
+    private String getPluginTypeName(AccessControl accessControl)
     {
-         List<String> pluginNames =  _aclConfigurationToPluginNamesMapping.get(aclFile);
-        if (pluginNames == null)
-        {
-            pluginNames = new ArrayList<String>();
-            _aclConfigurationToPluginNamesMapping.put(aclFile, pluginNames);
-        }
-        pluginNames.add(pluginName);
+        return accessControl.getClass().getName();
     }
 
     public static Subject getThreadSubject()
@@ -189,15 +198,6 @@ public class SecurityManager implements ConfigurationChangeListener
     public static Logger getLogger()
     {
         return _logger;
-    }
-
-    private static class CachedPropertiesMap extends LinkedHashMap<String, PublishAccessCheck>
-    {
-        @Override
-        protected boolean removeEldestEntry(Entry<String, PublishAccessCheck> eldest)
-        {
-            return size() >= 200;
-        }
     }
 
     private abstract class AccessCheck
@@ -500,16 +500,72 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-
-    public void addHostPlugin(AccessControl plugin)
-    {
-        _hostPlugins.put(plugin.getClass().getName(), plugin);
-    }
-
     @Override
     public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
-        // no op
+        if(_managementMode)
+        {
+            //AccessControl is disabled in ManagementMode
+            return;
+        }
+
+        if(object instanceof AccessControlProvider)
+        {
+            if(newState == State.ACTIVE)
+            {
+                synchronized (_hostPlugins)
+                {
+                    AccessControl accessControl = ((AccessControlProvider)object).getAccessControl();
+                    String pluginTypeName = getPluginTypeName(accessControl);
+
+                    _hostPlugins.put(pluginTypeName, accessControl);
+                }
+            }
+            else if(newState == State.DELETED)
+            {
+                synchronized (_hostPlugins)
+                {
+                    AccessControl control = ((AccessControlProvider)object).getAccessControl();
+                    String pluginTypeName = getPluginTypeName(control);
+
+                    // Remove the type->control mapping for this type key only if the
+                    // given control is actually referred to.
+                    if(_hostPlugins.containsValue(control))
+                    {
+                        // If we are removing this control, check if another of the same
+                        // type already exists on the broker and use it in instead.
+                        AccessControl other = null;
+                        Collection<AccessControlProvider> providers = _broker.getAccessControlProviders();
+                        for(AccessControlProvider p : providers)
+                        {
+                            if(p == object || p.getActualState() != State.ACTIVE)
+                            {
+                                //we don't count ourself as another
+                                continue;
+                            }
+
+                            AccessControl ac = p.getAccessControl();
+                            if(pluginTypeName.equals(getPluginTypeName(ac)))
+                            {
+                                other = ac;
+                                break;
+                            }
+                        }
+
+                        if(other != null)
+                        {
+                            //Another control of this type was found, use it instead
+                            _hostPlugins.replace(pluginTypeName, control, other);
+                        }
+                        else
+                        {
+                            //No other was found, remove the type entirely
+                            _hostPlugins.remove(pluginTypeName);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -527,29 +583,7 @@ public class SecurityManager implements ConfigurationChangeListener
     @Override
     public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
-        if (object instanceof Broker && Broker.ACL_FILE.equals(attributeName))
-        {
-            // the code below is not thread safe, however, it should be fine in a management mode
-            // as there will be no user connected
-
-            if (oldAttributeValue != null)
-            {
-                List<String> pluginNames = _aclConfigurationToPluginNamesMapping.remove(oldAttributeValue);
-                if (pluginNames != null)
-                {
-                    for (String name : pluginNames)
-                    {
-                        _hostPlugins.remove(name);
-                    }
-                }
-            }
-            if (newAttributeValue != null)
-            {
-                configureACLPlugin((String)newAttributeValue);
-            }
-            _immediatePublishPropsCache.clear();
-            _publishPropsCache.clear();
-        }
+        // no op
     }
 
     public boolean authoriseConfiguringBroker(String configuredObjectName, Class<? extends ConfiguredObject> configuredObjectType, Operation configuredObjectOperation)
