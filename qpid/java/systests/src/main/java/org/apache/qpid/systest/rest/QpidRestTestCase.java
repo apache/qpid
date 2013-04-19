@@ -50,10 +50,14 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         // use webadmin account to perform tests
         getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
 
+        //remove the normal 'test' vhost, we will configure the vhosts below
+        getBrokerConfiguration(0).removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+
         // Set up virtualhost config with queues and bindings to the amq.direct
         for (String virtualhost : EXPECTED_VIRTUALHOSTS)
         {
             createTestVirtualHost(0, virtualhost);
+
             for (String queue : EXPECTED_QUEUES)
             {
                 setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.exchange", "amq.direct");

@@ -277,7 +277,6 @@ public class ManagementLoggingTest extends AbstractTestLogging
             List<String> closeResults = null;
             try
             {
-                jmxUtils.setUp();
                 jmxUtils.open();
                 openResults = waitAndFindMatches("MNG-1007");
             }

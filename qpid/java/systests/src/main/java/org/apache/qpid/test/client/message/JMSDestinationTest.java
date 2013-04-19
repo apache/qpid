@@ -142,7 +142,7 @@ public class JMSDestinationTest extends QpidBrokerTestCase
     {
         // Setup JMXUtils
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
-        jmxUtils.setUp();
+
         // Open the JMX Connection
         jmxUtils.open();
         try
