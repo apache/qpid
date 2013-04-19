@@ -30,8 +30,10 @@ import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
@@ -39,6 +41,9 @@ import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticat
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.test.utils.TestSSLConstants;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
 
 public class BrokerACLTest extends QpidRestTestCase
 {
@@ -60,6 +65,8 @@ public class BrokerACLTest extends QpidRestTestCase
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 "httpBasicAuthenticationEnabled", true);
     }
+
+    /* === AuthenticationProvider === */
 
     public void testCreateAuthenticationProviderAllowed() throws Exception
     {
@@ -168,6 +175,8 @@ public class BrokerACLTest extends QpidRestTestCase
                 provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
     }
 
+    /* === VirtualHost === */
+
     public void testCreateVirtualHostAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
@@ -217,6 +226,8 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertVirtualHostExists(TEST2_VIRTUALHOST);
     }
+
+    /* === Port === */
 
     public void testCreatePortAllowed() throws Exception
     {
@@ -327,6 +338,264 @@ public class BrokerACLTest extends QpidRestTestCase
                 TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
     }
 
+    /* === KeyStore === */
+
+    public void testCreateKeyStoreAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String keyStoreName = getTestName();
+
+        assertKeyStoreExistence(keyStoreName, false);
+
+        int responseCode = createKeyStore(keyStoreName, "app1");
+        assertEquals("keyStore creation should be allowed", 201, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, true);
+    }
+
+    public void testCreateKeyStoreDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        String keyStoreName = getTestName();
+
+        assertKeyStoreExistence(keyStoreName, false);
+
+        int responseCode = createKeyStore(keyStoreName, "app1");
+        assertEquals("keyStore creation should be allowed", 403, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, false);
+    }
+
+    public void testDeleteKeyStoreDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String keyStoreName = getTestName();
+
+        assertKeyStoreExistence(keyStoreName, false);
+
+        int responseCode = createKeyStore(keyStoreName, "app1");
+        assertEquals("keyStore creation should be allowed", 201, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, true);
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "DELETE", null);
+        assertEquals("keystore deletion should be denied", 403, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, true);
+    }
+
+    public void testDeleteKeyStoreAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String keyStoreName = getTestName();
+
+        assertKeyStoreExistence(keyStoreName, false);
+
+        int responseCode = createKeyStore(keyStoreName, "app1");
+        assertEquals("keyStore creation should be allowed", 201, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, true);
+
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "DELETE", null);
+        assertEquals("keystore deletion should be allowed", 200, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, false);
+    }
+
+    public void testSetKeyStoreAttributesAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String keyStoreName = getTestName();
+        String initialCertAlias = "app1";
+        String updatedCertAlias = "app2";
+
+        assertKeyStoreExistence(keyStoreName, false);
+
+        int responseCode = createKeyStore(keyStoreName, initialCertAlias);
+        assertEquals("keyStore creation should be allowed", 201, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, true);
+        Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(KeyStore.NAME, keyStoreName);
+        attributes.put(KeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
+        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "PUT", attributes);
+        assertEquals("Setting of keystore attributes should be allowed", 200, responseCode);
+
+        keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        assertEquals("Unexpected certificateAlias attribute value", updatedCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+    }
+
+    public void testSetKeyStoreAttributesDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String keyStoreName = getTestName();
+        String initialCertAlias = "app1";
+        String updatedCertAlias = "app2";
+
+        assertKeyStoreExistence(keyStoreName, false);
+
+        int responseCode = createKeyStore(keyStoreName, initialCertAlias);
+        assertEquals("keyStore creation should be allowed", 201, responseCode);
+
+        assertKeyStoreExistence(keyStoreName, true);
+        Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(KeyStore.NAME, keyStoreName);
+        attributes.put(KeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
+        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "PUT", attributes);
+        assertEquals("Setting of keystore attributes should be denied", 403, responseCode);
+
+        keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+    }
+
+    /* === TrustStore === */
+
+    public void testCreateTrustStoreAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String trustStoreName = getTestName();
+
+        assertTrustStoreExistence(trustStoreName, false);
+
+        int responseCode = createTrustStore(trustStoreName, false);
+        assertEquals("trustStore creation should be allowed", 201, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, true);
+    }
+
+    public void testCreateTrustStoreDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        String trustStoreName = getTestName();
+
+        assertTrustStoreExistence(trustStoreName, false);
+
+        int responseCode = createTrustStore(trustStoreName, false);
+        assertEquals("trustStore creation should be allowed", 403, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, false);
+    }
+
+    public void testDeleteTrustStoreDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String trustStoreName = getTestName();
+
+        assertTrustStoreExistence(trustStoreName, false);
+
+        int responseCode = createTrustStore(trustStoreName, false);
+        assertEquals("trustStore creation should be allowed", 201, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, true);
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "DELETE", null);
+        assertEquals("truststore deletion should be denied", 403, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, true);
+    }
+
+    public void testDeleteTrustStoreAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String trustStoreName = getTestName();
+
+        assertTrustStoreExistence(trustStoreName, false);
+
+        int responseCode = createTrustStore(trustStoreName, false);
+        assertEquals("trustStore creation should be allowed", 201, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, true);
+
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "DELETE", null);
+        assertEquals("truststore deletion should be allowed", 200, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, false);
+    }
+
+    public void testSetTrustStoreAttributesAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String trustStoreName = getTestName();
+        boolean initialPeersOnly = false;
+        boolean updatedPeersOnly = true;
+
+        assertTrustStoreExistence(trustStoreName, false);
+
+        int responseCode = createTrustStore(trustStoreName, initialPeersOnly);
+        assertEquals("trustStore creation should be allowed", 201, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, true);
+        Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(TrustStore.NAME, trustStoreName);
+        attributes.put(TrustStore.PEERS_ONLY, updatedPeersOnly);
+        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "PUT", attributes);
+        assertEquals("Setting of truststore attributes should be allowed", 200, responseCode);
+
+        trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        assertEquals("Unexpected peersOnly attribute value", updatedPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+    }
+
+    public void testSetTrustStoreAttributesDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String trustStoreName = getTestName();
+        boolean initialPeersOnly = false;
+        boolean updatedPeersOnly = true;
+
+        assertTrustStoreExistence(trustStoreName, false);
+
+        int responseCode = createTrustStore(trustStoreName, initialPeersOnly);
+        assertEquals("trustStore creation should be allowed", 201, responseCode);
+
+        assertTrustStoreExistence(trustStoreName, true);
+        Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(TrustStore.NAME, trustStoreName);
+        attributes.put(TrustStore.PEERS_ONLY, updatedPeersOnly);
+        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "PUT", attributes);
+        assertEquals("Setting of truststore attributes should be denied", 403, responseCode);
+
+        trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+    }
+
+    /* === Broker === */
+
     public void testSetBrokerAttributesAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
@@ -395,6 +664,18 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("Unexpected result", exists, !hosts.isEmpty());
     }
 
+    private void assertKeyStoreExistence(String keyStoreName, boolean exists) throws Exception
+    {
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("/rest/keystore/" + keyStoreName);
+        assertEquals("Unexpected result", exists, !keyStores.isEmpty());
+    }
+
+    private void assertTrustStoreExistence(String trustStoreName, boolean exists) throws Exception
+    {
+        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("/rest/truststore/" + trustStoreName);
+        assertEquals("Unexpected result", exists, !trustStores.isEmpty());
+    }
+
     private int createHost(String hostName) throws Exception
     {
         Map<String, Object> hostData = new HashMap<String, Object>();
@@ -452,4 +733,25 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("Unexpected result", exists, !providers.isEmpty());
     }
 
+    private int createKeyStore(String name, String certAlias) throws IOException, JsonGenerationException, JsonMappingException
+    {
+        Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
+        keyStoreAttributes.put(KeyStore.NAME, name);
+        keyStoreAttributes.put(KeyStore.PATH, TestSSLConstants.KEYSTORE);
+        keyStoreAttributes.put(KeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
+        keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, certAlias);
+
+        return getRestTestHelper().submitRequest("/rest/keystore/" + name, "PUT", keyStoreAttributes);
+    }
+
+    private int createTrustStore(String name, boolean peersOnly) throws IOException, JsonGenerationException, JsonMappingException
+    {
+        Map<String, Object> trustStoreAttributes = new HashMap<String, Object>();
+        trustStoreAttributes.put(TrustStore.NAME, name);
+        trustStoreAttributes.put(TrustStore.PATH, TestSSLConstants.KEYSTORE);
+        trustStoreAttributes.put(TrustStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
+        trustStoreAttributes.put(TrustStore.PEERS_ONLY, peersOnly);
+
+        return getRestTestHelper().submitRequest("/rest/truststore/" + name, "PUT", trustStoreAttributes);
+    }
 }
