@@ -54,7 +54,7 @@ Backup::Backup(HaBroker& hb, const Settings& s) :
     haBroker(hb), broker(hb.getBroker()), settings(s),
     statusCheck(
         new StatusCheck(
-            logPrefix, broker.getLinkHearbeatInterval(), hb.getBrokerInfo()))
+            logPrefix, broker.getOptions().linkHeartbeatInterval, hb.getBrokerInfo()))
 {
     // Set link properties to tag outgoing links.
     framing::FieldTable linkProperties = broker.getLinkClientProperties();

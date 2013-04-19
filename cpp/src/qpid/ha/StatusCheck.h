@@ -27,6 +27,7 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/sys/Time.h"
 #include <vector>
 
 namespace qpid {
@@ -50,7 +51,7 @@ namespace ha {
 class StatusCheck
 {
   public:
-    StatusCheck(const std::string& logPrefix, uint16_t linkHeartbeatInteval, const BrokerInfo& self);
+    StatusCheck(const std::string& logPrefix, sys::Duration linkHeartbeatInterval, const BrokerInfo& self);
     ~StatusCheck();
     void setUrl(const Url&);
     bool canPromote();
@@ -62,7 +63,7 @@ class StatusCheck
     sys::Mutex lock;
     std::vector<sys::Thread> threads;
     bool promote;
-    uint16_t linkHeartbeatInterval;
+    sys::Duration linkHeartbeatInterval;
     BrokerInfo brokerInfo;
   friend class StatusCheckThread;
 };

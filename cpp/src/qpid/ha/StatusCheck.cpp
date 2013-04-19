@@ -46,21 +46,21 @@ class StatusCheckThread : public sys::Runnable {
   private:
     Url url;
     StatusCheck& statusCheck;
-    uint16_t linkHeartbeatInterval;
+    sys::Duration linkHeartbeatInterval;
     BrokerInfo brokerInfo;
 };
 
 void StatusCheckThread::run() {
     QPID_LOG(debug, statusCheck.logPrefix << "Checking status of " << url);
-    Variant::Map options, clientProperties;
-    clientProperties = brokerInfo.asMap(); // Detect self connections.
-    clientProperties["qpid.ha-admin"] = 1; // Allow connection to backups.
-
-    options["client-properties"] = clientProperties;
-    options["heartbeat"] = statusCheck.linkHeartbeatInterval;
-    Connection c(url.str(), options);
-
     try {
+        Variant::Map options, clientProperties;
+        clientProperties = brokerInfo.asMap(); // Detect self connections.
+        clientProperties["qpid.ha-admin"] = 1; // Allow connection to backups.
+
+        options["client-properties"] = clientProperties;
+        options["heartbeat"] = statusCheck.linkHeartbeatInterval/sys::TIME_SEC;
+        Connection c(url.str(), options);
+
         c.open();
         Session session = c.createSession();
         messaging::Address responses("#;{create:always,node:{x-declare:{exclusive:True,auto-delete:True,arguments:{'qpid.replicate':none}}}}");
@@ -78,7 +78,7 @@ void StatusCheckThread::run() {
         content["_object_id"] = oid;
         encode(content, request);
         s.send(request);
-        Message response = r.fetch(statusCheck.linkHeartbeatInterval*Duration::SECOND);
+        Message response = r.fetch(messaging::Duration(linkHeartbeatInterval/TIME_MSEC));
         session.acknowledge();
         Variant::List contentIn;
         decode(response, contentIn);
@@ -98,7 +98,7 @@ void StatusCheckThread::run() {
     delete this;
 }
 
-StatusCheck::StatusCheck(const string& lp, uint16_t lh, const BrokerInfo& self)
+StatusCheck::StatusCheck(const string& lp, sys::Duration lh, const BrokerInfo& self)
     : logPrefix(lp), promote(true), linkHeartbeatInterval(lh), brokerInfo(self)
 {}
 
