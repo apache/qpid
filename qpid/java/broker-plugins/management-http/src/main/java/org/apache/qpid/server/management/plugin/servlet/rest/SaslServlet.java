@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
@@ -276,7 +277,8 @@ public class SaslServlet extends AbstractServlet
 
     private SubjectCreator getSubjectCreator(HttpServletRequest request)
     {
-        return getBroker().getSubjectCreator(HttpManagementUtil.getSocketAddress(request));
+        SocketAddress localAddress = HttpManagementUtil.getSocketAddress(request);
+        return HttpManagementUtil.getManagementConfiguration(getServletContext()).getSubjectCreator(localAddress);
     }
 
     @Override
