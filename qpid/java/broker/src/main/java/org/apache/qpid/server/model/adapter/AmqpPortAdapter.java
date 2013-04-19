@@ -133,15 +133,11 @@ public class AmqpPortAdapter extends PortAdapter
 
     private SSLContext createSslContext()
     {
-        KeyStore keyStore = _broker.getDefaultKeyStore();
-        if (keyStore == null)
-        {
-            throw new IllegalConfigurationException("SSL was requested on AMQP port '"
-                    + this.getName() + "' but no key store defined");
-        }
+        KeyStore keyStore = getKeyStore();
 
-        Collection<TrustStore> trustStores = _broker.getTrustStores();
-        if (((Boolean)getAttribute(NEED_CLIENT_AUTH) || (Boolean)getAttribute(WANT_CLIENT_AUTH)) && trustStores.isEmpty())
+        Collection<TrustStore> trustStores = getTrustStores();
+        boolean needClientCert = (Boolean)getAttribute(NEED_CLIENT_AUTH) || (Boolean)getAttribute(WANT_CLIENT_AUTH);
+        if (needClientCert && trustStores.isEmpty())
         {
             throw new IllegalConfigurationException("Client certificate authentication is enabled on AMQP port '"
                     + this.getName() + "' but no trust store defined");
@@ -165,7 +161,7 @@ public class AmqpPortAdapter extends PortAdapter
                                                                              trustStore.getPassword(),
                                                                              (String)trustStore.getAttribute(TrustStore.TYPE),
                                                                              (Boolean) trustStore.getAttribute(TrustStore.PEERS_ONLY),
-                                                                             (String)trustStore.getAttribute(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM)));
+                                                                             (String)trustStore.getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM)));
                 }
                 sslContext = SSLContextFactory.buildClientContext(trstWrappers, keystorePath,
                                                                   keystorePassword, keystoreType,

@@ -19,8 +19,9 @@
  -
  -->
 <div class="dijitHidden">
-    <div data-dojo-type="dijit.Dialog" style="width:600px;" data-dojo-props="title:'Add Queue'" id="addQueue">
+    <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Add Queue'" id="addQueue">
         <form id="formAddQueue" method="post" dojoType="dijit.form.Form">
+            <div  style="height:250px; width:600px; overflow: auto">
             <table cellpadding="0" cellspacing="2">
                 <tr>
                     <td valign="top"><strong>Queue Name*: </strong></td>
@@ -173,10 +174,11 @@
                     </tr>
                 </table>
             </div>
-            <br/>
+            </div>
+          <div class="dijitDialogPaneActionBar">
             <!-- submit buttons -->
             <input type="submit" value="Create Queue" label="Create Queue" dojoType="dijit.form.Button" />
-
+          </div>
         </form>
     </div>
 </div>

@@ -31,8 +31,10 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.PluginFactory;
@@ -52,6 +54,8 @@ public class TestBrokerConfiguration
     public static final String ENTRY_NAME_JMX_MANAGEMENT = "MANAGEMENT-JMX";
     public static final String MANAGEMENT_JMX_PLUGIN_TYPE = "MANAGEMENT-JMX";
     public static final String ENTRY_NAME_ANONYMOUS_PROVIDER = "anonymous";
+    public static final String ENTRY_NAME_SSL_KEYSTORE = "systestsKeyStore";
+    public static final String ENTRY_NAME_SSL_TRUSTSTORE = "systestsTrustStore";
 
     private MemoryConfigurationEntryStore _store;
     private boolean _saved;
@@ -142,6 +146,18 @@ public class TestBrokerConfiguration
     {
         String name = (String) attributes.get(AuthenticationProvider.NAME);
         return addObjectConfiguration(name, AuthenticationProvider.class.getSimpleName(), attributes);
+    }
+
+    public UUID addTrustStoreConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(TrustStore.NAME);
+        return addObjectConfiguration(name, TrustStore.class.getSimpleName(), attributes);
+    }
+
+    public UUID addKeyStoreConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(KeyStore.NAME);
+        return addObjectConfiguration(name, KeyStore.class.getSimpleName(), attributes);
     }
 
     private boolean setObjectAttributes(ConfigurationEntry entry, Map<String, Object> attributes)

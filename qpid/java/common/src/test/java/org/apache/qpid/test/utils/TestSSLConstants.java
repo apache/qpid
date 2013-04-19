@@ -28,4 +28,10 @@ public interface TestSSLConstants
 
     String BROKER_KEYSTORE = "test-profiles/test_resources/ssl/java_broker_keystore.jks";
     String BROKER_KEYSTORE_PASSWORD = "password";
+
+    String BROKER_PEERSTORE = "test-profiles/test_resources/ssl/java_broker_peerstore.jks";
+    String BROKER_PEERSTORE_PASSWORD = "password";
+
+    String BROKER_TRUSTSTORE = "test-profiles/test_resources/ssl/java_broker_truststore.jks";
+    String BROKER_TRUSTSTORE_PASSWORD = "password";
 }

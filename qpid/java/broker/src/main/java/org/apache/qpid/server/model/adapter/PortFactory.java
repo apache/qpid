@@ -106,9 +106,9 @@ public class PortFactory
             port = new AmqpPortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
 
             boolean useClientAuth = (Boolean) port.getAttribute(Port.NEED_CLIENT_AUTH) || (Boolean) port.getAttribute(Port.WANT_CLIENT_AUTH);
-            if(useClientAuth && broker.getTrustStores().isEmpty())
+            if(useClientAuth && port.getTrustStores().isEmpty())
             {
-                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates as the broker has no trust/peer stores configured.");
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust stores configured.");
             }
 
             if(useClientAuth && !port.getTransports().contains(Transport.SSL))
@@ -142,13 +142,19 @@ public class PortFactory
 
             defaults.put(Port.NAME, portValue + "-" + protocol.name());
             port = new PortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
+
+            boolean rmiPort = port.getProtocols().contains(Protocol.RMI);
+            if (rmiPort && port.getTransports().contains(Transport.SSL))
+            {
+                throw new IllegalConfigurationException("Can't create RMI registry port which requires SSL");
+            }
         }
 
         if(port.getTransports().contains(Transport.SSL) || port.getProtocols().contains(Protocol.HTTPS))
         {
-            if(broker.getKeyStores().isEmpty())
+            if(port.getKeyStore() == null)
             {
-                throw new IllegalConfigurationException("Can't create port which requires SSL as the broker has no keystore configured.");
+                throw new IllegalConfigurationException("Can't create port which requires SSL but has no key store configured.");
             }
         }
 

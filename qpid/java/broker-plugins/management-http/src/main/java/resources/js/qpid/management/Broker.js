@@ -31,6 +31,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addAuthenticationProvider",
         "qpid/management/addVirtualHost",
         "qpid/management/addPort",
+        "qpid/management/addKeystore",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dijit/layout/AccordionContainer",
@@ -41,7 +42,7 @@ define(["dojo/_base/xhr",
         "dijit/form/CheckBox",
         "dojo/store/Memory",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort, addKeystore) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -114,79 +115,6 @@ define(["dojo/_base/xhr",
                              value: brokerData.groupFile,
                              label: "Group file location:",
                              name: "groupFile"});
-                       }
-               }, {
-                       name: "keyStorePath",
-                       createWidget: function(brokerData) {
-                           return new dijit.form.ValidationTextBox({
-                             required: false,
-                             value: brokerData.keyStorePath,
-                             label: "Path to keystore:",
-                             name: "keyStorePath"});
-                       }
-               }, {
-                       name: "keyStorePassword",
-                       requiredFor: "keyStorePath",
-                       createWidget: function(brokerData) {
-                           return new dijit.form.ValidationTextBox({
-                             required: false,
-                             label: "Keystore password:",
-                             invalidMessage: "Missed keystore password",
-                             name: "keyStorePassword",
-                             placeholder: brokerData["keyStorePassword"] ? brokerData["keyStorePassword"] : ""
-                             });
-                       }
-               }, {
-                       name: "keyStoreCertAlias",
-                       createWidget: function(brokerData) {
-                           return new dijit.form.ValidationTextBox({
-                             required: false,
-                             value: brokerData.keyStoreCertAlias,
-                             label: "Keystore certificate alias:",
-                             name: "keyStoreCertAlias"});
-                       }
-               }, {
-                       name: "trustStorePath",
-                       createWidget: function(brokerData)
-                       {
-                         return new dijit.form.ValidationTextBox({
-                             required: false,
-                             value: brokerData.trustStorePath,
-                             label: "Path to truststore:",
-                             name: "trustStorePath"});
-                       }
-               }, {
-                       name: "trustStorePassword",
-                       requiredFor: "trustStorePath",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           required: false,
-                           label: "Truststore password:",
-                           invalidMessage: "Missed trustore password",
-                           name: "trustStorePassword",
-                           placeholder: brokerData["trustStorePassword"] ? brokerData["trustStorePassword"] : ""
-                           });
-                       }
-               }, {
-                       name: "peerStorePath",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           required: false,
-                           value: brokerData.peerStorePath,
-                           label: "Path to peerstore:",
-                           name: "peerStorePath"});
-                       }
-               }, {
-                       name: "peerStorePassword",
-                       requiredFor: "peerStorePath",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           required: false,
-                           label: "Peerstore password:",
-                           invalidMessage: "Missed peerstore password",
-                           name: "peerStorePassword",
-                           placeholder: brokerData["peerStorePassword"] ? brokerData["peerStorePassword"] : ""
-                         });
                        }
                }, {
                        name: "statisticsReportingPeriod",
@@ -488,7 +416,10 @@ define(["dojo/_base/xhr",
                             );
 
                             var addPortButton = query(".addPort", contentPane.containerNode)[0];
-                            connect.connect(registry.byNode(addPortButton), "onClick", function(evt){ addPort.show(null, that.brokerUpdater.brokerData.authenticationproviders); });
+                            connect.connect(registry.byNode(addPortButton), "onClick", function(evt){
+                              addPort.show(null, that.brokerUpdater.brokerData.authenticationproviders,
+                                  that.brokerUpdater.brokerData.keystores, that.brokerUpdater.brokerData.truststores);
+                            });
 
                             var deletePort = query(".deletePort", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(deletePort), "onClick",
@@ -512,6 +443,35 @@ define(["dojo/_base/xhr",
                                 }
                             );
 
+                            var addKeystoreButton = query(".addKeystore", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addKeystoreButton), "onClick",
+                                function(evt){ addKeystore.showKeystoreDialog() });
+
+                            var deleteKeystore = query(".deleteKeystore", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteKeystore), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.keyStoresGrid.grid,
+                                                "rest/keystore",
+                                                "Are you sure you want to delete key store");
+                                }
+                            );
+
+                            var addTruststoreButton = query(".addTruststore", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addTruststoreButton), "onClick",
+                                function(evt){ addKeystore.showTruststoreDialog() });
+
+                            var deleteTruststore = query(".deleteTruststore", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteTruststore), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.trustStoresGrid.grid,
+                                                "rest/truststore",
+                                                "Are you sure you want to delete trust store");
+                                }
+                            );
                         }});
            };
 
@@ -581,7 +541,7 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            addPort.show(name, that.brokerData.authenticationproviders);
+                                                            addPort.show(name, that.brokerData.authenticationproviders, that.brokerData.keystores, that.brokerData.truststores);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 
@@ -614,6 +574,44 @@ define(["dojo/_base/xhr",
                                                              that.controller.show("authenticationprovider", name, brokerObj);
                                                          });
                                                  }, gridProperties, EnhancedGrid);
+
+                             that.keyStoresGrid =
+                               new UpdatableStore(that.brokerData.keystores, query(".broker-key-stores")[0],
+                                               [ { name: "Name",    field: "name",      width: "20%"},
+                                                 { name: "Path", field: "path", width: "50%"},
+                                                 { name: "Type", field: "type", width: "5%"},
+                                                 { name: "Key Manager Algorithm", field: "keyManagerFactoryAlgorithm", width: "20%"},
+                                                 { name: "Alias", field: "certificateAlias", width: "15%"}
+                                               ], function(obj) {
+                                                       connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                       function(evt){
+                                                           var idx = evt.rowIndex,
+                                                               theItem = this.getItem(idx);
+                                                           var name = obj.dataStore.getValue(theItem,"name");
+                                                           that.controller.show("keystore", name, brokerObj);
+                                                       });
+                                               }, gridProperties, EnhancedGrid);
+
+                             that.trustStoresGrid =
+                               new UpdatableStore(that.brokerData.truststores, query(".broker-trust-stores")[0],
+                                               [ { name: "Name",    field: "name",      width: "20%"},
+                                                 { name: "Path", field: "path", width: "50%"},
+                                                 { name: "Type", field: "type", width: "5%"},
+                                                 { name: "Trust Manager Algorithm", field: "trustManagerFactoryAlgorithm", width: "20%"},
+                                                 { name: "Peers only", field: "peersOnly", width: "15%",
+                                                   formatter: function(val){
+                                                     return "<input type='radio' disabled='disabled' "+(val ? "checked='checked'": "")+" />";
+                                                   }
+                                                 }
+                                               ], function(obj) {
+                                                       connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                       function(evt){
+                                                           var idx = evt.rowIndex,
+                                                               theItem = this.getItem(idx);
+                                                           var name = obj.dataStore.getValue(theItem,"name");
+                                                           that.controller.show("truststore", name, brokerObj);
+                                                       });
+                                               }, gridProperties, EnhancedGrid);
 
                          });
 
@@ -699,6 +697,15 @@ define(["dojo/_base/xhr",
                                                                                        that.portsGrid.update(that.brokerData.ports);
 
                                                                                        that.authenticationProvidersGrid.update(that.brokerData.authenticationproviders);
+
+                                                                                       if (that.keyStoresGrid)
+                                                                                       {
+                                                                                         that.keyStoresGrid.update(that.brokerData.keystores);
+                                                                                       }
+                                                                                       if (that.trustStoresGrid)
+                                                                                       {
+                                                                                         that.trustStoresGrid.update(that.brokerData.truststores);
+                                                                                       }
                                                                                    });
 
 
@@ -718,7 +725,7 @@ define(["dojo/_base/xhr",
                dojo.byId("brokerAttribute.operatingSystem").innerHTML = brokerData.operatingSystem;
                dojo.byId("brokerAttribute.platform").innerHTML = brokerData.platform;
                dojo.byId("brokerAttribute.productVersion").innerHTML = brokerData.productVersion;
-               dojo.byId("brokerAttribute.modelVersion").innerHTML = brokerData.managementVersion;
+               dojo.byId("brokerAttribute.modelVersion").innerHTML = brokerData.modelVersion;
                dojo.byId("brokerAttribute.storeType").innerHTML = brokerData.storeType;
                dojo.byId("brokerAttribute.storeVersion").innerHTML = brokerData.storeVersion;
                dojo.byId("brokerAttribute.storePath").innerHTML = brokerData.storePath;

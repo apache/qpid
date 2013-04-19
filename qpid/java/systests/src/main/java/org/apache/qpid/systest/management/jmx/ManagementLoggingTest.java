@@ -314,11 +314,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
         if(useManagementSSL)
         {
-            // This test requires we have an ssl connection
+            // This test requires we have ssl, change the transport and add they keystore to the port config
             config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
-
-            setSystemProperty("javax.net.ssl.keyStore", "test-profiles/test_resources/ssl/java_broker_keystore.jks");
-            setSystemProperty("javax.net.ssl.keyStorePassword", "password");
+            config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         }
 
         startBroker();

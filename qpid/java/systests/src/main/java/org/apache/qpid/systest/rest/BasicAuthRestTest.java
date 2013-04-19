@@ -58,6 +58,8 @@ public class BasicAuthRestTest extends QpidRestTestCase
         if (useSsl)
         {
             getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PROTOCOLS, Collections.singleton(Protocol.HTTPS));
+            getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
+
         }
         super.customizeConfiguration();
     }

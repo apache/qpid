@@ -37,12 +37,14 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.security.access.Operation;
@@ -58,6 +60,8 @@ public class PortAdapter extends AbstractAdapter implements Port
         put(NAME, String.class);
         put(PROTOCOLS, new ParameterizedTypeImpl(Set.class, Protocol.class));
         put(TRANSPORTS, new ParameterizedTypeImpl(Set.class, Transport.class));
+        put(TRUST_STORES, new ParameterizedTypeImpl(Set.class, String.class));
+        put(KEY_STORE, String.class);
         put(PORT, Integer.class);
         put(TCP_NO_DELAY, Boolean.class);
         put(RECEIVE_BUFFER_SIZE, Integer.class);
@@ -373,16 +377,40 @@ public class PortAdapter extends AbstractAdapter implements Port
         boolean requiresCertificate = (needClientCertificate != null && needClientCertificate.booleanValue())
                 || (wantClientCertificate != null && wantClientCertificate.booleanValue());
 
-        if (transports != null && transports.contains(Transport.SSL))
+        String keyStoreName = (String) merged.get(KEY_STORE);
+        boolean hasKeyStore = keyStoreName != null;
+        if(keyStoreName != null)
         {
-            if (_broker.getKeyStores().isEmpty())
+            if (_broker.findKeyStoreByName(keyStoreName) == null)
             {
-                throw new IllegalConfigurationException("Can't create port which requires SSL as the broker has no keystore configured.");
+                throw new IllegalConfigurationException("Can't find key store with name '" + keyStoreName + "' for port " + getName());
+            }
+        }
+
+        Set<String> trustStoreNames = (Set<String>) merged.get(TRUST_STORES);
+        boolean hasTrustStore = trustStoreNames != null && !trustStoreNames.isEmpty();
+        if(hasTrustStore)
+        {
+            for (String trustStoreName : trustStoreNames)
+            {
+                if (_broker.findTrustStoreByName(trustStoreName) == null)
+                {
+                    throw new IllegalConfigurationException("Cannot find trust store with name '" + trustStoreName + "'");
+                }
+            }
+        }
+
+        boolean usesSsl = transports != null && transports.contains(Transport.SSL);
+        if (usesSsl)
+        {
+            if (keyStoreName == null)
+            {
+                throw new IllegalConfigurationException("Can't create port which requires SSL but has no key store configured.");
             }
 
-            if (_broker.getTrustStores().isEmpty() && requiresCertificate)
+            if (!hasTrustStore && requiresCertificate)
             {
-                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates as the broker has no trust/peer stores configured.");
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust store configured.");
             }
         }
         else
@@ -393,9 +421,14 @@ public class PortAdapter extends AbstractAdapter implements Port
             }
         }
 
-        if (protocols != null && protocols.contains(Protocol.HTTPS) && _broker.getKeyStores().isEmpty())
+        if (protocols != null && protocols.contains(Protocol.HTTPS) && !hasKeyStore)
         {
-            throw new IllegalConfigurationException("Can't create port which requires SSL as the broker has no keystore configured.");
+            throw new IllegalConfigurationException("Can't create port which requires SSL but has no key store configured.");
+        }
+
+        if (protocols != null && protocols.contains(Protocol.RMI) && usesSsl)
+        {
+            throw new IllegalConfigurationException("Can't create RMI Registry port which requires SSL.");
         }
 
         String authenticationProviderName = (String)merged.get(AUTHENTICATION_PROVIDER);
@@ -449,5 +482,43 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
             throw new AccessControlException("Setting of port attributes is denied");
         }
+    }
+
+    @Override
+    public KeyStore getKeyStore()
+    {
+        String keyStoreName = (String)getAttribute(Port.KEY_STORE);
+        KeyStore keyStore = _broker.findKeyStoreByName(keyStoreName);
+
+        if (keyStoreName != null && keyStore == null)
+        {
+            throw new IllegalConfigurationException("Can't find key store with name '" + keyStoreName + "' for port " + getName());
+        }
+
+        return keyStore;
+    }
+
+    @Override
+    public Collection<TrustStore> getTrustStores()
+    {
+        Set<String> trustStoreNames = (Set<String>) getAttribute(TRUST_STORES);
+        boolean hasTrustStoreName = trustStoreNames != null && !trustStoreNames.isEmpty();
+
+        final Collection<TrustStore> trustStores = new ArrayList<TrustStore>();
+        if(hasTrustStoreName)
+        {
+            for (String name : trustStoreNames)
+            {
+                TrustStore trustStore = _broker.findTrustStoreByName(name);
+                if (trustStore == null)
+                {
+                    throw new IllegalConfigurationException("Can't find trust store with name '" + name + "' for port " + getName());
+                }
+
+                trustStores.add(trustStore);
+            }
+        }
+
+        return trustStores;
     }
 }
