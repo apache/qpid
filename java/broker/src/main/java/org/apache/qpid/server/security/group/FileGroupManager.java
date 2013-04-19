@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.server.security.group;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
@@ -34,32 +35,26 @@ import org.apache.qpid.server.security.auth.UsernamePrincipal;
  * This plugin is configured in the following manner:
  * </p>
  * <pre>
- * &lt;file-group-manager&gt;
- *    &lt;attributes&gt;
- *       &lt;attribute&gt;
- *            &lt;name>groupFile&lt;/name&gt;
- *            &lt;value>${conf}/groups&lt;/value&gt;
- *        &lt;/attribute&gt;
- *    &lt;/attributes&gt;
- * &lt;/file-group-manager&gt;
+ * "groupproviders":[
+ * ...
+ * {
+ *  "name" : "...",
+ *  "type" : "GroupFile",
+ *  "path" : "path/to/file/with/groups",
+ * }
+ * ...
+ * ]
  * </pre>
  */
 public class FileGroupManager implements GroupManager
 {
     private final FileGroupDatabase _groupDatabase;
-
+    private final String _groupFile;
 
     public FileGroupManager(String groupFile)
     {
+        _groupFile = groupFile;
         _groupDatabase = new FileGroupDatabase();
-        try
-        {
-            _groupDatabase.setGroupFile(groupFile);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException("Unable to set group file " + groupFile, e);
-        }
     }
 
     @Override
@@ -142,6 +137,103 @@ public class FileGroupManager implements GroupManager
     {
         _groupDatabase.removeUserFromGroup(user, group);
 
+    }
+
+    @Override
+    public void onDelete()
+    {
+        File file = new File(_groupFile);
+        if (file.exists())
+        {
+            if (!file.delete())
+            {
+                throw new IllegalConfigurationException("Cannot delete group file");
+            }
+        }
+    }
+
+    @Override
+    public void onCreate()
+    {
+        File file = new File(_groupFile);
+        if (!file.exists())
+        {
+            File parent = file.getParentFile();
+            if (!parent.exists())
+            {
+                parent.mkdirs();
+            }
+            if (parent.exists())
+            {
+                try
+                {
+                    file.createNewFile();
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot create group file");
+                }
+            }
+            else
+            {
+                throw new IllegalConfigurationException("Cannot create group file");
+            }
+        }
+    }
+
+    @Override
+    public void open()
+    {
+        try
+        {
+            _groupDatabase.setGroupFile(_groupFile);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Unable to set group file " + _groupFile, e);
+        }
+    }
+
+    @Override
+    public void close()
+    {
+        // no-op
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return ((_groupFile == null) ? 0 : _groupFile.hashCode());
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (obj == null)
+        {
+            return false;
+        }
+        if (getClass() != obj.getClass())
+        {
+            return false;
+        }
+        FileGroupManager other = (FileGroupManager) obj;
+        if (_groupFile == null)
+        {
+            if (other._groupFile != null)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        return _groupFile.equals(other._groupFile);
     }
 
 }

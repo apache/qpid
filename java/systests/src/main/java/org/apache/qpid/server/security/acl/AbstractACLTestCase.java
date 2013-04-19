@@ -63,7 +63,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     @Override
     public void setUp() throws Exception
     {
-        getBrokerConfiguration().setBrokerAttribute(Broker.GROUP_FILE, System.getProperty(QPID_HOME) + "/etc/groups-systests");
+        getBrokerConfiguration().addGroupFileConfiguration(System.getProperty(QPID_HOME) + "/etc/groups-systests");
 
         // run test specific setup
         String testSetup = StringUtils.replace(getName(), "test", "setUp");

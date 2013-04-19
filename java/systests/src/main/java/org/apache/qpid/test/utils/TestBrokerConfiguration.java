@@ -33,13 +33,16 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class TestBrokerConfiguration
 {
@@ -58,6 +61,7 @@ public class TestBrokerConfiguration
     public static final String ENTRY_NAME_ANONYMOUS_PROVIDER = "anonymous";
     public static final String ENTRY_NAME_SSL_KEYSTORE = "systestsKeyStore";
     public static final String ENTRY_NAME_SSL_TRUSTSTORE = "systestsTrustStore";
+    public static final String ENTRY_NAME_GROUP_FILE = "groupFile";
 
     private MemoryConfigurationEntryStore _store;
     private boolean _saved;
@@ -132,6 +136,16 @@ public class TestBrokerConfiguration
         return addObjectConfiguration(ENTRY_NAME_HTTP_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
     }
 
+    public UUID addGroupFileConfiguration(String groupFilePath)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, ENTRY_NAME_GROUP_FILE);
+        attributes.put(GroupManagerFactory.ATTRIBUTE_TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, groupFilePath);
+
+        return addGroupProviderConfiguration(attributes);
+    }
+
     public UUID addPortConfiguration(Map<String, Object> attributes)
     {
         String name = (String) attributes.get(Port.NAME);
@@ -148,6 +162,12 @@ public class TestBrokerConfiguration
     {
         String name = (String) attributes.get(AuthenticationProvider.NAME);
         return addObjectConfiguration(name, AuthenticationProvider.class.getSimpleName(), attributes);
+    }
+
+    public UUID addGroupProviderConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(GroupProvider.NAME);
+        return addObjectConfiguration(name, GroupProvider.class.getSimpleName(), attributes);
     }
 
     public UUID addTrustStoreConfiguration(Map<String, Object> attributes)

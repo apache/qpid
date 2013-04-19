@@ -65,10 +65,6 @@
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">ACL file location:</div>
                 <div id="brokerAttribute.aclFile" style="float:left;"></div>
             </div>
-            <div id="brokerAttribute.groupFile.container" style="display: none; clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Group file location:</div>
-                <div id="brokerAttribute.groupFile" style="float:left;"></div>
-            </div>
             <div id="brokerAttribute.statisticsReportingPeriod.container" style="display: none; clear:both">
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Statistics reporting period:</div>
                 <div id="brokerAttribute.statisticsReportingPeriod" style="float:left;"></div>
@@ -187,6 +183,12 @@
         <div class="broker-trust-stores"></div>
         <button data-dojo-type="dijit.form.Button" class="addTruststore">Add Trust Store</button>
         <button data-dojo-type="dijit.form.Button" class="deleteTruststore">Delete Trust Store</button>
+    </div>
+    <br/>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Group Providers'">
+        <div class="broker-group-providers"></div>
+        <button data-dojo-type="dijit.form.Button" class="addGroupProvider">Add Group Provider</button>
+        <button data-dojo-type="dijit.form.Button" class="deleteGroupProvider">Delete Group Provider</button>
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Log File',  open: false">

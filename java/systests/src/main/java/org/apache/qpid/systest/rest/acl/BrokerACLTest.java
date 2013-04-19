@@ -30,6 +30,7 @@ import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -38,6 +39,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -636,6 +638,122 @@ public class BrokerACLTest extends QpidRestTestCase
                 brokerAttributes.get(Broker.QUEUE_ALERT_REPEAT_GAP));
     }
 
+    /* === GroupProvider === */
+
+    public void testCreateGroupProviderAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String groupProviderName = getTestName();
+
+        assertGroupProviderExistence(groupProviderName, false);
+
+        int responseCode = createGroupProvider(groupProviderName);
+        assertEquals("Group provider creation should be allowed", 201, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, true);
+    }
+
+    public void testCreateGroupProviderDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        String groupProviderName = getTestName();
+
+        assertGroupProviderExistence(groupProviderName, false);
+
+        int responseCode = createGroupProvider(groupProviderName);
+        assertEquals("Group provider creation should be denied", 403, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, false);
+    }
+
+    public void testDeleteGroupProviderDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String groupProviderName = getTestName();
+
+        assertGroupProviderExistence(groupProviderName, false);
+
+        int responseCode = createGroupProvider(groupProviderName);
+        assertEquals("Group provider creation should be allowed", 201, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, true);
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "DELETE", null);
+        assertEquals("Group provider deletion should be denied", 403, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, true);
+    }
+
+    public void testDeleteGroupProviderAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String groupProviderName = getTestName();
+
+        assertGroupProviderExistence(groupProviderName, false);
+
+        int responseCode = createGroupProvider(groupProviderName);
+        assertEquals("Group provider creation should be allowed", 201, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, true);
+
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "DELETE", null);
+        assertEquals("Group provider deletion should be allowed", 200, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, false);
+    }
+
+    public void testSetGroupProviderAttributesAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String groupProviderName = getTestName();
+
+        assertGroupProviderExistence(groupProviderName, false);
+
+        int responseCode = createGroupProvider(groupProviderName);
+        assertEquals("Group provider creation should be allowed", 201, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, true);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, groupProviderName);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
+        assertEquals("Setting of group provider attributes should be allowed but not supported", 409, responseCode);
+    }
+
+    public void testSetGroupProviderAttributesDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String groupProviderName = getTestName();
+
+        assertGroupProviderExistence(groupProviderName, false);
+
+        int responseCode = createGroupProvider(groupProviderName);
+        assertEquals("Group provider creation should be allowed", 201, responseCode);
+
+        assertGroupProviderExistence(groupProviderName, true);
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, groupProviderName);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
+        assertEquals("Setting of group provider attributes should be denied", 403, responseCode);
+    }
+
     private int createPort(String portName) throws Exception
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -751,5 +869,23 @@ public class BrokerACLTest extends QpidRestTestCase
         trustStoreAttributes.put(TrustStore.PEERS_ONLY, peersOnly);
 
         return getRestTestHelper().submitRequest("/rest/truststore/" + name, "PUT", trustStoreAttributes);
+    }
+
+    private void assertGroupProviderExistence(String groupProviderName, boolean exists) throws Exception
+    {
+        String path = "/rest/groupprovider/" + groupProviderName;
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList(path);
+        assertEquals("Unexpected result", exists, !providers.isEmpty());
+    }
+
+    private int createGroupProvider(String groupProviderName) throws Exception
+    {
+        File file = TestFileUtils.createTempFile(this, ".groups");
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, groupProviderName);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, file.getAbsoluteFile());
+
+        return getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
     }
 }

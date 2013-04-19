@@ -37,4 +37,12 @@ public interface GroupManager
     void addUserToGroup(String user, String group);
 
     void removeUserFromGroup(String user, String group);
+
+    void open();
+
+    void close();
+
+    void onDelete();
+
+    void onCreate();
 }
