@@ -3101,15 +3101,17 @@ class Agent:
     if 'qmf_object' in kwargs:
       if self.session.console:
         obj = kwargs['qmf_object']
-        if len(self.session.class_filter) == 0:
-          self.session.console.objectProps(self.broker, obj)
-        elif obj.getClassKey():
+        if self.session.class_filter and obj.getClassKey():
           # slow path: check classKey against event_filter
           pname = obj.getClassKey().getPackageName()
           cname = obj.getClassKey().getClassName()
-          if ((pname, cname) in self.session.class_filter
-              or (pname, None) in self.session.class_filter):
-            self.session.console.objectProps(self.broker, obj)
+          if ((pname, cname) not in self.session.class_filter
+              and (pname, None) not in self.session.class_filter):
+              return
+        self.session.console.objectProps(self.broker, obj)
+        if obj.getStatistics():
+            # QMFv2 objects may also contain statistic updates
+            self.session.console.objectStats(self.broker, obj)
     elif 'qmf_object_stats' in kwargs:
       if self.session.console:
         obj = kwargs['qmf_object_stats']
