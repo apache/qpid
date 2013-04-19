@@ -469,6 +469,13 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
         std::string errordetail = sasl_errdetail(sasl_conn);
         if (!getUsername(uid)) {
             QPID_LOG(info, "SASL: Authentication failed (no username available yet):" << errordetail);
+        } else if (SASL_NOUSER == code) {
+            // SASL_NOUSER is returned when either:
+            // - the user name supplied was not in the sasl db or
+            // - the sasl db could not be read
+            //       - because of file permissions or
+            //       - because the file was not found
+            QPID_LOG(info, "SASL: Authentication failed. User not found or sasldb not accessible.(" << code << ") for " << uid);
         } else {
             QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << errordetail);
         }
