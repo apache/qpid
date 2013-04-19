@@ -211,7 +211,7 @@ public class VirtualHostImplTest extends QpidTestCase
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
-        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(null), configuration);
+        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
         _virtualHostRegistry.registerVirtualHost(host);
 
         return host;
@@ -295,7 +295,7 @@ public class VirtualHostImplTest extends QpidTestCase
         Configuration config = new PropertiesConfiguration();
         config.setProperty("store.type", MemoryMessageStore.TYPE);
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
-        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(null), configuration);
+        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
         _virtualHostRegistry.registerVirtualHost(host);
         return host;
     }

@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
@@ -71,8 +72,8 @@ public class BrokerRecovererTest extends TestCase
     {
         super.setUp();
 
-        _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(GroupProviderFactory.class), mock(PortFactory.class), mock(StatisticsGatherer.class),
-                mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class), mock(BrokerOptions.class));
+        _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(GroupProviderFactory.class), mock(AccessControlProviderFactory.class), mock(PortFactory.class),
+                mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class), mock(BrokerOptions.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
 
@@ -98,7 +99,6 @@ public class BrokerRecovererTest extends TestCase
         attributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 2);
         attributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
         attributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 1l);
-        attributes.put(Broker.ACL_FILE, "/path/to/acl");
         attributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 1000);
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);

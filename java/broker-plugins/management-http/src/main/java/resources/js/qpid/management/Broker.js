@@ -33,6 +33,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addPort",
         "qpid/management/addKeystore",
         "qpid/management/addGroupProvider",
+        "qpid/management/addAccessControlProvider",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dijit/layout/AccordionContainer",
@@ -43,7 +44,7 @@ define(["dojo/_base/xhr",
         "dijit/form/CheckBox",
         "dojo/store/Memory",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort, addKeystore, addGroupProvider) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -78,15 +79,6 @@ define(["dojo/_base/xhr",
                            value: brokerData.defaultVirtualHost,
                            label: "Default Virtual Host*:",
                            name: "defaultVirtualHost"})
-                       }
-               }, {
-                       name: "aclFile",
-                       createWidget: function(brokerData) {
-                          return new dijit.form.ValidationTextBox({
-                            required: false,
-                            value: brokerData.aclFile,
-                            label: "ACL file location:",
-                            name: "aclFile"})
                        }
                }, {
                        name: "statisticsReportingPeriod",
@@ -473,6 +465,21 @@ define(["dojo/_base/xhr",
                                                 warning + "Are you sure you want to delete group provider");
                                 }
                             );
+
+                            var addAccessControlButton = query(".addAccessControlProvider", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addAccessControlButton), "onClick",
+                                function(evt){addAccessControlProvider.show();});
+
+                            var deleteAccessControlProviderButton = query(".deleteAccessControlProvider", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(deleteAccessControlProviderButton), "onClick",
+                                    function(evt){
+                                        util.deleteGridSelections(
+                                                that.brokerUpdater,
+                                                that.brokerUpdater.accessControlProvidersGrid.grid,
+                                                "rest/accesscontrolprovider",
+                                                "Are you sure you want to delete access control provider");
+                                }
+                            );
                         }});
            };
 
@@ -626,7 +633,20 @@ define(["dojo/_base/xhr",
                                                            that.controller.show("groupprovider", name, brokerObj);
                                                        });
                                                }, gridProperties, EnhancedGrid);
-
+                             var aclData = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
+                             that.accessControlProvidersGrid =
+                               new UpdatableStore(aclData, query(".broker-access-control-providers")[0],
+                                               [ { name: "Name",    field: "name",      width: "60%"},
+                                                 { name: "Type", field: "type", width: "40%"}
+                                               ], function(obj) {
+                                                       connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                                                       function(evt){
+                                                           var idx = evt.rowIndex,
+                                                               theItem = this.getItem(idx);
+                                                           var name = obj.dataStore.getValue(theItem,"name");
+                                                           that.controller.show("accesscontrolprovider", name, brokerObj);
+                                                       });
+                                               }, gridProperties, EnhancedGrid);
                          });
 
                xhr.get({url: "rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
@@ -724,6 +744,11 @@ define(["dojo/_base/xhr",
                                                                                        if (that.groupProvidersGrid)
                                                                                        {
                                                                                          that.groupProvidersGrid.update(that.brokerData.groupproviders);
+                                                                                       }
+                                                                                       if (that.accessControlProvidersGrid)
+                                                                                       {
+                                                                                         var data = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
+                                                                                         that.accessControlProvidersGrid.update(data);
                                                                                        }
                                                                                    });
 

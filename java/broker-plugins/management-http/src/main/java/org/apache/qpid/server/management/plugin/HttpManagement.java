@@ -47,6 +47,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
@@ -283,6 +284,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
         addRestServlet(root, "authenticationprovider", AuthenticationProvider.class);
+        addRestServlet(root, "accesscontrolprovider", AccessControlProvider.class);
         addRestServlet(root, "user", AuthenticationProvider.class, User.class);
         addRestServlet(root, "groupprovider", GroupProvider.class);
         addRestServlet(root, "group", GroupProvider.class, Group.class);

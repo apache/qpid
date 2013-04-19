@@ -43,6 +43,7 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
@@ -92,7 +93,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(CONNECTION_HEART_BEAT_DELAY, Integer.class);
         put(STATISTICS_REPORTING_PERIOD, Integer.class);
 
-        put(ACL_FILE, String.class);
         put(NAME, String.class);
         put(DEFAULT_VIRTUAL_HOST, String.class);
 
@@ -166,9 +166,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
     private final Map<String, KeyStore> _keyStores = new HashMap<String, KeyStore>();
     private final Map<String, TrustStore> _trustStores = new HashMap<String, TrustStore>();
+    private final Map<UUID, AccessControlProvider> _accessControlProviders = new HashMap<UUID, AccessControlProvider>();
 
     private final GroupProviderFactory _groupProviderFactory;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
+    private final AccessControlProviderFactory _accessControlProviderFactory;
 
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
@@ -182,8 +184,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            GroupProviderFactory groupProviderFactory, PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore,
-            BrokerOptions brokerOptions)
+            GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, TaskExecutor taskExecutor,
+            ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -193,13 +195,13 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
         _groupProviderFactory = groupProviderFactory;
+        _accessControlProviderFactory = accessControlProviderFactory;
         _portFactory = portFactory;
-        _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
-        addChangeListener(_securityManager);
+        _brokerOptions = brokerOptions;
+        _securityManager = new SecurityManager(this, _brokerOptions.isManagementMode());
         _supportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
         _supportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
-        _brokerOptions = brokerOptions;
         if (_brokerOptions.isManagementMode())
         {
             AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
@@ -276,17 +278,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                     new ArrayList<GroupProvider>(_groupProviders.values());
             return groupManagers;
         }
-    }
-
-    public VirtualHost createVirtualHost(final String name,
-                                         final State initialState,
-                                         final boolean durable,
-                                         final LifetimePolicy lifetime,
-                                         final long ttl,
-                                         final Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException
-    {
-        return null;  //TODO
     }
 
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
@@ -388,6 +379,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return (Collection<C>) getPorts();
         }
+        else if(clazz == AccessControlProvider.class)
+        {
+            return (Collection<C>) getAccessControlProviders();
+        }
         else if(clazz == AuthenticationProvider.class)
         {
             return (Collection<C>) getAuthenticationProviders();
@@ -423,6 +418,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         else if(childClass == Port.class)
         {
             return (C) createPort(attributes);
+        }
+        else if(childClass == AccessControlProvider.class)
+        {
+            return (C) createAccessControlProvider(attributes);
         }
         else if(childClass == AuthenticationProvider.class)
         {
@@ -475,6 +474,64 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         port.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
 
         return port;
+    }
+
+    private AccessControlProvider createAccessControlProvider(Map<String, Object> attributes)
+    {
+        AccessControlProvider accessControlProvider = null;
+        synchronized (_accessControlProviders)
+        {
+            accessControlProvider = _accessControlProviderFactory.create(UUID.randomUUID(), this, attributes);
+            addAccessControlProvider(accessControlProvider);
+        }
+
+        boolean quiesce = isManagementMode() ;
+        accessControlProvider.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
+
+        return accessControlProvider;
+    }
+
+    /**
+     * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
+     */
+    private void addAccessControlProvider(AccessControlProvider accessControlProvider)
+    {
+        String name = accessControlProvider.getName();
+        synchronized (_authenticationProviders)
+        {
+            if (_accessControlProviders.containsKey(accessControlProvider.getId()))
+            {
+                throw new IllegalConfigurationException("Can't add AccessControlProvider because one with id " + accessControlProvider.getId() + " already exists");
+            }
+            for (AccessControlProvider provider : _accessControlProviders.values())
+            {
+                if (provider.getName().equals(name))
+                {
+                    throw new IllegalConfigurationException("Can't add AccessControlProvider because one with name " + name + " already exists");
+                }
+            }
+            _accessControlProviders.put(accessControlProvider.getId(), accessControlProvider);
+        }
+
+        accessControlProvider.addChangeListener(this);
+        accessControlProvider.addChangeListener(_securityManager);
+    }
+
+    private boolean deleteAccessControlProvider(AccessControlProvider accessControlProvider)
+    {
+        AccessControlProvider removedAccessControlProvider = null;
+        synchronized (_accessControlProviders)
+        {
+            removedAccessControlProvider = _accessControlProviders.remove(accessControlProvider.getId());
+        }
+
+        if(removedAccessControlProvider != null)
+        {
+            removedAccessControlProvider.removeChangeListener(this);
+            removedAccessControlProvider.removeChangeListener(_securityManager);
+        }
+
+        return removedAccessControlProvider != null;
     }
 
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
@@ -771,6 +828,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             changeState(_groupProviders, currentState, State.ACTIVE, false);
             changeState(_authenticationProviders, currentState, State.ACTIVE, false);
+            changeState(_accessControlProviders, currentState, State.ACTIVE, false);
 
             CurrentActor.set(new BrokerActor(getRootMessageLogger()));
             try
@@ -847,6 +905,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             {
                 childDeleted = deleteAuthenticationProvider((AuthenticationProvider)object);
             }
+            else if(object instanceof AccessControlProvider)
+            {
+                childDeleted = deleteAccessControlProvider((AccessControlProvider)object);
+            }
             else if(object instanceof Port)
             {
                 childDeleted = deletePort((Port)object);
@@ -920,6 +982,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         if(object instanceof AuthenticationProvider)
         {
             addAuthenticationProvider((AuthenticationProvider)object);
+        }
+        else if(object instanceof AccessControlProvider)
+        {
+            addAccessControlProvider((AccessControlProvider)object);
         }
         else if(object instanceof Port)
         {
@@ -1051,13 +1117,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private void validateAttributes(Map<String, Object> convertedAttributes)
     {
-        String aclFile = (String) convertedAttributes.get(ACL_FILE);
-        if (aclFile != null)
-        {
-            // create a security manager to validate the ACL specified in file
-            new SecurityManager(aclFile);
-        }
-
         String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
         if (defaultVirtualHost != null)
         {
@@ -1128,5 +1187,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public boolean isManagementMode()
     {
         return _brokerOptions.isManagementMode();
+    }
+
+    @Override
+    public Collection<AccessControlProvider> getAccessControlProviders()
+    {
+        synchronized (_accessControlProviders)
+        {
+            return new ArrayList<AccessControlProvider>(_accessControlProviders.values());
+        }
     }
 }

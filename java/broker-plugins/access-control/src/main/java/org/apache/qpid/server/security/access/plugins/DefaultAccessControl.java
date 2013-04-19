@@ -29,6 +29,7 @@ import javax.security.auth.Subject;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.AccessControl;
@@ -44,6 +45,7 @@ public class DefaultAccessControl implements AccessControl
     private static final Logger _logger = Logger.getLogger(DefaultAccessControl.class);
 
     private RuleSet _ruleSet;
+    private File _aclFile;
 
     public DefaultAccessControl(String fileName)
     {
@@ -51,15 +53,52 @@ public class DefaultAccessControl implements AccessControl
         {
             _logger.debug("Creating AccessControl instance using file: " + fileName);
         }
-        File aclFile = new File(fileName);
 
-        ConfigurationFile configFile = new PlainConfiguration(aclFile);
-        _ruleSet = configFile.load();
+        _aclFile = new File(fileName);
     }
 
     DefaultAccessControl(RuleSet rs) throws ConfigurationException
     {
         _ruleSet = rs;
+    }
+
+    public void open()
+    {
+        if(_aclFile != null)
+        {
+            if (!_aclFile.exists())
+            {
+                throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
+            }
+
+            ConfigurationFile configFile = new PlainConfiguration(_aclFile);
+            _ruleSet = configFile.load();
+        }
+    }
+
+    @Override
+    public void close()
+    {
+        //no-op
+    }
+
+    @Override
+    public void onDelete()
+    {
+        //no-op
+    }
+
+    @Override
+    public void onCreate()
+    {
+        //verify file exists
+        if(_aclFile != null)
+        {
+            if (!_aclFile.exists())
+            {
+                throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
+            }
+        }
     }
 
     public Result getDefault()
@@ -119,4 +158,5 @@ public class DefaultAccessControl implements AccessControl
             return Result.DENIED;
         }
     }
+
 }

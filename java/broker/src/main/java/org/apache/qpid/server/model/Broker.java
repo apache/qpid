@@ -21,11 +21,9 @@
 package org.apache.qpid.server.model;
 
 import java.net.SocketAddress;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -81,12 +79,6 @@ public interface Broker extends ConfiguredObject
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
 
-    /*
-     * A temporary attribute to pass the path to ACL file.
-     * TODO: It should be a part of AuthorizationProvider.
-     */
-    String ACL_FILE = "aclFile";
-
     // Attributes
     Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -129,8 +121,7 @@ public interface Broker extends ConfiguredObject
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
-                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-                              ACL_FILE
+                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN
                               ));
 
     //children
@@ -140,9 +131,7 @@ public interface Broker extends ConfiguredObject
 
     Collection<AuthenticationProvider> getAuthenticationProviders();
 
-    VirtualHost createVirtualHost(String name, State initialState, boolean durable,
-                                  LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException;
+    Collection<AccessControlProvider> getAccessControlProviders();
 
     Collection<GroupProvider> getGroupProviders();
 
