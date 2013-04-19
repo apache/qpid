@@ -12,6 +12,7 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -25,6 +26,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     private static final String MANAGEMENT_MODE_PORT_PREFIX = "MANAGEMENT-MODE-PORT-";
     private static final String PORT_TYPE = Port.class.getSimpleName();
     private static final String VIRTUAL_HOST_TYPE = VirtualHost.class.getSimpleName();
+    private static final String ACCESS_CONTROL_PROVIDER_TYPE = AccessControlProvider.class.getSimpleName();
     private static final String ATTRIBUTE_STATE = VirtualHost.STATE;
     private static final Object MANAGEMENT_MODE_AUTH_PROVIDER = "mm-auth";
 
@@ -250,6 +252,10 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
             Map<String, Object> attributes = entry.getAttributes();
             boolean quiesce = false;
             if (VIRTUAL_HOST_TYPE.equals(entryType) && options.isManagementModeQuiesceVirtualHosts())
+            {
+                quiesce = true;
+            }
+            else if (ACCESS_CONTROL_PROVIDER_TYPE.equals(entryType))
             {
                 quiesce = true;
             }

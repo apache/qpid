@@ -32,6 +32,7 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
@@ -40,8 +41,8 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.GroupManagerFactory;
 import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class TestBrokerConfiguration
@@ -62,13 +63,13 @@ public class TestBrokerConfiguration
     public static final String ENTRY_NAME_SSL_KEYSTORE = "systestsKeyStore";
     public static final String ENTRY_NAME_SSL_TRUSTSTORE = "systestsTrustStore";
     public static final String ENTRY_NAME_GROUP_FILE = "groupFile";
+    public static final String ENTRY_NAME_ACL_FILE = "aclFile";
 
     private MemoryConfigurationEntryStore _store;
     private boolean _saved;
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
-        // TODO: add support for DERBY store
         _store = new MemoryConfigurationEntryStore(intialStoreLocation, null);
     }
 
@@ -140,10 +141,20 @@ public class TestBrokerConfiguration
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, ENTRY_NAME_GROUP_FILE);
-        attributes.put(GroupManagerFactory.ATTRIBUTE_TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileGroupManagerFactory.PATH, groupFilePath);
 
         return addGroupProviderConfiguration(attributes);
+    }
+
+    public UUID addAclFileConfiguration(String aclFilePath)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AccessControlProvider.NAME, ENTRY_NAME_ACL_FILE);
+        attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(FileAccessControlProviderConstants.PATH, aclFilePath);
+
+        return addAccessControlConfiguration(attributes);
     }
 
     public UUID addPortConfiguration(Map<String, Object> attributes)
@@ -168,6 +179,12 @@ public class TestBrokerConfiguration
     {
         String name = (String) attributes.get(GroupProvider.NAME);
         return addObjectConfiguration(name, GroupProvider.class.getSimpleName(), attributes);
+    }
+
+    public UUID addAccessControlConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(AccessControlProvider.NAME);
+        return addObjectConfiguration(name, AccessControlProvider.class.getSimpleName(), attributes);
     }
 
     public UUID addTrustStoreConfiguration(Map<String, Object> attributes)

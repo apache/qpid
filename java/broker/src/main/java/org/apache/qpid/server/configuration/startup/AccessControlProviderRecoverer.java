@@ -25,26 +25,26 @@ import java.util.Map;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
+import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 
-public class AuthenticationProviderRecoverer implements ConfiguredObjectRecoverer<AuthenticationProvider>
+public class AccessControlProviderRecoverer implements ConfiguredObjectRecoverer<AccessControlProvider>
 {
-    private final AuthenticationProviderFactory _authenticationProviderFactory;
+    private final AccessControlProviderFactory _accessControlProviderFactory;
 
-    public AuthenticationProviderRecoverer(AuthenticationProviderFactory authenticationProviderFactory)
+    public AccessControlProviderRecoverer(AccessControlProviderFactory authenticationProviderFactory)
     {
-        _authenticationProviderFactory = authenticationProviderFactory;
+        _accessControlProviderFactory = authenticationProviderFactory;
     }
 
     @Override
-    public AuthenticationProvider create(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, ConfiguredObject... parents)
+    public AccessControlProvider create(RecovererProvider recovererProvider, ConfigurationEntry configurationEntry, ConfiguredObject... parents)
     {
         Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         Map<String, Object> attributes = configurationEntry.getAttributes();
-        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(
+        AccessControlProvider authenticationProvider = _accessControlProviderFactory.recover(
                 configurationEntry.getId(),
                 broker,
                 attributes);
