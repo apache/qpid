@@ -72,11 +72,14 @@ if (BUILD_SSL)
         )
 
     add_library (sslcommon SHARED ${sslcommon_SOURCES})
+    foreach(f ${NSS_LIBRARIES})
+      target_link_libraries (sslcommon ${f})
+    endforeach(f)
     target_link_libraries (sslcommon qpidcommon)
     set_target_properties (sslcommon PROPERTIES
                            VERSION ${sslcommon_version}
                            COMPILE_FLAGS ${NSS_COMPILE_FLAGS}
-                           LINK_FLAGS ${NSS_LINK_FLAGS})
+                           LINK_FLAGS -L${NSS_LIBDIR})
 
     install (TARGETS sslcommon
              DESTINATION ${QPID_INSTALL_LIBDIR}
