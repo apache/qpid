@@ -47,14 +47,14 @@ slf4j-log4j=lib/required/slf4j-log4j12-1.6.4.jar
 
 xalan=lib/required/xalan-2.7.0.jar
 
-jetty=lib/required/jetty-server-7.6.3.v20120416.jar
-jetty-continuation=lib/required/jetty-continuation-7.6.3.v20120416.jar
-jetty-security=lib/required/jetty-security-7.6.3.v20120416.jar
-jetty-util=lib/required/jetty-util-7.6.3.v20120416.jar
-jetty-io=lib/required/jetty-io-7.6.3.v20120416.jar
-jetty-http=lib/required/jetty-http-7.6.3.v20120416.jar
-jetty-servlet=lib/required/jetty-servlet-7.6.3.v20120416.jar
-jetty-websocket=lib/required/jetty-websocket-7.6.3.v20120416.jar
+jetty=lib/required/jetty-server-7.6.10.v20130312.jar
+jetty-continuation=lib/required/jetty-continuation-7.6.10.v20130312.jar
+jetty-security=lib/required/jetty-security-7.6.10.v20130312.jar
+jetty-util=lib/required/jetty-util-7.6.10.v20130312.jar
+jetty-io=lib/required/jetty-io-7.6.10.v20130312.jar
+jetty-http=lib/required/jetty-http-7.6.10.v20130312.jar
+jetty-servlet=lib/required/jetty-servlet-7.6.10.v20130312.jar
+jetty-websocket=lib/required/jetty-websocket-7.6.10.v20130312.jar
 servlet-api=${geronimo-servlet}
 
 dojo=lib/required/dojo-war-1.7.2.war
