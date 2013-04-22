@@ -186,7 +186,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
             if(((ServerSession)session).getSubscription(destination)!=null)
             {
-                exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Subscription already exists with destaination: '"+destination+"'");
+                exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Subscription already exists with destination '"+destination+"'");
             }
             else
             {
@@ -270,7 +270,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                     catch (AMQException e)
                     {
-                        exception(session, method, e, "Cannot subscribe to '" + destination);
+                        exception(session, method, e, "Cannot subscribe to queue '" + queueName + "' with destination '" + destination);
                     }
                 }
             }
