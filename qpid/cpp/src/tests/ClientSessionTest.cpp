@@ -248,7 +248,7 @@ QPID_AUTO_TEST_CASE(testOpenFailure) {
 
 QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     Broker::Options opts;
-    opts.queueCleanInterval = 1;
+    opts.queueCleanInterval = 1*TIME_SEC;
     opts.queueFlowStopRatio = 0;
     opts.queueFlowResumeRatio = 0;
     ClientSessionFixture fix(opts);
