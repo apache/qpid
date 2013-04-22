@@ -54,7 +54,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)]]></screen>
     </section>
 
     <section role="h2" id="Java-Broker-Miscellaneous-JVM-Verification-Unix">
-      <title>Verify JVM on Windows</title>
+      <title>Verify JVM on Unix</title>
       <para>
         Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
         following at the command prompt:
