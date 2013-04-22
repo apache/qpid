@@ -182,7 +182,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public Long getMaximumQueueDepth()
     {
-        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH));
+        return getLongValue("queues.maximumQueueDepth", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES));
     }
 
     public Long getMaximumMessageSize()
@@ -192,7 +192,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public Long getMaximumMessageCount()
     {
-        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_MESSAGE_COUNT));
+        return getLongValue("queues.maximumMessageCount", getBrokerAttributeAsLong(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES));
     }
 
     public Long getMinimumAlertRepeatGap()
@@ -243,22 +243,26 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public long getTransactionTimeoutOpenWarn()
     {
-        return getLongValue("transactionTimeout.openWarn", 0L);
+        return getLongValue("transactionTimeout.openWarn",
+                            getBrokerAttributeAsLong(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN));
     }
 
     public long getTransactionTimeoutOpenClose()
     {
-        return getLongValue("transactionTimeout.openClose", 0L);
+        return getLongValue("transactionTimeout.openClose",
+                            getBrokerAttributeAsLong(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE));
     }
 
     public long getTransactionTimeoutIdleWarn()
     {
-        return getLongValue("transactionTimeout.idleWarn", 0L);
+        return getLongValue("transactionTimeout.idleWarn",
+                            getBrokerAttributeAsLong(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN));
     }
 
     public long getTransactionTimeoutIdleClose()
     {
-        return getLongValue("transactionTimeout.idleClose", 0L);
+        return getLongValue("transactionTimeout.idleClose",
+                            getBrokerAttributeAsLong(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE));
     }
 
     public int getMaxDeliveryCount()

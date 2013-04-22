@@ -79,8 +79,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
-        put(ALERT_THRESHOLD_MESSAGE_COUNT, Long.class);
-        put(ALERT_THRESHOLD_QUEUE_DEPTH, Long.class);
+        put(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Long.class);
+        put(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Long.class);
         put(ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
         put(ALERT_REPEAT_GAP, Long.class);
         put(FLOW_CONTROL_SIZE_BYTES, Long.class);
@@ -108,6 +108,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(PEER_STORE_PATH, String.class);
         put(PEER_STORE_PASSWORD, String.class);
         put(GROUP_FILE, String.class);
+        put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
+        put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
+        put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
+        put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, Long.class);
     }});
 
     public static final int DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
@@ -125,6 +129,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public static final int DEFAULT_HEART_BEAT_DELAY = 0;
     public static final int DEFAULT_SESSION_COUNT_LIMIT = 256;
     public static final String DEFAULT_NAME = "QpidBroker";
+    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = 0l;
+    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
+    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
+    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
     private static final String DEFAULT_KEY_STORE_NAME = "defaultKeyStore";
     private static final String DEFAULT_TRUST_STORE_NAME = "defaultTrustStore";
     private static final String DEFAULT_GROUP_PROFIDER_NAME = "defaultGroupProvider";
@@ -138,9 +146,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(Broker.STATISTICS_REPORTING_RESET_ENABLED, DEFAULT_STATISTICS_REPORTING_RESET_ENABLED);
         put(Broker.ALERT_REPEAT_GAP, DEFAULT_ALERT_REPEAT_GAP);
         put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE);
-        put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT);
+        put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT);
         put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE);
-        put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH);
+        put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH);
         put(Broker.DEAD_LETTER_QUEUE_ENABLED, DEFAULT_DEAD_LETTER_QUEUE_ENABLED);
         put(Broker.MAXIMUM_DELIVERY_ATTEMPTS, DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS);
         put(Broker.FLOW_CONTROL_RESUME_SIZE_BYTES, DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES);
@@ -149,12 +157,18 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(Broker.HEART_BEAT_DELAY, DEFAULT_HEART_BEAT_DELAY);
         put(Broker.SESSION_COUNT_LIMIT, DEFAULT_SESSION_COUNT_LIMIT);
         put(Broker.NAME, DEFAULT_NAME);
+        put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
+        put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
+        put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
+        put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
     }});
 
-    private String[] POSITIVE_NUMERIC_ATTRIBUTES = { ALERT_THRESHOLD_MESSAGE_AGE, ALERT_THRESHOLD_MESSAGE_COUNT,
-            ALERT_THRESHOLD_QUEUE_DEPTH, ALERT_THRESHOLD_MESSAGE_SIZE, ALERT_REPEAT_GAP, FLOW_CONTROL_SIZE_BYTES,
+    private String[] POSITIVE_NUMERIC_ATTRIBUTES = { ALERT_THRESHOLD_MESSAGE_AGE, ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+            ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, ALERT_THRESHOLD_MESSAGE_SIZE, ALERT_REPEAT_GAP, FLOW_CONTROL_SIZE_BYTES,
             FLOW_CONTROL_RESUME_SIZE_BYTES, MAXIMUM_DELIVERY_ATTEMPTS, HOUSEKEEPING_CHECK_PERIOD, SESSION_COUNT_LIMIT,
-            HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD };
+            HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD, VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
+            VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
+            VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN};
 
 
     private final StatisticsGatherer _statisticsGatherer;
@@ -1028,9 +1042,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         Collection<String> names = AVAILABLE_ATTRIBUTES;
         for (String name : names)
         {
-            if (attributes.containsKey(name))
+            if (convertedAttributes.containsKey(name))
             {
-                Object desired = attributes.get(name);
+                Object desired = convertedAttributes.get(name);
                 Object expected = getAttribute(name);
                 if (changeAttribute(name, expected, desired))
                 {

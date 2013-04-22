@@ -34,7 +34,6 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
@@ -103,14 +102,36 @@ public class BrokerRestTest extends QpidRestTestCase
         assertBrokerAttributes(brokerAttributes, brokerDetails);
     }
 
+    public void testPutUpdateWhereNumericAttributesAreSetAsStringValues() throws Exception
+    {
+        Map<String, Object> validAttributes = getValidBrokerAttributes();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+
+        for (Map.Entry<String, Object> entry : validAttributes.entrySet())
+        {
+            Object value = entry.getValue();
+            if (value instanceof Number)
+            {
+                value = String.valueOf(value);
+            }
+            attributes.put(entry.getKey(), value);
+        }
+
+        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", attributes);
+        assertEquals("Unexpected update response", 200, response);
+
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        assertBrokerAttributes(validAttributes, brokerDetails);
+    }
+
     public void testPutToUpdateWithInvalidAttributeValues() throws Exception
     {
         Map<String, Object> invalidAttributes = new HashMap<String, Object>();
         invalidAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "non-existing-provider");
         invalidAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "non-existing-host");
         invalidAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, -1000);
-        invalidAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, -2000);
-        invalidAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, -3000);
+        invalidAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, -2000);
+        invalidAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, -3000);
         invalidAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, -4000);
         invalidAttributes.put(Broker.ALERT_REPEAT_GAP, -5000);
         invalidAttributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, -7000);
@@ -129,6 +150,10 @@ public class BrokerRestTest extends QpidRestTestCase
         invalidAttributes.put(Broker.PEER_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-peerstore.jks");
         invalidAttributes.put(Broker.PEER_STORE_PASSWORD, "password3");
         invalidAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups-non-existing");
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, -13000);
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, -14000);
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, -15000);
+        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, -16000);
 
         for (Map.Entry<String, Object> entry : invalidAttributes.entrySet())
         {
@@ -152,8 +177,8 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
         brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_AGE, 1000);
-        brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_COUNT, 2000);
-        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH, 3000);
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 2000);
+        brokerAttributes.put(Broker.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 3000);
         brokerAttributes.put(Broker.ALERT_THRESHOLD_MESSAGE_SIZE, 4000);
         brokerAttributes.put(Broker.ALERT_REPEAT_GAP, 5000);
         brokerAttributes.put(Broker.FLOW_CONTROL_SIZE_BYTES, 7000);
@@ -174,6 +199,10 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.PEER_STORE_PATH, TestSSLConstants.TRUSTSTORE);
         brokerAttributes.put(Broker.PEER_STORE_PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
         brokerAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups");
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 13000);
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 14000);
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 15000);
+        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, 16000);
         return brokerAttributes;
     }
 
