@@ -58,6 +58,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.group.FileGroupManager;
@@ -195,6 +196,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Collection<String> _supportedStoreTypes;
     private final ConfigurationEntryStore _brokerStore;
 
+    private boolean _managementMode;
+
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
             PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore)
@@ -214,6 +217,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         createBrokerChildrenFromAttributes();
         _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
+        _managementMode =  brokerStore instanceof ManagementModeStoreHandler;
     }
 
     /*
@@ -542,11 +546,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         port.addChangeListener(this);
     }
 
+    /**
+     * Called when adding a new port via the management interface
+     */
     private Port createPort(Map<String, Object> attributes)
     {
         Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
         addPort(port);
-        port.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+        //AMQP ports are disable during ManagementMode, and the management
+        //plugins can currently only start ports at broker startup and
+        //not when they are newly created via the management interfaces.
+        boolean quiesce = isManagementMode() || !(port instanceof AmqpPortAdapter);
+        port.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
+
         return port;
     }
 
@@ -1236,5 +1249,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             throw new AccessControlException("Setting of broker attributes is denied");
         }
+    }
+
+    @Override
+    public boolean isManagementMode()
+    {
+        return _managementMode;
     }
 }

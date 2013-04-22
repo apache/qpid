@@ -215,4 +215,6 @@ public interface Broker extends ConfiguredObject
     TrustStore getDefaultTrustStore();
 
     TaskExecutor getTaskExecutor();
+
+    boolean isManagementMode();
 }

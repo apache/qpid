@@ -23,6 +23,7 @@ package org.apache.qpid.server.model.adapter;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,21 +37,30 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class PortFactoryTest extends QpidTestCase
 {
     private UUID _portId = UUID.randomUUID();
+    private UUID _keyStoreId = UUID.randomUUID();
+    private UUID _trustStoreId = UUID.randomUUID();
     private int _portNumber = 123;
-    private Set<String> _tcpStringSet = Collections.singleton(Transport.SSL.name());
-    private Set<Transport> _tcpTransportSet = Collections.singleton(Transport.SSL);
+    private Set<String> _tcpStringSet = Collections.singleton(Transport.TCP.name());
+    private Set<Transport> _tcpTransportSet = Collections.singleton(Transport.TCP);
+    private Set<String> _sslStringSet = Collections.singleton(Transport.SSL.name());
+    private Set<Transport> _sslTransportSet = Collections.singleton(Transport.SSL);
 
     private Map<String, Object> _attributes = new HashMap<String, Object>();
 
     private Broker _broker = mock(Broker.class);
+    private KeyStore _keyStore = mock(KeyStore.class);
+    private TrustStore _trustStore = mock(TrustStore.class);
+
     private PortFactory _portFactory;
 
     @Override
@@ -66,8 +76,6 @@ public class PortFactoryTest extends QpidTestCase
         _attributes.put(Port.TCP_NO_DELAY, "true");
         _attributes.put(Port.RECEIVE_BUFFER_SIZE, "1");
         _attributes.put(Port.SEND_BUFFER_SIZE, "2");
-        _attributes.put(Port.NEED_CLIENT_AUTH, "true");
-        _attributes.put(Port.WANT_CLIENT_AUTH, "true");
         _attributes.put(Port.BINDING_ADDRESS, "127.0.0.1");
     }
 
@@ -126,9 +134,96 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateAmqpPort()
     {
+        createAmqpPortTestImpl(false,false,false);
+    }
+
+    public void testCreateAmqpPortUsingSslFailsWithoutKeyStore()
+    {
+        when(_broker.getKeyStores()).thenReturn(new ArrayList<KeyStore>());
+        try
+        {
+            createAmqpPortTestImpl(true,false,false);
+            fail("expected exception due to lack of SSL keystore");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            //expected
+        }
+    }
+
+    public void testCreateAmqpPortUsingSsslSucceedsWithKeyStore()
+    {
+        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
+
+        createAmqpPortTestImpl(true,false,false);
+    }
+
+    public void testCreateAmqpPortNeedingClientAuthFailsWithoutTrustStore()
+    {
+        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
+        when(_broker.getTrustStores()).thenReturn(new ArrayList<TrustStore>());
+        try
+        {
+            createAmqpPortTestImpl(true,true,false);
+            fail("expected exception due to lack of SSL truststore");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            //expected
+        }
+    }
+
+    public void testCreateAmqpPortNeedingClientAuthSucceedsWithTrustStore()
+    {
+        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
+        when(_broker.getTrustStores()).thenReturn(Collections.singleton(_trustStore));
+
+        createAmqpPortTestImpl(true,true,false);
+    }
+
+    public void testCreateAmqpPortWantingClientAuthFailsWithoutTrustStore()
+    {
+        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
+        when(_broker.getTrustStores()).thenReturn(new ArrayList<TrustStore>());
+        try
+        {
+            createAmqpPortTestImpl(true,false,true);
+            fail("expected exception due to lack of SSL truststore");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            //expected
+        }
+    }
+
+    public void testCreateAmqpPortWantingClientAuthSucceedsWithTrustStore()
+    {
+        when(_broker.getKeyStores()).thenReturn(Collections.singleton(_keyStore));
+        when(_broker.getTrustStores()).thenReturn(Collections.singleton(_trustStore));
+
+        createAmqpPortTestImpl(true,false,true);
+    }
+
+    public void createAmqpPortTestImpl(boolean useSslTransport, boolean needClientAuth, boolean wantClientAuth)
+    {
         Set<Protocol> amqp010ProtocolSet = Collections.singleton(Protocol.AMQP_0_10);
         Set<String> amqp010StringSet = Collections.singleton(Protocol.AMQP_0_10.name());
         _attributes.put(Port.PROTOCOLS, amqp010StringSet);
+
+        if(useSslTransport)
+        {
+            _attributes.put(Port.TRANSPORTS, _sslStringSet);
+        }
+
+        if(needClientAuth)
+        {
+            _attributes.put(Port.NEED_CLIENT_AUTH, "true");
+        }
+
+        if(wantClientAuth)
+        {
+            _attributes.put(Port.WANT_CLIENT_AUTH, "true");
+        }
 
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
@@ -136,12 +231,19 @@ public class PortFactoryTest extends QpidTestCase
         assertTrue(port instanceof AmqpPortAdapter);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
-        assertEquals(_tcpTransportSet, port.getTransports());
+        if(useSslTransport)
+        {
+            assertEquals(_sslTransportSet, port.getTransports());
+        }
+        else
+        {
+            assertEquals(_tcpTransportSet, port.getTransports());
+        }
         assertEquals(amqp010ProtocolSet, port.getProtocols());
         assertEquals("Unexpected send buffer size", 2, port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertEquals("Unexpected receive buffer size", 1, port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
-        assertEquals("Unexpected need client auth", true, port.getAttribute(Port.NEED_CLIENT_AUTH));
-        assertEquals("Unexpected want client auth", true, port.getAttribute(Port.WANT_CLIENT_AUTH));
+        assertEquals("Unexpected need client auth", needClientAuth, port.getAttribute(Port.NEED_CLIENT_AUTH));
+        assertEquals("Unexpected want client auth", wantClientAuth, port.getAttribute(Port.WANT_CLIENT_AUTH));
         assertEquals("Unexpected tcp no delay", true, port.getAttribute(Port.TCP_NO_DELAY));
         assertEquals("Unexpected binding", "127.0.0.1", port.getAttribute(Port.BINDING_ADDRESS));
     }

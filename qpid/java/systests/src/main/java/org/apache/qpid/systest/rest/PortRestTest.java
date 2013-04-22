@@ -30,6 +30,7 @@ import java.util.Map;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -107,7 +108,7 @@ public class PortRestTest extends QpidRestTestCase
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
         Map<String, Object> port = portDetails.get(0);
-        Asserts.assertPortAttributes(port);
+        Asserts.assertPortAttributes(port, State.QUIESCED);
 
         // make sure that port is there after broker restart
         restartBroker();
@@ -115,6 +116,8 @@ public class PortRestTest extends QpidRestTestCase
         portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
+        port = portDetails.get(0);
+        Asserts.assertPortAttributes(port, State.ACTIVE);
 
         // try to add a second RMI port
         attributes = new HashMap<String, Object>();
