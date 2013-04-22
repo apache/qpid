@@ -113,36 +113,24 @@ u_int32_t MessageStoreImpl::chkJrnlFileSizeParam(const u_int32_t param, const st
 u_int32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const u_int32_t param, const std::string paramName, const u_int16_t jrnlFsizePgs)
 {
     u_int32_t p = param;
-    switch (p)
-    {
-      case 1:
-      case 2:
-      case 4:
-      case 8:
-      case 16:
-      case 32:
-      case 64:
-      case 128:
-        if (jrnlFsizePgs == 1) {
-            p =  64;
-            QPID_LOG(warning, "parameter " << paramName << " (" << param << ") cannot set a page size greater than the journal file size; changing this parameter to the journal file size (" << p << ")");
-        }
-        break;
-      default:
-        if (p == 0) {
-            // For zero value, use default
-            p = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_DBLK_SIZE * JRNL_SBLK_SIZE / 1024;
-            QPID_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to default value (" << p << ")");
-        } else {
-            // For any positive value, use closest value
-            if      (p <   6)   p =   4;
-            else if (p <  12)   p =   8;
-            else if (p <  24)   p =  16;
-            else if (p <  48)   p =  32;
-            else if (p <  96)   p =  64;
-            else                p = 128;
-            QPID_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to closest allowable value (" << p << ")");
-        }
+
+    if (jrnlFsizePgs == 1 && p > 64 ) {
+        p =  64;
+        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") cannot set a page size greater than the journal file size; changing this parameter to the journal file size (" << p << ")");
+    }
+    else if (p == 0) {
+        // For zero value, use default
+        p = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_DBLK_SIZE * JRNL_SBLK_SIZE / 1024;
+        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to default value (" << p << ")");
+    } else if ( p > 128 || p & (p-1) ) {
+        // For any positive value that is not a power of 2, use closest value
+        if      (p <   6)   p =   4;
+        else if (p <  12)   p =   8;
+        else if (p <  24)   p =  16;
+        else if (p <  48)   p =  32;
+        else if (p <  96)   p =  64;
+        else                p = 128;
+        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to closest allowable value (" << p << ")");
     }
     return p;
 }
