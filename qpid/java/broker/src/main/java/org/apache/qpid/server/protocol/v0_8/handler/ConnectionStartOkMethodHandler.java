@@ -112,9 +112,9 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
-                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT),
+                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT),
                                                                                           BrokerProperties.FRAME_SIZE,
-                                                                                          (Integer)broker.getAttribute(Broker.HEART_BEAT_DELAY));
+                                                                                          (Integer)broker.getAttribute(Broker.CONNECTION_HEART_BEAT_DELAY));
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:

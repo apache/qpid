@@ -158,7 +158,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public AMQProtocolEngine(Broker broker, NetworkConnection network, final long connectionId)
     {
         _broker = broker;
-        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT);
+        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
         _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(broker, this);
         _codecFactory = new AMQCodecFactory(true, this);

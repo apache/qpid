@@ -827,7 +827,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             // TODO
         }
-        else if(DEAD_LETTER_QUEUE_ENABLED.equals(name))
+        else if(QUEUE_DEAD_LETTER_QUEUE_ENABLED.equals(name))
         {
             return _virtualHost.getConfiguration().isDeadLetterQueueEnabled();
         }
@@ -871,23 +871,23 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             return _virtualHost.getConfiguration().getTransactionTimeoutOpenWarn();
         }
-        else if(ALERT_REPEAT_GAP.equals(name))
+        else if(QUEUE_ALERT_REPEAT_GAP.equals(name))
         {
             return _virtualHost.getConfiguration().getMinimumAlertRepeatGap();
         }
-        else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
         {
             return _virtualHost.getConfiguration().getMaximumMessageAge();
         }
-        else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
         {
             return _virtualHost.getConfiguration().getMaximumMessageSize();
         }
-        else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
+        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
         {
             return _virtualHost.getConfiguration().getMaximumQueueDepth();
         }
-        else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
+        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
         {
             return _virtualHost.getConfiguration().getMaximumMessageCount();
         }

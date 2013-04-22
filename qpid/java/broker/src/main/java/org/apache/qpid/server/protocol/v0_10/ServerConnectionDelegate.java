@@ -75,7 +75,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         _broker = broker;
         _localFQDN = localFQDN;
-        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.SESSION_COUNT_LIMIT);
+        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
         _subjectCreator = subjectCreator;
     }
 

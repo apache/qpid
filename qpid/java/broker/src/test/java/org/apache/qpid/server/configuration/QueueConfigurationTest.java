@@ -69,14 +69,14 @@ public class QueueConfigurationTest extends TestCase
     public void testMaxDeliveryCount() throws Exception
     {
         // broker MAXIMUM_DELIVERY_ATTEMPTS attribute is not set
-        when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(null);
+        when(_broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(null);
 
         // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
         assertEquals("Unexpected default server configuration for max delivery count ", 0, qConf.getMaxDeliveryCount());
 
         // set broker MAXIMUM_DELIVERY_ATTEMPTS attribute to 2
-        when(_broker.getAttribute(Broker.MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(2);
+        when(_broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(2);
 
         // Check that queue inherits the MAXIMUM_DELIVERY_ATTEMPTS value from broker
         qConf = new QueueConfiguration("test", _emptyConf);
@@ -100,14 +100,14 @@ public class QueueConfigurationTest extends TestCase
     public void testIsDeadLetterQueueEnabled() throws Exception
     {
         // enable dead letter queues broker wide
-        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
+        when(_broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
 
         // Check that queue inherits the broker setting
         QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
         assertTrue("Unexpected queue configuration for dead letter enabled attribute", qConf.isDeadLetterQueueEnabled());
 
         // broker DEAD_LETTER_QUEUE_ENABLED is not set
-        when(_broker.getAttribute(Broker.DEAD_LETTER_QUEUE_ENABLED)).thenReturn(null);
+        when(_broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(null);
 
         // Check that queue dead letter queue is not enabled
         qConf = new QueueConfiguration("test", _emptyConf);
@@ -191,14 +191,14 @@ public class QueueConfigurationTest extends TestCase
     public void testGetMinimumAlertRepeatGap() throws Exception
     {
         // set broker attribute ALERT_REPEAT_GAP to 10
-        when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(10);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_REPEAT_GAP)).thenReturn(10);
 
         // check that broker level setting is available on queue configuration
         QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
         assertEquals(10, qConf.getMinimumAlertRepeatGap());
 
         // remove configuration for ALERT_REPEAT_GAP on broker level
-        when(_broker.getAttribute(Broker.ALERT_REPEAT_GAP)).thenReturn(null);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_REPEAT_GAP)).thenReturn(null);
 
         // Check default value
         qConf = new QueueConfiguration("test", _emptyConf);

@@ -70,8 +70,8 @@ public class BrokerTestHelper
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
         when(subjectCreator.getMechanisms()).thenReturn("");
         Broker broker = mock(Broker.class);
-        when(broker.getAttribute(Broker.SESSION_COUNT_LIMIT)).thenReturn(1);
-        when(broker.getAttribute(Broker.HOUSEKEEPING_CHECK_PERIOD)).thenReturn(10000l);
+        when(broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT)).thenReturn(1);
+        when(broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(10000l);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
         RootMessageLogger rootMessageLogger = CurrentActor.get().getRootMessageLogger();
