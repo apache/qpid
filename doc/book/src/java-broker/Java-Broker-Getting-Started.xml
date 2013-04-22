@@ -82,7 +82,7 @@
     <para>The BRK-1004 message confirms that the Broker is ready for work.  The MNG-1002 and BRK-1002 confirm the ports to
     which the Broker is listening (for HTTP/JMX management and AMQP respectively).</para>
     <para>To stop the Broker, use Control-C from the controlling shell, use the
-        <command>bin/qpid.stop</command> script, or use <command>kill -TERM &lt;pid&gt;</command> or
+        <command>bin/qpid.stop</command> script, use <command>kill -TERM &lt;pid&gt;</command>, or
       the Shutdown MBean from <xref linkend="Java-Broker-Configuring-And-Managing-JMX"/></para>
   </section>
   <section role="h2" id="Java-Broker-Getting-Started-LogFile">
@@ -98,43 +98,60 @@
     <para>The Java Broker understands a number of command line options which may be used to override the configuration.</para>
     <para>To see usage information for all command line options, use the option <option>--help</option></para>
     <programlisting><![CDATA[bin/qpid-server --help]]></programlisting>
-    <screen><![CDATA[usage: Qpid [-b address>] [-c <file>] [--exclude-0-10 <port>] [--exclude-0-8 <port>] [--exclude-0-9 <port>] [--exclude-0-9-1
-       <port>] [--exclude-1-0 <port>] [-h] [--include-0-10 <port>] [--include-0-8 <port>] [--include-0-9 <port>] [--include-0-9-1
-       <port>] [--include-1-0 <port>] [--jmxconnectorport <port>] [-l <file>] [-m <port>] [-p <port>] [-s <port>] [-v] [-w <period>]
- -b,--bind <address>            bind to the specified address. Overrides any value in the config file
- -c,--config <file>             use given configuration file
-    --exclude-0-10 <port>       when listening on the specified port do not accept AMQP0-10 connections. The
-                                specified port must be one specified on the command line
-    --exclude-0-8 <port>        when listening on the specified port do not accept AMQP0-8 connections. The
-                                specified port must be one specified on the command line
-    --exclude-0-9 <port>        when listening on the specified port do not accept AMQP0-9 connections. The
-                                specified port must be one specified on the command line
-    --exclude-0-9-1 <port>      when listening on the specified port do not accept AMQP0-9-1 connections. The
-                                specified port must be one specified on the command line
-    --exclude-1-0 <port>        when listening on the specified port do not accept AMQP1-0 connections. The
-                                specified port must be one specified on the command line
- -h,--help                      print this message
-    --include-0-10 <port>       accept AMQP0-10 connections on this port, overriding configuration to the contrary.
-                                The specified port must be one specified on the command line
-    --include-0-8 <port>        accept AMQP0-8 connections on this port, overriding configuration to the contrary.
-                                The specified port must be one specified on the command line
-    --include-0-9 <port>        accept AMQP0-9 connections on this port, overriding configuration to the contrary.
-                                The specified port must be one specified on the command line
-    --include-0-9-1 <port>      accept AMQP0-9-1 connections on this port, overriding configuration to the contrary.
-                                The specified port must be one specified on the command line
-    --include-1-0 <port>        accept AMQP1-0 connections on this port, overriding configuration to the contrary.
-                                The specified port must be one specified on the command line
-    --jmxconnectorport <port>   listen on the specified management (connector server) port. Overrides any
-                                value in the config file
- -l,--logconfig <file>          use the specified log4j xml configuration file. By default looks for a file named
-                                etc/log4j.xml in the same directory as the configuration file
- -m,--jmxregistryport <port>    listen on the specified management (registry server) port. Overrides any
-                                value in the config file
- -p,--port <port>               listen on the specified port. Overrides any value in the config file
- -s,--sslport <port>            SSL port. Overrides any value in the config file
- -v,--version                   print the version information and exit
- -w,--logwatch <period>         monitor the log file configuration file for changes. Units are seconds. Zero means
-                                do not check for changes.]]></screen>
+    <screen><![CDATA[usage: Qpid [-cic <path>] [-h] [-icp <path>] [-l <file>] [-mm] [-mmhttp <port>]
+            [-mmjmx <port>] [-mmpass <password>] [-mmqv] [-mmrmi <port>] [-os]
+            [-sp <path>] [-st <type>] [-v] [-w <period>]
+ -cic <path>                                    create a copy of the initial config
+ --create-initial-config <path>                 file, either to an optionally specified
+                                                file path, or as initial-config.json
+                                                in the current directory
+
+ -h,                                            print this message
+ --help
+
+ -icp  <path>                                   set the location of initial JSON config
+ --initial-config-path <path>                   to use when creating/overwriting a
+                                                broker configuration store
+
+ -l <file>                                      use the specified log4j xml configuration
+ --logconfig <file>                             file. By default looks for a file named
+                                                etc/log4j.xml in the same directory as
+                                                the configuration file
+
+ -mm                                            start broker in management mode,
+                                                disabling the AMQP ports
+
+ -mmhttp <port>                                 override http management port in
+ --management-mode-http-port <port>             management mode
+
+ -mmjmx                                         override jmx connector port in
+ --management-mode-jmx-connector-port <port>    management mode
+
+ -mmpass  <password>                            Set the password for the management
+ --management-mode-password <password>          mode user mm_admin
+
+ -mmqv                                          make virtualhosts stay in the quiesced
+ --management-mode-quiesce-virtualhosts         state during management mode.
+
+ -mmrmi <port>                                  override jmx rmi registry port in
+ --management-mode-rmi-registry-port <port>     management mode
+
+ -os                                            overwrite the broker configuration store
+ --overwrite-store                              with the current initial configuration
+
+ -sp <path>                                     use given configuration store location
+ --store-path <path>
+
+ -st <type>                                     use given broker configuration store type
+ --store-type <type>
+
+ -v                                             print the version information and exit
+ --version
+
+ -w <period>                                    monitor the log file configuration file
+ --logwatch <period>                            for changes. Units are seconds. Zero
+                                                means do not check for changes.
+]]></screen>
   </section>
 
 </chapter>
