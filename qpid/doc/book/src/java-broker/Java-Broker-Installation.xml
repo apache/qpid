@@ -126,13 +126,13 @@
         file and is used for the storage of persistent messages.  The work directory can be set on the
         command-line (for the lifetime of the command interpreter), but you will normally want to set
         the environment variable permanently via the Advanced System Settings in the Control Panel.</para>
-      <screen>set QPID_WORK=S:\qpidwork</screen>
+      <screen>set QPID_WORK=C:\qpidwork</screen>
       <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
          on start-up.</para>
     </section>
     <section role="h3" id="Java-Broker-Installation-InstallationWindows-OptionalDependencies">
       <title>Optional Dependencies</title>
-      <para>The broker has an optional message store implementations backed by Oracle BDB JE. If you wish to use these
+      <para>The broker has optional message store implementations backed by Oracle BDB JE. If you wish to use these
         stores you will need to provide the optional Oracle BDB JE dependency. For more details, see <xref linkend="Java-Broker-Stores-BDB-Store"></xref>
       </para>
     </section>
