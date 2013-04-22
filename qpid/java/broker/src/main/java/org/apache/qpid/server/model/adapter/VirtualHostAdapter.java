@@ -71,6 +71,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
@@ -980,8 +981,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         else if (desiredState == State.DELETED)
         {
-            //TODO: add ACL check to authorize the operation
-
             String hostName = getName();
 
             if (hostName.equals(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)))
@@ -1090,5 +1089,35 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     protected void changeAttributes(Map<String, Object> attributes)
     {
         throw new UnsupportedOperationException("Changing attributes on virtualhosts is not supported.");
+    }
+
+    @Override
+    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), VirtualHost.class, Operation.DELETE))
+            {
+                throw new AccessControlException("Deletion of virtual host is denied");
+            }
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), VirtualHost.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of virtual host attributes is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), VirtualHost.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of virtual host attributes is denied");
+        }
     }
 }

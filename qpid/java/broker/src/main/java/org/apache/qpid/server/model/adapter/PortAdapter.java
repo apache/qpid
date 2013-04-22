@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -355,5 +356,35 @@ public class PortAdapter extends AbstractAdapter implements Port
             throw new IllegalStateException("Cannot change attributes for an active port");
         }
         super.changeAttributes(MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+    }
+
+    @Override
+    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.DELETE))
+            {
+                throw new AccessControlException("Deletion of port is denied");
+            }
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of port attributes is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of port attributes is denied");
+        }
     }
 }

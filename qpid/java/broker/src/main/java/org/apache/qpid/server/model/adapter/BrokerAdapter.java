@@ -59,8 +59,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.group.FileGroupManager;
 import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.security.SecurityManager;
@@ -390,7 +389,18 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
                 _statisticsGatherer, getTaskExecutor());
         addVirtualHost(virtualHostAdapter);
-        virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+        // permission has already been granted to create the virtual host
+        // disable further access check on other operations, e.g. create exchange
+        _securityManager.setAccessChecksDisabled(true);
+        try
+        {
+            virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
+        }
+        finally
+        {
+            _securityManager.setAccessChecksDisabled(false);
+        }
         return virtualHostAdapter;
     }
 
@@ -1031,7 +1041,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        //TODO: Add ACL check
         //TODO: Add management mode check
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
         validateAttributes(convertedAttributes);
@@ -1198,6 +1207,34 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_securityManager.authoriseConfiguringBroker(getName(), Broker.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of broker attributes is denied");
+        }
+    }
+
+    @Override
+    protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes,
+            ConfiguredObject... otherParents) throws AccessControlException
+    {
+        if (!_securityManager.authoriseConfiguringBroker(String.valueOf(attributes.get(NAME)), childClass, Operation.CREATE))
+        {
+            throw new AccessControlException("Creation of new broker level entity is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_securityManager.authoriseConfiguringBroker(getName(), Broker.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of broker attributes is denied");
         }
     }
 }
