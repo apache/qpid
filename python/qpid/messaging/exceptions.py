@@ -154,3 +154,17 @@ class Empty(FetchError):
   available within the alloted time.
   """
   pass
+
+## Message Content errors
+class ContentError(MessagingError):
+  """
+  This type of exception will be returned to the application
+  once, and will not block further requests
+  """
+  pass
+
+class EncodeError(ContentError):
+  pass
+
+class DecodeError(ContentError):
+  pass

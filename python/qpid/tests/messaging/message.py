@@ -153,3 +153,16 @@ class MessageEchoTests(Base):
     f = echo.content["false"]
     assert isinstance(t, bool), t
     assert isinstance(f, bool), f
+
+  def testExceptionRaisedMismatchedContentType(self):
+    msg = Message(content_type="amqp/map", content="asdf")
+    try:
+      self.snd.send(msg)
+      self.rcv.fetch(0)
+      assert False, "Exception not raised on mismatched content/content_type"
+    except Exception, e:
+      pass
+
+  def testRecoverAfterException(self):
+    self.testExceptionRaisedMismatchedContentType()
+    self.testTextPlain()
