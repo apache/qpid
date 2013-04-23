@@ -25,7 +25,7 @@
                 <tr>
                     <td class="tableContainer-labelCell" style="width: 300px;">Name*:</td>
                     <td class="tableContainer-valueCell"><input type="text" required="true" name="name"
-                        id="formAddAuthenticationProvider.name" placeholder="Name"
+                        id="formAddAuthenticationProvider.name" placeholder="Name" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"
                         dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" /></div></td>
                 </tr>
                 </table>

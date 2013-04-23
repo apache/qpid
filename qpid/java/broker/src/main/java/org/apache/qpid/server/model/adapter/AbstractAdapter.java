@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.ChangeStateTask;
 import org.apache.qpid.server.configuration.updater.CreateChildTask;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 abstract class AbstractAdapter implements ConfiguredObject
 {
+    private static final Object ID = "id";
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
     private final Map<Class<? extends ConfiguredObject>, ConfiguredObject> _parents =
             new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject>();
@@ -90,9 +92,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-        authoriseSetDesiredState(currentState, desiredState);
         if (_taskExecutor.isTaskExecutorThread())
         {
+            authoriseSetDesiredState(currentState, desiredState);
             if (setState(currentState, desiredState))
             {
                 notifyStateChanged(currentState, desiredState);
@@ -225,9 +227,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        authoriseSetAttribute(name, expected, desired);
         if (_taskExecutor.isTaskExecutorThread())
         {
+            authoriseSetAttribute(name, expected, desired);
             if (changeAttribute(name, expected, desired))
             {
                 attributeSet(name, expected, desired);
@@ -304,9 +306,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
-        authoriseCreateChild(childClass, attributes, otherParents);
         if (_taskExecutor.isTaskExecutorThread())
         {
+            authoriseCreateChild(childClass, attributes, otherParents);
             C child = addChild(childClass, attributes, otherParents);
             if (child != null)
             {
@@ -334,9 +336,9 @@ abstract class AbstractAdapter implements ConfiguredObject
     @Override
     public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        authoriseSetAttributes(attributes);
         if (getTaskExecutor().isTaskExecutorThread())
         {
+            authoriseSetAttributes(attributes);
             changeAttributes(attributes);
         }
         else
@@ -347,6 +349,15 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected void changeAttributes(final Map<String, Object> attributes)
     {
+        if (attributes.containsKey(ID))
+        {
+            UUID id = getId();
+            Object idAttributeValue = attributes.get(ID);
+            if (idAttributeValue != null && !idAttributeValue.equals(id))
+            {
+                throw new IllegalConfigurationException("Cannot change existing configured object id");
+            }
+        }
         Collection<String> names = getAttributeNames();
         for (String name : names)
         {
@@ -380,5 +391,10 @@ abstract class AbstractAdapter implements ConfiguredObject
     protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
     {
         // allowed by default
+    }
+
+    protected Map<String, Object> getDefaultAttributes()
+    {
+        return _defaultAttributes;
     }
 }

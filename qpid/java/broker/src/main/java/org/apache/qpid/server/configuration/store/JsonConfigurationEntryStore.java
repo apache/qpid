@@ -28,6 +28,10 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
            initialiseStore(_storeFile, initialStore);
         }
         load(fileToURL(_storeFile));
+        if(isGeneratedObjectIdDuringLoad())
+        {
+            saveAsTree(_storeFile);
+        }
     }
 
     @Override

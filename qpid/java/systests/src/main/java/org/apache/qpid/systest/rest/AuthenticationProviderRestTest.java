@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -88,6 +89,22 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         Map<String, Object> provider = providerDetails.get(0);
         assertProvider(false, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE, provider);
+    }
+
+    public void testUpdateAuthenticationProviderIdFails() throws Exception
+    {
+        String providerName = "test-provider";
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AuthenticationProvider.NAME, providerName);
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        assertEquals("Unexpected response code", 201, responseCode);
+
+        attributes.put(AuthenticationProvider.ID, UUID.randomUUID());
+
+        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        assertEquals("Update with new ID should fail", 409, responseCode);
     }
 
     public void testDeleteOfDefaultAuthenticationProviderFails() throws Exception

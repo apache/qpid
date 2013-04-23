@@ -27,7 +27,7 @@
                     <td class="tableContainer-valueCell">
                         <input type="text" required="true" name="name" id="formAddVirtualHost.name"
                             placeholder="Virtual Host Name" dojoType="dijit.form.ValidationTextBox"
-                            missingMessage="A name must be supplied" />
+                            missingMessage="A name must be supplied" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"/>
                     </td>
                 </tr>
             </table>

@@ -19,22 +19,32 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.util.ResourceBundleLoader;
 
 public class ExternalAuthenticationManagerFactory implements AuthenticationManagerFactory
 {
+    public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.ExternalAuthenticationProviderAttributeDescriptions";
     public static final String PROVIDER_TYPE = "External";
+    public static final String ATTRIBUTE_USE_FULL_DN = "useFullDN";
+
+    public static final Collection<String> ATTRIBUTES = Collections.<String> unmodifiableList(Arrays.asList(
+            ATTRIBUTE_TYPE,
+            ATTRIBUTE_USE_FULL_DN));
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
     {
         if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {
-            return new ExternalAuthenticationManager();
+            boolean useFullDN = Boolean.valueOf(String.valueOf(attributes.get(ATTRIBUTE_USE_FULL_DN)));
+
+            return new ExternalAuthenticationManager(useFullDN);
         }
         return null;
     }
@@ -42,7 +52,7 @@ public class ExternalAuthenticationManagerFactory implements AuthenticationManag
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Collections.<String>singletonList(ATTRIBUTE_TYPE);
+        return ATTRIBUTES;
     }
 
     @Override
@@ -54,7 +64,7 @@ public class ExternalAuthenticationManagerFactory implements AuthenticationManag
     @Override
     public Map<String, String> getAttributeDescriptions()
     {
-        return null;
+        return ResourceBundleLoader.getResources(RESOURCE_BUNDLE);
     }
 
 }
