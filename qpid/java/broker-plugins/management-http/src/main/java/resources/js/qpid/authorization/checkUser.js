@@ -28,7 +28,7 @@ var updateUI = function updateUI(data)
     if(data.user)
     {
         dom.byId("authenticatedUser").innerHTML = data.user;
-        dojo.style(dom.byId("login"), {display: 'block'});
+        dom.byId("login").style.display = "block";
     }
 };
 

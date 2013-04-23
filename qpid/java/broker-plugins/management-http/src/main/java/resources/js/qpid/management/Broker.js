@@ -492,6 +492,7 @@ define(["dojo/_base/xhr",
                this.controller = controller;
                this.query = "rest/broker";
                this.attributes = attributes;
+               this.accessControlProvidersWarn = query(".broker-access-control-providers-warning", node)[0]
                var that = this;
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
@@ -647,6 +648,7 @@ define(["dojo/_base/xhr",
                                                            that.controller.show("accesscontrolprovider", name, brokerObj);
                                                        });
                                                }, gridProperties, EnhancedGrid);
+                             that.displayACLWarnMessage(aclData);
                          });
 
                xhr.get({url: "rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
@@ -715,6 +717,43 @@ define(["dojo/_base/xhr",
                }
            };
 
+           BrokerUpdater.prototype.displayACLWarnMessage = function(aclProviderData)
+           {
+             var message = "";
+             if (aclProviderData.length > 1)
+             {
+               var aclProviders = {};
+               var theSameTypeFound = false;
+               for(var d=0; d<aclProviderData.length; d++)
+               {
+                 var acl = aclProviderData[d];
+                 var aclType = acl.type;
+                 if (aclProviders[aclType])
+                 {
+                   aclProviders[aclType].push(acl.name);
+                   theSameTypeFound = true;
+                 }
+                 else
+                 {
+                   aclProviders[aclType] = [acl.name];
+                 }
+               }
+
+               if (theSameTypeFound)
+               {
+                 message = "Only one instance of a given type will be used. Please remove an instance of type(s):";
+                 for(var aclType in aclProviders)
+                 {
+                     if(aclProviders[aclType].length>1)
+                     {
+                       message +=  " " + aclType;
+                     }
+                 }
+               }
+             }
+             this.accessControlProvidersWarn.innerHTML = message;
+           }
+
            BrokerUpdater.prototype.update = function()
            {
 
@@ -749,6 +788,7 @@ define(["dojo/_base/xhr",
                                                                                        {
                                                                                          var data = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
                                                                                          that.accessControlProvidersGrid.update(data);
+                                                                                         that.displayACLWarnMessage(data);
                                                                                        }
                                                                                    });
 
