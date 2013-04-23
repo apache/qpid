@@ -890,7 +890,10 @@ class ReceiverTests(Base):
     self.assertEmpty(rb2)
     self.drain(self.rcv, expected=[])
 
-  # XXX: need testUnsettled()
+  def testUnsettled(self):
+    # just tests the code path and not the value
+    rcv = self.ssn.receiver('test-receiver-unsettled-queue; {create: always, delete: always}')
+    rcv.unsettled()
 
   def unreliabilityTest(self, mode="unreliable"):
     msgs = [self.message("testUnreliable", i) for i in range(3)]
