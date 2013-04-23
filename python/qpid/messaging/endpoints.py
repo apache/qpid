@@ -204,7 +204,13 @@ class Connection(Endpoint):
   def check_error(self):
     if self.error:
       self._condition.gc()
-      raise self.error
+      e = self.error
+      if isinstance(e, ContentError):
+          """ forget the content error. It will be
+          raised this time but won't block future calls
+          """
+          self.error = None
+      raise e
 
   def get_error(self):
     return self.error
@@ -887,8 +893,14 @@ class Sender(Endpoint):
     if self.synced < mno:
       self.synced = mno
       self._wakeup()
-    if not self._ewait(lambda: self.acked >= mno, timeout=timeout):
-      raise Timeout("sender sync timed out")
+    try:
+      if not self._ewait(lambda: self.acked >= mno, timeout=timeout):
+        raise Timeout("sender sync timed out")
+    except ContentError:
+      # clean bad message so we can continue
+      self.acked = mno
+      self.session.outgoing.pop(0)
+      raise
 
   @synchronized
   def close(self, timeout=None):

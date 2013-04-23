@@ -497,6 +497,9 @@ class Driver:
         self.engine.dispatch()
     except HeartbeatTimeout, e:
       self.close_engine(e)
+    except ContentError, e:
+      msg = compat.format_exc()
+      self.connection.error = ContentError(text=msg)
     except:
       # XXX: Does socket get leaked if this occurs?
       msg = compat.format_exc()
@@ -1245,7 +1248,11 @@ class Engine:
     if msg.ttl is not None:
       dp.ttl = long(msg.ttl*1000)
     enc, dec = get_codec(msg.content_type)
-    body = enc(msg.content)
+    try:
+      body = enc(msg.content)
+    except AttributeError, e:
+      # convert to non-blocking EncodeError
+      raise EncodeError(e)
 
     # XXX: this is not safe for out of order, can this be triggered by pre_ack?
     def msg_acked():
@@ -1294,7 +1301,10 @@ class Engine:
 
     ap = mp.application_headers
     enc, dec = get_codec(mp.content_type)
-    content = dec(xfr.payload)
+    try:
+      content = dec(xfr.payload)
+    except Exception, e:
+      raise DecodeError(e)
     msg = Message(content)
     msg.id = mp.message_id
     if ap is not None:
