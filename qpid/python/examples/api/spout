@@ -75,6 +75,7 @@ else:
   parser.error("address is required")
 
 content = None
+content_type = None
 
 if args:
   text = " ".join(args)
@@ -90,6 +91,9 @@ if opts.entries:
     content[name] = val
 else:
   content = text
+  # no entries were supplied, so assume text/plain for
+  # compatibility with java (and other) clients
+  content_type = "text/plain"
 
 conn = Connection(opts.broker,
                   reconnect=opts.reconnect,
@@ -107,6 +111,8 @@ try:
     msg = Message(subject=opts.subject,
                   reply_to=opts.reply_to,
                   content=content)
+    if content_type is not None:
+        msg.content_type = content_type
     msg.properties["spout-id"] = "%s:%s" % (spout_id, count)
     for p in opts.properties:
       name, val = nameval(p)
