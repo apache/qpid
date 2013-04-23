@@ -93,15 +93,15 @@ std::istream& operator>>(std::istream& i, Duration& d) {
     if (i.fail()) return i;
 
     if (i.eof() || std::isspace(i.peek())) // No suffix
-        d = number*TIME_SEC;
+        d = int64_t(number*TIME_SEC);
     else {
         std::string suffix;
         i >> suffix;
         if (i.fail()) return i;
-        if (suffix.compare("s") == 0) d = number*TIME_SEC;
-        else if (suffix.compare("ms") == 0) d = number*TIME_MSEC;
-        else if (suffix.compare("us") == 0) d = number*TIME_USEC;
-        else if (suffix.compare("ns") == 0) d = number*TIME_NSEC;
+        if (suffix.compare("s") == 0) d = int64_t(number*TIME_SEC);
+        else if (suffix.compare("ms") == 0) d = int64_t(number*TIME_MSEC);
+        else if (suffix.compare("us") == 0) d = int64_t(number*TIME_USEC);
+        else if (suffix.compare("ns") == 0) d = int64_t(number*TIME_NSEC);
         else i.setstate(std::ios::failbit);
     }
     return i;
