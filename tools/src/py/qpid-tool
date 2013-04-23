@@ -707,11 +707,11 @@ class IdRegistry(object):
 #=========================================================
 
 def parse_options( argv ):
-    _usage = """qpid-tool [OPTIONS] [[<username>/<password>@]<target-host>[:<tcp-port>]]
-  --ssl-certificate <path> - Client's SSL certificate (PEM Format file)
-  --ssl-key <path> - Client's SSL private key (PEM Format file)"""
+    _usage = """qpid-tool [OPTIONS] [[<username>/<password>@]<target-host>[:<tcp-port>]]"""
 
     parser = optparse.OptionParser(usage=_usage)
+    parser.add_option("-b", "--broker", action="store", type="string", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
+    parser.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option("--ssl-certificate",
                       action="store", type="string", metavar="<path>",
                       help="SSL certificate for client authentication")
@@ -727,25 +727,32 @@ def parse_options( argv ):
         args = encArgs
 
     conn_options = {}
+    broker_option = None
+    if opts.broker:
+        broker_option = opts.broker
     if opts.ssl_certificate:
         conn_options['ssl_certfile'] = opts.ssl_certificate
     if opts.ssl_key:
         if not opts.ssl_certificate:
             parser.error("missing '--ssl-certificate' (required by '--ssl-key')")
         conn_options['ssl_keyfile'] = opts.ssl_key
-    return conn_options, encArgs[1:]
-
+    if opts.sasl_mechanism:
+        conn_options['mechanisms'] = opts.sasl_mechanism
+    return broker_option, conn_options, args[1:]
 
 #=========================================================
 # Main Program
 #=========================================================
 
-# Get host name and port if specified on the command line
-conn_options, cargs = parse_options(sys.argv)
-_host = "localhost"
 
-if len(cargs) > 0:
-  _host = cargs[0]
+# Get options specified on the command line
+broker_option, conn_options, cargs = parse_options(sys.argv)
+
+_host = "localhost"
+if broker_option is not None:
+    _host = broker_option
+elif len(cargs) > 0:
+    _host = cargs[0]
 
 # note: prior to supporting options, qpid-tool assumed positional parameters.
 # the first argument was assumed to be the broker address.  The second argument
