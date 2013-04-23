@@ -28,8 +28,9 @@ public class BrokerOptionsTest extends QpidTestCase
 {
     private BrokerOptions _options;
 
-    protected void setUp()
+    protected void setUp() throws Exception
     {
+        super.setUp();
         _options = new BrokerOptions();
     }
 
@@ -129,6 +130,17 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(true, _options.isManagementMode());
     }
 
+    public void testDefaultManagementModeQuiesceVirtualHosts()
+    {
+        assertEquals(false, _options.isManagementModeQuiesceVirtualHosts());
+    }
+
+    public void testOverriddenDefaultManagementModeQuiesceVirtualHosts()
+    {
+        _options.setManagementModeQuiesceVirtualHosts(true);
+        assertEquals(true, _options.isManagementModeQuiesceVirtualHosts());
+    }
+
     public void testDefaultManagementModeRmiPort()
     {
         assertEquals(0, _options.getManagementModeRmiPort());
@@ -196,5 +208,22 @@ public class BrokerOptionsTest extends QpidTestCase
     {
         _options.setSkipLoggingConfiguration(true);
         assertTrue(_options.isSkipLoggingConfiguration());
+    }
+
+    public void testDefaultOverwriteConfigurationStore()
+    {
+        assertFalse(_options.isOverwriteConfigurationStore());
+    }
+
+    public void testOverriddenOverwriteConfigurationStore()
+    {
+        _options.setOverwriteConfigurationStore(true);
+        assertTrue(_options.isOverwriteConfigurationStore());
+    }
+
+    public void testManagementModePassword()
+    {
+        _options.setManagementModePassword("test");
+        assertEquals("Unexpected management mode password", "test", _options.getManagementModePassword());
     }
 }

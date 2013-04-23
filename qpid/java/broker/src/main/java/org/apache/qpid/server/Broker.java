@@ -124,7 +124,7 @@ public class Broker
         }
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
-        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType, options.getInitialConfigurationLocation());
+        ConfigurationEntryStore store = storeCreator.createStore(storeLocation, storeType, options.getInitialConfigurationLocation(), options.isOverwriteConfigurationStore());
 
         if (options.isManagementMode())
         {
@@ -134,7 +134,7 @@ public class Broker
         _applicationRegistry = new ApplicationRegistry(store);
         try
         {
-            _applicationRegistry.initialise();
+            _applicationRegistry.initialise(options);
         }
         catch(Exception e)
         {

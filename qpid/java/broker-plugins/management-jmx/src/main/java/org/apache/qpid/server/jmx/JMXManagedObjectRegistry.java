@@ -22,14 +22,15 @@ package org.apache.qpid.server.jmx;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 
-import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
+import org.apache.qpid.ssl.SSLContextFactory;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -39,10 +40,8 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
 import javax.management.remote.rmi.RMIConnectorServer;
+import javax.net.ssl.SSLContext;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -57,6 +56,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 
 /**
@@ -122,16 +122,32 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         if (connectorSslEnabled)
         {
-            String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
-            String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+            KeyStore keyStore = _connectorPort.getKeyStore();
 
-            validateKeyStoreProperties(keyStorePath, keyStorePassword);
+            String keyStorePath = (String) keyStore.getAttribute(KeyStore.PATH);
+            String keyStorePassword = keyStore.getPassword();
+            String keyStoreType = (String) keyStore.getAttribute(KeyStore.TYPE);
+            String keyManagerFactoryAlgorithm = (String) keyStore.getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
+
+            SSLContext sslContext;
+            try
+            {
+                sslContext = SSLContextFactory.buildServerContext(keyStorePath, keyStorePassword, keyStoreType, keyManagerFactoryAlgorithm);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new RuntimeException("Unable to create SSLContext for key store", e);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Unable to create SSLContext for key store", e);
+            }
 
             CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStorePath));
 
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
-            ssf = new SslRMIServerSocketFactory();
+            ssf = new QpidSslRMIServerSocketFactory(sslContext);
         }
         else
         {
@@ -144,7 +160,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         int jmxPortConnectorServer = _connectorPort.getPort();
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer));
+        JMXPasswordAuthenticator rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer));
         HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
@@ -260,31 +276,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));
         return rmiRegistry;
-    }
-
-    private void validateKeyStoreProperties(String keyStorePath, String keyStorePassword) throws FileNotFoundException
-    {
-        if (keyStorePath == null)
-        {
-            throw new IllegalConfigurationException("JVM system property 'javax.net.ssl.keyStore' is not set, "
-                    + "unable to start requested SSL protected JMX connector");
-        }
-        if (keyStorePassword == null)
-        {
-            throw new IllegalConfigurationException( "JVM system property 'javax.net.ssl.keyStorePassword' is not set, "
-                    + "unable to start requested SSL protected JMX connector");
-        }
-
-        File ksf = new File(keyStorePath);
-        if (!ksf.exists())
-        {
-            throw new FileNotFoundException("Cannot find SSL keystore file for JMX management: " + ksf);
-        }
-        if (!ksf.canRead())
-        {
-            throw new FileNotFoundException("Cannot read SSL keystore file for JMX management: "
-                                            + ksf +  ". Check permissions.");
-        }
     }
 
     @Override

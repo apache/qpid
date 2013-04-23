@@ -47,7 +47,7 @@ public class MainTest extends QpidTestCase
         assertEquals(null, options.getLogConfigFile());
         assertEquals(0, options.getLogWatchFrequency());
         assertEquals(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, options.getInitialConfigurationLocation());
-
+        assertFalse(options.isOverwriteConfigurationStore());
         assertFalse(options.isManagementMode());
         assertEquals(0, options.getManagementModeConnectorPort());
         assertEquals(0, options.getManagementModeRmiPort());
@@ -70,6 +70,15 @@ public class MainTest extends QpidTestCase
 
         options = startDummyMain("-store-type bdb");
         assertEquals("bdb", options.getConfigurationStoreType());
+    }
+
+    public void testOverwriteConfigurationStore()
+    {
+        BrokerOptions options = startDummyMain("-os");
+        assertTrue(options.isOverwriteConfigurationStore());
+
+        options = startDummyMain("-overwrite-store");
+        assertTrue(options.isOverwriteConfigurationStore());
     }
 
     public void testLogConfig()
@@ -122,44 +131,66 @@ public class MainTest extends QpidTestCase
 
     public void testManagementModeRmiPort()
     {
-        BrokerOptions options = startDummyMain("-mm -rmi 7777");
+        BrokerOptions options = startDummyMain("-mm -mmrmi 7777");
         assertTrue(options.isManagementMode());
         assertEquals(7777, options.getManagementModeRmiPort());
 
-        options = startDummyMain("-mm --jmxregistryport 7777");
+        options = startDummyMain("-mm --management-mode-rmi-registry-port 7777");
         assertTrue(options.isManagementMode());
         assertEquals(7777, options.getManagementModeRmiPort());
 
-        options = startDummyMain("-rmi 7777");
+        options = startDummyMain("-mmrmi 7777");
         assertEquals(0, options.getManagementModeRmiPort());
     }
 
     public void testManagementModeConnectorPort()
     {
-        BrokerOptions options = startDummyMain("-mm -jmxrmi 8888");
+        BrokerOptions options = startDummyMain("-mm -mmjmx 8888");
         assertTrue(options.isManagementMode());
         assertEquals(8888, options.getManagementModeConnectorPort());
 
-        options = startDummyMain("-mm --jmxconnectorport 8888");
+        options = startDummyMain("-mm --management-mode-jmx-connector-port 8888");
         assertTrue(options.isManagementMode());
         assertEquals(8888, options.getManagementModeConnectorPort());
 
-        options = startDummyMain("-jmxrmi 8888");
+        options = startDummyMain("-mmjmx 8888");
         assertEquals(0, options.getManagementModeConnectorPort());
     }
 
     public void testManagementModeHttpPort()
     {
-        BrokerOptions options = startDummyMain("-mm -http 9999");
+        BrokerOptions options = startDummyMain("-mm -mmhttp 9999");
         assertTrue(options.isManagementMode());
         assertEquals(9999, options.getManagementModeHttpPort());
 
-        options = startDummyMain("-mm --httpport 9999");
+        options = startDummyMain("-mm --management-mode-http-port 9999");
         assertTrue(options.isManagementMode());
         assertEquals(9999, options.getManagementModeHttpPort());
 
-        options = startDummyMain("-http 9999");
+        options = startDummyMain("-mmhttp 9999");
         assertEquals(0, options.getManagementModeHttpPort());
+    }
+
+    public void testManagementModePassword()
+    {
+        String password = getTestName();
+        BrokerOptions options = startDummyMain("-mm -mmpass " + password);
+        assertTrue(options.isManagementMode());
+        assertEquals(password, options.getManagementModePassword());
+
+        options = startDummyMain("-mm --management-mode-password " + password);
+        assertTrue(options.isManagementMode());
+        assertEquals(password, options.getManagementModePassword());
+
+        options = startDummyMain("-mmpass " + password);
+        assertNotNull(options.getManagementModePassword());
+    }
+
+    public void testDefaultManagementModePassword()
+    {
+        BrokerOptions options = startDummyMain("-mm");
+        assertTrue(options.isManagementMode());
+        assertNotNull(options.getManagementModePassword());
     }
 
     private BrokerOptions startDummyMain(String commandLine)

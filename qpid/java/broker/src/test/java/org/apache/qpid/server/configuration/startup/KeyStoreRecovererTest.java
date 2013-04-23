@@ -27,12 +27,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.KeyManagerFactory;
+
+import junit.framework.TestCase;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.TrustStore;
-
-import junit.framework.TestCase;
+import org.apache.qpid.server.model.adapter.AbstractKeyStoreAdapter;
+import org.apache.qpid.test.utils.TestSSLConstants;
 
 public class KeyStoreRecovererTest extends TestCase
 {
@@ -40,6 +43,7 @@ public class KeyStoreRecovererTest extends TestCase
     public void testCreateWithAllAttributesProvided()
     {
         Map<String, Object> attributes = getKeyStoreAttributes();
+        Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
@@ -49,34 +53,25 @@ public class KeyStoreRecovererTest extends TestCase
 
         KeyStoreRecoverer recovever = new KeyStoreRecoverer();
 
-        KeyStore KeyStore = recovever.create(null, entry, broker);
-        assertNotNull("Key store configured object is not created", KeyStore);
-        assertEquals(id, KeyStore.getId());
-        assertEquals("my-secret-password", KeyStore.getPassword());
+        KeyStore keyStore = recovever.create(null, entry, broker);
+        assertNotNull("Key store configured object is not created", keyStore);
+        assertEquals(id, keyStore.getId());
 
-        assertNull("Password was unexpectedly returned from configured object", KeyStore.getAttribute(TrustStore.PASSWORD));
+        //verify we can retrieve the actual password using the method
+        assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, keyStore.getPassword());
+        assertNotNull(keyStore.getPassword());
 
-        // password attribute should not be exposed by a key store configured object
-        // so, we should set password value to null in the map being used to create the key store configured object
-        attributes.put(KeyStore.PASSWORD, null);
-        for (Map.Entry<String, Object> attribute : attributes.entrySet())
+        //verify that we havent configured the key store with the actual dummy password value
+        assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(keyStore.getPassword()));
+
+        // Verify the remaining attributes, including that the password value returned
+        // via getAttribute is actually the dummy value and not the real password
+        attributesCopy.put(KeyStore.PASSWORD, AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK);
+        for (Map.Entry<String, Object> attribute : attributesCopy.entrySet())
         {
-            Object attributeValue = KeyStore.getAttribute(attribute.getKey());
+            Object attributeValue = keyStore.getAttribute(attribute.getKey());
             assertEquals("Unexpected value of attribute '" + attribute.getKey() + "'", attribute.getValue(), attributeValue);
         }
-    }
-
-    private Map<String, Object> getKeyStoreAttributes()
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(KeyStore.NAME, getName());
-        attributes.put(KeyStore.PATH, "/path/to/KeyStore");
-        attributes.put(KeyStore.PASSWORD, "my-secret-password");
-        attributes.put(KeyStore.TYPE, "NON-JKS");
-        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, "my-cert-alias");
-        attributes.put(KeyStore.DESCRIPTION, "description");
-        return attributes;
     }
 
     public void testCreateWithMissedRequiredAttributes()
@@ -106,6 +101,18 @@ public class KeyStoreRecovererTest extends TestCase
                 // pass
             }
         }
+    }
+
+    private Map<String, Object> getKeyStoreAttributes()
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(KeyStore.NAME, getName());
+        attributes.put(KeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(KeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
+        attributes.put(KeyStore.TYPE, "jks");
+        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
+        attributes.put(KeyStore.CERTIFICATE_ALIAS, "java-broker");
+        return attributes;
     }
 
 }

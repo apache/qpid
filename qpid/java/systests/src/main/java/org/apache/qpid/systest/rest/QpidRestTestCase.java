@@ -27,9 +27,7 @@ import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -49,10 +47,17 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
+        // use webadmin account to perform tests
+        getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
+
+        //remove the normal 'test' vhost, we will configure the vhosts below
+        getBrokerConfiguration(0).removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+
         // Set up virtualhost config with queues and bindings to the amq.direct
         for (String virtualhost : EXPECTED_VIRTUALHOSTS)
         {
             createTestVirtualHost(0, virtualhost);
+
             for (String queue : EXPECTED_QUEUES)
             {
                 setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.exchange", "amq.direct");
@@ -89,6 +94,11 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
         anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
         config.addAuthenticationProviderConfiguration(anonymousProviderAttributes);
+
+        // set password authentication provider on http port for the tests
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
+                TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpBasicAuthenticationEnabled", true);
     }
 
     public RestTestHelper getRestTestHelper()

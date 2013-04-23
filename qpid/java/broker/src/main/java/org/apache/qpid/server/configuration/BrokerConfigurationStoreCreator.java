@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,9 +60,10 @@ public class BrokerConfigurationStoreCreator
      * @param storeLocation store location
      * @param storeType store type
      * @param initialConfigLocation initial store location
+     * @param overwrite whether to overwrite an existing configuration store with the initial configuration
      * @throws IllegalConfigurationException if store type is unknown
      */
-    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialConfigLocation)
+    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialConfigLocation, boolean overwrite)
     {
         ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(initialConfigLocation, null);
         ConfigurationStoreFactory factory = _factories.get(storeType.toLowerCase());
@@ -68,7 +71,11 @@ public class BrokerConfigurationStoreCreator
         {
             throw new IllegalConfigurationException("Unknown store type: " + storeType);
         }
-        return factory.createStore(storeLocation, initialStore);
+        return factory.createStore(storeLocation, initialStore, overwrite);
     }
 
+    public Collection<String> getStoreTypes()
+    {
+        return Collections.unmodifiableCollection(_factories.keySet());
+    }
 }

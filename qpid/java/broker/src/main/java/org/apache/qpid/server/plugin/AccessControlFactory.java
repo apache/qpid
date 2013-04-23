@@ -18,11 +18,34 @@
  */
 package org.apache.qpid.server.plugin;
 
+import java.util.Collection;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.security.AccessControl;
 
 public interface AccessControlFactory
 {
+    public static final String ATTRIBUTE_TYPE = AccessControlProvider.TYPE;
+
     AccessControl createInstance(Map<String, Object> attributes);
+
+    /**
+     * Returns the access control provider type
+     * @return authentication provider type
+     */
+    String getType();
+
+    /**
+     * Get the names of attributes of the access control which can be passed into
+     * {@link #createInstance(Map)} to create the group manager
+     *
+     * @return the collection of attribute names
+     */
+    Collection<String> getAttributeNames();
+
+    /**
+     * @return returns human readable descriptions for the attributes
+     */
+    Map<String, String> getAttributeDescriptions();
 }

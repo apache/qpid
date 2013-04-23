@@ -51,5 +51,4 @@ public class AuthenticationProviderRecoverer implements ConfiguredObjectRecovere
 
         return authenticationProvider;
     }
-
 }

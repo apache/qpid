@@ -35,6 +35,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 /**
@@ -152,5 +153,10 @@ public class SubjectCreator
         }
 
         return Collections.unmodifiableSet(principals);
+    }
+
+    public boolean isAnonymousAuthenticationAllowed()
+    {
+        return _authenticationManager instanceof AnonymousAuthenticationManager;
     }
 }

@@ -1,9 +1,6 @@
 package org.apache.qpid.server.configuration.store;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -11,7 +8,6 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.util.FileUtils;
 
 public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 {
@@ -21,13 +17,32 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 
     public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore)
     {
+        this(storeLocation, initialStore, false);
+    }
+
+    public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite)
+    {
         super();
         _storeFile = new File(storeLocation);
+
+        if(_storeFile.isDirectory())
+        {
+            throw new IllegalConfigurationException("A directory exists at the location for the broker configuration store file: " + storeLocation);
+        }
+
+        if(overwrite && _storeFile.exists())
+        {
+            if(!_storeFile.delete())
+            {
+                throw new RuntimeException("Unable to overwrite existing configuration store file as requested: " + storeLocation);
+            }
+        }
+
         if ((!_storeFile.exists() || _storeFile.length() == 0))
         {
            initialiseStore(_storeFile, initialStore);
         }
-        load(fileToURL(_storeFile));
+        load(getConfigurationEntryStoreUtil().fileToURL(_storeFile));
         if(isGeneratedObjectIdDuringLoad())
         {
             saveAsTree(_storeFile);
@@ -72,7 +87,6 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         return "JsonConfigurationEntryStore [_storeFile=" + _storeFile + ", _rootId=" + getRootEntry().getId() + "]";
     }
 
-
     private void initialiseStore(File storeFile, ConfigurationEntryStore initialStore)
     {
         createFileIfNotExist(storeFile);
@@ -84,7 +98,7 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         {
             if (initialStore instanceof MemoryConfigurationEntryStore && initialStore.getStoreLocation() != null)
             {
-                copyInitialStoreFile(initialStore.getStoreLocation(), storeFile);
+                getConfigurationEntryStoreUtil().copyInitialConfigFile(initialStore.getStoreLocation(), storeFile);
             }
             else
             {
@@ -92,35 +106,6 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
                 Map<UUID, ConfigurationEntry> entries = new HashMap<UUID, ConfigurationEntry>();
                 copyEntry(rootEntry.getId(), initialStore, entries);
                 saveAsTree(rootEntry.getId(), entries, getObjectMapper(), storeFile, getVersion());
-            }
-        }
-    }
-
-    private void copyInitialStoreFile(String initialStoreLocation, File storeFile)
-    {
-        URL initialStoreURL = toURL(initialStoreLocation);
-        InputStream in =  null;
-        try
-        {
-            in = initialStoreURL.openStream();
-            FileUtils.copy(in, storeFile);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException("Cannot create store file " + storeFile + " by copying initial store from " + initialStoreLocation , e);
-        }
-        finally
-        {
-            if (in != null)
-            {
-                try
-                {
-                    in.close();
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalConfigurationException("Cannot close initial store input stream: " + initialStoreLocation , e);
-                }
             }
         }
     }

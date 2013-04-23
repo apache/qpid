@@ -54,6 +54,7 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.HTTPS));
         newAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+        newAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT,newAttributes);
     }
 
@@ -62,8 +63,6 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
         Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
 
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES, Broker.BYTES_RETAINED,
-                Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED,
-                Broker.ACL_FILE, Broker.KEY_STORE_CERT_ALIAS, Broker.TRUST_STORE_PATH, Broker.TRUST_STORE_PASSWORD,
-                Broker.GROUP_FILE, Broker.PEER_STORE_PATH, Broker.PEER_STORE_PASSWORD);
+                Broker.PROCESS_PID, Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED);
     }
 }

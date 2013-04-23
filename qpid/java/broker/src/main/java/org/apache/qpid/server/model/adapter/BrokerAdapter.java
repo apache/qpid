@@ -24,7 +24,6 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
-import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,17 +31,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.net.ssl.KeyManagerFactory;
-import java.security.cert.Certificate;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
@@ -58,22 +59,19 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.group.FileGroupManager;
-import org.apache.qpid.server.security.group.GroupManager;
+import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
-
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
     @SuppressWarnings("serial")
@@ -95,19 +93,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(CONNECTION_HEART_BEAT_DELAY, Integer.class);
         put(STATISTICS_REPORTING_PERIOD, Integer.class);
 
-        put(ACL_FILE, String.class);
         put(NAME, String.class);
         put(DEFAULT_VIRTUAL_HOST, String.class);
-        put(DEFAULT_AUTHENTICATION_PROVIDER, String.class);
 
-        put(KEY_STORE_PATH, String.class);
-        put(KEY_STORE_PASSWORD, String.class);
-        put(KEY_STORE_CERT_ALIAS, String.class);
-        put(TRUST_STORE_PATH, String.class);
-        put(TRUST_STORE_PASSWORD, String.class);
-        put(PEER_STORE_PATH, String.class);
-        put(PEER_STORE_PASSWORD, String.class);
-        put(GROUP_FILE, String.class);
         put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
         put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
         put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
@@ -133,12 +121,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
-    private static final String DEFAULT_KEY_STORE_NAME = "defaultKeyStore";
-    private static final String DEFAULT_TRUST_STORE_NAME = "defaultTrustStore";
-    private static final String DEFAULT_GROUP_PROVIDER_NAME = "defaultGroupProvider";
-    private static final String DEFAULT_PEER_STORE_NAME = "defaultPeerStore";
-
-    private static final String DUMMY_PASSWORD_MASK = "********";
 
     @SuppressWarnings("serial")
     private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
@@ -182,25 +164,28 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final Map<UUID, AuthenticationProvider> _authenticationProviders = new HashMap<UUID, AuthenticationProvider>();
     private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
     private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
-    private final Map<UUID, KeyStore> _keyStores = new HashMap<UUID, KeyStore>();
-    private final Map<UUID, TrustStore> _trustStores = new HashMap<UUID, TrustStore>();
+    private final Map<String, KeyStore> _keyStores = new HashMap<String, KeyStore>();
+    private final Map<String, TrustStore> _trustStores = new HashMap<String, TrustStore>();
+    private final Map<UUID, AccessControlProvider> _accessControlProviders = new HashMap<UUID, AccessControlProvider>();
 
+    private final GroupProviderFactory _groupProviderFactory;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
-    private AuthenticationProvider _defaultAuthenticationProvider;
+    private final AccessControlProviderFactory _accessControlProviderFactory;
 
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
-    private final UUID _defaultKeyStoreId;
-    private final UUID _defaultTrustStoreId;
 
-    private final Collection<String> _supportedStoreTypes;
+    private final Collection<String> _supportedVirtualHostStoreTypes;
+    private Collection<String> _supportedBrokerStoreTypes;
     private final ConfigurationEntryStore _brokerStore;
 
-    private boolean _managementMode;
+    private AuthenticationProvider _managementAuthenticationProvider;
+    private BrokerOptions _brokerOptions;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            PortFactory portFactory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore)
+            GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, TaskExecutor taskExecutor,
+            ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -209,109 +194,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _rootMessageLogger = rootMessageLogger;
         _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
+        _groupProviderFactory = groupProviderFactory;
+        _accessControlProviderFactory = accessControlProviderFactory;
         _portFactory = portFactory;
-        _securityManager = new SecurityManager((String)getAttribute(ACL_FILE));
-        addChangeListener(_securityManager);
-        _defaultKeyStoreId = UUIDGenerator.generateBrokerChildUUID(KeyStore.class.getSimpleName(), DEFAULT_KEY_STORE_NAME);
-        _defaultTrustStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_TRUST_STORE_NAME);
-        createBrokerChildrenFromAttributes();
-        _supportedStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _brokerOptions = brokerOptions;
+        _securityManager = new SecurityManager(this, _brokerOptions.isManagementMode());
+        _supportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _supportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
-        _managementMode =  brokerStore instanceof ManagementModeStoreHandler;
-    }
-
-    /*
-     * A temporary method to create broker children that can be only configured via broker attributes
-     */
-    private void createBrokerChildrenFromAttributes()
-    {
-        createGroupProvider();
-        createKeyStore();
-        createTrustStore();
-        createPeerStore();
-    }
-
-    private void createGroupProvider()
-    {
-        String groupFile = (String) getAttribute(GROUP_FILE);
-        if (groupFile != null)
+        if (_brokerOptions.isManagementMode())
         {
-            GroupManager groupManager = new FileGroupManager(groupFile);
-            UUID groupProviderId = UUIDGenerator.generateBrokerChildUUID(GroupProvider.class.getSimpleName(),
-                    DEFAULT_GROUP_PROVIDER_NAME);
-            GroupProviderAdapter groupProviderAdapter = new GroupProviderAdapter(groupProviderId, groupManager, this);
-            _groupProviders.put(DEFAULT_GROUP_PROVIDER_NAME, groupProviderAdapter);
-        }
-        else
-        {
-            _groupProviders.remove(DEFAULT_GROUP_PROVIDER_NAME);
-        }
-    }
-
-    private void createKeyStore()
-    {
-        Map<String, Object> actualAttributes = getActualAttributes();
-        String keyStorePath = (String) getAttribute(KEY_STORE_PATH);
-        if (keyStorePath != null)
-        {
-            Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
-            keyStoreAttributes.put(KeyStore.NAME, DEFAULT_KEY_STORE_NAME);
-            keyStoreAttributes.put(KeyStore.PATH, keyStorePath);
-            keyStoreAttributes.put(KeyStore.PASSWORD, (String) actualAttributes.get(KEY_STORE_PASSWORD));
-            keyStoreAttributes.put(KeyStore.TYPE, java.security.KeyStore.getDefaultType());
-            keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, getAttribute(KEY_STORE_CERT_ALIAS));
-            keyStoreAttributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            KeyStoreAdapter keyStoreAdapter = new KeyStoreAdapter(_defaultKeyStoreId, this, keyStoreAttributes);
-            _keyStores.put(keyStoreAdapter.getId(), keyStoreAdapter);
-        }
-        else
-        {
-            _keyStores.remove(_defaultKeyStoreId);
-        }
-    }
-
-    private void createTrustStore()
-    {
-        Map<String, Object> actualAttributes = getActualAttributes();
-        String trustStorePath = (String) getAttribute(TRUST_STORE_PATH);
-        if (trustStorePath != null)
-        {
-            Map<String, Object> trsustStoreAttributes = new HashMap<String, Object>();
-            trsustStoreAttributes.put(TrustStore.NAME, DEFAULT_TRUST_STORE_NAME);
-            trsustStoreAttributes.put(TrustStore.PATH, trustStorePath);
-            trsustStoreAttributes.put(TrustStore.PEERS_ONLY, Boolean.FALSE);
-            trsustStoreAttributes.put(TrustStore.PASSWORD, (String) actualAttributes.get(TRUST_STORE_PASSWORD));
-            trsustStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
-            trsustStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            TrustStoreAdapter trustStore = new TrustStoreAdapter(_defaultTrustStoreId, this, trsustStoreAttributes);
-            _trustStores.put(trustStore.getId(), trustStore);
-        }
-        else
-        {
-            _trustStores.remove(_defaultTrustStoreId);
-        }
-    }
-
-    private void createPeerStore()
-    {
-        Map<String, Object> actualAttributes = getActualAttributes();
-        String peerStorePath = (String) getAttribute(PEER_STORE_PATH);
-        UUID peerStoreId = UUIDGenerator.generateBrokerChildUUID(TrustStore.class.getSimpleName(), DEFAULT_PEER_STORE_NAME);
-        if (peerStorePath != null)
-        {
-            Map<String, Object> peerStoreAttributes = new HashMap<String, Object>();
-            peerStoreAttributes.put(TrustStore.NAME, peerStoreId.toString());
-            peerStoreAttributes.put(TrustStore.PATH, peerStorePath);
-            peerStoreAttributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
-            peerStoreAttributes.put(TrustStore.PASSWORD, (String) actualAttributes.get(PEER_STORE_PASSWORD));
-            peerStoreAttributes.put(TrustStore.TYPE, java.security.KeyStore.getDefaultType());
-            peerStoreAttributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-            TrustStoreAdapter trustStore = new TrustStoreAdapter(peerStoreId, this, peerStoreAttributes);
-            _trustStores.put(trustStore.getId(), trustStore);
-        }
-        else
-        {
-            _trustStores.remove(peerStoreId);
+            AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
+            AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
+                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
+            _managementAuthenticationProvider = authenticationProvider;
         }
     }
 
@@ -321,7 +217,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return new ArrayList<VirtualHost>(_vhostAdapters.values());
         }
-
     }
 
     public Collection<Port> getPorts()
@@ -343,6 +238,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName)
     {
+        if (isManagementMode())
+        {
+            return _managementAuthenticationProvider;
+        }
         Collection<AuthenticationProvider> providers = getAuthenticationProviders();
         for (AuthenticationProvider authenticationProvider : providers)
         {
@@ -354,15 +253,20 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return null;
     }
 
-    @Override
-    public AuthenticationProvider getDefaultAuthenticationProvider()
+    public KeyStore findKeyStoreByName(String keyStoreName)
     {
-        return _defaultAuthenticationProvider;
+        synchronized(_keyStores)
+        {
+            return _keyStores.get(keyStoreName);
+        }
     }
 
-    public void setDefaultAuthenticationProvider(AuthenticationProvider provider)
+    public TrustStore findTrustStoreByName(String trustStoreName)
     {
-        _defaultAuthenticationProvider = provider;
+        synchronized(_trustStores)
+        {
+            return _trustStores.get(trustStoreName);
+        }
     }
 
     @Override
@@ -376,17 +280,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    public VirtualHost createVirtualHost(final String name,
-                                         final State initialState,
-                                         final boolean durable,
-                                         final LifetimePolicy lifetime,
-                                         final long ttl,
-                                         final Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException
-    {
-        return null;  //TODO
-    }
-
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
@@ -396,14 +289,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
-        _securityManager.setAccessChecksDisabled(true);
+        SecurityManager.setAccessChecksDisabled(true);
         try
         {
             virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
         }
         finally
         {
-            _securityManager.setAccessChecksDisabled(false);
+            SecurityManager.setAccessChecksDisabled(false);
         }
         return virtualHostAdapter;
     }
@@ -486,6 +379,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return (Collection<C>) getPorts();
         }
+        else if(clazz == AccessControlProvider.class)
+        {
+            return (Collection<C>) getAccessControlProviders();
+        }
         else if(clazz == AuthenticationProvider.class)
         {
             return (Collection<C>) getAuthenticationProviders();
@@ -522,9 +419,25 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return (C) createPort(attributes);
         }
+        else if(childClass == AccessControlProvider.class)
+        {
+            return (C) createAccessControlProvider(attributes);
+        }
         else if(childClass == AuthenticationProvider.class)
         {
             return (C) createAuthenticationProvider(attributes);
+        }
+        else if(childClass == KeyStore.class)
+        {
+            return (C) createKeyStore(attributes);
+        }
+        else if(childClass == TrustStore.class)
+        {
+            return (C) createTrustStore(attributes);
+        }
+        else if(childClass == GroupProvider.class)
+        {
+            return (C) createGroupProvider(attributes);
         }
         else
         {
@@ -563,6 +476,64 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return port;
     }
 
+    private AccessControlProvider createAccessControlProvider(Map<String, Object> attributes)
+    {
+        AccessControlProvider accessControlProvider = null;
+        synchronized (_accessControlProviders)
+        {
+            accessControlProvider = _accessControlProviderFactory.create(UUID.randomUUID(), this, attributes);
+            addAccessControlProvider(accessControlProvider);
+        }
+
+        boolean quiesce = isManagementMode() ;
+        accessControlProvider.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
+
+        return accessControlProvider;
+    }
+
+    /**
+     * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
+     */
+    private void addAccessControlProvider(AccessControlProvider accessControlProvider)
+    {
+        String name = accessControlProvider.getName();
+        synchronized (_authenticationProviders)
+        {
+            if (_accessControlProviders.containsKey(accessControlProvider.getId()))
+            {
+                throw new IllegalConfigurationException("Can't add AccessControlProvider because one with id " + accessControlProvider.getId() + " already exists");
+            }
+            for (AccessControlProvider provider : _accessControlProviders.values())
+            {
+                if (provider.getName().equals(name))
+                {
+                    throw new IllegalConfigurationException("Can't add AccessControlProvider because one with name " + name + " already exists");
+                }
+            }
+            _accessControlProviders.put(accessControlProvider.getId(), accessControlProvider);
+        }
+
+        accessControlProvider.addChangeListener(this);
+        accessControlProvider.addChangeListener(_securityManager);
+    }
+
+    private boolean deleteAccessControlProvider(AccessControlProvider accessControlProvider)
+    {
+        AccessControlProvider removedAccessControlProvider = null;
+        synchronized (_accessControlProviders)
+        {
+            removedAccessControlProvider = _accessControlProviders.remove(accessControlProvider.getId());
+        }
+
+        if(removedAccessControlProvider != null)
+        {
+            removedAccessControlProvider.removeChangeListener(this);
+            removedAccessControlProvider.removeChangeListener(_securityManager);
+        }
+
+        return removedAccessControlProvider != null;
+    }
+
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
         AuthenticationProvider authenticationProvider = null;
@@ -599,6 +570,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         authenticationProvider.addChangeListener(this);
     }
 
+    private GroupProvider createGroupProvider(Map<String, Object> attributes)
+    {
+        GroupProvider groupProvider = _groupProviderFactory.create(UUID.randomUUID(), this, attributes);
+        groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        addGroupProvider(groupProvider);
+        return groupProvider;
+    }
+
     private void addGroupProvider(GroupProvider groupProvider)
     {
         synchronized (_groupProviders)
@@ -613,45 +592,92 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         groupProvider.addChangeListener(this);
     }
 
-    private boolean deleteGroupProvider(GroupProvider object)
+    private boolean deleteGroupProvider(GroupProvider groupProvider)
     {
-        throw new UnsupportedOperationException("Not implemented yet!");
+        GroupProvider removedGroupProvider = null;
+        synchronized (_groupProviders)
+        {
+            removedGroupProvider = _groupProviders.remove(groupProvider.getName());
+        }
+
+        if(removedGroupProvider != null)
+        {
+            removedGroupProvider.removeChangeListener(this);
+        }
+
+        return removedGroupProvider != null;
+    }
+
+    private KeyStore createKeyStore(Map<String, Object> attributes)
+    {
+        KeyStore keyStore = new KeyStoreAdapter(UUIDGenerator.generateRandomUUID(), this, attributes);
+        addKeyStore(keyStore);
+
+        return keyStore;
+    }
+
+    private TrustStore createTrustStore(Map<String, Object> attributes)
+    {
+        TrustStore trustStore = new TrustStoreAdapter(UUIDGenerator.generateRandomUUID(), this, attributes);
+        addTrustStore(trustStore);
+
+        return trustStore;
     }
 
     private void addKeyStore(KeyStore keyStore)
     {
         synchronized (_keyStores)
         {
-            if(_keyStores.containsKey(keyStore.getId()))
+            if(_keyStores.containsKey(keyStore.getName()))
             {
-                throw new IllegalConfigurationException("Cannot add KeyStore because one with id " + keyStore.getId() + " already exists");
+                throw new IllegalConfigurationException("Can't add KeyStore because one with name " + keyStore.getName() + " already exists");
             }
-            _keyStores.put(keyStore.getId(), keyStore);
+            _keyStores.put(keyStore.getName(), keyStore);
         }
         keyStore.addChangeListener(this);
     }
 
     private boolean deleteKeyStore(KeyStore object)
     {
-        throw new UnsupportedOperationException("Not implemented yet!");
+        synchronized(_keyStores)
+        {
+            String name = object.getName();
+            KeyStore removedKeyStore = _keyStores.remove(name);
+            if(removedKeyStore != null)
+            {
+                removedKeyStore.removeChangeListener(this);
+            }
+
+            return removedKeyStore != null;
+        }
     }
 
     private void addTrustStore(TrustStore trustStore)
     {
         synchronized (_trustStores)
         {
-            if(_trustStores.containsKey(trustStore.getId()))
+            if(_trustStores.containsKey(trustStore.getName()))
             {
-                throw new IllegalConfigurationException("Cannot add TrustStore because one with id " + trustStore.getId() + " already exists");
+                throw new IllegalConfigurationException("Can't add TrustStore because one with name " + trustStore.getName() + " already exists");
             }
-            _trustStores.put(trustStore.getId(), trustStore);
+            _trustStores.put(trustStore.getName(), trustStore);
         }
         trustStore.addChangeListener(this);
     }
 
     private boolean deleteTrustStore(TrustStore object)
     {
-        throw new UnsupportedOperationException("Not implemented yet!");
+        synchronized(_trustStores)
+        {
+            String name = object.getName();
+            TrustStore removedTrustStore = _trustStores.remove(name);
+            if(removedTrustStore != null)
+            {
+                removedTrustStore.removeChangeListener(this);
+            }
+
+            return removedTrustStore != null;
+        }
     }
 
     @Override
@@ -718,21 +744,17 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return QpidProperties.getReleaseVersion();
         }
-        else if(SUPPORTED_STORE_TYPES.equals(name))
+        else if(SUPPORTED_BROKER_STORE_TYPES.equals(name))
         {
-            return _supportedStoreTypes;
+            return _supportedBrokerStoreTypes;
+        }
+        else if(SUPPORTED_VIRTUALHOST_STORE_TYPES.equals(name))
+        {
+            return _supportedVirtualHostStoreTypes;
         }
         else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
         {
             return _authenticationProviderFactory.getSupportedAuthenticationProviders();
-        }
-        else if (KEY_STORE_PASSWORD.equals(name) || TRUST_STORE_PASSWORD.equals(name) || PEER_STORE_PASSWORD.equals(name))
-        {
-            if (getActualAttributes().get(name) != null)
-            {
-                return DUMMY_PASSWORD_MASK;
-            }
-            return null;
         }
         else if (MODEL_VERSION.equals(name))
         {
@@ -760,6 +782,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             removedPort = _portAdapters.remove(portAdapter.getPort());
         }
+
+        if (removedPort != null)
+        {
+            removedPort.removeChangeListener(this);
+        }
+
         return removedPort != null;
     }
 
@@ -770,6 +798,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getId());
         }
+
+        if(removedAuthenticationProvider != null)
+        {
+            removedAuthenticationProvider.removeChangeListener(this);
+        }
+
         return removedAuthenticationProvider != null;
     }
 
@@ -794,6 +828,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             changeState(_groupProviders, currentState, State.ACTIVE, false);
             changeState(_authenticationProviders, currentState, State.ACTIVE, false);
+            changeState(_accessControlProviders, currentState, State.ACTIVE, false);
 
             CurrentActor.set(new BrokerActor(getRootMessageLogger()));
             try
@@ -807,6 +842,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
             changeState(_portAdapters, currentState,State.ACTIVE, false);
             changeState(_plugins, currentState,State.ACTIVE, false);
+
+            if (isManagementMode())
+            {
+                CurrentActor.get().message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword()));
+            }
             return true;
         }
         else if (desiredState == State.STOPPED)
@@ -865,6 +905,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             {
                 childDeleted = deleteAuthenticationProvider((AuthenticationProvider)object);
             }
+            else if(object instanceof AccessControlProvider)
+            {
+                childDeleted = deleteAccessControlProvider((AccessControlProvider)object);
+            }
             else if(object instanceof Port)
             {
                 childDeleted = deletePort((Port)object);
@@ -885,6 +929,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             {
                 childDeleted = deleteTrustStore((TrustStore)object);
             }
+
             if(childDeleted)
             {
                 childRemoved(object);
@@ -937,6 +982,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         if(object instanceof AuthenticationProvider)
         {
             addAuthenticationProvider((AuthenticationProvider)object);
+        }
+        else if(object instanceof AccessControlProvider)
+        {
+            addAccessControlProvider((AccessControlProvider)object);
         }
         else if(object instanceof Port)
         {
@@ -996,7 +1045,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
         InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
-        AuthenticationProvider provider = _defaultAuthenticationProvider;
+        AuthenticationProvider provider = null;
         Collection<Port> ports = getPorts();
         for (Port p : ports)
         {
@@ -1006,6 +1055,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 break;
             }
         }
+
+        if(provider == null)
+        {
+            throw new IllegalConfigurationException("Unable to determine authentication provider for address: " + localAddress);
+        }
+
         return provider.getSubjectCreator();
     }
 
@@ -1034,18 +1089,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     @Override
-    public KeyStore getDefaultKeyStore()
-    {
-        return _keyStores.get(_defaultKeyStoreId);
-    }
-
-    @Override
-    public TrustStore getDefaultTrustStore()
-    {
-        return _trustStores.get(_defaultTrustStoreId);
-    }
-
-    @Override
     public TaskExecutor getTaskExecutor()
     {
         return super.getTaskExecutor();
@@ -1054,13 +1097,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        //TODO: Add management mode check
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
         validateAttributes(convertedAttributes);
 
-        boolean keyStoreChanged = false;
-        boolean trustStoreChanged = false;
-        boolean peerStoreChanged = false;
         Collection<String> names = AVAILABLE_ATTRIBUTES;
         for (String name : names)
         {
@@ -1070,74 +1109,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 Object expected = getAttribute(name);
                 if (changeAttribute(name, expected, desired))
                 {
-                    if (GROUP_FILE.equals(name))
-                    {
-                        createGroupProvider();
-                    }
-                    else if (DEFAULT_AUTHENTICATION_PROVIDER.equals(name))
-                    {
-                        if (!_defaultAuthenticationProvider.getName().equals(desired))
-                        {
-                            _defaultAuthenticationProvider = findAuthenticationProviderByName((String)desired);
-                        }
-                    }
-                    else if (KEY_STORE_PATH.equals(name) || KEY_STORE_PASSWORD.equals(name) || KEY_STORE_CERT_ALIAS.equals(name))
-                    {
-                        keyStoreChanged = true;
-                    }
-                    else if (TRUST_STORE_PATH.equals(name) || TRUST_STORE_PASSWORD.equals(name))
-                    {
-                        trustStoreChanged = true;
-                    }
-                    else if (PEER_STORE_PATH.equals(name) || PEER_STORE_PASSWORD.equals(name))
-                    {
-                        peerStoreChanged = true;
-                    }
                     attributeSet(name, expected, desired);
                 }
             }
-        }
-        if (keyStoreChanged)
-        {
-            createKeyStore();
-        }
-        if (trustStoreChanged)
-        {
-            createTrustStore();
-        }
-        if (peerStoreChanged)
-        {
-            createPeerStore();
         }
     }
 
     private void validateAttributes(Map<String, Object> convertedAttributes)
     {
-        String aclFile = (String) convertedAttributes.get(ACL_FILE);
-        if (aclFile != null)
-        {
-            // create a security manager to validate the ACL specified in file
-            new SecurityManager(aclFile);
-        }
-        String groupFile = (String) convertedAttributes.get(GROUP_FILE);
-        if (groupFile != null)
-        {
-            // create a group manager to validate the groups specified in file
-            new FileGroupManager(groupFile);
-        }
-        validateKeyStoreAttributes(convertedAttributes, "key store", KEY_STORE_PATH, KEY_STORE_PASSWORD, KEY_STORE_CERT_ALIAS);
-        validateKeyStoreAttributes(convertedAttributes, "trust store", TRUST_STORE_PATH, TRUST_STORE_PASSWORD, null);
-        validateKeyStoreAttributes(convertedAttributes, "peer store", PEER_STORE_PATH, PEER_STORE_PASSWORD, null);
-        String defaultAuthenticationProvider = (String) convertedAttributes.get(DEFAULT_AUTHENTICATION_PROVIDER);
-        if (defaultAuthenticationProvider != null)
-        {
-            AuthenticationProvider provider = findAuthenticationProviderByName(defaultAuthenticationProvider);
-            if (provider == null)
-            {
-                throw new IllegalConfigurationException("Authentication provider with name " + defaultAuthenticationProvider
-                        + " canot be set as a default as it does not exist");
-            }
-        }
         String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
         if (defaultVirtualHost != null)
         {
@@ -1176,59 +1155,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    private void validateKeyStoreAttributes(Map<String, Object> convertedAttributes, String type, String pathAttribute,
-            String passwordAttribute, String aliasAttribute)
-    {
-        String keyStoreFile = (String) convertedAttributes.get(pathAttribute);
-        String password = (String) convertedAttributes.get(passwordAttribute);
-        String alias = aliasAttribute!= null? (String) convertedAttributes.get(aliasAttribute) : null;
-        if (keyStoreFile != null || password != null || alias != null)
-        {
-            if (keyStoreFile == null)
-            {
-                keyStoreFile  = (String) getActualAttributes().get(pathAttribute);
-            }
-            if (password == null)
-            {
-                password = (String) getActualAttributes().get(passwordAttribute);
-            }
-            java.security.KeyStore keyStore = null;
-            try
-            {
-                keyStore = SSLUtil.getInitializedKeyStore(keyStoreFile, password, java.security.KeyStore.getDefaultType());
-            }
-            catch (Exception e)
-            {
-                throw new IllegalConfigurationException("Cannot instantiate " + type + " at " + keyStoreFile, e);
-            }
-            if (aliasAttribute != null)
-            {
-                if (alias == null)
-                {
-                    alias  = (String) getActualAttributes().get(aliasAttribute);
-                }
-                if (alias != null)
-                {
-                    Certificate cert = null;
-                    try
-                    {
-                        cert = keyStore.getCertificate(alias);
-                    }
-                    catch (KeyStoreException e)
-                    {
-                        // key store should be initialized above
-                        throw new RuntimeException("Key store has not been initialized", e);
-                    }
-                    if (cert == null)
-                    {
-                        throw new IllegalConfigurationException("Cannot find a certificate with alias " + alias + "in " + type
-                                + " : " + keyStoreFile);
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
     {
@@ -1260,6 +1186,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public boolean isManagementMode()
     {
-        return _managementMode;
+        return _brokerOptions.isManagementMode();
+    }
+
+    @Override
+    public Collection<AccessControlProvider> getAccessControlProviders()
+    {
+        synchronized (_accessControlProviders)
+        {
+            return new ArrayList<AccessControlProvider>(_accessControlProviders.values());
+        }
     }
 }

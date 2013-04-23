@@ -21,7 +21,6 @@
 package org.apache.qpid.test.utils;
 
 import junit.framework.TestCase;
-import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
@@ -31,8 +30,6 @@ import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.plugin.PluginFactory;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
@@ -47,9 +44,7 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -77,11 +72,6 @@ public class JMXTestUtils
     public JMXTestUtils(QpidBrokerTestCase test)
     {
         this(test, DEFAULT_USERID, DEFAULT_PASSWORD);
-    }
-
-    public void setUp() throws IOException, ConfigurationException, Exception
-    {
-        _test.getBrokerConfiguration().addJmxManagementConfiguration();
     }
 
     public void open() throws Exception

@@ -21,11 +21,9 @@
 package org.apache.qpid.server.model;
 
 import java.net.SocketAddress;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -43,7 +41,8 @@ public interface Broker extends ConfiguredObject
     String PLATFORM = "platform";
     String PROCESS_PID = "processPid";
     String PRODUCT_VERSION = "productVersion";
-    String SUPPORTED_STORE_TYPES = "supportedStoreTypes";
+    String SUPPORTED_BROKER_STORE_TYPES = "supportedBrokerStoreTypes";
+    String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
     String CREATED = "created";
     String DURABLE = "durable";
@@ -53,7 +52,6 @@ public interface Broker extends ConfiguredObject
     String STATE = "state";
     String TIME_TO_LIVE = "timeToLive";
     String UPDATED = "updated";
-    String DEFAULT_AUTHENTICATION_PROVIDER = "defaultAuthenticationProvider";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
@@ -81,30 +79,6 @@ public interface Broker extends ConfiguredObject
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
 
-    /*
-     * A temporary attribute to pass the path to ACL file.
-     * TODO: It should be a part of AuthorizationProvider.
-     */
-    String ACL_FILE = "aclFile";
-
-    /*
-     * A temporary attributes to set the broker default key/trust stores.
-     * TODO: Remove them after adding a full support to configure KeyStore/TrustStore via management layers.
-     */
-    String KEY_STORE_PATH = "keyStorePath";
-    String KEY_STORE_PASSWORD = "keyStorePassword";
-    String KEY_STORE_CERT_ALIAS = "keyStoreCertAlias";
-    String TRUST_STORE_PATH = "trustStorePath";
-    String TRUST_STORE_PASSWORD = "trustStorePassword";
-    String PEER_STORE_PATH = "peerStorePath";
-    String PEER_STORE_PASSWORD = "peerStorePassword";
-
-    /*
-     * A temporary attributes to set the broker group file.
-     * TODO: Remove them after adding a full support to configure authorization providers via management layers.
-     */
-    String GROUP_FILE = "groupFile";
-
     // Attributes
     Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -114,7 +88,8 @@ public interface Broker extends ConfiguredObject
                               PLATFORM,
                               PROCESS_PID,
                               PRODUCT_VERSION,
-                              SUPPORTED_STORE_TYPES,
+                              SUPPORTED_BROKER_STORE_TYPES,
+                              SUPPORTED_VIRTUALHOST_STORE_TYPES,
                               SUPPORTED_AUTHENTICATION_PROVIDERS,
                               CREATED,
                               DURABLE,
@@ -124,7 +99,6 @@ public interface Broker extends ConfiguredObject
                               STATE,
                               TIME_TO_LIVE,
                               UPDATED,
-                              DEFAULT_AUTHENTICATION_PROVIDER,
                               DEFAULT_VIRTUAL_HOST,
                               QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
                               QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
@@ -147,17 +121,7 @@ public interface Broker extends ConfiguredObject
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
                               VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
                               VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
-                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-
-                              ACL_FILE,
-                              KEY_STORE_PATH,
-                              KEY_STORE_PASSWORD,
-                              KEY_STORE_CERT_ALIAS,
-                              TRUST_STORE_PATH,
-                              TRUST_STORE_PASSWORD,
-                              PEER_STORE_PATH,
-                              PEER_STORE_PASSWORD,
-                              GROUP_FILE
+                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN
                               ));
 
     //children
@@ -167,11 +131,7 @@ public interface Broker extends ConfiguredObject
 
     Collection<AuthenticationProvider> getAuthenticationProviders();
 
-    VirtualHost createVirtualHost(String name, State initialState, boolean durable,
-                                  LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException;
-
-    AuthenticationProvider getDefaultAuthenticationProvider();
+    Collection<AccessControlProvider> getAccessControlProviders();
 
     Collection<GroupProvider> getGroupProviders();
 
@@ -192,7 +152,13 @@ public interface Broker extends ConfiguredObject
      */
     LogRecorder getLogRecorder();
 
+    AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName);
+
     VirtualHost findVirtualHostByName(String name);
+
+    KeyStore findKeyStoreByName(String name);
+
+    TrustStore findTrustStoreByName(String name);
 
     /**
      * Get the SubjectCreator for the given socket address.
@@ -210,10 +176,6 @@ public interface Broker extends ConfiguredObject
      * TODO: Remove this method. Eventually the broker will become a registry.
      */
     VirtualHostRegistry getVirtualHostRegistry();
-
-    KeyStore getDefaultKeyStore();
-
-    TrustStore getDefaultTrustStore();
 
     TaskExecutor getTaskExecutor();
 

@@ -1,23 +1,50 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.qpid.server.configuration.startup;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -28,20 +55,26 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final LogRecorder _logRecorder;
     private final RootMessageLogger _rootMessageLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
+    private final AccessControlProviderFactory _accessControlProviderFactory;
     private final PortFactory _portFactory;
     private final TaskExecutor _taskExecutor;
+    private final BrokerOptions _brokerOptions;
+    private final GroupProviderFactory _groupProviderFactory;
 
-    public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, PortFactory portFactory,
-            StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder,
-            RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor)
+    public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, GroupProviderFactory groupProviderFactory,
+            AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, StatisticsGatherer statisticsGatherer,
+            VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions)
     {
+        _groupProviderFactory = groupProviderFactory;
         _portFactory = portFactory;
         _authenticationProviderFactory = authenticationProviderFactory;
+        _accessControlProviderFactory = accessControlProviderFactory;
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
         _rootMessageLogger = rootMessageLogger;
         _taskExecutor = taskExecutor;
+        _brokerOptions = brokerOptions;
     }
 
     @Override
@@ -49,85 +82,62 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     {
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _portFactory, _taskExecutor, entry.getStore());
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory,
+                _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
 
         broker.addChangeListener(storeChangeListener);
-        Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
-        for (String type : childEntries.keySet())
+
+        //Recover the SSL keystores / truststores first, then others that depend on them
+        Map<String, Collection<ConfigurationEntry>> childEntries = new HashMap<String, Collection<ConfigurationEntry>>(entry.getChildren());
+        Map<String, Collection<ConfigurationEntry>> priorityChildEntries = new HashMap<String, Collection<ConfigurationEntry>>(childEntries);
+        List<String> types = new ArrayList<String>(childEntries.keySet());
+
+        for(String type : types)
         {
-            ConfiguredObjectRecoverer<?> recoverer = recovererProvider.getRecoverer(type);
-            if (recoverer == null)
+            if(KeyStore.class.getSimpleName().equals(type) || TrustStore.class.getSimpleName().equals(type)
+                        || AuthenticationProvider.class.getSimpleName().equals(type))
             {
-                throw new IllegalConfigurationException("Cannot recover entry for the type '" + type + "' from broker");
+                childEntries.remove(type);
             }
-            Collection<ConfigurationEntry> entries = childEntries.get(type);
-            for (ConfigurationEntry childEntry : entries)
+            else
             {
-                ConfiguredObject object = recoverer.create(recovererProvider, childEntry, broker);
-                if (object == null)
-                {
-                    throw new IllegalConfigurationException("Cannot create configured object for the entry " + childEntry);
-                }
-                broker.recoverChild(object);
-                object.addChangeListener(storeChangeListener);
+                priorityChildEntries.remove(type);
             }
         }
-        wireUpConfiguredObjects(broker, entry.getAttributes());
+
+        for (String type : priorityChildEntries.keySet())
+        {
+            recoverType(recovererProvider, storeChangeListener, broker, priorityChildEntries, type);
+        }
+        for (String type : childEntries.keySet())
+        {
+            recoverType(recovererProvider, storeChangeListener, broker, childEntries, type);
+        }
 
         return broker;
     }
 
-    private void wireUpConfiguredObjects(BrokerAdapter broker, Map<String, Object> brokerAttributes)
+    private void recoverType(RecovererProvider recovererProvider,
+                             StoreConfigurationChangeListener storeChangeListener,
+                             BrokerAdapter broker,
+                             Map<String, Collection<ConfigurationEntry>> childEntries,
+                             String type)
     {
-        AuthenticationProvider defaultAuthenticationProvider = null;
-        Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
-        int numberOfAuthenticationProviders = authenticationProviders.size();
-        if (numberOfAuthenticationProviders == 0)
+        ConfiguredObjectRecoverer<?> recoverer = recovererProvider.getRecoverer(type);
+        if (recoverer == null)
         {
-            throw new IllegalConfigurationException("No authentication provider was configured");
+            throw new IllegalConfigurationException("Cannot recover entry for the type '" + type + "' from broker");
         }
-        else if (numberOfAuthenticationProviders == 1)
+        Collection<ConfigurationEntry> entries = childEntries.get(type);
+        for (ConfigurationEntry childEntry : entries)
         {
-            defaultAuthenticationProvider = authenticationProviders.iterator().next();
-        }
-        else
-        {
-            String name = (String) brokerAttributes.get(Broker.DEFAULT_AUTHENTICATION_PROVIDER);
-            if (name == null)
+            ConfiguredObject object = recoverer.create(recovererProvider, childEntry, broker);
+            if (object == null)
             {
-                throw new IllegalConfigurationException("Multiple authentication providers defined, but no default was configured.");
+                throw new IllegalConfigurationException("Cannot create configured object for the entry " + childEntry);
             }
-
-            defaultAuthenticationProvider = getAuthenticationProviderByName(broker, name);
-        }
-        broker.setDefaultAuthenticationProvider(defaultAuthenticationProvider);
-
-        Collection<Port> ports = broker.getPorts();
-        for (Port port : ports)
-        {
-            String authenticationProviderName = (String) port.getAttribute(Port.AUTHENTICATION_PROVIDER);
-            AuthenticationProvider provider = null;
-            if (authenticationProviderName != null)
-            {
-                provider = getAuthenticationProviderByName(broker, authenticationProviderName);
-            }
-            else
-            {
-                provider = defaultAuthenticationProvider;
-            }
-            port.setAuthenticationProvider(provider);
+            broker.recoverChild(object);
+            object.addChangeListener(storeChangeListener);
         }
     }
-
-    private AuthenticationProvider getAuthenticationProviderByName(BrokerAdapter broker, String authenticationProviderName)
-    {
-        AuthenticationProvider provider = broker.findAuthenticationProviderByName(authenticationProviderName);
-        if (provider == null)
-        {
-            throw new IllegalConfigurationException("Cannot find the authentication provider with name: "
-                    + authenticationProviderName);
-        }
-        return provider;
-    }
-
 }

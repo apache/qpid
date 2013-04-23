@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server;
 
+import java.io.File;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -30,6 +32,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.server.configuration.store.ConfigurationEntryStoreUtil;
 
 /**
  * Main entry point for AMQPD.
@@ -37,7 +40,6 @@ import org.apache.qpid.framing.ProtocolVersion;
  */
 public class Main
 {
-
     private static final Option OPTION_HELP = new Option("h", "help", false, "print this message");
 
     private static final Option OPTION_VERSION = new Option("v", "version", false, "print the version information and exit");
@@ -46,10 +48,17 @@ public class Main
             .withDescription("use given configuration store location").withLongOpt("store-path").create("sp");
 
     private static final Option OPTION_CONFIGURATION_STORE_TYPE = OptionBuilder.withArgName("type").hasArg()
-            .withDescription("use given store type").withLongOpt("store-type").create("st");
+            .withDescription("use given broker configuration store type").withLongOpt("store-type").create("st");
 
     private static final Option OPTION_INITIAL_CONFIGURATION_PATH = OptionBuilder.withArgName("path").hasArg()
-            .withDescription("pass the location of initial JSON config to use when creating a new configuration store").withLongOpt("initial-config-path").create("icp");
+            .withDescription("set the location of initial JSON config to use when creating/overwriting a broker configuration store").withLongOpt("initial-config-path").create("icp");
+
+    private static final Option OPTION_OVERWRITE_CONFIGURATION_STORE = OptionBuilder.withDescription("overwrite the broker configuration store with the current initial configuration")
+            .withLongOpt("overwrite-store").create("os");
+
+    private static final Option OPTION_CREATE_INITIAL_CONFIG = OptionBuilder.withArgName("path").hasOptionalArg().withDescription("create a copy of the initial config file, either to an" +
+            " optionally specified file path, or as " + BrokerOptions.DEFAULT_INITIAL_CONFIG_NAME + " in the current directory")
+            .withLongOpt("create-initial-config").create("cic");
 
     private static final Option OPTION_LOG_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg()
@@ -62,14 +71,18 @@ public class Main
                     .withDescription("monitor the log file configuration file for changes. Units are seconds. "
                                      + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
 
-    private static final Option OPTION_MANAGEMENT_MODE = OptionBuilder.withDescription("start broker in a management mode")
+    private static final Option OPTION_MANAGEMENT_MODE = OptionBuilder.withDescription("start broker in management mode, disabling the AMQP ports")
             .withLongOpt("management-mode").create("mm");
-    private static final Option OPTION_RMI_PORT = OptionBuilder.withArgName("port").hasArg()
-            .withDescription("override jmx rmi port in management mode").withLongOpt("jmxregistryport").create("rmi");
-    private static final Option OPTION_CONNECTOR_PORT = OptionBuilder.withArgName("port").hasArg()
-            .withDescription("override jmx connector port in management mode").withLongOpt("jmxconnectorport").create("jmxrmi");
-    private static final Option OPTION_HTTP_PORT = OptionBuilder.withArgName("port").hasArg()
-            .withDescription("override web management port in management mode").withLongOpt("httpport").create("http");
+    private static final Option OPTION_MM_QUIESCE_VHOST = OptionBuilder.withDescription("make virtualhosts stay in the quiesced state during management mode.")
+            .withLongOpt("management-mode-quiesce-virtualhosts").create("mmqv");
+    private static final Option OPTION_MM_RMI_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override jmx rmi registry port in management mode").withLongOpt("management-mode-rmi-registry-port").create("mmrmi");
+    private static final Option OPTION_MM_CONNECTOR_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override jmx connector port in management mode").withLongOpt("management-mode-jmx-connector-port").create("mmjmx");
+    private static final Option OPTION_MM_HTTP_PORT = OptionBuilder.withArgName("port").hasArg()
+            .withDescription("override http management port in management mode").withLongOpt("management-mode-http-port").create("mmhttp");
+    private static final Option OPTION_MM_PASSWORD = OptionBuilder.withArgName("password").hasArg()
+            .withDescription("Set the password for the management mode user " + BrokerOptions.MANAGEMENT_MODE_USER_NAME).withLongOpt("management-mode-password").create("mmpass");
 
     private static final Options OPTIONS = new Options();
 
@@ -79,13 +92,17 @@ public class Main
         OPTIONS.addOption(OPTION_VERSION);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_PATH);
         OPTIONS.addOption(OPTION_CONFIGURATION_STORE_TYPE);
+        OPTIONS.addOption(OPTION_OVERWRITE_CONFIGURATION_STORE);
+        OPTIONS.addOption(OPTION_CREATE_INITIAL_CONFIG);
         OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
         OPTIONS.addOption(OPTION_LOG_WATCH);
         OPTIONS.addOption(OPTION_INITIAL_CONFIGURATION_PATH);
         OPTIONS.addOption(OPTION_MANAGEMENT_MODE);
-        OPTIONS.addOption(OPTION_RMI_PORT);
-        OPTIONS.addOption(OPTION_CONNECTOR_PORT);
-        OPTIONS.addOption(OPTION_HTTP_PORT);
+        OPTIONS.addOption(OPTION_MM_QUIESCE_VHOST);
+        OPTIONS.addOption(OPTION_MM_RMI_PORT);
+        OPTIONS.addOption(OPTION_MM_CONNECTOR_PORT);
+        OPTIONS.addOption(OPTION_MM_HTTP_PORT);
+        OPTIONS.addOption(OPTION_MM_PASSWORD);
     }
 
     protected CommandLine _commandLine;
@@ -140,10 +157,37 @@ public class Main
 
     protected void execute() throws Exception
     {
+        BrokerOptions options = new BrokerOptions();
+        String initialConfigLocation = _commandLine.getOptionValue(OPTION_INITIAL_CONFIGURATION_PATH.getOpt());
+        if (initialConfigLocation != null)
+        {
+            options.setInitialConfigurationLocation(initialConfigLocation);
+        }
+
+        //process the remaining options
         if (_commandLine.hasOption(OPTION_HELP.getOpt()))
         {
             final HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("Qpid", OPTIONS, true);
+        }
+        else if (_commandLine.hasOption(OPTION_CREATE_INITIAL_CONFIG.getOpt()))
+        {
+            File destinationFile = null;
+
+            String destinationOption = _commandLine.getOptionValue(OPTION_CREATE_INITIAL_CONFIG.getOpt());
+            if (destinationOption != null)
+            {
+                destinationFile = new File(destinationOption);
+            }
+            else
+            {
+                destinationFile = new File(System.getProperty("user.dir"), BrokerOptions.DEFAULT_INITIAL_CONFIG_NAME);
+            }
+
+            ConfigurationEntryStoreUtil util = new ConfigurationEntryStoreUtil();
+            util.copyInitialConfigFile(options.getInitialConfigurationLocation(), destinationFile);
+
+            System.out.println("Initial config written to: " + destinationFile.getAbsolutePath());
         }
         else if (_commandLine.hasOption(OPTION_VERSION.getOpt()))
         {
@@ -166,12 +210,12 @@ public class Main
         }
         else
         {
-            BrokerOptions options = new BrokerOptions();
             String configurationStore = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE_PATH.getOpt());
             if (configurationStore != null)
             {
                 options.setConfigurationStoreLocation(configurationStore);
             }
+
             String configurationStoreType = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE_TYPE.getOpt());
             if (configurationStoreType != null)
             {
@@ -190,27 +234,24 @@ public class Main
                 options.setLogConfigFile(logConfig);
             }
 
-            String initialConfigLocation = _commandLine.getOptionValue(OPTION_INITIAL_CONFIGURATION_PATH.getOpt());
-            if (initialConfigLocation != null)
-            {
-                options.setInitialConfigurationLocation(initialConfigLocation);
-            }
+            boolean overwriteConfigurationStore = _commandLine.hasOption(OPTION_OVERWRITE_CONFIGURATION_STORE.getOpt());
+            options.setOverwriteConfigurationStore(overwriteConfigurationStore);
 
-            boolean managmentMode = _commandLine.hasOption(OPTION_MANAGEMENT_MODE.getOpt());
-            if (managmentMode)
+            boolean managementMode = _commandLine.hasOption(OPTION_MANAGEMENT_MODE.getOpt());
+            if (managementMode)
             {
                 options.setManagementMode(true);
-                String rmiPort = _commandLine.getOptionValue(OPTION_RMI_PORT.getOpt());
+                String rmiPort = _commandLine.getOptionValue(OPTION_MM_RMI_PORT.getOpt());
                 if (rmiPort != null)
                 {
                     options.setManagementModeRmiPort(Integer.parseInt(rmiPort));
                 }
-                String connectorPort = _commandLine.getOptionValue(OPTION_CONNECTOR_PORT.getOpt());
+                String connectorPort = _commandLine.getOptionValue(OPTION_MM_CONNECTOR_PORT.getOpt());
                 if (connectorPort != null)
                 {
                     options.setManagementModeConnectorPort(Integer.parseInt(connectorPort));
                 }
-                String httpPort = _commandLine.getOptionValue(OPTION_HTTP_PORT.getOpt());
+                String httpPort = _commandLine.getOptionValue(OPTION_MM_HTTP_PORT.getOpt());
                 if (httpPort != null)
                 {
                     options.setManagementModeHttpPort(Integer.parseInt(httpPort));
@@ -218,6 +259,12 @@ public class Main
 
                 boolean quiesceVhosts = _commandLine.hasOption(OPTION_MM_QUIESCE_VHOST.getOpt());
                 options.setManagementModeQuiesceVirtualHosts(quiesceVhosts);
+
+                String password = _commandLine.getOptionValue(OPTION_MM_PASSWORD.getOpt());
+                if (password != null)
+                {
+                    options.setManagementModePassword(password);
+                }
             }
             setExceptionHandler();
 

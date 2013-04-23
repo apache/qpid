@@ -77,7 +77,7 @@ public class BrokerTestHelper
         RootMessageLogger rootMessageLogger = CurrentActor.get().getRootMessageLogger();
         when(broker.getRootMessageLogger()).thenReturn(rootMessageLogger);
         when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry());
-        when(broker.getSecurityManager()).thenReturn(new SecurityManager(null));
+        when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
         GenericActor.setDefaultMessageLogger(rootMessageLogger);
         return broker;
     }
@@ -96,14 +96,14 @@ public class BrokerTestHelper
             throws Exception
     {
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
-        VirtualHost host = new VirtualHostImpl(virtualHostRegistry, statisticsGatherer, new SecurityManager(null), virtualHostConfiguration);
+        VirtualHost host = new VirtualHostImpl(virtualHostRegistry, statisticsGatherer, new SecurityManager(mock(Broker.class), false), virtualHostConfiguration);
         virtualHostRegistry.registerVirtualHost(host);
         return host;
     }
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration) throws Exception
     {
-        return new VirtualHostImpl(null, mock(StatisticsGatherer.class), new SecurityManager(null), virtualHostConfiguration);
+        return new VirtualHostImpl(null, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), virtualHostConfiguration);
     }
 
     public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
@@ -156,7 +156,7 @@ public class BrokerTestHelper
 
     public static Exchange createExchange(String hostName) throws Exception
     {
-        SecurityManager securityManager = new SecurityManager(null);
+        SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
         VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);

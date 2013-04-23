@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.AccessControl;
+import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 
@@ -25,8 +27,10 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
         File aclFile = TestFileUtils.createTempFile(this, ".acl", "ACL ALLOW all all");
         DefaultAccessControlFactory factory = new DefaultAccessControlFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(DefaultAccessControlFactory.ATTRIBUTE_ACL_FILE, aclFile.getAbsolutePath());
+        attributes.put(GroupProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
         AccessControl acl = factory.createInstance(attributes);
+        acl.open();
 
         assertNotNull("ACL was not created from acl file: " + aclFile.getAbsolutePath(), acl);
     }
@@ -37,33 +41,17 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
         assertFalse("ACL file " + aclFile.getAbsolutePath() + " actually exists but should not", aclFile.exists());
         DefaultAccessControlFactory factory = new DefaultAccessControlFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(DefaultAccessControlFactory.ATTRIBUTE_ACL_FILE, aclFile.getAbsolutePath());
+        attributes.put(GroupProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
         try
         {
-            factory.createInstance(attributes);
-            fail("It should not be possible to create ACL from non existing file");
+            AccessControl control = factory.createInstance(attributes);
+            control.open();
+            fail("It should not be possible to create and initialise ACL with non existing file");
         }
         catch (IllegalConfigurationException e)
         {
-            assertTrue("Unexpected exception message", Pattern.matches("ACL file '.*' is not found", e.getMessage()));
-        }
-    }
-
-    public void testCreateInstanceWhenAclFileIsSpecifiedAsNonString()
-    {
-        DefaultAccessControlFactory factory = new DefaultAccessControlFactory();
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        Integer aclFile = new Integer(0);
-        attributes.put(DefaultAccessControlFactory.ATTRIBUTE_ACL_FILE, aclFile);
-        try
-        {
-            factory.createInstance(attributes);
-            fail("It should not be possible to create ACL from Integer");
-        }
-        catch (IllegalConfigurationException e)
-        {
-            assertEquals("Unexpected exception message", "Expected '" + DefaultAccessControlFactory.ATTRIBUTE_ACL_FILE
-                    + "' attribute value of type String but was " + Integer.class + ": " + aclFile, e.getMessage());
+            assertTrue("Unexpected exception message: " + e.getMessage(), Pattern.matches("ACL file '.*' is not found", e.getMessage()));
         }
     }
 }

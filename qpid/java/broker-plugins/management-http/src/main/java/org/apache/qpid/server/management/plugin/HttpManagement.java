@@ -22,8 +22,10 @@ package org.apache.qpid.server.management.plugin;
 
 import java.io.File;
 import java.lang.reflect.Type;
+import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,9 +35,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
+import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.AbstractServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
@@ -44,6 +47,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
@@ -60,21 +64,25 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-public class HttpManagement extends AbstractPluginAdapter
+public class HttpManagement extends AbstractPluginAdapter implements HttpManagementConfiguration
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
 
@@ -104,8 +112,6 @@ public class HttpManagement extends AbstractPluginAdapter
         add(TIME_OUT);
         add(PluginFactory.PLUGIN_TYPE);
     }});
-
-    public static final String ENTRY_POINT_PATH = "/management";
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
@@ -238,7 +244,7 @@ public class HttpManagement extends AbstractPluginAdapter
             }
             else if (protocols.contains(Protocol.HTTPS))
             {
-                KeyStore keyStore = _broker.getDefaultKeyStore();
+                KeyStore keyStore = port.getKeyStore();
                 if (keyStore == null)
                 {
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
@@ -266,12 +272,19 @@ public class HttpManagement extends AbstractPluginAdapter
         server.setHandler(root);
 
         // set servlet context attributes for broker and configuration
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_BROKER, _broker);
-        root.getServletContext().setAttribute(AbstractServlet.ATTR_MANAGEMENT, this);
+        root.getServletContext().setAttribute(HttpManagementUtil.ATTR_BROKER, _broker);
+        root.getServletContext().setAttribute(HttpManagementUtil.ATTR_MANAGEMENT_CONFIGURATION, this);
+
+        FilterHolder restAuthorizationFilter = new FilterHolder(new ForbiddingAuthorisationFilter());
+        restAuthorizationFilter.setInitParameter(ForbiddingAuthorisationFilter.INIT_PARAM_ALLOWED, "/rest/sasl");
+        root.addFilter(restAuthorizationFilter, "/rest/*", EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), HttpManagementUtil.ENTRY_POINT_PATH, EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/index.html", EnumSet.of(DispatcherType.REQUEST));
 
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
         addRestServlet(root, "authenticationprovider", AuthenticationProvider.class);
+        addRestServlet(root, "accesscontrolprovider", AccessControlProvider.class);
         addRestServlet(root, "user", AuthenticationProvider.class, User.class);
         addRestServlet(root, "groupprovider", GroupProvider.class);
         addRestServlet(root, "group", GroupProvider.class, Group.class);
@@ -282,6 +295,8 @@ public class HttpManagement extends AbstractPluginAdapter
         addRestServlet(root, "binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
         addRestServlet(root, "port", Port.class);
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
+        addRestServlet(root, "keystore", KeyStore.class);
+        addRestServlet(root, "truststore", TrustStore.class);
 
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
@@ -291,7 +306,7 @@ public class HttpManagement extends AbstractPluginAdapter
 
         root.addServlet(new ServletHolder(new SaslServlet()), "/rest/sasl");
 
-        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), ENTRY_POINT_PATH);
+        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), HttpManagementUtil.ENTRY_POINT_PATH);
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
@@ -396,24 +411,34 @@ public class HttpManagement extends AbstractPluginAdapter
         return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
     }
 
+    @Override
     public boolean isHttpsSaslAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTPS_SASL_AUTHENTICATION_ENABLED);
     }
 
+    @Override
     public boolean isHttpSaslAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTP_SASL_AUTHENTICATION_ENABLED);
     }
 
+    @Override
     public boolean isHttpsBasicAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTPS_BASIC_AUTHENTICATION_ENABLED);
     }
 
+    @Override
     public boolean isHttpBasicAuthenticationEnabled()
     {
         return (Boolean)getAttribute(HTTP_BASIC_AUTHENTICATION_ENABLED);
+    }
+
+    @Override
+    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
+    {
+        return _broker.getSubjectCreator(localAddress);
     }
 
 }

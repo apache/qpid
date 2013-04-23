@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.systest.rest;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,18 +28,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.apache.qpid.test.utils.TestSSLConstants;
 
 public class BrokerRestTest extends QpidRestTestCase
 {
-
     private static final String BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE = "authenticationproviders";
     private static final String BROKER_PORTS_ATTRIBUTE = "ports";
     private static final String BROKER_VIRTUALHOSTS_ATTRIBUTE = "virtualhosts";
@@ -127,7 +126,6 @@ public class BrokerRestTest extends QpidRestTestCase
     public void testPutToUpdateWithInvalidAttributeValues() throws Exception
     {
         Map<String, Object> invalidAttributes = new HashMap<String, Object>();
-        invalidAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "non-existing-provider");
         invalidAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "non-existing-host");
         invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, -1000);
         invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, -2000);
@@ -141,15 +139,6 @@ public class BrokerRestTest extends QpidRestTestCase
         invalidAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, -10);
         invalidAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, -11000);
         invalidAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, -12000);
-        invalidAttributes.put(Broker.ACL_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-acl.acl");
-        invalidAttributes.put(Broker.KEY_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-keystore.jks");
-        invalidAttributes.put(Broker.KEY_STORE_PASSWORD, "password1");
-        invalidAttributes.put(Broker.KEY_STORE_CERT_ALIAS, "java-broker1");
-        invalidAttributes.put(Broker.TRUST_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-truststore.jks");
-        invalidAttributes.put(Broker.TRUST_STORE_PASSWORD, "password2");
-        invalidAttributes.put(Broker.PEER_STORE_PATH, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "non-existing-peerstore.jks");
-        invalidAttributes.put(Broker.PEER_STORE_PASSWORD, "password3");
-        invalidAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups-non-existing");
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, -13000);
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, -14000);
         invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, -15000);
@@ -174,7 +163,6 @@ public class BrokerRestTest extends QpidRestTestCase
     private Map<String, Object> getValidBrokerAttributes()
     {
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
         brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 1000);
         brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 2000);
@@ -190,15 +178,6 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 11000);
         brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 12000);
         brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
-        brokerAttributes.put(Broker.ACL_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "broker_example.acl");
-        brokerAttributes.put(Broker.KEY_STORE_PATH, TestSSLConstants.BROKER_KEYSTORE);
-        brokerAttributes.put(Broker.KEY_STORE_PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        brokerAttributes.put(Broker.KEY_STORE_CERT_ALIAS, "java-broker");
-        brokerAttributes.put(Broker.TRUST_STORE_PATH, TestSSLConstants.TRUSTSTORE);
-        brokerAttributes.put(Broker.TRUST_STORE_PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
-        brokerAttributes.put(Broker.PEER_STORE_PATH, TestSSLConstants.TRUSTSTORE);
-        brokerAttributes.put(Broker.PEER_STORE_PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
-        brokerAttributes.put(Broker.GROUP_FILE, QpidTestCase.QPID_HOME + File.separator + "etc" + File.separator + "groups");
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 13000);
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 14000);
         brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 15000);
@@ -212,10 +191,7 @@ public class BrokerRestTest extends QpidRestTestCase
         {
             String attributeName = entry.getKey();
             Object attributeValue = entry.getValue();
-            if (attributeName.equals(Broker.KEY_STORE_PASSWORD) || attributeName.equals(Broker.TRUST_STORE_PASSWORD) || attributeName.equals(Broker.PEER_STORE_PASSWORD))
-            {
-                attributeValue = "********";
-            }
+
             Object currentValue = actualAttributes.get(attributeName);
             assertEquals("Unexpected attribute " + attributeName + " value:", attributeValue, currentValue);
         }
@@ -224,11 +200,8 @@ public class BrokerRestTest extends QpidRestTestCase
     protected void assertBrokerAttributes(Map<String, Object> brokerDetails)
     {
         Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES,
-                Broker.BYTES_RETAINED, Broker.PROCESS_PID, Broker.SUPPORTED_STORE_TYPES,
-                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED, Broker.ACL_FILE,
-                Broker.KEY_STORE_PATH, Broker.KEY_STORE_PASSWORD, Broker.KEY_STORE_CERT_ALIAS,
-                Broker.TRUST_STORE_PATH, Broker.TRUST_STORE_PASSWORD, Broker.GROUP_FILE,
-                Broker.PEER_STORE_PATH, Broker.PEER_STORE_PASSWORD);
+                Broker.BYTES_RETAINED, Broker.PROCESS_PID,
+                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED);
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));
@@ -243,7 +216,7 @@ public class BrokerRestTest extends QpidRestTestCase
         assertEquals("Unexpected value of attribute " + Broker.DURABLE, Boolean.TRUE, brokerDetails.get(Broker.DURABLE));
         assertEquals("Unexpected value of attribute " + Broker.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                 brokerDetails.get(Broker.LIFETIME_POLICY));
-        assertEquals("Unexpected value of attribute " + Broker.NAME, "QpidBroker", brokerDetails.get(Broker.NAME));
+        assertEquals("Unexpected value of attribute " + Broker.NAME, "Broker", brokerDetails.get(Broker.NAME));
         assertEquals("Unexpected value of attribute " + Broker.STATE, State.ACTIVE.name(), brokerDetails.get(Broker.STATE));
 
         assertNotNull("Unexpected value of attribute " + Broker.ID, brokerDetails.get(Broker.ID));
@@ -251,6 +224,16 @@ public class BrokerRestTest extends QpidRestTestCase
         assertNotNull("Unexpected value of attribute virtualhosts", brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute ports", brokerDetails.get(BROKER_PORTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute authenticationproviders", brokerDetails.get(BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> supportedBrokerStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_BROKER_STORE_TYPES);
+        Collection<String> expectedSupportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
+        assertEquals("Unexpected supported broker store types",  new HashSet<String>(expectedSupportedBrokerStoreTypes), new HashSet<String>(supportedBrokerStoreTypes));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> supportedVirtualHostStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES);
+        Collection<String> expectedSupportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
+        assertEquals("Unexpected supported virtual host store types",  new HashSet<String>(expectedSupportedVirtualHostStoreTypes), new HashSet<String>(supportedVirtualHostStoreTypes));
     }
 
 }

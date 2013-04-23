@@ -60,7 +60,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _brokerId = UUID.randomUUID();
         _brokerAttributes = new HashMap<String, Object>();
         _brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
-        _brokerAttributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         _brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 9);
         _brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 8);
         _brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 7);
@@ -71,7 +70,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _brokerAttributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 2);
         _brokerAttributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
         _brokerAttributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 1);
-        _brokerAttributes.put(Broker.ACL_FILE, "/path/to/acl");
         _brokerAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 1000);
         _brokerAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
         _brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
@@ -171,7 +169,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         ConfigurationEntry brokerConfigEntry = _store.getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
-        attributes.put(Broker.DEFAULT_AUTHENTICATION_PROVIDER, "authenticationProvider1");
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 19);
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 18);
         attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 17);
@@ -182,7 +179,6 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 12);
         attributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, false);
         attributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 11);
-        attributes.put(Broker.ACL_FILE, "/path/to/acl1");
         attributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 11000);
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 12000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 14000);
@@ -284,7 +280,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(TrustStore.PATH, "/path/to/truststore");
         attributes.put(TrustStore.PASSWORD, "my-secret-password");
         attributes.put(TrustStore.TYPE, "NON-JKS");
-        attributes.put(TrustStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(TrustStore.DESCRIPTION, "Description");
 
         ConfigurationEntry trustStoreEntry = new ConfigurationEntry(trustStoreId, TrustStore.class.getSimpleName(), attributes,

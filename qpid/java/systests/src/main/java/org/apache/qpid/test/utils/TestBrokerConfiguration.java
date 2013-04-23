@@ -21,6 +21,7 @@
 package org.apache.qpid.test.utils;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,13 +30,20 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.PluginFactory;
+import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
+import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class TestBrokerConfiguration
 {
@@ -52,13 +60,16 @@ public class TestBrokerConfiguration
     public static final String ENTRY_NAME_JMX_MANAGEMENT = "MANAGEMENT-JMX";
     public static final String MANAGEMENT_JMX_PLUGIN_TYPE = "MANAGEMENT-JMX";
     public static final String ENTRY_NAME_ANONYMOUS_PROVIDER = "anonymous";
+    public static final String ENTRY_NAME_SSL_KEYSTORE = "systestsKeyStore";
+    public static final String ENTRY_NAME_SSL_TRUSTSTORE = "systestsTrustStore";
+    public static final String ENTRY_NAME_GROUP_FILE = "groupFile";
+    public static final String ENTRY_NAME_ACL_FILE = "aclFile";
 
     private MemoryConfigurationEntryStore _store;
     private boolean _saved;
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
-        // TODO: add support for DERBY store
         _store = new MemoryConfigurationEntryStore(intialStoreLocation, null);
     }
 
@@ -105,7 +116,7 @@ public class TestBrokerConfiguration
 
     public UUID addObjectConfiguration(String name, String type, Map<String, Object> attributes)
     {
-        UUID id = UUIDGenerator.generateBrokerChildUUID(type, name);
+        UUID id = UUIDGenerator.generateRandomUUID();
         addObjectConfiguration(id, type, attributes);
         return id;
     }
@@ -126,13 +137,33 @@ public class TestBrokerConfiguration
         return addObjectConfiguration(ENTRY_NAME_HTTP_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
     }
 
+    public UUID addGroupFileConfiguration(String groupFilePath)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, ENTRY_NAME_GROUP_FILE);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, groupFilePath);
+
+        return addGroupProviderConfiguration(attributes);
+    }
+
+    public UUID addAclFileConfiguration(String aclFilePath)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AccessControlProvider.NAME, ENTRY_NAME_ACL_FILE);
+        attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(FileAccessControlProviderConstants.PATH, aclFilePath);
+
+        return addAccessControlConfiguration(attributes);
+    }
+
     public UUID addPortConfiguration(Map<String, Object> attributes)
     {
         String name = (String) attributes.get(Port.NAME);
         return addObjectConfiguration(name, Port.class.getSimpleName(), attributes);
     }
 
-    public UUID addHostConfiguration(Map<String, Object> attributes)
+    public UUID addVirtualHostConfiguration(Map<String, Object> attributes)
     {
         String name = (String) attributes.get(VirtualHost.NAME);
         return addObjectConfiguration(name, VirtualHost.class.getSimpleName(), attributes);
@@ -142,6 +173,30 @@ public class TestBrokerConfiguration
     {
         String name = (String) attributes.get(AuthenticationProvider.NAME);
         return addObjectConfiguration(name, AuthenticationProvider.class.getSimpleName(), attributes);
+    }
+
+    public UUID addGroupProviderConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(GroupProvider.NAME);
+        return addObjectConfiguration(name, GroupProvider.class.getSimpleName(), attributes);
+    }
+
+    public UUID addAccessControlConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(AccessControlProvider.NAME);
+        return addObjectConfiguration(name, AccessControlProvider.class.getSimpleName(), attributes);
+    }
+
+    public UUID addTrustStoreConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(TrustStore.NAME);
+        return addObjectConfiguration(name, TrustStore.class.getSimpleName(), attributes);
+    }
+
+    public UUID addKeyStoreConfiguration(Map<String, Object> attributes)
+    {
+        String name = (String) attributes.get(KeyStore.NAME);
+        return addObjectConfiguration(name, KeyStore.class.getSimpleName(), attributes);
     }
 
     private boolean setObjectAttributes(ConfigurationEntry entry, Map<String, Object> attributes)
@@ -188,11 +243,36 @@ public class TestBrokerConfiguration
     {
         ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), _store);
         ConfigurationEntry root = _store.getRootEntry();
+
+        Map<String, Collection<ConfigurationEntry>> children = root.getChildren();
+
+        verifyChildWithNameDoesNotExist(id, type, attributes, children);
+
         Set<UUID> childrenIds = new HashSet<UUID>(root.getChildrenIds());
         childrenIds.add(id);
         ConfigurationEntry newRoot = new ConfigurationEntry(root.getId(), root.getType(), root.getAttributes(), childrenIds,
                 _store);
         _store.save(newRoot, entry);
+    }
+
+    private void verifyChildWithNameDoesNotExist(UUID id, String type,
+            Map<String, Object> attributes,
+            Map<String, Collection<ConfigurationEntry>> children)
+    {
+        Collection<ConfigurationEntry> childrenOfType = children.get(type);
+
+        if(childrenOfType != null)
+        {
+            String name = (String) attributes.get("name");
+            for(ConfigurationEntry ce : childrenOfType)
+            {
+                Object ceName = ce.getAttributes().get("name");
+                if(name.equals(ceName) && !id.equals(ce.getId()))
+                {
+                    throw new IllegalConfigurationException("A " + type + " with name " + name + " already exists with a different ID");
+                }
+            }
+        }
     }
 
     private boolean setObjectAttribute(ConfigurationEntry entry, String attributeName, Object value)

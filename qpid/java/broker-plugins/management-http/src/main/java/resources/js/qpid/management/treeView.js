@@ -277,8 +277,13 @@ define(["dojo/_base/xhr",
                    controller.show("groupprovider", details.groupprovider, {broker: {type:"broker", name:""}});
                } else if (details.type == 'group') {
                    controller.show("group", details.group, { type: "groupprovider", name: details.groupprovider, parent: {broker: {type:"broker", name:""}}});
+               } else if (details.type == 'keystore') {
+                 controller.show("keystore", details.keystore, {broker: {type:"broker", name:""}});
+               } else if (details.type == 'truststore') {
+                 controller.show("truststore", details.truststore, {broker: {type:"broker", name:""}});
+               } else if (details.type == 'accesscontrolprovider') {
+                 controller.show("accesscontrolprovider", details.accesscontrolprovider, {broker: {type:"broker", name:""}});
                }
-
            };
 
            TreeViewModel.prototype.update = function () {

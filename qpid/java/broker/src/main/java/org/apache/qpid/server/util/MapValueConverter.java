@@ -62,7 +62,7 @@ public class MapValueConverter
         return getStringAttribute(name, attributes, null);
     }
 
-    private static void assertMandatoryAttribute(String name, Map<String, Object> attributes)
+    public static void assertMandatoryAttribute(String name, Map<String, Object> attributes)
     {
         if (!attributes.containsKey(name))
         {
@@ -326,6 +326,10 @@ public class MapValueConverter
 
     public static <T> Set<T> toSet(Object rawValue, Class<T> setItemClass, String attributeName)
     {
+        if (rawValue == null)
+        {
+            return null;
+        }
         HashSet<T> set = new HashSet<T>();
         if (rawValue instanceof Iterable)
         {

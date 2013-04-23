@@ -24,15 +24,19 @@ import java.io.File;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
 {
+    public static final String DEFAULT_INITIAL_CONFIG_NAME = "initial-config.json";
     public static final String DEFAULT_STORE_TYPE = "json";
     public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String DEFAULT_INITIAL_CONFIG_LOCATION =
-        BrokerOptions.class.getClassLoader().getResource("initial-store.json").toExternalForm();
+        BrokerOptions.class.getClassLoader().getResource(DEFAULT_INITIAL_CONFIG_NAME).toExternalForm();
+    public static final String MANAGEMENT_MODE_USER_NAME = "mm_admin";
+    private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
 
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
@@ -43,15 +47,33 @@ public class BrokerOptions
     private String _initialConfigurationLocation;
 
     private boolean _managementMode;
+    private boolean _managementModeQuiesceVhosts;
     private int _managementModeRmiPort;
     private int _managementModeConnectorPort;
     private int _managementModeHttpPort;
+    private String _managementModePassword;
     private String _workingDir;
     private boolean _skipLoggingConfiguration;
+    private boolean _overwriteConfigurationStore;
 
     public String getLogConfigFile()
     {
         return _logConfigFile;
+    }
+
+    public String getManagementModePassword()
+    {
+        if(_managementModePassword == null)
+        {
+            _managementModePassword = new StringUtil().randomAlphaNumericString(MANAGEMENT_MODE_PASSWORD_LENGTH);
+        }
+
+        return _managementModePassword;
+    }
+
+    public void setManagementModePassword(String managementModePassword)
+    {
+        _managementModePassword = managementModePassword;
     }
 
     public void setLogConfigFile(final String logConfigFile)
@@ -81,6 +103,16 @@ public class BrokerOptions
     public void setManagementMode(boolean managementMode)
     {
         _managementMode = managementMode;
+    }
+
+    public boolean isManagementModeQuiesceVirtualHosts()
+    {
+        return _managementModeQuiesceVhosts;
+    }
+
+    public void setManagementModeQuiesceVirtualHosts(boolean managementModeQuiesceVhosts)
+    {
+        _managementModeQuiesceVhosts = managementModeQuiesceVhosts;
     }
 
     public int getManagementModeRmiPort()
@@ -169,6 +201,24 @@ public class BrokerOptions
     }
 
     /**
+     * Returns whether the existing broker configuration store should be overwritten with the current
+     * initial configuration file (see {@link BrokerOptions#getInitialConfigurationLocation()}).
+     */
+    public boolean isOverwriteConfigurationStore()
+    {
+        return _overwriteConfigurationStore;
+    }
+
+    /**
+     * Sets whether the existing broker configuration store should be overwritten with the current
+     * initial configuration file (see {@link BrokerOptions#getInitialConfigurationLocation()}).
+     */
+    public void setOverwriteConfigurationStore(boolean overwrite)
+    {
+        _overwriteConfigurationStore = overwrite;
+    }
+
+    /**
      * Get the broker work directory location.
      *
      * Defaults to the location set in the "QPID_WORK" system property if it is set, or the 'work' sub-directory
@@ -205,7 +255,7 @@ public class BrokerOptions
     /**
      * Get the broker initial JSON configuration location.
      *
-     * Defaults to an internal configuration file within the broker jar, which is loaded with the {@link JsonConfigurationEntryStore}.
+     * Defaults to an internal configuration file within the broker jar.
      *
      * @return the previously set configuration location, or the default location if none was set.
      */
@@ -221,7 +271,7 @@ public class BrokerOptions
 
     /**
      * Set the absolute path or URL to use for the initial JSON configuration, which is loaded with the
-     * {@link JsonConfigurationEntryStore} in order to initialise any new {@link ConfigurationEntryStore} for the broker.
+     * {@link MemoryConfigurationEntryStore} in order to initialise any new {@link ConfigurationEntryStore} for the broker.
      *
      * Passing null clears any previously set value and returns to the default.
      */

@@ -20,12 +20,16 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import static org.apache.qpid.test.utils.TestSSLConstants.BROKER_PEERSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.BROKER_PEERSTORE_PASSWORD;
 import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 import static org.apache.qpid.test.utils.TestSSLConstants.UNTRUSTED_KEYSTORE;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,9 +42,9 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -52,6 +56,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     protected void setUp() throws Exception
     {
         // not calling super.setUp() to avoid broker start-up
+        setSystemProperty("javax.net.debug", "ssl");
     }
 
     /**
@@ -61,7 +66,6 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerOnSSLPort() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientKeystoreProperties();
@@ -88,13 +92,13 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     }
 
     /**
-     * Tests that when EXTERNAL authentication manager is set as the default, clients presenting certificates are able to connect.
-     * Also, checks a client with valid username and password but not using ssl is unable to connect to the non SSL port.
+     * Tests that when EXTERNAL authentication manager is set on the non-SSL port, clients with valid username and password
+     * but not using ssl are unable to connect to the non-SSL port.
      */
-    public void testExternalAuthenticationManagerAsDefault() throws Exception
+    public void testExternalAuthenticationManagerOnNonSslPort() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setBrokerAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientKeystoreProperties();
@@ -109,25 +113,15 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         {
             // pass
         }
-
-        try
-        {
-            getExternalSSLConnection(false);
-        }
-        catch (JMSException e)
-        {
-            fail("Should be able to create a connection to the SSL port. " + e.getMessage());
-        }
     }
 
     /**
-     * Tests that when EXTERNAL authentication manager is set as the default, clients without certificates are unable to connect to the SSL port
+     * Tests that when EXTERNAL authentication manager is used, clients without certificates are unable to connect to the SSL port
      * even with valid username and password.
      */
     public void testExternalAuthenticationManagerWithoutClientKeyStore() throws Exception
     {
         setCommonBrokerSSLProperties(false);
-        getBrokerConfiguration().setBrokerAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientTrustoreProperties();
@@ -150,7 +144,6 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationDeniesUntrustedClientCert() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setBrokerAttribute(Broker.DEFAULT_AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setUntrustedClientKeystoreProperties();
@@ -168,31 +161,85 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     }
 
     /**
-     * Tests that when using the EXTERNAL auth provide and the broker 'peerstore' is configured to contain a certificate that is
-     * otherwise untrusted by the broker [truststore], clients using that certificate will then be able to connect.
+     * Tests that when using the EXTERNAL auth provider and a 'peersOnly' truststore, clients using certs directly in
+     * in the store will be able to connect and clients using certs signed by the same CA but not in the store will not.
      */
-    public void testExternalAuthenticationWithPeerStoreAllowsOtherwiseUntrustedClientCert() throws Exception
+    public void testExternalAuthenticationWithPeersOnlyTrustStore() throws Exception
     {
-        setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        externalAuthenticationWithPeersOnlyTrustStoreTestImpl(false);
+    }
 
-        //Use the untrusted client keystore as the brokers peerstore to make the broker trust the cert.
-        getBrokerConfiguration().setBrokerAttribute(Broker.PEER_STORE_PATH, UNTRUSTED_KEYSTORE);
-        getBrokerConfiguration().setBrokerAttribute(Broker.PEER_STORE_PASSWORD, KEYSTORE_PASSWORD);
+    /**
+     * Tests that when using the EXTERNAL auth provider, with both the regular trust store and a 'peersOnly' truststore, clients
+     * using certs signed by the CA in the trust store are allowed even if they are not present in the 'peersOnly' store.
+     */
+    public void testExternalAuthenticationWithRegularAndPeersOnlyTrustStores() throws Exception
+    {
+        externalAuthenticationWithPeersOnlyTrustStoreTestImpl(true);
+    }
+
+    private void externalAuthenticationWithPeersOnlyTrustStoreTestImpl(boolean useTrustAndPeerStore) throws Exception
+    {
+        String peerStoreName = "myPeerStore";
+
+        List<String> storeNames = null;
+        if(useTrustAndPeerStore)
+        {
+            //Use the regular trust store AND the 'peersOnly' store. The regular trust store trusts the CA that
+            //signed both the app1 and app2 certs. The peersOnly store contains only app1 and so does not trust app2
+            storeNames = Arrays.asList(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE, peerStoreName);
+        }
+        else
+        {
+            //use only the 'peersOnly' store, which contains only app1 and so does not trust app2
+            storeNames = Arrays.asList(peerStoreName);
+        }
+
+        //set the brokers SSL config, inc which SSL stores to use
+        setCommonBrokerSSLProperties(true, storeNames);
+
+        //add the peersOnly store to the config
+        Map<String, Object> sslTrustStoreAttributes = new HashMap<String, Object>();
+        sslTrustStoreAttributes.put(TrustStore.NAME, peerStoreName);
+        sslTrustStoreAttributes.put(TrustStore.PATH, BROKER_PEERSTORE);
+        sslTrustStoreAttributes.put(TrustStore.PASSWORD, BROKER_PEERSTORE_PASSWORD);
+        sslTrustStoreAttributes.put(TrustStore.PEERS_ONLY, true);
+        getBrokerConfiguration().addTrustStoreConfiguration(sslTrustStoreAttributes);
 
         super.setUp();
 
-        setUntrustedClientKeystoreProperties();
+        setClientKeystoreProperties();
         setClientTrustoreProperties();
 
         try
         {
-            getExternalSSLConnection(false);
-            fail("Untrusted client's validation against the broker's multi store manager unexpectedly passed.");
+            //use the app1 cert, which IS in the peerstore (and has CA in the trustStore)
+            getExternalSSLConnection(false, "&ssl_cert_alias='app1'");
         }
         catch (JMSException e)
         {
-            // expected
+            fail("Client's validation against the broker's multi store manager unexpectedly failed, when configured store was expected to allow.");
+        }
+
+        try
+        {
+            //use the app2 cert, which is NOT in the peerstore (but is signed by the same CA as app1)
+            getExternalSSLConnection(false, "&ssl_cert_alias='app2'");
+            if(!useTrustAndPeerStore)
+            {
+                fail("Client's validation against the broker's multi store manager unexpectedly passed, when configured store was expected to deny.");
+            }
+        }
+        catch (JMSException e)
+        {
+            if(useTrustAndPeerStore)
+            {
+                fail("Client's validation against the broker's multi store manager unexpectedly failed, when configured store was expected to allow.");
+            }
+            else
+            {
+                //expected, the CA in trust store should allow both app1 and app2
+            }
         }
     }
 
@@ -203,10 +250,9 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerUsernameAsCN() throws Exception
     {
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
-        jmxUtils.setUp();
 
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
 
@@ -215,7 +261,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
         try
         {
-            getExternalSSLConnection(false);
+            getExternalSSLConnection(false, "&ssl_cert_alias='app2'");
         }
         catch (JMSException e)
         {
@@ -237,11 +283,10 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerUsernameAsDN() throws Exception
     {
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
-        jmxUtils.setUp();
 
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN, "true");
+        getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
 
@@ -250,7 +295,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
         try
         {
-            getExternalSSLConnection(false);
+            getExternalSSLConnection(false, "&ssl_cert_alias='app2'");
         }
         catch (JMSException e)
         {
@@ -267,32 +312,47 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
     private Connection getExternalSSLConnection(boolean includeUserNameAndPassword) throws Exception
     {
-        String url = "amqp://%s@test/?brokerlist='tcp://localhost:%s?ssl='true'&sasl_mechs='EXTERNAL'&ssl_cert_alias='app2''";
+        return getExternalSSLConnection(includeUserNameAndPassword, "");
+    }
+
+    private Connection getExternalSSLConnection(boolean includeUserNameAndPassword, String optionString) throws Exception
+    {
+        String url = "amqp://%s@test/?brokerlist='tcp://localhost:%s?ssl='true'&sasl_mechs='EXTERNAL'%s'";
         if (includeUserNameAndPassword)
         {
-            url = String.format(url, "guest:guest", String.valueOf(QpidBrokerTestCase.DEFAULT_SSL_PORT));
+            url = String.format(url, "guest:guest", String.valueOf(QpidBrokerTestCase.DEFAULT_SSL_PORT), optionString);
         }
         else
         {
-            url = String.format(url, ":", String.valueOf(QpidBrokerTestCase.DEFAULT_SSL_PORT));
+            url = String.format(url, ":", String.valueOf(QpidBrokerTestCase.DEFAULT_SSL_PORT), optionString);
         }
         return getConnection(new AMQConnectionURL(url));
     }
 
     private void setCommonBrokerSSLProperties(boolean needClientAuth) throws ConfigurationException
     {
+        setCommonBrokerSSLProperties(needClientAuth, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
+    }
+
+    private void setCommonBrokerSSLProperties(boolean needClientAuth, Collection<String> trustStoreNames) throws ConfigurationException
+    {
         TestBrokerConfiguration config = getBrokerConfiguration();
+
         Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
         sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
         sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
         sslPortAttributes.put(Port.NEED_CLIENT_AUTH, String.valueOf(needClientAuth));
         sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
+        sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
+        sslPortAttributes.put(Port.TRUST_STORES, trustStoreNames);
         config.addPortConfiguration(sslPortAttributes);
 
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
-        externalAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        externalAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
         config.addAuthenticationProviderConfiguration(externalAuthProviderAttributes);
+
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
     }
 
     private void setUntrustedClientKeystoreProperties()
@@ -311,6 +371,5 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     {
         setSystemProperty("javax.net.ssl.trustStore", TRUSTSTORE);
         setSystemProperty("javax.net.ssl.trustStorePassword", TRUSTSTORE_PASSWORD);
-        setSystemProperty("javax.net.debug", "ssl");
     }
 }

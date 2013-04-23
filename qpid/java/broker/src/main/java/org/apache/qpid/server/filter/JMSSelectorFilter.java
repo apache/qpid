@@ -14,14 +14,17 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.filter;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.filter.BooleanExpression;
 import org.apache.qpid.filter.FilterableMessage;
 import org.apache.qpid.filter.SelectorParsingException;
@@ -119,6 +122,34 @@ public class JMSSelectorFilter implements MessageFilter
     @Override
     public String toString()
     {
-        return "JMSSelector("+_selector+")";
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            .append("selector", _selector)
+            .toString();
     }
+
+    @Override
+    public int hashCode()
+    {
+        return new HashCodeBuilder().append(_selector).toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+        if (obj == this)
+        {
+            return true;
+        }
+        if (obj.getClass() != getClass())
+        {
+            return false;
+        }
+        JMSSelectorFilter rhs = (JMSSelectorFilter) obj;
+        return new EqualsBuilder().append(_selector, rhs._selector).isEquals();
+    }
+
 }

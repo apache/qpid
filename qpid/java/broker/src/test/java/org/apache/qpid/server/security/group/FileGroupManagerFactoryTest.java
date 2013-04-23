@@ -35,8 +35,8 @@ public class FileGroupManagerFactoryTest extends TestCase
 
     public void testInstanceCreated() throws Exception
     {
-        _configuration.put(GroupProvider.TYPE, FileGroupManagerFactory.FILE_GROUP_MANAGER_TYPE);
-        _configuration.put(FileGroupManagerFactory.FILE, _emptyButValidGroupFile);
+        _configuration.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        _configuration.put(FileGroupManagerFactory.PATH, _emptyButValidGroupFile);
 
         GroupManager manager = _factory.createInstance(_configuration);
         assertNotNull(manager);
@@ -60,8 +60,8 @@ public class FileGroupManagerFactoryTest extends TestCase
 
     public void testRejectsConfigThatIsMissingAttributeValue() throws Exception
     {
-        _configuration.put(GroupProvider.TYPE, FileGroupManagerFactory.FILE_GROUP_MANAGER_TYPE);
-        _configuration.put(FileGroupManagerFactory.FILE, null);
+        _configuration.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        _configuration.put(FileGroupManagerFactory.PATH, null);
 
         try
         {

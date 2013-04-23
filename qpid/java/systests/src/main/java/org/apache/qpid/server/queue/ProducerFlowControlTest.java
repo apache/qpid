@@ -64,8 +64,9 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().addJmxManagementConfiguration();
+
         _jmxUtils = new JMXTestUtils(this);
-        _jmxUtils.setUp();
         _jmxUtilConnected=false;
         super.setUp();
 

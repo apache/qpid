@@ -25,6 +25,7 @@ org.apache.qpid.test.client.FlowControlTest#*
 
 // 0-10 protocol doesn't support message bouncing
 org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testUnsubscribeWhenUsingSelectorMakesTopicUnreachable
 
 // 0-10 and 0-9 connections dont generate the exact same logging due to protocol differences
 org.apache.qpid.server.logging.ChannelLoggingTest#testChannelStartsFlowStopped

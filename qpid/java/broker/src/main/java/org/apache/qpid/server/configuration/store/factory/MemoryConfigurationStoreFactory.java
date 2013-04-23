@@ -27,7 +27,7 @@ import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFactory
 {
     @Override
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore)
+    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite)
     {
         return new MemoryConfigurationEntryStore(null, initialStore);
     }

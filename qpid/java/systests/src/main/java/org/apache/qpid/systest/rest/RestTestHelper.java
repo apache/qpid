@@ -51,6 +51,7 @@ import junit.framework.Assert;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -398,6 +399,11 @@ public class RestTestHelper
     {
         _username = username;
         _password = password;
+    }
+
+    public void setManagementModeCredentials()
+    {
+        setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, QpidBrokerTestCase.MANAGEMENT_MODE_PASSWORD);
     }
 
     /**

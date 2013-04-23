@@ -131,7 +131,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"));
+        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"), _name);
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
