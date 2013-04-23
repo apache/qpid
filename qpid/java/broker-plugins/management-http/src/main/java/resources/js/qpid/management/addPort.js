@@ -180,12 +180,11 @@ define(["dojo/_base/xhr",
                     registry.byId("formAddPort.keyStore").set("disabled", true);
                 }
 
-                if (transportSSLPanel.domNode.style.display != transportSSLPanelDisplay)
+                if (transportSSLPanel.domNode.style.display != transportSSLPanelDisplay && transportSSLPanel.domNode.style.display=="block")
                 {
-                  transportSSLPanel.resize();
+                    registry.byId("formAddPort.trustStores").resize();
                 }
             };
-
 
         xhr.get({url: "addPort.html",
                  sync: true,
@@ -373,8 +372,8 @@ define(["dojo/_base/xhr",
             var truststoreWidget = registry.byId("formAddPort.trustStores");
             if (truststores)
             {
-                var layout = [[{name: "Name", field: "name", width: "100%"},
-                               {name: "Peers only", field: "peersOnly", width: "80px",
+                var layout = [[{name: "Name", field: "name", width: "80%"},
+                               {name: "Peers only", field: "peersOnly", width: "20%",
                                  formatter: function(val){
                                    return "<input type='radio' disabled='disabled' "+(val?"checked='checked'": "")+" />"
                                  }
@@ -417,14 +416,15 @@ define(["dojo/_base/xhr",
                              }
                            }
                            truststoreWidget.selection.setSelected(j,selected);
-                           truststoreWidget.initialValue = port.trustStores;
                          }
                        }
+
                        var transportWidget = registry.byId("formAddPort.transports");
                        transportWidget.set("value", port.transports ? port.transports[0] : "");
                        registry.byId("formAddPort.port").set("value", port.port);
                        var protocols = port.protocols;
                        var typeWidget = registry.byId("formAddPort.type");
+
                        var store = typeWidget.store;
                        store.data.forEach(function(option){
                            registry.byId("formAddPort.protocols" + option.value).set("disabled", true);
@@ -439,7 +439,7 @@ define(["dojo/_base/xhr",
                            var defaultProtocolsWidget = registry.byId("formAddPort.protocolsDefault");
                            var addressWidget = registry.byId("formAddPort.bindingAddress");
                            addressWidget.set("value", port.bindingAddress);
-                           amqpProtocolsWidget.set("disabled", false);
+
                            if (protocols)
                            {
                                amqpProtocolsWidget.set("value", protocols)
@@ -471,8 +471,6 @@ define(["dojo/_base/xhr",
                        }
                        registry.byId("formAddPort:fields" + typeWidget.value).domNode.style.display = "block";
                        typeWidget.set("disabled", true);
-
-                       toggleSslWidgets(typeWidget.value, transportWidget.value);
 
                        keystoreWidget.initialValue = port.keyStore;
                        truststoreWidget.initialValue = port.trustStores;
