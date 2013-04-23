@@ -23,4 +23,156 @@
 <section id="Java-Broker-Configuring-And-Managing-Config-Files">
 <title>Config Files</title>
 
+    <para>
+        This section shows how to configure and manage broker.
+    </para>
+
+    <section role="h2" id="Java-Broker-Configuring-And-Managing-Config-Files-Configuration">
+        <title>Configuration file</title>
+        <para>Broker can be configured using XML configuration files. By default, broker is looking for configuration file at ${QPID_HOME}/etc/config.xml. The default configuration location can be overridden by specifying command line option <emphasis>-c &lt;path to configuration&gt;</emphasis> on broker start up.</para>
+    </section>
+
+    <section role="h2" id="Java-Broker-Configuring-And-Managing-Config-Files-Management">
+        <title>Management Configuration</title>
+        <para>
+        Management interfaces can be configured in <emphasis>management</emphasis> section of broker configuration file. The example of the management section is provided below.
+        </para>
+         <example>
+    <title>Management configuration</title>
+    <programlisting><![CDATA[
+    <broker>
+    ...
+        <management>
+            <enabled>true</enabled>
+            <jmxport>
+                <registryServer>8999</registryServer>
+            </jmxport>
+            <ssl>
+                <enabled>false</enabled>
+                <keyStorePath>${conf}/qpid.keystore</keyStorePath>
+                <keyStorePassword>password</keyStorePassword>
+            </ssl>
+            <http>
+                <enabled>true</enabled>
+            </http>
+            <https>
+                <enabled>false</enabled>
+            </https>
+        </management>
+    ...
+    </broker>]]></programlisting>
+  </example>
+    </section>
+    <section role="h2" id="Java-Broker-Configuring-And-Managing-Config-Files-JMX-Management">
+        <title>JMX Management Configuration</title>
+        <para>
+        JMX management can be configured in <emphasis>management</emphasis> section of broker configuration file.
+        </para>
+        <para>An <emphasis>enabled</emphasis> element in the <emphasis>management</emphasis> section is used to enable or disable the JMX interfaces. Setting it to <emphasis>true</emphasis> causes the broker to start the management plugin if such is available on the broker classpath.</para>
+        <para>JMX management requires two ports which can be configured in <emphasis>jmxport</emphasis> sub-section of <emphasis>management</emphasis>:
+        <itemizedlist>
+            <listitem><para>RMI port (8999 by default) can be configured in an element <emphasis>jmxport/registryServer</emphasis></para></listitem>
+            <listitem><para>Connector port can be configured in an element <emphasis>jmxport/connectorServer</emphasis>. If configuration element <emphasis>connectorServer</emphasis> is not provided than the connector port defaults to <emphasis>100 + registryServer port</emphasis>.</para></listitem>
+        </itemizedlist>
+        </para>
+        <example>
+            <title>Enabling JMX Management and configuring JMX ports</title>
+            <programlisting>
+&lt;broker&gt;
+...
+&lt;management&gt;
+    <emphasis>&lt;enabled>true&lt;/enabled&gt;</emphasis>                     <co id="java-broker-example-jmx-management-0"/>
+    &lt;jmxport&gt;
+        <emphasis>&lt;registryServer>7999&lt;/registryServer&gt;</emphasis>   <co id="java-broker-example-jmx-management-1"/>
+        <emphasis>&lt;connectorServer>7998&lt;/connectorServer&gt;</emphasis> <co id="java-broker-example-jmx-management-2"/>
+    &lt;/jmxport&gt;
+&lt;management&gt;
+...
+&lt;/broker&gt;</programlisting>
+        </example>
+        <para>In the snippet above the following is configured:</para>
+        <calloutlist>
+            <callout arearefs="java-broker-example-jmx-management-0"><para>Enable JMX management</para></callout>
+            <callout arearefs="java-broker-example-jmx-management-1"><para>Set RMI port to 7999</para></callout>
+            <callout arearefs="java-broker-example-jmx-management-2"><para>Set connector port to 7998</para></callout>
+        </calloutlist>
+        <para>SSL can be configured to use on the connector port in the sub-section <emphasis>ssl</emphasis> of the <emphasis>management</emphasis> section. See <xref linkend="Java-Broker-Configuring-And-Managing-Config-Files-SSL-keystore-configuration"/> for details.</para>
+        <para>In order to use SSL with JMX management an element <emphasis>ssl/enabled</emphasis> needs to be set to <emphasis>true</emphasis>.</para>
+    </section>
+    <section role="h2" id="Java-Broker-Configuring-And-Managing-Config-Files-SSL-keystore-configuration">
+        <title>Management SSL key store configuration</title>
+        <para>
+            This section describes how to configure the key store to use in SSL connections in both JMX and Web management interfaces.
+        </para>
+        <para>The following examples demonstrates how to configure keystore for management</para>
+        <example>
+            <title>Management key store configuration</title>
+            <programlisting>
+&lt;broker&gt;
+...
+&lt;management&gt;
+...
+    &lt;ssl&gt;
+        &lt;enabled&gt;true&lt;/enabled&gt;                            <co id="java-broker-example-management-keystore-0"/>
+        &lt;keyStorePath&gt;${conf}/qpid.keystore&lt;/keyStorePath&gt; <co id="java-broker-example-management-keystore-1"/>
+        &lt;keyStorePassword&gt;password&lt;/keyStorePassword&gt;      <co id="java-broker-example-management-keystore-2"/>
+    &lt;/ssl&gt;
+...
+&lt;management&gt;
+...
+&lt;/broker&gt;</programlisting>
+        </example>
+        <calloutlist>
+            <callout arearefs="java-broker-example-management-keystore-0"><para>Enable SSL on JMX connector port only. This setting does not effect the web management interfaces.</para></callout>
+            <callout arearefs="java-broker-example-management-keystore-1"><para>Set path to the key store file</para></callout>
+            <callout arearefs="java-broker-example-management-keystore-2"><para>Set keystore password</para></callout>
+        </calloutlist>
+     </section>
+     <section role="h2" id="Java-Broker-Configuring-And-Managing-Config-Files-Web-Management">
+        <title>Web Management Configuration</title>
+        <para>
+        Web management can be configured in <emphasis>management</emphasis> section of broker configuration file.
+        </para>
+        <para>Sub-section <emphasis>http</emphasis> is used to enable web management on http port.</para>
+        <para>Sub-section <emphasis>https</emphasis> is used to enable web management on https port.</para>
+        <para>The following example shows how to configure http and https ports</para>
+        <example>
+            <title>Enabling web management</title>
+            <programlisting>
+&lt;broker&gt;
+...
+&lt;management&gt;
+...
+    &lt;http&gt;
+        &lt;enabled&gt;true&lt;/enabled&gt;                       <co id="java-broker-example-management-web-0"/>
+        &lt;port&gt;9090&lt;/keyStorePath&gt;                     <co id="java-broker-example-management-web-1"/>
+        &lt;basic-auth&gt;false&lt;/basic-auth&gt;                <co id="java-broker-example-management-web-2"/>
+        &lt;sasl-auth&gt;true&lt;/sasl-auth&gt;                   <co id="java-broker-example-management-web-3"/>
+        &lt;session-timeout&gt;600&lt;/session-timeout&gt;        <co id="java-broker-example-management-web-4"/>
+    &lt;/http&gt;
+
+    &lt;https&gt;
+        &lt;enabled&gt;true&lt;/enabled&gt;                       <co id="java-broker-example-management-web-5"/>
+        &lt;port&gt;9443&lt;/keyStorePath&gt;                     <co id="java-broker-example-management-web-6"/>
+        &lt;sasl-auth&gt;true&lt;/sasl-auth&gt;                   <co id="java-broker-example-management-web-7"/>
+        &lt;basic-auth&gt;true&lt;/basic-auth&gt;                 <co id="java-broker-example-management-web-8"/>
+    &lt;/https&gt;
+...
+&lt;management&gt;
+...
+&lt;/broker&gt;</programlisting>
+        </example>
+        <calloutlist>
+            <callout arearefs="java-broker-example-management-web-0"><para>Enable web management on http port. Default is true.</para></callout>
+            <callout arearefs="java-broker-example-management-web-1"><para>Set web management http port to 9090. Default is 8080.</para></callout>
+            <callout arearefs="java-broker-example-management-web-2"><para>Disable basic authentication on http port for REST services only. Default is false.</para></callout>
+            <callout arearefs="java-broker-example-management-web-3"><para>Enable SASL authentication on http port for REST services and web console. Default is true.</para></callout>
+            <callout arearefs="java-broker-example-management-web-4"><para>Set session timeout in seconds. Default is 15 minutes.</para></callout>
+            <callout arearefs="java-broker-example-management-web-5"><para>Enable web management on https port. Default is false.</para></callout>
+            <callout arearefs="java-broker-example-management-web-6"><para>Set web management https port to 9443. Default is 8443.</para></callout>
+            <callout arearefs="java-broker-example-management-web-7"><para>Enable SASL authentication on https port for REST services and web console. Default is true.</para></callout>
+            <callout arearefs="java-broker-example-management-web-8"><para>Enable basic authentication on https port for REST services only. Default is true.</para></callout>
+        </calloutlist>
+        <note><para>Please configure the keystore to use with the https web management port. See <xref linkend="Java-Broker-Configuring-And-Managing-Config-Files-SSL-keystore-configuration"/> for details.</para></note>
+     </section>
 </section>
