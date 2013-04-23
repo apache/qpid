@@ -549,7 +549,7 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            addPort.show(name, that.brokerData.authenticationproviders, that.brokerData.keystores, that.brokerData.truststores);
+                                                            that.controller.show("port", name, brokerObj);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 
