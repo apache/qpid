@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
@@ -36,6 +37,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
@@ -51,6 +53,7 @@ public class BrokerACLTest extends QpidRestTestCase
 {
     private static final String ALLOWED_USER = "user1";
     private static final String DENIED_USER = "user2";
+    private String _secondaryAclFileContent = "";
 
     @Override
     protected void customizeConfiguration() throws ConfigurationException, IOException
@@ -63,6 +66,12 @@ public class BrokerACLTest extends QpidRestTestCase
                 "ACL ALLOW-LOG " + ALLOWED_USER + " CONFIGURE BROKER",
                 "ACL DENY-LOG " + DENIED_USER + " CONFIGURE BROKER",
                 "ACL DENY-LOG ALL ALL");
+
+        _secondaryAclFileContent =
+                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT\n" +
+                "ACL ALLOW-LOG " + ALLOWED_USER + " CONFIGURE BROKER\n" +
+                "ACL DENY-LOG " + DENIED_USER + " CONFIGURE BROKER\n" +
+                "ACL DENY-LOG ALL ALL";
 
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 "httpBasicAuthenticationEnabled", true);
@@ -754,6 +763,122 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("Setting of group provider attributes should be denied", 403, responseCode);
     }
 
+    /* === AccessControlProvider === */
+
+    public void testCreateAccessControlProviderAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String accessControlProviderName = getTestName();
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+
+        int responseCode = createAccessControlProvider(accessControlProviderName);
+        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, true);
+    }
+
+    public void testCreateAccessControlProviderDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        String accessControlProviderName = getTestName();
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+
+        int responseCode = createAccessControlProvider(accessControlProviderName);
+        assertEquals("Access control provider creation should be denied", 403, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+    }
+
+    public void testDeleteAccessControlProviderDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String accessControlProviderName = getTestName();
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+
+        int responseCode = createAccessControlProvider(accessControlProviderName);
+        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, true);
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "DELETE", null);
+        assertEquals("Access control provider deletion should be denied", 403, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, true);
+    }
+
+    public void testDeleteAccessControlProviderAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String accessControlProviderName = getTestName();
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+
+        int responseCode = createAccessControlProvider(accessControlProviderName);
+        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, true);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "DELETE", null);
+        assertEquals("Access control provider deletion should be allowed", 200, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+    }
+
+    public void testSetAccessControlProviderAttributesAllowedButUnsupported() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String accessControlProviderName = getTestName();
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+
+        int responseCode = createAccessControlProvider(accessControlProviderName);
+        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, true);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, accessControlProviderName);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        assertEquals("Setting of access control provider attributes should be allowed but not supported", 409, responseCode);
+    }
+
+    public void testSetAccessControlProviderAttributesDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        String accessControlProviderName = getTestName();
+
+        assertAccessControlProviderExistence(accessControlProviderName, false);
+
+        int responseCode = createAccessControlProvider(accessControlProviderName);
+        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+
+        assertAccessControlProviderExistence(accessControlProviderName, true);
+
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(GroupProvider.NAME, accessControlProviderName);
+        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        assertEquals("Setting of access control provider attributes should be denied", 403, responseCode);
+    }
+
+    /* === Utility Methods === */
+
     private int createPort(String portName) throws Exception
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -887,5 +1012,23 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(FileGroupManagerFactory.PATH, file.getAbsoluteFile());
 
         return getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
+    }
+
+    private void assertAccessControlProviderExistence(String accessControlProviderName, boolean exists) throws Exception
+    {
+        String path = "/rest/accesscontrolprovider/" + accessControlProviderName;
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList(path);
+        assertEquals("Unexpected result", exists, !providers.isEmpty());
+    }
+
+    private int createAccessControlProvider(String accessControlProviderName) throws Exception
+    {
+        File file = TestFileUtils.createTempFile(this, ".acl", _secondaryAclFileContent);
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AccessControlProvider.NAME, accessControlProviderName);
+        attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(FileAccessControlProviderConstants.PATH, file.getAbsoluteFile());
+
+        return getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
     }
 }
