@@ -988,7 +988,7 @@ class Receiver(Endpoint, object):
     """
     Returns the number of acknowledged messages awaiting confirmation.
     """
-    return len([m for m in self.acked if m._receiver is self])
+    return len([m for m in self.session.acked if m._receiver is self])
 
   @synchronized
   def available(self):
