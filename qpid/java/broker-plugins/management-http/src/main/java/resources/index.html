@@ -85,6 +85,22 @@
     <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'">
         <div qpid-type="footer"></div>
     </div>
+
+    <div class="dijitHidden">
+        <div data-dojo-type="dijit.Dialog" data-dojo-props="title: 'Connection Error'" id="errorDialog">
+            <div style="width:400px; overflow: auto">
+                <div><strong><span id="errorMessage">An error occurred when communicating with the broker.</span></strong></div>
+                <div><span id="statusMessage"></span></div>
+                <div style="margin-top: 10px; margin-bottom: 8px"><span id="reloadMessage">Please try to reload.</span></div>
+                <div id="errorDetails" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Details', open:false">
+                    <span id="errorDetailsMessage"></span>
+                </div>
+            </div>
+            <div class="dijitDialogPaneActionBar">
+                <input type="button" value="Close" label="Close" dojoType="dijit.form.Button" onClick="dijit.byId('errorDialog').hide();"/>
+            </div>
+        </div>
+    </div>
 </div>
 
 </body>

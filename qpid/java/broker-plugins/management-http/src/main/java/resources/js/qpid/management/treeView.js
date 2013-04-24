@@ -42,7 +42,6 @@ define(["dojo/_base/xhr",
                this.onDelete = function (object) {
                    // fired when an object is deleted
                };
-
            }
 
 
@@ -297,7 +296,7 @@ define(["dojo/_base/xhr",
                              else {
                                  thisObj.buildModel(data);
                              }
-                         });
+                         }, util.xhrErrorHandler);
 
            };
 
