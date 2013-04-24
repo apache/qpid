@@ -78,7 +78,7 @@ struct DaemonOptions : public qpid::Options {
             ("daemon,d", pure_switch(daemon), "Run as a daemon. Logs to syslog by default in this mode.")
             ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
             ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
-            ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
+            ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize or shutdown the daemon. If the daemon fails to initialize/shutdown, prints an error and returns 1")
             ("check,c", pure_switch(check), "Prints the daemon's process ID to stdout and returns 0 if the daemon is running, otherwise returns 1")
             ("quit,q", pure_switch(quit), "Tells the daemon to shut down");
     }
@@ -174,7 +174,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
             if (kill(pid, SIGINT) < 0)
                 throw Exception("Failed to stop daemon: " + qpid::sys::strError(errno));
             // Wait for the process to die before returning
-            int retry=10000;    // Try up to 10 seconds
+            int retry=myOptions->daemon.wait*1000;    // Try up to "--wait N" seconds, do retry every millisecond
             while (kill(pid,0) == 0 && --retry)
                 sys::usleep(1000);
             if (retry == 0)
