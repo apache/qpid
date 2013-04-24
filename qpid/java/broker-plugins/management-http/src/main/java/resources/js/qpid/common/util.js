@@ -309,7 +309,48 @@ define(["dojo/_base/xhr",
              var maxHeight = Math.max(Math.floor(viewport.h * 0.6), 100);
              dialogContentArea.style.overflow= "auto";
              dialogContentArea.style.height = Math.min(aproximateHeight, maxHeight ) + "px";
+             setAttributesDialog.on("hide", function(e){setAttributesDialog.destroy();});
              setAttributesDialog.show();
+           };
+
+           util.xhrErrorHandler = function(error)
+           {
+             if (error)
+             {
+               if (error.hasOwnProperty("status"))
+               {
+                 if (error.status == 401)
+                 {
+                   dojo.byId("statusMessage").innerHTML = "401 - Authentication required.";
+                 }
+                 else if (error.status == 403)
+                 {
+                   dojo.byId("statusMessage").innerHTML = "403 - Access denied.";
+                 }
+                 else
+                 {
+                   dojo.byId("statusMessage").innerHTML = "HTTP status code: " + error.status;
+                 }
+               }
+               else
+               {
+                 dojo.byId("statusMessage").innerHTML = "";
+               }
+               if (error.hasOwnProperty("message"))
+               {
+                 dojo.byId("errorDetailsMessage").innerHTML = error.message;
+                 dojo.byId("errorDetails").style.display = "block";
+               }
+               else
+               {
+                 dojo.byId("errorDetails").style.display = "none";
+               }
+               var dialog = dijit.byId("errorDialog");
+               if (!dialog.open)
+               {
+                 dialog.show();
+               }
+             }
            };
 
            return util;
