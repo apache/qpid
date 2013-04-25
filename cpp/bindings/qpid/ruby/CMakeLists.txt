@@ -31,6 +31,10 @@ set(GEM_OUTPUT_FILE ${GEM_OUTPUT_PATH}/pkg/qpid-${qpidc_version}.0.gem)
 ##------------------------------------------------------
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES CPLUSPLUS ON)
 
+if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+  set (RUBY_INCLUDE_DIRS ${RUBY_INCLUDE_PATH})
+endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+
 include_directories(${RUBY_INCLUDE_DIRS}
                     ${qpid-cpp_SOURCE_DIR}/include
                     ${qpid-cpp_SOURCE_DIR}/bindings)
@@ -43,11 +47,19 @@ set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_F
 ##----------------------------------
 ## Install the complete Ruby binding
 ##----------------------------------
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_ruby.so
+if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid_ruby.so
         RENAME cqpid.so
         DESTINATION ${RUBY_PFX_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
+else()
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_ruby.so
+        RENAME cqpid.so
+        DESTINATION ${RUBY_PFX_ARCH_DIR}
+        COMPONENT ${QPID_COMPONENT_CLIENT}
+        )
+endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
 
 add_custom_command(OUTPUT ${GEM_BINDINGS_SOURCE_FILE}
                    COMMAND cp ${swig_generated_file_fullname} ${GEM_BINDINGS_SOURCE_FILE}
