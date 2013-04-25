@@ -100,7 +100,7 @@ module Qpid
         it "raises an error when the name is invalid" do
           expect {
             @session.sender @name.reverse
-          }.to raise_error(Qpid::Messaging::KeyError)
+          }.to raise_error
         end
 
      end
@@ -160,7 +160,7 @@ module Qpid
         it "raises an error when the name is invalid" do
           expect {
             @session.receiver @name.reverse
-          }.to raise_error(Qpid::Messaging::KeyError)
+          }.to raise_error
         end
 
       end

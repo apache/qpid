@@ -75,7 +75,7 @@ module Qpid
 
         expect {
           @connection.session "farkle"
-        }.to raise_error(SessionNameException)
+        }.to raise_error
       end
 
       ####################################################################
