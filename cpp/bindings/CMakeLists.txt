@@ -30,6 +30,43 @@ if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
   else()
     set(RUBY_FOUND "FALSE")
   endif (RUBY_INCLUDE_PATH)
+
+  if (PERL_FOUND)
+    # taken from Cmake 2.8 FindPerlLibs.cmake
+    execute_process(
+      COMMAND
+        ${PERL_EXECUTABLE} -V:installarchlib
+        OUTPUT_VARIABLE PERL_ARCHLIB_OUTPUT_VARIABLE
+        RESULT_VARIABLE PERL_ARCHLIB_RESULT_VARIABLE
+    )
+    if (NOT PERL_ARCHLIB_RESULT_VARIABLE)
+      string(REGEX REPLACE "install[a-z]+='([^']+)'.*" "\\1" PERL_ARCHLIB ${PERL_ARCHLIB_OUTPUT_VARIABLE})
+      file(TO_CMAKE_PATH "${PERL_ARCHLIB}" PERL_ARCHLIB)
+    endif ()
+
+    IF ( PERL_INCLUDE_PATH MATCHES .*-NOTFOUND )
+      EXECUTE_PROCESS ( COMMAND ${PERL_EXECUTABLE}
+                        -MConfig -e "print \$Config{archlibexp}"
+                        OUTPUT_VARIABLE PERL_OUTPUT
+                        RESULT_VARIABLE PERL_RETURN_VALUE )
+      IF ( NOT PERL_RETURN_VALUE )
+        FIND_PATH ( PERL_INCLUDE_PATH perl.h ${PERL_OUTPUT}/CORE )
+      ENDIF ( NOT PERL_RETURN_VALUE )
+   ENDIF ( PERL_INCLUDE_PATH MATCHES .*-NOTFOUND )
+
+    ## Try to fix failure in PERL_LIBRARY
+    IF ( PERL_LIBRARY MATCHES .*-NOTFOUND )
+      EXECUTE_PROCESS ( COMMAND ${PERL_EXECUTABLE}
+                        -MConfig -e "print \$Config{libperl}"
+                        OUTPUT_VARIABLE PERL_OUTPUT
+                        RESULT_VARIABLE PERL_RETURN_VALUE )
+      IF ( NOT PERL_RETURN_VALUE )
+        FIND_LIBRARY ( PERL_LIBRARY NAMES ${PERL_OUTPUT}
+                                    PATHS ${PERL_INCLUDE_PATH} )
+      ENDIF ( NOT PERL_RETURN_VALUE )
+    ENDIF ( PERL_LIBRARY MATCHES .*-NOTFOUND )
+
+  endif (PERL_FOUND)
 endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
 
 set (SWIG_MINIMUM_VERSION "1.3.32")
@@ -64,7 +101,7 @@ if (SWIG_FOUND)
         add_subdirectory(qmf/ruby)
     endif (RUBY_FOUND)
 
-    if (PERLLIBS_FOUND)
+    if (PERL_FOUND)
         message("Building Perl bindings")
         execute_process(COMMAND ${PERL_EXECUTABLE} "-V::prefix:"
                         OUTPUT_VARIABLE QPERL_PREFIX
@@ -73,6 +110,6 @@ if (SWIG_FOUND)
         string(REPLACE ${PERL_PREFIX} ${CMAKE_INSTALL_PREFIX} PERL_PFX_ARCHLIB ${PERL_ARCHLIB})
 
         add_subdirectory(qpid/perl)
-    endif (PERLLIBS_FOUND)
+    endif (PERL_FOUND)
   endif (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
 endif (SWIG_FOUND)
