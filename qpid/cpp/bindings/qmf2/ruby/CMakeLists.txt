@@ -22,6 +22,10 @@
 ##------------------------------------------------------
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES CPLUSPLUS ON)
 
+if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+  set (RUBY_INCLUDE_DIRS ${RUBY_INCLUDE_PATH})
+endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+
 include_directories(${RUBY_INCLUDE_DIRS}
                     ${qpid-cpp_SOURCE_DIR}/include
                     ${qpid-cpp_SOURCE_DIR}/bindings)
@@ -32,9 +36,17 @@ swig_link_libraries(cqmf2_ruby qmf2 ${RUBY_LIBRARY})
 ##----------------------------------
 ## Install the complete Ruby binding
 ##----------------------------------
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqmf2_ruby.so
+if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqmf2_ruby.so
         RENAME cqmf2.so
         DESTINATION ${RUBY_PFX_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
+else()
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqmf2_ruby.so
+        RENAME cqmf2.so
+        DESTINATION ${RUBY_PFX_ARCH_DIR}
+        COMPONENT ${QPID_COMPONENT_CLIENT}
+        )
+endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
 
