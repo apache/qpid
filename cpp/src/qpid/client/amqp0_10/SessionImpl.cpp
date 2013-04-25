@@ -471,13 +471,11 @@ void SessionImpl::rollbackImpl()
 
 void SessionImpl::acknowledgeImpl()
 {
-    ScopedLock l(lock);
     if (!transactional) incoming.accept();
 }
 
 void SessionImpl::acknowledgeImpl(qpid::messaging::Message& m, bool cumulative)
 {
-    ScopedLock l(lock);
     if (!transactional) incoming.accept(MessageImplAccess::get(m).getInternalId(), cumulative);
 }
 
