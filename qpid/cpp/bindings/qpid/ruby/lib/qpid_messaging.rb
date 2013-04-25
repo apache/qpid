@@ -18,6 +18,7 @@
 #++
 
 require 'cqpid'
+require 'qpid_messaging/errors'
 require 'qpid_messaging/duration'
 require 'qpid_messaging/address'
 require 'qpid_messaging/encoding'
