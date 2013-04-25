@@ -169,6 +169,52 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of providers", 0, providerDetails.size());
     }
 
+    public void testCreateAndDeletePasswordAuthenticationProviderWithNonExistingFile() throws Exception
+    {
+        stopBroker();
+        getBrokerConfiguration().setSaved(false);
+        getBrokerConfiguration().removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+
+        startBroker();
+
+        File file = new File(TMP_FOLDER + File.separator + getTestName());
+        if (file.exists())
+        {
+            file.delete();
+        }
+        assertFalse("File " + file.getAbsolutePath() + " should not exist", file.exists());
+
+        // create provider
+        String providerName = "test-provider";
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AuthenticationProvider.NAME, providerName);
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        assertEquals("Password provider was not created", 201, responseCode);
+
+
+        Map<String, Object> providerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        assertNotNull("Providers details cannot be null", providerDetails);
+        assertEquals("Unexpected name", providerName, providerDetails.get(AuthenticationProvider.NAME));
+        assertEquals("Unexpected type", PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE, providerDetails.get(AuthenticationProvider.TYPE));
+        assertEquals("Unexpected path", file.getAbsolutePath(), providerDetails.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+
+        assertTrue("User file should be created", file.exists());
+
+        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName , "DELETE", null);
+        assertEquals("Unexpected response code for provider deletion", 200, responseCode);
+
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        assertNotNull("Providers details cannot be null", providers);
+        assertEquals("Unexpected number of providers", 0, providers.size());
+
+        assertFalse("File " + file.getAbsolutePath() + " should be deleted", file.exists());
+    }
+
     private void assertProvider(boolean managesPrincipals, String type, Map<String, Object> provider)
     {
         Asserts.assertAttributesPresent(provider, AuthenticationProvider.AVAILABLE_ATTRIBUTES,

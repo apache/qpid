@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.Principal;
 import org.apache.log4j.Logger;
@@ -79,6 +80,19 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     public void initialise()
     {
+        try
+        {
+            _principalDatabase.open(new File(_passwordFile));
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new IllegalConfigurationException("Exception opening password database: " + e.getMessage(), e);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot use password database at :" + _passwordFile, e);
+        }
+
         final Map<String, Class<? extends SaslServerFactory>> providerMap = new TreeMap<String, Class<? extends SaslServerFactory>>();
 
         initialiseAuthenticationMechanisms(providerMap, _principalDatabase);
@@ -224,8 +238,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
             {
                 throw new IllegalConfigurationException("Cannot read password file" + _passwordFile + ". Check permissions.");
             }
-
-            _principalDatabase.open(passwordFile);
         }
         catch (IOException e)
         {

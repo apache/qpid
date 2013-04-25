@@ -23,6 +23,8 @@ package org.apache.qpid.server.model.adapter;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,20 +47,42 @@ public class AuthenticationProviderFactoryTest extends TestCase
 
     public void testCreatePasswordCredentialManagingAuthenticationProvider()
     {
-        AuthenticationProvider provider = testForFactory(mock(PrincipalDatabaseAuthenticationManager.class));
+        AuthenticationManager am = mock(PrincipalDatabaseAuthenticationManager.class);
+        AuthenticationProvider provider = testForFactory(am, true);
         assertTrue("The created provider should match the factory's AuthenticationManager type",
                 provider instanceof PasswordCredentialManagingAuthenticationProvider);
+        verify(am).onCreate();
     }
 
     public void testCreateNonPasswordCredentialManagingAuthenticationProvider()
     {
-        AuthenticationProvider provider = testForFactory(mock(AuthenticationManager.class));
+        AuthenticationManager am = mock(AuthenticationManager.class);
+        AuthenticationProvider provider = testForFactory(am, true);
         assertFalse("The created provider should match the factory's AuthenticationManager type",
                 provider instanceof PasswordCredentialManagingAuthenticationProvider);
+        verify(am).onCreate();
+    }
+
+    public void testRecoverPasswordCredentialManagingAuthenticationProvider()
+    {
+        AuthenticationManager am = mock(PrincipalDatabaseAuthenticationManager.class);
+        AuthenticationProvider provider = testForFactory(am, false);
+        assertTrue("The created provider should match the factory's AuthenticationManager type",
+                provider instanceof PasswordCredentialManagingAuthenticationProvider);
+        verify(am, never()).onCreate();
+    }
+
+    public void testRecoverNonPasswordCredentialManagingAuthenticationProvider()
+    {
+        AuthenticationManager am = mock(AuthenticationManager.class);
+        AuthenticationProvider provider = testForFactory(am, false);
+        assertFalse("The created provider should match the factory's AuthenticationManager type",
+                provider instanceof PasswordCredentialManagingAuthenticationProvider);
+        verify(am, never()).onCreate();
     }
 
     @SuppressWarnings("unchecked")
-    private AuthenticationProvider testForFactory(AuthenticationManager authenticationManager)
+    private AuthenticationProvider testForFactory(AuthenticationManager authenticationManager, boolean create)
     {
         UUID id = UUID.randomUUID();
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -73,7 +97,16 @@ public class AuthenticationProviderFactoryTest extends TestCase
         when(authenticationManagerFactory.createInstance(attributes)).thenReturn(authenticationManager);
 
         AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(authManagerFactoryServiceLoader);
-        AuthenticationProvider provider = providerFactory.create(id, broker, attributes);
+
+        AuthenticationProvider provider = null;
+        if (create)
+        {
+            provider = providerFactory.create(id, broker, attributes);
+        }
+        else
+        {
+            provider = providerFactory.recover(id, attributes, broker);
+        }
 
         assertNotNull("Provider is not created", provider);
         assertEquals("Unexpected ID", id, provider.getId());
