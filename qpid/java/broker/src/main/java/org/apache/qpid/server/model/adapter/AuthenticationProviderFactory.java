@@ -62,6 +62,24 @@ public class AuthenticationProviderFactory
      */
     public AuthenticationProvider create(UUID id, Broker broker, Map<String, Object> attributes)
     {
+        AuthenticationProviderAdapter<?> provider = createAuthenticationProvider(id, broker, attributes);
+        provider.getAuthManager().onCreate();
+        return provider;
+    }
+
+    /**
+     * Recovers {@link AuthenticationProvider} for given ID, attributes and {@link Broker}.
+     * <p>
+     * The configured {@link AuthenticationManagerFactory}'s are used to try to create the {@link AuthenticationProvider}.
+     * The first non-null instance is returned. The factories are used in non-deterministic order.
+     */
+    public AuthenticationProvider recover(UUID id, Map<String, Object> attributes, Broker broker)
+    {
+        return createAuthenticationProvider(id, broker, attributes);
+    }
+
+    private AuthenticationProviderAdapter<?> createAuthenticationProvider(UUID id, Broker broker, Map<String, Object> attributes)
+    {
         for (AuthenticationManagerFactory factory : _factories)
         {
             AuthenticationManager manager = factory.createInstance(attributes);
@@ -80,18 +98,15 @@ public class AuthenticationProviderFactory
                     {
                         if (provider instanceof PasswordCredentialManagingAuthenticationProvider)
                         {
-                            throw new IllegalConfigurationException("An authentication provider which can manage users alredy exists ["
+                            throw new IllegalConfigurationException("An authentication provider which can manage users already exists ["
                                     + provider.getName() + "]. Only one instance is allowed.");
                         }
                     }
-
-                    manager.onCreate();
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
                             (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
                 }
                 else
                 {
-                    manager.onCreate();
                     authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
                 }
                 return authenticationProvider;

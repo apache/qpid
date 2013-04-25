@@ -20,7 +20,6 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,14 +61,11 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
         _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
         _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _emptyPasswordFile.getAbsolutePath());
 
-        try
-        {
-            _factory.createInstance(_configuration);
-        }
-        catch (RuntimeException re)
-        {
-            assertTrue(re.getCause() instanceof FileNotFoundException);
-        }
+        AuthenticationManager manager = _factory.createInstance(_configuration);
+
+        assertNotNull(manager);
+        assertTrue(manager instanceof PrincipalDatabaseAuthenticationManager);
+        assertTrue(((PrincipalDatabaseAuthenticationManager)manager).getPrincipalDatabase() instanceof PlainPasswordFilePrincipalDatabase);
     }
 
     public void testReturnsNullWhenNoConfig() throws Exception

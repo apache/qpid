@@ -357,11 +357,25 @@ define(["dojo/_base/xhr",
                             var deleteProviderButton = query(".deleteAuthenticationProvider", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(deleteProviderButton), "onClick",
                                     function(evt){
+                                        var warning = "";
+                                        var data = that.brokerUpdater.authenticationProvidersGrid.grid.selection.getSelected();
+                                        if(data.length && data.length > 0)
+                                        {
+                                          for(var i = 0; i<data.length; i++)
+                                          {
+                                              if (data[i].type.indexOf("File") != -1)
+                                              {
+                                                warning = "NOTE: provider deletion will also remove the password file on disk.\n\n"
+                                                break;
+                                              }
+                                          }
+                                        }
+
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.authenticationProvidersGrid.grid,
                                                 "rest/authenticationprovider",
-                                                "Are you sure you want to delete authentication provider");
+                                                warning + "Are you sure you want to delete authentication provider");
                                 }
                             );
 
