@@ -161,7 +161,7 @@ void TCPConnector::abort() {
     if (!closed) {
         if (aio) {
             // Established connection
-            aio->requestCallback(boost::bind(&TCPConnector::eof, this, _1));
+            aio->requestCallback(boost::bind(&TCPConnector::disconnected, this, _1));
         } else if (connector) {
             // We're still connecting
             connector->requestCallback(boost::bind(&TCPConnector::connectAborted, this));
