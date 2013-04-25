@@ -253,10 +253,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        AuthenticationManager manager = validateAttributes(attributes);
+        Map<String, Object> effectiveAttributes = super.generateEffectiveAttributes(attributes);
+        AuthenticationManager manager = validateAttributes(effectiveAttributes);
         manager.initialise();
         _authManager = (T)manager;
-        String type = (String)attributes.get(AuthenticationManagerFactory.ATTRIBUTE_TYPE);
+        String type = (String)effectiveAttributes.get(AuthenticationManagerFactory.ATTRIBUTE_TYPE);
         AuthenticationManagerFactory managerFactory = _factories.get(type);
         _supportedAttributes = createSupportedAttributes(managerFactory.getAttributeNames());
         super.changeAttributes(attributes);
