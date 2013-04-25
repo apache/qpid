@@ -123,7 +123,6 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
 }
 
 const std::string& ReceiverImpl::getName() const {
-    sys::Mutex::ScopedLock l(lock);
     return destination;
 }
 
@@ -200,9 +199,15 @@ void ReceiverImpl::closeImpl()
     if (state != CANCELLED) {
         state = CANCELLED;
         sync(session).messageStop(destination);
-        parent->releasePending(destination);
+        {
+            sys::Mutex::ScopedUnlock l(lock);
+            parent->releasePending(destination);
+        }
         source->cancel(session, destination);
-        parent->receiverCancelled(destination);
+        {
+            sys::Mutex::ScopedUnlock l(lock);
+            parent->receiverCancelled(destination);
+        }
     }
 }
 
