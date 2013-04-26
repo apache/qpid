@@ -282,6 +282,8 @@ define(["dojo/_base/xhr",
                  controller.show("truststore", details.truststore, {broker: {type:"broker", name:""}});
                } else if (details.type == 'accesscontrolprovider') {
                  controller.show("accesscontrolprovider", details.accesscontrolprovider, {broker: {type:"broker", name:""}});
+               } else if (details.type == 'plugin') {
+                 controller.show("plugin", details.plugin, {broker: {type:"broker", name:""}});
                }
            };
 

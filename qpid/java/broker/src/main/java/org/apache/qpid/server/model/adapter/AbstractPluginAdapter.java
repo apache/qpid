@@ -26,19 +26,23 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.security.access.Operation;
 
 public abstract class AbstractPluginAdapter extends AbstractAdapter implements Plugin
 {
+    private Broker _broker;
 
-    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, Broker broker)
     {
-        super(id, defaults, attributes, taskExecutor);
+        super(id, defaults, attributes, broker.getTaskExecutor());
+        _broker = broker;
+        addParent(Broker.class, broker);
     }
 
     @Override
@@ -104,13 +108,6 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
     }
 
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes,
-            ConfiguredObject... otherParents)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         return AVAILABLE_ATTRIBUTES;
@@ -148,5 +145,47 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
 
         }
         return super.getAttribute(name);
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes,
+            ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.DELETE))
+            {
+                throw new AccessControlException("Deletion of plugin is denied");
+            }
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of plugin attribute is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.UPDATE))
+        {
+            throw new AccessControlException("Setting of plugin attributes is denied");
+        }
+    }
+
+    protected Broker getBroker()
+    {
+        return _broker;
     }
 }

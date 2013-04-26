@@ -54,7 +54,7 @@ public class HttpManagementFactoryTest extends QpidTestCase
 
         HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
 
-        assertEquals(_broker, management.getBroker());
+        assertEquals(_broker, management.getParent(Broker.class));
         assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());
     }
 

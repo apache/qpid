@@ -37,7 +37,7 @@
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
   <property name="modules.jca"        value="jca"/>
   <property name="modules"            value="${modules.core} ${modules.examples}
-   ${modules.jca} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
+   ${modules.jca} ${modules.plugin} ${modules.tests} ${modules.opt}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
