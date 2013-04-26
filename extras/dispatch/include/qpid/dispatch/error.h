@@ -1,5 +1,5 @@
-#ifndef __dispatch_log_h__
-#define __dispatch_log_h__ 1
+#ifndef __dispatch_error_h__
+#define __dispatch_error_h__ 1
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,14 +19,11 @@
  * under the License.
  */
 
-#define LOG_NONE  0x00000000
-#define LOG_TRACE 0x00000001
-#define LOG_ERROR 0x00000002
-#define LOG_INFO  0x00000004
-
-void dx_log_impl(const char *module, int cls, const char *file, int line, const char *fmt, ...);
-#define dx_log(m, c, f, ...) dx_log_impl(m, c, __FILE__, __LINE__, f , ##__VA_ARGS__)
-
-void dx_log_set_mask(int mask);
+typedef enum {
+    DX_ERROR_NONE = 0,
+    DX_ERROR_NOT_FOUND,
+    DX_ERROR_ALREADY_EXISTS,
+    DX_ERROR_ALLOC
+} dx_error_t;
 
 #endif

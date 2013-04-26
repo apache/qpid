@@ -46,9 +46,14 @@ typedef struct dx_dispatch_t dx_dispatch_t;
  * \brief Initialize the Dispatch library and prepare it for operation.
  *
  * @param thread_count The number of worker threads (1 or more) that the server shall create
+ * @param container_name The name of the container.  If NULL, a UUID will be generated.
+ * @param router_area The name of the router's area.  If NULL, a default value will be supplied.
+ * @param router_id The identifying name of the router.  If NULL, it will be set the same as the
+ *        container_name.
  * @return A handle to be used in API calls for this instance.
  */
-dx_dispatch_t *dx_dispatch(int thread_count);
+dx_dispatch_t *dx_dispatch(int thread_count, const char *container_name,
+                           const char *router_area, const char *router_id);
 
 
 /**

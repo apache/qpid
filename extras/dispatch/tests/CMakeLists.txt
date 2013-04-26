@@ -22,8 +22,9 @@
 ##
 set(unit_test_SOURCES
     alloc_test.c
+    field_test.c
     message_test.c
-    run_tests.c
+    run_unit_tests.c
     server_test.c
     timer_test.c
     tool_test.c
@@ -32,7 +33,7 @@ set(unit_test_SOURCES
 add_executable(unit_tests ${unit_test_SOURCES})
 target_link_libraries(unit_tests qpid-dispatch)
 
-add_test(unit_tests_buf_512 unit_tests 512)
-add_test(unit_tests_buf_10K unit_tests 10000)
-add_test(unit_tests_buf_10  unit_tests 10)
-add_test(unit_tests_buf_1   unit_tests 1)
+add_test(unit_tests_buf_10000 unit_tests 10000)
+add_test(unit_tests_buf_512   unit_tests 512)
+add_test(unit_tests_buf_10    unit_tests 10)
+add_test(unit_tests_buf_1     unit_tests 1)

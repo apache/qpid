@@ -24,26 +24,43 @@
 /**
  * Private Function Prototypes
  */
-dx_server_t    *dx_server(int tc);
+dx_server_t    *dx_server(int tc, const char *container_name);
+void            dx_server_setup_agent(dx_dispatch_t *dx);
 void            dx_server_free(dx_server_t *server);
 dx_container_t *dx_container(dx_dispatch_t *dx);
+void            dx_container_setup_agent(dx_dispatch_t *dx);
 void            dx_container_free(dx_container_t *container);
-dx_router_t    *dx_router(dx_dispatch_t *dx);
+dx_router_t    *dx_router(dx_dispatch_t *dx, const char *area, const char *id);
+void            dx_router_setup_agent(dx_dispatch_t *dx);
 void            dx_router_free(dx_router_t *router);
 dx_agent_t     *dx_agent(dx_dispatch_t *dx);
 void            dx_agent_free(dx_agent_t *agent);
 
 
-dx_dispatch_t *dx_dispatch(int thread_count)
+dx_dispatch_t *dx_dispatch(int thread_count, const char *container_name,
+                           const char *router_area, const char *router_id)
 {
     dx_dispatch_t *dx = NEW(dx_dispatch_t);
 
     dx_alloc_initialize();
 
-    dx->server    = dx_server(thread_count);
+    if (!container_name)
+        container_name = "00000000-0000-0000-0000-000000000000";  // TODO - gen a real uuid
+
+    if (!router_area)
+        router_area = "area";
+
+    if (!router_id)
+        router_id = container_name;
+
+    dx->server    = dx_server(thread_count, container_name);
     dx->container = dx_container(dx);
-    dx->router    = dx_router(dx);
+    dx->router    = dx_router(dx, router_area, router_id);
     dx->agent     = dx_agent(dx);
+
+    dx_server_setup_agent(dx);
+    dx_container_setup_agent(dx);
+    dx_router_setup_agent(dx);
 
     return dx;
 }

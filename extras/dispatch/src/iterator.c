@@ -25,19 +25,25 @@
 #include <string.h>
 
 typedef enum {
-MODE_TO_END,
-MODE_TO_SLASH
+    MODE_TO_END,
+    MODE_TO_SLASH
 } parse_mode_t;
 
+typedef struct {
+    dx_buffer_t   *buffer;
+    unsigned char *cursor;
+    int            length;
+} pointer_t;
+
 struct dx_field_iterator_t {
-    dx_buffer_t        *start_buffer;
-    unsigned char      *start_cursor;
-    int                 start_length;
-    dx_buffer_t        *buffer;
-    unsigned char      *cursor;
-    int                 length;
+    pointer_t           start_pointer;
+    pointer_t           view_start_pointer;
+    pointer_t           pointer;
     dx_iterator_view_t  view;
     parse_mode_t        mode;
+    unsigned char       prefix;
+    int                 at_prefix;
+    int                 view_prefix;
 };
 
 
@@ -46,28 +52,86 @@ ALLOC_DEFINE(dx_field_iterator_t);
 
 
 typedef enum {
-STATE_START,
-STATE_SLASH_LEFT,
-STATE_SKIPPING_TO_NEXT_SLASH,
-STATE_SCANNING,
-STATE_COLON,
-STATE_COLON_SLASH,
-STATE_AT_NODE_ID
+    STATE_START,
+    STATE_SLASH_LEFT,
+    STATE_SKIPPING_TO_NEXT_SLASH,
+    STATE_SCANNING,
+    STATE_COLON,
+    STATE_COLON_SLASH,
+    STATE_AT_NODE_ID
 } state_t;
+
+
+static char *my_area    = "";
+static char *my_router  = "";
+
+
+static void parse_address_view(dx_field_iterator_t *iter)
+{
+    //
+    // This function starts with an iterator view that is identical to
+    // ITER_VIEW_NO_HOST.  We will now further refine the view in order
+    // to aid the router in looking up addresses.
+    //
+
+    if (dx_field_iterator_prefix(iter, "_")) {
+        if (dx_field_iterator_prefix(iter, "local/")) {
+            iter->prefix      = 'L';
+            iter->at_prefix   = 1;
+            iter->view_prefix = 1;
+            return;
+        }
+
+        if (dx_field_iterator_prefix(iter, "topo/")) {
+            if (dx_field_iterator_prefix(iter, "all/") || dx_field_iterator_prefix(iter, my_area)) {
+                if (dx_field_iterator_prefix(iter, "all/") || dx_field_iterator_prefix(iter, my_router)) {
+                    iter->prefix      = 'L';
+                    iter->at_prefix   = 1;
+                    iter->view_prefix = 1;
+                    return;
+                }
+
+                iter->prefix      = 'R';
+                iter->at_prefix   = 1;
+                iter->view_prefix = 1;
+                iter->mode        = MODE_TO_SLASH;
+                return;
+            }
+
+            iter->prefix      = 'A';
+            iter->at_prefix   = 1;
+            iter->view_prefix = 1;
+            iter->mode        = MODE_TO_SLASH;
+            return;
+        }
+    }
+
+    iter->prefix      = 'M';
+    iter->at_prefix   = 1;
+    iter->view_prefix = 1;
+}
 
 
 static void view_initialize(dx_field_iterator_t *iter)
 {
-    if (iter->view == ITER_VIEW_ALL) {
-        iter->mode = MODE_TO_END;
+    //
+    // The default behavior is for the view to *not* have a prefix.
+    // We'll add one if it's needed later.
+    //
+    iter->at_prefix   = 0;
+    iter->view_prefix = 0;
+    iter->mode        = MODE_TO_END;
+
+    if (iter->view == ITER_VIEW_ALL)
         return;
-    }
 
     //
     // Advance to the node-id.
     //
-    state_t      state = STATE_START;
-    unsigned int octet;
+    state_t        state = STATE_START;
+    unsigned int   octet;
+    pointer_t      save_pointer = {0,0,0};
+
     while (!dx_field_iterator_end(iter) && state != STATE_AT_NODE_ID) {
         octet = dx_field_iterator_octet(iter);
         switch (state) {
@@ -96,17 +160,20 @@ static void view_initialize(dx_field_iterator_t *iter)
             break;
 
         case STATE_COLON :
-            if (octet == '/')
+            if (octet == '/') {
                 state = STATE_COLON_SLASH;
-            else
+                save_pointer = iter->pointer;
+            } else
                 state = STATE_SCANNING;
             break;
 
         case STATE_COLON_SLASH :
             if (octet == '/')
                 state = STATE_SKIPPING_TO_NEXT_SLASH;
-            else
-                state = STATE_SCANNING;
+            else {
+                state = STATE_AT_NODE_ID;
+                iter->pointer = save_pointer;
+            }
             break;
 
         case STATE_AT_NODE_ID :
@@ -119,9 +186,7 @@ static void view_initialize(dx_field_iterator_t *iter)
         // The address string was relative, not absolute.  The node-id
         // is at the beginning of the string.
         //
-        iter->buffer = iter->start_buffer;
-        iter->cursor = iter->start_cursor;
-        iter->length = iter->start_length;
+        iter->pointer = iter->start_pointer;
     }
 
     //
@@ -137,6 +202,12 @@ static void view_initialize(dx_field_iterator_t *iter)
         return;
     }
 
+    if (iter->view == ITER_VIEW_ADDRESS_HASH) {
+        iter->mode = MODE_TO_END;
+        parse_address_view(iter);
+        return;
+    }
+
     if (iter->view == ITER_VIEW_NODE_SPECIFIC) {
         iter->mode = MODE_TO_END;
         while (!dx_field_iterator_end(iter)) {
@@ -149,17 +220,29 @@ static void view_initialize(dx_field_iterator_t *iter)
 }
 
 
+void dx_field_iterator_set_address(const char *area, const char *router)
+{
+    my_area = (char*) malloc(strlen(area) + 2);
+    strcpy(my_area, area);
+    strcat(my_area, "/");
+
+    my_router = (char*) malloc(strlen(router) + 2);
+    strcpy(my_router, router);
+    strcat(my_router, "/");
+}
+
+
 dx_field_iterator_t* dx_field_iterator_string(const char *text, dx_iterator_view_t view)
 {
     dx_field_iterator_t *iter = new_dx_field_iterator_t();
     if (!iter)
         return 0;
 
-    iter->start_buffer = 0;
-    iter->start_cursor = (unsigned char*) text;
-    iter->start_length = strlen(text);
+    iter->start_pointer.buffer = 0;
+    iter->start_pointer.cursor = (unsigned char*) text;
+    iter->start_pointer.length = strlen(text);
 
-    dx_field_iterator_reset(iter, view);
+    dx_field_iterator_reset_view(iter, view);
 
     return iter;
 }
@@ -171,11 +254,11 @@ dx_field_iterator_t *dx_field_iterator_buffer(dx_buffer_t *buffer, int offset, i
     if (!iter)
         return 0;
 
-    iter->start_buffer = buffer;
-    iter->start_cursor = dx_buffer_base(buffer) + offset;
-    iter->start_length = length;
+    iter->start_pointer.buffer = buffer;
+    iter->start_pointer.cursor = dx_buffer_base(buffer) + offset;
+    iter->start_pointer.length = length;
 
-    dx_field_iterator_reset(iter, view);
+    dx_field_iterator_reset_view(iter, view);
 
     return iter;
 }
@@ -187,40 +270,52 @@ void dx_field_iterator_free(dx_field_iterator_t *iter)
 }
 
 
-void dx_field_iterator_reset(dx_field_iterator_t *iter, dx_iterator_view_t  view)
+void dx_field_iterator_reset(dx_field_iterator_t *iter)
 {
-    iter->buffer = iter->start_buffer;
-    iter->cursor = iter->start_cursor;
-    iter->length = iter->start_length;
-    iter->view   = view;
+    iter->pointer   = iter->view_start_pointer;
+    iter->at_prefix = iter->view_prefix;
+}
+
+
+void dx_field_iterator_reset_view(dx_field_iterator_t *iter, dx_iterator_view_t  view)
+{
+    iter->pointer = iter->start_pointer;
+    iter->view    = view;
 
     view_initialize(iter);
+
+    iter->view_start_pointer = iter->pointer;
 }
 
 
 unsigned char dx_field_iterator_octet(dx_field_iterator_t *iter)
 {
-    if (iter->length == 0)
+    if (iter->at_prefix) {
+        iter->at_prefix = 0;
+        return iter->prefix;
+    }
+
+    if (iter->pointer.length == 0)
         return (unsigned char) 0;
 
-    unsigned char result = *(iter->cursor);
+    unsigned char result = *(iter->pointer.cursor);
 
-    iter->cursor++;
-    iter->length--;
+    iter->pointer.cursor++;
+    iter->pointer.length--;
 
-    if (iter->length > 0) {
-        if (iter->buffer) {
-            if (iter->cursor - dx_buffer_base(iter->buffer) == dx_buffer_size(iter->buffer)) {
-                iter->buffer = iter->buffer->next;
-                if (iter->buffer == 0)
-                    iter->length = 0;
-                iter->cursor = dx_buffer_base(iter->buffer);
+    if (iter->pointer.length > 0) {
+        if (iter->pointer.buffer) {
+            if (iter->pointer.cursor - dx_buffer_base(iter->pointer.buffer) == dx_buffer_size(iter->pointer.buffer)) {
+                iter->pointer.buffer = iter->pointer.buffer->next;
+                if (iter->pointer.buffer == 0)
+                    iter->pointer.length = 0;
+                iter->pointer.cursor = dx_buffer_base(iter->pointer.buffer);
             }
         }
     }
 
-    if (iter->length && iter->mode == MODE_TO_SLASH && *(iter->cursor) == '/')
-        iter->length = 0;
+    if (iter->pointer.length && iter->mode == MODE_TO_SLASH && *(iter->pointer.cursor) == '/')
+        iter->pointer.length = 0;
 
     return result;
 }
@@ -228,13 +323,13 @@ unsigned char dx_field_iterator_octet(dx_field_iterator_t *iter)
 
 int dx_field_iterator_end(dx_field_iterator_t *iter)
 {
-    return iter->length == 0;
+    return iter->pointer.length == 0;
 }
 
 
-int dx_field_iterator_equal(dx_field_iterator_t *iter, unsigned char *string)
+int dx_field_iterator_equal(dx_field_iterator_t *iter, const unsigned char *string)
 {
-    dx_field_iterator_reset(iter, iter->view);
+    dx_field_iterator_reset(iter);
     while (!dx_field_iterator_end(iter) && *string) {
         if (*string != dx_field_iterator_octet(iter))
             return 0;
@@ -245,19 +340,39 @@ int dx_field_iterator_equal(dx_field_iterator_t *iter, unsigned char *string)
 }
 
 
+int dx_field_iterator_prefix(dx_field_iterator_t *iter, const char *prefix)
+{
+    pointer_t      save_pointer = iter->pointer;
+    unsigned char *c            = (unsigned char*) prefix;
+
+    while(*c) {
+        if (*c != dx_field_iterator_octet(iter))
+            break;
+        c++;
+    }
+
+    if (*c) {
+        iter->pointer = save_pointer;
+        return 0;
+    }
+
+    return 1;
+}
+
+
 unsigned char *dx_field_iterator_copy(dx_field_iterator_t *iter)
 {
     int            length = 0;
     int            idx    = 0;
     unsigned char *copy;
 
-    dx_field_iterator_reset(iter, iter->view);
+    dx_field_iterator_reset(iter);
     while (!dx_field_iterator_end(iter)) {
         dx_field_iterator_octet(iter);
         length++;
     }
 
-    dx_field_iterator_reset(iter, iter->view);
+    dx_field_iterator_reset(iter);
     copy = (unsigned char*) malloc(length + 1);
     while (!dx_field_iterator_end(iter))
         copy[idx++] = dx_field_iterator_octet(iter);

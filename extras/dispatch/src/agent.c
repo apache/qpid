@@ -18,15 +18,18 @@
  */
 
 #include "dispatch_private.h"
+#include <qpid/dispatch/error.h>
 #include <qpid/dispatch/agent.h>
+#include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/hash.h>
 #include <qpid/dispatch/container.h>
 #include <qpid/dispatch/message.h>
 #include <qpid/dispatch/threading.h>
 #include <qpid/dispatch/timer.h>
+#include <qpid/dispatch/router.h>
 #include <string.h>
-
+#include <stdio.h>
 
 typedef struct dx_agent_t {
     dx_server_t       *server;
@@ -35,6 +38,7 @@ typedef struct dx_agent_t {
     dx_message_list_t  out_fifo;
     sys_mutex_t       *lock;
     dx_timer_t        *timer;
+    dx_address_t      *address;
 } dx_agent_t;
 
 
@@ -46,9 +50,27 @@ struct dx_agent_class_t {
 };
 
 
+typedef struct {
+    dx_agent_t   *agent;
+    dx_message_t *response_msg;
+} dx_agent_request_t;
+
+ALLOC_DECLARE(dx_agent_request_t);
+ALLOC_DEFINE(dx_agent_request_t);
+
+
 static void dx_agent_timer_handler(void *context)
 {
     // TODO - Process the in_fifo here
+}
+
+
+static void dx_agent_rx_handler(void *context, dx_message_t *msg)
+{
+    dx_agent_t *agent = (dx_agent_t*) context;
+    DEQ_INSERT_TAIL(agent->in_fifo, msg);
+    dx_timer_schedule(agent->timer, 0);
+    printf("dx_agent_rx_handler - inbound message\n");
 }
 
 
@@ -59,8 +81,9 @@ dx_agent_t *dx_agent(dx_dispatch_t *dx)
     agent->class_hash = hash(6, 10, 1);
     DEQ_INIT(agent->in_fifo);
     DEQ_INIT(agent->out_fifo);
-    agent->lock  = sys_mutex();
-    agent->timer = dx_timer(dx, dx_agent_timer_handler, agent);
+    agent->lock    = sys_mutex();
+    agent->timer   = dx_timer(dx, dx_agent_timer_handler, agent);
+    agent->address = dx_router_register_address(dx, true, "agent", dx_agent_rx_handler, agent);
 
     return agent;
 }
@@ -68,6 +91,7 @@ dx_agent_t *dx_agent(dx_dispatch_t *dx)
 
 void dx_agent_free(dx_agent_t *agent)
 {
+    dx_router_unregister_address(agent->address);
     sys_mutex_free(agent->lock);
     dx_timer_free(agent->timer);
     hash_free(agent->class_hash);
@@ -110,42 +134,42 @@ dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
 }
 
 
-void dx_agent_value_string(dx_dispatch_t *dx, const void *correlator, const char *key, const char *value)
+void dx_agent_value_string(const void *correlator, const char *key, const char *value)
 {
 }
 
 
-void dx_agent_value_uint(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value)
+void dx_agent_value_uint(const void *correlator, const char *key, uint64_t value)
 {
 }
 
 
-void dx_agent_value_null(dx_dispatch_t *dx, const void *correlator, const char *key)
+void dx_agent_value_null(const void *correlator, const char *key)
 {
 }
 
 
-void dx_agent_value_boolean(dx_dispatch_t *dx, const void *correlator, const char *key, bool value)
+void dx_agent_value_boolean(const void *correlator, const char *key, bool value)
 {
 }
 
 
-void dx_agent_value_binary(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value, size_t len)
+void dx_agent_value_binary(const void *correlator, const char *key, const uint8_t *value, size_t len)
 {
 }
 
 
-void dx_agent_value_uuid(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value)
+void dx_agent_value_uuid(const void *correlator, const char *key, const uint8_t *value)
 {
 }
 
 
-void dx_agent_value_timestamp(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value)
+void dx_agent_value_timestamp(const void *correlator, const char *key, uint64_t value)
 {
 }
 
 
-void dx_agent_value_complete(dx_dispatch_t *dx, const void *correlator, bool more)
+void dx_agent_value_complete(const void *correlator, bool more)
 {
 }
 

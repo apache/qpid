@@ -1081,19 +1081,19 @@ void dx_message_insert_binary(dx_message_t *msg, const uint8_t *start, size_t le
 }
 
 
-void dx_message_insert_string(dx_message_t *msg, const char *start)
+void dx_message_insert_string(dx_message_t *msg, const char *str)
 {
     dx_message_content_t *content = MSG_CONTENT(msg);
-    uint32_t len = strlen(start);
+    uint32_t len = strlen(str);
 
     if (len < 256) {
         dx_insert_8(content, 0xa1);  // str8-utf8
         dx_insert_8(content, (uint8_t) len);
-        dx_insert(content, (const uint8_t*) start, len);
+        dx_insert(content, (const uint8_t*) str, len);
     } else {
         dx_insert_8(content, 0xb1);  // str32-utf8
         dx_insert_32(content, len);
-        dx_insert(content, (const uint8_t*) start, len);
+        dx_insert(content, (const uint8_t*) str, len);
     }
     content->count++;
 }

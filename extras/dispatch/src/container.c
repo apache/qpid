@@ -30,6 +30,7 @@
 #include <qpid/dispatch/threading.h>
 #include <qpid/dispatch/iterator.h>
 #include <qpid/dispatch/log.h>
+#include <qpid/dispatch/agent.h>
 
 static char *module="CONTAINER";
 
@@ -63,34 +64,44 @@ typedef struct dxc_node_type_t {
 } dxc_node_type_t;
 DEQ_DECLARE(dxc_node_type_t, dxc_node_type_list_t);
 
+static int DX_CONTAINER_CLASS_CONTAINER = 1;
+static int DX_CONTAINER_CLASS_NODE_TYPE = 2;
+static int DX_CONTAINER_CLASS_NODE      = 3;
+
+typedef struct container_class_t {
+    dx_container_t *container;
+    int             class_id;
+} container_class_t;
 
 struct dx_container_t {
+    dx_dispatch_t        *dx;
     dx_server_t          *server;
     hash_t               *node_type_map;
     hash_t               *node_map;
     sys_mutex_t          *lock;
     dx_node_t            *default_node;
     dxc_node_type_list_t  node_type_list;
+    dx_agent_class_t     *class_container;
+    dx_agent_class_t     *class_node_type;
+    dx_agent_class_t     *class_node;
 };
 
 static void setup_outgoing_link(dx_container_t *container, pn_link_t *pn_link)
 {
     sys_mutex_lock(container->lock);
-    dx_node_t  *node;
-    int         result;
+    dx_node_t  *node = 0;
     const char *source = pn_terminus_get_address(pn_link_remote_source(pn_link));
     dx_field_iterator_t *iter;
     // TODO - Extract the name from the structured source
 
     if (source) {
         iter   = dx_field_iterator_string(source, ITER_VIEW_NODE_ID);
-        result = hash_retrieve(container->node_map, iter, (void*) &node);
+        hash_retrieve(container->node_map, iter, (void*) &node);
         dx_field_iterator_free(iter);
-    } else
-        result = -1;
+    }
     sys_mutex_unlock(container->lock);
 
-    if (result < 0) {
+    if (node == 0) {
         if (container->default_node)
             node = container->default_node;
         else {
@@ -119,21 +130,19 @@ static void setup_outgoing_link(dx_container_t *container, pn_link_t *pn_link)
 static void setup_incoming_link(dx_container_t *container, pn_link_t *pn_link)
 {
     sys_mutex_lock(container->lock);
-    dx_node_t   *node;
-    int          result;
+    dx_node_t   *node = 0;
     const char  *target = pn_terminus_get_address(pn_link_remote_target(pn_link));
     dx_field_iterator_t *iter;
     // TODO - Extract the name from the structured target
 
     if (target) {
         iter   = dx_field_iterator_string(target, ITER_VIEW_NODE_ID);
-        result = hash_retrieve(container->node_map, iter, (void*) &node);
+        hash_retrieve(container->node_map, iter, (void*) &node);
         dx_field_iterator_free(iter);
-    } else
-        result = -1;
+    }
     sys_mutex_unlock(container->lock);
 
-    if (result < 0) {
+    if (node == 0) {
         if (container->default_node)
             node = container->default_node;
         else {
@@ -404,10 +413,49 @@ static int handler(void *handler_context, void *conn_context, dx_conn_event_t ev
 }
 
 
+static void container_schema_handler(void *context, const void *correlator)
+{
+}
+
+
+static void container_query_handler(void* context, const char *id, const void *correlator)
+{
+    container_class_t *cls = (container_class_t*) context;
+
+    if (cls->class_id == DX_CONTAINER_CLASS_CONTAINER) {
+        dx_agent_value_uint(correlator, "node_type_count", hash_size(cls->container->node_type_map));
+        dx_agent_value_uint(correlator, "node_count",      hash_size(cls->container->node_map));
+        if (cls->container->default_node)
+            dx_agent_value_string(correlator, "default_node_type", cls->container->default_node->ntype->type_name);
+        else
+            dx_agent_value_null(correlator, "default_node_type");
+        dx_agent_value_complete(correlator, false);
+
+    } else if (cls->class_id == DX_CONTAINER_CLASS_NODE_TYPE) {
+
+    } else if (cls->class_id == DX_CONTAINER_CLASS_NODE) {
+
+    }
+}
+
+
+dx_agent_class_t *setup_class(dx_container_t *container, const char *fqname, int id)
+{
+    container_class_t *cls = NEW(container_class_t);
+    cls->container = container;
+    cls->class_id  = id;
+
+    return dx_agent_register_class(container->dx, fqname, cls,
+                                   container_schema_handler,
+                                   container_query_handler);
+}
+
+
 dx_container_t *dx_container(dx_dispatch_t *dx)
 {
     dx_container_t *container = NEW(dx_container_t);
 
+    container->dx            = dx;
     container->server        = dx->server;
     container->node_type_map = hash(6,  4, 1);  // 64 buckets, item batches of 4
     container->node_map      = hash(10, 32, 0); // 1K buckets, item batches of 32
@@ -419,6 +467,17 @@ dx_container_t *dx_container(dx_dispatch_t *dx)
     dx_server_set_conn_handler(dx, handler, container);
 
     return container;
+}
+
+
+void dx_container_setup_agent(dx_dispatch_t *dx)
+{
+    dx->container->class_container =
+        setup_class(dx->container, "org.apache.qpid.dispatch.container", DX_CONTAINER_CLASS_CONTAINER);
+    dx->container->class_node_type =
+        setup_class(dx->container, "org.apache.qpid.dispatch.container.node_type", DX_CONTAINER_CLASS_NODE_TYPE);
+    dx->container->class_node =
+        setup_class(dx->container, "org.apache.qpid.dispatch.container.node", DX_CONTAINER_CLASS_NODE);
 }
 
 
