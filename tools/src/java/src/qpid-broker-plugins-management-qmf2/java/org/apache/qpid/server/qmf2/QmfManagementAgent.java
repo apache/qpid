@@ -169,6 +169,8 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 _agent.registerEventClass(org.apache.qpid.server.qmf2.agentdata.Subscription.getSubscribeSchema());
                 _agent.registerEventClass(org.apache.qpid.server.qmf2.agentdata.Subscription.getUnsubscribeSchema());
 
+                _agent.registerObjectClass(org.apache.qpid.server.qmf2.agentdata.Session.getSchema());
+
                 // Initialise QmfAgentData Objects and track changes to the broker Management Objects.
                 registerConfigurationChangeListeners();
             }
@@ -176,10 +178,12 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
         catch (QmfException qmfe)
         {
             _log.info("QmfException {} caught in QmfManagementAgent Constructor", qmfe.getMessage());
+            _agent = null; // Causes isConnected() to be false and thus prevents the "QMF2 Management Ready" message.
         }
         catch (Exception e)
         {
             _log.info("Exception {} caught in QmfManagementAgent Constructor", e.getMessage());
+            _agent = null; // Causes isConnected() to be false and thus prevents the "QMF2 Management Ready" message.
         }
     }
 
@@ -214,7 +218,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
         for (VirtualHost vhost : _broker.getVirtualHosts())
         {
             // We don't add QmfAgentData VirtualHost objects. Possibly TODO, but it's a bit awkward at the moment
-            // becase (as of Qpid 0.20) the C++ broker doesn't *seem* to do much with them and the command line
+            // because (as of Qpid 0.20) the C++ broker doesn't *seem* to do much with them and the command line
             // tools such as qpid-config don't appear to be VirtualHost aware. A way to stay compatible is to
             // mark queues, exchanges etc with [vhost:<vhost-name>/]<object-name> (see Constructor comments).
             vhost.addChangeListener(this);
@@ -227,7 +231,6 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 {
                     childAdded(connection, session);
 
-                    // session.getSubscriptions() returns null in Qpid 0.23 TODO fix that.
                     if (session.getSubscriptions() != null)
                     {
                         for (Consumer subscription : session.getSubscriptions())
@@ -330,7 +333,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
      * QMF2 Management Object if one doesn't already exist. In most cases it's a one-to-one mapping, but for
      * Binding for example the Binding child is added to both Queue and Exchange so we only create the Binding
      * QMF2 Management Object once and add the queueRef and exchangeRef reference properties referencing the Queue
-     * and Exchange parent Objects respectively.
+     * and Exchange parent Objects respectively, Similarly for Consumer (AKA Subscription).
      * <p>
      * This method is also responsible for raising the appropriate QMF2 Events when Management Objects are created.
      * @param object the parent object that the child is being added to.
@@ -362,8 +365,16 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
             agentConnection = false; // Only ignore the first Connection, which is the one from the Agent. 
         }
         else if (child instanceof Session)
-        { // TODO
-
+        {
+            if (!_objects.containsKey(child))
+            {
+                QmfAgentData ref = _objects.get(object); // Get the Connection QmfAgentData so we can get connectionRef.
+                if (ref != null)
+                {
+                    data = new org.apache.qpid.server.qmf2.agentdata.Session((Session)child, ref.getObjectId());
+                    _objects.put(child, data);
+                }
+            }
         }
         else if (child instanceof Exchange)
         {
@@ -449,16 +460,14 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 {
                     subscription.setQueueRef(ref.getObjectId(), (Queue)object);
                     // Raise a Subscribe Event - N.B. Need to do it *after* we've set the queueRef.
-                    _agent.raiseEvent(((org.apache.qpid.server.qmf2.agentdata.Subscription)data).createSubscribeEvent());
+                    _agent.raiseEvent(subscription.createSubscribeEvent());
                 }
-                else if (object instanceof Session) // Won't get called in Qpid 0.20.
-                { // TODO the association between Session and Subscription isn't implemented in the 0.20 Java Broker.
-                    //System.out.println("subscription.setSessionRef");
+                else if (object instanceof Session)
+                {
                     subscription.setSessionRef(ref.getObjectId());
                 }
             }
         }
-
 
         try
         {
@@ -503,8 +512,8 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 _agent.raiseEvent(((org.apache.qpid.server.qmf2.agentdata.Connection)data).createClientDisconnectEvent());
             }
             else if (child instanceof Session)
-            { // TODO
-
+            {
+                // no-op, don't need to do anything specific when Session is removed.
             }
             else if (child instanceof Exchange)
             {
@@ -588,5 +597,4 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
             }
         }
     }
-
 }

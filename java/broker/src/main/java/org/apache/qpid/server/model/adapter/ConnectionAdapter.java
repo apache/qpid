@@ -68,17 +68,34 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
             {
                 if(!actualSessions.contains(session))
                 {
-                    _sessionAdapters.remove(session);
+                    SessionAdapter adapter = _sessionAdapters.remove(session);
+                    childRemoved(adapter); // Trigger corresponding ConfigurationChangeListener childRemoved() callback.
                 }
             }
             for(AMQSessionModel session : actualSessions)
             {
                 if(!_sessionAdapters.containsKey(session))
                 {
-                    _sessionAdapters.put(session, new SessionAdapter(session, getTaskExecutor()));
+                    SessionAdapter adapter = new SessionAdapter(session, getTaskExecutor());
+                    _sessionAdapters.put(session, adapter);
+                    childAdded(adapter); // Trigger corresponding ConfigurationChangeListener childAdded() callback.
                 }
             }
             return new ArrayList<Session>(_sessionAdapters.values());
+        }
+    }
+
+    /**
+     * Retrieve the SessionAdapter instance keyed by the AMQSessionModel from this Connection.
+     * @param session the AMQSessionModel used to index the SessionAdapter.
+     * @return the requested SessionAdapter.
+     */
+    SessionAdapter getSessionAdapter(AMQSessionModel session)
+    {
+        synchronized (_sessionAdapters)
+        {
+            getSessions(); // Call getSessions() first to ensure _sessionAdapters state is up to date with actualSessions.
+            return _sessionAdapters.get(session);
         }
     }
 

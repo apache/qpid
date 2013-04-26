@@ -37,9 +37,11 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 {
     private final Subscription _subscription;
     private final QueueAdapter _queue;
+    private final SessionAdapter _session;
     private final ConsumerStatistics _statistics;
 
-    public ConsumerAdapter(final QueueAdapter queueAdapter, final Subscription subscription)
+    public ConsumerAdapter(final QueueAdapter queueAdapter, final SessionAdapter sessionAdapter,
+                           final Subscription subscription)
     {
         super(UUIDGenerator.generateConsumerUUID(queueAdapter.getVirtualHost().getName(),
                                                queueAdapter.getName(),
@@ -48,6 +50,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
                                                subscription.getConsumerName()), queueAdapter.getTaskExecutor());
         _subscription = subscription;
         _queue = queueAdapter;
+        _session = sessionAdapter;
         _statistics = new ConsumerStatistics();
         //TODO
     }
