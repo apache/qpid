@@ -59,7 +59,7 @@ find_library(pthread_lib pthread)
 find_library(rt_lib rt)
 find_path(proton_include proton/driver.h)
 
-set(CMAKE_C_FLAGS "-pthread -Wall -Werror")
+set(CMAKE_C_FLAGS "-pthread -Wall -Werror -std=gnu99")
 set(CATCH_UNDEFINED "-Wl,--no-undefined")
 
 ##

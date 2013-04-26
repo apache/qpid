@@ -116,7 +116,7 @@ static char* test_start_handler(void *context)
 {
     int i;
 
-    dx = dx_dispatch(THREAD_COUNT);
+    dx = dx_dispatch(THREAD_COUNT, 0, 0, 0);
 
     expected_context = (void*) 0x00112233;
     stored_error[0] = 0x0;
@@ -139,7 +139,7 @@ static char* test_start_handler(void *context)
 
 static char *test_server_start(void *context)
 {
-    dx = dx_dispatch(THREAD_COUNT);
+    dx = dx_dispatch(THREAD_COUNT, 0, 0, 0);
     dx_server_start(dx);
     dx_server_stop(dx);
     dx_dispatch_free(dx);
@@ -153,7 +153,7 @@ static char* test_user_fd(void *context)
     int res;
     dx_timer_t *timer;
 
-    dx = dx_dispatch(THREAD_COUNT);
+    dx = dx_dispatch(THREAD_COUNT, 0, 0, 0);
     dx_server_set_user_fd_handler(dx, ufd_handler);
     timer = dx_timer(dx, fd_test_start, 0);
     dx_timer_schedule(timer, 0);

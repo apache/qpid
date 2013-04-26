@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <qpid/dispatch/iterator.h>
+#include <qpid/dispatch/error.h>
 
 typedef struct hash_t hash_t;
 
@@ -28,10 +29,10 @@ hash_t *hash(int bucket_exponent, int batch_size, int value_is_const);
 void hash_free(hash_t *h);
 
 size_t hash_size(hash_t *h);
-int    hash_insert(hash_t *h, dx_field_iterator_t *key, void *val);
-int    hash_insert_const(hash_t *h, dx_field_iterator_t *key, const void *val);
-int    hash_retrieve(hash_t *h, dx_field_iterator_t *key, void **val);
-int    hash_retrieve_const(hash_t *h, dx_field_iterator_t *key, const void **val);
-int    hash_remove(hash_t *h, dx_field_iterator_t *key);
+dx_error_t hash_insert(hash_t *h, dx_field_iterator_t *key, void *val);
+dx_error_t hash_insert_const(hash_t *h, dx_field_iterator_t *key, const void *val);
+dx_error_t hash_retrieve(hash_t *h, dx_field_iterator_t *key, void **val);
+dx_error_t hash_retrieve_const(hash_t *h, dx_field_iterator_t *key, const void **val);
+dx_error_t hash_remove(hash_t *h, dx_field_iterator_t *key);
 
 #endif
