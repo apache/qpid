@@ -172,6 +172,7 @@ void Logger::configure(const Options& opts) {
 
 void Logger::reconfigure(const std::vector<std::string>& selectors) {
     options.selectors = selectors;
+    options.deselectors.clear();
     select(Selector(options));
 }
 

@@ -59,16 +59,33 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
         ("trace,t", optValue(trace), "Enables all logging" )
         ("log-enable", optValue(selectors, "RULE"),
          ("Enables logging for selected levels and components. "
-          "RULE is in the form 'LEVEL[+][:PATTERN]' "
+          "RULE is in the form 'LEVEL[+-][:PATTERN]'\n"
           "LEVEL is one of: \n\t "+levels.str()+"\n"
-          "PATTERN is a function name or a catogory: \n\t "+categories.str()+"\n"
+          "PATTERN is a logging category name, or a namespace-qualified "
+          "function name or name fragment. "
+          "Logging category names are: \n\t "+categories.str()+"\n"
           "For example:\n"
-          "\t'--log-enable warning+' "
+          "\t'--log-enable warning+'\n"
           "logs all warning, error and critical messages.\n"
-          "\t'--log-enable trace+:Broker' "
+          "\t'--log-enable trace+:Broker'\n"
           "logs all category 'Broker' messages.\n"
-          "\t'--log-enable debug:framing' "
-          "logs debug messages from the framing namespace. "
+          "\t'--log-enable debug:framing'\n"
+          "logs debug messages from all functions with 'framing' in the namespace or function name.\n"
+          "This option can be used multiple times").c_str())
+        ("log-disable", optValue(deselectors, "RULE"),
+         ("Disables logging for selected levels and components. "
+          "RULE is in the form 'LEVEL[+-][:PATTERN]'\n"
+          "LEVEL is one of: \n\t "+levels.str()+"\n"
+          "PATTERN is a logging category name, or a namespace-qualified "
+          "function name or name fragment. "
+          "Logging category names are: \n\t "+categories.str()+"\n"
+          "For example:\n"
+          "\t'--log-disable warning-'\n"
+          "disables logging all warning, notice, info, debug, and trace messages.\n"
+          "\t'--log-disable trace:Broker'\n"
+          "disables all category 'Broker' trace messages.\n"
+          "\t'--log-disable debug-:qmf::'\n"
+          "disables logging debug and trace messages from all functions with 'qmf::' in the namespace.\n"
           "This option can be used multiple times").c_str())
         ("log-time", optValue(time, "yes|no"), "Include time in log messages")
         ("log-level", optValue(level,"yes|no"), "Include severity level in log messages")
@@ -77,7 +94,7 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
         ("log-function", optValue(function,"yes|no"), "Include function signature in log messages")
         ("log-hires-timestamp", optValue(hiresTs,"yes|no"), "Use hi-resolution timestamps in log messages")
         ("log-category", optValue(category,"yes|no"), "Include category in log messages")
-        ("log-prefix", optValue(prefix,"STRING"), "Prefix to append to all log messages")
+        ("log-prefix", optValue(prefix,"STRING"), "Prefix to prepend to all log messages")
         ;
     add(*sinkOptions);
 }
@@ -87,6 +104,7 @@ Options::Options(const Options &o) :
     argv0(o.argv0),
     name(o.name),
     selectors(o.selectors),
+    deselectors(o.deselectors),
     time(o.time),
     level(o.level),
     thread(o.thread),
@@ -106,6 +124,7 @@ Options& Options::operator=(const Options& x) {
         argv0 = x.argv0;
         name = x.name;
         selectors = x.selectors;
+        deselectors = x.deselectors;
         time = x.time;
         level= x.level;
         thread = x.thread;
