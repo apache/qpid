@@ -21,8 +21,10 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import java.util.Map;
@@ -34,6 +36,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
@@ -44,6 +47,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
     private AMQSessionModel _session;
     private SessionStatistics _statistics;
+    private Map<Subscription, ConsumerAdapter> _consumerAdapters = new HashMap<Subscription, ConsumerAdapter>();
 
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
@@ -54,7 +58,10 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
     public Collection<Consumer> getSubscriptions()
     {
-        return null;  //TODO
+        synchronized (_consumerAdapters)
+        {
+            return new ArrayList<Consumer>(_consumerAdapters.values());
+        }
     }
 
     public Collection<Publisher> getPublishers()
@@ -109,6 +116,37 @@ final class SessionAdapter extends AbstractAdapter implements Session
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return 0;  //TODO
+    }
+
+    /**
+     * Register a ConsumerAdapter (Subscription) with this Session keyed by the Subscription.
+     * @param subscription the org.apache.qpid.server.subscription.Subscription used to key the ConsumerAdapter.
+     * @param adapter the registered ConsumerAdapter.
+     */
+    void subscriptionRegistered(Subscription subscription, ConsumerAdapter adapter)
+    {
+        synchronized (_consumerAdapters)
+        {
+            _consumerAdapters.put(subscription, adapter);
+        }
+        childAdded(adapter);
+    }
+
+    /**
+     * Unregister a ConsumerAdapter (Subscription) with this Session keyed by the Subscription.
+     * @param subscription the org.apache.qpid.server.subscription.Subscription used to key the ConsumerAdapter.
+     */
+    void subscriptionUnregistered(Subscription subscription)
+    {
+        ConsumerAdapter adapter = null;
+        synchronized (_consumerAdapters)
+        {
+            adapter = _consumerAdapters.remove(subscription);
+        }
+        if (adapter != null)
+        {
+            childRemoved(adapter);
+        }
     }
 
     @Override
