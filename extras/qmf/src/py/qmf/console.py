@@ -3108,7 +3108,8 @@ class Agent:
           if ((pname, cname) not in self.session.class_filter
               and (pname, None) not in self.session.class_filter):
               return
-        self.session.console.objectProps(self.broker, obj)
+        if obj.getProperties():
+            self.session.console.objectProps(self.broker, obj)
         if obj.getStatistics():
             # QMFv2 objects may also contain statistic updates
             self.session.console.objectStats(self.broker, obj)
