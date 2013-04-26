@@ -138,15 +138,11 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         put(PluginFactory.PLUGIN_TYPE, String.class);
     }});
 
-    private final Broker _broker;
-
     private Server _server;
 
     public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker.getTaskExecutor());
-        _broker = broker;
-        addParent(Broker.class, broker);
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker);
     }
 
     @Override
@@ -169,7 +165,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     {
         CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
-        Collection<Port> httpPorts = getHttpPorts(_broker.getPorts());
+        Collection<Port> httpPorts = getHttpPorts(getBroker().getPorts());
         _server = createServer(httpPorts);
         try
         {
@@ -195,17 +191,11 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Failed to stop http management on port " + getHttpPorts(_broker.getPorts()));
+                throw new RuntimeException("Failed to stop http management on port " + getHttpPorts(getBroker().getPorts()));
             }
         }
 
         CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
-    }
-
-    /** Added for testing purposes */
-    Broker getBroker()
-    {
-        return _broker;
     }
 
     /** Added for testing purposes */
@@ -272,7 +262,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         server.setHandler(root);
 
         // set servlet context attributes for broker and configuration
-        root.getServletContext().setAttribute(HttpManagementUtil.ATTR_BROKER, _broker);
+        root.getServletContext().setAttribute(HttpManagementUtil.ATTR_BROKER, getBroker());
         root.getServletContext().setAttribute(HttpManagementUtil.ATTR_MANAGEMENT_CONFIGURATION, this);
 
         FilterHolder restAuthorizationFilter = new FilterHolder(new ForbiddingAuthorisationFilter());
@@ -297,6 +287,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
         addRestServlet(root, "keystore", KeyStore.class);
         addRestServlet(root, "truststore", TrustStore.class);
+        addRestServlet(root, "plugin", Plugin.class);
 
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
@@ -438,7 +429,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     @Override
     public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
-        return _broker.getSubjectCreator(localAddress);
+        return getBroker().getSubjectCreator(localAddress);
     }
 
 }

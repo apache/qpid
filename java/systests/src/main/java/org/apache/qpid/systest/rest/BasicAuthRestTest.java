@@ -30,6 +30,7 @@ import java.util.Collections;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -86,7 +87,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
     public void testBasicAuthWhenDisabledWithHttp() throws Exception
     {
         configure(false);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpBasicAuthenticationEnabled", false);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);
         super.setUp();
 
         // Try the attempt with authentication, it should fail because
@@ -99,7 +100,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
     {
         configure(false);
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpBasicAuthenticationEnabled", true);
+        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
         super.setUp();
 
         // Try the attempt with authentication, it should succeed because

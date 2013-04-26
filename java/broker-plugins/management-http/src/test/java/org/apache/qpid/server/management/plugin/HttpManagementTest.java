@@ -55,11 +55,6 @@ public class HttpManagementTest extends QpidTestCase
         _management = new HttpManagement(_id, _broker, attributes);
     }
 
-    public void testGetBroker()
-    {
-        assertEquals("Unexpected broker", _broker, _management.getBroker());
-    }
-
     public void testGetSessionTimeout()
     {
         assertEquals("Unexpected session timeout", 10000l, _management.getSessionTimeout());
