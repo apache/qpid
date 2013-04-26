@@ -133,17 +133,17 @@ Duration fromString(const std::string& str) { return boost::lexical_cast<Duratio
 
 QPID_AUTO_TEST_CASE(testOstreamInOut) {
     std::string empty;
-    BOOST_CHECK_EQUAL(toString(Duration(TIME_SEC)), "1s");
-    BOOST_CHECK_EQUAL(toString(Duration(TIME_SEC*123.4)), "123.4s");
-    BOOST_CHECK_EQUAL(toString(Duration(TIME_MSEC*123.4)), "123.4ms");
-    BOOST_CHECK_EQUAL(toString(Duration(TIME_USEC*123.4)), "123.4us");
-    BOOST_CHECK_EQUAL(toString(Duration(TIME_NSEC*123)), "123ns");
+    BOOST_CHECK_EQUAL(toString(Duration(int64_t(TIME_SEC))), "1s");
+    BOOST_CHECK_EQUAL(toString(Duration(int64_t(TIME_SEC*123.4))), "123.4s");
+    BOOST_CHECK_EQUAL(toString(Duration(int64_t(TIME_MSEC*123.4))), "123.4ms");
+    BOOST_CHECK_EQUAL(toString(Duration(int64_t(TIME_USEC*123.4))), "123.4us");
+    BOOST_CHECK_EQUAL(toString(Duration(int64_t(TIME_NSEC*123))), "123ns");
 
-    BOOST_CHECK_EQUAL(fromString("123.4"), Duration(TIME_SEC*123.4));
-    BOOST_CHECK_EQUAL(fromString("123.4s"), Duration(TIME_SEC*123.4));
-    BOOST_CHECK_EQUAL(fromString("123ms"), Duration(TIME_MSEC*123));
-    BOOST_CHECK_EQUAL(fromString("123us"), Duration(TIME_USEC*123));
-    BOOST_CHECK_EQUAL(fromString("123ns"), Duration(TIME_NSEC*123));
+    BOOST_CHECK_EQUAL(fromString("123.4"), Duration(int64_t(TIME_SEC*123.4)));
+    BOOST_CHECK_EQUAL(fromString("123.4s"), Duration(int64_t(TIME_SEC*123.4)));
+    BOOST_CHECK_EQUAL(fromString("123ms"), Duration(int64_t(TIME_MSEC*123)));
+    BOOST_CHECK_EQUAL(fromString("123us"), Duration(int64_t(TIME_USEC*123)));
+    BOOST_CHECK_EQUAL(fromString("123ns"), Duration(int64_t(TIME_NSEC*123)));
 
     Duration d = 0;
     std::istringstream i;
@@ -168,7 +168,7 @@ QPID_AUTO_TEST_CASE(testOptionParse) {
     opts.addOptions()("interval", optValue(interval, "I"), "blah");
     const char *args[] = { "fakeexe", "--interval", "123.4" };
     opts.parse(sizeof(args)/sizeof(args[0]), args);
-    BOOST_CHECK_EQUAL(interval, Duration(TIME_SEC * 123.4));
+    BOOST_CHECK_EQUAL(interval, Duration(int64_t(TIME_SEC*123.4)));
 }
 
 QPID_AUTO_TEST_SUITE_END()
