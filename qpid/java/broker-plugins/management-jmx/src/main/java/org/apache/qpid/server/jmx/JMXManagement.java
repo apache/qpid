@@ -89,16 +89,13 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         put(PluginFactory.PLUGIN_TYPE, String.class);
     }};
 
-    private final Broker _broker;
     private JMXManagedObjectRegistry _objectRegistry;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children = new HashMap<ConfiguredObject, AMQManagedObject>();
 
     public JMXManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker.getTaskExecutor());
-        _broker = broker;
-        addParent(Broker.class, broker);
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker);
     }
 
     @Override
@@ -130,9 +127,10 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 
     private void start() throws JMException, IOException
     {
+        Broker broker = getBroker();
         Port connectorPort = null;
         Port registryPort = null;
-        Collection<Port> ports = _broker.getPorts();
+        Collection<Port> ports = broker.getPorts();
         for (Port port : ports)
         {
             if (State.QUIESCED.equals(port.getActualState()))
@@ -158,13 +156,13 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             throw new IllegalStateException("No JMX RMI port found supporting protocol " + Protocol.RMI);
         }
 
-        _objectRegistry = new JMXManagedObjectRegistry(_broker, connectorPort, registryPort, this);
+        _objectRegistry = new JMXManagedObjectRegistry(broker, connectorPort, registryPort, this);
 
-        _broker.addChangeListener(this);
+        broker.addChangeListener(this);
 
         synchronized (_children)
         {
-            for(VirtualHost virtualHost : _broker.getVirtualHosts())
+            for(VirtualHost virtualHost : broker.getVirtualHosts())
             {
                 if(!_children.containsKey(virtualHost))
                 {
@@ -181,7 +179,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                     createAdditionalMBeansFromProviders(virtualHost, mbean);
                 }
             }
-            Collection<AuthenticationProvider> authenticationProviders = _broker.getAuthenticationProviders();
+            Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
             for (AuthenticationProvider authenticationProvider : authenticationProviders)
             {
                 if(authenticationProvider instanceof PasswordCredentialManagingAuthenticationProvider)
@@ -194,7 +192,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             }
         }
         new Shutdown(_objectRegistry);
-        new ServerInformationMBean(_objectRegistry, _broker);
+        new ServerInformationMBean(_objectRegistry, broker);
         if (LoggingManagementFacade.getCurrentInstance() != null)
         {
             new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
@@ -234,7 +232,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             }
             _children.clear();
         }
-        _broker.removeChangeListener(this);
+        getBroker().removeChangeListener(this);
         _objectRegistry.close();
     }
 
@@ -350,12 +348,6 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                 // if the child is ever removed, destroy these beans too.
             }
         }
-    }
-
-    /** Added for testing purposes */
-    Broker getBroker()
-    {
-        return _broker;
     }
 
     @Override

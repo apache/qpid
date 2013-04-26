@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -56,7 +57,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER, OTHER_USER);
 
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
-                "httpBasicAuthenticationEnabled", true);
+                HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 
     public void testCreateAccessControlProvider() throws Exception

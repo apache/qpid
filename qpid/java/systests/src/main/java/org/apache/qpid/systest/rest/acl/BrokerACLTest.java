@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -74,7 +75,7 @@ public class BrokerACLTest extends QpidRestTestCase
                 "ACL DENY-LOG ALL ALL";
 
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
-                "httpBasicAuthenticationEnabled", true);
+                HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 
     /* === AuthenticationProvider === */
@@ -875,6 +876,63 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be denied", 403, responseCode);
+    }
+
+    /* === HTTP management === */
+
+    public void testSetHttpManagementAttributesAllowed() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(HttpManagement.NAME, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+        attributes.put(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED, false);
+        attributes.put(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED, false);
+        attributes.put(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED, false);
+        attributes.put(HttpManagement.TIME_OUT, 10000);
+
+        int responseCode = getRestTestHelper().submitRequest(
+                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+        assertEquals("Setting of http management should be allowed", 200, responseCode);
+
+        Map<String, Object> details = getRestTestHelper().getJsonAsSingletonList(
+                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+
+        assertEquals("Unexpected session timeout", 10000, details.get(HttpManagement.TIME_OUT));
+        assertEquals("Unexpected http basic auth enabled", true, details.get(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED));
+        assertEquals("Unexpected https basic auth enabled", false, details.get(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED));
+        assertEquals("Unexpected http sasl auth enabled", false, details.get(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED));
+        assertEquals("Unexpected https sasl auth enabled", false, details.get(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED));
+    }
+
+    public void testSetHttpManagementAttributesDenied() throws Exception
+    {
+        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(HttpManagement.NAME, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+        attributes.put(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED, false);
+        attributes.put(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED, false);
+        attributes.put(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED, false);
+        attributes.put(HttpManagement.TIME_OUT, 10000);
+
+        int responseCode = getRestTestHelper().submitRequest(
+                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+        assertEquals("Setting of http management should be denied", 403, responseCode);
+
+        Map<String, Object> details = getRestTestHelper().getJsonAsSingletonList(
+                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+
+        assertEquals("Unexpected session timeout", HttpManagement.DEFAULT_TIMEOUT_IN_SECONDS,
+                details.get(HttpManagement.TIME_OUT));
+        assertEquals("Unexpected http basic auth enabled", true,
+                details.get(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED));
+        assertEquals("Unexpected https basic auth enabled", HttpManagement.DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED,
+                details.get(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED));
+        assertEquals("Unexpected http sasl auth enabled", HttpManagement.DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED,
+                details.get(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED));
+        assertEquals("Unexpected https sasl auth enabled", HttpManagement.DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED,
+                details.get(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED));
     }
 
     /* === Utility Methods === */
