@@ -1018,10 +1018,16 @@ void Broker::setLogLevel(const std::string& level)
 std::string Broker::getLogLevel()
 {
     std::string level;
+    std::string sep("");
     const std::vector<std::string>& selectors = qpid::log::Logger::instance().getOptions().selectors;
     for (std::vector<std::string>::const_iterator i = selectors.begin(); i != selectors.end(); ++i) {
-        if (i != selectors.begin()) level += std::string(",");
-        level += *i;
+        level += sep + *i;
+        sep = ",";
+    }
+    const std::vector<std::string>& disselectors = qpid::log::Logger::instance().getOptions().deselectors;
+    for (std::vector<std::string>::const_iterator i = disselectors.begin(); i != disselectors.end(); ++i) {
+        level += sep + "!" + *i;
+        sep = ",";
     }
     return level;
 }

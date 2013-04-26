@@ -51,6 +51,7 @@ struct  BrokerFixture : private boost::noncopyable {
         if (!::getenv("QPID_LOG_ENABLE") && !::getenv("QPID_TRACE")) {
             qpid::log::Options logOpts;
             logOpts.selectors.clear();
+            logOpts.deselectors.clear();
             logOpts.selectors.push_back("error+");
             qpid::log::Logger::instance().configure(logOpts);
         }
