@@ -71,7 +71,6 @@ using namespace broker;
 namespace {
 
 const string QPID_CONFIGURATION_REPLICATOR("qpid.broker-replicator");
-
 const string CLASS_NAME("_class_name");
 const string EVENT("_event");
 const string OBJECT_NAME("_object_name");
@@ -291,9 +290,9 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
       link(l),
       initialized(false),
       alternates(hb.getBroker().getExchanges()),
-      connection(0)
+      connection(0),
+      connectionObserver(new ConnectionObserver(*this))
 {
-    connectionObserver.reset(new ConnectionObserver(*this));
     broker.getConnectionObservers().add(connectionObserver);
     framing::FieldTable args = getArgs();
     args.setString(QPID_REPLICATE, printable(NONE).str());
@@ -761,8 +760,6 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::startQueueReplicator(
     if (replicationTest.getLevel(*queue) == ALL) {
         boost::shared_ptr<QueueReplicator> qr(
             new QueueReplicator(haBroker, queue, link));
-        if (!exchanges.registerExchange(qr))
-            throw Exception(QPID_MSG("Duplicate queue replicator " << qr->getName()));
         qr->activate();
         return qr;
     }
@@ -879,6 +876,7 @@ namespace {
 	}
 }
 
+// Called by ConnectionObserver::disconnected, disconnected from the network side.
 void BrokerReplicator::disconnected() {
     QPID_LOG(info, logPrefix << "Disconnected from " << primary);
     connection = 0;
