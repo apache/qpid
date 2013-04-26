@@ -72,7 +72,7 @@ class QueueReplicator : public broker::Exchange,
 
     ~QueueReplicator();
 
-    void activate();            // Call after ctor
+    void activate();            // Must be called immediately after constructor.
 
     std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue
@@ -105,6 +105,7 @@ class QueueReplicator : public broker::Exchange,
     BrokerInfo brokerInfo;
     bool subscribed;
     const Settings& settings;
+    bool destroyed;
 };
 
 }} // namespace qpid::ha
