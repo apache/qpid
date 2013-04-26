@@ -18,11 +18,36 @@
  */
 
 #include <qpid/dispatch/log.h>
+#include <qpid/dispatch/ctools.h>
+#include <qpid/dispatch/alloc.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
-static int mask=LOG_INFO;
+#define TEXT_MAX 512
+#define LIST_MAX 1000
+
+typedef struct dx_log_entry_t dx_log_entry_t;
+
+struct dx_log_entry_t {
+    DEQ_LINKS(dx_log_entry_t);
+    const char     *module;
+    int             cls;
+    const char     *file;
+    int             line;
+    struct timeval  tv;
+    char            text[TEXT_MAX];
+};
+
+ALLOC_DECLARE(dx_log_entry_t);
+ALLOC_DEFINE(dx_log_entry_t);
+
+DEQ_DECLARE(dx_log_entry_t, dx_log_list_t);
+
+static int            mask = LOG_INFO;
+static dx_log_list_t  entries;
+static int            list_init = 0;
 
 static char *cls_prefix(int cls)
 {
@@ -35,18 +60,36 @@ static char *cls_prefix(int cls)
     return "";
 }
 
-void dx_log(const char *module, int cls, const char *fmt, ...)
+void dx_log_impl(const char *module, int cls, const char *file, int line, const char *fmt, ...)
 {
     if (!(cls & mask))
         return;
 
+    if (list_init == 0) {
+        list_init = 1;
+        DEQ_INIT(entries);
+    }
+
+    dx_log_entry_t *entry = new_dx_log_entry_t();
+    entry->module = module;
+    entry->cls    = cls;
+    entry->file   = file;
+    entry->line   = line;
+    gettimeofday(&entry->tv, 0);
+
     va_list ap;
-    char    line[128];
 
     va_start(ap, fmt);
-    vsnprintf(line, 127, fmt, ap);
+    vsnprintf(entry->text, TEXT_MAX, fmt, ap);
     va_end(ap);
-    fprintf(stderr, "%s (%s): %s\n", module, cls_prefix(cls), line);
+    fprintf(stderr, "%s (%s) %s\n", module, cls_prefix(cls), entry->text);
+
+    DEQ_INSERT_TAIL(entries, entry);
+    if (DEQ_SIZE(entries) > LIST_MAX) {
+        entry = DEQ_HEAD(entries);
+        DEQ_REMOVE_HEAD(entries);
+        free_dx_log_entry_t(entry);
+    }
 }
 
 void dx_log_set_mask(int _mask)

@@ -54,13 +54,41 @@ typedef struct dx_field_iterator_t dx_field_iterator_t;
  *                                        ^^^^^^^^^^^^^
  *    node-id/node/specific
  *            ^^^^^^^^^^^^^
+ *
+ * ITER_VIEW_ADDRESS_HASH - Isolate the hashable part of the address depending on address syntax
+ *
+ *    amqp:/_local/<local>
+ *                L^^^^^^^
+ *    amqp:/_topo/<area>/<router>/<local>
+ *               A^^^^^^
+ *    amqp:/_topo/<my-area>/<router>/<local>
+ *                         R^^^^^^^^
+ *    amqp:/_topo/<my_area>/<my-router>/<local>
+ *                                     L^^^^^^^
+ *    amqp:/_topo/<area>/all/<local>
+ *               A^^^^^^
+ *    amqp:/_topo/<my-area>/all/<local>
+ *                             L^^^^^^^
+ *    amqp:/_topo/all/all/<local>
+ *                       L^^^^^^^
+ *    amqp:/<mobile>
+ *         M^^^^^^^^
+ *
  */
 typedef enum {
     ITER_VIEW_ALL,
     ITER_VIEW_NO_HOST,
     ITER_VIEW_NODE_ID,
-    ITER_VIEW_NODE_SPECIFIC
+    ITER_VIEW_NODE_SPECIFIC,
+    ITER_VIEW_ADDRESS_HASH
 } dx_iterator_view_t;
+
+
+/**
+ * Set the area and router names for the local router.  These are used to match
+ * my-area and my-router in address fields.
+ */
+void dx_field_iterator_set_address(const char *area, const char *router);
 
 /**
  * Create an iterator from a null-terminated string.
@@ -87,8 +115,10 @@ void dx_field_iterator_free(dx_field_iterator_t *iter);
 /**
  * Reset the iterator to the first octet and set a new view
  */
-void dx_field_iterator_reset(dx_field_iterator_t *iter,
-                             dx_iterator_view_t   view);
+void dx_field_iterator_reset(dx_field_iterator_t *iter);
+
+void dx_field_iterator_reset_view(dx_field_iterator_t *iter,
+                                  dx_iterator_view_t   view);
 
 /**
  * Return the current octet in the iterator's view and step to the next.
@@ -103,7 +133,15 @@ int dx_field_iterator_end(dx_field_iterator_t *iter);
 /**
  * Compare an input string to the iterator's view.  Return true iff they are equal.
  */
-int dx_field_iterator_equal(dx_field_iterator_t *iter, unsigned char *string);
+int dx_field_iterator_equal(dx_field_iterator_t *iter, const unsigned char *string);
+
+/**
+ * Return true iff the string matches the characters at the current location in the view.
+ * This function ignores octets beyond the length of the prefix.
+ * This function does not alter the position of the iterator if the prefix does not match,
+ * if it matches, the prefix is consumed.
+ */
+int dx_field_iterator_prefix(dx_field_iterator_t *iter, const char *prefix);
 
 /**
  * Return a copy of the iterator's view.

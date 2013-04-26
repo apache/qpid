@@ -156,7 +156,7 @@ void dx_message_insert_ubyte(dx_message_t *msg, uint8_t value);
 void dx_message_insert_uint(dx_message_t *msg, uint32_t value);
 void dx_message_insert_ulong(dx_message_t *msg, uint64_t value);
 void dx_message_insert_binary(dx_message_t *msg, const uint8_t *start, size_t len);
-void dx_message_insert_string(dx_message_t *msg, const char *start);
+void dx_message_insert_string(dx_message_t *msg, const char *str);
 void dx_message_insert_uuid(dx_message_t *msg, const uint8_t *value);
 void dx_message_insert_symbol(dx_message_t *msg, const char *start, size_t len);
 void dx_message_insert_timestamp(dx_message_t *msg, uint64_t value);

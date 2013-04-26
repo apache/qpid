@@ -26,17 +26,29 @@
 static int            exit_with_sigint = 0;
 static dx_dispatch_t *dispatch;
 
+/**
+ * The thread_start_handler is invoked once for each server thread at thread startup.
+ */
 static void thread_start_handler(void* context, int thread_id)
 {
 }
 
 
+/**
+ * This is the OS signal handler, invoked on an undetermined thread at a completely
+ * arbitrary point of time.  It is not safe to do anything here but signal the dispatch
+ * server with the signal number.
+ */
 static void signal_handler(int signum)
 {
     dx_server_signal(dispatch, signum);
 }
 
 
+/**
+ * This signal handler is called cleanly by one of the server's worker threads in
+ * response to an earlier call to dx_server_signal.
+ */
 static void server_signal_handler(void* context, int signum)
 {
     dx_server_pause(dispatch);
@@ -94,7 +106,7 @@ int main(int argc, char **argv)
 {
     dx_log_set_mask(LOG_INFO | LOG_TRACE | LOG_ERROR);
 
-    dispatch = dx_dispatch(4);
+    dispatch = dx_dispatch(4, "Qpid.Dispatch", "area", "Router.A");
 
     dx_server_set_signal_handler(dispatch, server_signal_handler, 0);
     dx_server_set_start_handler(dispatch, thread_start_handler, 0);

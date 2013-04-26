@@ -38,7 +38,7 @@ typedef struct dx_agent_class_t dx_agent_class_t;
  *
  * @param context The handler context supplied in dx_agent_register.
  */
-typedef void (*dx_agent_schema_cb_t)(void* context);
+typedef void (*dx_agent_schema_cb_t)(void* context, const void *correlator);
 
 
 /**
@@ -71,19 +71,19 @@ dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
 /**
  *
  */
-void dx_agent_value_string(dx_dispatch_t *dx, const void *correlator, const char *key, const char *value);
-void dx_agent_value_uint(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value);
-void dx_agent_value_null(dx_dispatch_t *dx, const void *correlator, const char *key);
-void dx_agent_value_boolean(dx_dispatch_t *dx, const void *correlator, const char *key, bool value);
-void dx_agent_value_binary(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value, size_t len);
-void dx_agent_value_uuid(dx_dispatch_t *dx, const void *correlator, const char *key, const uint8_t *value);
-void dx_agent_value_timestamp(dx_dispatch_t *dx, const void *correlator, const char *key, uint64_t value);
+void dx_agent_value_string(const void *correlator, const char *key, const char *value);
+void dx_agent_value_uint(const void *correlator, const char *key, uint64_t value);
+void dx_agent_value_null(const void *correlator, const char *key);
+void dx_agent_value_boolean(const void *correlator, const char *key, bool value);
+void dx_agent_value_binary(const void *correlator, const char *key, const uint8_t *value, size_t len);
+void dx_agent_value_uuid(const void *correlator, const char *key, const uint8_t *value);
+void dx_agent_value_timestamp(const void *correlator, const char *key, uint64_t value);
 
 
 /**
  *
  */
-void dx_agent_value_complete(dx_dispatch_t *dx, const void *correlator, bool more);
+void dx_agent_value_complete(const void *correlator, bool more);
 
 
 /**

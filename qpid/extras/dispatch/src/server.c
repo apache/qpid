@@ -44,6 +44,7 @@ typedef struct dx_thread_t {
 
 struct dx_server_t {
     int                      thread_count;
+    const char              *container_name;
     pn_driver_t             *driver;
     dx_thread_start_cb_t     start_handler;
     dx_conn_handler_cb_t     conn_handler;
@@ -201,7 +202,7 @@ static void process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
             ctx->state = CONN_STATE_OPERATIONAL;
 
             pn_connection_t *conn = pn_connection();
-            pn_connection_set_container(conn, "dispatch"); // TODO - make unique
+            pn_connection_set_container(conn, dx_server->container_name);
             pn_connector_set_connection(cxtr, conn);
             pn_connection_set_context(conn, ctx);
             ctx->pn_conn = conn;
@@ -557,7 +558,7 @@ static void cxtr_try_open(void *context)
 }
 
 
-dx_server_t *dx_server(int thread_count)
+dx_server_t *dx_server(int thread_count, const char *container_name)
 {
     int i;
 
@@ -566,6 +567,7 @@ dx_server_t *dx_server(int thread_count)
         return 0;
 
     dx_server->thread_count    = thread_count;
+    dx_server->container_name  = container_name;
     dx_server->driver          = pn_driver();
     dx_server->start_handler   = 0;
     dx_server->conn_handler    = 0;
@@ -593,6 +595,12 @@ dx_server_t *dx_server(int thread_count)
     dx_server->pending_signal      = 0;
 
     return dx_server;
+}
+
+
+void dx_server_setup_agent(dx_dispatch_t *dx)
+{
+    // TODO
 }
 
 

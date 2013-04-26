@@ -19,6 +19,28 @@
  * under the License.
  */
 
-// TODO - Add router message-passing methods
+#include <stdbool.h>
+
+typedef struct dx_dispatch_t dx_dispatch_t;
+typedef struct dx_message_t  dx_message_t;
+typedef struct dx_address_t  dx_address_t;
+
+
+typedef void (*dx_router_message_cb)(void *context, dx_message_t *msg);
+
+
+dx_address_t *dx_router_register_address(dx_dispatch_t        *dx,
+                                         bool                  is_local,
+                                         const char           *address,
+                                         dx_router_message_cb  handler,
+                                         void                 *context);
+
+void dx_router_unregister_address(dx_address_t *address);
+
+
+void dx_router_send(dx_dispatch_t *dx,
+                    const char    *address,
+                    dx_message_t  *msg);
+
 
 #endif
