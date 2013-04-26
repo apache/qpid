@@ -39,6 +39,7 @@ struct Options : public qpid::Options {
     std::string argv0;
     std::string name;
     std::vector<std::string> selectors;
+    std::vector<std::string> deselectors;
     bool time, level, thread, source, function, hiresTs, category;
     bool trace;
     std::string prefix;

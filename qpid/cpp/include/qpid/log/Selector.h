@@ -28,6 +28,22 @@ namespace log {
 struct Options;
 
 /**
+ * SelectorElement parses a cli/mgmt enable/disable entry into usable fields
+ * where cliEntry = [!]LEVEL[+-][:PATTERN]
+ */
+struct SelectorElement {
+    SelectorElement(const std::string cliEntry);
+    std::string levelStr;
+    std::string patternStr;
+    Level level;
+    Category category;
+    bool isDisable;
+    bool isCategory;
+    bool isLevelAndAbove;
+    bool isLevelAndBelow;
+};
+
+/**
  * A selector identifies the set of log messages to enable.
  *
  * Thread object unsafe, pass-by-value type.
@@ -35,56 +51,45 @@ struct Options;
 class Selector {
   public:
     /** Empty selector selects nothing */
-    Selector() {
-        reset();
-    }
+    Selector();
 
     /** Set selector from Options */
     QPID_COMMON_EXTERN Selector(const Options&);
 
     /** Equavlient to: Selector s; s.enable(l, s) */
-    Selector(Level l, const std::string& s=std::string()) {
-        reset();
-        enable(l,s);
-    }
+    Selector(Level l, const std::string& s=std::string());
 
-    Selector(const std::string& enableStr) {
-        reset();
-        enable(enableStr);
-    }
+    /** Selector from string */
+    Selector(const std::string& selector);
+
+    /** push option settings into runtime lookup structs */
+    QPID_COMMON_EXTERN void enable(const std::string& enableStr);
+    QPID_COMMON_EXTERN void disable(const std::string& disableStr);
 
     /**
-     * Enable messages with level in levels where the file
+     * Enable/disable messages with level in levels where the file
      * name contains substring. Empty string matches all.
      */
-    void enable(Level level, const std::string& substring=std::string()) {
-        substrings[level].push_back(substring);
-    }
+    void enable(Level level, const std::string& substring=std::string());
+    void disable(Level level, const std::string& substring=std::string());
 
-    /**
-     * Enable messages at this level for this category
-     */
-    void enable(Level level, Category category) {
-        catFlags[level][category] = true;
-    }
-
-    /** Enable based on a 'level[+]:file' string */
-    QPID_COMMON_EXTERN void enable(const std::string& enableStr);
-
-    /** True if level is enabled for file. */
+    /** Tests to determine if function names are in enable/disable tables */
     QPID_COMMON_EXTERN bool isEnabled(Level level, const char* function);
+    QPID_COMMON_EXTERN bool isDisabled(Level level, const char* function);
+
+    /** Test to determine if log Statement is enabled */
     QPID_COMMON_EXTERN bool isEnabled(Level level, const char* function, Category category);
 
-    /** Reset the category enable flags */
-    QPID_COMMON_EXTERN void reset() {
-        for (int lt = 0; lt < LevelTraits::COUNT; ++lt)
-            for (int ct = 0; ct < CategoryTraits::COUNT; ++ct)
-                catFlags[lt][ct] = false;
-    }
-
   private:
-    std::vector<std::string> substrings[LevelTraits::COUNT];
-    bool catFlags[LevelTraits::COUNT][CategoryTraits::COUNT];
+    typedef std::vector<std::string> FunctionNameTable [LevelTraits::COUNT];
+    FunctionNameTable enabledFunctions;   // log function names explicitly enabled
+    FunctionNameTable disabledFunctions;  // log function names explicitly disabled
+    bool enableFlags[LevelTraits::COUNT][CategoryTraits::COUNT];
+    bool disableFlags[LevelTraits::COUNT][CategoryTraits::COUNT];
+
+    bool lookupFuncName(Level level, const char* function, FunctionNameTable& table);
+    /** Reset the category enable flags */
+    QPID_COMMON_EXTERN void reset();
 };
 
 

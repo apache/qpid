@@ -85,6 +85,17 @@ QPID_AUTO_TEST_CASE(testSelector_enable) {
     BOOST_CHECK(s.isEnabled(critical, "oops"));
 }
 
+QPID_AUTO_TEST_CASE(testSelector_disable) {
+    Selector s;
+    // Simple enable/disable
+    s.enable(trace,"foo");
+    BOOST_CHECK(s.isEnabled(trace,"foo"));
+    BOOST_CHECK(!s.isDisabled(trace,"foo"));
+    s.disable(trace,"foo");
+    BOOST_CHECK(s.isEnabled(trace,"foo"));
+    BOOST_CHECK(s.isDisabled(trace,"foo"));
+}
+
 QPID_AUTO_TEST_CASE(testStatementEnabled) {
     // Verify that the singleton enables and disables static
     // log statements.
@@ -271,6 +282,9 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
         "--log-enable", "error+:foo",
         "--log-enable", "debug:bar",
         "--log-enable", "info",
+        "--log-disable", "error+:foo",
+        "--log-disable", "debug:bar",
+        "--log-disable", "info",
         "--log-to-stderr", "no",
         "--log-to-file", "logout",
         "--log-level", "yes",
@@ -288,6 +302,7 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
     sinks = *opts.sinkOptions;
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
+    BOOST_CHECK_EQUAL(expect, opts.deselectors);
     BOOST_CHECK(!sinks.logToStderr);
     BOOST_CHECK(!sinks.logToStdout);
     BOOST_CHECK(sinks.logFile == "logout");
@@ -331,6 +346,64 @@ QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
     BOOST_CHECK(s.isEnabled(debug, "bar"));
     BOOST_CHECK(s.isEnabled(error, "foo"));
     BOOST_CHECK(s.isEnabled(critical, "foo"));
+}
+
+QPID_AUTO_TEST_CASE(testDeselectorFromOptions) {
+    const char* argv[]={
+        0,
+        "--log-disable", "error-:foo",
+        "--log-disable", "debug:bar",
+        "--log-disable", "info"
+    };
+    qpid::log::Options opts("");
+    opts.parse(ARGC(argv), const_cast<char**>(argv));
+    vector<string> expect=list_of("error-:foo")("debug:bar")("info");
+    BOOST_CHECK_EQUAL(expect, opts.deselectors);
+    Selector s(opts);
+    BOOST_CHECK(!s.isDisabled(warning, "x"));
+    BOOST_CHECK(!s.isDisabled(debug, "x"));
+    BOOST_CHECK(s.isDisabled(debug, "bar"));
+    BOOST_CHECK(s.isDisabled(trace, "foo"));
+    BOOST_CHECK(s.isDisabled(debug, "foo"));
+    BOOST_CHECK(s.isDisabled(info, "foo"));
+    BOOST_CHECK(s.isDisabled(notice, "foo"));
+    BOOST_CHECK(s.isDisabled(warning, "foo"));
+    BOOST_CHECK(s.isDisabled(error, "foo"));
+    BOOST_CHECK(!s.isDisabled(critical, "foo"));
+}
+
+QPID_AUTO_TEST_CASE(testMultiConflictingSelectorFromOptions) {
+    const char* argv[]={
+        0,
+        "--log-enable",  "trace+:foo",
+        "--log-disable", "error-:foo",
+        "--log-enable",  "debug:bar",
+        "--log-disable", "debug:bar",
+        "--log-enable",  "info",
+        "--log-disable", "info",
+        "--log-enable",  "debug+:Model",
+        "--log-disable", "info-:Model"
+    };
+    qpid::log::Options opts("");
+    opts.parse(ARGC(argv), const_cast<char**>(argv));
+    Selector s(opts);
+    BOOST_CHECK(!s.isEnabled(warning, "x", log::broker));
+    BOOST_CHECK(!s.isEnabled(debug, "x", log::broker));
+    BOOST_CHECK(!s.isEnabled(trace, "foo", log::broker));
+    BOOST_CHECK(!s.isEnabled(debug, "foo", log::broker));
+    BOOST_CHECK(!s.isEnabled(info, "foo", log::broker));
+    BOOST_CHECK(!s.isEnabled(notice, "foo", log::broker));
+    BOOST_CHECK(!s.isEnabled(warning, "foo", log::broker));
+    BOOST_CHECK(!s.isEnabled(error, "foo", log::broker));
+    BOOST_CHECK(s.isEnabled(critical, "foo", log::broker));
+    BOOST_CHECK(!s.isEnabled(debug, "bar", log::model));
+    BOOST_CHECK(!s.isEnabled(trace, "zaz", log::model));
+    BOOST_CHECK(!s.isEnabled(debug, "zaz", log::model));
+    BOOST_CHECK(!s.isEnabled(info, "zaz", log::model));
+    BOOST_CHECK(s.isEnabled(notice, "zaz", log::model));
+    BOOST_CHECK(s.isEnabled(warning, "zaz", log::model));
+    BOOST_CHECK(s.isEnabled(error, "zaz", log::model));
+    BOOST_CHECK(s.isEnabled(critical, "zaz", log::model));
 }
 
 QPID_AUTO_TEST_CASE(testLoggerStateure) {
@@ -383,6 +456,55 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");
+}
+
+QPID_AUTO_TEST_CASE(testSelectorElements) {
+    SelectorElement s("debug");
+    BOOST_CHECK_EQUAL(s.levelStr, "debug");
+    BOOST_CHECK_EQUAL(s.patternStr, "");
+    BOOST_CHECK_EQUAL(s.level, debug);
+    BOOST_CHECK(!s.isDisable);
+    BOOST_CHECK(!s.isCategory);
+    BOOST_CHECK(!s.isLevelAndAbove);
+    BOOST_CHECK(!s.isLevelAndBelow);
+
+    SelectorElement t("debug:Broker");
+    BOOST_CHECK_EQUAL(t.levelStr, "debug");
+    BOOST_CHECK_EQUAL(t.patternStr, "Broker");
+    BOOST_CHECK_EQUAL(t.level, debug);
+    BOOST_CHECK_EQUAL(t.category, broker);
+    BOOST_CHECK(!t.isDisable);
+    BOOST_CHECK(t.isCategory);
+    BOOST_CHECK(!t.isLevelAndAbove);
+    BOOST_CHECK(!t.isLevelAndBelow);
+
+    SelectorElement u("info+:qmf::");
+    BOOST_CHECK_EQUAL(u.levelStr, "info");
+    BOOST_CHECK_EQUAL(u.patternStr, "qmf::");
+    BOOST_CHECK_EQUAL(u.level, info);
+    BOOST_CHECK(!u.isDisable);
+    BOOST_CHECK(!u.isCategory);
+    BOOST_CHECK(u.isLevelAndAbove);
+    BOOST_CHECK(!u.isLevelAndBelow);
+
+    SelectorElement v("critical-");
+    BOOST_CHECK_EQUAL(v.levelStr, "critical");
+    BOOST_CHECK_EQUAL(v.patternStr, "");
+    BOOST_CHECK_EQUAL(v.level, critical);
+    BOOST_CHECK(!v.isDisable);
+    BOOST_CHECK(!v.isCategory);
+    BOOST_CHECK(!v.isLevelAndAbove);
+    BOOST_CHECK(v.isLevelAndBelow);
+
+    SelectorElement w("!warning-:Management");
+    BOOST_CHECK_EQUAL(w.levelStr, "warning");
+    BOOST_CHECK_EQUAL(w.patternStr, "Management");
+    BOOST_CHECK_EQUAL(w.level, warning);
+    BOOST_CHECK_EQUAL(w.category, management);
+    BOOST_CHECK(w.isDisable);
+    BOOST_CHECK(w.isCategory);
+    BOOST_CHECK(!w.isLevelAndAbove);
+    BOOST_CHECK(w.isLevelAndBelow);
 }
 
 QPID_AUTO_TEST_SUITE_END()
