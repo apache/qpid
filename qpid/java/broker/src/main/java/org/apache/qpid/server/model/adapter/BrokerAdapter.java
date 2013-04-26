@@ -536,13 +536,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
-        AuthenticationProvider authenticationProvider = null;
-        synchronized (_authenticationProviders)
-        {
-            authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
-            addAuthenticationProvider(authenticationProvider);
-        }
+        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
         authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        addAuthenticationProvider(authenticationProvider);
         return authenticationProvider;
     }
 

@@ -44,10 +44,7 @@ public class AuthenticationProviderRecoverer implements ConfiguredObjectRecovere
     {
         Broker broker = RecovererHelper.verifyOnlyBrokerIsParent(parents);
         Map<String, Object> attributes = configurationEntry.getAttributes();
-        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(
-                configurationEntry.getId(),
-                broker,
-                attributes);
+        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.recover(configurationEntry.getId(), attributes, broker);
 
         return authenticationProvider;
     }

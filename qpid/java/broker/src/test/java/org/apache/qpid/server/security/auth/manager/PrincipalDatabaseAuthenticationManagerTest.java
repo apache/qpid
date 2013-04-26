@@ -25,10 +25,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.security.Principal;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -36,9 +40,11 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
@@ -121,8 +127,51 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 
         usernamePasswordInitialiser.initialise(_principalDatabase);
 
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, null);
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
         _manager.initialise();
+    }
+
+    public void testInitialiseWhenPasswordFileNotFound() throws Exception
+    {
+        _principalDatabase = new PlainPasswordFilePrincipalDatabase();
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
+
+        try
+        {
+            _manager.initialise();
+            fail("Initialisiation should fail when users file does not exist");
+        }
+        catch (IllegalConfigurationException e)
+        {
+            assertTrue(e.getCause() instanceof FileNotFoundException);
+        }
+    }
+
+    public void testInitialiseWhenPasswordFileExists() throws Exception
+    {
+        _principalDatabase = new PlainPasswordFilePrincipalDatabase();
+        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
+
+        File f = new File(_passwordFileLocation);
+        f.createNewFile();
+        FileOutputStream fos = null;
+        try
+        {
+            fos = new FileOutputStream(f);
+            fos.write("admin:admin".getBytes());
+        }
+        finally
+        {
+            if (fos != null)
+            {
+                fos.close();
+            }
+        }
+        _manager.initialise();
+        List<Principal> users = _principalDatabase.getUsers();
+        assertEquals("Unexpected uses size", 1, users.size());
+        Principal p = _principalDatabase.getUser("admin");
+        assertEquals("Unexpected principal name", "admin", p.getName());
     }
 
     /**
