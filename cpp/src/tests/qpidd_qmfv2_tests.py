@@ -111,6 +111,7 @@ class ConsoleTest(BrokerTest):
                 self.events.append(event)
             def objectProps(self, broker, record):
                 #print "ObjProps %s" % record
+                assert len(record.getProperties()), "objectProps() invoked with no properties?"
                 oid = record.getObjectId()
                 if oid not in self.updates:
                     self.updates[oid] = record
@@ -118,6 +119,7 @@ class ConsoleTest(BrokerTest):
                     self.updates[oid].mergeUpdate( record )
             def objectStats(self, broker, record):
                 #print "ObjStats %s" % record
+                assert len(record.getStatistics()), "objectStats() invoked with no properties?"
                 oid = record.getObjectId()
                 if oid not in self.updates:
                     self.updates[oid] = record
