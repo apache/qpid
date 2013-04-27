@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -64,14 +65,19 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
 
         synchronized (_sessionAdapters)
         {
-            for(AMQSessionModel session : _sessionAdapters.keySet())
+            Iterator<AMQSessionModel> iterator = _sessionAdapters.keySet().iterator();
+            while(iterator.hasNext())
             {
+                AMQSessionModel session = iterator.next();
                 if(!actualSessions.contains(session))
                 {
-                    SessionAdapter adapter = _sessionAdapters.remove(session);
+                    SessionAdapter adapter = _sessionAdapters.get(session);
+                    iterator.remove();
+
                     childRemoved(adapter); // Trigger corresponding ConfigurationChangeListener childRemoved() callback.
                 }
             }
+
             for(AMQSessionModel session : actualSessions)
             {
                 if(!_sessionAdapters.containsKey(session))
@@ -81,6 +87,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
                     childAdded(adapter); // Trigger corresponding ConfigurationChangeListener childAdded() callback.
                 }
             }
+
             return new ArrayList<Session>(_sessionAdapters.values());
         }
     }
