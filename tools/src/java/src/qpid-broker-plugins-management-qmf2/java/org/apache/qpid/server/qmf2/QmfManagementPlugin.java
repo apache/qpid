@@ -143,7 +143,7 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
      */
     public QmfManagementPlugin(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker.getTaskExecutor());
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker);
         addParent(Broker.class, broker);
         _broker = broker;
         _defaultVirtualHost = (String)broker.getAttribute("defaultVirtualHost");
