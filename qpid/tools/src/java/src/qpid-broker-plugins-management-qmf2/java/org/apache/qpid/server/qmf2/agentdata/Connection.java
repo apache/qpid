@@ -36,6 +36,7 @@ import org.apache.qpid.qmf2.common.SchemaEventClass;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
+import org.apache.qpid.server.model.Statistics;
 
 /**
  * This class provides a concrete implementation of QmfAgentData for the Connection Management Object.
@@ -168,7 +169,7 @@ public class Connection extends QmfAgentData
     }
 
     /**
-     * This method maps the org.apache.qpid.server.model.Connection to QMF2 broker properties where possible then
+     * This method maps the org.apache.qpid.server.model.Connection to QMF2 connection properties where possible then
      * serialises into the underlying Map for transmission via AMQP. This method is called by handleQueryRequest()
      * in the org.apache.qpid.qmf2.agent.Agent class implementing the main QMF2 Agent behaviour.
      * 
@@ -177,27 +178,17 @@ public class Connection extends QmfAgentData
     @Override
     public Map<String, Object> mapEncode()
     {
-/*
-        // There isn't yet a way yet in the Java Broker to associate Connections->Sessions->Subscriptions->Queues
-        System.out.println("Connection name = " + _connection.getName());
-        for (org.apache.qpid.server.model.Session session : _connection.getSessions())
-        {
-            System.out.println("Session name = " + session);
-        }
-*/
-
-
         // Statistics
-        //Statistics stats = _queue.getStatistics();
+        Statistics stats = _connection.getStatistics();
         // closing Not implemented in Qpid 0.20
         setValue("framesFromClient", 0); // framesFromClient Not implemented in Qpid 0.20
         setValue("framesToClient", 0); // framesToClient Not implemented in Qpid 0.20
-        setValue("bytesFromClient", 0); // bytesFromClient Not implemented in Qpid 0.20
-        setValue("bytesToClient", 0); // bytesToClient Not implemented in Qpid 0.20
-        setValue("msgsFromClient", 0); // msgsFromClient Not implemented in Qpid 0.20
-        setValue("msgsToClient", 0); // msgsToClient Not implemented in Qpid 0.20
+        setValue("bytesFromClient", stats.getStatistic("bytesIn"));
+        setValue("bytesToClient", stats.getStatistic("bytesOut")); 
+        setValue("msgsFromClient", stats.getStatistic("messagesIn"));
+        setValue("msgsToClient", stats.getStatistic("messagesOut"));
 
-        //update(); // TODO set update if statistics change.
+        update(); // TODO set update if statistics change.
         return super.mapEncode();
     }
 }
