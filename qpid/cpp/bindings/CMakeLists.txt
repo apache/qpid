@@ -24,6 +24,14 @@ include(FindRuby)
 include(FindPythonLibs)
 include(FindPerlLibs)
 
+if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+  if (RUBY_INCLUDE_PATH)
+    set(RUBY_FOUND "TRUE")
+  else()
+    set(RUBY_FOUND "FALSE")
+  endif (RUBY_INCLUDE_PATH)
+endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+
 set (SWIG_MINIMUM_VERSION "1.3.32")
 
 if (SWIG_FOUND)
@@ -33,6 +41,7 @@ if (SWIG_FOUND)
     set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
 
     if (PYTHONLIBS_FOUND)
+        message("Building Python bindings")
         execute_process(COMMAND ${PYTHON_EXECUTABLE}
                         -c "from distutils.sysconfig import get_python_lib; print get_python_lib(True, prefix='${CMAKE_INSTALL_PREFIX}')"
                         OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
@@ -44,17 +53,19 @@ if (SWIG_FOUND)
     endif (PYTHONLIBS_FOUND)
 
     if (RUBY_FOUND)
+        message("Building Ruby bindings")
         execute_process(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e "puts RbConfig::CONFIG['prefix']"
                         OUTPUT_VARIABLE RUBY_PREFIX
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
-        string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_ARCH_DIR})
-
+        string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_SITEARCH_DIR})
+#       string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_ARCH_DIR})
         add_subdirectory(qpid/ruby)
         add_subdirectory(qmf2/ruby)
         add_subdirectory(qmf/ruby)
     endif (RUBY_FOUND)
 
     if (PERLLIBS_FOUND)
+        message("Building Perl bindings")
         execute_process(COMMAND ${PERL_EXECUTABLE} "-V::prefix:"
                         OUTPUT_VARIABLE QPERL_PREFIX
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
