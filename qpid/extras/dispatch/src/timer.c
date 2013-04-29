@@ -57,6 +57,7 @@ static void dx_timer_cancel_LH(dx_timer_t *timer)
 
     case TIMER_PENDING:
         dx_server_timer_cancel_LH(timer);
+        DEQ_INSERT_TAIL(idle_timers, timer);
         break;
     }
 

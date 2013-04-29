@@ -94,6 +94,30 @@ static char* test_immediate(void *context)
 }
 
 
+static char* test_immediate_reschedule(void *context)
+{
+    while(fire_head());
+    fire_mask = 0;
+
+    dx_timer_schedule(timers[0], 0);
+    dx_timer_schedule(timers[0], 0);
+
+    if (fire_mask != 0)  return "pass 1 - Premature firing";
+    if (fire_head() > 1) return "pass 1 - Too many firings";
+    if (fire_mask != 1)  return "pass 1 - Incorrect fire mask";
+
+    fire_mask = 0;
+    dx_timer_schedule(timers[0], 0);
+    dx_timer_schedule(timers[0], 0);
+
+    if (fire_mask != 0)  return "pass 2 - Premature firing";
+    if (fire_head() > 1) return "pass 2 - Too many firings";
+    if (fire_mask != 1)  return "pass 2 - Incorrect fire mask";
+
+    return 0;
+}
+
+
 static char* test_immediate_plus_delayed(void *context)
 {
     while(fire_head());
@@ -369,6 +393,7 @@ int timer_tests(void)
 
     TEST_CASE(test_quiet, 0);
     TEST_CASE(test_immediate, 0);
+    TEST_CASE(test_immediate_reschedule, 0);
     TEST_CASE(test_immediate_plus_delayed, 0);
     TEST_CASE(test_single, 0);
     TEST_CASE(test_two_inorder, 0);

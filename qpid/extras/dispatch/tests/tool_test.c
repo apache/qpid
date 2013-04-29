@@ -148,11 +148,52 @@ static char* test_deq_basic(void *context)
 }
 
 
+static char* test_deq_basic2(void *context)
+{
+    item_list_t  list;
+    item_t       item[10];
+    item_t      *ptr;
+    int          idx;
+    char        *subtest;
+
+    DEQ_INIT(list);
+    if (DEQ_SIZE(list) != 0) return "Expected zero initial size";
+
+    for (idx = 0; idx < 10; idx++) {
+        DEQ_ITEM_INIT(&item[idx]);
+        item[idx].letter = '0' + idx;
+    }
+
+    DEQ_INSERT_TAIL(list, &item[0]);
+    if (DEQ_SIZE(list) != 1) return "Expected 1 items in list";
+    subtest = list_well_formed(list, "0");
+    if (subtest) return subtest;
+
+    ptr = DEQ_HEAD(list);
+    DEQ_REMOVE_HEAD(list);
+    if (ptr->letter != '0')  return "Expected item '0'";
+    if (DEQ_SIZE(list) != 0) return "Expected 0 items in list";
+
+    DEQ_INSERT_TAIL(list, &item[0]);
+    if (DEQ_SIZE(list) != 1) return "Expected 1 items in list";
+    subtest = list_well_formed(list, "0");
+    if (subtest) return subtest;
+
+    ptr = DEQ_HEAD(list);
+    DEQ_REMOVE_HEAD(list);
+    if (ptr->letter != '0')  return "Expected item '0'";
+    if (DEQ_SIZE(list) != 0) return "Expected 0 items in list";
+
+    return 0;
+}
+
+
 int tool_tests(void)
 {
     int result = 0;
 
     TEST_CASE(test_deq_basic, 0);
+    TEST_CASE(test_deq_basic2, 0);
 
     return result;
 }
