@@ -46,6 +46,9 @@ my_random_number=$RANDOM
 tmp_root=/tmp/sasl_fed_$my_random_number
 mkdir -p $tmp_root
 
+# create ACL file to allow links
+echo acl allow all all > $tmp_root/sasl_fed.acl
+
 
 #--------------------------------------------------
 #echo " Starting broker 1"
@@ -59,6 +62,8 @@ $QPIDD_EXEC                                  \
   --log-source yes                           \
   --log-to-file $tmp_root/qpidd_1.log        \
   --sasl-config=$sasl_config_file            \
+  --load-module acl.so                       \
+  --acl-file $tmp_root/sasl_fed.acl          \
   -d > $tmp_root/broker_1_port
 
 broker_1_port=`cat $tmp_root/broker_1_port`
@@ -76,6 +81,8 @@ $QPIDD_EXEC                                  \
   --log-source yes                           \
   --log-to-file $tmp_root/qpidd_2.log        \
   --sasl-config=$sasl_config_file            \
+  --load-module acl.so                       \
+  --acl-file $tmp_root/sasl_fed.acl          \
   -d > $tmp_root/broker_2_port
 
 broker_2_port=`cat $tmp_root/broker_2_port`

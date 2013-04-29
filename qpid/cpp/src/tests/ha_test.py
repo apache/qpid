@@ -79,6 +79,16 @@ class HaBroker(Broker):
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]
         if brokers_url: args += [ "--ha-brokers-url", brokers_url ]
+        # Set up default ACL
+        acl=os.path.join(os.getcwd(), "unrestricted.acl")
+        if not os.path.exists(acl):
+            aclf=file(acl,"w")
+            aclf.write("""
+acl allow all all
+ """)
+            aclf.close()
+        if not "--acl-file" in args:
+            args += [ "--acl-file", acl, "--load-module", os.getenv("ACL_LIB") ]
         Broker.__init__(self, test, args, **kwargs)
         self.qpid_ha_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-ha")
         assert os.path.exists(self.qpid_ha_path)

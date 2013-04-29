@@ -39,11 +39,66 @@ start_brokers() {
     LOCAL_PORTQ=`cat qpiddq.port`
 }
 
+start_noacl_noauth_brokers() {
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --auth no --log-to-file local.log > qpidd.port
+    LOCAL_PORT=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRI --auth no --log-to-file locali.log > qpiddi.port
+    LOCAL_PORTI=`cat qpiddi.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRU --auth no --log-to-file localu.log > qpiddu.port
+    LOCAL_PORTU=`cat qpiddu.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRQ --auth no --log-to-file localq.log > qpiddq.port
+    LOCAL_PORTQ=`cat qpiddq.port`
+}
+
+start_noacl_auth_brokers() {
+    sasl_config_file=$builddir/sasl_config
+    if [ ! -f $sasl_config_file ] ; then
+	echo Creating sasl database
+	. $srcdir/sasl_test_setup.sh
+    fi
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --auth yes --sasl-config=$sasl_config_file --log-to-file local.log > qpidd.port
+    LOCAL_PORT=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRI --auth yes --sasl-config=$sasl_config_file --log-to-file locali.log > qpiddi.port
+    LOCAL_PORTI=`cat qpiddi.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRU --auth yes --sasl-config=$sasl_config_file --log-to-file localu.log > qpiddu.port
+    LOCAL_PORTU=`cat qpiddu.port`
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRQ --auth yes --sasl-config=$sasl_config_file --log-to-file localq.log > qpiddq.port
+    LOCAL_PORTQ=`cat qpiddq.port`
+}
+
 stop_brokers() {
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTI
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTU
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTQ
+}
+
+delete_directories() {
+    rm -rf $DATA_DIR
+    rm -rf $DATA_DIRI
+    rm -rf $DATA_DIRU
+    rm -rf $DATA_DIRQ
+}
+
+delete_logfiles() {
+    rm -rf local.log
+    rm -rf locali.log
+    rm -rf localu.log
+    rm -rf localq.log
+}
+
+create_directories() {
+    mkdir -p $DATA_DIR
+    mkdir -p $DATA_DIRI
+    mkdir -p $DATA_DIRU
+    mkdir -p $DATA_DIRQ
+}
+
+populate_directories() {
+    cp $srcdir/policy.acl $DATA_DIR
+    cp $srcdir/policy.acl $DATA_DIRI
+    cp $srcdir/policy.acl $DATA_DIRU
+    cp $srcdir/policy.acl $DATA_DIRQ
 }
 
 test_loading_acl_from_absolute_path(){
@@ -59,28 +114,53 @@ test_loading_acl_from_absolute_path(){
    rm temp.log
 }
 
+test_noacl_deny_create_link() {
+    delete_logfiles
+    start_noacl_noauth_brokers
+    echo "Running no-acl, no-auth tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
+    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORT  add exchange topic fed.topic
+    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORTI add exchange topic fed.topic
+    $QPID_ROUTE_EXEC dynamic add localhost:$LOCAL_PORT localhost:$LOCAL_PORTI fed.topic 2>/dev/null
+    sleep 2
+    stop_brokers
+    grep -q "must specify ACL create link rules" local.log
+    if [ $? -eq 0 ]
+    then
+	echo "Test fail - Broker with auth=no should have allowed link creation";
+	return 1;
+    fi
+
+    delete_logfiles
+    start_noacl_auth_brokers
+    echo "Running no-acl, auth tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
+    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORT  add exchange topic fed.topic
+    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORTI add exchange topic fed.topic
+    $QPID_ROUTE_EXEC dynamic add localhost:$LOCAL_PORT localhost:$LOCAL_PORTI fed.topic 2>/dev/null
+    sleep 2
+    stop_brokers
+    grep -q "must specify ACL create link rules" local.log
+    if [ $? -ne 0 ]
+    then
+	echo "Test fail - Broker with no ACL and --auth=yes file did not deny link creation";
+	return 1;
+    fi
+}
+
 if test -d ${PYTHON_DIR} ;  then
-    rm -rf $DATA_DIR
-    rm -rf $DATA_DIRI
-    rm -rf $DATA_DIRU
-    rm -rf $DATA_DIRQ
-    mkdir -p $DATA_DIR
-    mkdir -p $DATA_DIRI
-    mkdir -p $DATA_DIRU
-    mkdir -p $DATA_DIRQ
-    cp $srcdir/policy.acl $DATA_DIR
-    cp $srcdir/policy.acl $DATA_DIRI
-    cp $srcdir/policy.acl $DATA_DIRU
-    cp $srcdir/policy.acl $DATA_DIRQ
+    # run acl.py test file
+    delete_directories
+    create_directories
+    populate_directories
+    delete_logfiles
     start_brokers
     echo "Running acl tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
     $QPID_PYTHON_TEST -b localhost:$LOCAL_PORT -m acl -Dport-i=$LOCAL_PORTI -Dport-u=$LOCAL_PORTU -Dport-q=$LOCAL_PORTQ || EXITCODE=1
     stop_brokers || EXITCODE=1
+    #
     test_loading_acl_from_absolute_path || EXITCODE=1
-    rm -rf $DATA_DIR
-    rm -rf $DATA_DIRI
-    rm -rf $DATA_DIRU
-    rm -rf $DATA_DIRQ
+    #
+    test_noacl_deny_create_link || EXITCODE=1
+    delete_directories
     exit $EXITCODE
 fi
 

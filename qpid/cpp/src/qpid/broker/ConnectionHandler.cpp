@@ -201,12 +201,22 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
     }
     if (connection.isFederationLink()) {
         AclModule* acl =  connection.getBroker().getAcl();
-        FieldTable properties;
-    	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
-            proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,
-                        QPID_MSG("ACL denied " << connection.getUserId()
-                                 << " creating a federation link"));
-            return;
+        if (acl) {
+            if (!acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
+                proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,
+                            QPID_MSG("ACL denied " << connection.getUserId()
+                                        << " creating a federation link"));
+                return;
+            }
+        } else {
+            Broker::Options& conf = connection.getBroker().getOptions();
+            if (conf.auth) {
+                proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,
+                            QPID_MSG("User " << connection.getUserId()
+                                << " federation connection denied. Systems with authentication "
+                                   "enabled must specify ACL create link rules."));
+                return;
+            }
         }
         QPID_LOG(info, "Connection is a federation link");
     }
