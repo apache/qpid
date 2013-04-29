@@ -106,10 +106,4 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     {
         return _restTestHelper;
     }
-
-    protected void restartBrokerInManagementMode() throws Exception
-    {
-        stopBroker();
-        startBroker(0, true);
-    }
 }
