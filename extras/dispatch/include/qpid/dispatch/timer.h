@@ -69,7 +69,7 @@ void dx_timer_free(dx_timer_t *timer);
  *
  * @param timer Pointer to the timer object returned by dx_timer.
  * @param msec The minimum number of milliseconds of delay until the timer fires.
- *             If 0 is supplied, the timer will fire immediately.
+ *             If 0 is supplied, the timer will be scheduled to fire immediately.
  */
 void dx_timer_schedule(dx_timer_t *timer, long msec);
 

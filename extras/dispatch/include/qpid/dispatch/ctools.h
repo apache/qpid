@@ -117,6 +117,7 @@ do {                            \
 do {                            \
     CT_ASSERT((i)->next == 0);  \
     CT_ASSERT((i)->prev == 0);  \
+    CT_ASSERT(a);               \
     if ((a)->next)              \
         (a)->next->prev = (i);  \
     else                        \
