@@ -28,14 +28,11 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.sasl.anonymous.AnonymousInitialiser;
 import org.apache.qpid.server.security.auth.sasl.anonymous.AnonymousSaslServer;
 
 public class AnonymousAuthenticationManager implements AuthenticationManager
 {
-    private static final AnonymousInitialiser SASL_INITIALISER = new AnonymousInitialiser();
-
-    private static final String ANONYMOUS = SASL_INITIALISER.getMechanismName();
+    private static final String ANONYMOUS = "ANONYMOUS";
 
     public static final String ANONYMOUS_USERNAME = "ANONYMOUS";
 

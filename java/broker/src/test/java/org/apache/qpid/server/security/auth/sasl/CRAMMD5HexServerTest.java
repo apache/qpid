@@ -69,7 +69,7 @@ public class CRAMMD5HexServerTest extends TestCase
         _saslServer = _saslFactory.createSaslServer(CRAMMD5HexSaslServer.MECHANISM,
                 "AMQP",
                 "localhost",
-                _initializer.getProperties(),
+                null,
                 _initializer.getCallbackHandler());
         assertNotNull("Unable to create saslServer with mechanism type " + CRAMMD5HexSaslServer.MECHANISM, _saslServer);
 

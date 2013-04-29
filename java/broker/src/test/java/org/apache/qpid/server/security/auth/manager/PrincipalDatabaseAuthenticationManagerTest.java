@@ -28,10 +28,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.Principal;
-import java.security.Provider;
-import java.security.Security;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +42,6 @@ import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationS
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -56,6 +51,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
  */
 public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 {
+    private static final String LOCALHOST = "localhost";
     private static final String MOCK_MECH_NAME = "MOCK-MECH-NAME";
     private static final UsernamePrincipal PRINCIPAL = new UsernamePrincipal("guest");
 
@@ -92,40 +88,8 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     {
         _principalDatabase = mock(PrincipalDatabase.class);
 
-        AuthenticationProviderInitialiser _mockMechInitialiser = mock(AuthenticationProviderInitialiser.class);
-        Map<String, AuthenticationProviderInitialiser> _initialisers = Collections.singletonMap(MOCK_MECH_NAME, _mockMechInitialiser);
-
-        when(_principalDatabase.getMechanisms()).thenReturn(_initialisers);
-
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
-        _manager.initialise();
-    }
-
-    private void setupMocksWithInitialiser() throws Exception
-    {
-        _principalDatabase = mock(PrincipalDatabase.class);
-
-        UsernamePasswordInitialiser usernamePasswordInitialiser = new UsernamePasswordInitialiser()
-        {
-            @Override
-            public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-            {
-                return MySaslServerFactory.class;
-            }
-
-            @Override
-            public String getMechanismName()
-            {
-                return MOCK_MECH_NAME;
-            }
-        };
-
-        Map<String,AuthenticationProviderInitialiser> initialisers = new HashMap<String, AuthenticationProviderInitialiser>();
-        initialisers.put(MOCK_MECH_NAME, usernamePasswordInitialiser);
-
-        when(_principalDatabase.getMechanisms()).thenReturn(initialisers);
-
-        usernamePasswordInitialiser.initialise(_principalDatabase);
+        when(_principalDatabase.getMechanisms()).thenReturn(MOCK_MECH_NAME);
+        when(_principalDatabase.createSaslServer(MOCK_MECH_NAME, LOCALHOST, null)).thenReturn(new MySaslServer(false, true));
 
         _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
         _manager.initialise();
@@ -175,32 +139,14 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     }
 
     /**
-     * Tests that the PDAM registers SASL mechanisms correctly with the runtime.
-     */
-    public void testRegisteredMechanisms() throws Exception
-    {
-        //Ensure we haven't registered anything yet (though this would really indicate a prior test failure!)
-        Provider qpidProvider = Security.getProvider(AuthenticationManager.PROVIDER_NAME);
-        assertNull(qpidProvider);
-
-        setupMocksWithInitialiser();
-
-        assertNotNull(_manager.getMechanisms());
-        assertEquals(MOCK_MECH_NAME, _manager.getMechanisms());
-
-        qpidProvider = Security.getProvider(AuthenticationManager.PROVIDER_NAME);
-        assertNotNull(qpidProvider);
-    }
-
-    /**
      * Tests that the SASL factory method createSaslServer correctly
      * returns a non-null implementation.
      */
     public void testSaslMechanismCreation() throws Exception
     {
-        setupMocksWithInitialiser();
+        setupMocks();
 
-        SaslServer server = _manager.createSaslServer(MOCK_MECH_NAME, "localhost", null);
+        SaslServer server = _manager.createSaslServer(MOCK_MECH_NAME, LOCALHOST, null);
         assertNotNull(server);
         // Merely tests the creation of the mechanism. Mechanisms themselves are tested
         // by their own tests.
@@ -278,24 +224,6 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         AuthenticationResult result = _manager.authenticate("guest", "wrongpassword");
         assertEquals("Principals was not expected size", 0, result.getPrincipals().size());
         assertEquals(AuthenticationStatus.CONTINUE, result.getStatus());
-    }
-
-    /**
-     * Tests the ability to de-register the provider.
-     */
-    public void testClose() throws Exception
-    {
-        setupMocksWithInitialiser();
-
-        assertEquals(MOCK_MECH_NAME, _manager.getMechanisms());
-        assertNotNull(Security.getProvider(AuthenticationManager.PROVIDER_NAME));
-
-        _manager.close();
-
-        // Check provider has been removed.
-        assertNull(_manager.getMechanisms());
-        assertNull(Security.getProvider(AuthenticationManager.PROVIDER_NAME));
-        _manager = null;
     }
 
     public void testOnCreate() throws Exception

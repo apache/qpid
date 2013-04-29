@@ -22,17 +22,10 @@ package org.apache.qpid.server.security.auth.sasl.plain;
 
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 
-import javax.security.sasl.SaslServerFactory;
-
 public class PlainInitialiser extends UsernamePasswordInitialiser
 {
     public String getMechanismName()
     {
         return "PLAIN";
     }
-
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-    {
-        return PlainSaslServerFactory.class;
-    }    
 }
