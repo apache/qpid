@@ -121,4 +121,8 @@ public abstract class NullMessageStore implements MessageStore
         return null;
     }
 
+    @Override
+    public void onDelete()
+    {
+    }
 }

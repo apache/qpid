@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -472,6 +473,22 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("First Message is incorrect", 22L, val.longValue());
         val = enqueuedIds.get(1);
         assertEquals("Second Message is incorrect", 23L, val.longValue());
+    }
+
+    public void testOnDelete() throws Exception
+    {
+        MessageStore log = getVirtualHost().getMessageStore();
+        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
+        String storeLocation = bdbStore.getStoreLocation();
+
+        File location = new File(storeLocation);
+        assertTrue("Store does not exist at " + storeLocation, location.exists());
+
+        bdbStore.close();
+        assertTrue("Store does not exist at " + storeLocation, location.exists());
+
+        bdbStore.onDelete();
+        assertFalse("Store exists at " + storeLocation, location.exists());
     }
 
     /**
