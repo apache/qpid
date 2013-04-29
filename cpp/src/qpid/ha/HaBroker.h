@@ -90,6 +90,8 @@ class HaBroker : public management::Manageable
     Membership& getMembership() { return membership; }
     types::Uuid getSystemId() const { return systemId; }
 
+    void setAddress(const Address&); // set self address from a self-connection
+
   private:
 
     void setPublicUrl(const Url&);

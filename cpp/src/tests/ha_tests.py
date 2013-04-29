@@ -545,26 +545,25 @@ class ReplicationTests(HaBrokerTest):
         """Check that broker information is correctly published via management"""
         cluster = HaCluster(self, 3)
 
-        for broker in cluster:  # Make sure HA system-id matches broker's
-            qmf = broker.agent().getHaBroker()
-            self.assertEqual(qmf.systemId, UUID(broker.agent().getBroker().systemRef))
+        def ha_broker(broker):
+            ha_broker = broker.agent().getHaBroker();
+            ha_broker.update()
+            return ha_broker
 
-        cluster_ports = map(lambda b: b.port(), cluster)
-        cluster_ports.sort()
-        def ports(qmf):
-            qmf.update()
-            return sorted(map(lambda b: b["port"], qmf.members))
+        for broker in cluster:  # Make sure HA system-id matches broker's
+            self.assertEqual(ha_broker(broker).systemId, UUID(broker.agent().getBroker().systemRef))
+
         # Check that all brokers have the same membership as the cluster
-        for broker in cluster:
-            qmf = broker.agent().getHaBroker()
-            assert retry(lambda: cluster_ports == ports(qmf), 1), "%s != %s on %s"%(cluster_ports, ports(qmf), broker)
+        def check_ids(broker):
+            cluster_ids = set([ ha_broker(b).systemId for b in cluster])
+            broker_ids = set([m["system-id"] for m in  ha_broker(broker).members])
+            assert retry(lambda: cluster_ids == broker_ids, 1), "%s != %s on %s"%(cluster_ids, broker_ids, broker)
+
+        for broker in cluster: check_ids(broker)
+
         # Add a new broker, check it is updated everywhere
         b = cluster.start()
-        cluster_ports.append(b.port())
-        cluster_ports.sort()
-        for broker in cluster:
-            qmf = broker.agent().getHaBroker()
-            assert retry(lambda: cluster_ports == ports(qmf), 1), "%s != %s"%(cluster_ports, ports(qmf))
+        for broker in cluster: check_ids(broker)
 
     def test_auth(self):
         """Verify that authentication does not interfere with replication."""
