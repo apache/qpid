@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/Messages.h"
+#include "qpid/broker/Message.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/MemoryMappedFile.h"
 #include <deque>
