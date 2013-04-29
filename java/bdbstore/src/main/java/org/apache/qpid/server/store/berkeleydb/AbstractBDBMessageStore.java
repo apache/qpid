@@ -73,6 +73,7 @@ import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
+import org.apache.qpid.util.FileUtils;
 
 public abstract class AbstractBDBMessageStore implements MessageStore
 {
@@ -1799,6 +1800,27 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             LOGGER.error("Asynchronous exception thrown by BDB thread '"
                          + event.getThreadName() + "'", event.getException());
+        }
+    }
+
+    @Override
+    public void onDelete()
+    {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Deleting store " + _storeLocation);
+        }
+
+        if (_storeLocation != null)
+        {
+            File location = new File(_storeLocation);
+            if (location.exists())
+            {
+                if (!FileUtils.delete(location, true))
+                {
+                    LOGGER.error("Cannot delete " + _storeLocation);
+                }
+            }
         }
     }
 }

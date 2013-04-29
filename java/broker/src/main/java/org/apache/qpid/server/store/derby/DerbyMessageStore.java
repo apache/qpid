@@ -39,6 +39,7 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.util.FileUtils;
 
 /**
  * An implementation of a {@link MessageStore} that uses Apache Derby as the persistence
@@ -56,7 +57,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
 
     private static final String TABLE_EXISTANCE_QUERY = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = ?";
 
-    private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
+    public static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
     public static final String TYPE = "DERBY";
 
@@ -418,4 +419,29 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         return TYPE;
     }
 
+    @Override
+    public void onDelete()
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Deleting store " + _storeLocation);
+        }
+
+        if (MEMORY_STORE_LOCATION.equals(_storeLocation))
+        {
+            return;
+        }
+
+        if (_storeLocation != null)
+        {
+            File location = new File(_storeLocation);
+            if (location.exists())
+            {
+                if (!FileUtils.delete(location, true))
+                {
+                    _logger.error("Cannot delete " + _storeLocation);
+                }
+            }
+        }
+    }
 }
