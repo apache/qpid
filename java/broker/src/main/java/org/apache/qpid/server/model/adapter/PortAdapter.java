@@ -309,7 +309,7 @@ public class PortAdapter extends AbstractAdapter implements Port
         State state = _state.get();
         if (desiredState == State.DELETED)
         {
-            if (state == State.STOPPED || state == State.QUIESCED)
+            if (state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED)
             {
                 return _state.compareAndSet(state, State.DELETED);
             }
@@ -322,7 +322,15 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
             if ((state == State.INITIALISING || state == State.QUIESCED) && _state.compareAndSet(state, State.ACTIVE))
             {
-                onActivate();
+                try
+                {
+                    onActivate();
+                }
+                catch(RuntimeException e)
+                {
+                    _state.compareAndSet(State.ACTIVE, state);
+                    throw e;
+                }
                 return true;
             }
             else
@@ -371,15 +379,27 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        if (getActualState() == State.ACTIVE && !_broker.isManagementMode())
-        {
-            throw new IllegalStateException("Cannot change attributes for an active port outside of Management Mode");
-        }
         Map<String, Object> converted = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
 
-        Map<String, Object> merged =  new HashMap<String, Object>(getDefaultAttributes());
-        merged.putAll(getActualAttributes());
-        merged.putAll(converted);
+        Map<String, Object> merged = generateEffectiveAttributes(converted);
+
+        String newName = (String) merged.get(NAME);
+        if(!getName().equals(newName))
+        {
+            throw new IllegalConfigurationException("Changing the port name is not allowed");
+        }
+
+        Integer newPort = (Integer) merged.get(PORT);
+        if(getPort() != newPort)
+        {
+            for(Port p : _broker.getPorts())
+            {
+                if(p.getPort() == newPort)
+                {
+                    throw new IllegalConfigurationException("Port number " + newPort + " is already in use by port " + p.getName());
+                }
+            }
+        }
 
         @SuppressWarnings("unchecked")
         Collection<Transport> transports = (Collection<Transport>)merged.get(TRANSPORTS);

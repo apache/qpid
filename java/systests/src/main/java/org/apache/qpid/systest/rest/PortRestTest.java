@@ -124,8 +124,9 @@ public class PortRestTest extends QpidRestTestCase
         Asserts.assertPortAttributes(port, State.ACTIVE);
 
         // try to add a second RMI port
+        portName = portName + "2";
         attributes = new HashMap<String, Object>();
-        attributes.put(Port.NAME, portName + 2);
+        attributes.put(Port.NAME, portName);
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
@@ -162,28 +163,11 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.AMQP_0_9_1));
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
-        assertEquals("Port cannot be updated in non management mode", 409, responseCode);
-    }
-
-    public void testPutUpdateOpenedAmqpPortFails() throws Exception
-    {
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT);
-        Integer portValue = (Integer)port.get(Port.PORT);
-
-        port.put(Port.PORT, findFreePort());
-
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, "PUT", port);
-        assertEquals("Unexpected response code for port update", 409, responseCode);
-
-        port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT);
-        assertEquals("Port has been changed", portValue, port.get(Port.PORT));
+        assertEquals("Unexpected response code for port update", 200, responseCode);
     }
 
     public void testUpdatePortTransportFromTCPToSSLWhenKeystoreIsConfigured() throws Exception
     {
-        restartBrokerInManagementMode();
-        getRestTestHelper().setManagementModeCredentials();
-
         String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
@@ -192,9 +176,6 @@ public class PortRestTest extends QpidRestTestCase
 
         int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("Transport has not been changed to SSL " , 200, responseCode);
-
-        restartBroker();
-        getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
 
         Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
 
@@ -209,9 +190,6 @@ public class PortRestTest extends QpidRestTestCase
 
     public void testUpdateTransportFromTCPToSSLWithoutKeystoreConfiguredFails() throws Exception
     {
-        restartBrokerInManagementMode();
-        getRestTestHelper().setManagementModeCredentials();
-
         String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
@@ -235,17 +213,12 @@ public class PortRestTest extends QpidRestTestCase
         int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("SSL port was not added", 201, responseCode);
 
-        restartBrokerInManagementMode();
-        getRestTestHelper().setManagementModeCredentials();
-
         attributes.put(Port.NEED_CLIENT_AUTH, true);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
 
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("Attributes for need/want client auth are not set", 200, responseCode);
 
-        restartBroker();
-        getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
         Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
         assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, true, port.get(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, true, port.get(Port.WANT_CLIENT_AUTH));
@@ -254,9 +227,6 @@ public class PortRestTest extends QpidRestTestCase
         Collection<String> trustStores = (Collection<String>) port.get(Port.TRUST_STORES);
         assertEquals("Unexpected auth provider", new HashSet<String>(Arrays.asList(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE)),
                 new HashSet<String>(trustStores));
-
-        restartBrokerInManagementMode();
-        getRestTestHelper().setManagementModeCredentials();
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
@@ -274,8 +244,6 @@ public class PortRestTest extends QpidRestTestCase
         responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
         assertEquals("Should be able to change transport to TCP ", 200, responseCode);
 
-        restartBroker();
-        getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
         port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
         assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, false, port.get(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, false, port.get(Port.WANT_CLIENT_AUTH));
@@ -288,9 +256,6 @@ public class PortRestTest extends QpidRestTestCase
 
     public void testUpdateSettingWantNeedCertificateFailsForNonSSLPort() throws Exception
     {
-        restartBrokerInManagementMode();
-        getRestTestHelper().setManagementModeCredentials();
-
         String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
@@ -307,9 +272,6 @@ public class PortRestTest extends QpidRestTestCase
 
     public void testUpdatePortAuthenticationProvider() throws Exception
     {
-        restartBrokerInManagementMode();
-        getRestTestHelper().setManagementModeCredentials();
-
         String portName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
