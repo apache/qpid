@@ -93,6 +93,7 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
 
     void decodeHeader(framing::Buffer& buffer);
     void decodeContent(framing::Buffer& buffer);
+    void decodeContent(framing::Buffer& buffer, size_t size);
 
     void encode(framing::Buffer& buffer) const;
     uint32_t encodedSize() const;

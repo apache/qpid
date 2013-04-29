@@ -22,11 +22,11 @@
  *
  */
 #include "RecoverableMessage.h"
+#include "Message.h"
 
 namespace qpid {
 namespace broker {
 class DtxBuffer;
-class Message;
 class Queue;
 
 class RecoverableMessageImpl : public RecoverableMessage
@@ -43,6 +43,7 @@ public:
     void recover(boost::shared_ptr<Queue> queue);
     void enqueue(boost::shared_ptr<DtxBuffer> buffer, boost::shared_ptr<Queue> queue);
     void dequeue(boost::shared_ptr<DtxBuffer> buffer, boost::shared_ptr<Queue> queue);
+    Message getMessage();
 };
 }} // namespace qpid::broker
 

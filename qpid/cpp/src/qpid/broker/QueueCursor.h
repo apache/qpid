@@ -64,6 +64,7 @@ class QueueCursor
   friend class MessageDeque;
   friend class MessageMap;
   friend class PriorityQueue;
+  friend class PagedQueue;
   template <typename T> friend class IndexedDeque;
 };
 }} // namespace qpid::broker

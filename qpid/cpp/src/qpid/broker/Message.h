@@ -145,9 +145,6 @@ public:
     void annotationsChanged();
 };
 
-QPID_BROKER_EXTERN void encode(const Message&, std::string&);
-QPID_BROKER_EXTERN void decode(const std::string&, Message&);
-
 }}
 
 

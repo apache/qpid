@@ -20,6 +20,7 @@
  */
 #include "Protocol.h"
 #include "qpid/sys/ConnectionCodec.h"
+#include "qpid/broker/RecoverableMessageImpl.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/log/Statement.h"
 
@@ -47,11 +48,23 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> ProtocolReg
 }
 boost::shared_ptr<RecoverableMessage> ProtocolRegistry::recover(qpid::framing::Buffer& b)
 {
-    boost::shared_ptr<RecoverableMessage> msg;
-    for (Protocols::const_iterator i = protocols.begin(); !msg && i != protocols.end(); ++i) {
-        msg = i->second->recover(b);
+    uint32_t position = b.getPosition();
+    for (Protocols::const_iterator i = protocols.begin(); i != protocols.end(); ++i) {
+        boost::shared_ptr<RecoverableMessage> msg = i->second->recover(b);
+        if (msg) return msg;
+        else b.setPosition(position);
     }
+    boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> transfer(new qpid::broker::amqp_0_10::MessageTransfer());
+    transfer->decodeHeader(b);
+    boost::shared_ptr<RecoverableMessage> msg(new RecoverableMessageImpl(Message(transfer, transfer)));
     return msg;
+}
+
+Message ProtocolRegistry::decode(qpid::framing::Buffer& buffer)
+{
+    boost::shared_ptr<RecoverableMessage> r = recover(buffer);
+    r->decodeContent(buffer);
+    return r->getMessage();
 }
 
 ProtocolRegistry::~ProtocolRegistry()

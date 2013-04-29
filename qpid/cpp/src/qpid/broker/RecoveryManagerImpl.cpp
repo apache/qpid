@@ -118,15 +118,8 @@ RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& 
 
 RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buffer& buffer)
 {
-    framing::Buffer sniffer(buffer.getPointer(), buffer.available());
-    RecoverableMessage::shared_ptr m = protocols.recover(sniffer);
-    if (m) {
-        return m;
-    } else {
-        boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> transfer(new qpid::broker::amqp_0_10::MessageTransfer());
-        transfer->decodeHeader(buffer);
-        return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(Message(transfer, transfer)));
-    }
+    RecoverableMessage::shared_ptr m = protocols.recover(buffer);
+    return m;
 }
 
 RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
@@ -189,6 +182,11 @@ void RecoverableMessageImpl::setRedelivered()
 void RecoverableMessageImpl::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& ep)
 {
     msg.computeExpiration(ep);
+}
+
+Message RecoverableMessageImpl::getMessage()
+{
+    return msg;
 }
 
 void RecoverableQueueImpl::recover(RecoverableMessage::shared_ptr msg)
