@@ -34,16 +34,9 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
  * {@link AuthenticationResult} containing the user's main {@link Principal} and zero or
  * more other implementation-specific principals.
  * </p>
- * <p>
- * The {@link #initialise()} method is responsible for registering SASL mechanisms required by
- * the manager.  The {@link #close()} method must reverse this registration.
- * </p>
  */
 public interface AuthenticationManager extends Closeable
 {
-    /** The name for the required SASL Server mechanisms */
-    public static final String PROVIDER_NAME= "AMQSASLProvider-Server";
-
     /**
      * Initialise the authentication plugin.
      *

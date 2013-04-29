@@ -24,6 +24,8 @@ import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialis
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,8 +102,13 @@ public interface PrincipalDatabase
      */
     void reload() throws IOException;
 
-    public Map<String, AuthenticationProviderInitialiser> getMechanisms();
-
-
     List<Principal> getUsers();
+
+    /**
+     * Get the list of mechanisms supported for use with the PrincipalDatabase
+     * @return space separated list of supported Sasl mechanisms
+     */
+    public String getMechanisms();
+
+    public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException;
 }

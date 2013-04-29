@@ -21,16 +21,17 @@
 
 package org.apache.qpid.server.security.auth.sasl;
 
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.AccountNotFoundException;
-
 import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
+
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 public class TestPrincipalDatabase implements PrincipalDatabase
 {
@@ -45,12 +46,6 @@ public class TestPrincipalDatabase implements PrincipalDatabase
     {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    public Map<String, AuthenticationProviderInitialiser> getMechanisms()
-    {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public Principal getUser(String username)
@@ -92,6 +87,21 @@ public class TestPrincipalDatabase implements PrincipalDatabase
     public void open(File passwordFile) throws IOException
     {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public String getMechanisms()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public SaslServer createSaslServer(String mechanism, String localFQDN,
+            Principal externalPrincipal) throws SaslException
+    {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

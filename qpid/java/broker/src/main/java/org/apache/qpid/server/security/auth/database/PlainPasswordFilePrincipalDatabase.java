@@ -20,14 +20,22 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.log4j.Logger;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
+import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainSaslServer;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
-
-import javax.security.auth.login.AccountNotFoundException;
-import java.security.Principal;
+import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -40,13 +48,24 @@ public class PlainPasswordFilePrincipalDatabase extends AbstractPasswordFilePrin
 {
 
     private final Logger _logger = Logger.getLogger(PlainPasswordFilePrincipalDatabase.class);
+    private final Map<String, CallbackHandler> _callbackHandlerMap = new HashMap<String, CallbackHandler>();
+    private String _mechanismsString;
 
     public PlainPasswordFilePrincipalDatabase()
     {
-        /**
-         *  Create Authenticators for Plain Password file.
-         */
-        super(new AmqPlainInitialiser(), new PlainInitialiser(), new CRAMMD5Initialiser());
+        AmqPlainInitialiser amqPlainInitialiser = new AmqPlainInitialiser();
+        amqPlainInitialiser.initialise(this);
+        _callbackHandlerMap.put(AmqPlainSaslServer.MECHANISM, amqPlainInitialiser.getCallbackHandler());
+
+        PlainInitialiser plainInitialiser = new PlainInitialiser();
+        plainInitialiser.initialise(this);
+        _callbackHandlerMap.put(PlainSaslServer.MECHANISM, plainInitialiser.getCallbackHandler());
+
+        CRAMMD5Initialiser crammd5Initialiser = new CRAMMD5Initialiser();
+        crammd5Initialiser.initialise(this);
+        _callbackHandlerMap.put(CRAMMD5Initialiser.MECHANISM, crammd5Initialiser.getCallbackHandler());
+
+        _mechanismsString = AmqPlainSaslServer.MECHANISM + " " + PlainSaslServer.MECHANISM + " " + CRAMMD5Initialiser.MECHANISM;
     }
 
 
@@ -90,5 +109,38 @@ public class PlainPasswordFilePrincipalDatabase extends AbstractPasswordFilePrin
     protected Logger getLogger()
     {
         return _logger;
+    }
+
+
+    @Override
+    public String getMechanisms()
+    {
+        return _mechanismsString;
+    }
+
+    @Override
+    public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
+    {
+        CallbackHandler callbackHandler = _callbackHandlerMap.get(mechanism);
+        if(callbackHandler == null)
+        {
+            throw new SaslException("Unsupported mechanism: " + mechanism);
+        }
+
+        if(CRAMMD5Initialiser.MECHANISM.equals(mechanism))
+        {
+            //simply delegate to the built in CRAM-MD5 SaslServer
+            return Sasl.createSaslServer(mechanism, "AMQP", localFQDN, null, callbackHandler);
+        }
+        else if(PlainSaslServer.MECHANISM.equals(mechanism))
+        {
+            return new PlainSaslServer(callbackHandler);
+        }
+        else if(AmqPlainSaslServer.MECHANISM.equals(mechanism))
+        {
+            return new AmqPlainSaslServer(callbackHandler);
+        }
+
+        throw new SaslException("Unsupported mechanism: " + mechanism);
     }
 }
