@@ -106,7 +106,7 @@ class HeadersExchange : public virtual Exchange {
 
     virtual bool supportsDynamicBinding() { return true; }
 
-    static QPID_BROKER_EXTERN bool match(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
+    static QPID_BROKER_EXTERN bool match(const qpid::framing::FieldTable& bindArgs, const qpid::broker::Message& msg);
     static bool equal(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
 };
 
