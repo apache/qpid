@@ -325,6 +325,7 @@ EXTRA_DIST +=								\
   run_perftest								\
   ring_queue_test							\
   run_ring_queue_test							\
+  run_paged_queue_tests							\
   dynamic_log_level_test						\
   dynamic_log_hires_timestamp                                           \
   qpid-ctrl								\
@@ -362,7 +363,7 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 # Not run under valgrind, too slow
 
 LONG_TESTS+=start_broker \
- fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test \
+ fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test run_paged_queue_tests\
  run_msg_group_tests_soak \
  stop_broker \
  run_long_federation_sys_tests

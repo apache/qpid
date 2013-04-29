@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/Message.h"
+#include "qpid/broker/Protocol.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -56,10 +57,12 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     properties["abc"] = "xyz";
     Message msg = MessageUtils::createMessage(properties, data);
 
-    std::string buffer;
-    encode(msg, buffer);
-    msg = Message();
-    decode(buffer, msg);
+    std::vector<char> bytes(msg.getPersistentContext()->encodedSize());
+    qpid::framing::Buffer buffer(&bytes[0], bytes.size());
+    msg.getPersistentContext()->encode(buffer);
+    buffer.reset();
+    ProtocolRegistry registry;
+    msg = registry.decode(buffer);
 
     BOOST_CHECK_EQUAL(routingKey, msg.getRoutingKey());
     BOOST_CHECK_EQUAL((uint64_t) data.size(), msg.getContentSize());

@@ -30,7 +30,7 @@
 namespace qpid {
 namespace broker {
 class ExpiryPolicy;
-
+class Message;
 /**
  * The interface through which messages are reloaded on recovery.
  */
@@ -53,6 +53,7 @@ public:
      * of length as necessary)
      */
     virtual void decodeContent(framing::Buffer& buffer) = 0;
+    virtual Message getMessage() = 0;
     virtual ~RecoverableMessage() {};
 };
 

@@ -68,6 +68,7 @@ class ProtocolRegistry : public Protocol
     qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const Message&);
     boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
+    Message decode(qpid::framing::Buffer&);
 
     ~ProtocolRegistry();
     void add(const std::string&, Protocol*);
