@@ -69,4 +69,6 @@ public interface MessageStore extends DurableConfigurationStore
     String getStoreLocation();
 
     String getStoreType();
+
+    void onDelete();
 }

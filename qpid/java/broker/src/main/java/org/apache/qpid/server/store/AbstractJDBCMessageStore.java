@@ -72,6 +72,9 @@ abstract public class AbstractJDBCMessageStore implements MessageStore
 
     private static final String CONFIGURED_OBJECTS_TABLE_NAME = "QPID_CONFIGURED_OBJECTS";
 
+    public static String[] ALL_TABLES = new String[] { DB_VERSION_TABLE_NAME, LINKS_TABLE_NAME, BRIDGES_TABLE_NAME, XID_ACTIONS_TABLE_NAME,
+        XID_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, META_DATA_TABLE_NAME, CONFIGURED_OBJECTS_TABLE_NAME };
+
     private static final int DB_VERSION = 6;
 
     private final AtomicLong _messageId = new AtomicLong(0);
@@ -166,6 +169,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore
     }
 
     private ConfiguredObjectHelper _configuredObjectHelper = new ConfiguredObjectHelper();
+
 
     @Override
     public void configureConfigStore(String name,
@@ -2036,5 +2040,38 @@ abstract public class AbstractJDBCMessageStore implements MessageStore
     protected abstract String getBlobAsString(ResultSet rs, int col) throws SQLException;
 
     protected abstract void storedSizeChange(int storeSizeIncrease);
+
+
+    @Override
+    public void onDelete()
+    {
+        try
+        {
+            Connection conn = newAutoCommitConnection();
+            try
+            {
+                for (String tableName : ALL_TABLES)
+                {
+                    Statement stmt = conn.createStatement();
+                    try
+                    {
+                        stmt.execute("DROP TABLE " +  tableName);
+                    }
+                    finally
+                    {
+                        stmt.close();
+                    }
+                }
+            }
+            finally
+            {
+                conn.close();
+            }
+        }
+        catch(SQLException e)
+        {
+            getLogger().error("Exception while deleting store tables", e);
+        }
+    }
 
 }
