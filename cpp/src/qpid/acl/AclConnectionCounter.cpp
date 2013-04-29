@@ -288,7 +288,6 @@ std::string ConnectionCounter::getClientHost(const std::string mgmtId)
     }
 
     // no hyphen found - use whole string
-    assert(false);
     return mgmtId;
 }
 
