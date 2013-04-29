@@ -162,7 +162,7 @@ public class Hello
             streamMessage.writeBoolean(true);
             streamMessage.writeLong(18031974L);
             streamMessage.writeString("this is a stream Message");
-            streamMessage.writeChar('£');
+            streamMessage.writeChar('\u00A3');  // POUND SIGN character
             messageProducer.send(streamMessage);
 */
             Thread.sleep(50000L);
