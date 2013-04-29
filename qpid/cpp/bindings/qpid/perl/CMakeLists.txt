@@ -35,7 +35,7 @@ include_directories(${PERL_INCLUDE_PATH}
 ##----------------------------------
 ## Install the complete Perl binding
 ##----------------------------------
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_perl.so
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.so
               ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.pm
               ${CMAKE_CURRENT_SOURCE_DIR}/qpid.pm
               ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
