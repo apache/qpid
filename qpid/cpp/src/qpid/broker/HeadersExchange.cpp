@@ -286,9 +286,7 @@ void HeadersExchange::route(Deliverable& msg)
     Bindings::ConstPtr p = bindings.snapshot();
     if (p.get()) {
         for (std::vector<BoundKey>::const_iterator i = p->begin(); i != p->end(); ++i) {
-            Matcher matcher(i->args);
-            msg.getMessage().processProperties(matcher);
-            if (matcher.matches()) {
+            if (match(i->args, msg.getMessage())) {
                 b->push_back(i->binding);
             }
         }
@@ -340,40 +338,10 @@ namespace
 
 }
 
-
-bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
-    typedef FieldTable::ValueMap Map;
-    std::string what = getMatch(&bind);
-    if (what == all) {
-        for (Map::const_iterator i = bind.begin();
-             i != bind.end();
-             ++i)
-        {
-            if (i->first != x_match) 
-            {
-                Map::const_iterator j = msg.find(i->first);
-                if (j == msg.end()) return false;
-                if (!match_values(*(i->second), *(j->second))) return false;
-            }
-        }
-        return true;
-    } else if (what == any) {
-        for (Map::const_iterator i = bind.begin();
-             i != bind.end();
-             ++i)
-        {
-            if (i->first != x_match) 
-            {
-                Map::const_iterator j = msg.find(i->first);
-                if (j != msg.end()) {
-                    if (match_values(*(i->second), *(j->second))) return true;
-                }
-            }
-        }
-        return false;
-    } else {
-        return false;
-    }
+bool HeadersExchange::match(const FieldTable& bindArgs, const Message& msg) {
+    Matcher matcher(bindArgs);
+    msg.processProperties(matcher);
+    return matcher.matches();
 }
 
 bool HeadersExchange::equal(const FieldTable& a, const FieldTable& b) {
