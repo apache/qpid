@@ -47,6 +47,7 @@ import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
@@ -196,11 +197,13 @@ public class BrokerRecovererTest extends TestCase
         //Add a couple ports
         ConfigurationEntry portEntry1 = mock(ConfigurationEntry.class);
         Port port1 = mock(Port.class);
+        when(port1.getId()).thenReturn(UUIDGenerator.generateRandomUUID());
         when(port1.getName()).thenReturn("port1");
         when(port1.getPort()).thenReturn(5671);
         when(port1.getAttribute(Port.AUTHENTICATION_PROVIDER)).thenReturn("authenticationProvider1");
         ConfigurationEntry portEntry2 = mock(ConfigurationEntry.class);
         Port port2 = mock(Port.class);
+        when(port2.getId()).thenReturn(UUIDGenerator.generateRandomUUID());
         when(port2.getName()).thenReturn("port2");
         when(port2.getPort()).thenReturn(5672);
         when(port2.getAttribute(Port.AUTHENTICATION_PROVIDER)).thenReturn("authenticationProvider2");
