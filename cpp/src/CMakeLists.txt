@@ -748,6 +748,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/IocpPoller.cpp
     qpid/sys/windows/IOHandle.cpp
     qpid/sys/windows/LockFile.cpp
+    qpid/sys/windows/MemoryMappedFile.cpp
     qpid/sys/windows/PipeHandle.cpp
     qpid/sys/windows/PollableCondition.cpp
     qpid/sys/windows/Shlib.cpp
@@ -849,6 +850,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/FileSysDir.cpp
     qpid/sys/posix/IOHandle.cpp
     qpid/sys/posix/LockFile.cpp
+    qpid/sys/posix/MemoryMappedFile.cpp
     qpid/sys/posix/Mutex.cpp
     qpid/sys/posix/PipeHandle.cpp
     qpid/sys/posix/PollableCondition.cpp
@@ -1196,6 +1198,7 @@ set (qpidbroker_SOURCES
      qpid/broker/MessageStoreModule.cpp
      qpid/broker/NameGenerator.cpp
      qpid/broker/NullMessageStore.cpp
+     qpid/broker/PagedQueue.cpp
      qpid/broker/QueueBindings.cpp
      qpid/broker/QueuedMessage.cpp
      qpid/broker/QueueCursor.cpp

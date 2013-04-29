@@ -30,16 +30,17 @@
 #include "qpid/broker/Fairshare.h"
 #include "qpid/broker/MessageDeque.h"
 #include "qpid/broker/MessageMap.h"
+#include "qpid/broker/PagedQueue.h"
 #include "qpid/broker/PriorityQueue.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/ThresholdAlerts.h"
 #include "qpid/broker/FifoDistributor.h"
+#include "qpid/log/Statement.h"
 #include <map>
 #include <memory>
 
 namespace qpid {
 namespace broker {
-
 
 QueueFactory::QueueFactory() : broker(0), store(0), parent(0) {}
 
@@ -65,6 +66,17 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
             queue->messages = Fairshare::create(settings);
         } else {
             queue->messages = std::auto_ptr<Messages>(new PriorityQueue(settings.priorities));
+        }
+    } else if (settings.paging) {
+        if (!broker) {
+            QPID_LOG(warning, "Cannot create paged queue without broker context");
+        } else if (!qpid::sys::MemoryMappedFile::isSupported()) {
+            QPID_LOG(warning, "Cannot create paged queue; memory mapped file support not available on this platform");
+        } else {
+            queue->messages = std::auto_ptr<Messages>(new PagedQueue(name, broker->getOptions().dataDir,
+                                                                     settings.maxPages ? settings.maxPages : 4,
+                                                                     settings.pageFactor ? settings.pageFactor : 1,
+                                                                     broker->getProtocolRegistry()));
         }
     } else if (settings.lvqKey.empty()) {//LVQ already handled above
         queue->messages = std::auto_ptr<Messages>(new MessageDeque());

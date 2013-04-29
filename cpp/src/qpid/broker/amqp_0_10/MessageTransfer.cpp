@@ -228,11 +228,16 @@ void MessageTransfer::decodeHeader(framing::Buffer& buffer)
 }
 void MessageTransfer::decodeContent(framing::Buffer& buffer)
 {
-    if (buffer.available()) {
+    decodeContent(buffer, buffer.available());
+}
+
+void MessageTransfer::decodeContent(framing::Buffer& buffer, size_t size)
+{
+    if (size) {
         //get the data as a string and set that as the content
         //body on a frame then add that frame to the frameset
         AMQFrame frame((AMQContentBody()));
-        frame.castBody<AMQContentBody>()->decode(buffer, buffer.available());
+        frame.castBody<AMQContentBody>()->decode(buffer, size);
         frame.setFirstSegment(false);
         frames.append(frame);
     } else {
@@ -373,25 +378,4 @@ boost::intrusive_ptr<PersistableMessage> MessageTransfer::merge(const std::map<s
     }
     return clone;
 }
-}
-// qpid::broker namespace, TODO: move these elsewhere!
-void encode(const Message& in, std::string& out)
-{
-    const amqp_0_10::MessageTransfer& transfer = amqp_0_10::MessageTransfer::get(in);
-    uint32_t size = transfer.encodedSize();
-    std::vector<char> data(size);
-    qpid::framing::Buffer buffer(&(data[0]), size);
-    transfer.encode(buffer);
-    buffer.reset();
-    buffer.getRawData(out, size);
-}
-void decode(const std::string& in, Message& out)
-{
-    boost::intrusive_ptr<amqp_0_10::MessageTransfer> transfer(new amqp_0_10::MessageTransfer);
-    qpid::framing::Buffer buffer(const_cast<char*>(in.data()), in.size());
-    transfer->decodeHeader(buffer);
-    transfer->decodeContent(buffer);
-    out = Message(transfer, transfer);
-}
-
-}} // namespace qpid::broker::amqp_0_10
+}}} // namespace qpid::broker::amqp_0_10

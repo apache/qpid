@@ -54,6 +54,9 @@ const std::string ALERT_SIZE_DOWN("qpid.alert_size_down");
 const std::string PRIORITIES("qpid.priorities");
 const std::string FAIRSHARE("qpid.fairshare");
 const std::string FAIRSHARE_ALIAS("x-qpid-fairshare");
+const std::string PAGING("qpid.paging");
+const std::string MAX_PAGES("qpid.max_pages_loaded");
+const std::string PAGE_FACTOR("qpid.page_factor");
 
 const std::string LVQ_LEGACY("qpid.last_value_queue");
 const std::string LVQ_LEGACY_KEY("qpid.LVQ_key");
@@ -87,6 +90,9 @@ QueueSettings::QueueSettings(bool d, bool a) :
     shareGroups(false),
     addTimestamp(false),
     dropMessagesAtLimit(false),
+    paging(false),
+    maxPages(0),
+    pageFactor(0),
     noLocal(false),
     isBrowseOnly(false),
     autoDeleteDelay(0),
@@ -187,6 +193,15 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
     } else if (key == MAX_FILE_SIZE && value.asUint64() > 0) {
         maxFileSize = value.asUint64();
         return false; // 'handle' here and also pass to store
+    } else if (key == PAGING) {
+        paging = value;
+        return true;
+    } else if (key == MAX_PAGES) {
+        maxPages = value;
+        return true;
+    } else if (key == PAGE_FACTOR) {
+        pageFactor = value;
+        return true;
     } else {
         return false;
     }
@@ -217,6 +232,25 @@ void QueueSettings::validate() const
     if (!shareGroups && groupKey.size()) {
         throw qpid::framing::InvalidArgumentException(QPID_MSG("Only shared groups are supported at present; " << MessageGroupManager::qpidSharedGroup
                                                                << " is required if " << MessageGroupManager::qpidMessageGroupKey << " is set"));
+    }
+
+    if (paging) {
+        if(lvqKey.size()) {
+            throw qpid::framing::InvalidArgumentException(QPID_MSG("Cannot specify " << LVQ_KEY << " and " << PAGING << " for the same queue"));
+        }
+        if(priorities) {
+            throw qpid::framing::InvalidArgumentException(QPID_MSG("Cannot specify " << PRIORITIES << " and " << PAGING << " for the same queue"));
+        }
+        if(groupKey.size()) {
+            throw qpid::framing::InvalidArgumentException(QPID_MSG("Cannot specify " << MessageGroupManager::qpidMessageGroupKey << " and " << PAGING << " for the same queue"));
+        }
+    } else {
+        if (maxPages) {
+            throw qpid::framing::InvalidArgumentException(QPID_MSG("Can only specify " << MAX_PAGES << " if " << PAGING << " is set"));
+        }
+        if (pageFactor) {
+            throw qpid::framing::InvalidArgumentException(QPID_MSG("Can only specify " << PAGE_FACTOR << " if " << PAGING << " is set"));
+        }
     }
 }
 

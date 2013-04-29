@@ -39,6 +39,7 @@ windows_dist = \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/MemoryMappedFile.cpp \
   qpid/sys/windows/mingw32_compat.h \
   qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/PipeHandle.cpp \
@@ -167,6 +168,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/posix/AsynchIO.cpp			\
   qpid/sys/posix/FileSysDir.cpp			\
   qpid/sys/posix/LockFile.cpp			\
+  qpid/sys/posix/MemoryMappedFile.cpp		\
   qpid/sys/posix/Time.cpp			\
   qpid/sys/posix/Thread.cpp			\
   qpid/sys/posix/Shlib.cpp			\
@@ -492,6 +494,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Fork.h				\
   qpid/sys/LockFile.h				\
   qpid/sys/LockPtr.h				\
+  qpid/sys/MemoryMappedFile.h			\
   qpid/sys/MemStat.h				\
   qpid/sys/OutputControl.h			\
   qpid/sys/OutputTask.h				\
@@ -654,6 +657,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/MessageStoreModule.h \
+  qpid/broker/PagedQueue.h \
+  qpid/broker/PagedQueue.cpp \
   qpid/broker/PriorityQueue.h \
   qpid/broker/PriorityQueue.cpp \
   qpid/broker/Protocol.h \
