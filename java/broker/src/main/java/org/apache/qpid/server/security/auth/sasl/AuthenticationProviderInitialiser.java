@@ -21,8 +21,6 @@
 package org.apache.qpid.server.security.auth.sasl;
 
 import javax.security.auth.callback.CallbackHandler;
-import javax.security.sasl.SaslServerFactory;
-import java.util.Map;
 
 public interface AuthenticationProviderInitialiser
 {
@@ -38,17 +36,4 @@ public interface AuthenticationProviderInitialiser
      * fully threadsafe.
      */
     CallbackHandler getCallbackHandler();
-
-    /**
-     * Get the properties that must be passed in to the Sasl.createSaslServer method.
-     * @return the properties, which may be null
-     */
-    Map<String, ?> getProperties();
-
-    /**
-     * Get the class that is the server factory. This is used for the JCA registration.
-     * @return null if no JCA registration is required, otherwise return the class
-     * that will be used in JCA registration
-     */
-    Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration();
 }

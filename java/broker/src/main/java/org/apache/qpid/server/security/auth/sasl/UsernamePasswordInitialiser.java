@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.sasl;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -35,7 +34,6 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.AuthorizeCallback;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Map;
 
 public abstract class UsernamePasswordInitialiser implements AuthenticationProviderInitialiser
 {
@@ -88,15 +86,6 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
         }
     }
 
-    public void initialise(String baseConfigPath, Configuration configuration,
-        Map<String, PrincipalDatabase> principalDatabases) throws Exception
-    {
-        String principalDatabaseName = configuration.getString(baseConfigPath + ".principal-database");
-        PrincipalDatabase db = principalDatabases.get(principalDatabaseName);
-
-        initialise(db);
-    }
-
     public void initialise(PrincipalDatabase db)
     {
         if (db == null)
@@ -110,11 +99,5 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
     public CallbackHandler getCallbackHandler()
     {
         return _callbackHandler;
-    }
-
-    public Map<String, ?> getProperties()
-    {
-        // there are no properties required for the CRAM-MD5 implementation
-        return null;
     }
 }

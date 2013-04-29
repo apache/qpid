@@ -23,9 +23,6 @@ package org.apache.qpid.server.security.auth.sasl.crammd5;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 
-import javax.security.sasl.SaslServerFactory;
-import java.util.Map;
-
 public class CRAMMD5HashedInitialiser extends UsernamePasswordInitialiser
 {
     public String getMechanismName()
@@ -33,18 +30,8 @@ public class CRAMMD5HashedInitialiser extends UsernamePasswordInitialiser
         return CRAMMD5HashedSaslServer.MECHANISM;
     }
 
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-    {
-        return CRAMMD5HashedServerFactory.class;
-    }
-
     public void initialise(PrincipalDatabase passwordFile)
     {
         super.initialise(passwordFile);
-    }
-
-    public Map<String, ?> getProperties()
-    {
-        return null;
     }
 }

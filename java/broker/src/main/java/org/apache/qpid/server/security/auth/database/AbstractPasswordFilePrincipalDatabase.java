@@ -22,8 +22,6 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
-import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
@@ -44,26 +42,13 @@ import java.util.regex.Pattern;
 
 public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPrincipal> implements PrincipalDatabase
 {
-    private final Pattern _regexp = Pattern.compile(":");
-
-    private final Map<String, AuthenticationProviderInitialiser> _saslServers =
-            new HashMap<String, AuthenticationProviderInitialiser>();
-
     protected static final String DEFAULT_ENCODING = "utf-8";
+
+    private final Pattern _regexp = Pattern.compile(":");
     private final Map<String, U> _userMap = new HashMap<String, U>();
     private final ReentrantLock _userUpdate = new ReentrantLock();
     private final Random _random = new Random();
     private File _passwordFile;
-
-
-    protected AbstractPasswordFilePrincipalDatabase(UsernamePasswordInitialiser... initialisers)
-    {
-        for(UsernamePasswordInitialiser initialiser : initialisers)
-        {
-            initialiser.initialise(this);
-            _saslServers.put(initialiser.getMechanismName(), initialiser);
-        }
-    }
 
     public final void open(File passwordFile) throws IOException
     {
@@ -395,11 +380,6 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
     public void reload() throws IOException
     {
         loadPasswordFile();
-    }
-
-    public Map<String, AuthenticationProviderInitialiser> getMechanisms()
-    {
-        return _saslServers;
     }
 
     public List<Principal> getUsers()
