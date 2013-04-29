@@ -22,6 +22,7 @@
 #include "ConnectionObserver.h"
 #include "BrokerInfo.h"
 #include "HaBroker.h"
+#include "qpid/Url.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
@@ -36,6 +37,17 @@ bool ConnectionObserver::getBrokerInfo(const broker::Connection& connection, Bro
     framing::FieldTable ft;
     if (connection.getClientProperties().getTable(ConnectionObserver::BACKUP_TAG, ft)) {
         info = BrokerInfo(ft);
+        return true;
+    }
+    return false;
+}
+
+bool ConnectionObserver::getAddress(const broker::Connection& connection, Address& addr) {
+    Url url;
+    url.parseNoThrow(
+        connection.getClientProperties().getAsString(ConnectionObserver::ADDRESS_TAG).c_str());
+    if (!url.empty()) {
+        addr = url[0];
         return true;
     }
     return false;
@@ -60,16 +72,19 @@ bool ConnectionObserver::isSelf(const broker::Connection& connection) {
 
 void ConnectionObserver::opened(broker::Connection& connection) {
     try {
+        if (isSelf(connection)) { // Reject self connections
+            // Set my own address if there is an address header.
+            Address addr;
+            if (getAddress(connection, addr)) haBroker.setAddress(addr);
+            QPID_LOG(debug, logPrefix << "Rejected self connection "+connection.getMgmtId());
+            connection.abort();
+            return;
+        }
         if (connection.isLink()) return; // Allow outgoing links.
         if (connection.getClientProperties().isSet(ADMIN_TAG)) {
             QPID_LOG(debug, logPrefix << "Accepted admin connection: "
                      << connection.getMgmtId());
             return;                 // No need to call observer, always allow admins.
-        }
-        if (isSelf(connection)) { // Reject self connections
-            QPID_LOG(debug, logPrefix << "Rejected self connection "+connection.getMgmtId());
-            connection.abort();
-            return;
         }
         ObserverPtr o(getObserver());
         if (o) o->opened(connection);
@@ -94,5 +109,6 @@ void ConnectionObserver::closed(broker::Connection& connection) {
 
 const std::string ConnectionObserver::ADMIN_TAG="qpid.ha-admin";
 const std::string ConnectionObserver::BACKUP_TAG="qpid.ha-backup";
+const std::string ConnectionObserver::ADDRESS_TAG="qpid.ha-address";
 
 }} // namespace qpid::ha

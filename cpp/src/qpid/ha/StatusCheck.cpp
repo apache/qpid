@@ -19,6 +19,7 @@
  *
  */
 #include "StatusCheck.h"
+#include "ConnectionObserver.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Connection.h"
@@ -55,7 +56,9 @@ void StatusCheckThread::run() {
     try {
         Variant::Map options, clientProperties;
         clientProperties = brokerInfo.asMap(); // Detect self connections.
-        clientProperties["qpid.ha-admin"] = 1; // Allow connection to backups.
+        clientProperties[ConnectionObserver::ADMIN_TAG] = 1; // Allow connection to backups.
+        clientProperties[ConnectionObserver::ADDRESS_TAG] = url.str();
+        clientProperties[ConnectionObserver::BACKUP_TAG] = brokerInfo.asMap();
 
         options["client-properties"] = clientProperties;
         options["heartbeat"] = statusCheck.linkHeartbeatInterval/sys::TIME_SEC;

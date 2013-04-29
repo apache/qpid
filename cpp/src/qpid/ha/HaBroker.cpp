@@ -84,15 +84,7 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 
 // Called in Plugin::initialize
 void HaBroker::initialize() {
-    // FIXME aconway 2012-07-19: assumes there's a TCP transport with a meaningful port.
-    membership.add(
-        BrokerInfo(
-            membership.getSelf(),
-            settings.cluster ? JOINING : membership.getStatus(),
-            broker.getSystem()->getNodeName(),
-            broker.getPort(broker::Broker::TCP_TRANSPORT)
-        )
-    );
+    if (settings.cluster) membership.setStatus(JOINING);
     QPID_LOG(notice, "Initializing: " << membership.getInfo());
 
     // Set up the management object.
@@ -206,5 +198,12 @@ void HaBroker::shutdown(const std::string& message) {
 BrokerStatus HaBroker::getStatus() const {
     return membership.getStatus();
 }
+
+void HaBroker::setAddress(const Address& a) {
+    QPID_LOG(info, role->getLogPrefix() << "Set self address to: " << a);
+    BrokerInfo b(membership.getSelf(), membership.getStatus(), a.host, a.port);
+    membership.add(b);
+}
+
 
 }} // namespace qpid::ha
