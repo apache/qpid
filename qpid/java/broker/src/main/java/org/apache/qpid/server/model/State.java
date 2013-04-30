@@ -26,5 +26,7 @@ public enum State
     QUIESCED,
     STOPPED,
     ACTIVE,
-    DELETED
+    DELETED,
+    REPLICA,
+    ERRORED
 }

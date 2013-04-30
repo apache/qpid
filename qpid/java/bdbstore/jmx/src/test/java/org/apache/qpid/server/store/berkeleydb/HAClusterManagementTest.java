@@ -235,7 +235,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch  (Exception e)
         {
             String message = e.getMessage();
-            assertEquals(message, "The virtual hosts state of INITIALISING does not permit this operation.");
+            assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
         }
 
         try
@@ -246,7 +246,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch  (Exception e)
         {
             String message = e.getMessage();
-            assertEquals(message, "The virtual hosts state of INITIALISING does not permit this operation.");
+            assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
         }
     }
 
