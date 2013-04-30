@@ -140,7 +140,7 @@ qpidtest_SCRIPTS =
 tmoduleexecdir = $(libdir)/qpid/tests
 tmoduleexec_LTLIBRARIES=
 
-BROKER_CXXFLAGS = -D_IN_QPID_BROKER
+BROKER_CXXFLAGS = -D_IN_QPID_BROKER -DQPIDD_SASLCONF_DIR=\"$(sysconfdir)/sasl2\"
 
 ## Automake macros to build libraries and executables.
 qpidd_CXXFLAGS = $(AM_CXXFLAGS) $(BROKER_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
