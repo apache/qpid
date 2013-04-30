@@ -909,8 +909,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
                         // adjust timeout
                         timeout = adjustTimeout(timeout, startCloseTime);
-                        _delegate.closeConnection(timeout);
-
                         //If the taskpool hasn't shutdown by now then give it shutdownNow.
                         // This will interupt any running tasks.
                         if (!_taskPool.isTerminated())
@@ -922,13 +920,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                             }
                         }
                     }
-                    catch (AMQException e)
+                    catch (JMSException e)
                     {
                         _logger.error("error:", e);
                         JMSException jmse = new JMSException("Error closing connection: " + e);
                         jmse.setLinkedException(e);
                         jmse.initCause(e);
                         throw jmse;
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            _delegate.closeConnection(timeout);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.warn("Error closing underlying protocol connection", e);
+                        }
                     }
                 }
             }
