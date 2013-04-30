@@ -35,13 +35,19 @@ if (UNIX)
 
 endif (UNIX)
 
+set (sysconfdir ${SYSCONF_INSTALL_DIR})
+
+configure_file(qpidd-primary.in
+        ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
+        @ONLY)
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qpidd ${CMAKE_CURRENT_BINARY_DIR}/qpidd-primary
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         DESTINATION ${SYSCONF_INSTALL_DIR}/rc.d/init.d
         COMPONENT ${QPID_COMPONENT_BROKER})
 
 install(FILES qpidc.conf
-        DESTINATION ${QPID_INSTALL_CONFDIR}
+        DESTINATION ${QPID_INSTALL_CONFDIR}/qpid
         COMPONENT ${QPID_COMPONENT_CLIENT})
 
 install(FILES qpidd.conf
