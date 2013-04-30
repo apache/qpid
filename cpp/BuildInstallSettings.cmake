@@ -184,7 +184,6 @@ if (UNIX)
 
   set_absolute_install_path (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client) # Directory to load client plug-in modules from
   set_absolute_install_path (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon) # Directory to load broker plug-in modules from
-  set_absolute_install_path (QPIDD_SASLCONF_DIR ${QPID_INSTALL_SASLDIR}) # Directory to put Cyrus SASL config files into
 
   #----
   # Set RPATH so that installe executables can run without setting
