@@ -21,7 +21,6 @@
  * under the License.
  *
  */
-#include <memory>
 #include <string>
 
 namespace qpid {
@@ -34,6 +33,7 @@ class MemoryMappedFilePrivate;
 class MemoryMappedFile {
   public:
     MemoryMappedFile();
+    ~MemoryMappedFile();
     /**
      * Opens a file that can be mapped by region into memory
      */
@@ -64,7 +64,7 @@ class MemoryMappedFile {
      */
     static bool isSupported();
   private:
-    std::auto_ptr<MemoryMappedFilePrivate> state;
+    MemoryMappedFilePrivate* state;
 
     MemoryMappedFile(const MemoryMappedFile&);
     MemoryMappedFile& operator=(const MemoryMappedFile&);
