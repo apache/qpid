@@ -91,13 +91,16 @@ public class DefaultAccessControl implements AccessControl
     @Override
     public void onCreate()
     {
-        //verify file exists
         if(_aclFile != null)
         {
+            //verify it exists
             if (!_aclFile.exists())
             {
                 throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
             }
+
+            //verify it is parsable
+            new PlainConfiguration(_aclFile).load();
         }
     }
 

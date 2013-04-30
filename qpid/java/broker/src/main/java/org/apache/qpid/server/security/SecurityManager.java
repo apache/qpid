@@ -137,6 +137,8 @@ public class SecurityManager implements ConfigurationChangeListener
      */
     public SecurityManager(SecurityManager parent, String aclFile, String vhostName)
     {
+        _managementMode = parent._managementMode;
+
         if(!_managementMode)
         {
             configureVirtualHostAclPlugin(aclFile, vhostName);
