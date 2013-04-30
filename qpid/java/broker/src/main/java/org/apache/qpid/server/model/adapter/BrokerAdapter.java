@@ -160,7 +160,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private StatisticsAdapter _statistics;
 
     private final Map<String, VirtualHost> _vhostAdapters = new HashMap<String, VirtualHost>();
-    private final Map<Integer, Port> _portAdapters = new HashMap<Integer, Port>();
+    private final Map<UUID, Port> _portAdapters = new HashMap<UUID, Port>();
+    private final Map<Port, Integer> _stillInUsePortNumbers = new HashMap<Port, Integer>();
     private final Map<UUID, AuthenticationProvider> _authenticationProviders = new HashMap<UUID, AuthenticationProvider>();
     private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
     private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
@@ -445,20 +446,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    private void addPort(Port port)
-    {
-        synchronized (_portAdapters)
-        {
-            int portNumber = port.getPort();
-            if(_portAdapters.containsKey(portNumber))
-            {
-                throw new IllegalArgumentException("Cannot add port " + port + " because port number " + portNumber + " already configured");
-            }
-            _portAdapters.put(portNumber, port);
-        }
-        port.addChangeListener(this);
-    }
-
     /**
      * Called when adding a new port via the management interface
      */
@@ -467,13 +454,47 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
         addPort(port);
 
-        //AMQP ports are disable during ManagementMode, and the management
-        //plugins can currently only start ports at broker startup and
-        //not when they are newly created via the management interfaces.
-        boolean quiesce = isManagementMode() || !(port instanceof AmqpPortAdapter);
+        //1. AMQP ports are disabled during ManagementMode.
+        //2. The management plugins can currently only start ports at broker startup and
+        //   not when they are newly created via the management interfaces.
+        //3. When active ports are deleted, or their port numbers updated, the broker must be
+        //   restarted for it to take effect so we can't reuse port numbers until it is.
+        boolean quiesce = isManagementMode() || !(port instanceof AmqpPortAdapter) || isPreviouslyUsedPortNumber(port);
+
         port.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
 
         return port;
+    }
+
+    private void addPort(Port port)
+    {
+        synchronized (_portAdapters)
+        {
+            int portNumber = port.getPort();
+            String portName = port.getName();
+            UUID portId = port.getId();
+
+            for(Port p : _portAdapters.values())
+            {
+                if(portNumber == p.getPort())
+                {
+                    throw new IllegalConfigurationException("Can't add port " + portName + " because port number " + portNumber + " is already configured for port " + p.getName());
+                }
+
+                if(portName == p.getName())
+                {
+                    throw new IllegalConfigurationException("Can't add Port because one with name " + portName + " already exists");
+                }
+
+                if(portId == p.getId())
+                {
+                    throw new IllegalConfigurationException("Can't add Port because one with id " + portId + " already exists");
+                }
+            }
+
+            _portAdapters.put(port.getId(), port);
+        }
+        port.addChangeListener(this);
     }
 
     private AccessControlProvider createAccessControlProvider(Map<String, Object> attributes)
@@ -771,17 +792,24 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return super.getAttribute(name);
     }
 
-    private boolean deletePort(Port portAdapter)
+    private boolean deletePort(State oldState, Port portAdapter)
     {
         Port removedPort = null;
         synchronized (_portAdapters)
         {
-            removedPort = _portAdapters.remove(portAdapter.getPort());
+            removedPort = _portAdapters.remove(portAdapter.getId());
         }
 
         if (removedPort != null)
         {
             removedPort.removeChangeListener(this);
+
+            if(oldState == State.ACTIVE)
+            {
+                //Record the originally used port numbers of previously-active ports being deleted, to ensure
+                //when creating new ports we don't try to re-bind a port number that we are currently still using
+                recordPreviouslyUsedPortNumberIfNecessary(removedPort, removedPort.getPort());
+            }
         }
 
         return removedPort != null;
@@ -907,7 +935,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             }
             else if(object instanceof Port)
             {
-                childDeleted = deletePort((Port)object);
+                childDeleted = deletePort(oldState, (Port)object);
             }
             else if(object instanceof VirtualHost)
             {
@@ -948,7 +976,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
-        // no-op
+        if(object instanceof Port)
+        {
+            //Record all the originally used port numbers of active ports, to ensure that when
+            //creating new ports we don't try to re-bind a port number that we are still using
+            if(attributeName == Port.PORT && object.getActualState() == State.ACTIVE)
+            {
+                recordPreviouslyUsedPortNumberIfNecessary((Port) object, (Integer)oldAttributeValue);
+            }
+        }
     }
 
     private void addPlugin(ConfiguredObject plugin)
@@ -1192,5 +1228,19 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return new ArrayList<AccessControlProvider>(_accessControlProviders.values());
         }
+    }
+
+    private void recordPreviouslyUsedPortNumberIfNecessary(Port port, Integer portNumber)
+    {
+        //If we haven't previously recorded its original port number, record it now
+        if(!_stillInUsePortNumbers.containsKey(port))
+        {
+            _stillInUsePortNumbers.put(port, portNumber);
+        }
+    }
+
+    private boolean isPreviouslyUsedPortNumber(Port port)
+    {
+        return _stillInUsePortNumbers.containsValue(port.getPort());
     }
 }
