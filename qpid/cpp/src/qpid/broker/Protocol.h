@@ -25,6 +25,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
 namespace sys {
@@ -65,12 +66,12 @@ class Protocol
 class ProtocolRegistry : public Protocol
 {
   public:
-    qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
-    boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const Message&);
-    boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
-    Message decode(qpid::framing::Buffer&);
+    QPID_BROKER_EXTERN qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
+    QPID_BROKER_EXTERN boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const Message&);
+    QPID_BROKER_EXTERN boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
+    QPID_BROKER_EXTERN Message decode(qpid::framing::Buffer&);
 
-    ~ProtocolRegistry();
+    QPID_BROKER_EXTERN ~ProtocolRegistry();
     void add(const std::string&, Protocol*);
   private:
     //name may be useful for descriptive purposes or even for some
