@@ -35,6 +35,7 @@ if (UNIX)
 
 endif (UNIX)
 
+set (bindir ${QPID_INSTALL_BINDIR})
 set (sysconfdir ${SYSCONF_INSTALL_DIR})
 
 configure_file(qpidd-primary.in
