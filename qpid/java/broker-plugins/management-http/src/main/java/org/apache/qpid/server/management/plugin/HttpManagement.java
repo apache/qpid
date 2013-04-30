@@ -138,6 +138,8 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         put(PluginFactory.PLUGIN_TYPE, String.class);
     }});
 
+    private static final String JSESSIONID_COOKIE_PREFIX = "JSESSIONID_";
+
     private Server _server;
 
     public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
@@ -218,6 +220,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         }
 
         Server server = new Server();
+        int lastPort = -1;
         for (Port port : ports)
         {
             if (State.QUIESCED.equals(port.getActualState()))
@@ -253,6 +256,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             {
                 throw new IllegalArgumentException("Unexpected protocol " + protocols);
             }
+            lastPort = port.getPort();
             connector.setPort(port.getPort());
             server.addConnector(connector);
         }
@@ -313,7 +317,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
-
+        sessionManager.setSessionCookie(JSESSIONID_COOKIE_PREFIX + lastPort);
         sessionManager.setMaxInactiveInterval((Integer)getAttribute(TIME_OUT));
 
         return server;
