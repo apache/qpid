@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/CommonImportExport.h"
 #include <string>
 
 namespace qpid {
@@ -32,37 +33,37 @@ class MemoryMappedFilePrivate;
  */
 class MemoryMappedFile {
   public:
-    MemoryMappedFile();
-    ~MemoryMappedFile();
+    QPID_COMMON_EXTERN MemoryMappedFile();
+    QPID_COMMON_EXTERN ~MemoryMappedFile();
     /**
      * Opens a file that can be mapped by region into memory
      */
-    std::string open(const std::string& name, const std::string& directory);
+    QPID_COMMON_EXTERN std::string open(const std::string& name, const std::string& directory);
     /**
      * Returns the page size
      */
-    size_t getPageSize();
+    QPID_COMMON_EXTERN size_t getPageSize();
     /**
      * Load a portion of the file into memory
      */
-    char* map(size_t offset, size_t size);
+    QPID_COMMON_EXTERN char* map(size_t offset, size_t size);
     /**
      * Evict a portion of the file from memory
      */
-    void unmap(char* region, size_t size);
+    QPID_COMMON_EXTERN void unmap(char* region, size_t size);
     /**
      * Flush any changes to a previously mapped region of the file
      * back to disk
      */
-    void flush(char* region, size_t size);
+    QPID_COMMON_EXTERN void flush(char* region, size_t size);
     /**
      * Expand the capacity of the file
      */
-    void expand(size_t offset);
+    QPID_COMMON_EXTERN void expand(size_t offset);
     /**
      * Returns true if memory mapping is supported, false otherwise
      */
-    static bool isSupported();
+    QPID_COMMON_EXTERN static bool isSupported();
   private:
     MemoryMappedFilePrivate* state;
 
