@@ -32,7 +32,7 @@ struct Options;
  * where cliEntry = [!]LEVEL[+-][:PATTERN]
  */
 struct SelectorElement {
-    SelectorElement(const std::string cliEntry);
+    QPID_COMMON_EXTERN SelectorElement(const std::string cliEntry);
     std::string levelStr;
     std::string patternStr;
     Level level;
@@ -51,16 +51,16 @@ struct SelectorElement {
 class Selector {
   public:
     /** Empty selector selects nothing */
-    Selector();
+    QPID_COMMON_EXTERN Selector();
 
     /** Set selector from Options */
     QPID_COMMON_EXTERN Selector(const Options&);
 
     /** Equavlient to: Selector s; s.enable(l, s) */
-    Selector(Level l, const std::string& s=std::string());
+    QPID_COMMON_EXTERN Selector(Level l, const std::string& s=std::string());
 
     /** Selector from string */
-    Selector(const std::string& selector);
+    QPID_COMMON_EXTERN Selector(const std::string& selector);
 
     /** push option settings into runtime lookup structs */
     QPID_COMMON_EXTERN void enable(const std::string& enableStr);
@@ -70,8 +70,8 @@ class Selector {
      * Enable/disable messages with level in levels where the file
      * name contains substring. Empty string matches all.
      */
-    void enable(Level level, const std::string& substring=std::string());
-    void disable(Level level, const std::string& substring=std::string());
+    QPID_COMMON_EXTERN void enable(Level level, const std::string& substring=std::string());
+    QPID_COMMON_EXTERN void disable(Level level, const std::string& substring=std::string());
 
     /** Tests to determine if function names are in enable/disable tables */
     QPID_COMMON_EXTERN bool isEnabled(Level level, const char* function);
