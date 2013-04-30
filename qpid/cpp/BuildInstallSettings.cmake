@@ -172,7 +172,7 @@ if (UNIX)
   set (QPID_INSTALL_SBINDIR sbin)
   set (QPID_INSTALL_TESTDIR libexec/qpid/tests) # Directory for test executables
   set (QPID_INSTALL_CONFDIR ${SYSCONF_INSTALL_DIR})
-  set (QPID_INSTALL_SASLDIR ${SYSCONF_INSTALL_DIR}/qpid/sasl2)
+  set (QPID_INSTALL_SASLDIR ${SYSCONF_INSTALL_DIR}/sasl2)
   set (QPID_INSTALL_DATADIR ${SHARE_INSTALL_DIR}/qpid)
   set (QPID_INSTALL_EXAMPLESDIR ${SHARE_INSTALL_DIR}/examples)
   set (QPID_INSTALL_DOCDIR ${DOC_INSTALL_DIR}) # Directory to install documentation
