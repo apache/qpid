@@ -181,7 +181,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
-    private AbstractConfiguration _queueConfiguration;
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
     private int _maximumDeliveryCount;

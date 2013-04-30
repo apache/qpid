@@ -55,8 +55,6 @@ public class MockSubscription implements Subscription
     private List<QueueEntry> _acceptEntries = null;
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
-    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
-
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
@@ -100,11 +98,6 @@ public class MockSubscription implements Subscription
     public SubscriptionAcquiredState getOwningState()
     {
         return _owningState;
-    }
-
-    public QueueEntry.SubscriptionAssignedState getAssignedState()
-    {
-        return _assignedState;
     }
 
     public LogActor getLogActor()

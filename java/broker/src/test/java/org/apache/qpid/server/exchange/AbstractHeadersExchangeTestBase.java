@@ -396,16 +396,6 @@ public class AbstractHeadersExchangeTestBase extends QpidTestCase
 
                 }
 
-                public boolean releaseButRetain()
-                {
-                    return false;
-                }
-
-                public boolean immediateAndNotDelivered()
-                {
-                    return false;
-                }
-
                 public void setRedelivered()
                 {
 

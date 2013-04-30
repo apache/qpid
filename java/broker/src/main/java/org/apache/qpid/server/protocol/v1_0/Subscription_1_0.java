@@ -88,7 +88,6 @@ class Subscription_1_0 implements Subscription
     private final AtomicReference<State> _state = new AtomicReference<State>(State.SUSPENDED);
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
-    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
     private final long _id;
     private final boolean _acquires;
     private volatile AMQQueue.Context _queueContext;
@@ -147,11 +146,6 @@ class Subscription_1_0 implements Subscription
         return _owningState;
     }
 
-    public QueueEntry.SubscriptionAssignedState getAssignedState()
-    {
-        return _assignedState;
-    }
-
     public void setQueue(final AMQQueue queue, final boolean exclusive)
     {
         //TODO
@@ -160,11 +154,6 @@ class Subscription_1_0 implements Subscription
     public void setNoLocal(final boolean noLocal)
     {
         _noLocal = noLocal;
-    }
-
-    public boolean isNoLocal()
-    {
-        return _noLocal;
     }
 
     public long getSubscriptionID()

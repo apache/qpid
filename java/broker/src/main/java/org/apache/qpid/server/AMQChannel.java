@@ -1446,21 +1446,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         return getProtocolSession().getVirtualHost();
     }
 
-    public int getChannel()
-    {
-        return getChannelId();
-    }
-
-    public boolean isDurable()
-    {
-        return false;
-    }
-
-    public long getCreateTime()
-    {
-        return _createTime;
-    }
-
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, openWarn, openClose, idleWarn, idleClose);

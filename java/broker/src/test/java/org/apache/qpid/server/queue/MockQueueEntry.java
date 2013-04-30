@@ -88,7 +88,7 @@ public class MockQueueEntry implements QueueEntry
 
     public boolean isAvailable()
     {
-        return false; 
+        return false;
     }
 
     public Subscription getDeliveredSubscription()
@@ -114,11 +114,6 @@ public class MockQueueEntry implements QueueEntry
     public long getSize()
     {
         return 0;
-    }
-
-    public boolean immediateAndNotDelivered()
-    {
-        return false;
     }
 
     public boolean isAcquired()
@@ -157,11 +152,6 @@ public class MockQueueEntry implements QueueEntry
     {
 
 
-    }
-
-    public boolean releaseButRetain()
-    {
-        return false;
     }
 
 
