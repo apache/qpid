@@ -80,13 +80,11 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.util.FileUtils;
 
 public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
                                                                   QueueRegistry.RegistryChangeListener,
                                                                   IConnectionRegistry.RegistryChangeListener
 {
-
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
     @SuppressWarnings("serial")
@@ -1004,24 +1002,21 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
             }
-            String storePath = (String)getAttribute(STORE_PATH);
             if (_virtualHost != null && _virtualHost.getState() == org.apache.qpid.server.virtualhost.State.ACTIVE)
             {
                 setDesiredState(currentState, State.STOPPED);
             }
+            MessageStore ms = _virtualHost.getMessageStore();
             _virtualHost = null;
-            setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
-            if (storePath != null)
+            try
             {
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Deleting store at " + storePath);
-                }
-                if (!FileUtils.delete(new File(storePath), true))
-                {
-                    LOGGER.warn("Cannot delete  " + storePath);
-                }
+                ms.onDelete();
             }
+            catch(Exception e)
+            {
+                LOGGER.warn("Exception occured on store deletion", e);
+            }
+            setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
             return true;
         }
         return false;

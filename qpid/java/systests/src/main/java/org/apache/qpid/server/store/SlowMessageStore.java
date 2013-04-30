@@ -344,4 +344,10 @@ public class SlowMessageStore implements MessageStore
         return "SLOW";
     }
 
+    @Override
+    public void onDelete()
+    {
+        _realStore.onDelete();
+    }
+
 }
