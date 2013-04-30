@@ -296,6 +296,10 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
         messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
         messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
+        if (messageStore instanceof HAMessageStore)
+        {
+            messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
+        }
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
 
@@ -685,6 +689,15 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
                 _state = finalState;
                 reportIfError(_state);
             }
+        }
+
+    }
+
+    private final class AfterInitialisationListener implements EventListener
+    {
+        public void event(Event event)
+        {
+            _state = State.PASSIVE;
         }
 
     }
