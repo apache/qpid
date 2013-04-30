@@ -22,6 +22,7 @@
 #include "qpid/Exception.h"
 #include "qpid/Msg.h"
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 
