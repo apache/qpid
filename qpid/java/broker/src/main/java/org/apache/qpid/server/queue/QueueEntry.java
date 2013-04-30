@@ -164,38 +164,10 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         }
     }
 
-    public final class SubscriptionAssignedState extends EntryState
-    {
-        private final Subscription _subscription;
-
-        public SubscriptionAssignedState(Subscription subscription)
-        {
-            _subscription = subscription;
-        }
-
-
-        public State getState()
-        {
-            return State.AVAILABLE;
-        }
-
-        public Subscription getSubscription()
-        {
-            return _subscription;
-        }
-
-
-        public String toString()
-        {
-            return "{" + getState().name() + " : " + _subscription +"}";
-        }
-    }
-
 
     final static EntryState AVAILABLE_STATE = new AvailableState();
     final static EntryState DELETED_STATE = new DeletedState();
     final static EntryState DEQUEUED_STATE = new DequeuedState();
-    final static EntryState EXPIRED_STATE = new ExpiredState();
     final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
 
 
@@ -225,10 +197,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
     boolean isAcquiredBy(Subscription subscription);
 
     void release();
-    boolean releaseButRetain();
-
-
-    boolean immediateAndNotDelivered();
 
     void setRedelivered();
 

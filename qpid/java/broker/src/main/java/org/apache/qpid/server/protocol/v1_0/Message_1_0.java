@@ -208,11 +208,8 @@ public class Message_1_0 implements ServerMessage, InboundMessage
     /**
      * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
      * message store.
-     *
-     *
-     * @throws org.apache.qpid.server.queue.MessageCleanupException when an attempt was made to remove the message from the message store and that
-     *                                 failed
      */
+
     public void decrementReference()
     {
         int count = _refCountUpdater.decrementAndGet(this);
