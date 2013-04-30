@@ -136,6 +136,7 @@ Broker::Options::Options(const std::string& name) :
     tcpNoDelay(true),
     requireEncrypted(false),
     knownHosts(knownHostsNone),
+    saslConfigPath(QPIDD_SASLCONF_DIR),
     qmf2Support(true),
     qmf1Support(true),
     queueFlowStopRatio(80),
