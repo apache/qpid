@@ -34,13 +34,17 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
+import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -91,6 +95,38 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         _queue.setNotificationListener(this);
     }
 
+    /**
+     * Helper method to retrieve the SessionAdapter keyed by the AMQSessionModel.
+     * This method first finds the ConnectionAdapter associated with the Session from this QueueAdapter's parent vhost
+     * then it does a lookup on that to find the SessionAdapter keyed by the requested AMQSessionModel instance.
+     * @param session the AMQSessionModel used to index the SessionAdapter.
+     * @return the requested SessionAdapter or null if it can't be found.
+     */
+    private SessionAdapter getSessionAdapter(AMQSessionModel session)
+    {
+        // Retrieve the ConnectionModel associated with the SessionModel as a key to lookup the ConnectionAdapter.
+        AMQConnectionModel connectionKey = session.getConnectionModel();
+
+        // Lookup the ConnectionAdapter, from which we should be able to retrieve the SessionAdapter we really want.
+        ConnectionAdapter connectionAdapter = _vhost.getConnectionAdapter(connectionKey);
+        if (connectionAdapter == null)
+        {
+            return null; // If we can't find an associated ConnectionAdapter the SessionAdapter is a lost cause.
+        }
+        else
+        {   // With a good ConnectionAdapter we can finally try to find the SessionAdapter we are actually looking for.
+            SessionAdapter sessionAdapter = connectionAdapter.getSessionAdapter(session);
+            if (sessionAdapter == null)
+            {
+                return null; // If the SessionAdapter isn't associated with the selected ConnectionAdapter give up.
+            }
+            else
+            {
+                return sessionAdapter;
+            }
+        }
+    }
+
     private void populateConsumers()
     {
         Collection<org.apache.qpid.server.subscription.Subscription> actualSubscriptions = _queue.getConsumers();
@@ -102,7 +138,13 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             {
                 if(!_consumerAdapters.containsKey(subscription))
                 {
-                    _consumerAdapters.put(subscription, new ConsumerAdapter(this, subscription));
+                    SessionAdapter sessionAdapter = getSessionAdapter(subscription.getSessionModel());
+                    ConsumerAdapter adapter = new ConsumerAdapter(this, sessionAdapter, subscription);
+                    _consumerAdapters.put(subscription, adapter);
+                    if (sessionAdapter != null)
+                    { // Register ConsumerAdapter with the SessionAdapter.
+                        sessionAdapter.subscriptionRegistered(subscription, adapter);
+                    }
                 }
             }
         }
@@ -571,9 +613,13 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         {
             if(!_consumerAdapters.containsKey(subscription))
             {
-                adapter = new ConsumerAdapter(this, subscription);
-                _consumerAdapters.put(subscription,adapter);
-                // TODO - register with session
+                SessionAdapter sessionAdapter = getSessionAdapter(subscription.getSessionModel());
+                adapter = new ConsumerAdapter(this, sessionAdapter, subscription);
+                _consumerAdapters.put(subscription, adapter);
+                if (sessionAdapter != null)
+                { // Register ConsumerAdapter with the SessionAdapter.
+                    sessionAdapter.subscriptionRegistered(subscription, adapter);
+                }
             }
         }
         if(adapter != null)
@@ -589,10 +635,14 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         synchronized (_consumerAdapters)
         {
             adapter = _consumerAdapters.remove(subscription);
-            // TODO - register with session
         }
         if(adapter != null)
         {
+            SessionAdapter sessionAdapter = getSessionAdapter(subscription.getSessionModel());
+            if (sessionAdapter != null)
+            { // Unregister ConsumerAdapter with the SessionAdapter.
+                sessionAdapter.subscriptionUnregistered(subscription);
+            }
             childRemoved(adapter);
         }
     }

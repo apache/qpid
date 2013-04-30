@@ -214,6 +214,19 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     }
 
+    /**
+     * Retrieve the ConnectionAdapter instance keyed by the AMQConnectionModel from this VirtualHost.
+     * @param connection the AMQConnectionModel used to index the ConnectionAdapter.
+     * @return the requested ConnectionAdapter.
+     */
+    ConnectionAdapter getConnectionAdapter(AMQConnectionModel connection)
+    {
+        synchronized (_connectionAdapters)
+        {
+            return _connectionAdapters.get(connection);
+        }
+    }
+
     public Collection<Queue> getQueues()
     {
         synchronized(_queueAdapters)
@@ -644,6 +657,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
         if(adapter != null)
         {
+            // Call getSessions() first to ensure that any SessionAdapter children are cleanly removed and any
+            // corresponding ConfigurationChangeListener childRemoved() callback is called for child SessionAdapters.
+            adapter.getSessions();
+
             childRemoved(adapter);
         }
     }
