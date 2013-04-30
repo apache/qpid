@@ -24,7 +24,8 @@ namespace qpid {
 namespace sys {
 class MemoryMappedFilePrivate {};
 
-MemoryMappedFile::MemoryMappedFile() {}
+MemoryMappedFile::MemoryMappedFile() : state(0) {}
+MemoryMappedFile::~MemoryMappedFile() {}
 
 std::string MemoryMappedFile::open(const std::string& /*name*/, const std::string& /*directory*/)
 {

@@ -54,10 +54,11 @@ std::string getFileName(const std::string& name, const std::string& dir)
 class MemoryMappedFilePrivate
 {
     friend class MemoryMappedFile;
-    const int fd;
-    MemoryMappedFilePrivate(int fd_) : fd(fd_) {}
+    int fd;
+    MemoryMappedFilePrivate() : fd(0) {}
 };
-MemoryMappedFile::MemoryMappedFile() {}
+MemoryMappedFile::MemoryMappedFile() : state(new MemoryMappedFilePrivate) {}
+MemoryMappedFile::~MemoryMappedFile() { delete state; }
 
 std::string MemoryMappedFile::open(const std::string& name, const std::string& directory)
 {
@@ -66,7 +67,7 @@ std::string MemoryMappedFile::open(const std::string& name, const std::string& d
     int flags = O_CREAT | O_TRUNC | O_RDWR;
     int fd = ::open(path.c_str(), flags, S_IRWXU);
     if (fd == -1) throw qpid::Exception(QPID_MSG("Failed to open memory mapped file " << path << ": " << qpid::sys::strError(errno) << " [flags=" << flags << "]"));
-    state = std::auto_ptr<MemoryMappedFilePrivate>(new MemoryMappedFilePrivate(fd));
+    state->fd = fd;
     return path;
 }
 size_t MemoryMappedFile::getPageSize()
