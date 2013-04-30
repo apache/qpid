@@ -136,7 +136,6 @@ Broker::Options::Options(const std::string& name) :
     tcpNoDelay(true),
     requireEncrypted(false),
     knownHosts(knownHostsNone),
-    saslConfigPath(QPIDD_SASLCONF_DIR),
     qmf2Support(true),
     qmf1Support(true),
     queueFlowStopRatio(80),
@@ -178,7 +177,7 @@ Broker::Options::Options(const std::string& name) :
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
-        ("sasl-config", optValue(saslConfigPath, "DIR"), "gets sasl config info from nonstandard location")
+        ("sasl-config", optValue(saslConfigPath, "DIR"), "Allows SASL config path, if supported by platform, to be overridden.  For default location on Linux, see Cyrus SASL documentation.  There is no SASL config dir on Windows.")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
         ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
