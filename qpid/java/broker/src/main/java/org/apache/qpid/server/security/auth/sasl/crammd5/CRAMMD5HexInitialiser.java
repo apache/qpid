@@ -20,35 +20,24 @@
  */
 package org.apache.qpid.server.security.auth.sasl.crammd5;
 
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
-import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
-
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.sasl.SaslServerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
+
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 
 public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
 {
     public String getMechanismName()
     {
         return CRAMMD5HexSaslServer.MECHANISM;
-    }
-
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-    {
-        return CRAMMD5HexServerFactory.class;
-    }
-
-    public Map<String, ?> getProperties()
-    {
-        return null;
     }
 
     public void initialise(PrincipalDatabase db)
@@ -127,11 +116,6 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
             return _realPricipalDatabase.getUser(username);
         }
 
-        public Map<String, AuthenticationProviderInitialiser> getMechanisms()
-        {
-            return _realPricipalDatabase.getMechanisms();
-        }
-
         public List<Principal> getUsers()
         {
             return _realPricipalDatabase.getUsers();
@@ -146,6 +130,19 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         public void open(File passwordFile) throws IOException
         {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getMechanisms()
+        {
+            return _realPricipalDatabase.getMechanisms();
+        }
+
+        @Override
+        public SaslServer createSaslServer(String mechanism, String localFQDN,
+                Principal externalPrincipal) throws SaslException
+        {
+            return _realPricipalDatabase.createSaslServer(mechanism, localFQDN, externalPrincipal);
         }
     }
 

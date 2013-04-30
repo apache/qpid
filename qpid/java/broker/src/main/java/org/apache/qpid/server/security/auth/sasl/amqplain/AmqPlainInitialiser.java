@@ -22,17 +22,10 @@ package org.apache.qpid.server.security.auth.sasl.amqplain;
 
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 
-import javax.security.sasl.SaslServerFactory;
-
 public class AmqPlainInitialiser extends UsernamePasswordInitialiser
 {
     public String getMechanismName()
     {
         return "AMQPLAIN";
-    }
-
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-    {
-        return AmqPlainSaslServerFactory.class;
     }
 }

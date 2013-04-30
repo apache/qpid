@@ -49,7 +49,6 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 {
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManager.class);
 
-    private static final String PLAIN_MECHANISM = "PLAIN";
     private final String _providerSearchURL;
     private final String _providerAuthURL;
     private final String _searchContext;
@@ -74,13 +73,13 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     @Override
     public String getMechanisms()
     {
-        return PLAIN_MECHANISM;
+        return PlainSaslServer.MECHANISM;
     }
 
     @Override
     public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
-        if(PLAIN_MECHANISM.equals(mechanism))
+        if(PlainSaslServer.MECHANISM.equals(mechanism))
         {
             return new PlainSaslServer(new SimpleLDAPPlainCallbackHandler());
         }

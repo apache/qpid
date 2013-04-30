@@ -20,52 +20,14 @@
  */
 package org.apache.qpid.server.security.auth.sasl.crammd5;
 
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
-
-import javax.security.sasl.SaslServerFactory;
 
 public class CRAMMD5Initialiser extends UsernamePasswordInitialiser
 {
-    private HashDirection _hashDirection;
-
-    public enum HashDirection
-    {
-        INCOMMING, PASSWORD_FILE
-    }
-
+    public static final String MECHANISM = "CRAM-MD5";
 
     public String getMechanismName()
     {
-        return "CRAM-MD5";
+        return MECHANISM;
     }
-
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-    {
-        // since the CRAM-MD5 provider is registered as part of the JDK, we do not
-        // return the factory class here since we do not need to register it ourselves.
-        if (_hashDirection == HashDirection.PASSWORD_FILE)
-        {
-            return null;
-        }
-        else
-        {
-            //fixme we need a server that will correctly has the incomming plain text for comparison to file.
-            _logger.warn("we need a server that will correctly convert the incomming plain text for comparison to file.");
-            return null;
-        }
-    }
-
-    public void initialise(PrincipalDatabase passwordFile)
-    {
-        initialise(passwordFile, HashDirection.PASSWORD_FILE);
-    }
-
-    public void initialise(PrincipalDatabase passwordFile, HashDirection direction)
-    {
-        super.initialise(passwordFile);
-
-        _hashDirection = direction;
-    }
-
 }
