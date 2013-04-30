@@ -176,23 +176,6 @@ public abstract class QueueEntryImpl implements QueueEntry
     {
         boolean acquired = _stateUpdater.compareAndSet(this,AVAILABLE_STATE, state);
 
-        // deal with the case where the node has been assigned to a given subscription already
-        // including the case that the node is assigned to a closed subscription
-        if(!acquired)
-        {
-            if(state != NON_SUBSCRIPTION_ACQUIRED_STATE)
-            {
-                EntryState currentState = _state;
-                if(currentState.getState() == State.AVAILABLE
-                   && ((currentState == AVAILABLE_STATE)
-                       || (((SubscriptionAcquiredState)state).getSubscription() ==
-                           ((SubscriptionAssignedState)currentState).getSubscription())
-                       || ((SubscriptionAssignedState)currentState).getSubscription().isClosed() ))
-                {
-                    acquired = _stateUpdater.compareAndSet(this,currentState, state);
-                }
-            }
-        }
         if(acquired && _stateChangeListeners != null)
         {
             notifyStateChange(State.AVAILABLE, State.ACQUIRED);
@@ -256,41 +239,6 @@ public abstract class QueueEntryImpl implements QueueEntry
             }
         }
 
-    }
-
-    public boolean releaseButRetain()
-    {
-        EntryState state = _state;
-
-        boolean stateUpdated = false;
-
-        if(state instanceof SubscriptionAcquiredState)
-        {
-            Subscription sub = ((SubscriptionAcquiredState) state).getSubscription();
-            if(_stateUpdater.compareAndSet(this, state, sub.getAssignedState()))
-            {
-                getQueue().requeue(this);
-                if(_stateChangeListeners != null)
-                {
-                    notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
-                }
-                stateUpdated = true;
-            }
-        }
-
-        return stateUpdated;
-
-    }
-
-    public boolean immediateAndNotDelivered()
-    {
-        return !getDeliveredToConsumer() && isImmediate();
-    }
-
-    private boolean isImmediate()
-    {
-        final ServerMessage message = getMessage();
-        return message != null && message.isImmediate();
     }
 
     public void setRedelivered()

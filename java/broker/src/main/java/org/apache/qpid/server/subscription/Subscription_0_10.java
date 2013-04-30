@@ -86,7 +86,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final long _subscriptionID;
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
-    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
 
     private static final Option[] BATCHED = new Option[] { Option.BATCH };
 
@@ -170,11 +169,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _owningState;
     }
 
-    public QueueEntry.SubscriptionAssignedState getAssignedState()
-    {
-        return _assignedState;
-    }
-
     public void setQueue(AMQQueue queue, boolean exclusive)
     {
         if(getQueue() != null)
@@ -201,7 +195,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         return _destination;
     }
-    
+
     public boolean isSuspended()
     {
         return !isActive() || _deleted.get() || _session.isClosing(); // TODO check for Session suspension

@@ -78,7 +78,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final RecordDeliveryMethod _recordMethod;
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
-    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
 
     private final Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
 
@@ -706,12 +705,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return _owningState;
     }
-
-    public QueueEntry.SubscriptionAssignedState getAssignedState()
-    {
-        return _assignedState;
-    }
-
 
     public void confirmAutoClose()
     {
