@@ -16,6 +16,7 @@
  *
  */
 
+#include "qpid/log/Logger.h"
 #include "qpid/Options.h"
 #include "qpid/Exception.h"
 
@@ -196,6 +197,8 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
                 // End of hack
             }
             else {
+                // log the inability to read the configuration file
+                QPID_LOG(warning, "Config file not read: " << configFile);
                 // No error if default configfile is missing/unreadable
                 // but complain for non-default config file.
                 if (configFile != defaultConfigFile)
