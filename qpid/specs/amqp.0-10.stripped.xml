@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 
 <!--
-Copyright Bank of America, N.A., Barclays Bank PLC, Cisco Systems, Credit
-Suisse, Deutsche Boerse, Envoy Technologies Inc., Goldman Sachs, HCL
-Technologies Ltd, IIT Software GmbH, iMatix Corporation, INETCO Systems Limited,
-Informatica Corporation, JPMorgan Chase & Co., Kaazing Corporation, N.A,
-Microsoft Corporation, my-Channels, Novell, Progress Software, Red Hat Inc.,
-Software AG, Solace Systems Inc., StormMQ Ltd., Tervela Inc., TWIST Process
-Innovations Ltd, VMware, Inc., and WS02 Inc. 2006-2011. All rights reserved.
+Copyright Cisco Systems, Credit Suisse, Deutsche Borse Systems, Envoy
+Technologies, Inc., Goldman Sachs, IONA Technologies PLC, iMatix
+Corporation sprl.,JPMorgan Chase Bank Inc. N.A, Novell, Rabbit
+Technologies Ltd., Red Hat, Inc., TWIST Process Innovations ltd, and
+29West Inc. 2006, 2007. All rights reserved.
+
+Copyright (c) 2009 AMQP Working Group.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
