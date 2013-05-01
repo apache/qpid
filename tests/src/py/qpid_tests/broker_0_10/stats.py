@@ -211,7 +211,7 @@ class BrokerStatsTests(Base):
 
         now_broker = agent.getBroker()
 
-        self.assertEqual(now_broker.discardsNoRoute - start_broker.discardsNoRoute, 5, "Expect 5 no-routes")
+        self.failUnless((now_broker.discardsNoRoute - start_broker.discardsNoRoute) >= 5, "Expect at least 5 no-routes")
 
         sess.close()
 
