@@ -33,7 +33,6 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
@@ -114,8 +113,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
         return provider;
     }
 
-    @SuppressWarnings("unchecked")
-    public void testCreatePasswordCredentialManagingAuthenticationProviderFailsWhenAnotherOneAlreadyExist()
+    public void testCreatePasswordCredentialManagingAuthenticationProviderFailsWhenAnotherOneAlready()
     {
         Broker broker = mock(Broker.class);
         PasswordCredentialManagingAuthenticationProvider anotherProvider = mock(PasswordCredentialManagingAuthenticationProvider.class);
@@ -127,15 +125,12 @@ public class AuthenticationProviderFactoryTest extends TestCase
         when(loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class)).thenReturn(Collections.singleton(managerFactory));
 
         AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader);
-        try
-        {
-            providerFactory.create(UUID.randomUUID(), broker, new HashMap<String, Object>());
-            fail("Creation of anaother PasswordCredentialManagingAuthenticationProvider should fail");
-        }
-        catch (IllegalConfigurationException e)
-        {
-            // pass
-        }
+
+        UUID randomUUID = UUID.randomUUID();
+        AuthenticationProvider provider = providerFactory.create(randomUUID, broker, new HashMap<String, Object>());
+
+        assertNotNull("Provider is not created", provider);
+        assertEquals("Unexpected ID", randomUUID, provider.getId());
     }
 
     @SuppressWarnings("unchecked")
