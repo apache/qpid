@@ -21,6 +21,7 @@
 
 #include "qpid/legacystore/MessageStoreImpl.h"
 
+#include "qpid/broker/QueueSettings.h"
 #include "qpid/legacystore/BindingDbt.h"
 #include "qpid/legacystore/BufferValue.h"
 #include "qpid/legacystore/IdDbt.h"
@@ -79,35 +80,27 @@ MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* en
 
 u_int16_t MessageStoreImpl::chkJrnlNumFilesParam(const u_int16_t param, const std::string paramName)
 {
-    u_int16_t p = param;
-    if (p < JRNL_MIN_NUM_FILES) {
-        p = JRNL_MIN_NUM_FILES;
-        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") is below allowable minimum (" << JRNL_MIN_NUM_FILES << "); changing this parameter to minimum value.");
-    } else if (p > JRNL_MAX_NUM_FILES) {
-        p = JRNL_MAX_NUM_FILES;
-        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") is above allowable maximum (" << JRNL_MAX_NUM_FILES << "); changing this parameter to maximum value.");
+    if (param < JRNL_MIN_NUM_FILES || param > JRNL_MAX_NUM_FILES) {
+        std::ostringstream oss;
+        oss << "Parameter " << paramName << ": Illegal number of store journal files (" << param << "), must be " << JRNL_MIN_NUM_FILES << " to " << JRNL_MAX_NUM_FILES << " inclusive.";
+        THROW_STORE_EXCEPTION(oss.str());
     }
-    return p;
+    return param;
 }
 
 u_int32_t MessageStoreImpl::chkJrnlFileSizeParam(const u_int32_t param, const std::string paramName, const u_int32_t wCachePgSizeSblks)
 {
-    u_int32_t p = param;
-    u_int32_t min = JRNL_MIN_FILE_SIZE / JRNL_RMGR_PAGE_SIZE;
-    u_int32_t max = JRNL_MAX_FILE_SIZE / JRNL_RMGR_PAGE_SIZE;
-    if (p < min) {
-        p = min;
-        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") is below allowable minimum (" << min << "); changing this parameter to minimum value.");
-    } else if (p > max) {
-        p = max;
-        QPID_LOG(warning, "parameter " << paramName << " (" << param << ") is above allowable maximum (" << max << "); changing this parameter to maximum value.");
-    }
-    if (wCachePgSizeSblks > p * JRNL_RMGR_PAGE_SIZE) {
+    if (param < (JRNL_MIN_FILE_SIZE / JRNL_RMGR_PAGE_SIZE) || (param > JRNL_MAX_FILE_SIZE / JRNL_RMGR_PAGE_SIZE)) {
         std::ostringstream oss;
-        oss << "Cannot create store with file size less than write page cache size. [file size = " << p << " (" << (p * JRNL_RMGR_PAGE_SIZE / 2) << " kB); write page cache = " << (wCachePgSizeSblks / 2) << " kB]";
+        oss << "Parameter " << paramName << ": Illegal store journal file size (" << param << "), must be " << JRNL_MIN_FILE_SIZE / JRNL_RMGR_PAGE_SIZE << " to " << JRNL_MAX_FILE_SIZE / JRNL_RMGR_PAGE_SIZE << " inclusive.";
         THROW_STORE_EXCEPTION(oss.str());
     }
-    return p;
+    if (wCachePgSizeSblks > param * JRNL_RMGR_PAGE_SIZE) {
+        std::ostringstream oss;
+        oss << "Cannot create store with file size less than write page cache size. [file size = " << param << " (" << (param * JRNL_RMGR_PAGE_SIZE / 2) << " kB); write page cache = " << (wCachePgSizeSblks / 2) << " kB]";
+        THROW_STORE_EXCEPTION(oss.str());
+    }
+    return param;
 }
 
 u_int32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const u_int32_t param, const std::string paramName, const u_int16_t jrnlFsizePgs)
@@ -804,6 +797,21 @@ void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
             long idcnt = 0L;    // in-doubt msg count
             u_int64_t thisHighestRid = 0ULL;
             jQueue->recover(numJrnlFiles, autoJrnlExpand, autoJrnlExpandMaxFiles, jrnlFsizeSblks, wCacheNumPages, wCachePgSizeSblks, &prepared, thisHighestRid, key.id); // start recovery
+
+            // Check for changes to queue store settings qpid.file_count and qpid.file_size resulting
+            // from recovery of a store that has had its size changed externally by the resize utility.
+            // If so, update the queue store settings so that QMF queries will reflect the new values.
+            const qpid::framing::FieldTable& storeargs = queue->getSettings().storeSettings;
+            qpid::framing::FieldTable::ValuePtr value;
+            value = storeargs.get("qpid.file_count");
+            if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (u_int16_t)value->get<int>() != jQueue->num_jfiles()) {
+                queue->addArgument("qpid.file_count", jQueue->num_jfiles());
+            }
+            value = storeargs.get("qpid.file_size");
+            if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (u_int32_t)value->get<int>() != jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE) {
+                queue->addArgument("qpid.file_size", jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE);
+            }
+
             if (highestRid == 0ULL)
                 highestRid = thisHighestRid;
             else if (thisHighestRid - highestRid < 0x8000000000000000ULL) // RFC 1982 comparison for unsigned 64-bit
