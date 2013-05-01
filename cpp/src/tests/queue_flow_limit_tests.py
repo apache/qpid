@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,10 +20,8 @@
 
 import sys
 from qpid.testlib import TestBase010
-from qpid import datatypes, messaging
-from qpid.messaging import Message, Empty
-from threading import Thread, Lock
-from logging import getLogger
+from qpid.messaging import Connection
+from threading import Thread
 from time import sleep, time
 from os import environ, popen
 
@@ -56,8 +54,9 @@ class QueueFlowLimitTests(TestBase010):
         if (max_count is not None):
             args["qpid.max_count"] = max_count;
 
-
-        self.session.queue_declare(queue=name, arguments=args)
+        broker = self.qmf.getObjects(_class="broker")[0]
+        rc = broker.create( "queue", name, args, True )
+        self.assertEqual(rc.status, 0, rc)
 
         qs = self.qmf.getObjects(_class="queue")
         for i in qs:
@@ -84,7 +83,9 @@ class QueueFlowLimitTests(TestBase010):
     def _delete_queue(self, name):
         """ Delete a named queue
         """
-        self.session.queue_delete(queue=name)
+        broker = self.qmf.getObjects(_class="broker")[0]
+        rc = broker.delete( "queue", name, {} )
+        self.assertEqual(rc.status, 0, rc)
 
 
     def _start_qpid_send(self, queue, count, content="X", capacity=100):
@@ -287,6 +288,7 @@ class QueueFlowLimitTests(TestBase010):
                 self.sendCount = 1000
                 self.consumeCount = 301 # (send - resume) + 1 to reenable flow
                 self.content = "X"
+                self.mgmt = None
             def verifyStopped(self):
                 self.mgmt.update()
                 return self.mgmt.flowStopped and (self.mgmt.msgDepth > 800)
@@ -313,6 +315,7 @@ class QueueFlowLimitTests(TestBase010):
                 self.sendCount = 2000
                 self.consumeCount = 601 # (send - resume) + 1 to reenable flow
                 self.content = "XXXXX"  # 5 bytes per message sent.
+                self.mgmt = None
             def verifyStopped(self):
                 self.mgmt.update()
                 return self.mgmt.flowStopped and (self.mgmt.byteDepth > 8000)

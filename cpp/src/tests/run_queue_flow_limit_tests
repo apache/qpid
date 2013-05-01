@@ -24,8 +24,7 @@
 source ./test_env.sh
 test -d $PYTHON_DIR || { echo "Skipping queue flow control tests, no python dir."; exit 0; }
 
-LOG_FILE=queue_flow_limit_test.log
-PORT=""
+LOG_FILE=qpidd.log
 
 trap stop_broker INT TERM QUIT
 
@@ -34,22 +33,17 @@ error() {
     exit 1;
 }
 
-start_broker() {
-    # Note: if you change the DEFAULT_THRESHOLDS, you will need to update queue_flow_limit_tests.py
-    DEFAULT_THRESHOLDS="--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
-    rm -rf $LOG_FILE
-    PORT=$($QPIDD_EXEC $DEFAULT_THRESHOLDS --auth=no --no-module-dir --daemon --port=0 -t --log-to-file $LOG_FILE) || error "Could not start broker"
-}
+#set -x
 
-stop_broker() {
-    test -n "$PORT" && $QPIDD_EXEC --no-module-dir --quit --port $PORT
-}
-
-start_broker
-echo "Running Queue flow limit tests using broker on port $PORT"
-$QPID_PYTHON_TEST -m queue_flow_limit_tests $SKIPTESTS -b localhost:$PORT $@
+rm -rf $LOG_FILE
+# Note: if you change the DEFAULT_THRESHOLDS, you will need to update queue_flow_limit_tests.py
+DEFAULT_THRESHOLDS="--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
+start_broker $DEFAULT_THRESHOLDS -t --log-to-stderr=no --log-to-stdout=no || error "Could not start broker"
+QPID_PORT=`cat qpidd.port`
+echo "Running Queue flow limit tests using broker on port $QPID_PORT"
+$QPID_PYTHON_TEST -m queue_flow_limit_tests $SKIPTESTS -b localhost:$QPID_PORT $@
 RETCODE=$?
-stop_broker
+stop_broker || error "Could not stop broker"
 if test x$RETCODE != x0; then
     echo "FAIL queue flow limit tests"; exit 1;
 fi
