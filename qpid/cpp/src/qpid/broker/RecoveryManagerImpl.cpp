@@ -56,9 +56,12 @@ public:
     const std::string& getName() const;
     void setExternalQueueStore(ExternalQueueStore* inst);
     ExternalQueueStore* getExternalQueueStore() const;
+    const QueueSettings& getSettings() const;
+    void addArgument(const std::string& key, const types::Variant& value);
     void recover(RecoverableMessage::shared_ptr msg);
     void enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
     void dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
+
 };
 
 class RecoverableExchangeImpl : public RecoverableExchange
@@ -217,6 +220,16 @@ void RecoverableQueueImpl::setExternalQueueStore(ExternalQueueStore* inst)
 ExternalQueueStore* RecoverableQueueImpl::getExternalQueueStore() const
 {
 	return queue->getExternalQueueStore();
+}
+
+const QueueSettings& RecoverableQueueImpl::getSettings() const
+{
+    return queue->getSettings();
+}
+
+void RecoverableQueueImpl::addArgument(const std::string& key, const types::Variant& value)
+{
+    queue->addArgument(key, value);
 }
 
 void RecoverableExchangeImpl::setPersistenceId(uint64_t id)
