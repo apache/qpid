@@ -198,7 +198,7 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
             }
             else {
                 // log the inability to read the configuration file
-                QPID_LOG(warning, "Config file not read: " << configFile);
+                QPID_LOG(debug, "Config file not read: " << configFile);
                 // No error if default configfile is missing/unreadable
                 // but complain for non-default config file.
                 if (configFile != defaultConfigFile)
