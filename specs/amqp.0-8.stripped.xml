@@ -1,0 +1,1374 @@
+<?xml version="1.0"?>
+
+<!--
+Copyright Cisco Systems, Credit Suisse, Deutsche Borse Systems, Envoy
+Technologies, Inc., Goldman Sachs, IONA Technologies PLC, iMatix
+Corporation sprl.,JPMorgan Chase Bank Inc. N.A, Novell, Rabbit
+Technologies Ltd., Red Hat, Inc., TWIST Process Innovations ltd, and
+29West Inc. 2006, 2007. All rights reserved.
+
+Copyright (c) 2009 AMQP Working Group.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<amqp comment="AMQ protocol 0.80" major="8" port="5672" minor="0">
+AMQ Protocol 0.80  <constant name="frame method" value="1"/>
+  <constant name="frame header" value="2"/>
+  <constant name="frame body" value="3"/>
+  <constant name="frame oob method" value="4"/>
+  <constant name="frame oob header" value="5"/>
+  <constant name="frame oob body" value="6"/>
+  <constant name="frame trace" value="7"/>
+  <constant name="frame heartbeat" value="8"/>
+  <constant name="frame min size" value="4096"/>
+  <constant name="frame end" value="206"/>
+  <constant name="reply success" value="200">
+Indicates that the method completed successfully. This reply code is
+  reserved for future use - the current protocol design does not use
+  positive confirmation and reply codes are sent only in case of an
+  error.  </constant>
+  <constant name="not delivered" class="soft error" value="310">
+The client asked for a specific message that is no longer available.
+  The message was delivered to another client, or was purged from the
+  queue for some other reason.  </constant>
+  <constant name="content too large" class="soft error" value="311">
+The client attempted to transfer content larger than the server
+  could accept at the present time.  The client may retry at a later
+  time.  </constant>
+  <constant name="connection forced" class="hard error" value="320">
+An operator intervened to close the connection for some reason.
+  The client may retry at some later date.  </constant>
+  <constant name="invalid path" class="hard error" value="402">
+The client tried to work with an unknown virtual host or cluster.  </constant>
+  <constant name="access refused" class="soft error" value="403">
+The client attempted to work with a server entity to which it has
+  no  due to security settings.  </constant>
+  <constant name="not found" class="soft error" value="404">
+The client attempted to work with a server entity that does not exist.  </constant>
+  <constant name="resource locked" class="soft error" value="405">
+The client attempted to work with a server entity to which it has
+  no access because another client is working with it.  </constant>
+  <constant name="frame error" class="hard error" value="501">
+The client sent a malformed frame that the server could not decode.
+  This strongly implies a programming error in the client.  </constant>
+  <constant name="syntax error" class="hard error" value="502">
+The client sent a frame that contained illegal values for one or more
+  fields.  This strongly implies a programming error in the client.  </constant>
+  <constant name="command invalid" class="hard error" value="503">
+The client sent an invalid sequence of frames, attempting to perform
+  an operation that was considered invalid by the server. This usually
+  implies a programming error in the client.  </constant>
+  <constant name="channel error" class="hard error" value="504">
+The client attempted to work with a channel that had not been
+  correctly opened.  This most likely indicates a fault in the client
+  layer.  </constant>
+  <constant name="resource error" class="hard error" value="506">
+The server could not complete the method because it lacked sufficient
+  resources. This may be due to the client creating too many of some
+  type of entity.  </constant>
+  <constant name="not allowed" class="hard error" value="530">
+The client tried to work with some entity in a manner that is
+  prohibited by the server, due to security settings or by some other
+  criteria.  </constant>
+  <constant name="not implemented" class="hard error" value="540">
+The client tried to use functionality that is not implemented in the
+  server.  </constant>
+  <constant name="internal error" class="hard error" value="541">
+The server could not complete the method because of an internal error.
+  The server may require intervention by an operator in order to resume
+  normal operations.  </constant>
+  <domain name="access ticket" type="short">
+access ticket granted by server    <assert check="ne" value="0"/>
+  </domain>
+  <domain name="class id" type="short"/>
+  <domain name="consumer tag" type="shortstr">
+consumer tag    <rule implement="MUST">
+The consumer tag is valid only within the channel from which the
+      consumer was created. I.e. a client MUST NOT create a consumer in
+      one channel and then use it in another.    </rule>
+  </domain>
+  <domain name="delivery tag" type="longlong">
+server-assigned delivery tag    <rule implement="MUST">
+The delivery tag is valid only within the channel from which the
+      message was received.  I.e. a client MUST NOT receive a message on
+      one channel and then acknowledge it on another.    </rule>
+    <rule implement="MUST">
+The server MUST NOT use a zero value for delivery tags.  Zero is
+      reserved for client use, meaning "all messages so far received".    </rule>
+  </domain>
+  <domain name="exchange name" type="shortstr">
+exchange name    <assert check="length" value="127"/>
+  </domain>
+  <domain name="known hosts" type="shortstr">
+list of known hosts    <rule implement="MAY">
+The server MAY leave this field empty if it knows of no other
+hosts than itself.    </rule>
+  </domain>
+  <domain name="method id" type="short"/>
+  <domain name="no ack" type="bit">
+no acknowledgement needed  </domain>
+  <domain name="no local" type="bit">
+do not deliver own messages  </domain>
+  <domain name="path" type="shortstr">
+    <assert check="notnull"/>
+    <assert check="syntax" rule="path"/>
+    <assert check="length" value="127"/>
+  </domain>
+  <domain name="peer properties" type="table">
+    <rule implement="SHOULD">
+The properties SHOULD contain these fields:
+"product", giving the name of the peer product, "version", giving
+the name of the peer version, "platform", giving the name of the
+operating system, "copyright", if appropriate, and "information",
+giving other general information.    </rule>
+  </domain>
+  <domain name="queue name" type="shortstr">
+queue name    <assert check="length" value="127"/>
+  </domain>
+  <domain name="redelivered" type="bit">
+message is being redelivered    <rule implement="SHOULD">
+The server SHOULD try to signal redelivered messages when it can.
+      When redelivering a message that was not successfully acknowledged,
+      the server SHOULD deliver it to the original client if possible.    </rule>
+    <rule implement="MUST">
+The client MUST NOT rely on the redelivered field but MUST take it
+      as a hint that the message may already have been processed.  A
+      fully robust client must be able to track duplicate received messages
+      on non-transacted, and locally-transacted channels.    </rule>
+  </domain>
+  <domain name="reply code" type="short">
+reply code from server    <assert check="notnull"/>
+  </domain>
+  <domain name="reply text" type="shortstr">
+localised reply text    <assert check="notnull"/>
+  </domain>
+  <class name="connection" index="10" handler="connection">
+work with socket connections    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MUST"/>
+    <method name="start" index="10" synchronous="1">
+start connection negotiation      <rule implement="MUST">
+If the client cannot handle the protocol version suggested by the
+    server it MUST close the socket connection.      </rule>
+      <rule implement="MUST">
+The server MUST provide a protocol version that is lower than or
+    equal to that requested by the client in the protocol header. If
+    the server cannot support the specified protocol it MUST NOT send
+    this method, but MUST close the socket connection.      </rule>
+      <chassis name="client" implement="MUST"/>
+      <response name="start-ok"/>
+      <field name="version major" type="octet">
+protocol major version      </field>
+      <field name="version minor" type="octet">
+protocol major version      </field>
+      <field name="server properties" domain="peer properties">
+server properties      </field>
+      <field name="mechanisms" type="longstr">
+available security mechanisms        <see name="security mechanisms"/>
+        <assert check="notnull"/>
+      </field>
+      <field name="locales" type="longstr">
+available message locales        <rule implement="MUST">
+All servers MUST support at least the en_US locale.        </rule>
+        <assert check="notnull"/>
+      </field>
+    </method>
+    <method name="start-ok" index="11" synchronous="1">
+select security mechanism and locale      <chassis name="server" implement="MUST"/>
+      <field name="client properties" domain="peer properties">
+client properties      </field>
+      <field name="mechanism" type="shortstr">
+selected security mechanism        <rule implement="SHOULD">
+The client SHOULD authenticate using the highest-level security
+      profile it can handle from the list provided by the server.        </rule>
+        <rule implement="MUST">
+The mechanism field MUST contain one of the security mechanisms
+    proposed by the server in the Start method. If it doesn't, the
+    server MUST close the socket.        </rule>
+        <assert check="notnull"/>
+      </field>
+      <field name="response" type="longstr">
+security response data        <assert check="notnull"/>
+      </field>
+      <field name="locale" type="shortstr">
+selected message locale        <assert check="notnull"/>
+      </field>
+    </method>
+    <method name="secure" index="20" synchronous="1">
+security mechanism challenge      <chassis name="client" implement="MUST"/>
+      <response name="secure-ok"/>
+      <field name="challenge" type="longstr">
+security challenge data        <see name="security mechanisms"/>
+      </field>
+    </method>
+    <method name="secure-ok" index="21" synchronous="1">
+security mechanism response      <chassis name="server" implement="MUST"/>
+      <field name="response" type="longstr">
+security response data        <assert check="notnull"/>
+      </field>
+    </method>
+    <method name="tune" index="30" synchronous="1">
+propose connection tuning parameters      <chassis name="client" implement="MUST"/>
+      <response name="tune-ok"/>
+      <field name="channel max" type="short">
+proposed maximum channels      </field>
+      <field name="frame max" type="long">
+proposed maximum frame size        <rule implement="MUST">
+Until the frame-max has been negotiated, both peers MUST accept
+      frames of up to 4096 octets large. The minimum non-zero value for
+      the frame-max field is 4096.        </rule>
+      </field>
+      <field name="heartbeat" type="short">
+desired heartbeat delay      </field>
+    </method>
+    <method name="tune-ok" index="31" synchronous="1">
+negotiate connection tuning parameters      <chassis name="server" implement="MUST"/>
+      <field name="channel max" type="short">
+negotiated maximum channels        <rule implement="MAY">
+The server MAY ignore the channel-max value or MAY use it for
+      tuning its resource allocation.        </rule>
+        <assert check="notnull"/>
+        <assert field="channel max" check="le" method="tune"/>
+      </field>
+      <field name="frame max" type="long">
+negotiated maximum frame size        <rule implement="MUST">
+Until the frame-max has been negotiated, both peers must accept
+      frames of up to 4096 octets large. The minimum non-zero value for
+      the frame-max field is 4096.        </rule>
+      </field>
+      <field name="heartbeat" type="short">
+desired heartbeat delay      </field>
+    </method>
+    <method name="open" index="40" synchronous="1">
+open connection to virtual host      <rule implement="MUST">
+The client MUST open the context before doing any work on the
+    connection.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="open-ok"/>
+      <response name="redirect"/>
+      <field name="virtual host" domain="path">
+virtual host name        <assert check="regexp" value="^[a-zA-Z0-9/-_]+$"/>
+        <rule implement="MUST">
+If the server supports multiple virtual hosts, it MUST enforce a
+      full separation of exchanges, queues, and all associated entities
+      per virtual host. An application, connected to a specific virtual
+      host, MUST NOT be able to access resources of another virtual host.        </rule>
+        <rule implement="SHOULD">
+The server SHOULD verify that the client has permission to access
+      the specified virtual host.        </rule>
+        <rule implement="MAY">
+The server MAY configure arbitrary limits per virtual host, such
+      as the number of each type of entity that may be used, per
+      connection and/or in total.        </rule>
+      </field>
+      <field name="capabilities" type="shortstr">
+required capabilities      </field>
+      <field name="insist" type="bit">
+insist on connecting to server        <rule implement="SHOULD">
+When the client uses the insist option, the server SHOULD accept
+      the client connection unless it is technically unable to do so.        </rule>
+      </field>
+    </method>
+    <method name="open-ok" index="41" synchronous="1">
+signal that the connection is ready      <chassis name="client" implement="MUST"/>
+      <field name="known hosts" domain="known hosts"/>
+    </method>
+    <method name="redirect" index="50" synchronous="1">
+asks the client to use a different server      <rule implement="SHOULD">
+When getting the Connection.Redirect method, the client SHOULD
+    reconnect to the host specified, and if that host is not present,
+    to any of the hosts specified in the known-hosts list.      </rule>
+      <chassis name="client" implement="MAY"/>
+      <field name="host" type="shortstr">
+server to connect to        <assert check="notnull"/>
+      </field>
+      <field name="known hosts" domain="known hosts"/>
+    </method>
+    <method name="close" index="60" synchronous="1">
+request a connection close      <rule implement="MUST">
+After sending this method any received method except the Close-OK
+    method MUST be discarded.      </rule>
+      <rule implement="MAY">
+The peer sending this method MAY use a counter or timeout to
+    detect failure of the other peer to respond correctly with
+    the Close-OK method.      </rule>
+      <rule implement="MUST">
+When a server receives the Close method from a client it MUST
+    delete all server-side resources associated with the client's
+    context.  A client CANNOT reconnect to a context after sending
+    or receiving a Close method.      </rule>
+      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <response name="close-ok"/>
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <field name="class id" domain="class id">
+failing method class      </field>
+      <field name="method id" domain="method id">
+failing method ID      </field>
+    </method>
+    <method name="close-ok" index="61" synchronous="1">
+confirm a connection close      <rule implement="SHOULD">
+A peer that detects a socket closure without having received a
+    Close-Ok handshake method SHOULD log the error.      </rule>
+      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+    </method>
+  </class>
+  <class name="channel" index="20" handler="channel">
+work with channels    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MUST"/>
+    <method name="open" index="10" synchronous="1">
+open a channel for use      <rule implement="MUST">
+This method MUST NOT be called when the channel is already open.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="open-ok"/>
+      <field name="out of band" type="shortstr">
+out-of-band settings        <assert check="null"/>
+      </field>
+    </method>
+    <method name="open-ok" index="11" synchronous="1">
+signal that the channel is ready      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="flow" index="20" synchronous="1">
+enable/disable flow from peer      <rule implement="MAY">
+When a new channel is opened, it is active.  Some applications
+    assume that channels are inactive until started.  To emulate this
+    behaviour a client MAY open the channel, then pause it.      </rule>
+      <rule implement="SHOULD">
+When sending content data in multiple frames, a peer SHOULD monitor
+    the channel for incoming methods and respond to a Channel.Flow as
+    rapidly as possible.      </rule>
+      <rule implement="MAY">
+A peer MAY use the Channel.Flow method to throttle incoming content
+    data for internal reasons, for example, when exchangeing data over a
+    slower connection.      </rule>
+      <rule implement="MAY">
+The peer that requests a Channel.Flow method MAY disconnect and/or
+    ban a peer that does not respect the request.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+      <response name="flow-ok"/>
+      <field name="active" type="bit">
+start/stop content frames      </field>
+    </method>
+    <method name="flow-ok" index="21">
+confirm a flow method      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+      <field name="active" type="bit">
+current flow setting      </field>
+    </method>
+    <method name="alert" index="30">
+send a non-fatal warning message      <chassis name="client" implement="MUST"/>
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <field name="details" type="table">
+detailed information for warning      </field>
+    </method>
+    <method name="close" index="40" synchronous="1">
+request a channel close      <rule implement="MUST">
+After sending this method any received method except
+    Channel.Close-OK MUST be discarded.      </rule>
+      <rule implement="MAY">
+The peer sending this method MAY use a counter or timeout to detect
+    failure of the other peer to respond correctly with Channel.Close-OK..      </rule>
+      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <response name="close-ok"/>
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <field name="class id" domain="class id">
+failing method class      </field>
+      <field name="method id" domain="method id">
+failing method ID      </field>
+    </method>
+    <method name="close-ok" index="41" synchronous="1">
+confirm a channel close      <rule implement="SHOULD">
+A peer that detects a socket closure without having received a
+    Channel.Close-Ok handshake method SHOULD log the error.      </rule>
+      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+    </method>
+  </class>
+  <class name="access" index="30" handler="connection">
+work with access tickets    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MUST"/>
+    <method name="request" index="10" synchronous="1">
+request an access ticket      <rule implement="MUST">
+The realm name MUST start with either "/data" (for application
+    resources) or "/admin" (for server administration resources).
+    If the realm starts with any other path, the server MUST raise
+    a connection exception with reply code 403 (access refused).      </rule>
+      <rule implement="MUST">
+The server MUST implement the /data realm and MAY implement the
+    /admin realm.  The mapping of resources to realms is not
+    defined in the protocol - this is a server-side configuration
+    issue.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="request-ok"/>
+      <field name="realm" domain="path">
+name of requested realm        <rule implement="MUST">
+If the specified realm is not known to the server, the server
+      must raise a channel exception with reply code 402 (invalid
+      path).        </rule>
+      </field>
+      <field name="exclusive" type="bit">
+request exclusive access      </field>
+      <field name="passive" type="bit">
+request passive access      </field>
+      <field name="active" type="bit">
+request active access      </field>
+      <field name="write" type="bit">
+request write access      </field>
+      <field name="read" type="bit">
+request read access      </field>
+    </method>
+    <method name="request-ok" index="11" synchronous="1">
+grant access to server resources      <rule implement="MUST">
+The client MUST NOT use access tickets except within the same
+    channel as originally granted.      </rule>
+      <rule implement="MUST">
+The server MUST isolate access tickets per channel and treat an
+    attempt by a client to mix these as a connection exception.      </rule>
+      <chassis name="client" implement="MUST"/>
+      <field name="ticket" domain="access ticket"/>
+    </method>
+  </class>
+  <class name="exchange" index="40" handler="channel">
+work with exchanges    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MUST"/>
+    <rule implement="MUST">
+      <test>
+amq_exchange_19      </test>
+The server MUST implement the direct and fanout exchange types, and
+  predeclare the corresponding exchanges named amq.direct and amq.fanout
+  in each virtual host. The server MUST also predeclare a direct
+  exchange to act as the default exchange for content Publish methods
+  and for default queue bindings.    </rule>
+    <rule implement="SHOULD">
+      <test>
+amq_exchange_20      </test>
+The server SHOULD implement the topic exchange type, and predeclare
+  the corresponding exchange named amq.topic in each virtual host.    </rule>
+    <rule implement="MAY">
+      <test>
+amq_exchange_21      </test>
+The server MAY implement the system exchange type, and predeclare the
+  corresponding exchanges named amq.system in each virtual host. If the
+  client attempts to bind a queue to the system exchange, the server
+  MUST raise a connection exception with reply code 507 (not allowed).    </rule>
+    <rule implement="MUST">
+      <test>
+amq_exchange_22      </test>
+The default exchange MUST be defined as internal, and be inaccessible
+  to the client except by specifying an empty exchange name in a content
+  Publish method. That is, the server MUST NOT let clients make explicit
+  bindings to this exchange.    </rule>
+    <method name="declare" index="10" synchronous="1">
+declare exchange, create if needed      <rule implement="SHOULD">
+        <test>
+amq_exchange_23        </test>
+The server SHOULD support a minimum of 16 exchanges per virtual host
+    and ideally, impose no limit except as defined by available resources.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="declare-ok"/>
+      <field name="ticket" domain="access ticket">
+        <rule implement="MUST">
+The client MUST provide a valid access ticket giving "active" access
+      to the realm in which the exchange exists or will be created, or
+      "passive" access if the if-exists flag is set.        </rule>
+      </field>
+      <field name="exchange" domain="exchange name">
+        <rule implement="MUST">
+          <test>
+amq_exchange_15          </test>
+Exchange names starting with "amq." are reserved for predeclared
+      and standardised exchanges.  If the client attempts to create an
+      exchange starting with "amq.", the server MUST raise a channel
+      exception with reply code 403 (access refused).        </rule>
+        <assert check="regexp" value="^[a-zA-Z0-9-_.:]+$"/>
+      </field>
+      <field name="type" type="shortstr">
+exchange type        <rule implement="MUST">
+          <test>
+amq_exchange_16          </test>
+If the exchange already exists with a different type, the server
+      MUST raise a connection exception with a reply code 507 (not allowed).        </rule>
+        <rule implement="MUST">
+          <test>
+amq_exchange_18          </test>
+If the server does not support the requested exchange type it MUST
+      raise a connection exception with a reply code 503 (command invalid).        </rule>
+        <assert check="regexp" value="^[a-zA-Z0-9-_.:]+$"/>
+      </field>
+      <field name="passive" type="bit">
+do not create exchange        <rule implement="MUST">
+          <test>
+amq_exchange_05          </test>
+If set, and the exchange does not already exist, the server MUST
+      raise a channel exception with reply code 404 (not found).        </rule>
+      </field>
+      <field name="durable" type="bit">
+request a durable exchange        <rule implement="MUST">
+          <test>
+amq_exchange_24          </test>
+The server MUST support both durable and transient exchanges.        </rule>
+        <rule implement="MUST">
+The server MUST ignore the durable field if the exchange already
+      exists.        </rule>
+      </field>
+      <field name="auto delete" type="bit">
+auto-delete when unused        <rule implement="SHOULD">
+          <test>
+amq_exchange_02          </test>
+The server SHOULD allow for a reasonable delay between the point
+      when it determines that an exchange is not being used (or no longer
+      used), and the point when it deletes the exchange.  At the least it
+      must allow a client to create an exchange and then bind a queue to
+      it, with a small but non-zero delay between these two actions.        </rule>
+        <rule implement="MUST">
+          <test>
+amq_exchange_25          </test>
+The server MUST ignore the auto-delete field if the exchange already
+      exists.        </rule>
+      </field>
+      <field name="internal" type="bit">
+create internal exchange      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+      <field name="arguments" type="table">
+arguments for declaration      </field>
+    </method>
+    <method name="declare-ok" index="11" synchronous="1">
+confirms an exchange declaration      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="delete" index="20" synchronous="1">
+delete an exchange      <chassis name="server" implement="MUST"/>
+      <response name="delete-ok"/>
+      <field name="ticket" domain="access ticket">
+        <rule implement="MUST">
+The client MUST provide a valid access ticket giving "active"
+      access rights to the exchange's access realm.        </rule>
+      </field>
+      <field name="exchange" domain="exchange name">
+        <rule implement="MUST">
+          <test>
+amq_exchange_11          </test>
+The exchange MUST exist. Attempting to delete a non-existing exchange
+      causes a channel exception.        </rule>
+        <assert check="notnull"/>
+      </field>
+      <field name="if unused" type="bit">
+delete only if unused        <rule implement="SHOULD">
+          <test>
+amq_exchange_12          </test>
+If set, the server SHOULD delete the exchange but only if it has
+      no queue bindings.        </rule>
+        <rule implement="SHOULD">
+          <test>
+amq_exchange_13          </test>
+If set, the server SHOULD raise a channel exception if the exchange is in
+      use.        </rule>
+      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="delete-ok" index="21" synchronous="1">
+confirm deletion of an exchange      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="bound" index="22" synchronous="1">
+      <chassis name="server" implement="SHOULD"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+      <field name="queue" domain="queue name"/>
+    </method>
+    <method name="bound-ok" index="23" synchronous="1">
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <chassis name="client" implement="SHOULD"/>
+    </method>
+  </class>
+  <class name="queue" index="50" handler="channel">
+work with queues    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MUST"/>
+    <rule implement="MUST">
+      <test>
+amq_queue_33      </test>
+A server MUST allow any content class to be sent to any queue, in any
+  mix, and queue and delivery these content classes independently. Note
+  that all methods that fetch content off queues are specific to a given
+  content class.    </rule>
+    <method name="declare" index="10" synchronous="1">
+declare queue, create if needed      <rule implement="MUST">
+        <test>
+amq_queue_34        </test>
+The server MUST create a default binding for a newly-created queue
+    to the default exchange, which is an exchange of type 'direct'.      </rule>
+      <rule implement="SHOULD">
+        <test>
+amq_queue_35        </test>
+The server SHOULD support a minimum of 256 queues per virtual host
+    and ideally, impose no limit except as defined by available resources.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="declare-ok"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name">
+        <rule implement="MAY">
+          <test>
+amq_queue_10          </test>
+The queue name MAY be empty, in which case the server MUST create
+      a new queue with a unique generated name and return this to the
+      client in the Declare-Ok method.        </rule>
+        <rule implement="MUST">
+          <test>
+amq_queue_32          </test>
+Queue names starting with "amq." are reserved for predeclared and
+      standardised server queues.  If the queue name starts with "amq."
+      and the passive option is zero, the server MUST raise a connection
+      exception with reply code 403 (access refused).        </rule>
+        <assert check="regexp" value="^[a-zA-Z0-9-_.:]*$"/>
+      </field>
+      <field name="passive" type="bit">
+do not create queue        <rule implement="MUST">
+          <test>
+amq_queue_05          </test>
+If set, and the queue does not already exist, the server MUST
+      respond with a reply code 404 (not found) and raise a channel
+      exception.        </rule>
+      </field>
+      <field name="durable" type="bit">
+request a durable queue        <rule implement="MUST">
+          <test>
+amq_queue_03          </test>
+The server MUST recreate the durable queue after a restart.        </rule>
+        <rule implement="MUST">
+          <test>
+amq_queue_36          </test>
+The server MUST support both durable and transient queues.        </rule>
+        <rule implement="MUST">
+          <test>
+amq_queue_37          </test>
+The server MUST ignore the durable field if the queue already
+      exists.        </rule>
+      </field>
+      <field name="exclusive" type="bit">
+request an exclusive queue        <rule implement="MUST">
+          <test>
+amq_queue_38          </test>
+The server MUST support both exclusive (private) and non-exclusive
+      (shared) queues.        </rule>
+        <rule implement="MUST">
+          <test>
+amq_queue_04          </test>
+The server MUST raise a channel exception if 'exclusive' is specified
+      and the queue already exists and is owned by a different connection.        </rule>
+      </field>
+      <field name="auto delete" type="bit">
+auto-delete queue when unused        <rule implement="SHOULD">
+          <test>
+amq_queue_02          </test>
+The server SHOULD allow for a reasonable delay between the point
+      when it determines that a queue is not being used (or no longer
+      used), and the point when it deletes the queue.  At the least it
+      must allow a client to create a queue and then create a consumer
+      to read from it, with a small but non-zero delay between these
+      two actions.  The server should equally allow for clients that may
+      be disconnected prematurely, and wish to re-consume from the same
+      queue without losing messages.  We would recommend a configurable
+      timeout, with a suitable default value being one minute.        </rule>
+        <rule implement="MUST">
+          <test>
+amq_queue_31          </test>
+The server MUST ignore the auto-delete field if the queue already
+      exists.        </rule>
+      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+      <field name="arguments" type="table">
+arguments for declaration      </field>
+    </method>
+    <method name="declare-ok" index="11" synchronous="1">
+confirms a queue definition      <chassis name="client" implement="MUST"/>
+      <field name="queue" domain="queue name">
+        <assert check="notnull"/>
+      </field>
+      <field name="message count" type="long">
+number of messages in queue      </field>
+      <field name="consumer count" type="long">
+number of consumers      </field>
+    </method>
+    <method name="bind" index="20" synchronous="1">
+bind queue to an exchange      <rule implement="MUST">
+        <test>
+amq_queue_25        </test>
+A server MUST allow ignore duplicate bindings - that is, two or
+    more bind methods for a specific queue, with identical arguments
+    - without treating these as an error.      </rule>
+      <rule implement="MUST">
+        <test>
+amq_queue_39        </test>
+If a bind fails, the server MUST raise a connection exception.      </rule>
+      <rule implement="MUST">
+        <test>
+amq_queue_12        </test>
+The server MUST NOT allow a durable queue to bind to a transient
+    exchange. If the client attempts this the server MUST raise a
+    channel exception.      </rule>
+      <rule implement="SHOULD">
+        <test>
+amq_queue_13        </test>
+Bindings for durable queues are automatically durable and the
+    server SHOULD restore such bindings after a server restart.      </rule>
+      <rule implement="MUST">
+        <test>
+amq_queue_17        </test>
+If the client attempts to an exchange that was declared as internal,
+    the server MUST raise a connection exception with reply code 530
+    (not allowed).      </rule>
+      <rule implement="SHOULD">
+        <test>
+amq_queue_40        </test>
+The server SHOULD support at least 4 bindings per queue, and
+    ideally, impose no limit except as defined by available resources.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="bind-ok"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name"/>
+      <field name="exchange" domain="exchange name">
+The name of the exchange to bind to.        <rule implement="MUST">
+          <test>
+amq_queue_14          </test>
+If the exchange does not exist the server MUST raise a channel
+      exception with reply code 404 (not found).        </rule>
+      </field>
+      <field name="routing key" type="shortstr">
+message routing key      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+      <field name="arguments" type="table">
+arguments for binding      </field>
+    </method>
+    <method name="bind-ok" index="21" synchronous="1">
+confirm bind successful      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="purge" index="30" synchronous="1">
+purge a queue      <rule implement="MUST">
+        <test>
+amq_queue_15        </test>
+A call to purge MUST result in an empty queue.      </rule>
+      <rule implement="MUST">
+        <test>
+amq_queue_41        </test>
+On transacted channels the server MUST not purge messages that have
+    already been sent to a client but not yet acknowledged.      </rule>
+      <rule implement="MAY">
+        <test>
+amq_queue_42        </test>
+The server MAY implement a purge queue or log that allows system
+    administrators to recover accidentally-purged messages.  The server
+    SHOULD NOT keep purged messages in the same storage spaces as the
+    live messages since the volumes of purged messages may get very
+    large.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="purge-ok"/>
+      <field name="ticket" domain="access ticket">
+        <rule implement="MUST">
+The client MUST provide a valid access ticket giving "read" access
+      rights to the queue's access realm.  Note that purging a queue is
+      equivalent to reading all messages and discarding them.        </rule>
+      </field>
+      <field name="queue" domain="queue name"/>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="purge-ok" index="31" synchronous="1">
+confirms a queue purge      <chassis name="client" implement="MUST"/>
+      <field name="message count" type="long">
+number of messages purged      </field>
+    </method>
+    <method name="delete" index="40" synchronous="1">
+delete a queue      <rule implement="SHOULD">
+        <test>
+amq_queue_43        </test>
+The server SHOULD use a dead-letter queue to hold messages that
+    were pending on a deleted queue, and MAY provide facilities for
+    a system administrator to move these messages back to an active
+    queue.      </rule>
+      <chassis name="server" implement="MUST"/>
+      <response name="delete-ok"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name"/>
+      <field name="if unused" type="bit">
+delete only if unused        <rule implement="MUST">
+          <test>
+amq_queue_29          </test>
+          <test>
+amq_queue_30          </test>
+The server MUST respect the if-unused flag when deleting a queue.        </rule>
+      </field>
+      <field name="if empty" type="bit">
+delete only if empty        <test>
+amq_queue_27        </test>
+      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="delete-ok" index="41" synchronous="1">
+confirm deletion of a queue      <chassis name="client" implement="MUST"/>
+      <field name="message count" type="long">
+number of messages purged      </field>
+    </method>
+  </class>
+  <class name="basic" index="60" handler="channel">
+work with basic content    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MAY"/>
+    <field name="content type" type="shortstr">
+MIME content type    </field>
+    <field name="content encoding" type="shortstr">
+MIME content encoding    </field>
+    <field name="headers" type="table">
+Message header field table    </field>
+    <field name="delivery mode" type="octet">
+Non-persistent (1) or persistent (2)    </field>
+    <field name="priority" type="octet">
+The message priority, 0 to 9    </field>
+    <field name="correlation id" type="shortstr">
+The application correlation identifier    </field>
+    <field name="reply to" type="shortstr">
+The destination to reply to    </field>
+    <field name="expiration" type="shortstr">
+Message expiration specification    </field>
+    <field name="message id" type="shortstr">
+The application message identifier    </field>
+    <field name="timestamp" type="timestamp">
+The message timestamp    </field>
+    <field name="type" type="shortstr">
+The message type name    </field>
+    <field name="user id" type="shortstr">
+The creating user id    </field>
+    <field name="app id" type="shortstr">
+The creating application id    </field>
+    <field name="cluster id" type="shortstr">
+Intra-cluster routing identifier    </field>
+    <method name="qos" index="10" synchronous="1">
+specify quality of service      <chassis name="server" implement="MUST"/>
+      <response name="qos-ok"/>
+      <field name="prefetch size" type="long">
+prefetch window in octets      </field>
+      <field name="prefetch count" type="short">
+prefetch window in messages      </field>
+      <field name="global" type="bit">
+apply to entire connection      </field>
+    </method>
+    <method name="qos-ok" index="11" synchronous="1">
+confirm the requested qos      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="consume" index="20" synchronous="1">
+start a queue consumer      <chassis name="server" implement="MUST"/>
+      <response name="consume-ok"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="no local" domain="no local"/>
+      <field name="no ack" domain="no ack"/>
+      <field name="exclusive" type="bit">
+request exclusive access      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+      <field name="arguments" type="table"/>
+    </method>
+    <method name="consume-ok" index="21" synchronous="1">
+confirm a new consumer      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+    </method>
+    <method name="cancel" index="30" synchronous="1">
+end a queue consumer      <chassis name="server" implement="MUST"/>
+      <response name="cancel-ok"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="cancel-ok" index="31" synchronous="1">
+confirm a cancelled consumer      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+    </method>
+    <method name="publish" content="1" index="40">
+publish a message      <chassis name="server" implement="MUST"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+      <field name="mandatory" type="bit">
+indicate mandatory routing      </field>
+      <field name="immediate" type="bit">
+request immediate delivery      </field>
+    </method>
+    <method name="return" content="1" index="50">
+return a failed message      <chassis name="client" implement="MUST"/>
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+    </method>
+    <method name="deliver" content="1" index="60">
+notify the client of a consumer message      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="redelivered" domain="redelivered"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+    </method>
+    <method name="get" index="70" synchronous="1">
+direct access to a queue      <response name="get-ok"/>
+      <response name="get-empty"/>
+      <chassis name="server" implement="MUST"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name"/>
+      <field name="no ack" domain="no ack"/>
+    </method>
+    <method name="get-ok" content="1" index="71" synchronous="1">
+provide client with a message      <chassis name="client" implement="MAY"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="redelivered" domain="redelivered"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+      <field name="message count" type="long">
+number of messages pending      </field>
+    </method>
+    <method name="get-empty" index="72" synchronous="1">
+indicate no messages available      <chassis name="client" implement="MAY"/>
+      <field name="cluster id" type="shortstr">
+Cluster id      </field>
+    </method>
+    <method name="ack" index="80">
+acknowledge one or more messages      <chassis name="server" implement="MUST"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="multiple" type="bit">
+acknowledge multiple messages      </field>
+    </method>
+    <method name="reject" index="90">
+reject an incoming message      <chassis name="server" implement="MUST"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="requeue" type="bit">
+requeue the message      </field>
+    </method>
+    <method name="recover" index="100">
+redeliver unacknowledged messages      <chassis name="server" implement="MUST"/>
+      <field name="requeue" type="bit">
+requeue the message      </field>
+      <response name="recover-ok"/>
+    </method>
+    <method name="recover-ok" index="101" synchronous="1">
+confirm a successful recover      <chassis name="client" implement="MUST"/>
+    </method>
+  </class>
+  <class name="file" index="70" handler="channel">
+work with file content    <chassis name="server" implement="MAY"/>
+    <chassis name="client" implement="MAY"/>
+    <field name="content type" type="shortstr">
+MIME content type    </field>
+    <field name="content encoding" type="shortstr">
+MIME content encoding    </field>
+    <field name="headers" type="table">
+Message header field table    </field>
+    <field name="priority" type="octet">
+The message priority, 0 to 9    </field>
+    <field name="reply to" type="shortstr">
+The destination to reply to    </field>
+    <field name="message id" type="shortstr">
+The application message identifier    </field>
+    <field name="filename" type="shortstr">
+The message filename    </field>
+    <field name="timestamp" type="timestamp">
+The message timestamp    </field>
+    <field name="cluster id" type="shortstr">
+Intra-cluster routing identifier    </field>
+    <method name="qos" index="10" synchronous="1">
+specify quality of service      <chassis name="server" implement="MUST"/>
+      <response name="qos-ok"/>
+      <field name="prefetch size" type="long">
+prefetch window in octets      </field>
+      <field name="prefetch count" type="short">
+prefetch window in messages      </field>
+      <field name="global" type="bit">
+apply to entire connection      </field>
+    </method>
+    <method name="qos-ok" index="11" synchronous="1">
+confirm the requested qos      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="consume" index="20" synchronous="1">
+start a queue consumer      <chassis name="server" implement="MUST"/>
+      <response name="consume-ok"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="no local" domain="no local"/>
+      <field name="no ack" domain="no ack"/>
+      <field name="exclusive" type="bit">
+request exclusive access      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="consume-ok" index="21" synchronous="1">
+confirm a new consumer      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+    </method>
+    <method name="cancel" index="30" synchronous="1">
+end a queue consumer      <chassis name="server" implement="MUST"/>
+      <response name="cancel-ok"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="cancel-ok" index="31" synchronous="1">
+confirm a cancelled consumer      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+    </method>
+    <method name="open" index="40" synchronous="1">
+request to start staging      <response name="open-ok"/>
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+      <field name="identifier" type="shortstr">
+staging identifier      </field>
+      <field name="content size" type="longlong">
+message content size      </field>
+    </method>
+    <method name="open-ok" index="41" synchronous="1">
+confirm staging ready      <response name="stage"/>
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+      <field name="staged size" type="longlong">
+already staged amount      </field>
+    </method>
+    <method name="stage" content="1" index="50">
+stage message content      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="publish" index="60">
+publish a message      <chassis name="server" implement="MUST"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+      <field name="mandatory" type="bit">
+indicate mandatory routing      </field>
+      <field name="immediate" type="bit">
+request immediate delivery      </field>
+      <field name="identifier" type="shortstr">
+staging identifier      </field>
+    </method>
+    <method name="return" content="1" index="70">
+return a failed message      <chassis name="client" implement="MUST"/>
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+    </method>
+    <method name="deliver" index="80">
+notify the client of a consumer message      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="redelivered" domain="redelivered"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+      <field name="identifier" type="shortstr">
+staging identifier      </field>
+    </method>
+    <method name="ack" index="90">
+acknowledge one or more messages      <chassis name="server" implement="MUST"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="multiple" type="bit">
+acknowledge multiple messages      </field>
+    </method>
+    <method name="reject" index="100">
+reject an incoming message      <chassis name="server" implement="MUST"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="requeue" type="bit">
+requeue the message      </field>
+    </method>
+  </class>
+  <class name="stream" index="80" handler="channel">
+work with streaming content    <chassis name="server" implement="MAY"/>
+    <chassis name="client" implement="MAY"/>
+    <field name="content type" type="shortstr">
+MIME content type    </field>
+    <field name="content encoding" type="shortstr">
+MIME content encoding    </field>
+    <field name="headers" type="table">
+Message header field table    </field>
+    <field name="priority" type="octet">
+The message priority, 0 to 9    </field>
+    <field name="timestamp" type="timestamp">
+The message timestamp    </field>
+    <method name="qos" index="10" synchronous="1">
+specify quality of service      <chassis name="server" implement="MUST"/>
+      <response name="qos-ok"/>
+      <field name="prefetch size" type="long">
+prefetch window in octets      </field>
+      <field name="prefetch count" type="short">
+prefetch window in messages      </field>
+      <field name="consume rate" type="long">
+transfer rate in octets/second      </field>
+      <field name="global" type="bit">
+apply to entire connection      </field>
+    </method>
+    <method name="qos-ok" index="11" synchronous="1">
+confirm the requested qos      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="consume" index="20" synchronous="1">
+start a queue consumer      <chassis name="server" implement="MUST"/>
+      <response name="consume-ok"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="queue" domain="queue name"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="no local" domain="no local"/>
+      <field name="exclusive" type="bit">
+request exclusive access      </field>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="consume-ok" index="21" synchronous="1">
+confirm a new consumer      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+    </method>
+    <method name="cancel" index="30" synchronous="1">
+end a queue consumer      <chassis name="server" implement="MUST"/>
+      <response name="cancel-ok"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="nowait" type="bit">
+do not send a reply method      </field>
+    </method>
+    <method name="cancel-ok" index="31" synchronous="1">
+confirm a cancelled consumer      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+    </method>
+    <method name="publish" content="1" index="40">
+publish a message      <chassis name="server" implement="MUST"/>
+      <field name="ticket" domain="access ticket"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+      <field name="mandatory" type="bit">
+indicate mandatory routing      </field>
+      <field name="immediate" type="bit">
+request immediate delivery      </field>
+    </method>
+    <method name="return" content="1" index="50">
+return a failed message      <chassis name="client" implement="MUST"/>
+      <field name="reply code" domain="reply code"/>
+      <field name="reply text" domain="reply text"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="routing key" type="shortstr">
+Message routing key      </field>
+    </method>
+    <method name="deliver" content="1" index="60">
+notify the client of a consumer message      <chassis name="client" implement="MUST"/>
+      <field name="consumer tag" domain="consumer tag"/>
+      <field name="delivery tag" domain="delivery tag"/>
+      <field name="exchange" domain="exchange name"/>
+      <field name="queue" domain="queue name">
+        <assert check="notnull"/>
+      </field>
+    </method>
+  </class>
+  <class name="tx" index="90" handler="channel">
+work with standard transactions    <rule implement="SHOULD">
+An client using standard transactions SHOULD be able to track all
+  messages received within a reasonable period, and thus detect and
+  reject duplicates of the same message. It SHOULD NOT pass these to
+  the application layer.    </rule>
+    <chassis name="server" implement="SHOULD"/>
+    <chassis name="client" implement="MAY"/>
+    <method name="select" index="10" synchronous="1">
+select standard transaction mode      <chassis name="server" implement="MUST"/>
+      <response name="select-ok"/>
+    </method>
+    <method name="select-ok" index="11" synchronous="1">
+confirm transaction mode      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="commit" index="20" synchronous="1">
+commit the current transaction      <chassis name="server" implement="MUST"/>
+      <response name="commit-ok"/>
+    </method>
+    <method name="commit-ok" index="21" synchronous="1">
+confirm a successful commit      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="rollback" index="30" synchronous="1">
+abandon the current transaction      <chassis name="server" implement="MUST"/>
+      <response name="rollback-ok"/>
+    </method>
+    <method name="rollback-ok" index="31" synchronous="1">
+confirm a successful rollback      <chassis name="client" implement="MUST"/>
+    </method>
+  </class>
+  <class name="dtx" index="100" handler="channel">
+work with distributed transactions    <chassis name="server" implement="MAY"/>
+    <chassis name="client" implement="MAY"/>
+    <method name="select" index="10" synchronous="1">
+select standard transaction mode      <chassis name="server" implement="MUST"/>
+      <response name="select-ok"/>
+    </method>
+    <method name="select-ok" index="11" synchronous="1">
+confirm transaction mode      <chassis name="client" implement="MUST"/>
+    </method>
+    <method name="start" index="20" synchronous="1">
+start a new distributed transaction      <chassis name="server" implement="MAY"/>
+      <response name="start-ok"/>
+      <field name="dtx identifier" type="shortstr">
+transaction identifier        <assert check="notnull"/>
+      </field>
+    </method>
+    <method name="start-ok" index="21" synchronous="1">
+confirm the start of a new distributed transaction      <chassis name="client" implement="MUST"/>
+    </method>
+  </class>
+  <class name="tunnel" index="110" handler="tunnel">
+methods for protocol tunneling.    <chassis name="server" implement="MAY"/>
+    <chassis name="client" implement="MAY"/>
+    <field name="headers" type="table">
+Message header field table    </field>
+    <field name="proxy name" type="shortstr">
+The identity of the tunnelling proxy    </field>
+    <field name="data name" type="shortstr">
+The name or type of the message being tunnelled    </field>
+    <field name="durable" type="octet">
+The message durability indicator    </field>
+    <field name="broadcast" type="octet">
+The message broadcast mode    </field>
+    <method name="request" content="1" index="10">
+sends a tunnelled method      <chassis name="server" implement="MUST"/>
+      <field name="meta data" type="table">
+meta data for the tunnelled block      </field>
+    </method>
+  </class>
+  <class name="test" index="120" handler="channel">
+test functional primitives of the implementation    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="SHOULD"/>
+    <method name="integer" index="10" synchronous="1">
+test integer handling      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <response name="integer-ok"/>
+      <field name="integer 1" type="octet">
+octet test value      </field>
+      <field name="integer 2" type="short">
+short test value      </field>
+      <field name="integer 3" type="long">
+long test value      </field>
+      <field name="integer 4" type="longlong">
+long-long test value      </field>
+      <field name="operation" type="octet">
+operation to test        <assert check="enum">
+          <value name="add">
+return sum of test values          </value>
+          <value name="min">
+return lowest of test values          </value>
+          <value name="max">
+return highest of test values          </value>
+        </assert>
+      </field>
+    </method>
+    <method name="integer-ok" index="11" synchronous="1">
+report integer test result      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <field name="result" type="longlong">
+result value      </field>
+    </method>
+    <method name="string" index="20" synchronous="1">
+test string handling      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <response name="string-ok"/>
+      <field name="string 1" type="shortstr">
+short string test value      </field>
+      <field name="string 2" type="longstr">
+long string test value      </field>
+      <field name="operation" type="octet">
+operation to test        <assert check="enum">
+          <value name="add">
+return concatentation of test strings          </value>
+          <value name="min">
+return shortest of test strings          </value>
+          <value name="max">
+return longest of test strings          </value>
+        </assert>
+      </field>
+    </method>
+    <method name="string-ok" index="21" synchronous="1">
+report string test result      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <field name="result" type="longstr">
+result value      </field>
+    </method>
+    <method name="table" index="30" synchronous="1">
+test field table handling      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <response name="table-ok"/>
+      <field name="table" type="table">
+field table of test values      </field>
+      <field name="integer op" type="octet">
+operation to test on integers        <assert check="enum">
+          <value name="add">
+return sum of numeric field values          </value>
+          <value name="min">
+return min of numeric field values          </value>
+          <value name="max">
+return max of numeric field values          </value>
+        </assert>
+      </field>
+      <field name="string op" type="octet">
+operation to test on strings        <assert check="enum">
+          <value name="add">
+return concatenation of string field values          </value>
+          <value name="min">
+return shortest of string field values          </value>
+          <value name="max">
+return longest of string field values          </value>
+        </assert>
+      </field>
+    </method>
+    <method name="table-ok" index="31" synchronous="1">
+report table test result      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <field name="integer result" type="longlong">
+integer result value      </field>
+      <field name="string result" type="longstr">
+string result value      </field>
+    </method>
+    <method name="content" content="1" index="40" synchronous="1">
+test content handling      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <response name="content-ok"/>
+    </method>
+    <method name="content-ok" content="1" index="41" synchronous="1">
+report content test result      <chassis name="client" implement="MUST"/>
+      <chassis name="server" implement="MUST"/>
+      <field name="content checksum" type="long">
+content hash      </field>
+    </method>
+  </class>
+</amqp>
