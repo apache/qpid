@@ -856,7 +856,7 @@ class Sender(Endpoint):
     if not self.session.connection._connected or self.session.closing:
       raise Detached()
 
-    self._ecwait(lambda: self.linked)
+    self._ecwait(lambda: self.linked, timeout=timeout)
 
     if isinstance(object, Message):
       message = object
