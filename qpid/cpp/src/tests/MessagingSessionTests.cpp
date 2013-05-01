@@ -1217,6 +1217,43 @@ QPID_AUTO_TEST_CASE(testLinkBindingCleanup)
     BOOST_CHECK(!receiver2.fetch(in, Duration::IMMEDIATE));
 }
 
+namespace {
+struct Fetcher : public qpid::sys::Runnable {
+    Receiver receiver;
+    Message message;
+    bool result;
+
+    Fetcher(Receiver r) : receiver(r), result(false) {}
+    void run()
+    {
+        result = receiver.fetch(message, Duration::SECOND*10);
+    }
+};
+}
+
+QPID_AUTO_TEST_CASE(testConcurrentFetch)
+{
+    MessagingFixture fix;
+    Sender sender = fix.session.createSender("my-test-queue;{create:always, node : { x-declare : { auto-delete: true}}}");
+    Receiver receiver = fix.session.createReceiver("my-test-queue");
+    Fetcher fetcher(fix.session.createReceiver("amq.fanout"));
+    qpid::sys::Thread runner(fetcher);
+    Message out("test-message");
+    for (int i = 0; i < 10; i++) {//try several times to make sure
+        sender.send(out, true);
+        //since the message is now on the queue, it should take less than the timeout to actually fetch it
+        qpid::sys::AbsTime start = qpid::sys::AbsTime::now();
+        Message in;
+        BOOST_CHECK(receiver.fetch(in, qpid::messaging::Duration::SECOND*2));
+        qpid::sys::Duration time(start, qpid::sys::AbsTime::now());
+        BOOST_CHECK(time < qpid::sys::TIME_SEC*2);
+        if (time >= qpid::sys::TIME_SEC*2) break;//if we failed, no need to keep testing
+    }
+    fix.session.createSender("amq.fanout").send(out);
+    runner.join();
+    BOOST_CHECK(fetcher.result);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
