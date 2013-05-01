@@ -27,9 +27,11 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 
 import javax.management.JMException;
+import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
@@ -50,6 +52,9 @@ public class UserManagementMBean extends AMQManagedObject implements UserManagem
     private static final Logger _logger = Logger.getLogger(UserManagementMBean.class);
 
     private PasswordCredentialManagingAuthenticationProvider _authProvider;
+
+    private String _mbeanName;
+    private String _type;
 
     // Setup for the TabularType
     private static final TabularType _userlistDataType; // Datatype for representing User Lists
@@ -81,14 +86,16 @@ public class UserManagementMBean extends AMQManagedObject implements UserManagem
     public UserManagementMBean(PasswordCredentialManagingAuthenticationProvider provider, ManagedObjectRegistry registry) throws JMException
     {
         super(UserManagement.class, UserManagement.TYPE, registry);
-        register();
         _authProvider = provider;
+        _mbeanName = UserManagement.TYPE + "-" + _authProvider.getName();
+        _type = String.valueOf(_authProvider.getAttribute(AuthenticationProvider.TYPE));
+        register();
     }
 
     @Override
     public String getObjectInstanceName()
     {
-        return UserManagement.TYPE;
+        return ObjectName.quote(_mbeanName);
     }
 
     @Override
@@ -175,5 +182,11 @@ public class UserManagementMBean extends AMQManagedObject implements UserManagem
     public ManagedObject getParentObject()
     {
         return null;
+    }
+
+    @Override
+    public String getAuthenticationProviderType()
+    {
+        return _type;
     }
 }

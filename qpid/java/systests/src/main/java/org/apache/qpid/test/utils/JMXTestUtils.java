@@ -381,9 +381,10 @@ public class JMXTestUtils
         return getManagedObject(LoggingManagement.class, objectName);
     }
 
-    public UserManagement getUserManagement() throws MalformedObjectNameException
+    public UserManagement getUserManagement(String name) throws MalformedObjectNameException
     {
-        ObjectName objectName = new ObjectName("org.apache.qpid:type=UserManagement,name=UserManagement");
+        String umName = ObjectName.quote(UserManagement.TYPE + "-" + name);
+        ObjectName objectName = new ObjectName("org.apache.qpid:type=UserManagement,name=" + umName);
         return getManagedObject(UserManagement.class, objectName);
     }
 
