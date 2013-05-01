@@ -23,7 +23,7 @@ use cqpid_perl;
 
 package qpid::messaging;
 
-use qpid::messaging::codec;
+use qpid::messaging;
 use qpid::messaging::Address;
 use qpid::messaging::Duration;
 use qpid::messaging::Message;
