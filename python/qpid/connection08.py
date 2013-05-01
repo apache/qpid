@@ -151,6 +151,12 @@ class Connection:
   def read_0_9(self):
     return self.read_8_0()
 
+  def write_0_91(self, frame):
+    self.write_8_0(frame)
+
+  def read_0_91(self):
+    return self.read_8_0()
+
   def write_0_10(self, frame):
     c = self.codec
     flags = 0
