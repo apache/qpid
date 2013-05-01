@@ -79,7 +79,7 @@
             when starting broker: "no data directory"
           </title>
           <para>
-            The qpidd broker requires you to set a data directory or specify
+            The C++ Broker requires you to set a data directory or specify
             --no-data-dir (see help for more details). The data
             directory is used for the journal, so it is important when
             reliability counts. Make sure your process has write permission
@@ -258,25 +258,77 @@ Daemon options:
                               returns 1
   -q [ --quit ]               Tells the daemon to shut down
 Logging options:
-  --log-output FILE (stderr)  Send log output to FILE. FILE can be a file name
-                              or one of the special values:
-                              stderr, stdout, syslog
   -t [ --trace ]              Enables all logging
-  --log-enable RULE (error+)  Enables logging for selected levels and component
-                              s. RULE is in the form 'LEVEL+:PATTERN'
-                              Levels are one of:
-                              trace debug info notice warning error critical
+  --log-enable RULE (notice+) Enables logging for selected levels and components. 
+                              RULE is in the form 'LEVEL[+-][:PATTERN]'
+                              LEVEL is one of: 
+                                 trace debug info notice warning error critical
+                              PATTERN is a logging category name, or a namespace-qualified 
+                              function name or name fragment. 
+                                 Logging category names are: 
+                                 Security Broker Management Protocol System HA Messaging Store 
+                                 Network Test Client Model Unspecified
+
                               For example:
-                              '--log-enable warning+' logs all warning, error
-                              and critical messages.
-                              '--log-enable debug:framing' logs debug messages
-                              from the framing namespace. This option can be
-                              used multiple times
-  --log-time yes|no (1)       Include time in log messages
-  --log-level yes|no (1)      Include severity level in log messages
-  --log-source yes|no (0)     Include source file:line in log messages
-  --log-thread yes|no (0)     Include thread ID in log messages
-  --log-function yes|no (0)   Include function signature in log messages
+                                  '--log-enable warning+'
+                                  logs all warning, error and critical messages.
+
+                                  '--log-enable trace+:Broker'
+                                  logs all category 'Broker' messages.
+
+                                  '--log-enable debug:framing'
+                                  logs debug messages from all functions with 'framing' in 
+                                  the namespace or function name.
+
+                              This option can be used multiple times
+
+  --log-disable RULE          Disables logging for selected levels and components. 
+                              RULE is in the form 'LEVEL[+-][:PATTERN]'
+                              LEVEL is one of: 
+                                 trace debug info notice warning error critical
+                              PATTERN is a logging category name, or a namespace-qualified 
+                              function name or name fragment. 
+                                 Logging category names are: 
+                                 Security Broker Management Protocol System HA Messaging Store 
+                                 Network Test Client Model Unspecified
+
+                              For example:
+                                  '--log-disable warning-'
+                                  disables logging all warning, notice, info, debug, and 
+                                  trace messages.
+
+                                  '--log-disable trace:Broker'
+                                  disables all category 'Broker' trace messages.
+
+                                  '--log-disable debug-:qmf::'
+                                  disables logging debug and trace messages from all functions 
+                                  with 'qmf::' in the namespace.
+
+                              This option can be used multiple times
+
+  --log-time yes|no (1)                 Include time in log messages
+  --log-level yes|no (1)                Include severity level in log messages
+  --log-source yes|no (0)               Include source file:line in log 
+                                        messages
+  --log-thread yes|no (0)               Include thread ID in log messages
+  --log-function yes|no (0)             Include function signature in log 
+                                        messages
+  --log-hires-timestamp yes|no (0)      Use hi-resolution timestamps in log 
+                                        messages
+  --log-category yes|no (1)             Include category in log messages
+  --log-prefix STRING                   Prefix to prepend to all log messages
+
+Logging sink options:
+  --log-to-stderr yes|no (1)            Send logging output to stderr
+  --log-to-stdout yes|no (0)            Send logging output to stdout
+  --log-to-file FILE                    Send log output to FILE.
+  --log-to-syslog yes|no (0)            Send logging output to syslog;
+                                        customize using --syslog-name and 
+                                        --syslog-facility
+  --syslog-name NAME (qpidd)            Name to use in syslog messages
+  --syslog-facility LOG_XXX (LOG_DAEMON) 
+                                        Facility to use in syslog messages
+
 </programlisting>
 	  <!--h2--></section>
           <section role="h2" id="RASC-Loadingextramodules"><title>
@@ -381,5 +433,414 @@ self.assertEqual(rc.status, 0)
 self.assertEqual(rc.text, "OK")
     </programlisting>
   </example>
+<!--h2--></section>
+<section role="h2" id="RASC-logging-options">
+  <title>Logging Options</title>
+  <para>
+    The C++ Broker provides a rich set of logging options. To use logging effectively
+    a user must select a useful set of options to expose the log messages of interest.
+    This section introduces the logging options and how they are used in practice.
+  </para>
+  <section role="h3" id="RASC-LogConcepts">
+    <title>Logging Concepts</title>
+
+    <section role="h4" id="RASC-LogConcept-level">
+      <title>Log Level</title>
+      <para>
+	The C++ Broker has a traditional set of log severity levels. The log levels
+	range from low frequency and high importance critical level
+	to high frequency and low importance trace level.
+      </para>
+      <table>
+	<title>C++ Broker Log Severity Levels</title>
+	<tgroup cols="2">
+	  <thead>
+	    <row>
+	      <entry>Name</entry>
+	      <entry>Level</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row><entry>critical</entry><entry>high</entry></row>
+	    <row><entry>error</entry>   <entry></entry>    </row>
+	    <row><entry>warning</entry> <entry></entry>    </row>
+	    <row><entry>notice</entry>  <entry></entry>    </row>
+	    <row><entry>info</entry>    <entry></entry>    </row>
+	    <row><entry>debug</entry>   <entry></entry>    </row>
+	    <row><entry>trace</entry>   <entry>low</entry> </row>
+	  </tbody>
+	</tgroup>
+      </table>
+    <!--h4--></section>
+
+    <section role="h4" id="RASC-LogConcept-category">
+      <title>Log Category</title>
+      <para>
+	The C++ Broker groups log messages into categories. The log category
+	name may then be used to enable and disable groups of related messages
+	at varying log levels.
+      </para>
+      <table>
+	<title>C++ Broker Log Categories</title>
+	<tgroup cols="1">
+	  <thead>
+	    <row>
+	      <entry>Name</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row><entry>Security</entry></row>
+	    <row><entry>Broker</entry></row>
+	    <row><entry>Management</entry></row>
+	    <row><entry>Protocol</entry></row>
+	    <row><entry>System</entry></row>
+	    <row><entry>HA</entry></row>
+	    <row><entry>Messaging</entry></row>
+	    <row><entry>Store</entry></row>
+	    <row><entry>Network</entry></row>
+	    <row><entry>Test</entry></row>
+	    <row><entry>Client</entry></row>
+	    <row><entry>Model</entry></row>
+	    <row><entry>Unspecified</entry></row>
+	  </tbody>
+	</tgroup>
+      </table>
+      <para>
+	Generally speaking the log categories are groupings of messages from files 
+	related by
+	thier placement in the source code directory structure. The 
+	<emphasis>Model</emphasis> category is an exception. Debug log entries 
+	identified by the Model category expose the creation, deletion, and usage 
+	statistics for managed objects in the broker. Log messages in the Model 
+	category are emitted by source files scattered throughout the source tree.
+      </para>
+    <!--h4--></section>
+
+    <section role="h4" id="RASC-LogConcept-StatementAttributes">
+      <title>Log Statement Attributes</title>
+      <para>
+	Every log statement in the C++ Broker has fixed attributes that may be
+	used in enabling or disabling log messages.
+      </para>
+      <table>
+	<title>C++ Broker Log Statement Attributes</title>
+	<tgroup cols="2">
+	  <thead>
+	    <row>
+	      <entry>Name</entry>
+	      <entry>Description</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>Level</entry>
+	      <entry>Severity level</entry>
+	    </row>
+	    <row>
+	      <entry>Category</entry>
+	      <entry>Category</entry>
+	    </row>
+	    <row>
+	      <entry>Function</entry>
+	      <entry>Namespace-qualified source function name</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+    <!--h4--></section>
+
+  <!--h3--></section>
+  <section role="h3" id="RASC-LogRules-EnableDisable">
+    <title>Enabling and Disabling Log Messages</title>
+    <para>
+      The Qpid C++ Broker has hundreds of log message statements in the source
+      code. Under typical conditions
+      most of the messages are deselected and never emitted as actual logs.
+      However, under some circumstances debug and trace messages must be enabled
+      to analyze broker behavior. This section discusses how the broker enables
+      and disables log messages.
+    </para>
+    <para>
+      At startup the broker processes command line and option file '--log-enable RULE' and
+      '--log-disable RULE' options using the following rule format:
+    </para>
+    <programlisting>
+  LEVEL[+-][:PATTERN}
+    </programlisting>
+    <table>
+      <title>C++ Broker Log Enable/Disable RULE Format</title>
+      <tgroup cols="2">
+	<thead>
+	  <row>
+	    <entry>Name</entry>
+	    <entry>Description</entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>LEVEL</entry>
+	    <entry>Severity level</entry>
+	  </row>
+	  <row>
+	    <entry>[+-]</entry>
+	    <entry>
+	      Option level modifiers. <emphasis>'+'</emphasis> indicates 
+	      <emphasis>this level and above</emphasis>. 
+	      <emphasis>'-'</emphasis> indicates <emphasis>this level and below</emphasis>.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>[:PATTERN]</entry>
+	    <entry>
+	      If PATTERN matches a Category name then the log option applies only
+	      to log messages with the named category. Otherwise, the pattern is stored
+	      as a function name match string.
+	    </entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+    <para>
+      As the options are procesed the results are aggregated into two pairs of tables.
+    </para>
+    <table>
+      <title>C++ Broker Log Enable/Disable Settings Tables</title>
+      <tgroup cols="2">
+	<thead>
+	  <row>
+	    <entry>Name</entry>
+	    <entry>Description</entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>Function Table</entry>
+	    <entry>
+	      A set of vectors of accumulated function name patterns. 
+	      There is a separate vector of name patterns for each log level.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>Category Table</entry>
+	    <entry>
+	      A simple two dimensional array of boolean values indexed by 
+	      [Level][Category] indicating
+	      if all log statements are enabled for the Level and Category pair.
+	    </entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+    <para>
+      --log-enable statements and --log-disable statements are aggregated into dedicated
+      Function and Category tables. With this scheme multiple conflicting log enable and
+      disable commands may be processed in any order yet produce consistent patterns
+      of enabled broker log statements.
+    </para>
+  <!--h3--></section>
+
+  <section role="h3" id="RASC-LogRules-RuleMatching">
+    <title>Determining if a Log Statement is Enabled</title>
+    <para>
+      Function Table Lookups are simple string pattern matches where the searchable
+      text is the domain-name qualified function name from the log statement and the
+      search pattern is the set of Function Table entries for a given log level.
+    </para>
+    <para>
+      Category Table Lookups are boolean array queries where the Level and Category 
+      indexes are from the log statement.
+    </para>
+    <para>
+      Each log statment sends its Level, Category, and FunctionName to the
+      Logger for evaluation. As a result the log statement is either visible or hidden.
+    </para>
+    <table>
+      <title>C++ Broker Log Statement Visibility Determination</title>
+      <tgroup cols="2">
+	<thead>
+	  <row>
+	    <entry>Test</entry>
+	    <entry>Description</entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>Disabled Function</entry>
+	    <entry>
+	      If the statement matches a Disabled Function pattern then the
+	      statement is hidden.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>Disabled Category</entry>
+	    <entry>
+	      If the Disabled Category table for this [Level][Category] is true then the
+	      statement is hidden.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>Enabled Function</entry>
+	    <entry>
+	      If the statement matches a Enabled Function pattern then the
+	      statement is visible.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>Enabled Category</entry>
+	    <entry>
+	      If the Enabled Category table for this [Level][Category] is true then the
+	      statement is visible.
+	    </entry>
+	  </row>
+	  <row>
+	    <entry>Unreferenced</entry>
+	    <entry>
+	      Log statements that are unreferenced by specific enable rules are by 
+	      default hidden.
+	    </entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+  <!--h3--></section>
+
+  <section role="h3" id="RASC-LogRules-Reenabling">
+    <title>Changing Log Enable/Disable Settings at Run Time</title>
+    <para>
+      The C++ Broker provides QMF management methods that allow users to query and to set
+      the log enable and disable settings while the broker is running.
+    </para>
+    <table>
+      <title>QMF Management - Broker Methods for Managing the Log Enable/Disable Settings</title>
+      <tgroup cols="2">
+	<thead>
+	  <row>
+	    <entry>Method</entry>
+	    <entry>Description</entry>
+	  </row>
+	</thead>
+	<tbody>
+	  <row>
+	    <entry>getLogLevel</entry>
+	    <entry>Get the log enable/disable settings.</entry>
+	  </row>
+	  <row>
+	    <entry>setLogLevel</entry>
+	    <entry>Set the log enable/disable settings.</entry>
+	  </row>
+	</tbody>
+      </tgroup>
+    </table>
+    <para>
+      The management methods use a RULE format similar to the option RULE format:
+    </para>
+    <programlisting>
+  [!]LEVEL[+-][:PATTERN]
+    </programlisting>
+    <para>
+      The difference is the leading exclamation point that identifies disable rules.
+    </para>
+    <example>
+      <title>
+	Querying Log Settings via qpid-ctrl utility
+      </title>
+      <para>
+	At start up a C++ Broker may have the following options:
+      </para>
+      <programlisting>
+  --log-enable debug+
+  --log-enable trace+:Protocol
+  --log-disable info-:Management
+      </programlisting>
+      <para>
+	The following command:
+      </para>
+      <programlisting>
+  qpid-ctrl getLogLevel
+      </programlisting>
+      <para>
+	will return the following result:
+      </para>
+      <programlisting>
+  level=debug+,trace+:Protocol,!info-:Management
+      </programlisting>
+    </example>
+    <example>
+      <title>
+	Setting Log Settings via qpid-ctrl utility
+      </title>
+      <para>
+	New broker log options may be set at any time using qpid-ctrl
+      </para>
+      <programlisting>
+  qpid-ctrl setLogLevel level='debug+:Broker !debug-:broker::Broker::ManagementMethod'
+      </programlisting>
+    </example>
+  <!--h3--></section>
+
+  <section role="h3" id="RASC-LogRules-Explorer">
+    <title>Discovering Log Sources</title>
+    <para>
+      A common condition for a user is being swamped by log messages that are not
+      interesting for some debug situation. Conversely, a particular log entry
+      may be of interest all the time but enabling all log levels just to see a
+      single log entry is too much. How can a user find and specify a pattern
+      to single out logs of interest?
+    </para>
+    <para>
+      The easiest way to hide messages it to disable logs at log level and 
+      category combinations. This may not always work since using only these 
+      coarse controls the log messages of interest may also be hidden. 
+      To discover a more precise filter to specify the messages you want 
+      to show or to hide you may temporarily enable the 
+      <emphasis>"--log-function=yes"</emphasis> option. 
+      The following log entries show a typical log message without and 
+      with the log function names enabled:
+    </para>
+    <programlisting>
+  2013-05-01 11:16:01 [Broker] notice Broker running
+  2013-05-01 11:16:54 [Broker] notice qpid::broker::Broker::run: Broker running
+    </programlisting>
+    <para>
+      This log entry is emitted by function <emphasis>qpid::broker::Broker::run</emphasis>
+      and this is the function name pattern to be used in specific log enable and 
+      disable rules.
+      For example, this log entry could be disabled with any of the following:
+    </para>
+    <programlisting>
+  --log-disable notice                            [1]
+  --log-disable notice:qpid::                     [2]
+  --log-disable notice:Broker                     [3]
+  --log-disable notice-:Broker::run               [4]
+  --log-disable notice:qpid::broker::Broker::run  [5]
+    </programlisting>
+    <itemizedlist>
+      <listitem>
+	[1] Disables all messages at notice level.
+      </listitem>
+      <listitem>
+	[2] Disables all messages at notice level in qpid:: name space. This is
+	very broad and disables many log messages.
+      </listitem>
+      <listitem>
+	[3] Disables the category <emphasis>[Broker]</emphasis> and is not specific
+	to the function. Category names supercede function name fragments in
+	log option processing
+      </listitem>
+      <listitem>
+	[4] Disables the function.
+      </listitem>
+      <listitem>
+	[5] Disables the function.
+      </listitem>
+    </itemizedlist>
+    <para>
+      Remember that the log filter matching PATTERN strings are matched against the 
+      domain-name qualified function names associated with the log statement
+      and not against the log message text itself. That is, in the previous example
+      log filters cannot be set on the log text <emphasis>Broker running</emphasis>
+    </para>
+  <!--h3--></section>
 <!--h2--></section>
 </section>
