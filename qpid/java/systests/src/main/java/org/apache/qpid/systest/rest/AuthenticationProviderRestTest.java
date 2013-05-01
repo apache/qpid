@@ -60,7 +60,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         }
     }
 
-    public void testPutCreateSecondPlainPrincipalDatabaseProviderFails() throws Exception
+    public void testPutCreateSecondPlainPrincipalDatabaseProviderSucceeds() throws Exception
     {
         File principalDatabase = getRestTestHelper().createTemporaryPasswdFile(new String[]{"admin2", "guest2", "test2"});
 
@@ -71,7 +71,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, principalDatabase.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
-        assertEquals("Expected to fail because we can have only one password provider", 409, responseCode);
+        assertEquals("failed to create authentication provider", 201, responseCode);
     }
 
     public void testPutCreateNewAnonymousProvider() throws Exception
@@ -105,19 +105,6 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
         responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Update with new ID should fail", 409, responseCode);
-    }
-
-    public void testDeleteOfDefaultAuthenticationProviderFails() throws Exception
-    {
-        String providerName = TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER;
-
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName , "DELETE", null);
-        assertEquals("Unexpected response code", 409, responseCode);
-
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
-        assertNotNull("Providers details cannot be null", providerDetails);
-        assertEquals("Unexpected number of providers", 1, providerDetails.size());
-        assertProvider(true, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE, providerDetails.get(0));
     }
 
     public void testDeleteOfUsedAuthenticationProviderFails() throws Exception

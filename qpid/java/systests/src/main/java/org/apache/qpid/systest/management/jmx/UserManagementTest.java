@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,9 +30,6 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
@@ -74,7 +70,7 @@ public class UserManagementTest extends QpidBrokerTestCase
 
         _testUserName = getTestName() + System.currentTimeMillis();
 
-        _userManagement = _jmxUtils.getUserManagement();
+        _userManagement = _jmxUtils.getUserManagement(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
     }
 
 
@@ -158,6 +154,12 @@ public class UserManagementTest extends QpidBrokerTestCase
         _userManagement.reloadData();
 
         assertJmsConnectionSucceeds(_testUserName, TEST_PASSWORD);
+    }
+
+    public void testGetAuthenticationProviderType() throws Exception
+    {
+        String actualType = _userManagement.getAuthenticationProviderType();
+        assertEquals("unexpected authentication provider type", getAuthenticationManagerType(), actualType);
     }
 
     protected Passwd createPasswordEncodingUtility()

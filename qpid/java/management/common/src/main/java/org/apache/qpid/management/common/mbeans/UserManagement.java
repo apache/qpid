@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
@@ -118,5 +119,11 @@ public interface UserManagement
                     impact = MBeanOperationInfo.INFO)
     TabularData viewUsers();
 
-
+    /**
+     * The type of the underlying authentication provider being managed.
+     *
+     * @since Qpid JMX API 2.6
+     */
+    @MBeanAttribute(name="AuthenticationProviderType", description="The type of the underlying authentication provider being managed.")
+    String getAuthenticationProviderType();
 }
