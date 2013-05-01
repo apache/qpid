@@ -100,7 +100,23 @@ struct Match
         }
     }
 };
+
+struct ScopedRelease
+{
+    bool& flag;
+    qpid::sys::Monitor& lock;
+
+    ScopedRelease(bool& f, qpid::sys::Monitor& l) : flag(f), lock(l) {}
+    ~ScopedRelease()
+    {
+        sys::Monitor::ScopedLock l(lock);
+        flag = false;
+        lock.notifyAll();
+    }
+};
 }
+
+IncomingMessages::IncomingMessages() : inUse(false) {}
 
 void IncomingMessages::setSession(qpid::client::AsyncSession s)
 {
@@ -110,10 +126,11 @@ void IncomingMessages::setSession(qpid::client::AsyncSession s)
     acceptTracker.reset();
 }
 
-bool IncomingMessages::get(Handler& handler, Duration timeout)
+bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
 {
-    {
-        sys::Mutex::ScopedLock l(lock);
+    sys::Mutex::ScopedLock l(lock);
+    AbsTime deadline(AbsTime::now(), timeout);
+    do {
         //search through received list for any transfer of interest:
         for (FrameSetQueue::iterator i = received.begin(); i != received.end(); i++)
         {
@@ -123,19 +140,42 @@ bool IncomingMessages::get(Handler& handler, Duration timeout)
                 return true;
             }
         }
-    }
-    //none found, check incoming:
-    return process(&handler, timeout);
+        if (inUse) {
+            //someone is already waiting on the incoming session queue, wait for them to finish
+            lock.wait(deadline);
+        } else {
+            inUse = true;
+            ScopedRelease release(inUse, lock);
+            sys::Mutex::ScopedUnlock l(lock);
+            //wait for suitable new message to arrive
+            return process(&handler, timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline));
+        }
+    } while (AbsTime::now() < deadline);
+    return false;
 }
 
-bool IncomingMessages::getNextDestination(std::string& destination, Duration timeout)
+bool IncomingMessages::getNextDestination(std::string& destination, qpid::sys::Duration timeout)
 {
     sys::Mutex::ScopedLock l(lock);
-    //if there is not already a received message, we must wait for one
-    if (received.empty() && !wait(timeout)) return false;
-    //else we have a message in received; return the corresponding destination
-    destination = received.front()->as<MessageTransferBody>()->getDestination();
-    return true;
+    AbsTime deadline(AbsTime::now(), timeout);
+    while (received.empty() && AbsTime::now() < deadline) {
+        if (inUse) {
+            //someone is already waiting on the sessions incoming queue
+            lock.wait(deadline);
+        } else {
+            inUse = true;
+            ScopedRelease release(inUse, lock);
+            sys::Mutex::ScopedUnlock l(lock);
+            //wait for an incoming message
+            wait(timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline));
+        }
+    }
+    if (!received.empty()) {
+        destination = received.front()->as<MessageTransferBody>()->getDestination();
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void IncomingMessages::accept()
@@ -206,6 +246,7 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
                     QPID_LOG(debug, "Pushed " << *content->getMethod() << " to received queue");
                     sys::Mutex::ScopedLock l(lock);
                     received.push_back(content);
+                    lock.notifyAll();
                 }
             } else {
                 //TODO: handle other types of commands (e.g. message-accept, message-flow etc)
@@ -225,6 +266,7 @@ bool IncomingMessages::wait(qpid::sys::Duration duration)
             QPID_LOG(debug, "Pushed " << *content->getMethod() << " to received queue");
             sys::Mutex::ScopedLock l(lock);
             received.push_back(content);
+            lock.notifyAll();
             return true;
         } else {
             //TODO: handle other types of commands (e.g. message-accept, message-flow etc)
