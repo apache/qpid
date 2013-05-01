@@ -192,7 +192,6 @@ fi
 if [ "PERL" == "$PERL" ]; then
   mkdir qpid-${VER}/perl-qpid-${VER}
   cp qpid-${VER}/cpp/bindings/qpid/perl/perl.i \
-     qpid-${VER}/cpp/bindings/qpid/perl/*pm \
      qpid-${VER}/cpp/bindings/qpid/perl/LICENSE \
      qpid-${VER}/cpp/bindings/qpid/perl/Makefile.PL \
      qpid-${VER}/cpp/bindings/qpid/perl/t/*.t \
