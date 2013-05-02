@@ -86,7 +86,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <domain name="reply text" type="shortstr">
     <assert check="notnull"/>
   </domain>
-  <class name="connection" index="10" handler="connection">
+  <class name="connection" handler="connection" index="10">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
     <method name="start" synchronous="1" index="10">
@@ -180,7 +180,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="server" implement="MUST"/>
     </method>
   </class>
-  <class name="channel" index="20" handler="channel">
+  <class name="channel" handler="channel" index="20">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
     <method name="open" synchronous="1" index="10">
@@ -224,7 +224,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="server" implement="MUST"/>
     </method>
   </class>
-  <class name="access" index="30" handler="connection">
+  <class name="access" handler="connection" index="30">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
     <method name="request" synchronous="1" index="10">
@@ -242,7 +242,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="ticket" domain="access ticket"/>
     </method>
   </class>
-  <class name="exchange" index="40" handler="channel">
+  <class name="exchange" handler="channel" index="40">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
     <method name="declare" synchronous="1" index="10">
@@ -290,7 +290,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="SHOULD"/>
     </method>
   </class>
-  <class name="queue" index="50" handler="channel">
+  <class name="queue" handler="channel" index="50">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
     <method name="declare" synchronous="1" index="10">
@@ -353,7 +353,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="message count" type="long"/>
     </method>
   </class>
-  <class name="basic" index="60" handler="channel">
+  <class name="basic" handler="channel" index="60">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MAY"/>
     <field name="content type" type="shortstr"/>
@@ -406,7 +406,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="publish" index="40" content="1">
+    <method name="publish" content="1" index="40">
       <chassis name="server" implement="MUST"/>
       <field name="ticket" domain="access ticket"/>
       <field name="exchange" domain="exchange name"/>
@@ -414,14 +414,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="mandatory" type="bit"/>
       <field name="immediate" type="bit"/>
     </method>
-    <method name="return" index="50" content="1">
+    <method name="return" content="1" index="50">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
     </method>
-    <method name="deliver" index="60" content="1">
+    <method name="deliver" content="1" index="60">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="delivery tag" domain="delivery tag"/>
@@ -437,7 +437,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="queue" domain="queue name"/>
       <field name="no ack" domain="no ack"/>
     </method>
-    <method name="get-ok" synchronous="1" index="71" content="1">
+    <method name="get-ok" content="1" synchronous="1" index="71">
       <chassis name="client" implement="MAY"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="redelivered" domain="redelivered"/>
@@ -468,7 +468,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="MUST"/>
     </method>
   </class>
-  <class name="file" index="70" handler="channel">
+  <class name="file" handler="channel" index="70">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <field name="content type" type="shortstr"/>
@@ -528,7 +528,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="MUST"/>
       <field name="staged size" type="longlong"/>
     </method>
-    <method name="stage" index="50" content="1">
+    <method name="stage" content="1" index="50">
       <chassis name="server" implement="MUST"/>
       <chassis name="client" implement="MUST"/>
     </method>
@@ -541,7 +541,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="immediate" type="bit"/>
       <field name="identifier" type="shortstr"/>
     </method>
-    <method name="return" index="70" content="1">
+    <method name="return" content="1" index="70">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
@@ -568,7 +568,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="requeue" type="bit"/>
     </method>
   </class>
-  <class name="stream" index="80" handler="channel">
+  <class name="stream" handler="channel" index="80">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <field name="content type" type="shortstr"/>
@@ -611,7 +611,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="publish" index="40" content="1">
+    <method name="publish" content="1" index="40">
       <chassis name="server" implement="MUST"/>
       <field name="ticket" domain="access ticket"/>
       <field name="exchange" domain="exchange name"/>
@@ -619,14 +619,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="mandatory" type="bit"/>
       <field name="immediate" type="bit"/>
     </method>
-    <method name="return" index="50" content="1">
+    <method name="return" content="1" index="50">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
     </method>
-    <method name="deliver" index="60" content="1">
+    <method name="deliver" content="1" index="60">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="delivery tag" domain="delivery tag"/>
@@ -636,7 +636,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       </field>
     </method>
   </class>
-  <class name="tx" index="90" handler="channel">
+  <class name="tx" handler="channel" index="90">
     <chassis name="server" implement="SHOULD"/>
     <chassis name="client" implement="MAY"/>
     <method name="select" synchronous="1" index="10">
@@ -661,7 +661,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="MUST"/>
     </method>
   </class>
-  <class name="dtx" index="100" handler="channel">
+  <class name="dtx" handler="channel" index="100">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <method name="select" synchronous="1" index="10">
@@ -682,7 +682,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="client" implement="MUST"/>
     </method>
   </class>
-  <class name="tunnel" index="110" handler="tunnel">
+  <class name="tunnel" handler="tunnel" index="110">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <field name="headers" type="table"/>
@@ -690,12 +690,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <field name="data name" type="shortstr"/>
     <field name="durable" type="octet"/>
     <field name="broadcast" type="octet"/>
-    <method name="request" index="10" content="1">
+    <method name="request" content="1" index="10">
       <chassis name="server" implement="MUST"/>
       <field name="meta data" type="table"/>
     </method>
   </class>
-  <class name="test" index="120" handler="channel">
+  <class name="test" handler="channel" index="120">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="SHOULD"/>
     <method name="integer" synchronous="1" index="10">
@@ -764,12 +764,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="integer result" type="longlong"/>
       <field name="string result" type="longstr"/>
     </method>
-    <method name="content" synchronous="1" index="40" content="1">
+    <method name="content" content="1" synchronous="1" index="40">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="content-ok"/>
     </method>
-    <method name="content-ok" synchronous="1" index="41" content="1">
+    <method name="content-ok" content="1" synchronous="1" index="41">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <field name="content checksum" type="long"/>
