@@ -1193,12 +1193,21 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
                  << " user:" << userId
                  << " rhost:" << connectionId
     );
-    if (acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,NULL)) {
-        throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
-    }
-
     Queue::shared_ptr queue = queues.find(name);
     if (queue) {
+        if (acl) {
+            std::map<acl::Property, std::string> params;
+            const qpid::broker::QueueSettings settings = queue->getSettings();
+            boost::shared_ptr<Exchange> altEx = queue->getAlternateExchange();
+            params.insert(make_pair(acl::PROP_ALTERNATE, (altEx) ? altEx->getName() : "" ));
+            params.insert(make_pair(acl::PROP_DURABLE, queue->isDurable() ? _TRUE : _FALSE));
+            params.insert(make_pair(acl::PROP_EXCLUSIVE, queue->hasExclusiveOwner() ? _TRUE : _FALSE));
+            params.insert(make_pair(acl::PROP_AUTODELETE, queue->isAutoDelete() ? _TRUE : _FALSE));
+            params.insert(make_pair(acl::PROP_POLICYTYPE, settings.dropMessagesAtLimit ? "ring" : "reject"));
+
+            if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,&params) )
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
+        }
         if (check) check(queue);
         if (acl)
             acl->recordDestroyQueue(name);
@@ -1256,16 +1265,23 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
     QPID_LOG_CAT(debug, model, "Deleting exchange. name:" << name
         << " user:" << userId
         << " rhost:" << connectionId);
-    if (acl) {
-        if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
-            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
-    }
-
     if (name.empty()) {
         throw framing::InvalidArgumentException(QPID_MSG("Delete not allowed for default exchange"));
     }
     Exchange::shared_ptr exchange(exchanges.get(name));
     if (!exchange) throw framing::NotFoundException(QPID_MSG("Delete failed. No such exchange: " << name));
+
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        Exchange::shared_ptr altEx = exchange->getAlternate();
+        params.insert(make_pair(acl::PROP_TYPE, exchange->getType()));
+        params.insert(make_pair(acl::PROP_ALTERNATE, (altEx) ? altEx->getName() : "" ));
+        params.insert(make_pair(acl::PROP_DURABLE, exchange->isDurable() ? _TRUE : _FALSE));
+
+        if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,&params) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
+    }
+
     if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Cannot delete " << name <<", in use as alternate-exchange."));
     if (exchange->isDurable()) store->destroy(*exchange);
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
