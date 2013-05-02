@@ -85,13 +85,27 @@ static struct SslPlugin : public Plugin {
 
     void earlyInitialize(Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (broker && !options.certDbPath.empty()) {
+        if (broker && broker->shouldListen("ssl")) {
             broker::Broker::Options& opts = broker->getOptions();
+
+            if (options.certDbPath.empty()) {
+                QPID_LOG(notice, "SSL plugin not enabled, you must set --ssl-cert-db to enable it.");
+                broker->disableListening("ssl");
+                return;
+            }
+
+            try {
+                ssl::initNSS(options, true);
+                nssInitialized = true;
+            } catch (const std::exception& e) {
+                QPID_LOG(error, "Failed to initialise SSL plugin: " << e.what());
+                broker->disableListening("ssl");
+                return;
+            }
 
             if (opts.port == options.port && // AMQP & AMQPS ports are the same
                 opts.port != 0 &&
-                broker->shouldListen("tcp")&&
-                broker->shouldListen("ssl")) {
+                broker->shouldListen("tcp")) {
                 multiplex = true;
                 broker->disableListening("tcp");
             }
@@ -103,39 +117,28 @@ static struct SslPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
-            if (options.certDbPath.empty()) {
-                QPID_LOG(notice, "SSL plugin not enabled, you must set --ssl-cert-db to enable it.");
-            } else {
-                try {
-                    ssl::initNSS(options, true);
-                    nssInitialized = true;
-
-                    const broker::Broker::Options& opts = broker->getOptions();
-                    uint16_t port = options.port;
-                    TransportAcceptor::shared_ptr ta;
-                    if (broker->shouldListen("ssl")) {
-                        SocketAcceptor* sa =
-                            new SocketAcceptor(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer());
-                            port = sa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(options.port), opts.connectionBacklog,
-                                                multiplex ?
-                                                    boost::bind(&createServerSSLMuxSocket, options) :
-                                                    boost::bind(&createServerSSLSocket, options));
-                        if ( port!=0 ) {
-                            ta.reset(sa);
-                            QPID_LOG(notice, "Listening for " <<
-                                            (multiplex ? "SSL or TCP" : "SSL") <<
-                                            " connections on TCP/TCP6 port " <<
-                                            port);
-                        }
-                    }
-                    TransportConnector::shared_ptr tc(
-                        new SocketConnector(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer(),
-                                            &createClientSSLSocket));
-                    broker->registerTransport("ssl", ta, tc, port);
-                } catch (const std::exception& e) {
-                    QPID_LOG(error, "Failed to initialise SSL plugin: " << e.what());
+            const broker::Broker::Options& opts = broker->getOptions();
+            uint16_t port = options.port;
+            TransportAcceptor::shared_ptr ta;
+            if (broker->shouldListen("ssl")) {
+                SocketAcceptor* sa =
+                    new SocketAcceptor(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer());
+                    port = sa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(options.port), opts.connectionBacklog,
+                                        multiplex ?
+                                            boost::bind(&createServerSSLMuxSocket, options) :
+                                            boost::bind(&createServerSSLSocket, options));
+                if ( port!=0 ) {
+                    ta.reset(sa);
+                    QPID_LOG(notice, "Listening for " <<
+                                    (multiplex ? "SSL or TCP" : "SSL") <<
+                                    " connections on TCP/TCP6 port " <<
+                                    port);
                 }
             }
+            TransportConnector::shared_ptr tc(
+                new SocketConnector(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer(),
+                                    &createClientSSLSocket));
+            broker->registerTransport("ssl", ta, tc, port);
         }
     }
 } sslPlugin;
