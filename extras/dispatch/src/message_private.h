@@ -78,6 +78,9 @@ typedef struct {
     dx_field_location_t  compose_count;
     uint32_t             length;
     uint32_t             count;
+    dx_buffer_t         *parse_buffer;
+    unsigned char       *parse_cursor;
+    dx_message_depth_t   parse_depth;
 } dx_message_content_t;
 
 typedef struct {

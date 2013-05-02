@@ -150,6 +150,35 @@ static char* test_insufficient_check_depth(void *context)
 }
 
 
+static char* test_check_multiple(void *context)
+{
+    pn_message_t *pn_msg = pn_message();
+    pn_message_set_address(pn_msg, "test_addr_2");
+
+    size_t size = 10000;
+    int result = pn_message_encode(pn_msg, buffer, &size);
+    if (result != 0) return "Error in pn_message_encode";
+
+    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_content_t *content = MSG_CONTENT(msg);
+
+    set_content(content, size);
+
+    int valid = dx_message_check(msg, DX_DEPTH_DELIVERY_ANNOTATIONS);
+    if (!valid) return "dx_message_check returns 'invalid' for DELIVERY_ANNOTATIONS";
+
+    valid = dx_message_check(msg, DX_DEPTH_BODY);
+    if (!valid) return "dx_message_check returns 'invalid' for BODY";
+
+    valid = dx_message_check(msg, DX_DEPTH_PROPERTIES);
+    if (!valid) return "dx_message_check returns 'invalid' for PROPERTIES";
+
+    dx_free_message(msg);
+
+    return 0;
+}
+
+
 int message_tests(void)
 {
     int result = 0;
@@ -157,6 +186,7 @@ int message_tests(void)
     TEST_CASE(test_send_to_messenger, 0);
     TEST_CASE(test_receive_from_messenger, 0);
     TEST_CASE(test_insufficient_check_depth, 0);
+    TEST_CASE(test_check_multiple, 0);
 
     return result;
 }

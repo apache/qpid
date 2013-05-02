@@ -59,18 +59,44 @@ ALLOC_DECLARE(dx_agent_request_t);
 ALLOC_DEFINE(dx_agent_request_t);
 
 
+static void dx_agent_process_request(dx_message_t *msg)
+{
+    if (!dx_message_check(msg, DX_DEPTH_BODY))
+        return;
+    printf("Processing Agent Request\n");
+}
+
+
 static void dx_agent_timer_handler(void *context)
 {
-    // TODO - Process the in_fifo here
+    dx_agent_t   *agent = (dx_agent_t*) context;
+    dx_message_t *msg;
+
+    do {
+        sys_mutex_lock(agent->lock);
+        msg = DEQ_HEAD(agent->in_fifo);
+        if (msg)
+            DEQ_REMOVE_HEAD(agent->in_fifo);
+        sys_mutex_unlock(agent->lock);
+
+        if (msg) {
+            dx_agent_process_request(msg);
+            dx_free_message(msg);
+        }
+    } while (msg);
 }
 
 
 static void dx_agent_rx_handler(void *context, dx_message_t *msg)
 {
-    dx_agent_t *agent = (dx_agent_t*) context;
-    DEQ_INSERT_TAIL(agent->in_fifo, msg);
+    dx_agent_t   *agent = (dx_agent_t*) context;
+    dx_message_t *copy  = dx_message_copy(msg);
+
+    sys_mutex_lock(agent->lock);
+    DEQ_INSERT_TAIL(agent->in_fifo, copy);
+    sys_mutex_unlock(agent->lock);
+
     dx_timer_schedule(agent->timer, 0);
-    printf("dx_agent_rx_handler - inbound message\n");
 }
 
 
