@@ -32,7 +32,7 @@ class GenExceptions < CppGen
     enum.choices.each { |c|
       name=c.name.typename+suffix+"Exception"
       genl
-      doxygen_comment { genl c.doc }
+      doxygen_comment { genl c.doc } if c.doc
       struct(name, "public #{base}") {
         genl "#{name}(const std::string& msg=std::string())"
         genl "    : #{base}(#{ns}::#{c.name.shout}, msg) {}"
