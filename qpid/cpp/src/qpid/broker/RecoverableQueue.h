@@ -29,7 +29,7 @@ namespace qpid {
 namespace broker {
 
 class ExternalQueueStore;
-class QueueSettings;
+struct QueueSettings;
 
 /**
  * The interface through which messages are added back to queues on
@@ -52,7 +52,7 @@ public:
     virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
     virtual ExternalQueueStore* getExternalQueueStore() const = 0;
     virtual const QueueSettings& getSettings() const = 0;
-    virtual void addArgument(const std::string& key, const types::Variant& value) = 0;
+    virtual void addArgument(const std::string& key, const qpid::types::Variant& value) = 0;
 
 };
 
