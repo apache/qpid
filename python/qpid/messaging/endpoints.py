@@ -264,7 +264,10 @@ class Connection(Endpoint):
     if self._open:
       raise ConnectionError("already open")
     self._open = True
-    self.attach()
+    timeout = None
+    if self.reconnect and self.reconnect_timeout > 0:
+        timeout = self.reconnect_timeout
+    self.attach(timeout=timeout)
 
   @synchronized
   def opened(self):
@@ -274,7 +277,7 @@ class Connection(Endpoint):
     return self._open
 
   @synchronized
-  def attach(self):
+  def attach(self, timeout=None):
     """
     Attach to the remote endpoint.
     """
@@ -282,7 +285,9 @@ class Connection(Endpoint):
       self._connected = True
       self._driver.start()
       self._wakeup()
-    self._ewait(lambda: self._transport_connected and not self._unlinked())
+    if not self._ewait(lambda: self._transport_connected and not self._unlinked(), timeout=timeout):
+      self.reconnect = False
+      raise Timeout("Connection attach timed out")
 
   def _unlinked(self):
     return [l
