@@ -23,6 +23,7 @@
  */
 
 #include "qpid/broker/RecoverableMessage.h"
+#include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
