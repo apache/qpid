@@ -17,9 +17,10 @@
  * under the License.
  */
 
-#include <qpid/dispatch/log.h>
+#include "log_private.h"
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/alloc.h>
+#include <qpid/dispatch/threading.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,7 +48,8 @@ DEQ_DECLARE(dx_log_entry_t, dx_log_list_t);
 
 static int            mask = LOG_INFO;
 static dx_log_list_t  entries;
-static int            list_init = 0;
+static sys_mutex_t   *log_lock = 0;
+
 
 static char *cls_prefix(int cls)
 {
@@ -65,11 +67,6 @@ void dx_log_impl(const char *module, int cls, const char *file, int line, const 
     if (!(cls & mask))
         return;
 
-    if (list_init == 0) {
-        list_init = 1;
-        DEQ_INIT(entries);
-    }
-
     dx_log_entry_t *entry = new_dx_log_entry_t();
     entry->module = module;
     entry->cls    = cls;
@@ -84,16 +81,31 @@ void dx_log_impl(const char *module, int cls, const char *file, int line, const 
     va_end(ap);
     fprintf(stderr, "%s (%s) %s\n", module, cls_prefix(cls), entry->text);
 
+    sys_mutex_lock(log_lock);
     DEQ_INSERT_TAIL(entries, entry);
     if (DEQ_SIZE(entries) > LIST_MAX) {
         entry = DEQ_HEAD(entries);
         DEQ_REMOVE_HEAD(entries);
         free_dx_log_entry_t(entry);
     }
+    sys_mutex_unlock(log_lock);
 }
 
 void dx_log_set_mask(int _mask)
 {
     mask = _mask;
 }
+
+
+void dx_log_initialize(void)
+{
+    DEQ_INIT(entries);
+    log_lock = sys_mutex();
+}
+
+
+void dx_log_finalize(void)
+{
+}
+
 

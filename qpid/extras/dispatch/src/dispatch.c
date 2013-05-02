@@ -20,6 +20,7 @@
 #include <qpid/dispatch.h>
 #include "dispatch_private.h"
 #include "alloc_private.h"
+#include "log_private.h"
 
 /**
  * Private Function Prototypes
@@ -42,6 +43,7 @@ dx_dispatch_t *dx_dispatch(int thread_count, const char *container_name,
 {
     dx_dispatch_t *dx = NEW(dx_dispatch_t);
 
+    dx_log_initialize();
     dx_alloc_initialize();
 
     if (!container_name)
@@ -72,5 +74,6 @@ void dx_dispatch_free(dx_dispatch_t *dx)
     dx_router_free(dx->router);
     dx_container_free(dx->container);
     dx_server_free(dx->server);
+    dx_log_finalize();
 }
 
