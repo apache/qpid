@@ -91,8 +91,8 @@ class Config:
         self._clusterDurable    = False
         self._if_empty          = True
         self._if_unused         = True
-        self._fileCount         = 8
-        self._fileSize          = 24
+        self._fileCount         = None
+        self._fileSize          = None
         self._maxQueueSize      = None
         self._maxQueueCount     = None
         self._limitPolicy       = None
@@ -194,8 +194,8 @@ def OptionsAndArguments(argv):
 
     group3 = OptionGroup(parser, "Options for Adding Queues")
     group3.add_option("--cluster-durable", action="store_true", help="The new queue becomes durable if there is only one functioning cluster node")
-    group3.add_option("--file-count", action="store", type="int", default=8, metavar="<n>", help="Number of files in queue's persistence journal")
-    group3.add_option("--file-size", action="store", type="int", default=24, metavar="<n>", help="File size in pages (64KiB/page)")
+    group3.add_option("--file-count", action="store", type="int", metavar="<n>", help="Number of files in queue's persistence journal")
+    group3.add_option("--file-size", action="store", type="int", metavar="<n>", help="File size in pages (64KiB/page)")
     group3.add_option("--max-queue-size", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as bytes")
     group3.add_option("--max-queue-count", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as a number of messages")
     group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
@@ -570,8 +570,12 @@ class BrokerManager:
             declArgs[r[0]] = value
 
         if config._durable:
-            declArgs[FILECOUNT] = config._fileCount
-            declArgs[FILESIZE]  = config._fileSize
+            # allow the default fileCount and fileSize specified 
+            # in qpid config file to take prededence
+            if config._fileCount:
+                declArgs[FILECOUNT] = config._fileCount
+            if config._fileSize:
+                declArgs[FILESIZE]  = config._fileSize
 
         if config._maxQueueSize is not None:
             declArgs[MAX_QUEUE_SIZE]  = config._maxQueueSize
