@@ -1464,13 +1464,6 @@ class ACLTests(TestBase010):
                 self.fail("ACL should allow exchange bound request for myEx with queuename=q1 and binding_key='rk1.*'");
 
         try:
-            session.exchange_delete(exchange='myXml')
-            self.fail("ACL should deny exchange delete request for myXml");
-        except qpid.session.SessionException, e:
-            self.assertEqual(403,e.args[0].error_code)
-            session = self.get_session('bob','bob')
-
-        try:
             session.exchange_delete(exchange='myEx')
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
@@ -3111,6 +3104,245 @@ class ACLTests(TestBase010):
 
         # User not named in quotas is denied
         self.queue_quota('bilboGR', 'bilbo', 0)
+
+    def test_queue_delete_with_properties(self):
+        """
+        Test cases for queue delete with properties
+        """
+        aclf = self.get_acl_file()
+        aclf.write('acl allow bob@QPID access queue\n')
+        aclf.write('acl allow bob@QPID access exchange\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq1 durable=true\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq2 exclusive=true\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq3 policytype=ring\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq4 durable=false\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq5 exclusive=false\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq6 policytype=reject\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq7 autodelete=true\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq8 autodelete=false\n')
+        aclf.write('acl allow bob@QPID create queue name=qdaq9\n')
+        aclf.write('acl allow bob@QPID create exchange name=qdae9\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq1 durable=true\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq2 exclusive=true\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq3 policytype=ring\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq4 durable=false\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq5 exclusive=false\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq6 policytype=reject\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq7 autodelete=true\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq8 autodelete=false\n')
+        aclf.write('acl deny  bob@QPID delete queue name=qdaq9 alternate=qdaq9a\n')
+        aclf.write('acl allow all      access queue\n')
+        aclf.write('acl allow anonymous all all\n')
+        aclf.write('acl deny all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qdaq1", durable=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq1 durable=true");
+
+        try:
+            session.queue_delete(queue="qdaq1")
+            self.fail("ACL should deny queue delete request for qdaq1");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qdaq2", exclusive=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq2 exclusive=true");
+
+        try:
+            session.queue_delete(queue="qdaq2")
+            self.fail("ACL should deny queue delete request for qdaq2");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.policy_type"] = "ring"
+            session.queue_declare(queue="qdaq3", arguments=queue_options)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request for qdaq3 with policytype=ring");
+
+        try:
+            session.queue_delete(queue="qdaq3")
+            self.fail("ACL should deny queue delete request for qdaq3");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qdaq4", durable=False)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq4 durable=false");
+
+        try:
+            session.queue_delete(queue="qdaq4")
+            self.fail("ACL should deny queue delete request for qdaq4");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qdaq5", exclusive=False)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq5 exclusive=false");
+
+        try:
+            session.queue_delete(queue="qdaq5")
+            self.fail("ACL should deny queue delete request for qdaq5");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.policy_type"] = "reject"
+            session.queue_declare(queue="qdaq6", arguments=queue_options)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request for qdaq6 with policytype=reject");
+
+        try:
+            session.queue_delete(queue="qdaq6")
+            self.fail("ACL should deny queue delete request for qdaq6");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qdaq7", auto_delete=True)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq7 autodelete=true");
+
+        try:
+            session.queue_delete(queue="qdaq7")
+            self.fail("ACL should deny queue delete request for qdaq7");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="qdaq8", auto_delete=False)
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq8 autodelete=false");
+
+        try:
+            session.queue_delete(queue="qdaq8")
+            self.fail("ACL should deny queue delete request for qdaq8");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_declare(exchange='qdae9', type='direct')
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow exchange create request with name=qdae9");
+
+        try:
+            session.queue_declare(queue="qdaq9", alternate_exchange="qdae9")
+        except qpid.session.SessionException, e:
+            if (403 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=qdaq9 alternate=qdaq9a");
+
+        try:
+            session.queue_delete(queue="qdaq9")
+            self.fail("ACL should deny queue delete request for qdaq9");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+
+    def test_exchange_delete_with_properties(self):
+        """
+        Test cases for exchange delete with properties
+        """
+        aclf = self.get_acl_file()
+        aclf.write('acl allow bob@QPID access exchange\n')
+        aclf.write('acl allow bob@QPID create exchange\n')
+        aclf.write('acl deny  bob@QPID delete exchange name=edae1 durable=true\n')
+        aclf.write('acl deny  bob@QPID delete exchange name=edae2 alternate=edae2a\n')
+        aclf.write('acl deny  bob@QPID delete exchange type=direct\n')
+        aclf.write('acl allow bob@QPID delete exchange type=headers\n')
+        aclf.write('acl allow anonymous all all\n')
+        aclf.write('acl deny all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result):
+            self.fail(result)
+
+        session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_declare(exchange='edae1', type='direct', durable=True)
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow exchange create request with name=edae1");
+
+        try:
+            session.exchange_delete(exchange="edae1")
+            self.fail("ACL should deny exchange delete request for edae1");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_declare(exchange='edae2a', type='direct')
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow exchange create request with name=edae2a");
+
+        try:
+            session.exchange_declare(exchange='edae2', type='direct', alternate_exchange='edae2a')
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow exchange create request with name=edae2");
+
+        try:
+            session.exchange_delete(exchange="edae2")
+            self.fail("ACL should deny exchange delete request for edae2");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_declare(exchange='edae3d', type='direct')
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow exchange create request with name=edae3d");
+
+        try:
+            session.exchange_declare(exchange='edae3h', type='headers')
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow exchange create request with name=eda3h");
+
+        try:
+            session.exchange_delete(exchange="edae3d")
+            self.fail("ACL should deny exchange delete request for edae3d");
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_delete(exchange="edae3h")
+        except qpid.session.SessionException, e:
+            self.assertEqual(403,e.args[0].error_code)
+            self.fail("ACL should allow exchange delete request for edae3h");
+
+
 
 class BrokerAdmin:
     def __init__(self, broker, username=None, password=None):
