@@ -98,10 +98,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <domain name="reply text" type="shortstr">
     <assert check="notnull"/>
   </domain>
-  <class name="connection" index="10" handler="connection">
+  <class index="10" name="connection" handler="connection">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
-    <method name="start" index="10" synchronous="1">
+    <method index="10" name="start" synchronous="1">
       <rule implement="MUST"/>
       <rule implement="MUST"/>
       <chassis name="client" implement="MUST"/>
@@ -118,7 +118,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <assert check="notnull"/>
       </field>
     </method>
-    <method name="start-ok" index="11" synchronous="1">
+    <method index="11" name="start-ok" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <field name="client properties" domain="peer properties"/>
       <field name="mechanism" type="shortstr">
@@ -133,20 +133,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <assert check="notnull"/>
       </field>
     </method>
-    <method name="secure" index="20" synchronous="1">
+    <method index="20" name="secure" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <response name="secure-ok"/>
       <field name="challenge" type="longstr">
         <see name="security mechanisms"/>
       </field>
     </method>
-    <method name="secure-ok" index="21" synchronous="1">
+    <method index="21" name="secure-ok" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <field name="response" type="longstr">
         <assert check="notnull"/>
       </field>
     </method>
-    <method name="tune" index="30" synchronous="1">
+    <method index="30" name="tune" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <response name="tune-ok"/>
       <field name="channel max" type="short"/>
@@ -155,7 +155,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       </field>
       <field name="heartbeat" type="short"/>
     </method>
-    <method name="tune-ok" index="31" synchronous="1">
+    <method index="31" name="tune-ok" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <field name="channel max" type="short">
         <rule implement="MAY"/>
@@ -167,7 +167,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       </field>
       <field name="heartbeat" type="short"/>
     </method>
-    <method name="open" index="40" synchronous="1">
+    <method index="40" name="open" synchronous="1">
       <rule implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="open-ok"/>
@@ -183,11 +183,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <rule implement="SHOULD"/>
       </field>
     </method>
-    <method name="open-ok" index="41" synchronous="1">
+    <method index="41" name="open-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="known hosts" domain="known hosts"/>
     </method>
-    <method name="redirect" index="50" synchronous="1">
+    <method index="50" name="redirect" synchronous="1">
       <rule implement="SHOULD"/>
       <chassis name="client" implement="MAY"/>
       <field name="host" type="shortstr">
@@ -195,7 +195,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       </field>
       <field name="known hosts" domain="known hosts"/>
     </method>
-    <method name="close" index="60" synchronous="1">
+    <method index="60" name="close" synchronous="1">
       <rule implement="MUST"/>
       <rule implement="MAY"/>
       <rule implement="MUST"/>
@@ -207,16 +207,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="class id" domain="class id"/>
       <field name="method id" domain="method id"/>
     </method>
-    <method name="close-ok" index="61" synchronous="1">
+    <method index="61" name="close-ok" synchronous="1">
       <rule implement="SHOULD"/>
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
     </method>
   </class>
-  <class name="channel" index="20" handler="channel">
+  <class index="20" name="channel" handler="channel">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
-    <method name="open" index="10" synchronous="1">
+    <method index="10" name="open" synchronous="1">
       <rule implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="open-ok"/>
@@ -224,10 +224,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <assert check="null"/>
       </field>
     </method>
-    <method name="open-ok" index="11" synchronous="1">
+    <method index="11" name="open-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="flow" index="20" synchronous="1">
+    <method index="20" name="flow" synchronous="1">
       <rule implement="MAY"/>
       <rule implement="SHOULD"/>
       <rule implement="MAY"/>
@@ -237,18 +237,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <response name="flow-ok"/>
       <field name="active" type="bit"/>
     </method>
-    <method name="flow-ok" index="21">
+    <method index="21" name="flow-ok">
       <chassis name="server" implement="MUST"/>
       <chassis name="client" implement="MUST"/>
       <field name="active" type="bit"/>
     </method>
-    <method name="alert" index="30">
+    <method index="30" name="alert">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="details" type="table"/>
     </method>
-    <method name="close" index="40" synchronous="1">
+    <method index="40" name="close" synchronous="1">
       <rule implement="MUST"/>
       <rule implement="MAY"/>
       <chassis name="client" implement="MUST"/>
@@ -259,16 +259,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="class id" domain="class id"/>
       <field name="method id" domain="method id"/>
     </method>
-    <method name="close-ok" index="41" synchronous="1">
+    <method index="41" name="close-ok" synchronous="1">
       <rule implement="SHOULD"/>
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
     </method>
   </class>
-  <class name="access" index="30" handler="connection">
+  <class index="30" name="access" handler="connection">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
-    <method name="request" index="10" synchronous="1">
+    <method index="10" name="request" synchronous="1">
       <rule implement="MUST"/>
       <rule implement="MUST"/>
       <chassis name="server" implement="MUST"/>
@@ -282,176 +282,120 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="write" type="bit"/>
       <field name="read" type="bit"/>
     </method>
-    <method name="request-ok" index="11" synchronous="1">
+    <method index="11" name="request-ok" synchronous="1">
       <rule implement="MUST"/>
       <rule implement="MUST"/>
       <chassis name="client" implement="MUST"/>
       <field name="ticket" domain="access ticket"/>
     </method>
   </class>
-  <class name="exchange" index="40" handler="channel">
+  <class index="40" name="exchange" handler="channel">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
-    <rule implement="MUST">
-      <test/>
-    </rule>
-    <rule implement="SHOULD">
-      <test/>
-    </rule>
-    <rule implement="MAY">
-      <test/>
-    </rule>
-    <rule implement="MUST">
-      <test/>
-    </rule>
-    <method name="declare" index="10" synchronous="1">
-      <rule implement="SHOULD">
-        <test/>
-      </rule>
+    <rule implement="MUST"/>
+    <rule implement="SHOULD"/>
+    <rule implement="MAY"/>
+    <rule implement="MUST"/>
+    <method index="10" name="declare" synchronous="1">
+      <rule implement="SHOULD"/>
       <chassis name="server" implement="MUST"/>
       <response name="declare-ok"/>
       <field name="ticket" domain="access ticket">
         <rule implement="MUST"/>
       </field>
       <field name="exchange" domain="exchange name">
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
         <assert check="regexp" value="^[a-zA-Z0-9-_.:]+$"/>
       </field>
       <field name="type" type="shortstr">
-        <rule implement="MUST">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
+        <rule implement="MUST"/>
         <assert check="regexp" value="^[a-zA-Z0-9-_.:]+$"/>
       </field>
       <field name="passive" type="bit">
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
       </field>
       <field name="durable" type="bit">
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
         <rule implement="MUST"/>
       </field>
       <field name="auto delete" type="bit">
-        <rule implement="SHOULD">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="SHOULD"/>
+        <rule implement="MUST"/>
       </field>
       <field name="internal" type="bit"/>
       <field name="nowait" type="bit"/>
       <field name="arguments" type="table"/>
     </method>
-    <method name="declare-ok" index="11" synchronous="1">
+    <method index="11" name="declare-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="delete" index="20" synchronous="1">
+    <method index="20" name="delete" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="delete-ok"/>
       <field name="ticket" domain="access ticket">
         <rule implement="MUST"/>
       </field>
       <field name="exchange" domain="exchange name">
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
         <assert check="notnull"/>
       </field>
       <field name="if unused" type="bit">
-        <rule implement="SHOULD">
-          <test/>
-        </rule>
-        <rule implement="SHOULD">
-          <test/>
-        </rule>
+        <rule implement="SHOULD"/>
+        <rule implement="SHOULD"/>
       </field>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="delete-ok" index="21" synchronous="1">
+    <method index="21" name="delete-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="bound" index="22" synchronous="1">
+    <method index="22" name="bound" synchronous="1">
       <chassis name="server" implement="SHOULD"/>
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
       <field name="queue" domain="queue name"/>
     </method>
-    <method name="bound-ok" index="23" synchronous="1">
+    <method index="23" name="bound-ok" synchronous="1">
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <chassis name="client" implement="SHOULD"/>
     </method>
   </class>
-  <class name="queue" index="50" handler="channel">
+  <class index="50" name="queue" handler="channel">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MUST"/>
-    <rule implement="MUST">
-      <test/>
-    </rule>
-    <method name="declare" index="10" synchronous="1">
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="SHOULD">
-        <test/>
-      </rule>
+    <rule implement="MUST"/>
+    <method index="10" name="declare" synchronous="1">
+      <rule implement="MUST"/>
+      <rule implement="SHOULD"/>
       <chassis name="server" implement="MUST"/>
       <response name="declare-ok"/>
       <field name="ticket" domain="access ticket"/>
       <field name="queue" domain="queue name">
-        <rule implement="MAY">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MAY"/>
+        <rule implement="MUST"/>
         <assert check="regexp" value="^[a-zA-Z0-9-_.:]*$"/>
       </field>
       <field name="passive" type="bit">
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
       </field>
       <field name="durable" type="bit">
-        <rule implement="MUST">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
+        <rule implement="MUST"/>
+        <rule implement="MUST"/>
       </field>
       <field name="exclusive" type="bit">
-        <rule implement="MUST">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
+        <rule implement="MUST"/>
       </field>
       <field name="auto delete" type="bit">
-        <rule implement="SHOULD">
-          <test/>
-        </rule>
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="SHOULD"/>
+        <rule implement="MUST"/>
       </field>
       <field name="nowait" type="bit"/>
       <field name="arguments" type="table"/>
     </method>
-    <method name="declare-ok" index="11" synchronous="1">
+    <method index="11" name="declare-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="queue" domain="queue name">
         <assert check="notnull"/>
@@ -459,51 +403,31 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="message count" type="long"/>
       <field name="consumer count" type="long"/>
     </method>
-    <method name="bind" index="20" synchronous="1">
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="SHOULD">
-        <test/>
-      </rule>
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="SHOULD">
-        <test/>
-      </rule>
+    <method index="20" name="bind" synchronous="1">
+      <rule implement="MUST"/>
+      <rule implement="MUST"/>
+      <rule implement="MUST"/>
+      <rule implement="SHOULD"/>
+      <rule implement="MUST"/>
+      <rule implement="SHOULD"/>
       <chassis name="server" implement="MUST"/>
       <response name="bind-ok"/>
       <field name="ticket" domain="access ticket"/>
       <field name="queue" domain="queue name"/>
       <field name="exchange" domain="exchange name">
-        <rule implement="MUST">
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
       </field>
       <field name="routing key" type="shortstr"/>
       <field name="nowait" type="bit"/>
       <field name="arguments" type="table"/>
     </method>
-    <method name="bind-ok" index="21" synchronous="1">
+    <method index="21" name="bind-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="purge" index="30" synchronous="1">
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="MUST">
-        <test/>
-      </rule>
-      <rule implement="MAY">
-        <test/>
-      </rule>
+    <method index="30" name="purge" synchronous="1">
+      <rule implement="MUST"/>
+      <rule implement="MUST"/>
+      <rule implement="MAY"/>
       <chassis name="server" implement="MUST"/>
       <response name="purge-ok"/>
       <field name="ticket" domain="access ticket">
@@ -512,35 +436,28 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="queue" domain="queue name"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="purge-ok" index="31" synchronous="1">
+    <method index="31" name="purge-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="message count" type="long"/>
     </method>
-    <method name="delete" index="40" synchronous="1">
-      <rule implement="SHOULD">
-        <test/>
-      </rule>
+    <method index="40" name="delete" synchronous="1">
+      <rule implement="SHOULD"/>
       <chassis name="server" implement="MUST"/>
       <response name="delete-ok"/>
       <field name="ticket" domain="access ticket"/>
       <field name="queue" domain="queue name"/>
       <field name="if unused" type="bit">
-        <rule implement="MUST">
-          <test/>
-          <test/>
-        </rule>
+        <rule implement="MUST"/>
       </field>
-      <field name="if empty" type="bit">
-        <test/>
-      </field>
+      <field name="if empty" type="bit"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="delete-ok" index="41" synchronous="1">
+    <method index="41" name="delete-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="message count" type="long"/>
     </method>
   </class>
-  <class name="basic" index="60" handler="channel">
+  <class index="60" name="basic" handler="channel">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="MAY"/>
     <field name="content type" type="shortstr"/>
@@ -557,17 +474,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <field name="user id" type="shortstr"/>
     <field name="app id" type="shortstr"/>
     <field name="cluster id" type="shortstr"/>
-    <method name="qos" index="10" synchronous="1">
+    <method index="10" name="qos" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="qos-ok"/>
       <field name="prefetch size" type="long"/>
       <field name="prefetch count" type="short"/>
       <field name="global" type="bit"/>
     </method>
-    <method name="qos-ok" index="11" synchronous="1">
+    <method index="11" name="qos-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="consume" index="20" synchronous="1">
+    <method index="20" name="consume" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="consume-ok"/>
       <field name="ticket" domain="access ticket"/>
@@ -579,21 +496,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="nowait" type="bit"/>
       <field name="arguments" type="table"/>
     </method>
-    <method name="consume-ok" index="21" synchronous="1">
+    <method index="21" name="consume-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="cancel" index="30" synchronous="1">
+    <method index="30" name="cancel" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="cancel-ok"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="cancel-ok" index="31" synchronous="1">
+    <method index="31" name="cancel-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="publish" content="1" index="40">
+    <method index="40" name="publish" content="1">
       <chassis name="server" implement="MUST"/>
       <field name="ticket" domain="access ticket"/>
       <field name="exchange" domain="exchange name"/>
@@ -601,14 +518,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="mandatory" type="bit"/>
       <field name="immediate" type="bit"/>
     </method>
-    <method name="return" content="1" index="50">
+    <method index="50" name="return" content="1">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
     </method>
-    <method name="deliver" content="1" index="60">
+    <method index="60" name="deliver" content="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="delivery tag" domain="delivery tag"/>
@@ -616,7 +533,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
     </method>
-    <method name="get" index="70" synchronous="1">
+    <method index="70" name="get" synchronous="1">
       <response name="get-ok"/>
       <response name="get-empty"/>
       <chassis name="server" implement="MUST"/>
@@ -624,7 +541,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="queue" domain="queue name"/>
       <field name="no ack" domain="no ack"/>
     </method>
-    <method name="get-ok" content="1" index="71" synchronous="1">
+    <method index="71" name="get-ok" content="1" synchronous="1">
       <chassis name="client" implement="MAY"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="redelivered" domain="redelivered"/>
@@ -632,30 +549,30 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="routing key" type="shortstr"/>
       <field name="message count" type="long"/>
     </method>
-    <method name="get-empty" index="72" synchronous="1">
+    <method index="72" name="get-empty" synchronous="1">
       <chassis name="client" implement="MAY"/>
       <field name="cluster id" type="shortstr"/>
     </method>
-    <method name="ack" index="80">
+    <method index="80" name="ack">
       <chassis name="server" implement="MUST"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="multiple" type="bit"/>
     </method>
-    <method name="reject" index="90">
+    <method index="90" name="reject">
       <chassis name="server" implement="MUST"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="requeue" type="bit"/>
     </method>
-    <method name="recover" index="100">
+    <method index="100" name="recover">
       <chassis name="server" implement="MUST"/>
       <field name="requeue" type="bit"/>
       <response name="recover-ok"/>
     </method>
-    <method name="recover-ok" index="101" synchronous="1">
+    <method index="101" name="recover-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
   </class>
-  <class name="file" index="70" handler="channel">
+  <class index="70" name="file" handler="channel">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <field name="content type" type="shortstr"/>
@@ -667,17 +584,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <field name="filename" type="shortstr"/>
     <field name="timestamp" type="timestamp"/>
     <field name="cluster id" type="shortstr"/>
-    <method name="qos" index="10" synchronous="1">
+    <method index="10" name="qos" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="qos-ok"/>
       <field name="prefetch size" type="long"/>
       <field name="prefetch count" type="short"/>
       <field name="global" type="bit"/>
     </method>
-    <method name="qos-ok" index="11" synchronous="1">
+    <method index="11" name="qos-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="consume" index="20" synchronous="1">
+    <method index="20" name="consume" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="consume-ok"/>
       <field name="ticket" domain="access ticket"/>
@@ -688,38 +605,38 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="exclusive" type="bit"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="consume-ok" index="21" synchronous="1">
+    <method index="21" name="consume-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="cancel" index="30" synchronous="1">
+    <method index="30" name="cancel" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="cancel-ok"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="cancel-ok" index="31" synchronous="1">
+    <method index="31" name="cancel-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="open" index="40" synchronous="1">
+    <method index="40" name="open" synchronous="1">
       <response name="open-ok"/>
       <chassis name="server" implement="MUST"/>
       <chassis name="client" implement="MUST"/>
       <field name="identifier" type="shortstr"/>
       <field name="content size" type="longlong"/>
     </method>
-    <method name="open-ok" index="41" synchronous="1">
+    <method index="41" name="open-ok" synchronous="1">
       <response name="stage"/>
       <chassis name="server" implement="MUST"/>
       <chassis name="client" implement="MUST"/>
       <field name="staged size" type="longlong"/>
     </method>
-    <method name="stage" content="1" index="50">
+    <method index="50" name="stage" content="1">
       <chassis name="server" implement="MUST"/>
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="publish" index="60">
+    <method index="60" name="publish">
       <chassis name="server" implement="MUST"/>
       <field name="ticket" domain="access ticket"/>
       <field name="exchange" domain="exchange name"/>
@@ -728,14 +645,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="immediate" type="bit"/>
       <field name="identifier" type="shortstr"/>
     </method>
-    <method name="return" content="1" index="70">
+    <method index="70" name="return" content="1">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
     </method>
-    <method name="deliver" index="80">
+    <method index="80" name="deliver">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="delivery tag" domain="delivery tag"/>
@@ -744,18 +661,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="routing key" type="shortstr"/>
       <field name="identifier" type="shortstr"/>
     </method>
-    <method name="ack" index="90">
+    <method index="90" name="ack">
       <chassis name="server" implement="MUST"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="multiple" type="bit"/>
     </method>
-    <method name="reject" index="100">
+    <method index="100" name="reject">
       <chassis name="server" implement="MUST"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="requeue" type="bit"/>
     </method>
   </class>
-  <class name="stream" index="80" handler="channel">
+  <class index="80" name="stream" handler="channel">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <field name="content type" type="shortstr"/>
@@ -763,7 +680,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <field name="headers" type="table"/>
     <field name="priority" type="octet"/>
     <field name="timestamp" type="timestamp"/>
-    <method name="qos" index="10" synchronous="1">
+    <method index="10" name="qos" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="qos-ok"/>
       <field name="prefetch size" type="long"/>
@@ -771,10 +688,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="consume rate" type="long"/>
       <field name="global" type="bit"/>
     </method>
-    <method name="qos-ok" index="11" synchronous="1">
+    <method index="11" name="qos-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="consume" index="20" synchronous="1">
+    <method index="20" name="consume" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="consume-ok"/>
       <field name="ticket" domain="access ticket"/>
@@ -784,21 +701,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="exclusive" type="bit"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="consume-ok" index="21" synchronous="1">
+    <method index="21" name="consume-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="cancel" index="30" synchronous="1">
+    <method index="30" name="cancel" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="cancel-ok"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="nowait" type="bit"/>
     </method>
-    <method name="cancel-ok" index="31" synchronous="1">
+    <method index="31" name="cancel-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
     </method>
-    <method name="publish" content="1" index="40">
+    <method index="40" name="publish" content="1">
       <chassis name="server" implement="MUST"/>
       <field name="ticket" domain="access ticket"/>
       <field name="exchange" domain="exchange name"/>
@@ -806,14 +723,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="mandatory" type="bit"/>
       <field name="immediate" type="bit"/>
     </method>
-    <method name="return" content="1" index="50">
+    <method index="50" name="return" content="1">
       <chassis name="client" implement="MUST"/>
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="exchange" domain="exchange name"/>
       <field name="routing key" type="shortstr"/>
     </method>
-    <method name="deliver" content="1" index="60">
+    <method index="60" name="deliver" content="1">
       <chassis name="client" implement="MUST"/>
       <field name="consumer tag" domain="consumer tag"/>
       <field name="delivery tag" domain="delivery tag"/>
@@ -823,54 +740,54 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       </field>
     </method>
   </class>
-  <class name="tx" index="90" handler="channel">
+  <class index="90" name="tx" handler="channel">
     <rule implement="SHOULD"/>
     <chassis name="server" implement="SHOULD"/>
     <chassis name="client" implement="MAY"/>
-    <method name="select" index="10" synchronous="1">
+    <method index="10" name="select" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="select-ok"/>
     </method>
-    <method name="select-ok" index="11" synchronous="1">
+    <method index="11" name="select-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="commit" index="20" synchronous="1">
+    <method index="20" name="commit" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="commit-ok"/>
     </method>
-    <method name="commit-ok" index="21" synchronous="1">
+    <method index="21" name="commit-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="rollback" index="30" synchronous="1">
+    <method index="30" name="rollback" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="rollback-ok"/>
     </method>
-    <method name="rollback-ok" index="31" synchronous="1">
+    <method index="31" name="rollback-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
   </class>
-  <class name="dtx" index="100" handler="channel">
+  <class index="100" name="dtx" handler="channel">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
-    <method name="select" index="10" synchronous="1">
+    <method index="10" name="select" synchronous="1">
       <chassis name="server" implement="MUST"/>
       <response name="select-ok"/>
     </method>
-    <method name="select-ok" index="11" synchronous="1">
+    <method index="11" name="select-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
-    <method name="start" index="20" synchronous="1">
+    <method index="20" name="start" synchronous="1">
       <chassis name="server" implement="MAY"/>
       <response name="start-ok"/>
       <field name="dtx identifier" type="shortstr">
         <assert check="notnull"/>
       </field>
     </method>
-    <method name="start-ok" index="21" synchronous="1">
+    <method index="21" name="start-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
     </method>
   </class>
-  <class name="tunnel" index="110" handler="tunnel">
+  <class index="110" name="tunnel" handler="tunnel">
     <chassis name="server" implement="MAY"/>
     <chassis name="client" implement="MAY"/>
     <field name="headers" type="table"/>
@@ -878,15 +795,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <field name="data name" type="shortstr"/>
     <field name="durable" type="octet"/>
     <field name="broadcast" type="octet"/>
-    <method name="request" content="1" index="10">
+    <method index="10" name="request" content="1">
       <chassis name="server" implement="MUST"/>
       <field name="meta data" type="table"/>
     </method>
   </class>
-  <class name="test" index="120" handler="channel">
+  <class index="120" name="test" handler="channel">
     <chassis name="server" implement="MUST"/>
     <chassis name="client" implement="SHOULD"/>
-    <method name="integer" index="10" synchronous="1">
+    <method index="10" name="integer" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="integer-ok"/>
@@ -902,12 +819,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </assert>
       </field>
     </method>
-    <method name="integer-ok" index="11" synchronous="1">
+    <method index="11" name="integer-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <field name="result" type="longlong"/>
     </method>
-    <method name="string" index="20" synchronous="1">
+    <method index="20" name="string" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="string-ok"/>
@@ -921,12 +838,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </assert>
       </field>
     </method>
-    <method name="string-ok" index="21" synchronous="1">
+    <method index="21" name="string-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <field name="result" type="longstr"/>
     </method>
-    <method name="table" index="30" synchronous="1">
+    <method index="30" name="table" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="table-ok"/>
@@ -946,18 +863,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </assert>
       </field>
     </method>
-    <method name="table-ok" index="31" synchronous="1">
+    <method index="31" name="table-ok" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <field name="integer result" type="longlong"/>
       <field name="string result" type="longstr"/>
     </method>
-    <method name="content" content="1" index="40" synchronous="1">
+    <method index="40" name="content" content="1" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="content-ok"/>
     </method>
-    <method name="content-ok" content="1" index="41" synchronous="1">
+    <method index="41" name="content-ok" content="1" synchronous="1">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <field name="content checksum" type="long"/>
