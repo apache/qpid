@@ -30,7 +30,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<amqp comment="AMQ protocol 0.80" major="8" port="5672" minor="0">
+<amqp major="8" port="5672" minor="0">
   <constant name="frame method" value="1"/>
   <constant name="frame header" value="2"/>
   <constant name="frame body" value="3"/>
@@ -437,7 +437,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="queue" domain="queue name"/>
       <field name="no ack" domain="no ack"/>
     </method>
-    <method name="get-ok" content="1" synchronous="1" index="71">
+    <method name="get-ok" synchronous="1" content="1" index="71">
       <chassis name="client" implement="MAY"/>
       <field name="delivery tag" domain="delivery tag"/>
       <field name="redelivered" domain="redelivered"/>
@@ -764,12 +764,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="integer result" type="longlong"/>
       <field name="string result" type="longstr"/>
     </method>
-    <method name="content" content="1" synchronous="1" index="40">
+    <method name="content" synchronous="1" content="1" index="40">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <response name="content-ok"/>
     </method>
-    <method name="content-ok" content="1" synchronous="1" index="41">
+    <method name="content-ok" synchronous="1" content="1" index="41">
       <chassis name="client" implement="MUST"/>
       <chassis name="server" implement="MUST"/>
       <field name="content checksum" type="long"/>
