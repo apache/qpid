@@ -173,6 +173,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="reply code" domain="reply code"/>
       <field name="reply text" domain="reply text"/>
       <field name="class id" domain="class id"/>
+      <!-- Qpid difference : correct the domain -->
       <field name="method id" domain="method id"/>
     </method>
     <method name="close-ok" synchronous="1" index="61">
@@ -278,6 +279,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <method name="delete-ok" synchronous="1" index="21">
       <chassis name="client" implement="MUST"/>
     </method>
+    <!-- Qpid specific addition -->
     <method name="bound" synchronous="1" index="22">
       <chassis name="server" implement="SHOULD"/>
       <field name="exchange" domain="exchange name"/>
@@ -289,6 +291,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="reply text" domain="reply text"/>
       <chassis name="client" implement="SHOULD"/>
     </method>
+    <!-- End Qpid specific addition -->
   </class>
   <class name="queue" handler="channel" index="50">
     <chassis name="server" implement="MUST"/>
@@ -390,6 +393,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="no ack" domain="no ack"/>
       <field name="exclusive" type="bit"/>
       <field name="nowait" type="bit"/>
+      <!-- Qpid specific addition : interop issue extra field -->
       <field name="arguments" type="table"/>
     </method>
     <method name="consume-ok" synchronous="1" index="21">
@@ -459,6 +463,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="delivery tag" domain="delivery tag"/>
       <field name="requeue" type="bit"/>
     </method>
+    <!-- Qpid specific modification : interop issue, added synchronous reply -->
     <method name="recover" index="100">
       <chassis name="server" implement="MUST"/>
       <field name="requeue" type="bit"/>
@@ -467,6 +472,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <method name="recover-ok" synchronous="1" index="101">
       <chassis name="client" implement="MUST"/>
     </method>
+    <!-- End Qpid specific modification --> 
   </class>
   <class name="file" handler="channel" index="70">
     <chassis name="server" implement="MAY"/>

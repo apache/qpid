@@ -309,6 +309,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <method name="delete-ok" synchronous="1" index="21">
       <chassis name="client" implement="MUST"/>
     </method>
+    <!-- Qpid specific addition -->
     <method name="bound" synchronous="1" index="22">
       <chassis name="server" implement="SHOULD"/>
       <response name="bound-ok"/>
@@ -321,6 +322,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="reply-text" domain="reply-text"/>
       <chassis name="client" implement="SHOULD"/>
     </method>
+    <!-- End Qpid specific addition -->
   </class>
   <class name="queue" handler="channel" index="50">
     <chassis name="server" implement="MUST"/>
@@ -337,7 +339,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <field name="exclusive" domain="bit"/>
       <field name="auto-delete" domain="bit"/>
       <field name="nowait" domain="bit"/>
-      <field name="arguments" domain="table"/>
+      <!-- Qpid diff - this field is known as filter in the original 0-9, 
+           however since the name does not go on the wire, there is no
+           interop implication  -->
+      <field name="arguments" domain="table"/> 
     </method>
     <method name="declare-ok" synchronous="1" index="11">
       <chassis name="client" implement="MUST"/>
@@ -507,6 +512,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       <chassis name="server" implement="MUST"/>
       <field name="requeue" domain="bit"/>
     </method>
+    <!-- Qpid specific addition -->
     <method name="recover-sync" index="102">
       <chassis name="server" implement="MUST"/>
       <field name="requeue" type="bit"/>
@@ -515,6 +521,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <method name="recover-sync-ok" synchronous="1" index="101">
       <chassis name="client" implement="MUST"/>
     </method>
+    <!-- End Qpid specific addition -->
   </class>
   <class name="file" handler="channel" index="70">
     <chassis name="server" implement="MAY"/>
