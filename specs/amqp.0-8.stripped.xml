@@ -30,7 +30,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<amqp major="8" port="5672" minor="0">
+<amqp major="8" minor="0" port="5672">
   <constant name="frame method" value="1"/>
   <constant name="frame header" value="2"/>
   <constant name="frame body" value="3"/>
