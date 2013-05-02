@@ -377,9 +377,20 @@ class BrokerManager:
         self.conn = Connection.establish(self.url, **conn_options)
         self.broker = BrokerAgent(self.conn)
 
-    def Disconnect(self):
+    def Disconnect(self, ignore=True):
         if self.conn:
-            self.conn.close()
+            try:
+                self.conn.close()
+            except Exception, e:
+                 if ignore:
+                     # suppress close errors to avoid
+                     # tracebacks when a previous
+                     # exception will be printed to stdout
+                     pass
+                 else:
+                     # raise last exception so complete 
+                     # trackback is preserved
+                     raise
 
     def Overview(self):
         exchanges = self.broker.getAllExchanges()
@@ -770,7 +781,7 @@ def main(argv=None):
         # some commands take longer than the default amqp timeout to complete,
         # so attempt to disconnect until successful, ignoring Timeouts
         try:
-            bm.Disconnect()
+            bm.Disconnect(ignore=False)
             break
         except Exception, e:
             if e.__class__.__name__ != "Timeout":
