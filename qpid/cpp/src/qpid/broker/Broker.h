@@ -94,6 +94,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         std::string dataDir;
         uint16_t port;
         std::vector<std::string> listenInterfaces;
+        std::vector<std::string> listenDisabled;
         int workerThreads;
         int connectionBacklog;
         bool enableMgmt;
@@ -168,6 +169,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     std::auto_ptr<sys::Timer> timer;
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
+    std::set<std::string> disabledListeningTransports;
     TransportMap transportMap;
     std::auto_ptr<MessageStore> store;
     AclModule* acl;
@@ -246,6 +248,12 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QPID_BROKER_EXTERN management::Manageable* GetVhostObject() const;
     QPID_BROKER_EXTERN management::Manageable::status_t ManagementMethod(
         uint32_t methodId, management::Args& args, std::string& text);
+
+    // Should we listen using this protocol or not?
+    QPID_BROKER_EXTERN bool shouldListen(std::string transport);
+
+    // Turn off listening for a protocol
+    QPID_BROKER_EXTERN void disableListening(std::string transport);
 
     /** Add to the broker's protocolFactorys */
     QPID_BROKER_EXTERN void registerTransport(
