@@ -247,7 +247,7 @@ fi
 AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$PERL" && test -n "$SWIG" && test -n "$PERL_INC"])
 
 specdir=`pwd`/$srcdir/../specs
-AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
+AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.stripped.xml
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
 test -f $AMQP_FINAL_XML -a -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])

@@ -34,6 +34,7 @@ class CppGen
   
   # Generates a doxygen comment for AmqpMethod m.
   def doxygen(m)
+    return unless m.doc
     doxygen_comment {
       genl m.doc
       genl
@@ -143,7 +144,8 @@ class SessionNoKeywordGen < CppGen
       namespace(@namespace) { 
         doxygen_comment {
           genl "AMQP #{@amqp.version} #{sync_adjective} session API."
-          genl @amqp.class_("session").doc
+          d = @amqp.class_("session").doc
+          genl d if d
           # FIXME aconway 2008-05-23: additional doc on sync/async use.
         }
         cpp_class(@classname, "public #{@version_base}") {
