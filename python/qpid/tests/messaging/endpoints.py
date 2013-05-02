@@ -351,6 +351,16 @@ class TimeoutTests(Base):
   def testConnectionClose(self):
     self.timeoutTest(self.conn.close)
 
+  def testConnectionOpen(self):
+    options = self.connection_options()
+    options["reconnect"] = True
+    options["reconnect_timeout"] = self.delay()
+    try:
+      bad_conn = Connection.establish("badhostname", **options)
+      assert False, "did not time out"
+    except Timeout:
+      pass
+
 ACK_QC = 'test-ack-queue; {create: always}'
 ACK_QD = 'test-ack-queue; {delete: always}'
 
