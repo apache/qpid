@@ -165,9 +165,9 @@ static int start_list(unsigned char **cursor, dx_buffer_t **buffer)
 //
 static int dx_check_and_advance(dx_buffer_t         **buffer,
                                 unsigned char       **cursor,
-                                unsigned char        *pattern,
+                                const unsigned char  *pattern,
                                 int                   pattern_length,
-                                unsigned char        *expected_tags,
+                                const unsigned char  *expected_tags,
                                 dx_field_location_t  *location)
 {
     dx_buffer_t   *test_buffer = *buffer;
@@ -451,8 +451,9 @@ dx_message_t *dx_allocate_message()
     }
 
     memset(msg->content, 0, sizeof(dx_message_content_t));
-    msg->content->lock      = sys_mutex();
-    msg->content->ref_count = 1;
+    msg->content->lock        = sys_mutex();
+    msg->content->ref_count   = 1;
+    msg->content->parse_depth = DX_DEPTH_NONE;
 
     return (dx_message_t*) msg;
 }
@@ -631,123 +632,143 @@ void dx_message_send(dx_message_t *in_msg, pn_link_t *link)
 }
 
 
-int dx_message_check(dx_message_t *in_msg, dx_message_depth_t depth)
+static int dx_check_field_LH(dx_message_content_t *content,
+                             dx_message_depth_t    depth,
+                             const unsigned char  *long_pattern,
+                             const unsigned char  *short_pattern,
+                             const unsigned char  *expected_tags,
+                             dx_field_location_t  *location)
 {
-
 #define LONG  10
 #define SHORT 3
-#define MSG_HDR_LONG                  (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x70"
-#define MSG_HDR_SHORT                 (unsigned char*) "\x00\x53\x70"
-#define DELIVERY_ANNOTATION_LONG      (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x71"
-#define DELIVERY_ANNOTATION_SHORT     (unsigned char*) "\x00\x53\x71"
-#define MESSAGE_ANNOTATION_LONG       (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x72"
-#define MESSAGE_ANNOTATION_SHORT      (unsigned char*) "\x00\x53\x72"
-#define PROPERTIES_LONG               (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x73"
-#define PROPERTIES_SHORT              (unsigned char*) "\x00\x53\x73"
-#define APPLICATION_PROPERTIES_LONG   (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x74"
-#define APPLICATION_PROPERTIES_SHORT  (unsigned char*) "\x00\x53\x74"
-#define BODY_DATA_LONG                (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x75"
-#define BODY_DATA_SHORT               (unsigned char*) "\x00\x53\x75"
-#define BODY_SEQUENCE_LONG            (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x76"
-#define BODY_SEQUENCE_SHORT           (unsigned char*) "\x00\x53\x76"
-#define FOOTER_LONG                   (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x78"
-#define FOOTER_SHORT                  (unsigned char*) "\x00\x53\x78"
-#define TAGS_LIST                     (unsigned char*) "\x45\xc0\xd0"
-#define TAGS_MAP                      (unsigned char*) "\xc1\xd1"
-#define TAGS_BINARY                   (unsigned char*) "\xa0\xb0"
+    if (depth > content->parse_depth) {
+        if (0 == dx_check_and_advance(&content->parse_buffer, &content->parse_cursor, long_pattern,  LONG,  expected_tags, location))
+            return 0;
+        if (0 == dx_check_and_advance(&content->parse_buffer, &content->parse_cursor, short_pattern, SHORT, expected_tags, location))
+            return 0;
+        content->parse_depth = depth;
+    }
+    return 1;
+}
 
-    dx_message_pvt_t     *msg = (dx_message_pvt_t*) in_msg;
-    dx_message_content_t *content = msg->content;
-    dx_buffer_t          *buffer = DEQ_HEAD(content->buffers);
-    unsigned char        *cursor;
+
+static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t depth)
+{
+    static const unsigned char * const MSG_HDR_LONG                 = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x70";
+    static const unsigned char * const MSG_HDR_SHORT                = (unsigned char*) "\x00\x53\x70";
+    static const unsigned char * const DELIVERY_ANNOTATION_LONG     = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x71";
+    static const unsigned char * const DELIVERY_ANNOTATION_SHORT    = (unsigned char*) "\x00\x53\x71";
+    static const unsigned char * const MESSAGE_ANNOTATION_LONG      = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x72";
+    static const unsigned char * const MESSAGE_ANNOTATION_SHORT     = (unsigned char*) "\x00\x53\x72";
+    static const unsigned char * const PROPERTIES_LONG              = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x73";
+    static const unsigned char * const PROPERTIES_SHORT             = (unsigned char*) "\x00\x53\x73";
+    static const unsigned char * const APPLICATION_PROPERTIES_LONG  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x74";
+    static const unsigned char * const APPLICATION_PROPERTIES_SHORT = (unsigned char*) "\x00\x53\x74";
+    static const unsigned char * const BODY_DATA_LONG               = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x75";
+    static const unsigned char * const BODY_DATA_SHORT              = (unsigned char*) "\x00\x53\x75";
+    static const unsigned char * const BODY_SEQUENCE_LONG           = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x76";
+    static const unsigned char * const BODY_SEQUENCE_SHORT          = (unsigned char*) "\x00\x53\x76";
+    static const unsigned char * const FOOTER_LONG                  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x78";
+    static const unsigned char * const FOOTER_SHORT                 = (unsigned char*) "\x00\x53\x78";
+    static const unsigned char * const TAGS_LIST                    = (unsigned char*) "\x45\xc0\xd0";
+    static const unsigned char * const TAGS_MAP                     = (unsigned char*) "\xc1\xd1";
+    static const unsigned char * const TAGS_BINARY                  = (unsigned char*) "\xa0\xb0";
+
+    dx_buffer_t *buffer  = DEQ_HEAD(content->buffers);
 
     if (!buffer)
         return 0; // Invalid - No data in the message
 
+    if (depth <= content->parse_depth)
+        return 1; // We've already parsed at least this deep
+
+    if (content->parse_buffer == 0) {
+        content->parse_buffer = buffer;
+        content->parse_cursor = dx_buffer_base(content->parse_buffer);
+    }
+
     if (depth == DX_DEPTH_NONE)
         return 1;
-
-    cursor = dx_buffer_base(buffer);
 
     //
     // MESSAGE HEADER
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, MSG_HDR_LONG,  LONG,  TAGS_LIST, &content->section_message_header))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_HEADER,
+                               MSG_HDR_LONG, MSG_HDR_SHORT, TAGS_LIST, &content->section_message_header))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, MSG_HDR_SHORT, SHORT, TAGS_LIST, &content->section_message_header))
-        return 0;
-
     if (depth == DX_DEPTH_HEADER)
         return 1;
 
     //
     // DELIVERY ANNOTATION
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, DELIVERY_ANNOTATION_LONG,  LONG,  TAGS_MAP,  &content->section_delivery_annotation))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_DELIVERY_ANNOTATIONS,
+                               DELIVERY_ANNOTATION_LONG, DELIVERY_ANNOTATION_SHORT, TAGS_MAP, &content->section_delivery_annotation))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, DELIVERY_ANNOTATION_SHORT, SHORT, TAGS_MAP,  &content->section_delivery_annotation))
-        return 0;
-
     if (depth == DX_DEPTH_DELIVERY_ANNOTATIONS)
         return 1;
 
     //
     // MESSAGE ANNOTATION
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, MESSAGE_ANNOTATION_LONG,  LONG,  TAGS_MAP,  &content->section_message_annotation))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_MESSAGE_ANNOTATIONS,
+                               MESSAGE_ANNOTATION_LONG, MESSAGE_ANNOTATION_SHORT, TAGS_MAP, &content->section_message_annotation))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, MESSAGE_ANNOTATION_SHORT, SHORT, TAGS_MAP,  &content->section_message_annotation))
-        return 0;
-
     if (depth == DX_DEPTH_MESSAGE_ANNOTATIONS)
         return 1;
 
     //
     // PROPERTIES
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, PROPERTIES_LONG,  LONG,  TAGS_LIST, &content->section_message_properties))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_PROPERTIES,
+                               PROPERTIES_LONG, PROPERTIES_SHORT, TAGS_LIST, &content->section_message_properties))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, PROPERTIES_SHORT, SHORT, TAGS_LIST, &content->section_message_properties))
-        return 0;
-
     if (depth == DX_DEPTH_PROPERTIES)
         return 1;
 
     //
     // APPLICATION PROPERTIES
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, APPLICATION_PROPERTIES_LONG,  LONG,  TAGS_MAP, &content->section_application_properties))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_APPLICATION_PROPERTIES,
+                               APPLICATION_PROPERTIES_LONG, APPLICATION_PROPERTIES_SHORT, TAGS_MAP, &content->section_application_properties))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, APPLICATION_PROPERTIES_SHORT, SHORT, TAGS_MAP, &content->section_application_properties))
-        return 0;
-
     if (depth == DX_DEPTH_APPLICATION_PROPERTIES)
         return 1;
 
     //
     // BODY  (Note that this function expects a single data section or a single AMQP sequence)
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, BODY_DATA_LONG,      LONG,  TAGS_BINARY, &content->section_body))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_BODY,
+                               BODY_DATA_LONG, BODY_DATA_SHORT, TAGS_BINARY, &content->section_body))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, BODY_DATA_SHORT,     SHORT, TAGS_BINARY, &content->section_body))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_BODY,
+                               BODY_SEQUENCE_LONG, BODY_SEQUENCE_SHORT, TAGS_LIST, &content->section_body))
         return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, BODY_SEQUENCE_LONG,  LONG,  TAGS_LIST,   &content->section_body))
-        return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, BODY_SEQUENCE_SHORT, SHORT, TAGS_LIST,   &content->section_body))
-        return 0;
-
     if (depth == DX_DEPTH_BODY)
         return 1;
 
     //
     // FOOTER
     //
-    if (0 == dx_check_and_advance(&buffer, &cursor, FOOTER_LONG,  LONG,  TAGS_MAP, &content->section_footer))
-        return 0;
-    if (0 == dx_check_and_advance(&buffer, &cursor, FOOTER_SHORT, SHORT, TAGS_MAP, &content->section_footer))
+    if (0 == dx_check_field_LH(content, DX_DEPTH_ALL,
+                               FOOTER_LONG, FOOTER_SHORT, TAGS_MAP, &content->section_footer))
         return 0;
 
     return 1;
+}
+
+
+int dx_message_check(dx_message_t *in_msg, dx_message_depth_t depth)
+{
+    dx_message_pvt_t     *msg     = (dx_message_pvt_t*) in_msg;
+    dx_message_content_t *content = msg->content;
+    int                   result;
+
+    sys_mutex_lock(content->lock);
+    result = dx_message_check_LH(content, depth);
+    sys_mutex_unlock(content->lock);
+
+    return result;
 }
 
 

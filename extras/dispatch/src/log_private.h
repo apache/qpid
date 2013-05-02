@@ -1,3 +1,5 @@
+#ifndef __log_private_h__
+#define __log_private_h__ 1
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,20 +19,9 @@
  * under the License.
  */
 
-#include <qpid/dispatch/buffer.h>
+#include <qpid/dispatch/log.h>
 
-int tool_tests();
-int timer_tests();
-int alloc_tests();
-int server_tests();
+void dx_log_initialize(void);
+void dx_log_finalize(void);
 
-int main(int argc, char** argv)
-{
-    int result = 0;
-    result += tool_tests();
-    result += timer_tests();
-    result += alloc_tests();
-    result += server_tests();
-    return result;
-}
-
+#endif
