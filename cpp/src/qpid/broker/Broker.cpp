@@ -162,6 +162,7 @@ Broker::Options::Options(const std::string& name) :
         ("no-data-dir", optValue(noDataDir), "Don't use a data directory.  No persistent configuration will be loaded or stored")
         ("port,p", optValue(port,"PORT"), "Tells the broker to listen on PORT")
         ("interface", optValue(listenInterfaces, "<interface name>|<interface address>"), "Which network interfaces to use to listen for incoming connections")
+        ("listen-disable", optValue(listenDisabled, "<transport name>"), "Transports to disable listening")
         ("worker-threads", optValue(workerThreads, "N"), "Sets the broker thread pool size")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
@@ -208,6 +209,7 @@ Broker::Broker(const Broker::Options& conf) :
     managementAgent(conf.enableMgmt ? new ManagementAgent(conf.qmf1Support,
                                                           conf.qmf2Support)
                                     : 0),
+    disabledListeningTransports(config.listenDisabled.begin(), config.listenDisabled.end()),
     store(new NullMessageStore),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
@@ -1060,13 +1062,28 @@ uint16_t Broker::getPort(const std::string& name) const  {
     }
 }
 
+bool Broker::shouldListen(std::string transport) {
+    return disabledListeningTransports.count(transport)==0;
+}
+
+void Broker::disableListening(std::string transport) {
+    disabledListeningTransports.insert(transport);
+}
+
 void Broker::registerTransport(const std::string& name, boost::shared_ptr<TransportAcceptor> a, boost::shared_ptr<TransportConnector> c, uint16_t p) {
     transportMap[name] = TransportInfo(a, c, p);
 }
 
 void Broker::accept() {
+    unsigned accepting = 0;
     for (TransportMap::const_iterator i = transportMap.begin(); i != transportMap.end(); i++) {
-        if (i->second.acceptor) i->second.acceptor->accept(poller, factory.get());
+        if (i->second.acceptor) {
+            i->second.acceptor->accept(poller, factory.get());
+            ++accepting;
+        }
+    }
+    if ( accepting==0 ) {
+        throw Exception(QPID_MSG("Failed to start broker: No transports are listening for incoming connections"));
     }
 }
 

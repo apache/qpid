@@ -43,12 +43,10 @@ struct SslServerOptions : ssl::SslOptions
     uint16_t port;
     bool clientAuth;
     bool nodict;
-    bool multiplex;
 
     SslServerOptions() : port(5671),
                          clientAuth(false),
-                         nodict(false),
-                         multiplex(false)
+                         nodict(false)
     {
         addOptions()
             ("ssl-port", optValue(port, "PORT"), "Port on which to listen for SSL connections")
@@ -78,10 +76,11 @@ namespace {
 static struct SslPlugin : public Plugin {
     SslServerOptions options;
     bool nssInitialized;
+    bool multiplex;
 
     Options* getOptions() { return &options; }
 
-    SslPlugin() : nssInitialized(false) {}
+    SslPlugin() : nssInitialized(false), multiplex(false) {}
     ~SslPlugin() { if (nssInitialized) ssl::shutdownNSS(); }
 
     void earlyInitialize(Target& target) {
@@ -90,14 +89,11 @@ static struct SslPlugin : public Plugin {
             broker::Broker::Options& opts = broker->getOptions();
 
             if (opts.port == options.port && // AMQP & AMQPS ports are the same
-                opts.port != 0) {
-                // The presence of this option is used to signal to the TCP
-                // plugin not to start listening on the shared port. The actual
-                // value cannot be configured through the command line or config
-                // file (other than by setting the ports to the same value)
-                // because we are only adding it after option parsing.
-                options.multiplex = true;
-                options.addOptions()("ssl-multiplex", optValue(options.multiplex), "Allow SSL and non-SSL connections on the same port");
+                opts.port != 0 &&
+                broker->shouldListen("tcp")&&
+                broker->shouldListen("ssl")) {
+                multiplex = true;
+                broker->disableListening("tcp");
             }
         }
     }
@@ -115,21 +111,23 @@ static struct SslPlugin : public Plugin {
                     nssInitialized = true;
 
                     const broker::Broker::Options& opts = broker->getOptions();
+                    uint16_t port = options.port;
                     TransportAcceptor::shared_ptr ta;
-                    SocketAcceptor* sa =
-                        new SocketAcceptor(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer());
-                    uint16_t port = sa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(options.port), opts.connectionBacklog,
-                                               options.multiplex ?
-                                                 boost::bind(&createServerSSLMuxSocket, options) :
-                                                 boost::bind(&createServerSSLSocket, options));
-                    if ( port!=0 ) {
-                        ta.reset(sa);
-                        QPID_LOG(notice, "Listening for " <<
-                                        (options.multiplex ? "SSL or TCP" : "SSL") <<
-                                        " connections on TCP/TCP6 port " <<
-                                        port);
+                    if (broker->shouldListen("ssl")) {
+                        SocketAcceptor* sa =
+                            new SocketAcceptor(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer());
+                            port = sa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(options.port), opts.connectionBacklog,
+                                                multiplex ?
+                                                    boost::bind(&createServerSSLMuxSocket, options) :
+                                                    boost::bind(&createServerSSLSocket, options));
+                        if ( port!=0 ) {
+                            ta.reset(sa);
+                            QPID_LOG(notice, "Listening for " <<
+                                            (multiplex ? "SSL or TCP" : "SSL") <<
+                                            " connections on TCP/TCP6 port " <<
+                                            port);
+                        }
                     }
-
                     TransportConnector::shared_ptr tc(
                         new SocketConnector(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer(),
                                             &createClientSSLSocket));

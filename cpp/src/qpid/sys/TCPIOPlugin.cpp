@@ -31,20 +31,6 @@
 namespace qpid {
 namespace sys {
 
-static bool sslMultiplexEnabled(void)
-{
-    Options o;
-    Plugin::addOptions(o);
-
-    if (o.find_nothrow("ssl-multiplex", false)) {
-        // This option is added by the SSL plugin when the SSL port
-        // is configured to be the same as the main port.
-        QPID_LOG(notice, "SSL multiplexing enabled");
-        return true;
-    }
-    return false;
-}
-
 // Static instance to initialise plugin
 static class TCPIOPlugin : public Plugin {
     void earlyInitialize(Target&) {
@@ -56,12 +42,9 @@ static class TCPIOPlugin : public Plugin {
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
 
-            // Check for SSL on the same port
-            bool shouldListen = !sslMultiplexEnabled();
-
             uint16_t port = opts.port;
             TransportAcceptor::shared_ptr ta;
-            if (shouldListen) {
+            if (broker->shouldListen("tcp")) {
                 SocketAcceptor* aa = new SocketAcceptor(opts.tcpNoDelay, false, opts.maxNegotiateTime, broker->getTimer());
                 ta.reset(aa);
                 port = aa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(opts.port), opts.connectionBacklog, &createSocket);
