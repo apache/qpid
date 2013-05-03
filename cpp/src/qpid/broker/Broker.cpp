@@ -1197,13 +1197,12 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
     if (queue) {
         if (acl) {
             std::map<acl::Property, std::string> params;
-            const qpid::broker::QueueSettings settings = queue->getSettings();
             boost::shared_ptr<Exchange> altEx = queue->getAlternateExchange();
             params.insert(make_pair(acl::PROP_ALTERNATE, (altEx) ? altEx->getName() : "" ));
             params.insert(make_pair(acl::PROP_DURABLE, queue->isDurable() ? _TRUE : _FALSE));
             params.insert(make_pair(acl::PROP_EXCLUSIVE, queue->hasExclusiveOwner() ? _TRUE : _FALSE));
             params.insert(make_pair(acl::PROP_AUTODELETE, queue->isAutoDelete() ? _TRUE : _FALSE));
-            params.insert(make_pair(acl::PROP_POLICYTYPE, settings.dropMessagesAtLimit ? "ring" : "reject"));
+            params.insert(make_pair(acl::PROP_POLICYTYPE, queue->getSettings().dropMessagesAtLimit ? "ring" : "reject"));
 
             if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,&params) )
                 throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
