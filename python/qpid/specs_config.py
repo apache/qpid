@@ -21,6 +21,6 @@ import os
 
 AMQP_SPEC_DIR=os.path.join(os.path.dirname(os.path.abspath(__file__)), "specs")
 amqp_spec = os.path.join(AMQP_SPEC_DIR, "amqp-0-10-qpid-errata-stripped.xml")
-amqp_spec_0_8 = os.path.join(AMQP_SPEC_DIR, "amqp-0-8-stripped.xml")
-amqp_spec_0_9 = os.path.join(AMQP_SPEC_DIR, "amqp-0-9-stripped.xml")
+amqp_spec_0_8 = os.path.join(AMQP_SPEC_DIR, "amqp-0-8-qpid-stripped.xml")
+amqp_spec_0_9 = os.path.join(AMQP_SPEC_DIR, "amqp-0-9-qpid-stripped.xml")
 amqp_spec_0_9_1 = os.path.join(AMQP_SPEC_DIR, "amqp-0-9-1-stripped.xml")
