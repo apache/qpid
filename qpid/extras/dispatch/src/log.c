@@ -68,6 +68,7 @@ void dx_log_impl(const char *module, int cls, const char *file, int line, const 
         return;
 
     dx_log_entry_t *entry = new_dx_log_entry_t();
+    DEQ_ITEM_INIT(entry);
     entry->module = module;
     entry->cls    = cls;
     entry->file   = file;
