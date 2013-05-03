@@ -21,6 +21,10 @@
 package org.apache.qpid.server;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
@@ -29,6 +33,16 @@ import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
 {
+    public static final String QPID_AMQP_PORT = "qpid.amqp_port";
+    public static final String QPID_HTTP_PORT = "qpid.http_port";
+    public static final String QPID_RMI_PORT  = "qpid.rmi_port";
+    public static final String QPID_JMX_PORT  = "qpid.jmx_port";
+
+    public static final String DEFAULT_AMQP_PORT_NUMBER = "5672";
+    public static final String DEFAULT_HTTP_PORT_NUMBER = "8080";
+    public static final String DEFAULT_RMI_PORT_NUMBER  = "8999";
+    public static final String DEFAULT_JMX_PORT_NUMBER  = "9099";
+
     public static final String DEFAULT_INITIAL_CONFIG_NAME = "initial-config.json";
     public static final String DEFAULT_STORE_TYPE = "json";
     public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
@@ -55,6 +69,7 @@ public class BrokerOptions
     private String _workingDir;
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
+    private Map<String, String> _configProperties = new HashMap<String,String>();
 
     public String getLogConfigFile()
     {
@@ -288,5 +303,42 @@ public class BrokerOptions
     public void setSkipLoggingConfiguration(boolean skipLoggingConfiguration)
     {
         _skipLoggingConfiguration = skipLoggingConfiguration;
+    }
+
+    /**
+     * Sets the named configuration property to the given value.
+     *
+     * Passing a null value causes removal of a previous value, and restores any default there may have been.
+     */
+    public void setConfigProperty(String name, String value)
+    {
+        if(value == null)
+        {
+            _configProperties.remove(name);
+        }
+        else
+        {
+            _configProperties.put(name, value);
+        }
+    }
+
+    /**
+     * Get an un-editable copy of the configuration properties, representing
+     * the user-configured values as well as any defaults for properties
+     * not otherwise configured.
+     *
+     * Subsequent property changes are not reflected in this map.
+     */
+    public Map<String,String> getConfigProperties()
+    {
+        ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String,String>();
+        properties.putAll(_configProperties);
+
+        properties.putIfAbsent(QPID_AMQP_PORT, String.valueOf(DEFAULT_AMQP_PORT_NUMBER));
+        properties.putIfAbsent(QPID_HTTP_PORT, String.valueOf(DEFAULT_HTTP_PORT_NUMBER));
+        properties.putIfAbsent(QPID_RMI_PORT, String.valueOf(DEFAULT_RMI_PORT_NUMBER));
+        properties.putIfAbsent(QPID_JMX_PORT, String.valueOf(DEFAULT_JMX_PORT_NUMBER));
+
+        return Collections.unmodifiableMap(properties);
     }
 }

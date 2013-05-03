@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.plugin;
 
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 
@@ -39,7 +41,8 @@ public interface ConfigurationStoreFactory
      * @param storeLocation store location
      * @param initialStore initial store
      * @param overwrite overwrite existing store with initial store
+     * @param configProperties a map of configuration properties the store can use to resolve configuration variables
      * @throws IllegalConfigurationException if store cannot be opened in the given location
      */
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite);
+    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties);
 }
