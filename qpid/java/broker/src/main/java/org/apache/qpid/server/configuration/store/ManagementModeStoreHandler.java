@@ -13,6 +13,8 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AccessControlProvider;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -27,8 +29,11 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     private static final String PORT_TYPE = Port.class.getSimpleName();
     private static final String VIRTUAL_HOST_TYPE = VirtualHost.class.getSimpleName();
     private static final String ACCESS_CONTROL_PROVIDER_TYPE = AccessControlProvider.class.getSimpleName();
+    private static final String GROUP_PROVIDER_TYPE = GroupProvider.class.getSimpleName();
+    private static final String AUTHENTICATION_PROVIDER_TYPE = AuthenticationProvider.class.getSimpleName();
     private static final String ATTRIBUTE_STATE = VirtualHost.STATE;
     private static final Object MANAGEMENT_MODE_AUTH_PROVIDER = "mm-auth";
+
 
     private final ConfigurationEntryStore _store;
     private final Map<UUID, ConfigurationEntry> _cliEntries;
@@ -255,11 +260,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
             {
                 quiesce = true;
             }
-            else if (ACCESS_CONTROL_PROVIDER_TYPE.equals(entryType))
-            {
-                quiesce = true;
-            }
-            else if (PORT_TYPE.equalsIgnoreCase(entryType))
+            else if (PORT_TYPE.equals(entryType))
             {
                 if (attributes == null)
                 {

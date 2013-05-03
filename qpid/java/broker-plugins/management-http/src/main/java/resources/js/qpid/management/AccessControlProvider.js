@@ -100,6 +100,7 @@ define(["dojo/_base/xhr",
                this.controller = controller;
                this.name = query(".name", node)[0];
                this.type = query(".type", node)[0];
+               this.state = query(".state", node)[0];
                this.query = "rest/accesscontrolprovider/"+encodeURIComponent(groupProviderObj.name);
 
                var that = this;
@@ -125,6 +126,7 @@ define(["dojo/_base/xhr",
            {
                this.name.innerHTML = this.accessControlProviderData[ "name" ];
                this.type.innerHTML = this.accessControlProviderData[ "type" ];
+               this.state.innerHTML = this.accessControlProviderData[ "state" ];
            };
 
            return AccessControlProvider;

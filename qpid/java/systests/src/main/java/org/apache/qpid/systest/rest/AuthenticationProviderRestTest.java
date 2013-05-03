@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
@@ -154,6 +155,103 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 0, providerDetails.size());
+    }
+
+    public void testRemovalOfAuthenticationProviderInErrorStateUsingManagementMode() throws Exception
+    {
+        stopBroker();
+
+        File file = new File(TMP_FOLDER, getTestName());
+        if (file.exists())
+        {
+            file.delete();
+        }
+        assertFalse("Group file should not exist", file.exists());
+
+        TestBrokerConfiguration config = getBrokerConfiguration();
+
+        String providerName = getTestName();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.NAME, providerName);
+        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsoluteFile());
+
+        UUID id = config.addAuthenticationProviderConfiguration(attributes);
+        config.setSaved(false);
+        startBroker(0, true);
+
+        getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
+
+        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
+        assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
+        assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+        assertEquals("Unexpected state", State.ERRORED.name() , provider.get(AuthenticationProvider.STATE));
+
+        int status = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "DELETE", null);
+        assertEquals("ACL was not deleted", 200, status);
+
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        assertEquals("Provider exists", 0, providers.size());
+    }
+
+    public void testUpdateOfAuthenticationProviderInErrorStateUsingManagementMode() throws Exception
+    {
+        stopBroker();
+
+        File file = new File(TMP_FOLDER, getTestName());
+        if (file.exists())
+        {
+            file.delete();
+        }
+        assertFalse("Group file should not exist", file.exists());
+
+        TestBrokerConfiguration config = getBrokerConfiguration();
+
+        String providerName = getTestName();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.NAME, providerName);
+        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsoluteFile());
+
+        UUID id = config.addAuthenticationProviderConfiguration(attributes);
+        config.setSaved(false);
+        startBroker(0, true);
+
+        getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
+
+        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
+        assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
+        assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+        assertEquals("Unexpected state", State.ERRORED.name() , provider.get(AuthenticationProvider.STATE));
+
+        File principalDatabase = null;
+        try
+        {
+            principalDatabase = getRestTestHelper().createTemporaryPasswdFile(new String[]{"admin2", "guest2", "test2"});
+            attributes = new HashMap<String, Object>();
+            attributes.put(AuthenticationProvider.NAME, providerName);
+            attributes.put(AuthenticationProvider.ID, id);
+            attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+            attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, principalDatabase.getAbsolutePath());
+
+            int status = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+            assertEquals("ACL was not deleted", 200, status);
+
+            provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+            assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
+            assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
+            assertEquals("Unexpected path", principalDatabase.getAbsolutePath() , provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+            assertEquals("Unexpected state", State.ACTIVE.name() , provider.get(AuthenticationProvider.STATE));
+        }
+        finally
+        {
+            if (principalDatabase != null)
+            {
+                principalDatabase.delete();
+            }
+        }
     }
 
     public void testCreateAndDeletePasswordAuthenticationProviderWithNonExistingFile() throws Exception
