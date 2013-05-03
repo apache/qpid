@@ -66,7 +66,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     private static final String ID = "id";
     private static final String TYPE = "@type";
 
-    private static final int STORE_VERSION = 1;
+    static final int STORE_VERSION = 1;
 
     private final ObjectMapper _objectMapper;
     private final Map<UUID, ConfigurationEntry> _entries;
@@ -268,6 +268,24 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         {
             is = url.openStream();
             JsonNode node = loadJsonNodes(is, _objectMapper);
+
+            int storeVersion = 0;
+            JsonNode storeVersionNode = node.get(Broker.STORE_VERSION);
+            if (storeVersionNode == null || storeVersionNode.isNull())
+            {
+                throw new IllegalConfigurationException("Broker " + Broker.STORE_VERSION + " attribute must be specified");
+            }
+            else
+            {
+                storeVersion = storeVersionNode.getIntValue();
+            }
+
+            if (storeVersion != STORE_VERSION)
+            {
+                throw new IllegalConfigurationException("The data of version " + storeVersion
+                        + " can not be loaded by store of version " + STORE_VERSION);
+            }
+
             ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
             _rootId = brokerEntry.getId();
         }

@@ -49,10 +49,19 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     private File createStoreFile(UUID brokerId, Map<String, Object> brokerAttributes) throws IOException,
             JsonGenerationException, JsonMappingException
     {
+        return createStoreFile(brokerId, brokerAttributes, true);
+    }
+
+    private File createStoreFile(UUID brokerId, Map<String, Object> brokerAttributes, boolean setVersion) throws IOException,
+            JsonGenerationException, JsonMappingException
+    {
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();
         brokerObjectMap.put(Broker.ID, brokerId);
-        brokerObjectMap.put("@type", Broker.class.getSimpleName());
-        brokerObjectMap.put("storeVersion", 1);
+        if (setVersion)
+        {
+            brokerObjectMap.put(Broker.STORE_VERSION, MemoryConfigurationEntryStore.STORE_VERSION);
+        }
+        brokerObjectMap.put(Broker.NAME, getTestName());
         brokerObjectMap.putAll(brokerAttributes);
 
         StringWriter sw = new StringWriter();
@@ -124,7 +133,6 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     {
         UUID brokerId = UUID.randomUUID();
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        brokerAttributes.put(Broker.NAME, getTestName());
         File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
 
         JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore(initialStoreFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
@@ -150,5 +158,59 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     public void testGetType()
     {
         assertEquals("Unexpected type", "json", getStore().getType());
+    }
+
+    public void testUnsupportedStoreVersion() throws Exception
+    {
+        UUID brokerId = UUID.randomUUID();
+        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        int[] storeVersions = {Integer.MAX_VALUE, 0};
+        for (int storeVersion : storeVersions)
+        {
+            brokerAttributes.put(Broker.STORE_VERSION, storeVersion);
+            File storeFile = null;
+            try
+            {
+                storeFile = createStoreFile(brokerId, brokerAttributes);
+                new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), null, false, Collections.<String, String>emptyMap());
+                fail("The store creation should fail due to unsupported store version");
+            }
+            catch (IllegalConfigurationException e)
+            {
+                assertEquals("The data of version " + storeVersion
+                        + " can not be loaded by store of version " + MemoryConfigurationEntryStore.STORE_VERSION, e.getMessage());
+            }
+            finally
+            {
+                if (storeFile != null)
+                {
+                    storeFile.delete();
+                }
+            }
+        }
+    }
+
+    public void testStoreVersionNotSpecified() throws Exception
+    {
+        UUID brokerId = UUID.randomUUID();
+        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        File storeFile = null;
+        try
+        {
+            storeFile = createStoreFile(brokerId, brokerAttributes, false);
+            new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), null, false, Collections.<String, String>emptyMap());
+            fail("The store creation should fail due to unspecified store version");
+        }
+        catch (IllegalConfigurationException e)
+        {
+            assertEquals("Broker " + Broker.STORE_VERSION + " attribute must be specified", e.getMessage());
+        }
+        finally
+        {
+            if (storeFile != null)
+            {
+                storeFile.delete();
+            }
+        }
     }
 }
