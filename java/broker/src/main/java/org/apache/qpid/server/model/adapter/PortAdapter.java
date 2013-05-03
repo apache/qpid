@@ -309,7 +309,7 @@ public class PortAdapter extends AbstractAdapter implements Port
         State state = _state.get();
         if (desiredState == State.DELETED)
         {
-            if (state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED)
+            if (state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED  || state == State.ERRORED)
             {
                 return _state.compareAndSet(state, State.DELETED);
             }
@@ -328,7 +328,7 @@ public class PortAdapter extends AbstractAdapter implements Port
                 }
                 catch(RuntimeException e)
                 {
-                    _state.compareAndSet(State.ACTIVE, state);
+                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
                     throw e;
                 }
                 return true;

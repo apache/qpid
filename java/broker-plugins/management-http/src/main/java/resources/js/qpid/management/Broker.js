@@ -576,14 +576,15 @@ define(["dojo/_base/xhr",
 
                              that.authenticationProvidersGrid =
                                  new UpdatableStore(that.brokerData.authenticationproviders, query(".broker-authentication-providers")[0],
-                                                 [ { name: "Name",    field: "name",      width: "100%"},
-                                                     { name: "Type", field: "type", width: "300px"},
-                                                     { name: "User Management", field: "type", width: "200px",
+                                                 [ { name: "Name",    field: "name",      width: "30%"},
+                                                   { name: "State",    field: "state",      width: "20%"},
+                                                     { name: "Type", field: "type", width: "20%"},
+                                                     { name: "User Management", field: "type", width: "20%",
                                                              formatter: function(val){
                                                                  return "<input type='radio' disabled='disabled' "+(util.isProviderManagingUsers(val)?"checked='checked'": "")+" />";
                                                              }
                                                      },
-                                                     { name: "Default", field: "name", width: "100px",
+                                                     { name: "Default", field: "name", width: "10%",
                                                          formatter: function(val){
                                                              return "<input type='radio' disabled='disabled' "+(val == that.brokerData.defaultAuthenticationProvider ? "checked='checked'": "")+" />";
                                                          }
@@ -637,8 +638,9 @@ define(["dojo/_base/xhr",
                                                }, gridProperties, EnhancedGrid);
                              that.groupProvidersGrid =
                                new UpdatableStore(that.brokerData.groupproviders, query(".broker-group-providers")[0],
-                                               [ { name: "Name",    field: "name",      width: "50%"},
-                                                 { name: "Type", field: "type", width: "50%"}
+                                               [ { name: "Name",    field: "name",      width: "40%"},
+                                                 { name: "State", field: "state", width: "30%"},
+                                                 { name: "Type", field: "type", width: "30%"}
                                                ], function(obj) {
                                                        connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                        function(evt){
@@ -651,8 +653,9 @@ define(["dojo/_base/xhr",
                              var aclData = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
                              that.accessControlProvidersGrid =
                                new UpdatableStore(aclData, query(".broker-access-control-providers")[0],
-                                               [ { name: "Name",    field: "name",      width: "60%"},
-                                                 { name: "Type", field: "type", width: "40%"}
+                                               [ { name: "Name",  field: "name",  width: "40%"},
+                                                 { name: "State", field: "state", width: "30%"},
+                                                 { name: "Type",  field: "type", width: "30%"}
                                                ], function(obj) {
                                                        connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                        function(evt){

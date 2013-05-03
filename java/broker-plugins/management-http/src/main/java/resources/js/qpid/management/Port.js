@@ -128,6 +128,7 @@ define(["dojo/dom",
                }
 
                storeNodes(["nameValue",
+                           "stateValue",
                            "portValue",
                            "authenticationProviderValue",
                            "protocolsValue",
@@ -169,6 +170,7 @@ define(["dojo/dom",
                }
 
               this.nameValue.innerHTML = this.keyStoreData[ "name" ];
+              this.stateValue.innerHTML = this.keyStoreData[ "state" ];
               this.portValue.innerHTML = this.keyStoreData[ "port" ];
               this.authenticationProviderValue.innerHTML = this.keyStoreData[ "authenticationProvider" ] ? this.keyStoreData[ "authenticationProvider" ] : "";
               this.protocolsValue.innerHTML = printArray( "protocols", this.keyStoreData);

@@ -115,11 +115,9 @@ define(["dojo/_base/xhr",
                this.controller = controller;
                this.name = query(".name", node)[0];
                this.type = query(".type", node)[0];
+               this.state = query(".state", node)[0];
                this.authenticationProvider = authenticationProvider;
-               /*this.state = dom.byId("state");
-               this.durable = dom.byId("durable");
-               this.lifetimePolicy = dom.byId("lifetimePolicy");
-               */
+
                this.query = "rest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
 
                var that = this;
@@ -155,10 +153,7 @@ define(["dojo/_base/xhr",
                this.authenticationProvider.name = this.authProviderData[ "name" ]
                this.name.innerHTML = this.authProviderData[ "name" ];
                this.type.innerHTML = this.authProviderData[ "type" ];
-    /*           this.state.innerHTML = this.brokerData[ "state" ];
-               this.durable.innerHTML = this.brokerData[ "durable" ];
-               this.lifetimePolicy.innerHTML = this.brokerData[ "lifetimePolicy" ];
-*/
+               this.state.innerHTML = this.authProviderData[ "state" ];
            };
 
            AuthProviderUpdater.prototype.update = function()

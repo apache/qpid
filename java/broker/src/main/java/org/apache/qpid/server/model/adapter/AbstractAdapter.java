@@ -351,15 +351,7 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected void changeAttributes(final Map<String, Object> attributes)
     {
-        if (attributes.containsKey(ID))
-        {
-            UUID id = getId();
-            Object idAttributeValue = attributes.get(ID);
-            if (idAttributeValue != null && !idAttributeValue.equals(id))
-            {
-                throw new IllegalConfigurationException("Cannot change existing configured object id");
-            }
-        }
+        validateChangeAttributes(attributes);
         Collection<String> names = getAttributeNames();
         for (String name : names)
         {
@@ -371,6 +363,19 @@ abstract class AbstractAdapter implements ConfiguredObject
                 {
                     attributeSet(name, expected, desired);
                 }
+            }
+        }
+    }
+
+    protected void validateChangeAttributes(final Map<String, Object> attributes)
+    {
+        if (attributes.containsKey(ID))
+        {
+            UUID id = getId();
+            Object idAttributeValue = attributes.get(ID);
+            if (idAttributeValue != null && !idAttributeValue.equals(id.toString()))
+            {
+                throw new IllegalConfigurationException("Cannot change existing configured object id");
             }
         }
     }

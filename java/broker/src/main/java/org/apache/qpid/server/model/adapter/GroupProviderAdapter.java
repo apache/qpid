@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Group;
@@ -43,13 +45,17 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.util.MapValueConverter;
 
 public class GroupProviderAdapter extends AbstractAdapter implements
         GroupProvider
 {
+    private static Logger LOGGER = Logger.getLogger(GroupProviderAdapter.class);
+
     private final GroupManager _groupManager;
     private final Broker _broker;
     private Collection<String> _supportedAttributes;
+    private AtomicReference<State> _state;
 
     public GroupProviderAdapter(UUID id, Broker broker, GroupManager groupManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
@@ -62,6 +68,8 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         _groupManager = groupManager;
         _broker = broker;
         _supportedAttributes = createSupportedAttributes(attributeNames);
+        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
+        _state = new AtomicReference<State>(state);
        addParent(Broker.class, broker);
 
        // set attributes now after all attribute names are known
@@ -104,7 +112,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
     @Override
     public State getActualState()
     {
-        return null;
+        return _state.get();
     }
 
     @Override
@@ -180,7 +188,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
         else if (STATE.equals(name))
         {
-            return State.ACTIVE; // TODO
+            return getActualState();
         }
         else if (TIME_TO_LIVE.equals(name))
         {
@@ -252,21 +260,67 @@ public class GroupProviderAdapter extends AbstractAdapter implements
     @Override
     protected boolean setState(State currentState, State desiredState)
     {
+        State state = _state.get();
         if (desiredState == State.ACTIVE)
         {
-            _groupManager.open();
-            return true;
+            if ((state == State.INITIALISING || state == State.QUIESCED || state == State.STOPPED)
+                    && _state.compareAndSet(state, State.ACTIVE))
+            {
+                try
+                {
+                    _groupManager.open();
+                    return true;
+                }
+                catch(RuntimeException e)
+                {
+                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
+                    if (_broker.isManagementMode())
+                    {
+                        LOGGER.warn("Failed to activate group provider: " + getName(), e);
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot activate group provider in state: " + state);
+            }
         }
         else if (desiredState == State.STOPPED)
         {
-            _groupManager.close();
-            return true;
+            if (_state.compareAndSet(state, State.STOPPED))
+            {
+                _groupManager.close();
+                return true;
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot stop group provider in state: " + state);
+            }
         }
         else if (desiredState == State.DELETED)
         {
-            _groupManager.close();
-            _groupManager.onDelete();
-            return true;
+            if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED || state == State.ERRORED)
+                    && _state.compareAndSet(state, State.DELETED))
+            {
+                _groupManager.close();
+                _groupManager.onDelete();
+                return true;
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot delete group provider in state: " + state);
+            }
+        }
+        else if (desiredState == State.QUIESCED)
+        {
+            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
+            {
+                return true;
+            }
         }
         return false;
     }

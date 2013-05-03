@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -43,6 +44,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 
 public class AccessControlProviderAdapter extends AbstractAdapter implements AccessControlProvider
 {
+    private static final Logger LOGGER = Logger.getLogger(AccessControlProviderAdapter.class);
+
     protected AccessControl _accessControl;
     protected final Broker _broker;
 
@@ -217,8 +220,23 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
         {
             if ((state == State.INITIALISING || state == State.QUIESCED) && _state.compareAndSet(state, State.ACTIVE))
             {
-                _accessControl.open();
-                return true;
+                try
+                {
+                    _accessControl.open();
+                    return true;
+                }
+                catch(RuntimeException e)
+                {
+                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
+                    if (_broker.isManagementMode())
+                    {
+                        LOGGER.warn("Failed to activate ACL provider: " + getName(), e);
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
             }
             else
             {
@@ -235,7 +253,6 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
 
             return false;
         }
-
         return false;
     }
 

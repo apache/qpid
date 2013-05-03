@@ -25,10 +25,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -228,6 +231,34 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         assertCanAccessManagementInterface(accessControlProviderName2, false);
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
         assertCanAccessManagementInterface(accessControlProviderName2, true);
+    }
+
+    public void testRemovalOfAccessControlProviderInErrorStateUsingManagementMode() throws Exception
+    {
+        stopBroker();
+
+        File file = new File(TMP_FOLDER, getTestName());
+        if (file.exists())
+        {
+            file.delete();
+        }
+        assertFalse("ACL file should not exist", file.exists());
+        UUID id = getBrokerConfiguration().addAclFileConfiguration(file.getAbsolutePath());
+        getBrokerConfiguration().setSaved(false);
+        startBroker(0, true);
+
+        getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
+
+        Map<String, Object> acl = getRestTestHelper().getJsonAsSingletonList("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
+        assertEquals("Unexpected id", id.toString(), acl.get(AccessControlProvider.ID));
+        assertEquals("Unexpected path", file.getAbsolutePath() , acl.get(FileAccessControlProviderConstants.PATH));
+        assertEquals("Unexpected state", State.ERRORED.name() , acl.get(AccessControlProvider.STATE));
+
+        int status = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE, "DELETE", null);
+        assertEquals("ACL was not deleted", 200, status);
+
+        List<Map<String, Object>> acls = getRestTestHelper().getJsonAsList("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
+        assertEquals("ACL exists", 0, acls.size());
     }
 
     private void assertCanAccessManagementInterface(String accessControlProviderName, boolean canAccess) throws Exception

@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -283,6 +285,37 @@ public class GroupProviderRestTest extends QpidRestTestCase
         {
             groupFile.delete();
         }
+    }
+
+    public void testRemovalOfGroupProviderInErrorStateUsingManagementMode() throws Exception
+    {
+        stopBroker();
+
+        File file = new File(TMP_FOLDER, getTestName());
+        if (file.exists())
+        {
+            file.delete();
+        }
+        assertFalse("Group file should not exist", file.exists());
+
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
+        UUID id = config.addGroupFileConfiguration(file.getAbsolutePath());
+        config.setSaved(false);
+        startBroker(0, true);
+
+        getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
+
+        Map<String, Object> groupProvider = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
+        assertEquals("Unexpected id", id.toString(), groupProvider.get(GroupProvider.ID));
+        assertEquals("Unexpected path", file.getAbsolutePath() , groupProvider.get(FileGroupManagerFactory.PATH));
+        assertEquals("Unexpected state", State.ERRORED.name() , groupProvider.get(GroupProvider.STATE));
+
+        int status = getRestTestHelper().submitRequest("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE, "DELETE", null);
+        assertEquals("ACL was not deleted", 200, status);
+
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
+        assertEquals("Provider exists", 0, providers.size());
     }
 
     private void assertProvider(String name, String type, Map<String, Object> provider)
