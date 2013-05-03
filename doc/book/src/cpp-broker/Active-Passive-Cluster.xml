@@ -317,7 +317,15 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>ha-backup-timeout <replaceable>SECONDS</replaceable></literal> </entry>
+	    <entry><literal>ha-backup-timeout<replaceable>SECONDS</replaceable></literal>
+	    <footnote id="ha-seconds-spec">
+	      <para>
+		Values specified as <replaceable>SECONDS</replaceable> can be a
+		fraction of a second, e.g. "0.1" for a tenth of a second.
+		They can also have an explicit unit, e.g. 10s, 10ms, 10us, 10ns
+	      </para>
+	    </footnote>
+	    </entry>
 	    <entry>
 	      <para>
 		Maximum time that a recovering primary will wait for an expected
@@ -326,7 +334,10 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>link-maintenance-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <literal>link-maintenance-interval <replaceable>SECONDS</replaceable></literal>
+	      <footnoteref linkend="ha-seconds-spec"/>
+	    </entry>
 	    <entry>
 	      <para>
 		Interval for the broker to check link health and re-connect links if need
@@ -336,7 +347,10 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>link-heartbeat-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <literal>link-heartbeat-interval <replaceable>SECONDS</replaceable></literal>
+	      <footnoteref linkend="ha-seconds-spec"/>
+	    </entry>
 	    <entry>
 	      <para>
 		Heartbeat interval for replication links. The link will be assumed broken
