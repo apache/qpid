@@ -34,6 +34,7 @@ public class Model
      */
     public static final int MODEL_MAJOR_VERSION = 1;
     public static final int MODEL_MINOR_VERSION = 0;
+    public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
 
     private static final Model MODEL_INSTANCE = new Model();
 

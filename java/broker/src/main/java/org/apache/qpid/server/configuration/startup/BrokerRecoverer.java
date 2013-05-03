@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
@@ -39,6 +40,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
@@ -46,10 +48,13 @@ import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 {
+    private static final Pattern MODEL_VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+$");
+
     private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
@@ -80,8 +85,14 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
+        Map<String, Object> attributes = entry.getAttributes();
+        validateAttributes(attributes);
+
+        Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
+        attributesCopy.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
+
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
-        BrokerAdapter broker = new BrokerAdapter(entry.getId(), entry.getAttributes(), _statisticsGatherer, _virtualHostRegistry,
+        BrokerAdapter broker = new BrokerAdapter(entry.getId(), attributesCopy, _statisticsGatherer, _virtualHostRegistry,
                 _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory,
                 _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
 
@@ -115,6 +126,37 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         }
 
         return broker;
+    }
+
+    private void validateAttributes(Map<String, Object> attributes)
+    {
+        String modelVersion = null;
+        if (attributes.containsKey(Broker.MODEL_VERSION))
+        {
+            modelVersion = MapValueConverter.getStringAttribute(Broker.MODEL_VERSION, attributes, null);
+        }
+
+        if (modelVersion == null)
+        {
+            throw new IllegalConfigurationException("Broker " + Broker.MODEL_VERSION + " must be specified");
+        }
+
+        if (!MODEL_VERSION_PATTERN.matcher(modelVersion).matches())
+        {
+            throw new IllegalConfigurationException("Broker " + Broker.MODEL_VERSION + " is specified in incorrect format: "
+                    + modelVersion);
+        }
+
+        int versionSeparatorPosition = modelVersion.indexOf(".");
+        String majorVersionPart = modelVersion.substring(0, versionSeparatorPosition);
+        int majorModelVersion = Integer.parseInt(majorVersionPart);
+        int minorModelVersion = Integer.parseInt(modelVersion.substring(versionSeparatorPosition + 1));
+
+        if (majorModelVersion != Model.MODEL_MAJOR_VERSION || minorModelVersion > Model.MODEL_MINOR_VERSION)
+        {
+            throw new IllegalConfigurationException("The model version '" + modelVersion
+                    + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
+        }
     }
 
     private void recoverType(RecovererProvider recovererProvider,
