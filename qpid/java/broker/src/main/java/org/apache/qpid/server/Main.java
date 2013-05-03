@@ -60,6 +60,10 @@ public class Main
             " optionally specified file path, or as " + BrokerOptions.DEFAULT_INITIAL_CONFIG_NAME + " in the current directory")
             .withLongOpt("create-initial-config").create("cic");
 
+    private static final Option OPTION_CONFIGURATION_PROPERTY = OptionBuilder.withArgName("name=value").hasArg()
+            .withDescription("set a configuration property to use when resolving variables in the broker configuration store, with format 'name=value'")
+            .withLongOpt("config-property").create("prop");
+
     private static final Option OPTION_LOG_CONFIG_FILE =
             OptionBuilder.withArgName("file").hasArg()
                     .withDescription("use the specified log4j xml configuration file. By "
@@ -103,6 +107,7 @@ public class Main
         OPTIONS.addOption(OPTION_MM_CONNECTOR_PORT);
         OPTIONS.addOption(OPTION_MM_HTTP_PORT);
         OPTIONS.addOption(OPTION_MM_PASSWORD);
+        OPTIONS.addOption(OPTION_CONFIGURATION_PROPERTY);
     }
 
     protected CommandLine _commandLine;
@@ -210,6 +215,28 @@ public class Main
         }
         else
         {
+            String[] configPropPairs = _commandLine.getOptionValues(OPTION_CONFIGURATION_PROPERTY.getOpt());
+            if(configPropPairs != null && configPropPairs.length > 0)
+            {
+                for(String s : configPropPairs)
+                {
+                    int firstEquals = s.indexOf("=");
+                    if(firstEquals == -1)
+                    {
+                        throw new IllegalArgumentException("Configuration property argument is not of the format name=value: " + s);
+                    }
+                    String name = s.substring(0, firstEquals);
+                    String value = s.substring(firstEquals + 1);
+
+                    if(name.equals(""))
+                    {
+                        throw new IllegalArgumentException("Configuration property argument is not of the format name=value: " + s);
+                    }
+
+                    options.setConfigProperty(name, value);
+                }
+            }
+
             String configurationStore = _commandLine.getOptionValue(OPTION_CONFIGURATION_STORE_PATH.getOpt());
             if (configurationStore != null)
             {

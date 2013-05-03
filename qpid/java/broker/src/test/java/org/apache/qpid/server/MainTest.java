@@ -21,6 +21,7 @@
 package org.apache.qpid.server;
 
 import java.io.File;
+import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -33,6 +34,8 @@ import org.apache.qpid.test.utils.QpidTestCase;
  */
 public class MainTest extends QpidTestCase
 {
+    private Exception _startupException;
+
     public void testNoOptionsSpecified()
     {
         BrokerOptions options = startDummyMain("");
@@ -193,6 +196,40 @@ public class MainTest extends QpidTestCase
         assertNotNull(options.getManagementModePassword());
     }
 
+    public void testSetConfigProperties()
+    {
+        //short name
+        String newPort = "12345";
+        BrokerOptions options = startDummyMain("-prop name=value -prop " + BrokerOptions.QPID_AMQP_PORT + "=" + newPort);
+
+        Map<String, String> props = options.getConfigProperties();
+
+        assertEquals(newPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals("value", props.get("name"));
+
+        //long name
+        newPort = "678910";
+        options = startDummyMain("--config-property name2=value2 --config-property " + BrokerOptions.QPID_AMQP_PORT + "=" + newPort);
+
+        props = options.getConfigProperties();
+
+        assertEquals(newPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals("value2", props.get("name2"));
+    }
+
+    public void testSetConfigPropertiesInvalidFormat()
+    {
+        //missing equals
+        startDummyMain("-prop namevalue");
+        assertTrue("expected exception did not occur",
+                _startupException instanceof IllegalArgumentException);
+
+        //no name specified
+        startDummyMain("-prop =value");
+        assertTrue("expected exception did not occur",
+                _startupException instanceof IllegalArgumentException);
+    }
+
     private BrokerOptions startDummyMain(String commandLine)
     {
         return (new TestMain(commandLine.split("\\s"))).getOptions();
@@ -205,6 +242,19 @@ public class MainTest extends QpidTestCase
         public TestMain(String[] args)
         {
             super(args);
+        }
+
+        @Override
+        protected void execute()
+        {
+            try
+            {
+                super.execute();
+            }
+            catch(Exception re)
+            {
+                MainTest.this._startupException = re;
+            }
         }
 
         @Override

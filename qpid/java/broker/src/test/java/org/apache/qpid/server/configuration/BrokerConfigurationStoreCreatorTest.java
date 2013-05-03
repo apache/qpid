@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration;
 
 import java.io.File;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -73,11 +74,11 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
     public void testCreateJsonStore()
     {
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, false);
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, false, new BrokerOptions().getConfigProperties());
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null);
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
         Set<UUID> childrenIds = jsonStore.getRootEntry().getChildrenIds();
         assertFalse("Unexpected children: " + childrenIds, childrenIds.isEmpty());
     }
@@ -112,11 +113,11 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
         File _initialStoreFile = TestFileUtils.createTempFile(this, ".json", brokerJson);
 
-        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _initialStoreFile.getAbsolutePath(), false);
+        ConfigurationEntryStore store = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", _initialStoreFile.getAbsolutePath(), false, Collections.<String,String>emptyMap());
         assertNotNull("Store was not created", store);
         assertTrue("File should exists", _userStoreLocation.exists());
         assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
-        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null);
+        JsonConfigurationEntryStore jsonStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
         ConfigurationEntry entry = jsonStore.getRootEntry();
         assertEquals("Unexpected root id", testBrokerId, entry.getId());
         Map<String, Object> attributes = entry.getAttributes();
@@ -128,13 +129,13 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 
         if(overwrite)
         {
-            ConfigurationEntryStore overwrittenStore = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, true);
+            ConfigurationEntryStore overwrittenStore = _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "json", BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, true, new BrokerOptions().getConfigProperties());
             assertNotNull("Store was not created", overwrittenStore);
             assertTrue("File should exists", _userStoreLocation.exists());
             assertTrue("File size should be greater than 0", _userStoreLocation.length() > 0);
 
             //check the contents reflect the test store content having been overwritten with the default store
-            JsonConfigurationEntryStore reopenedOverwrittenStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null, false);
+            JsonConfigurationEntryStore reopenedOverwrittenStore = new JsonConfigurationEntryStore(_userStoreLocation.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
             entry = reopenedOverwrittenStore.getRootEntry();
             assertFalse("Root id did not change, store content was not overwritten", testBrokerId.equals(entry.getId()));
             attributes = entry.getAttributes();
@@ -150,7 +151,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
     {
         try
         {
-            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "derby", null, false);
+            _storeCreator.createStore(_userStoreLocation.getAbsolutePath(), "other", null, false, Collections.<String,String>emptyMap());
             fail("Store is not yet supported");
         }
         catch(IllegalConfigurationException e)

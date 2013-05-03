@@ -42,7 +42,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     protected ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
     {
         _storeFile = createStoreFile(brokerId, brokerAttributes);
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null);
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
         return store;
     }
 
@@ -83,7 +83,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
                 attributes, brokerConfigEntry.getChildrenIds(), store);
         store.save(updatedBrokerEntry);
 
-        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null);
+        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
 
         assertEquals("Unresolved default virtualhost  value", defaultVhost, store2.getRootEntry().getAttributes().get(Broker.DEFAULT_VIRTUAL_HOST));
     }
@@ -93,7 +93,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         File file = TestFileUtils.createTempFile(this, ".json");
         try
         {
-            new JsonConfigurationEntryStore(file.getAbsolutePath(), null);
+            new JsonConfigurationEntryStore(file.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
             fail("Cannot create a new store without initial store");
         }
         catch(IllegalConfigurationException e)
@@ -109,7 +109,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         brokerAttributes.put(Broker.NAME, getTestName());
         File file = createStoreFile(brokerId, brokerAttributes);
 
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(file.getAbsolutePath(), null);
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(file.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
         assertEquals("Unexpected root entry", brokerId, root.getId());
@@ -127,10 +127,10 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         brokerAttributes.put(Broker.NAME, getTestName());
         File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
 
-        JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore(initialStoreFile.getAbsolutePath(), null);
+        JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore(initialStoreFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
 
         File storeFile = TestFileUtils.createTempFile(this, ".json");
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), initialStore);
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), initialStore, false, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
