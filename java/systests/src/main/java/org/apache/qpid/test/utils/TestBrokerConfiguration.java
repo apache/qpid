@@ -70,7 +70,7 @@ public class TestBrokerConfiguration
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
-        _store = new MemoryConfigurationEntryStore(intialStoreLocation, null);
+        _store = new MemoryConfigurationEntryStore(intialStoreLocation, null, Collections.<String,String>emptyMap());
     }
 
     public boolean setBrokerAttribute(String name, Object value)

@@ -21,6 +21,7 @@
 package org.apache.qpid.server;
 
 import java.io.File;
+import java.util.Map;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -225,5 +226,48 @@ public class BrokerOptionsTest extends QpidTestCase
     {
         _options.setManagementModePassword("test");
         assertEquals("Unexpected management mode password", "test", _options.getManagementModePassword());
+    }
+
+    public void testGetDefaultConfigProperties()
+    {
+        Map<String,String> props = _options.getConfigProperties();
+
+        assertEquals("unexpected number of entries", 4, props.keySet().size());
+
+        assertEquals(BrokerOptions.DEFAULT_AMQP_PORT_NUMBER, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
+        assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
+    }
+
+    public void testSetDefaultConfigProperties()
+    {
+        String oldPort = BrokerOptions.DEFAULT_AMQP_PORT_NUMBER;
+        String newPort = "12345";
+
+        _options.setConfigProperty(BrokerOptions.QPID_AMQP_PORT, newPort);
+        Map<String,String> props = _options.getConfigProperties();
+        assertEquals("unexpected number of entries", 4, props.keySet().size());
+        assertEquals(newPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
+        assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
+
+        _options.setConfigProperty(BrokerOptions.QPID_AMQP_PORT, null);
+        props = _options.getConfigProperties();
+        assertEquals("unexpected number of entries", 4, props.keySet().size());
+        assertEquals(oldPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
+        assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
+
+        _options.setConfigProperty("name", "value");
+        props = _options.getConfigProperties();
+        assertEquals("unexpected number of entries", 5, props.keySet().size());
+        assertEquals(oldPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
+        assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
+        assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
+        assertEquals("value", props.get("name"));
     }
 }

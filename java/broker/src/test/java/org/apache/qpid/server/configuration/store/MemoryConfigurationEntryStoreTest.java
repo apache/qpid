@@ -24,7 +24,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         broker.putAll(brokerAttributes);
         ObjectMapper mapper = new ObjectMapper();
 
-        return new MemoryConfigurationEntryStore(mapper.writeValueAsString(broker));
+        return new MemoryConfigurationEntryStore(mapper.writeValueAsString(broker), Collections.<String,String>emptyMap());
     }
 
     @Override
@@ -38,7 +38,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     {
         try
         {
-            new MemoryConfigurationEntryStore(null, null);
+            new MemoryConfigurationEntryStore(null, null, Collections.<String,String>emptyMap());
             fail("Cannot create a memory store without either initial store or path to an initial store file");
         }
         catch(IllegalConfigurationException e)
@@ -49,7 +49,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
 
     public void testCreateWithNullJson()
     {
-        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null);
+        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -61,7 +61,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.NAME, getTestName());
         MemoryConfigurationEntryStore  initialStoreFile = (MemoryConfigurationEntryStore)createStore(brokerId, brokerAttributes);
-        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, initialStoreFile);
+        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, initialStoreFile, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -82,11 +82,11 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
             setTestSystemProperty("QPID_HOME", TMP_FOLDER);
             setTestSystemProperty("QPID_WORK", TMP_FOLDER + File.separator + "work");
         }
-        MemoryConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, null);
+        MemoryConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, null, new BrokerOptions().getConfigProperties());
         ConfigurationEntry initialStoreRoot = initialStore.getRootEntry();
         assertNotNull("Initial store root entry is not found", initialStoreRoot);
 
-         MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, initialStore);
+         MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, initialStore, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
