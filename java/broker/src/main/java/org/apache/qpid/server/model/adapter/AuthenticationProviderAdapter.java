@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.login.AccountNotFoundException;
 
@@ -58,6 +59,7 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.util.MapValueConverter;
 
 public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
 {
@@ -68,6 +70,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     protected Collection<String> _supportedAttributes;
     protected Map<String, AuthenticationManagerFactory> _factories;
+    private AtomicReference<State> _state;
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
@@ -76,6 +79,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         _broker = broker;
         _supportedAttributes = createSupportedAttributes(attributeNames);
         _factories = getAuthenticationManagerFactories();
+
+        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
+        _state = new AtomicReference<State>(state);
         addParent(Broker.class, broker);
 
         // set attributes now after all attribute names are known
@@ -117,7 +123,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     @Override
     public State getActualState()
     {
-        return null;
+        return _state.get();
     }
 
     @Override
@@ -191,7 +197,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
         else if(STATE.equals(name))
         {
-            return State.ACTIVE; // TODO
+            return getActualState();
         }
         else if(TIME_TO_LIVE.equals(name))
         {
@@ -214,6 +220,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     public boolean setState(State currentState, State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
+        State state = _state.get();
         if(desiredState == State.DELETED)
         {
             String providerName = getName();
@@ -227,20 +234,66 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }
             }
-            _authManager.close();
-            _authManager.onDelete();
-            return true;
+
+            if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED  || state == State.ERRORED)
+                    && _state.compareAndSet(state, State.DELETED))
+            {
+                _authManager.close();
+                _authManager.onDelete();
+                return true;
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot delete authentication provider in state: " + state);
+            }
         }
         else if(desiredState == State.ACTIVE)
         {
-            _authManager.initialise();
-            return true;
+            if ((state == State.INITIALISING || state == State.QUIESCED || state == State.STOPPED) && _state.compareAndSet(state, State.ACTIVE))
+            {
+                try
+                {
+                    _authManager.initialise();
+                    return true;
+                }
+                catch(RuntimeException e)
+                {
+                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
+                    if (_broker.isManagementMode())
+                    {
+                        LOGGER.warn("Failed to activate authentication provider: " + getName(), e);
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot activate authentication provider in state: " + state);
+            }
+        }
+        else if (desiredState == State.QUIESCED)
+        {
+            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
+            {
+                return true;
+            }
         }
         else if(desiredState == State.STOPPED)
         {
-            _authManager.close();
-            return true;
+            if (_state.compareAndSet(state, State.STOPPED))
+            {
+                _authManager.close();
+                return true;
+            }
+            else
+            {
+                throw new IllegalStateException("Cannot stop authentication provider in state: " + state);
+            }
         }
+
         return false;
     }
 
@@ -256,11 +309,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         Map<String, Object> effectiveAttributes = super.generateEffectiveAttributes(attributes);
         AuthenticationManager manager = validateAttributes(effectiveAttributes);
         manager.initialise();
-        _authManager = (T)manager;
-        String type = (String)effectiveAttributes.get(AuthenticationManagerFactory.ATTRIBUTE_TYPE);
-        AuthenticationManagerFactory managerFactory = _factories.get(type);
-        _supportedAttributes = createSupportedAttributes(managerFactory.getAttributeNames());
         super.changeAttributes(attributes);
+        _authManager = (T)manager;
+
+        // if provider was previously in ERRORED state then set its state to ACTIVE
+        _state.compareAndSet(State.ERRORED, State.ACTIVE);
     }
 
     private Map<String, AuthenticationManagerFactory> getAuthenticationManagerFactories()
@@ -287,6 +340,8 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     protected AuthenticationManager validateAttributes(Map<String, Object> attributes)
     {
+        super.validateChangeAttributes(attributes);
+
         String newName = (String)attributes.get(NAME);
         String currentName = getName();
         if (!currentName.equals(newName))
