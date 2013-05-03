@@ -100,6 +100,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
         put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
         put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, Long.class);
+        put(MODEL_VERSION, String.class);
+        put(STORE_VERSION, String.class);
     }});
 
     public static final int DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
@@ -775,7 +777,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
         else if (MODEL_VERSION.equals(name))
         {
-            return Model.MODEL_MAJOR_VERSION + "." + Model.MODEL_MINOR_VERSION;
+            return Model.MODEL_VERSION;
         }
         else if (STORE_VERSION.equals(name))
         {
@@ -1132,23 +1134,22 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
         validateAttributes(convertedAttributes);
 
-        Collection<String> names = AVAILABLE_ATTRIBUTES;
-        for (String name : names)
-        {
-            if (convertedAttributes.containsKey(name))
-            {
-                Object desired = convertedAttributes.get(name);
-                Object expected = getAttribute(name);
-                if (changeAttribute(name, expected, desired))
-                {
-                    attributeSet(name, expected, desired);
-                }
-            }
-        }
+        super.changeAttributes(convertedAttributes);
     }
 
     private void validateAttributes(Map<String, Object> convertedAttributes)
     {
+        if (convertedAttributes.containsKey(MODEL_VERSION) && !Model.MODEL_VERSION.equals(convertedAttributes.get(MODEL_VERSION)))
+        {
+            throw new IllegalConfigurationException("Cannot change the model version");
+        }
+
+        if (convertedAttributes.containsKey(STORE_VERSION)
+                && !new Integer(_brokerStore.getVersion()).equals(convertedAttributes.get(STORE_VERSION)))
+        {
+            throw new IllegalConfigurationException("Cannot change the store version");
+        }
+
         String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
         if (defaultVirtualHost != null)
         {

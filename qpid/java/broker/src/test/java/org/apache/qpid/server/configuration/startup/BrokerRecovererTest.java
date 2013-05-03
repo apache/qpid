@@ -36,6 +36,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -44,6 +45,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
@@ -77,6 +79,7 @@ public class BrokerRecovererTest extends TestCase
                 mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class), mock(BrokerOptions.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
+        when(_brokerEntry.getAttributes()).thenReturn(Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, Model.MODEL_VERSION));
 
         //Add a base AuthenticationProvider for all tests
         _authenticationProvider1 = mock(AuthenticationProvider.class);
@@ -104,6 +107,7 @@ public class BrokerRecovererTest extends TestCase
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
         attributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
+        attributes.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
 
         Map<String, Object> entryAttributes = new HashMap<String, Object>();
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
@@ -190,9 +194,6 @@ public class BrokerRecovererTest extends TestCase
         when(authenticationProvider2.getName()).thenReturn("authenticationProvider2");
         ConfigurationEntry authenticationProviderEntry2 = mock(ConfigurationEntry.class);
         _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1, authenticationProviderEntry2));
-
-        Map<String,Object> brokerAtttributes = new HashMap<String,Object>();
-        when(_brokerEntry.getAttributes()).thenReturn(brokerAtttributes);
 
         //Add a couple ports
         ConfigurationEntry portEntry1 = mock(ConfigurationEntry.class);
@@ -286,6 +287,69 @@ public class BrokerRecovererTest extends TestCase
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
         assertEquals(Collections.singleton(trustStore), new HashSet<ConfiguredObject>(broker.getChildren(TrustStore.class)));
+    }
+
+    public void testModelVersionValidationForIncompatibleMajorVersion() throws Exception
+    {
+        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        String[] incompatibleVersions = {Integer.MAX_VALUE + "." + 0, "0.0"};
+        for (String incompatibleVersion : incompatibleVersions)
+        {
+            brokerAttributes.put(Broker.MODEL_VERSION, incompatibleVersion);
+            when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
+
+            try
+            {
+                _brokerRecoverer.create(null, _brokerEntry);
+                fail("The broker creation should fail due to unsupported model version");
+            }
+            catch (IllegalConfigurationException e)
+            {
+                assertEquals("The model version '" + incompatibleVersion
+                        + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'", e.getMessage());
+            }
+        }
+    }
+
+
+    public void testModelVersionValidationForIncompatibleMinorVersion() throws Exception
+    {
+        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        String incompatibleVersion = Model.MODEL_MAJOR_VERSION + "." + Integer.MAX_VALUE;
+        brokerAttributes.put(Broker.MODEL_VERSION, incompatibleVersion);
+        when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
+
+        try
+        {
+            _brokerRecoverer.create(null, _brokerEntry);
+            fail("The broker creation should fail due to unsupported model version");
+        }
+        catch (IllegalConfigurationException e)
+        {
+            assertEquals("The model version '" + incompatibleVersion
+                    + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'", e.getMessage());
+        }
+    }
+
+    public void testIncorrectModelVersion() throws Exception
+    {
+        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        String[] versions = { Integer.MAX_VALUE + "_" + 0, "", null };
+        for (String modelVersion : versions)
+        {
+            brokerAttributes.put(Broker.MODEL_VERSION, modelVersion);
+            when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
+
+            try
+            {
+                _brokerRecoverer.create(null, _brokerEntry);
+                fail("The broker creation should fail due to unsupported model version");
+            }
+            catch (IllegalConfigurationException e)
+            {
+                // pass
+            }
+        }
     }
 
     private String convertToString(Object attributeValue)

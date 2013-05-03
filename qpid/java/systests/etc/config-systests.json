@@ -21,6 +21,8 @@
 {
   "name": "Broker",
   "defaultVirtualHost" : "test",
+  "storeVersion": 1,
+  "modelVersion": "1.0",
   "authenticationproviders" : [ {
     "name" : "plain",
     "type" : "PlainPasswordFile",
@@ -59,14 +61,4 @@
     "name" : "test",
     "configPath" : "${broker.virtualhosts-config}"
   } ]
-  /*
-,
-  "plugins" : [ {
-    "pluginType" : "MANAGEMENT-HTTP",
-    "name" : "httpManagement"
-  }, {
-    "pluginType" : "MANAGEMENT-JMX",
-    "name" : "jmxManagement"
-  } ]
-  */
 }
