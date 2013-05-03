@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.configuration.store.factory;
 
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
@@ -27,9 +29,9 @@ import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFactory
 {
     @Override
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite)
+    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
-        return new MemoryConfigurationEntryStore(null, initialStore);
+        return new MemoryConfigurationEntryStore(null, initialStore, configProperties);
     }
 
     @Override
@@ -37,5 +39,4 @@ public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFacto
     {
         return MemoryConfigurationEntryStore.STORE_TYPE;
     }
-
 }

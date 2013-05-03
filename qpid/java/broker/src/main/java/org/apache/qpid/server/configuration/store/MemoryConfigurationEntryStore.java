@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.util.Strings;
+import org.apache.qpid.util.Strings.ChainedResolver;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
@@ -77,18 +78,22 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     private boolean _generatedObjectIdDuringLoad;
 
-    protected MemoryConfigurationEntryStore()
+    private ChainedResolver _resolver;
+
+    protected MemoryConfigurationEntryStore(Map<String, String> configProperties)
     {
         _objectMapper = new ObjectMapper();
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         _entries = new HashMap<UUID, ConfigurationEntry>();
         _relationshipClasses = buildRelationshipClassMap();
+        _resolver = new Strings.ChainedResolver(Strings.SYSTEM_RESOLVER,
+                                                new Strings.MapResolver(configProperties));
     }
 
-    MemoryConfigurationEntryStore(String json)
+    MemoryConfigurationEntryStore(String json, Map<String, String> configProperties)
     {
-        this();
+        this(configProperties);
         if (json == null || "".equals(json))
         {
             createRootEntry();
@@ -99,9 +104,9 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         }
     }
 
-    public MemoryConfigurationEntryStore(String initialStoreLocation, ConfigurationEntryStore initialStore)
+    public MemoryConfigurationEntryStore(String initialStoreLocation, ConfigurationEntryStore initialStore, Map<String, String> configProperties)
     {
-        this();
+        this(configProperties);
         if (initialStore == null && (initialStoreLocation == null || "".equals(initialStoreLocation) ))
         {
             throw new IllegalConfigurationException("Cannot instantiate the memory broker store as neither initial store nor initial store location is provided");
@@ -609,7 +614,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             }
             else
             {
-                return Strings.expand(node.asText());
+                return Strings.expand(node.asText(), _resolver);
             }
         }
         else if (node.isArray())

@@ -29,20 +29,20 @@
   } ],
   "ports" : [  {
     "name" : "AMQP",
-    "port" : 5672,
+    "port" : "${qpid.amqp_port}",
     "authenticationProvider" : "passwordFile"
   }, {
     "name" : "HTTP",
-    "port" : 8080,
+    "port" : "${qpid.http_port}",
     "authenticationProvider" : "passwordFile",
     "protocols" : [ "HTTP" ]
   }, {
     "name" : "RMI_REGISTRY",
-    "port" : 8999,
+    "port" : "${qpid.rmi_port}",
     "protocols" : [ "RMI" ]
   }, {
     "name" : "JMX_CONNECTOR",
-    "port" : 9099,
+    "port" : "${qpid.jmx_port}",
     "authenticationProvider" : "passwordFile",
     "protocols" : [ "JMX_RMI" ]
   }],

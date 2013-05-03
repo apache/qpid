@@ -61,17 +61,18 @@ public class BrokerConfigurationStoreCreator
      * @param storeType store type
      * @param initialConfigLocation initial store location
      * @param overwrite whether to overwrite an existing configuration store with the initial configuration
+     * @param configProperties a map of configuration properties the store can use to resolve configuration variables
      * @throws IllegalConfigurationException if store type is unknown
      */
-    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialConfigLocation, boolean overwrite)
+    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialConfigLocation, boolean overwrite, Map<String, String> configProperties)
     {
-        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(initialConfigLocation, null);
+        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(initialConfigLocation, null, configProperties);
         ConfigurationStoreFactory factory = _factories.get(storeType.toLowerCase());
         if (factory == null)
         {
             throw new IllegalConfigurationException("Unknown store type: " + storeType);
         }
-        return factory.createStore(storeLocation, initialStore, overwrite);
+        return factory.createStore(storeLocation, initialStore, overwrite, configProperties);
     }
 
     public Collection<String> getStoreTypes()

@@ -1,6 +1,7 @@
 package org.apache.qpid.server.configuration.store;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -15,14 +16,9 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 
     private File _storeFile;
 
-    public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore)
+    public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
-        this(storeLocation, initialStore, false);
-    }
-
-    public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite)
-    {
-        super();
+        super(configProperties);
         _storeFile = new File(storeLocation);
 
         if(_storeFile.isDirectory())
