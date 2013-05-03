@@ -31,6 +31,7 @@ import java.util.UUID;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -104,7 +105,9 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();
         UUID testBrokerId = UUID.randomUUID();
         brokerObjectMap.put(Broker.ID, testBrokerId);
-        brokerObjectMap.put("name", testBrokerName);
+        brokerObjectMap.put(Broker.NAME, testBrokerName);
+        brokerObjectMap.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
+        brokerObjectMap.put(Broker.STORE_VERSION, 1);
 
         StringWriter sw = new StringWriter();
         objectMapper.writeValue(sw, brokerObjectMap);
@@ -122,7 +125,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         assertEquals("Unexpected root id", testBrokerId, entry.getId());
         Map<String, Object> attributes = entry.getAttributes();
         assertNotNull("Unexpected attributes: " + attributes, attributes);
-        assertEquals("Unexpected attributes size: " + attributes.size(), 1, attributes.size());
+        assertEquals("Unexpected attributes size: " + attributes.size(), 3, attributes.size());
         assertEquals("Unexpected attribute name: " + attributes.get("name"), testBrokerName, attributes.get(Broker.NAME));
         Set<UUID> childrenIds = entry.getChildrenIds();
         assertTrue("Unexpected children: " + childrenIds, childrenIds.isEmpty());

@@ -21,6 +21,7 @@
 {
   "name": "Broker",
   "storeVersion": 1,
+  "modelVersion": "1.0",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
     "name" : "passwordFile",
