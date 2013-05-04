@@ -142,7 +142,6 @@ public class BindingRestTest extends QpidRestTestCase
 
         Asserts.assertBinding(bindingName, "queue", "amq.direct", binding);
 
-        attributes.put(Binding.ID, binding.get(Binding.ID));
         attributes.put(Binding.ARGUMENTS, null);
 
         responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT", attributes);
