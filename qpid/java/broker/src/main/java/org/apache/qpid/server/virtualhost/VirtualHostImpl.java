@@ -146,7 +146,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _bindingFactory = new BindingFactory(this);
 
-        _messageStore = configureMessageStore(hostConfig);
+        _messageStore = initialiseMessageStore(hostConfig);
+
+        configureMessageStore(hostConfig);
 
         activateNonHAMessageStore();
 
@@ -260,29 +262,21 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         return _houseKeepingTasks.getActiveCount();
     }
 
-
-    private MessageStore initialiseMessageStore(final String messageStoreClass) throws Exception
-    {
-        final Class<?> clazz = Class.forName(messageStoreClass);
-        final Object o = clazz.newInstance();
-
-        if (!(o instanceof MessageStore))
-        {
-            throw new ClassCastException("Message store class must implement " + MessageStore.class +
-                                        ". Class " + clazz + " does not.");
-        }
-
-        final MessageStore messageStore = (MessageStore) o;
-        return messageStore;
-    }
-
-    private MessageStore configureMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
     {
         String storeType = hostConfig.getConfig().getString("store.type");
         MessageStore  messageStore = null;
         if (storeType == null)
         {
-            messageStore = initialiseMessageStore(hostConfig.getMessageStoreClass());
+            final Class<?> clazz = Class.forName(hostConfig.getMessageStoreClass());
+            final Object o = clazz.newInstance();
+
+            if (!(o instanceof MessageStore))
+            {
+                throw new ClassCastException(clazz + " does not implement " + MessageStore.class);
+            }
+
+            messageStore = (MessageStore) o;
         }
         else
         {
@@ -301,11 +295,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
         }
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
-
-        messageStore.configureConfigStore(getName(), recoveryHandler, hostConfig.getStoreConfiguration());
-        messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, hostConfig.getStoreConfiguration());
-
         return messageStore;
     }
 
@@ -315,6 +304,14 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         {
             _messageStore.activate();
         }
+    }
+
+    private void configureMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    {
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
+
+        _messageStore.configureConfigStore(getName(), recoveryHandler, hostConfig.getStoreConfiguration());
+        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, hostConfig.getStoreConfiguration());
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
