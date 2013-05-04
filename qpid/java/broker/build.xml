@@ -26,8 +26,8 @@
 
     <!-- Add dependencies to the broker pom for the broker-plugins and bdbstore modules -->
     <property name="module.maven.depends" value="broker-plugins/management-http broker-plugins/management-jmx broker-plugins/access-control bdbstore bdbstore/jmx"/>
-    <!-- Make them optional -->
-    <property name="module.genpom.args" value="-Oqpid-broker-plugins-management-http -Oqpid-broker-plugins-management-jmx -Oqpid-broker-plugins-access-control -Oqpid-bdbstore -Oqpid-bdbstore-jmx"/>
+    <!-- Make them runtime dependencies, make bdbstore modules optional -->
+    <property name="module.genpom.args" value="-Sqpid-broker-plugins-management-http=runtime -Sqpid-broker-plugins-management-jmx=runtime -Sqpid-broker-plugins-access-control=runtime -Sqpid-bdbstore=runtime -Oqpid-bdbstore -Sqpid-bdbstore-jmx=runtime -Oqpid-bdbstore-jmx"/>
 
     <import file="../module.xml"/>
 
