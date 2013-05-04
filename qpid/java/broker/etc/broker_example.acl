@@ -57,6 +57,7 @@ ACL ALLOW webadmins ACCESS MANAGEMENT
 # All rules below are required for console admin users
 # to perform create/update/delete operations
 ACL ALLOW-LOG webadmins CREATE QUEUE
+ACL ALLOW-LOG webadmins UPDATE QUEUE
 ACL ALLOW-LOG webadmins DELETE QUEUE
 ACL ALLOW-LOG webadmins PURGE  QUEUE
 ACL ALLOW-LOG webadmins CREATE EXCHANGE
