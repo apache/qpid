@@ -175,31 +175,6 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(5555, _options.getManagementModeHttpPort());
     }
 
-    public void testDefaultWorkDirWithQpidWork()
-    {
-        String qpidWork = "/test/value";
-        setTestSystemProperty("QPID_WORK", qpidWork);
-
-        String expectedPath = new File(qpidWork).getAbsolutePath();
-        assertEquals (expectedPath, _options.getWorkDir());
-    }
-
-    public void testDefaultWorkDirWithoutQpidWork()
-    {
-        setTestSystemProperty("QPID_WORK", null);
-        String userDir = System.getProperty("user.dir");
-
-        String expectedPath = new File(userDir, "work").getAbsolutePath();
-        assertEquals (expectedPath, _options.getWorkDir());
-    }
-
-    public void testOverriddenWorkDir()
-    {
-        final String testWorkDir = "/my/test/work/dir";
-        _options.setWorkDir(testWorkDir);
-        assertEquals(testWorkDir, _options.getWorkDir());
-    }
-
     public void testDefaultSkipLoggingConfiguration()
     {
         assertFalse(_options.isSkipLoggingConfiguration());
@@ -230,40 +205,108 @@ public class BrokerOptionsTest extends QpidTestCase
 
     public void testGetDefaultConfigProperties()
     {
+        //Unset QPID_WORK and QPID_HOME for this test.
+        //See below for specific tests of behaviour depending on their value
+        setTestSystemProperty("QPID_WORK", null);
+        setTestSystemProperty("QPID_HOME", null);
+
         Map<String,String> props = _options.getConfigProperties();
 
-        assertEquals("unexpected number of entries", 4, props.keySet().size());
+        assertEquals("unexpected number of entries", 5, props.keySet().size());
 
         assertEquals(BrokerOptions.DEFAULT_AMQP_PORT_NUMBER, props.get(BrokerOptions.QPID_AMQP_PORT));
         assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
         assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
         assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
+        assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
+        assertTrue(props.containsKey(BrokerOptions.QPID_WORK_DIR));
+        assertFalse(props.containsKey(BrokerOptions.QPID_HOME_DIR));
+    }
+
+    public void testDefaultWorkDirWithQpidWork()
+    {
+        String qpidWork = "/test/value";
+        setTestSystemProperty("QPID_WORK", qpidWork);
+
+        String expectedPath = new File(qpidWork).getAbsolutePath();
+        assertEquals (expectedPath, _options.getConfigProperties().get(BrokerOptions.QPID_WORK_DIR));
+    }
+
+    public void testDefaultWorkDirWithoutQpidWork()
+    {
+        setTestSystemProperty("QPID_WORK", null);
+        String userDir = System.getProperty("user.dir");
+
+        String expectedPath = new File(userDir, "work").getAbsolutePath();
+        assertEquals (expectedPath, _options.getConfigProperties().get(BrokerOptions.QPID_WORK_DIR));
+    }
+
+    public void testOverriddenWorkDir()
+    {
+        final String testWorkDir = "/my/test/work/dir";
+        _options.setConfigProperty(BrokerOptions.QPID_WORK_DIR, testWorkDir);
+        assertEquals(testWorkDir, _options.getConfigProperties().get(BrokerOptions.QPID_WORK_DIR));
+    }
+
+    public void testDefaultHomeDirWithQpidHome()
+    {
+        String qpidHome = "/test/value";
+        setTestSystemProperty("QPID_HOME", qpidHome);
+
+        String expectedPath = new File(qpidHome).getAbsolutePath();
+        assertEquals (expectedPath, _options.getConfigProperties().get(BrokerOptions.QPID_HOME_DIR));
+        assertEquals("unexpected number of entries", 6, _options.getConfigProperties().keySet().size());
+    }
+
+    public void testDefaultomeDirWithoutQpidHome()
+    {
+        setTestSystemProperty("QPID_HOME", null);
+
+        assertNull(_options.getConfigProperties().get(BrokerOptions.QPID_HOME_DIR));
+        assertFalse(_options.getConfigProperties().containsKey(BrokerOptions.QPID_HOME_DIR));
+        assertEquals("unexpected number of entries", 5, _options.getConfigProperties().keySet().size());
+    }
+
+    public void testOverriddenHomeDir()
+    {
+        final String testHomeDir = "/my/test/home/dir";
+        _options.setConfigProperty(BrokerOptions.QPID_HOME_DIR, testHomeDir);
+        assertEquals(testHomeDir, _options.getConfigProperties().get(BrokerOptions.QPID_HOME_DIR));
+        assertEquals("unexpected number of entries", 6, _options.getConfigProperties().keySet().size());
     }
 
     public void testSetDefaultConfigProperties()
     {
+        //Unset QPID_WORK and QPID_HOME for this test.
+        //See above for specific tests of behaviour depending on their value
+        setTestSystemProperty("QPID_WORK", null);
+        setTestSystemProperty("QPID_HOME", null);
+
         String oldPort = BrokerOptions.DEFAULT_AMQP_PORT_NUMBER;
         String newPort = "12345";
 
+        //set a new value for a previously defaulted port number property
         _options.setConfigProperty(BrokerOptions.QPID_AMQP_PORT, newPort);
         Map<String,String> props = _options.getConfigProperties();
-        assertEquals("unexpected number of entries", 4, props.keySet().size());
+        assertEquals("unexpected number of entries", 5, props.keySet().size());
         assertEquals(newPort, props.get(BrokerOptions.QPID_AMQP_PORT));
         assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
         assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
         assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
 
+        //clear the value to ensure the default returns
         _options.setConfigProperty(BrokerOptions.QPID_AMQP_PORT, null);
         props = _options.getConfigProperties();
-        assertEquals("unexpected number of entries", 4, props.keySet().size());
+        assertEquals("unexpected number of entries", 5, props.keySet().size());
         assertEquals(oldPort, props.get(BrokerOptions.QPID_AMQP_PORT));
         assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
         assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
         assertEquals(BrokerOptions.DEFAULT_JMX_PORT_NUMBER, props.get(BrokerOptions.QPID_JMX_PORT));
 
+        //set a user specified property
         _options.setConfigProperty("name", "value");
         props = _options.getConfigProperties();
-        assertEquals("unexpected number of entries", 5, props.keySet().size());
+        assertEquals("unexpected number of entries", 6, props.keySet().size());
         assertEquals(oldPort, props.get(BrokerOptions.QPID_AMQP_PORT));
         assertEquals(BrokerOptions.DEFAULT_HTTP_PORT_NUMBER, props.get(BrokerOptions.QPID_HTTP_PORT));
         assertEquals(BrokerOptions.DEFAULT_RMI_PORT_NUMBER, props.get(BrokerOptions.QPID_RMI_PORT));
