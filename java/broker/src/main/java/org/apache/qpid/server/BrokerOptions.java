@@ -33,6 +33,21 @@ import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
 {
+    /**
+     * Configuration property name for the absolute path to use for the broker work directory.
+     *
+     * If not otherwise set, the value for this configuration property defaults to the location
+     * set in the "QPID_WORK" system property if that was set, or the 'work' sub-directory of
+     * the JVM working directory ("user.dir" property) for the Java process if it was not.
+     */
+    public static final String QPID_WORK_DIR  = "qpid.work_dir";
+    /**
+     * Configuration property name for the absolute path to use for the broker home directory.
+     *
+     * If not otherwise set, the value for this configuration property defaults to the location
+     * set in the "QPID_HOME" system property if that was set, or remains unset if it was not.
+     */
+    public static final String QPID_HOME_DIR  = "qpid.home_dir";
     public static final String QPID_AMQP_PORT = "qpid.amqp_port";
     public static final String QPID_HTTP_PORT = "qpid.http_port";
     public static final String QPID_RMI_PORT  = "qpid.rmi_port";
@@ -52,6 +67,8 @@ public class BrokerOptions
     public static final String MANAGEMENT_MODE_USER_NAME = "mm_admin";
     private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
 
+    private static final File FALLBACK_WORK_DIR = new File(System.getProperty("user.dir"), "work");
+
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
 
@@ -66,7 +83,6 @@ public class BrokerOptions
     private int _managementModeConnectorPort;
     private int _managementModeHttpPort;
     private String _managementModePassword;
-    private String _workingDir;
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
     private Map<String, String> _configProperties = new HashMap<String,String>();
@@ -188,7 +204,8 @@ public class BrokerOptions
     /**
      * Get the broker configuration store location.
      *
-     * Defaults to {@value #DEFAULT_CONFIG_NAME_PREFIX}.{@literal <store type>} (see {@link BrokerOptions#getConfigurationStoreType()}) within the broker work directory (see {@link BrokerOptions#getWorkDir()}).
+     * Defaults to {@value #DEFAULT_CONFIG_NAME_PREFIX}.{@literal <store type>} (see {@link BrokerOptions#getConfigurationStoreType()})
+     * within the broker work directory (gathered via config property {@link #QPID_WORK_DIR}).
      *
      * @return the previously set configuration store location, or the default location if none was set.
      */
@@ -231,40 +248,6 @@ public class BrokerOptions
     public void setOverwriteConfigurationStore(boolean overwrite)
     {
         _overwriteConfigurationStore = overwrite;
-    }
-
-    /**
-     * Get the broker work directory location.
-     *
-     * Defaults to the location set in the "QPID_WORK" system property if it is set, or the 'work' sub-directory
-     * of the user working directory ("user.dir" property) for the Java process if it is not.
-     *
-     * @return the previously set configuration store location, or the default location if none was set.
-     */
-    public String getWorkDir()
-    {
-        if(_workingDir == null)
-        {
-            String qpidWork = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
-            if (qpidWork == null)
-            {
-                return new File(System.getProperty("user.dir"), "work").getAbsolutePath();
-            }
-
-            return qpidWork;
-        }
-
-        return _workingDir;
-    }
-
-    /**
-     * Set the absolute path to use for the broker work directory.
-     *
-     * Passing null clears any previously set value and returns to the default.
-     */
-    public void setWorkDir(String workingDir)
-    {
-        _workingDir = workingDir;
     }
 
     /**
@@ -338,7 +321,40 @@ public class BrokerOptions
         properties.putIfAbsent(QPID_HTTP_PORT, String.valueOf(DEFAULT_HTTP_PORT_NUMBER));
         properties.putIfAbsent(QPID_RMI_PORT, String.valueOf(DEFAULT_RMI_PORT_NUMBER));
         properties.putIfAbsent(QPID_JMX_PORT, String.valueOf(DEFAULT_JMX_PORT_NUMBER));
+        properties.putIfAbsent(QPID_WORK_DIR, getWorkDir());
+
+        String homeDir = getHomeDir();
+        if(homeDir != null)
+        {
+            properties.putIfAbsent(QPID_HOME_DIR, homeDir);
+        }
 
         return Collections.unmodifiableMap(properties);
+    }
+
+    private String getWorkDir()
+    {
+        if(!_configProperties.containsKey(QPID_WORK_DIR))
+        {
+            String qpidWork = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
+            if (qpidWork == null)
+            {
+                return FALLBACK_WORK_DIR.getAbsolutePath();
+            }
+
+            return qpidWork;
+        }
+
+        return _configProperties.get(QPID_WORK_DIR);
+    }
+
+    private String getHomeDir()
+    {
+        if(!_configProperties.containsKey(QPID_HOME_DIR))
+        {
+            return System.getProperty(BrokerProperties.PROPERTY_QPID_HOME);
+        }
+
+        return _configProperties.get(QPID_HOME_DIR);
     }
 }
