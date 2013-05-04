@@ -443,7 +443,7 @@ public class RestServlet extends AbstractServlet
             for(ConfiguredObject obj: existingChildren)
             {
                 if((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
-                   || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents)))
+                   || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents, objClass)))
                 {
                     doUpdate(obj, providedObject);
                     response.setStatus(HttpServletResponse.SC_OK);
@@ -465,13 +465,34 @@ public class RestServlet extends AbstractServlet
         obj.setAttributes(providedObject);
     }
 
-    private boolean equalParents(ConfiguredObject obj, ConfiguredObject[] otherParents)
+    private boolean equalParents(ConfiguredObject obj, ConfiguredObject[] otherParents, Class<? extends ConfiguredObject> objClass)
     {
         if(otherParents == null || otherParents.length == 0)
         {
             return true;
         }
-        return false;  //TODO - Implement.
+
+        Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getInstance().getParentTypes(objClass);
+
+        for (ConfiguredObject parent : otherParents)
+        {
+            boolean found = false;
+            for (Class<? extends ConfiguredObject> parentClass : parentClasses)
+            {
+                if (parent == obj.getParent(parentClass))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException
