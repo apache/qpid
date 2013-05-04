@@ -21,6 +21,7 @@
 package org.apache.qpid.systest.rest;
 
 import java.net.URLDecoder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +61,26 @@ public class ExchangeRestTest extends QpidRestTestCase
                     + URLDecoder.decode(exchangeName, "UTF-8"));
             assertExchange(exchangeName, exchange);
         }
+    }
+
+    public void testSetExchangeAttributesUnsupported() throws Exception
+    {
+        String exchangeName = getTestName();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Exchange.NAME, exchangeName);
+        attributes.put(Exchange.TYPE, "direct");
+        int responseCode =getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+
+        Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/" + exchangeName);
+        assertNotNull("Exchange not found", exchange);
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(Exchange.NAME, exchangeName);
+        attributes.put(Exchange.ALTERNATE_EXCHANGE, "my-alternate-exchange");
+
+        responseCode = getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+        assertEquals("Exchange update should be unsupported", 409, responseCode);
     }
 
     private void assertExchange(String exchangeName, Map<String, Object> exchange)

@@ -52,6 +52,7 @@ import static org.apache.qpid.server.security.access.Operation.DELETE;
 import static org.apache.qpid.server.security.access.Operation.PUBLISH;
 import static org.apache.qpid.server.security.access.Operation.PURGE;
 import static org.apache.qpid.server.security.access.Operation.UNBIND;
+import static org.apache.qpid.server.security.access.Operation.UPDATE;
 
 import javax.security.auth.Subject;
 import java.net.SocketAddress;
@@ -382,6 +383,30 @@ public class SecurityManager implements ConfigurationChangeListener
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(DELETE, QUEUE, new ObjectProperties(queue));
+            }
+        });
+    }
+
+
+    public boolean authoriseUpdate(final AMQQueue queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(UPDATE, QUEUE, new ObjectProperties(queue));
+            }
+        });
+    }
+
+
+    public boolean authoriseUpdate(final Exchange exchange)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(UPDATE, EXCHANGE, new ObjectProperties(exchange.getName()));
             }
         });
     }

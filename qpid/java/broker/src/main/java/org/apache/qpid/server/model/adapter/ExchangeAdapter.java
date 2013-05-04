@@ -384,6 +384,30 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         return false;
     }
 
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        throw new UnsupportedOperationException("Changing attributes on exchange is not supported.");
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_vhost.getSecurityManager().authoriseUpdate(_exchange))
+        {
+            throw new AccessControlException("Setting of exchange attribute is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_vhost.getSecurityManager().authoriseUpdate(_exchange))
+        {
+            throw new AccessControlException("Setting of exchange attributes is denied");
+        }
+    }
+
     private class ExchangeStatistics implements Statistics
     {
 

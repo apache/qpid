@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,16 +32,15 @@ import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Consumer;
-import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
-import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -51,6 +51,19 @@ import org.apache.qpid.server.util.MapValueConverter;
 
 final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.SubscriptionRegistrationListener, AMQQueue.NotificationListener
 {
+    @SuppressWarnings("serial")
+    static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
+        put(ALERT_REPEAT_GAP, Long.class);
+        put(ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
+        put(ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
+        put(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Long.class);
+        put(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Long.class);
+        put(QUEUE_FLOW_CONTROL_SIZE_BYTES, Long.class);
+        put(QUEUE_FLOW_RESUME_SIZE_BYTES, Long.class);
+        put(MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
+        put(EXCLUSIVE, Boolean.class);
+        put(DESCRIPTION, String.class);
+    }});
 
     static final Map<String, String> ATTRIBUTE_MAPPINGS = new HashMap<String, String>();
     static
@@ -773,6 +786,63 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             return true;
         }
         return false;
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        if (!_vhost.getSecurityManager().authoriseUpdate(_queue))
+        {
+            throw new AccessControlException("Setting of queue attribute is denied");
+        }
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        if (!_vhost.getSecurityManager().authoriseUpdate(_queue))
+        {
+            throw new AccessControlException("Setting of queue attributes is denied");
+        }
+    }
+
+    @Override
+    protected void changeAttributes(final Map<String, Object> attributes)
+    {
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+        validateAttributes(convertedAttributes);
+
+        super.changeAttributes(convertedAttributes);
+    }
+
+    private void validateAttributes(Map<String, Object> convertedAttributes)
+    {
+        Long queueFlowControlSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_SIZE_BYTES);
+        Long queueFlowControlResumeSize = (Long) convertedAttributes.get(QUEUE_FLOW_RESUME_SIZE_BYTES);
+        if (queueFlowControlSize != null || queueFlowControlResumeSize != null )
+        {
+            if (queueFlowControlSize == null)
+            {
+                queueFlowControlSize = (Long)getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES);
+            }
+            if (queueFlowControlResumeSize == null)
+            {
+                queueFlowControlResumeSize = (Long)getAttribute(QUEUE_FLOW_RESUME_SIZE_BYTES);
+            }
+            if (queueFlowControlResumeSize > queueFlowControlSize)
+            {
+                throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
+            }
+        }
+        for (Map.Entry<String, Object> entry: convertedAttributes.entrySet())
+        {
+            Object value = entry.getValue();
+            if (value instanceof Number && ((Number)value).longValue() < 0)
+            {
+                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
+                        + entry.getKey());
+            }
+        }
     }
 
 }
