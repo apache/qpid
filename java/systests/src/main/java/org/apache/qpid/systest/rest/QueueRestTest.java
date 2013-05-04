@@ -127,6 +127,44 @@ public class QueueRestTest extends QpidRestTestCase
         assertConsumer(consumers.get(0));
     }
 
+    public void testUpdateQueue() throws Exception
+    {
+        String queueName = getTestName();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.NAME, queueName);
+
+        int responseCode =  getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Asserts.assertQueue(queueName, "standard", queueDetails);
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000);
+        attributes.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 80000);
+        attributes.put(Queue.ALERT_REPEAT_GAP, 10000);
+        attributes.put(Queue.ALERT_THRESHOLD_MESSAGE_AGE, 20000);
+        attributes.put(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 30000);
+        attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 40000);
+        attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 50000);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        attributes.put(Queue.EXCLUSIVE, true);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+        assertEquals("Setting of queue attribites should be allowed", 200, responseCode);
+
+        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        assertEquals("Unexpected " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000, queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES) );
+        assertEquals("Unexpected " + Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 80000, queueData.get(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES) );
+        assertEquals("Unexpected " + Queue.ALERT_REPEAT_GAP, 10000, queueData.get(Queue.ALERT_REPEAT_GAP) );
+        assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_MESSAGE_AGE, 20000, queueData.get(Queue.ALERT_THRESHOLD_MESSAGE_AGE) );
+        assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 30000, queueData.get(Queue.ALERT_THRESHOLD_MESSAGE_SIZE) );
+        assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 40000, queueData.get(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES) );
+        assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 50000, queueData.get(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES) );
+        assertEquals("Unexpected " + Queue.EXCLUSIVE, true, queueData.get(Queue.EXCLUSIVE) );
+    }
+
     public void testPutCreateBinding() throws Exception
     {
         String queueName = getTestQueueName();

@@ -127,4 +127,25 @@ public class BindingRestTest extends QpidRestTestCase
         Asserts.assertBinding(bindingName, "queue", "amq.direct", binding);
     }
 
+    public void testSetBindingAttributesUnsupported() throws Exception
+    {
+        String bindingName =  getTestName();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Binding.NAME, bindingName);
+        attributes.put(Binding.QUEUE, "queue");
+        attributes.put(Binding.EXCHANGE, "amq.direct");
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT", attributes);
+        assertEquals("Unexpected response code", 201, responseCode);
+
+        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList("/rest/binding/test/amq.direct/queue/" + bindingName);
+
+        Asserts.assertBinding(bindingName, "queue", "amq.direct", binding);
+
+        attributes.put(Binding.ID, binding.get(Binding.ID));
+        attributes.put(Binding.ARGUMENTS, null);
+
+        responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT", attributes);
+        assertEquals("Update should be unsupported", 409, responseCode);
+    }
 }
