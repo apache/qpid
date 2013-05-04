@@ -222,4 +222,19 @@ final class BindingAdapter extends AbstractAdapter implements Binding
         }
         return false;
     }
+
+    @Override
+    public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
+            AccessControlException, IllegalArgumentException
+    {
+        throw new UnsupportedOperationException("Changing attributes on binding is not supported.");
+    }
+
+    @Override
+    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
+            IllegalArgumentException
+    {
+        throw new UnsupportedOperationException("Changing attributes on binding is not supported.");
+    }
+
 }
