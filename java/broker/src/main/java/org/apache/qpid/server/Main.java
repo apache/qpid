@@ -258,7 +258,7 @@ public class Main
             String logConfig = _commandLine.getOptionValue(OPTION_LOG_CONFIG_FILE.getOpt());
             if(logConfig != null)
             {
-                options.setLogConfigFile(logConfig);
+                options.setLogConfigFileLocation(logConfig);
             }
 
             boolean overwriteConfigurationStore = _commandLine.hasOption(OPTION_OVERWRITE_CONFIGURATION_STORE.getOpt());

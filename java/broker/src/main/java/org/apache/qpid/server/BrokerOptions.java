@@ -87,11 +87,6 @@ public class BrokerOptions
     private boolean _overwriteConfigurationStore;
     private Map<String, String> _configProperties = new HashMap<String,String>();
 
-    public String getLogConfigFile()
-    {
-        return _logConfigFile;
-    }
-
     public String getManagementModePassword()
     {
         if(_managementModePassword == null)
@@ -105,11 +100,6 @@ public class BrokerOptions
     public void setManagementModePassword(String managementModePassword)
     {
         _managementModePassword = managementModePassword;
-    }
-
-    public void setLogConfigFile(final String logConfigFile)
-    {
-        _logConfigFile = logConfigFile;
     }
 
     public int getLogWatchFrequency()
@@ -330,6 +320,32 @@ public class BrokerOptions
         }
 
         return Collections.unmodifiableMap(properties);
+    }
+
+    /**
+     * Get the broker logging configuration file location.
+     *
+     * If not previously explicitly set, defaults to {@value #DEFAULT_LOG_CONFIG_FILE} within the broker
+     * home directory if configured (gathered via config property {@link #QPID_HOME_DIR}) or the current
+     * JVM working directory if not.
+     *
+     * @return the previously set logging configuration file location, or the default location if none was set.
+     */
+    public String getLogConfigFileLocation()
+    {
+        if(_logConfigFile == null)
+        {
+            String homeDir = getHomeDir();
+
+            return new File(homeDir, DEFAULT_LOG_CONFIG_FILE).getAbsolutePath();
+        }
+
+        return _logConfigFile;
+    }
+
+    public void setLogConfigFileLocation(final String logConfigFile)
+    {
+        _logConfigFile = logConfigFile;
     }
 
     private String getWorkDir()

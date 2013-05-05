@@ -23,6 +23,7 @@ package org.apache.qpid.server;
 import java.io.File;
 import java.util.Map;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BrokerOptionsTest extends QpidTestCase
@@ -83,16 +84,30 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(testConfigFile, _options.getConfigurationStoreLocation());
     }
 
-    public void testDefaultLogConfigFile()
+    public void testDefaultLogConfigFileWithQpidHome()
     {
-        assertNull(_options.getLogConfigFile());
+        String qpidHome = "/test/value";
+        setTestSystemProperty(BrokerProperties.PROPERTY_QPID_HOME, qpidHome);
+
+        String expectedPath = new File(qpidHome, BrokerOptions.DEFAULT_LOG_CONFIG_FILE).getAbsolutePath();
+
+        assertEquals(expectedPath, _options.getLogConfigFileLocation());
+    }
+
+    public void testDefaultLogConfigFileWithoutQpiddHome()
+    {
+        setTestSystemProperty(BrokerProperties.PROPERTY_QPID_HOME, null);
+
+        String expectedPath = new File(BrokerOptions.DEFAULT_LOG_CONFIG_FILE).getAbsolutePath();
+
+        assertEquals(expectedPath, _options.getLogConfigFileLocation());
     }
 
     public void testOverriddenLogConfigFile()
     {
         final String testLogConfigFile = "etc/mytestlog4j.xml";
-        _options.setLogConfigFile(testLogConfigFile);
-        assertEquals(testLogConfigFile, _options.getLogConfigFile());
+        _options.setLogConfigFileLocation(testLogConfigFile);
+        assertEquals(testLogConfigFile, _options.getLogConfigFileLocation());
     }
 
     public void testDefaultLogWatchFrequency()

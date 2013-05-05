@@ -475,7 +475,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.
-            options.setLogConfigFile(_logConfigFile.getAbsolutePath());
+            options.setLogConfigFileLocation(_logConfigFile.getAbsolutePath());
 
             Broker broker = new Broker();
             _logger.info("Starting internal broker (same JVM)");
