@@ -109,7 +109,6 @@ public class Broker
 
     private void startupImpl(final BrokerOptions options) throws Exception
     {
-        final String qpidHome = System.getProperty(BrokerProperties.PROPERTY_QPID_HOME);
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
@@ -119,8 +118,7 @@ public class Broker
         //embedding the broker and want to configure it themselves.
         if(!options.isSkipLoggingConfiguration())
         {
-            File logConfigFile = getConfigFile(options.getLogConfigFile(), BrokerOptions.DEFAULT_LOG_CONFIG_FILE, qpidHome, false);
-            configureLogging(logConfigFile, options.getLogWatchFrequency());
+            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
         }
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
@@ -150,36 +148,6 @@ public class Broker
             throw e;
         }
 
-    }
-
-
-    private File getConfigFile(final String fileName,
-                               final String defaultFileName,
-                               final String qpidHome, boolean throwOnFileNotFound) throws InitException
-    {
-        File configFile = null;
-        if (fileName != null)
-        {
-            configFile = new File(fileName);
-        }
-        else
-        {
-            configFile = new File(qpidHome, defaultFileName);
-        }
-
-        if (!configFile.exists() && throwOnFileNotFound)
-        {
-            String error = "File " + configFile + " could not be found. Check the file exists and is readable.";
-
-            if (qpidHome == null)
-            {
-                error = error + "\nNote: " + BrokerProperties.PROPERTY_QPID_HOME + " is not set.";
-            }
-
-            throw new InitException(error, null);
-        }
-
-        return configFile;
     }
 
     public static void parsePortList(Set<Integer> output, List<?> ports) throws InitException
