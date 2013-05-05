@@ -79,9 +79,9 @@ public class BrokerOptions
 
     private boolean _managementMode;
     private boolean _managementModeQuiesceVhosts;
-    private int _managementModeRmiPort;
-    private int _managementModeConnectorPort;
-    private int _managementModeHttpPort;
+    private int _managementModeRmiPortOverride;
+    private int _managementModeJmxPortOverride;
+    private int _managementModeHttpPortOverride;
     private String _managementModePassword;
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
@@ -136,34 +136,34 @@ public class BrokerOptions
         _managementModeQuiesceVhosts = managementModeQuiesceVhosts;
     }
 
-    public int getManagementModeRmiPort()
+    public int getManagementModeRmiPortOverride()
     {
-        return _managementModeRmiPort;
+        return _managementModeRmiPortOverride;
     }
 
-    public void setManagementModeRmiPort(int managementModeRmiPort)
+    public void setManagementModeRmiPortOverride(int managementModeRmiPortOverride)
     {
-        _managementModeRmiPort = managementModeRmiPort;
+        _managementModeRmiPortOverride = managementModeRmiPortOverride;
     }
 
-    public int getManagementModeConnectorPort()
+    public int getManagementModeJmxPortOverride()
     {
-        return _managementModeConnectorPort;
+        return _managementModeJmxPortOverride;
     }
 
-    public void setManagementModeConnectorPort(int managementModeConnectorPort)
+    public void setManagementModeJmxPortOverride(int managementModeJmxPortOverride)
     {
-        _managementModeConnectorPort = managementModeConnectorPort;
+        _managementModeJmxPortOverride = managementModeJmxPortOverride;
     }
 
-    public int getManagementModeHttpPort()
+    public int getManagementModeHttpPortOverride()
     {
-        return _managementModeHttpPort;
+        return _managementModeHttpPortOverride;
     }
 
-    public void setManagementModeHttpPort(int managementModeHttpPort)
+    public void setManagementModeHttpPortOverride(int managementModeHttpPortOverride)
     {
-        _managementModeHttpPort = managementModeHttpPort;
+        _managementModeHttpPortOverride = managementModeHttpPortOverride;
     }
 
     /**
