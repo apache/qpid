@@ -61,7 +61,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testGetRootEntryWithHttpPortOverriden()
     {
-        _options.setManagementModeHttpPort(9090);
+        _options.setManagementModeHttpPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
         ConfigurationEntry root = _handler.getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -72,7 +72,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testGetRootEntryWithRmiPortOverriden()
     {
-        _options.setManagementModeRmiPort(9090);
+        _options.setManagementModeRmiPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
         ConfigurationEntry root = _handler.getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -83,7 +83,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testGetRootEntryWithConnectorPortOverriden()
     {
-        _options.setManagementModeConnectorPort(9090);
+        _options.setManagementModeJmxPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
         ConfigurationEntry root = _handler.getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -94,9 +94,9 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testGetRootEntryWithManagementPortsOverriden()
     {
-        _options.setManagementModeHttpPort(1000);
-        _options.setManagementModeRmiPort(2000);
-        _options.setManagementModeConnectorPort(3000);
+        _options.setManagementModeHttpPortOverride(1000);
+        _options.setManagementModeRmiPortOverride(2000);
+        _options.setManagementModeJmxPortOverride(3000);
         _handler = new ManagementModeStoreHandler(_store, _options);
         ConfigurationEntry root = _handler.getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -122,7 +122,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testGetEntryByCLIConnectorPortId()
     {
-        _options.setManagementModeConnectorPort(9090);
+        _options.setManagementModeJmxPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         UUID optionsPort = getOptionsPortId();
@@ -132,7 +132,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testGetEntryByCLIHttpPortId()
     {
-        _options.setManagementModeHttpPort(9090);
+        _options.setManagementModeHttpPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         UUID optionsPort = getOptionsPortId();
@@ -145,7 +145,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.HTTP));
         when(_portEntry.getAttributes()).thenReturn(attributes);
-        _options.setManagementModeHttpPort(9090);
+        _options.setManagementModeHttpPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         ConfigurationEntry portEntry = _handler.getEntry(_portEntryId);
@@ -157,7 +157,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
         when(_portEntry.getAttributes()).thenReturn(attributes);
-        _options.setManagementModeRmiPort(9090);
+        _options.setManagementModeRmiPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         ConfigurationEntry portEntry = _handler.getEntry(_portEntryId);
@@ -169,7 +169,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.JMX_RMI));
         when(_portEntry.getAttributes()).thenReturn(attributes);
-        _options.setManagementModeRmiPort(9090);
+        _options.setManagementModeRmiPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         ConfigurationEntry portEntry = _handler.getEntry(_portEntryId);
@@ -226,9 +226,9 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testSavePort()
     {
-        _options.setManagementModeHttpPort(1000);
-        _options.setManagementModeRmiPort(2000);
-        _options.setManagementModeConnectorPort(3000);
+        _options.setManagementModeHttpPortOverride(1000);
+        _options.setManagementModeRmiPortOverride(2000);
+        _options.setManagementModeJmxPortOverride(3000);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -241,9 +241,9 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testSaveRoot()
     {
-        _options.setManagementModeHttpPort(1000);
-        _options.setManagementModeRmiPort(2000);
-        _options.setManagementModeConnectorPort(3000);
+        _options.setManagementModeHttpPortOverride(1000);
+        _options.setManagementModeRmiPortOverride(2000);
+        _options.setManagementModeJmxPortOverride(3000);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         ConfigurationEntry root = _handler.getRootEntry();
@@ -257,7 +257,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testSaveCLIHttpPort()
     {
-        _options.setManagementModeHttpPort(1000);
+        _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         UUID portId = getOptionsPortId();
@@ -278,7 +278,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testRemove()
     {
-        _options.setManagementModeHttpPort(1000);
+        _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         _handler.remove(_portEntryId);
@@ -287,7 +287,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
     public void testRemoveCLIPort()
     {
-        _options.setManagementModeHttpPort(1000);
+        _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
         UUID portId = getOptionsPortId();
         try

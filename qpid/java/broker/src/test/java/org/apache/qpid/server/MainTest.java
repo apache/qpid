@@ -55,9 +55,9 @@ public class MainTest extends QpidTestCase
         assertEquals(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, options.getInitialConfigurationLocation());
         assertFalse(options.isOverwriteConfigurationStore());
         assertFalse(options.isManagementMode());
-        assertEquals(0, options.getManagementModeConnectorPort());
-        assertEquals(0, options.getManagementModeRmiPort());
-        assertEquals(0, options.getManagementModeHttpPort());
+        assertEquals(0, options.getManagementModeJmxPortOverride());
+        assertEquals(0, options.getManagementModeRmiPortOverride());
+        assertEquals(0, options.getManagementModeHttpPortOverride());
     }
 
     public void testConfigurationStoreLocation()
@@ -135,46 +135,46 @@ public class MainTest extends QpidTestCase
         assertTrue(options.isManagementMode());
     }
 
-    public void testManagementModeRmiPort()
+    public void testManagementModeRmiPortOverride()
     {
         BrokerOptions options = startDummyMain("-mm -mmrmi 7777");
         assertTrue(options.isManagementMode());
-        assertEquals(7777, options.getManagementModeRmiPort());
+        assertEquals(7777, options.getManagementModeRmiPortOverride());
 
         options = startDummyMain("-mm --management-mode-rmi-registry-port 7777");
         assertTrue(options.isManagementMode());
-        assertEquals(7777, options.getManagementModeRmiPort());
+        assertEquals(7777, options.getManagementModeRmiPortOverride());
 
         options = startDummyMain("-mmrmi 7777");
-        assertEquals(0, options.getManagementModeRmiPort());
+        assertEquals(0, options.getManagementModeRmiPortOverride());
     }
 
-    public void testManagementModeConnectorPort()
+    public void testManagementModeJmxPortOverride()
     {
         BrokerOptions options = startDummyMain("-mm -mmjmx 8888");
         assertTrue(options.isManagementMode());
-        assertEquals(8888, options.getManagementModeConnectorPort());
+        assertEquals(8888, options.getManagementModeJmxPortOverride());
 
         options = startDummyMain("-mm --management-mode-jmx-connector-port 8888");
         assertTrue(options.isManagementMode());
-        assertEquals(8888, options.getManagementModeConnectorPort());
+        assertEquals(8888, options.getManagementModeJmxPortOverride());
 
         options = startDummyMain("-mmjmx 8888");
-        assertEquals(0, options.getManagementModeConnectorPort());
+        assertEquals(0, options.getManagementModeJmxPortOverride());
     }
 
-    public void testManagementModeHttpPort()
+    public void testManagementModeHttpPortOverride()
     {
         BrokerOptions options = startDummyMain("-mm -mmhttp 9999");
         assertTrue(options.isManagementMode());
-        assertEquals(9999, options.getManagementModeHttpPort());
+        assertEquals(9999, options.getManagementModeHttpPortOverride());
 
         options = startDummyMain("-mm --management-mode-http-port 9999");
         assertTrue(options.isManagementMode());
-        assertEquals(9999, options.getManagementModeHttpPort());
+        assertEquals(9999, options.getManagementModeHttpPortOverride());
 
         options = startDummyMain("-mmhttp 9999");
-        assertEquals(0, options.getManagementModeHttpPort());
+        assertEquals(0, options.getManagementModeHttpPortOverride());
     }
 
     public void testManagementModePassword()
