@@ -157,37 +157,37 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(true, _options.isManagementModeQuiesceVirtualHosts());
     }
 
-    public void testDefaultManagementModeRmiPort()
+    public void testDefaultManagementModeRmiPortOverride()
     {
-        assertEquals(0, _options.getManagementModeRmiPort());
+        assertEquals(0, _options.getManagementModeRmiPortOverride());
     }
 
-    public void testOverriddenDefaultManagementModeRmiPort()
+    public void testOverriddenManagementModeRmiPort()
     {
-        _options.setManagementModeRmiPort(5555);
-        assertEquals(5555, _options.getManagementModeRmiPort());
+        _options.setManagementModeRmiPortOverride(5555);
+        assertEquals(5555, _options.getManagementModeRmiPortOverride());
     }
 
-    public void testDefaultManagementModeConnectorPort()
+    public void testDefaultManagementModeJmxPortOverride()
     {
-        assertEquals(0, _options.getManagementModeConnectorPort());
+        assertEquals(0, _options.getManagementModeJmxPortOverride());
     }
 
-    public void testOverriddenDefaultManagementModeConnectorPort()
+    public void testOverriddenManagementModeJmxPort()
     {
-        _options.setManagementModeConnectorPort(5555);
-        assertEquals(5555, _options.getManagementModeConnectorPort());
+        _options.setManagementModeJmxPortOverride(5555);
+        assertEquals(5555, _options.getManagementModeJmxPortOverride());
     }
 
-    public void testDefaultManagementModeHttpPort()
+    public void testDefaultManagementModeHttpPortOverride()
     {
-        assertEquals(0, _options.getManagementModeHttpPort());
+        assertEquals(0, _options.getManagementModeHttpPortOverride());
     }
 
-    public void testOverriddenDefaultManagementModeHttpPort()
+    public void testOverriddenManagementModeHttpPort()
     {
-        _options.setManagementModeHttpPort(5555);
-        assertEquals(5555, _options.getManagementModeHttpPort());
+        _options.setManagementModeHttpPortOverride(5555);
+        assertEquals(5555, _options.getManagementModeHttpPortOverride());
     }
 
     public void testDefaultSkipLoggingConfiguration()

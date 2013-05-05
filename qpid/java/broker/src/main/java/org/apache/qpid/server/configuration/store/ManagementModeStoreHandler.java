@@ -12,9 +12,6 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -28,9 +25,6 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     private static final String MANAGEMENT_MODE_PORT_PREFIX = "MANAGEMENT-MODE-PORT-";
     private static final String PORT_TYPE = Port.class.getSimpleName();
     private static final String VIRTUAL_HOST_TYPE = VirtualHost.class.getSimpleName();
-    private static final String ACCESS_CONTROL_PROVIDER_TYPE = AccessControlProvider.class.getSimpleName();
-    private static final String GROUP_PROVIDER_TYPE = GroupProvider.class.getSimpleName();
-    private static final String AUTHENTICATION_PROVIDER_TYPE = AuthenticationProvider.class.getSimpleName();
     private static final String ATTRIBUTE_STATE = VirtualHost.STATE;
     private static final Object MANAGEMENT_MODE_AUTH_PROVIDER = "mm-auth";
 
@@ -171,40 +165,40 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
 
     private Map<UUID, ConfigurationEntry> createPortsFromCommadLineOptions(BrokerOptions options)
     {
-        int managementModeRmiPort = options.getManagementModeRmiPort();
-        if (managementModeRmiPort < 0)
+        int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
+        if (managementModeRmiPortOverride < 0)
         {
-            throw new IllegalConfigurationException("Invalid rmi port is specified: " + managementModeRmiPort);
+            throw new IllegalConfigurationException("Invalid rmi port is specified: " + managementModeRmiPortOverride);
         }
-        int managementModeConnectorPort = options.getManagementModeConnectorPort();
-        if (managementModeConnectorPort < 0)
+        int managementModeJmxPortOverride = options.getManagementModeJmxPortOverride();
+        if (managementModeJmxPortOverride < 0)
         {
-            throw new IllegalConfigurationException("Invalid connector port is specified: " + managementModeConnectorPort);
+            throw new IllegalConfigurationException("Invalid jmx port is specified: " + managementModeJmxPortOverride);
         }
-        int managementModeHttpPort = options.getManagementModeHttpPort();
-        if (managementModeHttpPort < 0)
+        int managementModeHttpPortOverride = options.getManagementModeHttpPortOverride();
+        if (managementModeHttpPortOverride < 0)
         {
-            throw new IllegalConfigurationException("Invalid http port is specified: " + managementModeHttpPort);
+            throw new IllegalConfigurationException("Invalid http port is specified: " + managementModeHttpPortOverride);
         }
         Map<UUID, ConfigurationEntry> cliEntries = new HashMap<UUID, ConfigurationEntry>();
-        if (managementModeRmiPort != 0)
+        if (managementModeRmiPortOverride != 0)
         {
-            ConfigurationEntry entry = createCLIPortEntry(managementModeRmiPort, Protocol.RMI);
+            ConfigurationEntry entry = createCLIPortEntry(managementModeRmiPortOverride, Protocol.RMI);
             cliEntries.put(entry.getId(), entry);
-            if (managementModeConnectorPort == 0)
+            if (managementModeJmxPortOverride == 0)
             {
-                ConfigurationEntry connectorEntry = createCLIPortEntry(managementModeRmiPort + 100, Protocol.JMX_RMI);
+                ConfigurationEntry connectorEntry = createCLIPortEntry(managementModeRmiPortOverride + 100, Protocol.JMX_RMI);
                 cliEntries.put(connectorEntry.getId(), connectorEntry);
             }
         }
-        if (managementModeConnectorPort != 0)
+        if (managementModeJmxPortOverride != 0)
         {
-            ConfigurationEntry entry = createCLIPortEntry(managementModeConnectorPort, Protocol.JMX_RMI);
+            ConfigurationEntry entry = createCLIPortEntry(managementModeJmxPortOverride, Protocol.JMX_RMI);
             cliEntries.put(entry.getId(), entry);
         }
-        if (managementModeHttpPort != 0)
+        if (managementModeHttpPortOverride != 0)
         {
-            ConfigurationEntry entry = createCLIPortEntry(managementModeHttpPort, Protocol.HTTP);
+            ConfigurationEntry entry = createCLIPortEntry(managementModeHttpPortOverride, Protocol.HTTP);
             cliEntries.put(entry.getId(), entry);
         }
         return cliEntries;
@@ -246,9 +240,9 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     {
         Map<UUID, Object> quiescedEntries = new HashMap<UUID, Object>();
         Set<UUID> childrenIds;
-        int managementModeRmiPort = options.getManagementModeRmiPort();
-        int managementModeConnectorPort = options.getManagementModeConnectorPort();
-        int managementModeHttpPort = options.getManagementModeHttpPort();
+        int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
+        int managementModeJmxPortOverride = options.getManagementModeJmxPortOverride();
+        int managementModeHttpPortOverride = options.getManagementModeHttpPortOverride();
         childrenIds = storeRoot.getChildrenIds();
         for (UUID id : childrenIds)
         {
@@ -278,14 +272,14 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
                         switch (protocol)
                         {
                         case JMX_RMI:
-                            quiesce = managementModeConnectorPort > 0 || managementModeRmiPort > 0;
+                            quiesce = managementModeJmxPortOverride > 0 || managementModeRmiPortOverride > 0;
                             break;
                         case RMI:
-                            quiesce = managementModeRmiPort > 0;
+                            quiesce = managementModeRmiPortOverride > 0;
                             break;
                         case HTTP:
                         case HTTPS:
-                            quiesce = managementModeHttpPort > 0;
+                            quiesce = managementModeHttpPortOverride > 0;
                             break;
                         default:
                             quiesce = true;

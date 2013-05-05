@@ -271,17 +271,17 @@ public class Main
                 String rmiPort = _commandLine.getOptionValue(OPTION_MM_RMI_PORT.getOpt());
                 if (rmiPort != null)
                 {
-                    options.setManagementModeRmiPort(Integer.parseInt(rmiPort));
+                    options.setManagementModeRmiPortOverride(Integer.parseInt(rmiPort));
                 }
                 String connectorPort = _commandLine.getOptionValue(OPTION_MM_CONNECTOR_PORT.getOpt());
                 if (connectorPort != null)
                 {
-                    options.setManagementModeConnectorPort(Integer.parseInt(connectorPort));
+                    options.setManagementModeJmxPortOverride(Integer.parseInt(connectorPort));
                 }
                 String httpPort = _commandLine.getOptionValue(OPTION_MM_HTTP_PORT.getOpt());
                 if (httpPort != null)
                 {
-                    options.setManagementModeHttpPort(Integer.parseInt(httpPort));
+                    options.setManagementModeHttpPortOverride(Integer.parseInt(httpPort));
                 }
 
                 boolean quiesceVhosts = _commandLine.hasOption(OPTION_MM_QUIESCE_VHOST.getOpt());
