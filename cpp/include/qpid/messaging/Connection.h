@@ -51,15 +51,20 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
     /**
      * Current implementation supports the following options:
      *
-     * - username
-     * - password
-     * - heartbeat
-     * - tcp_nodelay
-     * - sasl_mechanisms
-     * - sasl_service
-     * - sasl_min_ssf
-     * - sasl_max_ssf
-     * - transport
+     * - heartbeat: the heartbeat interval in seconds
+     * - tcp_nodelay: true/false, whether nagle should be disabled or not
+     * - transport: the underlying transport to use (e.g. tcp, ssl, rdma)
+     * - protocol: the version of AMQP to use (e.g. amqp0-10 or amqp1.0)
+     *
+     * (Note: the transports and/or protocols recognised may depend on
+     * which plugins are loaded)
+     *
+     * - username: the username to authenticate as
+     * - password: the password to use if required by the selected authentication mechanism
+     * - sasl_mechanisms: a space separate dlist of acceptable SASL mechanisms
+     * - sasl_min_ssf: the minimum acceptable security strength factor
+     * - sasl_max_ssf: the minimum acceptable security strength factor
+     * - sasl_service: the service name if needed by the SASL mechanism in use
      *
      * Reconnect behaviour can be controlled through the following options:
      *
