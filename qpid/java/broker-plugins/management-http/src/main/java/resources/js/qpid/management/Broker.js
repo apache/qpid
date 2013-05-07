@@ -389,7 +389,7 @@ define(["dojo/_base/xhr",
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.vhostsGrid.grid,
                                                 "rest/virtualhost",
-                                                "Deletion of virtual will delete the message store data.\n\n Are you sure you want to delete virtual host");
+                                                "Deletion of virtual host will delete the message store data.\n\n Are you sure you want to delete virtual host");
                                 }
                             );
 
@@ -576,19 +576,14 @@ define(["dojo/_base/xhr",
 
                              that.authenticationProvidersGrid =
                                  new UpdatableStore(that.brokerData.authenticationproviders, query(".broker-authentication-providers")[0],
-                                                 [ { name: "Name",    field: "name",      width: "30%"},
+                                                 [ { name: "Name",    field: "name",      width: "40%"},
                                                    { name: "State",    field: "state",      width: "20%"},
                                                      { name: "Type", field: "type", width: "20%"},
                                                      { name: "User Management", field: "type", width: "20%",
                                                              formatter: function(val){
                                                                  return "<input type='radio' disabled='disabled' "+(util.isProviderManagingUsers(val)?"checked='checked'": "")+" />";
                                                              }
-                                                     },
-                                                     { name: "Default", field: "name", width: "10%",
-                                                         formatter: function(val){
-                                                             return "<input type='radio' disabled='disabled' "+(val == that.brokerData.defaultAuthenticationProvider ? "checked='checked'": "")+" />";
-                                                         }
-                                                 }
+                                                     }
                                                  ], function(obj) {
                                                          connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                          function(evt){
