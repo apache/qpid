@@ -21,7 +21,9 @@
 
 #include "qpid/broker/Selector.h"
 
+#include "qpid/amqp/CharSequence.h"
 #include "qpid/broker/Message.h"
+#include "qpid/broker/MapHandler.h"
 #include "qpid/broker/SelectorExpression.h"
 #include "qpid/broker/SelectorValue.h"
 #include "qpid/log/Statement.h"
@@ -89,6 +91,7 @@ class MessageSelectorEnv : public SelectorEnv {
     const Message& msg;
     mutable boost::ptr_vector<string> returnedStrings;
     mutable unordered_map<string, Value> returnedValues;
+    mutable bool valuesLookedup;
 
     const Value& value(const string&) const;
 
@@ -97,54 +100,69 @@ public:
 };
 
 MessageSelectorEnv::MessageSelectorEnv(const Message& m) :
-msg(m)
+    msg(m),
+    valuesLookedup(false)
 {
 }
 
+struct ValueHandler : public broker::MapHandler {
+    unordered_map<string, Value>& values;
+    boost::ptr_vector<string>& strings;
+
+    ValueHandler(unordered_map<string, Value>& v, boost::ptr_vector<string>& s) :
+        values(v),
+        strings(s)
+    {}
+
+    template <typename T>
+    void handle(const CharSequence& key, const T& value)
+    {
+        values[string(key.data, key.size)] = value;
+    }
+
+    void handleVoid(const CharSequence&) {}
+    void handleBool(const CharSequence& key, bool value) { handle<bool>(key, value); }
+    void handleUint8(const CharSequence& key, uint8_t value) { handle<int64_t>(key, value); }
+    void handleUint16(const CharSequence& key, uint16_t value) { handle<int64_t>(key, value); }
+    void handleUint32(const CharSequence& key, uint32_t value) { handle<int64_t>(key, value); }
+    void handleUint64(const CharSequence& key, uint64_t value) {
+        if ( value>uint64_t(std::numeric_limits<int64_t>::max()) ) {
+            handle<double>(key, value);
+        } else {
+            handle<int64_t>(key, value);
+        }
+    }
+    void handleInt8(const CharSequence& key, int8_t value) { handle<int64_t>(key, value); }
+    void handleInt16(const CharSequence& key, int16_t value) { handle<int64_t>(key, value); }
+    void handleInt32(const CharSequence& key, int32_t value) { handle<int64_t>(key, value); }
+    void handleInt64(const CharSequence& key, int64_t value) { handle<int64_t>(key, value); }
+    void handleFloat(const CharSequence& key, float value) { handle<double>(key, value); }
+    void handleDouble(const CharSequence& key, double value) { handle<double>(key, value); }
+    void handleString(const CharSequence& key, const CharSequence& value, const CharSequence&) {
+        strings.push_back(new string(value.data, value.size));
+        handle(key, strings[strings.size()-1]);
+    }
+};
+
 const Value& MessageSelectorEnv::value(const string& identifier) const
 {
-    if (returnedValues.find(identifier)==returnedValues.end()) {
-        Value v;
-
-        // Check for amqp prefix and strip it if present
-        if (identifier.substr(0, 5) == "amqp.") {
-            v = specialValue(msg, identifier.substr(5));
-        } else {
-            // Just return property as string
-            //v = &msg.getPropertyAsString(identifier);
-            qpid::types::Variant var = msg.getProperty(identifier);
-            switch (var.getType()) {
-            case types::VAR_VOID:
-                v = Value(); break;
-            case types::VAR_STRING: {
-                string& s = var.getString();
-                returnedStrings.push_back(new string(s));
-                v = returnedStrings[returnedStrings.size()-1];
-                break;
-            }
-            case types::VAR_UINT64:
-                // TODO: Need to take care of values too high to be int64_t
-            case types::VAR_UINT32:
-            case types::VAR_UINT16:
-            case types::VAR_UINT8:
-            case types::VAR_INT64:
-            case types::VAR_INT32:
-            case types::VAR_INT16:
-            case types::VAR_INT8:
-                v = var.asInt64(); break;
-            case types::VAR_FLOAT:
-            case types::VAR_DOUBLE:
-                v = var.asDouble(); break;
-            case types::VAR_BOOL:
-                v = var.asBool(); break;
-            default:
-                v = Value(); break;
-            }
+    // Check for amqp prefix and strip it if present
+    if ( identifier.substr(0, 5) == "amqp." ) {
+        if ( returnedValues.count(identifier)==0 ) {
+            QPID_LOG(debug, "Selector lookup special identifier: " << identifier);
+            returnedValues[identifier] = specialValue(msg, identifier.substr(5));
         }
-        QPID_LOG(debug, "Selector identifier: " << identifier << "->" << v);
-        returnedValues[identifier] = v;
+    } else if (!valuesLookedup) {
+        QPID_LOG(debug, "Selector lookup triggered by: " << identifier);
+        // Iterate over all the message properties
+        ValueHandler handler(returnedValues, returnedStrings);
+        msg.getEncoding().processProperties(handler);
+        valuesLookedup = true;
+        // Anything that wasn't found will have a void value now
     }
-    return returnedValues[identifier];
+    const Value& v = returnedValues[identifier];
+    QPID_LOG(debug, "Selector identifier: " << identifier << "->" << v);
+    return v;
 }
 
 Selector::Selector(const string& e)
