@@ -40,9 +40,9 @@ using std::string;
 namespace qpid {
 namespace broker {
 
-Message::Message() : deliveryCount(0), publisher(0), expiration(FAR_FUTURE), timestamp(0), isManagementMessage(false) {}
+Message::Message() : deliveryCount(-1), publisher(0), expiration(FAR_FUTURE), timestamp(0), isManagementMessage(false) {}
 Message::Message(boost::intrusive_ptr<Encoding> e, boost::intrusive_ptr<PersistableMessage> p)
-    : encoding(e), persistentContext(p), deliveryCount(0), publisher(0), expiration(FAR_FUTURE), timestamp(0), isManagementMessage(false)
+    : encoding(e), persistentContext(p), deliveryCount(-1), publisher(0), expiration(FAR_FUTURE), timestamp(0), isManagementMessage(false)
 {
     if (persistentContext) persistentContext->setIngressCompletion(e);
 }

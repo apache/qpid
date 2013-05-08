@@ -271,7 +271,7 @@ int main(int argc, char ** argv)
                 } else {
                     session.commit();
                 }
-            } else {
+            } else if (opts.ackFrequency) {
                 session.acknowledge();
             }
             session.close();

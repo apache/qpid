@@ -70,11 +70,11 @@ public:
     QPID_BROKER_EXTERN Message();
     QPID_BROKER_EXTERN ~Message();
 
-    bool isRedelivered() const { return deliveryCount > 1; }
+    bool isRedelivered() const { return deliveryCount; }
     void deliver() { ++deliveryCount; }
     void undeliver() { --deliveryCount; }
     int getDeliveryCount() const { return deliveryCount; }
-    void resetDeliveryCount() { deliveryCount = 0; }
+    void resetDeliveryCount() { deliveryCount = -1; }
 
     const ConnectionToken* getPublisher() const {  return publisher; }
     void setPublisher(ConnectionToken* p) {  publisher = p; }
