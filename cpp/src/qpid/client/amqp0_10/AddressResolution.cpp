@@ -95,6 +95,7 @@ const std::string X_SUBSCRIBE("x-subscribe");
 const std::string X_BINDINGS("x-bindings");
 const std::string SELECTOR("selector");
 const std::string APACHE_SELECTOR("x-apache-selector");
+const std::string QPID_FILTER("qpid.filter");
 const std::string EXCHANGE("exchange");
 const std::string QUEUE("queue");
 const std::string KEY("key");
@@ -523,6 +524,8 @@ Subscription::Subscription(const Address& address, const std::string& type)
 {
     (Opt(address)/LINK/X_DECLARE/ARGUMENTS).collect(queueOptions);
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(subscriptionOptions);
+    std::string selector = Opt(address)/LINK/SELECTOR;
+    if (!selector.empty()) queueOptions.setString(QPID_FILTER, selector);
 
     if (!address.getSubject().empty()) bindSubject(address.getSubject());
     else if (linkBindings.empty()) bindAll();
