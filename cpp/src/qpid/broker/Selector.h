@@ -38,8 +38,6 @@ class TopExpression;
 
 /**
  * Interface to provide values to a Selector evaluation
- * (For the moment just use string values)
- * TODO: allow more complex values.
  */
 class SelectorEnv {
 public:
