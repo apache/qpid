@@ -203,7 +203,7 @@ int WinSocket::listen(const SocketAddress& addr, int backlog) const
 
     const SOCKET& socket = handle->fd;
     BOOL yes=1;
-    QPID_WINSOCK_CHECK(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)));
+    QPID_WINSOCK_CHECK(setsockopt(socket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *)&yes, sizeof(yes)));
 
     if (::bind(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) == SOCKET_ERROR)
         throw Exception(QPID_MSG("Can't bind to " << addr.asString() << ": " << strError(WSAGetLastError())));
