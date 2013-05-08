@@ -228,7 +228,7 @@ void EncodedMessage::InitialScan::onTtl(uint32_t i) { mi.setTtl(i); em.ttl = i; 
 void EncodedMessage::InitialScan::onFirstAcquirer(bool b) { em.firstAcquirer = b; }
 void EncodedMessage::InitialScan::onDeliveryCount(uint32_t i)
 {
-    mi.setRedelivered(i > 1);
+    mi.setRedelivered(i);
     em.deliveryCount = i;
 }
 
