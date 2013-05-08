@@ -86,6 +86,11 @@ QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
         out.setProperty("b", i + 100);
         sender.send(out);
     }
+    uint8_t v1(255u);
+    int8_t v2(-120);
+    out.getProperties()["c"] = v1;
+    out.getProperties()["d"] = v2;
+    sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in;
     for (uint i = 0; i < 10; ++i) {
@@ -95,6 +100,13 @@ QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
         BOOST_CHECK_EQUAL(in.getProperties()["b"].asUint32(), i + 100);
         fix.session.acknowledge();
     }
+    BOOST_CHECK(receiver.fetch(in, Duration::SECOND * 5));
+    Variant& c = in.getProperties()["c"];
+    BOOST_CHECK_EQUAL(c.getType(), VAR_UINT8);
+    BOOST_CHECK_EQUAL(c.asUint8(), v1);
+    Variant& d = in.getProperties()["d"];
+    BOOST_CHECK_EQUAL(d.getType(), VAR_INT8);
+    BOOST_CHECK_EQUAL(d.asInt8(), v2);
 }
 
 QPID_AUTO_TEST_CASE(testSenderError)

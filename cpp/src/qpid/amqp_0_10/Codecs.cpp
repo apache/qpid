@@ -102,9 +102,9 @@ Variant toVariant(boost::shared_ptr<FieldValue> in)
     //based on AMQP 0-10 typecode, pick most appropriate variant type
     switch (in->getType()) {
         //Fixed Width types:
-      case 0x01: out.setEncoding(amqp0_10_binary);
-      case 0x02: out = in->getIntegerValue<int8_t>(); break;
-      case 0x03: out = in->getIntegerValue<uint8_t>(); break;
+      case 0x00: out.setEncoding(amqp0_10_binary);
+      case 0x01: out = in->getIntegerValue<int8_t>(); break;
+      case 0x02: out = in->getIntegerValue<uint8_t>(); break;
       case 0x04: break; //TODO: iso-8859-15 char
       case 0x08: out = static_cast<bool>(in->getIntegerValue<uint8_t>()); break;
       case 0x10: out.setEncoding(amqp0_10_binary);
