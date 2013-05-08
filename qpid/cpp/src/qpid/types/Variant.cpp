@@ -122,7 +122,7 @@ class VariantImpl
             } else {
                 T r = boost::lexical_cast<T>(s.substr(1));
                 if (std::numeric_limits<T>::is_signed) {
-                    return -r;                    
+                    return -r;
                 } else {
                     if (r==0) return 0;
                 }
@@ -802,6 +802,9 @@ Variant& Variant::parse(const std::string& s)
     operator=(s);
     try {
         return operator=(asInt64());
+    } catch (const InvalidConversion&) {}
+    try {
+        return operator=(asUint64());
     } catch (const InvalidConversion&) {}
     try {
         return operator=(asDouble());
