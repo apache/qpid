@@ -57,6 +57,7 @@ const std::string FAIRSHARE_ALIAS("x-qpid-fairshare");
 const std::string PAGING("qpid.paging");
 const std::string MAX_PAGES("qpid.max_pages_loaded");
 const std::string PAGE_FACTOR("qpid.page_factor");
+const std::string FILTER("qpid.filter");
 
 const std::string LVQ_LEGACY("qpid.last_value_queue");
 const std::string LVQ_LEGACY_KEY("qpid.LVQ_key");
@@ -201,6 +202,9 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
         return true;
     } else if (key == PAGE_FACTOR) {
         pageFactor = value;
+        return true;
+    } else if (key == FILTER) {
+        filter = value.asString();
         return true;
     } else {
         return false;

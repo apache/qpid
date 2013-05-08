@@ -272,6 +272,10 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         outgoing[link] = q;
     } else if (node.exchange) {
         QueueSettings settings(false, true);
+        if (filter.hasSelectorFilter()) {
+            settings.filter = filter.getSelectorFilter();
+            QPID_LOG(debug, "Selector specified for outgoing link from exchange " << node.exchange->getName() << ": " << settings.filter);
+        }
         //TODO: populate settings from source details when available from engine
         boost::shared_ptr<qpid::broker::Queue> queue
             = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
