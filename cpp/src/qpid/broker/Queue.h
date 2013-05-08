@@ -43,6 +43,7 @@
 #include "qmf/org/apache/qpid/broker/Broker.h"
 #include "qpid/framing/amqp_types.h"
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -66,6 +67,7 @@ class QueueDepth;
 class QueueEvents;
 class QueueRegistry;
 class QueueFactory;
+class Selector;
 class TransactionContext;
 class TxBuffer;
 class MessageDistributor;
@@ -165,8 +167,10 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
     boost::shared_ptr<MessageDistributor> allocator;
+    boost::scoped_ptr<Selector> selector;
 
     virtual void push(Message& msg, bool isRecovery=false);
+    bool accept(const Message&);
     void process(Message& msg);
     bool enqueue(TransactionContext* ctxt, Message& msg);
     bool getNextMessage(Message& msg, Consumer::shared_ptr& c);

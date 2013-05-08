@@ -83,6 +83,8 @@ struct QueueSettings
     uint64_t maxFileSize;
     uint64_t maxFileCount;
 
+    std::string filter;
+
     //yuck, yuck
     qpid::framing::FieldTable storeSettings;
     std::map<std::string, qpid::types::Variant> original;
