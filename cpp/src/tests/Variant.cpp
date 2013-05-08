@@ -780,6 +780,33 @@ QPID_AUTO_TEST_CASE(testBufferEncoding)
     BOOST_CHECK_THROW(MapCodec::encode(inMap, buffer), std::exception);
 }
 
+QPID_AUTO_TEST_CASE(parse)
+{
+    Variant a;
+    a.parse("What a fine mess");
+    BOOST_CHECK(a.getType()==types::VAR_STRING);
+    a.parse("true");
+    BOOST_CHECK(a.getType()==types::VAR_BOOL);
+    a.parse("FalsE");
+    BOOST_CHECK(a.getType()==types::VAR_BOOL);
+    a.parse("3.1415926");
+    BOOST_CHECK(a.getType()==types::VAR_DOUBLE);
+    a.parse("-7.2e-15");
+    BOOST_CHECK(a.getType()==types::VAR_DOUBLE);
+    a.parse("9223372036854775807");
+    BOOST_CHECK(a.getType()==types::VAR_INT64);
+    a.parse("9223372036854775808");
+    BOOST_CHECK(a.getType()==types::VAR_UINT64);
+    a.parse("-9223372036854775807");
+    BOOST_CHECK(a.getType()==types::VAR_INT64);
+    a.parse("-9223372036854775808");
+    BOOST_CHECK(a.getType()==types::VAR_DOUBLE);
+    a.parse("18446744073709551615");
+    BOOST_CHECK(a.getType()==types::VAR_UINT64);
+    a.parse("18446744073709551616");
+    BOOST_CHECK(a.getType()==types::VAR_DOUBLE);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
