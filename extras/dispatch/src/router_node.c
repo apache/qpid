@@ -310,6 +310,11 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     pn_link_t   *pn_link = dx_link_pn(link);
     const char  *r_tgt   = pn_terminus_get_address(pn_link_remote_target(pn_link));
 
+    if (!r_tgt) {
+        pn_link_close(pn_link);
+        return 0;
+    }
+
     dx_router_link_t *rlink = new_dx_router_link_t();
     rlink->link = link;
     DEQ_INIT(rlink->out_fifo);
@@ -390,6 +395,9 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
     pn_link_t      *pn_link = dx_link_pn(link);
     const char     *r_tgt   = pn_terminus_get_address(pn_link_remote_target(pn_link));
     dx_link_item_t *item;
+
+    if (!r_tgt)
+        return 0;
 
     sys_mutex_lock(router->lock);
     if (pn_link_is_sender(pn_link)) {
