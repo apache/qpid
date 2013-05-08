@@ -38,17 +38,16 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
     public static final String ATTRIBUTE_SEARCH_FILTER = "searchFilter";
     public static final String ATTRIBUTE_SEARCH_CONTEXT = "searchContext";
     public static final String ATTRIBUTE_PROVIDER_AUTH_URL = "providerAuthUrl";
-    public static final String ATTRIBUTE_PROVIDER_SEARCH_URL = "providerSearchUrl";
     public static final String ATTRIBUTE_PROVIDER_URL = "providerUrl";
 
     public static final Collection<String> ATTRIBUTES = Collections.<String> unmodifiableList(Arrays.asList(
             ATTRIBUTE_TYPE,
-            ATTRIBUTE_LDAP_CONTEXT_FACTORY,
-            ATTRIBUTE_SEARCH_FILTER,
+            ATTRIBUTE_PROVIDER_URL,
             ATTRIBUTE_SEARCH_CONTEXT,
+            ATTRIBUTE_SEARCH_FILTER,
             ATTRIBUTE_PROVIDER_AUTH_URL,
-            ATTRIBUTE_PROVIDER_SEARCH_URL,
-            ATTRIBUTE_PROVIDER_URL));
+            ATTRIBUTE_LDAP_CONTEXT_FACTORY
+            ));
 
     @Override
     public AuthenticationManager createInstance(Map<String, Object> attributes)
@@ -58,11 +57,6 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
             return null;
         }
         String providerUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_URL);
-        String providerSearchUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_SEARCH_URL);
-        if (providerSearchUrl == null)
-        {
-            providerSearchUrl = providerUrl;
-        }
         String providerAuthUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_AUTH_URL);
         if (providerAuthUrl == null)
         {
@@ -76,7 +70,7 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
             ldapContextFactory = DEFAULT_LDAP_CONTEXT_FACTORY;
         }
 
-        return new SimpleLDAPAuthenticationManager(providerSearchUrl, providerAuthUrl, searchContext, searchFilter,
+        return new SimpleLDAPAuthenticationManager(providerUrl, providerAuthUrl, searchContext, searchFilter,
                 ldapContextFactory);
     }
 
