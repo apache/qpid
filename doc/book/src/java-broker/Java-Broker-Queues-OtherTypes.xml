@@ -30,10 +30,13 @@
   <section role="h2" id="Java-Broker-Queues-OtherTypes-Introduction">
     <title>Introduction</title>
     <para> In addition to the standard queue type where messages are delivered in the same order
-      that they were sent, the Java Broker supports three additional queue types which allows for
-      alternative delivery behaviours. These are <link linkend="Java-Broker-Queues-OtherTypes-Priority"
-        >priority-queues</link>, <link linkend="Java-Broker-Queues-OtherTypes-Sorted">sorted-queues</link>-, and
-        <link linkend="Java-Broker-Queues-OtherTypes-LVQ">last-value-queues</link> (LVQs). </para>
+      that they were sent, the Java Broker supports four additional queue types which allows for
+      alternative delivery behaviours. These are
+      <link linkend="Java-Broker-Queues-OtherTypes-Priority">priority-queues</link>,
+      <link linkend="Java-Broker-Queues-OtherTypes-Sorted">sorted-queues</link>-,
+      <link linkend="Java-Broker-Queues-OtherTypes-LVQ">last-value-queues</link> (LVQs), and
+      <link linkend="Java-Broker-Queues-OtherTypes-Message-Grouping">grouped queues</link>.
+    </para>
     <para> In the following sections, the semantics of each queue type is described, followed by a
       description of how instances of these queue can be created via <link
         linkend="Java-Broker-Queues-OtherTypes-CreateUsingConfig">configuration</link> or <link
@@ -244,12 +247,162 @@ managedBroker.createNewQueue("myqueue", null, true, arguments);]]></programlisti
     </section>
   </section>
 
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-Message-Grouping">
+    <title>
+      Messaging Grouping
+    </title>
+    <para>
+      The broker allows messaging applications to classify a set of related messages as
+      belonging to a group.  This allows a message producer to indicate to the consumer
+      that a group of messages should be considered a single logical operation with
+      respect to the application.
+    </para>
+    <para>
+      The broker can use this group identification to enforce policies controlling how
+      messages from a given group can be distributed to consumers.  For instance, the
+      broker can be configured to guarantee all the messages from a particular group are
+      processed in order across multiple consumers.
+    </para>
+    <para>
+      For example, assume we have a shopping application that manages items in a virtual
+      shopping cart.  A user may add an item to their shopping cart, then change their
+      mind and remove it.  If the application sends an <emphasis>add</emphasis> message to the broker,
+      immediately followed by a <emphasis>remove</emphasis> message, they will be queued in the proper
+      order - <emphasis>add</emphasis>, followed by <emphasis>remove</emphasis>.
+    </para>
+    <para>
+      However, if there are multiple consumers, it is possible that once a consumer
+      acquires the <emphasis>add</emphasis> message, a different consumer may acquire the
+      <emphasis>remove</emphasis> message.  This allows both messages to be processed in parallel,
+      which could result in a "race" where the <emphasis>remove</emphasis> operation is incorrectly
+      performed before the <emphasis>add</emphasis> operation.
+    </para>
+    <section role="h3" id="Java-Broker-Queues-OtherTypes-GroupingMessages">
+      <title>
+        Grouping Messages
+      </title>
+      <para>
+        In order to group messages, the application would designate a particular
+        message header as containing a message's <emphasis>group identifier</emphasis>.  The group
+        identifier stored in that header field would be a string value set by the message
+        producer.  Messages from the same group would have the same group identifier
+        value. The key that identifies the header must also be known to the message
+        consumers.  This allows the consumers to determine a message's assigned group.
+      </para>
+      <para>
+        The header that is used to hold the group identifier, as well as the values used
+        as group identifiers, are totally under control of the application.
+      </para>
+    </section>
+    <section role="h3" id="Java-Broker-Queues-OtherTypes-BrokerRole">
+      <title>
+        The Role of the Broker in Message Grouping
+      </title>
+      <para>
+        The broker will apply the following processing on each grouped message:
+        <itemizedlist>
+          <listitem>Enqueue a received message on the destination queue.</listitem>
+          <listitem>Determine the message's group by examining the message's group identifier header.</listitem>
+          <listitem>Enforce <emphasis>consumption ordering</emphasis> among messages belonging
+          to the same group. <emphasis>Consumption ordering</emphasis> means one of two things
+          depending on how the queue has been configured.
+            <itemizedlist>
+              <listitem>In default mode, each group is assigned to a consumer for
+              the lifetime of the consumer.</listitem>
+              <listitem>In C++ compatibility mode (which gives the same behaviour
+              as the C++ Qpid Broker), the Broker enforces a looser guarantee, nameley that all the
+              <emphasis>currently unacknowledged messages</emphasis> in a group will be sent to the
+              same consumer.  This means that only one consumer can be processing messages from a particular
+              group at a given time.  When the consumer acknowledges all of its acquired
+              messages, then the broker <emphasis>may</emphasis> pass the next pending message
+              from that group to a different consumer.</listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        The absence of a value in the designated header field for grouping as treated as indicative
+        of a lack of desire for the message to be grouped. Messages with such a lack of a value will
+        be distributed to any available consumer.
+      </para>
+      <para>
+        Note that message grouping has no effect on queue browsers.
+      </para>
+      <para>
+        Note well that distinct message groups would not block each other from delivery.
+        For example, assume a queue contains messages from two different message groups -
+        say group "A" and group "B" - and they are enqueued such that "A"'s messages are
+        in front of "B". If the first message of group "A" is in the process of being
+        consumed by a client, then the remaining "A" messages are blocked, but the
+        messages of the "B" group are available for consumption by other consumers - even
+        though it is "behind" group "A" in the queue.
+      </para>
+    </section>
+    <section role="h3" id="Java-Broker-Queues-OtherTypes-BrokerConfig">
+      <title>
+        Broker Message Grouping Configuration
+      </title>
+      <para>
+        In order for the broker to determine a message's group, the key for the header
+        that contains the group identifier must be provided to the broker via
+        configuration.  This is done on a per-queue basis, when the queue is first
+        configured.
+      </para>
+      <para>
+        This means that message group classification is determined by the message's destination
+        queue.
+      </para>
+      <para>
+        Specifically, the queue "holds" the header key that is used to find the message's
+        group identifier.  All messages arriving at the queue are expected to use the same
+        header key for holding the identifer.  Once the message is enqueued, the broker
+        looks up the group identifier in the message's header, and classifies the message
+        by its group.
+      </para>
+      <para>
+        Message group support is specified by providing one or more of the following settings
+        in the arguments map that is used when declaring the queue (e.g. when calling
+        <code>AMQSession.createQueue()</code>).
+          <table>
+            <title>Queue Declare Message Group Configuration Arguments</title>
+            <tgroup cols="2">
+              <thead>
+                <row>
+                  <entry>Key</entry>
+                  <entry>Value</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>qpid.group_header_key</entry>
+                  <entry>The name of the message header that holds the group identifier value.
+                  The values in this header may be of any supported type (i.e. not just strings).
+                  </entry>
+                </row>
+                <row>
+                  <entry>qpid.shared_msg_group</entry>
+                  <entry>Provide a value of "1" to switch on
+                  <link linkend="Java-Broker-Queues-OtherTypes-BrokerRole">C++ compatibility mode</link></entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </table>
+      </para>
+      <para>
+        It is important to note that there is no need to provide the actual group
+        identifer values that will be used. The broker learns these values as messages are
+        recieved.  Also, there is no practical limit - aside from resource limitations -
+        to the number of different groups that the broker can track at run time.
+      </para>
+    </section>
+  </section>
+
   <section role="h2" id="Java-Broker-Queues-OtherTypes-SetLowPrefetch">
-    <title>Low pre-fetch</title>
+    <title>Using low pre-fetch with special queue types</title>
     <para>Qpid clients receive buffered messages in batches, sized according to the pre-fetch value.
       The current default is 500. </para>
     <para>However, if you use the default value you will probably <emphasis>not</emphasis> see
-      desirable behaviour when using priority, sorted or lvq queues. Once the broker has sent a
+      desirable behaviour when using priority, sorted, lvq or grouped queues. Once the broker has sent a
       message to the client its delivery order is then fixed, regardless of the special behaviour of
       the queue. </para>
     <para>For example, if using a priority queue and a prefetch of 100, and 100 messages arrive with
