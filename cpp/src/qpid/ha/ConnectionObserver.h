@@ -29,7 +29,7 @@
 #include "boost/shared_ptr.hpp"
 
 namespace qpid {
-class Address;
+struct Address;
 
 namespace ha {
 class BrokerInfo;
