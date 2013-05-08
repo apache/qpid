@@ -148,6 +148,7 @@ void OutgoingFromQueue::detached()
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         if (deliveries[i].msg) queue->release(deliveries[i].cursor, true);
     }
+    if (exclusive) queue->releaseExclusiveOwnership();
     Queue::tryAutoDelete(*queue->getBroker(), queue, "", "");
 }
 
