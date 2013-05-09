@@ -28,6 +28,7 @@
 #include <qpid/dispatch/threading.h>
 #include <qpid/dispatch/timer.h>
 #include <qpid/dispatch/router.h>
+#include <qpid/dispatch/log.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -58,12 +59,70 @@ typedef struct {
 ALLOC_DECLARE(dx_agent_request_t);
 ALLOC_DEFINE(dx_agent_request_t);
 
+static char *log_module = "AGENT";
 
-static void dx_agent_process_request(dx_message_t *msg)
+
+static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map)
 {
+    dx_field_iterator_t *cls = dx_field_map_by_key(map, "class");
+    if (cls == 0)
+        return;
+
+    dx_field_iterator_t    *cls_string = dx_field_string(cls);
+    const dx_agent_class_t *cls_record;
+    hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
+
+    if (cls_record == 0)
+        return;
+
+    dx_log(log_module, LOG_TRACE, "Received GET request for class: %s", cls_record->fqname);
+}
+
+
+static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
+{
+    //
+    // Parse the message through the body and exit if the message is not well formed.
+    //
     if (!dx_message_check(msg, DX_DEPTH_BODY))
         return;
-    printf("Processing Agent Request\n");
+
+    //
+    // Get an iterator for the message body.  Exit if the message has no body.
+    //
+    dx_field_iterator_t *body = dx_message_field_iterator(msg, DX_FIELD_BODY);
+    if (body == 0)
+        return;
+
+    //
+    // Try to get a map-view of the body.  Exit if the body is not a map-value.
+    //
+    dx_field_map_t *map = dx_field_map(body, 1);
+    if (map == 0) {
+        dx_field_iterator_free(body);
+        return;
+    }
+
+    //
+    // Get an iterator for the "opcode" field in the map.  Exit if the key is not found.
+    //
+    dx_field_iterator_t *opcode = dx_field_map_by_key(map, "opcode");
+    if (opcode == 0) {
+        dx_field_map_free(map);
+        dx_field_iterator_free(body);
+        return;
+    }
+
+    //
+    // Dispatch the opcode to the appropriate handler
+    //
+    dx_field_iterator_t *opcode_string = dx_field_string(opcode);
+    if (dx_field_iterator_equal(opcode_string, (unsigned char*) "get"))
+        dx_agent_process_get(agent, map);
+
+    dx_field_iterator_free(opcode_string);
+    dx_field_map_free(map);
+    dx_field_iterator_free(body);
 }
 
 
@@ -80,7 +139,7 @@ static void dx_agent_timer_handler(void *context)
         sys_mutex_unlock(agent->lock);
 
         if (msg) {
-            dx_agent_process_request(msg);
+            dx_agent_process_request(agent, msg);
             dx_free_message(msg);
         }
     } while (msg);
@@ -147,6 +206,7 @@ dx_agent_class_t *dx_agent_register_class(dx_dispatch_t        *dx,
     if (result < 0)
         assert(false);
 
+    dx_log(log_module, LOG_TRACE, "%s class registered: %s", query_handler ? "Object" : "Event", fqname);
     return cls;
 }
 

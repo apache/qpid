@@ -148,4 +148,14 @@ int dx_field_iterator_prefix(dx_field_iterator_t *iter, const char *prefix);
  */
 unsigned char *dx_field_iterator_copy(dx_field_iterator_t *iter);
 
+
+
+typedef struct dx_field_map_t dx_field_map_t;
+
+dx_field_map_t *dx_field_map(dx_field_iterator_t *iter, int string_keys_only);
+void dx_field_map_free(dx_field_map_t *map);
+dx_field_iterator_t *dx_field_map_by_key(dx_field_map_t *map, const char *key);
+
+dx_field_iterator_t *dx_field_string(dx_field_iterator_t *iter);
+
 #endif

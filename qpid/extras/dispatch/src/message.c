@@ -216,7 +216,8 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
     //
     // Advance the pointers to consume the whole section.
     //
-    int consume = 0;
+    int pre_consume = 1;  // Count the already extracted tag
+    int consume     = 0;
     unsigned char tag = next_octet(&test_cursor, &test_buffer);
     if (!test_cursor) return 0;
     switch (tag) {
@@ -226,6 +227,7 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
     case 0xd0 : // list32
     case 0xd1 : // map32
     case 0xb0 : // vbin32
+        pre_consume += 3;
         consume |= ((int) next_octet(&test_cursor, &test_buffer)) << 24;
         if (!test_cursor) return 0;
         consume |= ((int) next_octet(&test_cursor, &test_buffer)) << 16;
@@ -237,11 +239,13 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
     case 0xc0 : // list8
     case 0xc1 : // map8
     case 0xa0 : // vbin8
+        pre_consume += 1;
         consume |= (int) next_octet(&test_cursor, &test_buffer);
         if (!test_cursor) return 0;
         break;
     }
 
+    location->length = pre_consume + consume;
     if (consume)
         advance(&test_cursor, &test_buffer, consume);
 
@@ -411,20 +415,8 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
         break;
 
     case DX_FIELD_BODY:
-        while (1) {
-            if (content->body.parsed)
-                return &content->body;
-
-            if (content->section_body.parsed == 0)
-                break;
-
-            dx_buffer_t   *buffer = content->section_body.buffer;
-            unsigned char *cursor = dx_buffer_base(buffer) + content->section_body.offset;
-            int result;
-
-            result = traverse_field(&cursor, &buffer, &content->body);
-            if (!result) return 0;
-        }
+        if (content->section_body.parsed)
+            return &content->section_body;
         break;
 
     default:
@@ -637,7 +629,8 @@ static int dx_check_field_LH(dx_message_content_t *content,
                              const unsigned char  *long_pattern,
                              const unsigned char  *short_pattern,
                              const unsigned char  *expected_tags,
-                             dx_field_location_t  *location)
+                             dx_field_location_t  *location,
+                             int                   more)
 {
 #define LONG  10
 #define SHORT 3
@@ -646,7 +639,8 @@ static int dx_check_field_LH(dx_message_content_t *content,
             return 0;
         if (0 == dx_check_and_advance(&content->parse_buffer, &content->parse_cursor, short_pattern, SHORT, expected_tags, location))
             return 0;
-        content->parse_depth = depth;
+        if (!more)
+            content->parse_depth = depth;
     }
     return 1;
 }
@@ -668,11 +662,14 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     static const unsigned char * const BODY_DATA_SHORT              = (unsigned char*) "\x00\x53\x75";
     static const unsigned char * const BODY_SEQUENCE_LONG           = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x76";
     static const unsigned char * const BODY_SEQUENCE_SHORT          = (unsigned char*) "\x00\x53\x76";
+    static const unsigned char * const BODY_VALUE_LONG              = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x77";
+    static const unsigned char * const BODY_VALUE_SHORT             = (unsigned char*) "\x00\x53\x77";
     static const unsigned char * const FOOTER_LONG                  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x78";
     static const unsigned char * const FOOTER_SHORT                 = (unsigned char*) "\x00\x53\x78";
     static const unsigned char * const TAGS_LIST                    = (unsigned char*) "\x45\xc0\xd0";
     static const unsigned char * const TAGS_MAP                     = (unsigned char*) "\xc1\xd1";
     static const unsigned char * const TAGS_BINARY                  = (unsigned char*) "\xa0\xb0";
+    static const unsigned char * const TAGS_ANY                     = (unsigned char*) "\x45\xc0\xd0\xc1\xd1\xa0\xb0";
 
     dx_buffer_t *buffer  = DEQ_HEAD(content->buffers);
 
@@ -694,7 +691,7 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     // MESSAGE HEADER
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_HEADER,
-                               MSG_HDR_LONG, MSG_HDR_SHORT, TAGS_LIST, &content->section_message_header))
+                               MSG_HDR_LONG, MSG_HDR_SHORT, TAGS_LIST, &content->section_message_header, 0))
         return 0;
     if (depth == DX_DEPTH_HEADER)
         return 1;
@@ -703,7 +700,7 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     // DELIVERY ANNOTATION
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_DELIVERY_ANNOTATIONS,
-                               DELIVERY_ANNOTATION_LONG, DELIVERY_ANNOTATION_SHORT, TAGS_MAP, &content->section_delivery_annotation))
+                               DELIVERY_ANNOTATION_LONG, DELIVERY_ANNOTATION_SHORT, TAGS_MAP, &content->section_delivery_annotation, 0))
         return 0;
     if (depth == DX_DEPTH_DELIVERY_ANNOTATIONS)
         return 1;
@@ -712,7 +709,7 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     // MESSAGE ANNOTATION
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_MESSAGE_ANNOTATIONS,
-                               MESSAGE_ANNOTATION_LONG, MESSAGE_ANNOTATION_SHORT, TAGS_MAP, &content->section_message_annotation))
+                               MESSAGE_ANNOTATION_LONG, MESSAGE_ANNOTATION_SHORT, TAGS_MAP, &content->section_message_annotation, 0))
         return 0;
     if (depth == DX_DEPTH_MESSAGE_ANNOTATIONS)
         return 1;
@@ -721,7 +718,7 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     // PROPERTIES
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_PROPERTIES,
-                               PROPERTIES_LONG, PROPERTIES_SHORT, TAGS_LIST, &content->section_message_properties))
+                               PROPERTIES_LONG, PROPERTIES_SHORT, TAGS_LIST, &content->section_message_properties, 0))
         return 0;
     if (depth == DX_DEPTH_PROPERTIES)
         return 1;
@@ -730,19 +727,25 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     // APPLICATION PROPERTIES
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_APPLICATION_PROPERTIES,
-                               APPLICATION_PROPERTIES_LONG, APPLICATION_PROPERTIES_SHORT, TAGS_MAP, &content->section_application_properties))
+                               APPLICATION_PROPERTIES_LONG, APPLICATION_PROPERTIES_SHORT, TAGS_MAP, &content->section_application_properties, 0))
         return 0;
     if (depth == DX_DEPTH_APPLICATION_PROPERTIES)
         return 1;
 
     //
-    // BODY  (Note that this function expects a single data section or a single AMQP sequence)
+    // BODY
+    // Note that this function expects a limited set of types in a VALUE section.  This is
+    // not a problem for messages passing through Dispatch because through-only messages won't
+    // be parsed to BODY-depth.
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_BODY,
-                               BODY_DATA_LONG, BODY_DATA_SHORT, TAGS_BINARY, &content->section_body))
+                               BODY_DATA_LONG, BODY_DATA_SHORT, TAGS_BINARY, &content->section_body, 1))
         return 0;
     if (0 == dx_check_field_LH(content, DX_DEPTH_BODY,
-                               BODY_SEQUENCE_LONG, BODY_SEQUENCE_SHORT, TAGS_LIST, &content->section_body))
+                               BODY_SEQUENCE_LONG, BODY_SEQUENCE_SHORT, TAGS_LIST, &content->section_body, 1))
+        return 0;
+    if (0 == dx_check_field_LH(content, DX_DEPTH_BODY,
+                               BODY_VALUE_LONG, BODY_VALUE_SHORT, TAGS_ANY, &content->section_body, 0))
         return 0;
     if (depth == DX_DEPTH_BODY)
         return 1;
@@ -751,7 +754,7 @@ static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t
     // FOOTER
     //
     if (0 == dx_check_field_LH(content, DX_DEPTH_ALL,
-                               FOOTER_LONG, FOOTER_SHORT, TAGS_MAP, &content->section_footer))
+                               FOOTER_LONG, FOOTER_SHORT, TAGS_MAP, &content->section_footer, 0))
         return 0;
 
     return 1;
