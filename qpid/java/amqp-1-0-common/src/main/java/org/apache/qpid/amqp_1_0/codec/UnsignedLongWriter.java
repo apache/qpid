@@ -127,7 +127,7 @@ public class UnsignedLongWriter implements ValueWriter<UnsignedLong>
         {
             _delegate = _zeroByteWriter;
         }
-        else if(ulong.compareTo(UnsignedLong.valueOf(256))<0)
+        else if((ulong.longValue() & 0xffL) == ulong.longValue())
         {
             _delegate = _oneByteWriter;
         }
