@@ -342,7 +342,7 @@ define(["dojo/_base/xhr",
 
             registry.byId("formAddPort").reset();
             dojo.byId("formAddPort.id").value = "";
-
+            var editWarning = dojo.byId("portEditWarning");
             var providerWidget = registry.byId("formAddPort.authenticationProvider");
             if (providers)
             {
@@ -388,6 +388,8 @@ define(["dojo/_base/xhr",
 
             if (portName)
             {
+                editWarning.style.display = "block";
+
                 xhr.get({
                     url: "rest/port/" + encodeURIComponent(portName),
                     handleAs: "json"
@@ -490,6 +492,7 @@ define(["dojo/_base/xhr",
                 typeWidget.set("value", "AMQP");
                 var name = registry.byId("formAddPort.name");
                 name.set("disabled", false);
+                editWarning.style.display = "none";
                 registry.byId("addPort").show();
             }
         };
