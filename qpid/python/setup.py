@@ -279,7 +279,7 @@ class install_lib(_install_lib):
     outputs = _install_lib.get_outputs(self)
     extra = []
     for of in outputs:
-      if os.path.basename(of) == "amqp-0-10-qpid-errata.xml":
+      if os.path.basename(of) == "amqp-0-10-qpid-errata-stripped.xml":
         extra.append(pclfile(of))
     return outputs + extra
 
@@ -287,7 +287,7 @@ class install_lib(_install_lib):
     outfiles = _install_lib.install(self)
     extra = []
     for of in outfiles:
-      if os.path.basename(of) == "amqp-0-10-qpid-errata.xml":
+      if os.path.basename(of) == "amqp-0-10-qpid-errata-stripped.xml":
         tgt = pclfile(of)
         if self.force or newer(of, tgt):
           log.info("caching %s to %s" % (of, os.path.basename(tgt)))

@@ -28,7 +28,7 @@ if ! test -d "$QPID_DIR" ; then
 fi
 STORE_LIB=../lib/.libs/msgstore.so
 
-xml_spec=$QPID_DIR/specs/amqp.0-10-qpid-errata.xml
+xml_spec=$QPID_DIR/specs/amqp.0-10-qpid-errata.stripped.xml
 test -f $xml_spec || error "$xml_spec not found: invalid \$QPID_DIR ?"
 export PYTHONPATH=$QPID_DIR/python:$QPID_DIR/extras/qmf/src/py:$QPID_DIR/tools/src/py
 

@@ -175,7 +175,7 @@ inherit_value ("winver_LEGAL_COPYRIGHT"      "")
 # present, and if any sources have changed, forcing a re-gen of source code.
 
 set(AMQP_SPEC_DIR ${qpid-cpp_SOURCE_DIR}/../specs)
-set(AMQP_SPEC ${AMQP_SPEC_DIR}/amqp.0-10-qpid-errata.xml)
+set(AMQP_SPEC ${AMQP_SPEC_DIR}/amqp.0-10-qpid-errata.stripped.xml)
 if (EXISTS ${AMQP_SPEC})
   include(FindRuby)
   include(FindPythonInterp)

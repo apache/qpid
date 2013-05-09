@@ -135,7 +135,7 @@ EOS
     name=c.name.caps+"Exception"
     value="#{package}::#{enum.parent.name.shout}_#{c.name.shout}"
     genl
-    doxygen_comment { genl c.doc }
+    doxygen_comment { genl c.doc } if c.doc
     struct(c.name.caps+"Exception", base) {
       genl "std::string getPrefix() const { return \"#{c.name}\"; }"
       genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{value}, \"\"+msg) {}"
