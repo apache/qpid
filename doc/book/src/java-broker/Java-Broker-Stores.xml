@@ -21,7 +21,7 @@
 -->
 
 <chapter  id="Java-Broker-Stores">
-    <title>Stores</title>
+    <title>Virtual Host Message Stores</title>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Stores-Memory-Store.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Stores-Derby-Store.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Stores-SQL-Store.xml"/>

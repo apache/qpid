@@ -26,7 +26,11 @@
 
 <chapter id="Java-Broker-Getting-Started">
   <title>Getting Started</title>
-  <para>This section describes how to start the Java Broker for the first time.</para>
+  <para>
+    This section describes how to start the Java Broker for the first time.
+    The Broker configuration details and configuration command line arguments are described in <xref linkend="Java-Broker-Configuring-And-Managing-Configuration-Store-Introduction"/>.
+  </para>
+
   <section role="h2" id="Java-Broker-Getting-Started-Starting">
     <title>Starting/Stopping the Broker</title>
     <para>To start the Broker, use the <command>qpid-server</command> script (UNIX) or <command>qpid-server.bat</command> (Windows)
@@ -39,19 +43,19 @@
     <para>Now use the <command>qpid-server.bat</command> to start the server</para>
     <programlisting><![CDATA[bin\qpid-server.bat]]></programlisting>
     <para>Output similar to the following will be seen:</para>
-    <screen>[Broker] BRK-1006 : Using configuration : C:\qpid\qpid-broker-&qpidCurrentRelease;\etc\config.xml
+    <screen>[Broker] BRK-1006 : Using configuration : C:\qpidwork\config.json
 [Broker] BRK-1007 : Using logging configuration : C:\qpid\qpid-broker-&qpidCurrentRelease;\etc\log4j.xml
-[Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: 1411386
-[Broker] BRK-1010 : Platform : JVM : Sun Microsystems Inc. version: 1.6.0_24-b07 OS : Windows 7 version: 6.1 arch: amd64
-[Broker] BRK-1011 : Maximum Memory : 1,069,416,448 bytes
-[Broker] MNG-1001 : Web Management Startup
-[Broker] MNG-1002 : Starting : HTTP : Listening on port 8080
-[Broker] MNG-1004 : Web Management Ready
+[Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: 1478262
+[Broker] BRK-1010 : Platform : JVM : Oracle Corporation version: 1.7.0_21-b11 OS : Windows 7 version: 6.1 arch: x86
+[Broker] BRK-1011 : Maximum Memory : 1,060,372,480 bytes
+[Broker] BRK-1002 : Starting : Listening on TCP port 5672
 [Broker] MNG-1001 : JMX Management Startup
 [Broker] MNG-1002 : Starting : RMI Registry : Listening on port 8999
 [Broker] MNG-1002 : Starting : JMX RMIConnectorServer : Listening on port 9099
 [Broker] MNG-1004 : JMX Management Ready
-[Broker] BRK-1002 : Starting : Listening on TCP port 5672
+[Broker] MNG-1001 : Web Management Startup
+[Broker] MNG-1002 : Starting : HTTP : Listening on port 8080
+[Broker] MNG-1004 : Web Management Ready
 [Broker] BRK-1004 : Qpid Broker Ready</screen>
     <para>The BRK-1004 message confirms that the Broker is ready for work.  The MNG-1002 and BRK-1002 confirm the ports to
       which the Broker is listening (for HTTP/JMX management and AMQP respectively).</para>
@@ -65,11 +69,12 @@
     <para>Now use the <command>qpid-server</command> script to start the server:</para>
     <programlisting><![CDATA[bin\qpid-server]]></programlisting>
     <para>Output similar to the following will be seen:</para>
-    <screen>[Broker] BRK-1006 : Using configuration : /usr/local/qpid/qpid-broker-&qpidCurrentRelease;/etc/config.xml
+    <screen>[Broker] BRK-1006 : Using configuration : /var/qpidwork/config.json
 [Broker] BRK-1007 : Using logging configuration : /usr/local/qpid/qpid-broker-&qpidCurrentRelease;/etc/log4j.xml
-[Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: 1411386
-[Broker] BRK-1010 : Platform : JVM : Apple Inc. version: 1.6.0_35-b10-428-11M3811 OS : Mac OS X version: 10.8.2 arch: x86_64
-[Broker] BRK-1011 : Maximum Memory : 1,070,399,488 bytes
+[Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: exported
+[Broker] BRK-1010 : Platform : JVM : Sun Microsystems Inc. version: 1.6.0_32-b05 OS : Linux version: 3.6.10-2.fc16.x86_64 arch: amd64
+[Broker] BRK-1011 : Maximum Memory : 1,065,025,536 bytes
+[Broker] BRK-1002 : Starting : Listening on TCP port 5672
 [Broker] MNG-1001 : Web Management Startup
 [Broker] MNG-1002 : Starting : HTTP : Listening on port 8080
 [Broker] MNG-1004 : Web Management Ready
@@ -77,7 +82,6 @@
 [Broker] MNG-1002 : Starting : RMI Registry : Listening on port 8999
 [Broker] MNG-1002 : Starting : JMX RMIConnectorServer : Listening on port 9099
 [Broker] MNG-1004 : JMX Management Ready
-[Broker] BRK-1002 : Starting : Listening on TCP port 5672
 [Broker] BRK-1004 : Qpid Broker Ready</screen>
     <para>The BRK-1004 message confirms that the Broker is ready for work.  The MNG-1002 and BRK-1002 confirm the ports to
     which the Broker is listening (for HTTP/JMX management and AMQP respectively).</para>
@@ -138,6 +142,11 @@
 
  -os                                            overwrite the broker configuration store
  --overwrite-store                              with the current initial configuration
+
+ -prop,--config-property <name=value>           set a configuration property to use when
+                                                resolving variables in the broker
+                                                configuration store, with format
+                                                'name=value'
 
  -sp <path>                                     use given configuration store location
  --store-path <path>

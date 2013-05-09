@@ -22,5 +22,27 @@
 
 <section id="Java-Broker-Concepts-Exchanges">
 <title>Exchanges</title>
-
+<para><emphasis>Exchange</emphasis> is the named entity within the <emphasis>Virtual Host</emphasis> which receives messages from producer applications and
+optionally routes them to message queues within the <emphasis>Virtual Host</emphasis>. The message routing occurs based on exchange routing algorithm
+and queue <emphasis>Bindings</emphasis>.</para>
+<para>
+The following <emphasis>Exchanges</emphasis> are implemented and supported by the <emphasis>Broker</emphasis>:
+    <itemizedlist>
+        <listitem><para><emphasis>Direct Exchange</emphasis> provides routing of messages to zero or more queues based on an exact match between
+the routing key of the message, and the binding key used to bind the queue to the exchange
+        </para></listitem>
+        <listitem><para><emphasis>Topic Exchange</emphasis> provides routing to bound queues based on a pattern match between the binding key and the
+routing key of the message. This exchange type is used to support the classic publish/subscribe paradigm using a topic namespace as the
+addressing model to select and deliver messages across multiple consumers based on a partial or full match on a topic pattern.
+        </para></listitem>
+        <listitem><para><emphasis>Fanout Exchange</emphasis> provides routing of messages to all bound queues regardless of the message's routing key.
+        </para></listitem>
+        <listitem><para><emphasis>Headers Exchange</emphasis> provides routing based on header properties within the AMQP message.
+        The message is passed to the queue if the headers property matches the arguments with which the queue was bound.
+        </para></listitem>
+     </itemizedlist>
+</para>
+<para>Also, Broker supports the concept of a Default Exchange to which all queues are bound using their name as a binding key.</para>
+<para>Any number of exchanges of any type can be created on <emphasis>Virtual Host</emphasis>.</para>
+<para>Exchange configuration is covered in <xref linkend="Java-Broker-Exchanges"/>.</para>
 </section>

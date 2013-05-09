@@ -23,8 +23,7 @@
 <chapter id="Java-Broker-Configuring-And-Managing">
   <title>Configuring And Managing</title>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing-Config-Files.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing-Web-Console.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing-REST-API.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing-Web-Management.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing-JMX.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing-Other-Tooling.xml"/>
 </chapter>

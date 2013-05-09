@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="Java-Broker-Ports">
+  <title>Broker Ports</title>
+  <para>This section guides through the process of configuring of Broker AMQP and non-AMQP ports.</para>
+
+  <section id="Java-Broker-Ports-Configuring">
+    <title>Configuring Broker Ports</title>
+    <para>The Broker Ports can be configured using
+    <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
+    and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>.</para>
+
+    <para>The following Port managing operations are available from Web Management Console:
+        <itemizedlist>
+            <listitem><para>A new Port can be created by clicking "Add Port" button on the Broker tab.</para></listitem>
+            <listitem><para>An existing Port details are displayed on the Port tab after clicking
+            on Port name in the Broker object tree or after clicking on a Port row in the Ports grid on the Broker tab.</para></listitem>
+            <listitem><para>An existing Port can be edited by clicking on "Edit" button on the Port tab.</para></listitem>
+            <listitem><para>An existing Port can be deleted by clicking on "Delete Port" button
+            on Broker tab or "Delete" button on the Port tab.</para></listitem>
+        </itemizedlist>
+    </para>
+
+    <para>Three different types of ports can be created:
+        <itemizedlist>
+            <listitem><para>AMQP ports accepting connections for supported AMQP protocols.</para></listitem>
+            <listitem><para>HTTP ports accepting connections for HTTP and HTTPS protocols and used by web management plugin.</para></listitem>
+            <listitem><para>RMI ports supporting RMI and JMX_RMI protocols and used by JMX management plugin.</para></listitem>
+        </itemizedlist>
+    </para>
+
+    <para>On creation or editing of AMQP port the port protocols can be specified from the list of supported AMQP protocols.
+     Any number of AMQP ports with any combination of supported protocols can be configured on the Broker.</para>
+
+     <para>It is possible to create any number of HTTP/HTTPS ports. However, only two JMX ports are recommended
+     to configure on the Broker: one with RMI protocol and another with JMX_RMI protocol.
+     The creation of more JMX protocols might result in unexpected behavior. When more then two JMX ports are configured
+     the JMX plugin will pick up only two of them (having different RMI protocols) in indeterministic order.</para>
+
+    <para>Both TCP and SSL transports are supported by AMQP and HTTP ports.
+    The Keystore is required to configure on Port for SSL transport support.
+    The details of Keystore configuration are covered in <xref linkend="Java-Broker-SSL-Keystore"/>.
+    SSL transport is also supported by the JMX connector port (having protocol set to "JMX_RMI")
+    but JMX RMI port (having protocol set to "RMI") does not support SSL transport.</para>
+
+    <para>Client Certificate Authentication can be configured with AMQP ports only. This requires configuring
+    of one or more Trustores on the Port and setting of needClientAuthentication and wantClientAuthentication attributes.
+    They allow control of whether the client must present an SSL certificate. Only one of these elements is needed but both
+    may be used at the same time. A socket's client authentication setting is one of three states:
+    required (needClientAuth = true), requested (wantClientAuth = true), or none desired (both false, the default).
+    If both elements are set to true, needClientAuth takes precedence. When using Client Certificate Authentication
+    it may be desirable to use the External Authentication Provider, for details see <xref linkend="Java-Broker-Security-External-Provider"/>.
+    The details how to configure Trustores are covered in <xref linkend="SSL-Truststore-ClientCertificate"/>.</para>
+
+    <para>An Authentication Provider is required to configure on AMQP, HTTP and JMX connector(having protocol set to "JMX_RMI") ports.
+    JMX RMI port (having protocol set to "RMI") does not require setting of Authentication Provider.
+    For Authentication Provider configuration details see <xref linkend="Java-Broker-Security-Authentication-Providers"/></para>
+
+    <important>
+    Neither Port type no name can be changed for existing Port as editing of name and type is unsupported at the moment.
+    </important>
+
+    <important>
+    The changes of port attributes will take effect only after broker restart.
+    </important>
+
+    <important>
+    On deletion of active Port all opened connections remain opened until they are closed by the clients or Broker is shutdown
+    or connection Virtual Hosts are deleted or stopped. When Port is deleted with active connections, the creation of another Port
+    having the same port number as deleted one fails.
+    </important>
+
+  </section>
+
+</chapter>

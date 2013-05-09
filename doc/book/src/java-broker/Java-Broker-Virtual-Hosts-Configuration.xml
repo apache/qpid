@@ -1,0 +1,643 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+  <section id="Java-Broker-Virtual-Hosts-Configuration-File">
+    <title>Configuring Virtual Host using configuration file</title>
+    <para>This section describes how to configure Virtual Host using configuration XML.</para>
+    <para>Virtual Host configuration XML can hold configuration for a single Virtual Host or multiple Virtual Hosts.
+    When multiple Virtual Hosts are configured a section for the each virtual host needs to be added. It should contain a tag
+    having the same name as virtual host.
+    </para>
+<programlisting>
+&lt;virtualhosts&gt;
+    ...
+    &lt;virtualhost&gt;                 <co id="Java-Broker-Virtual-Hosts-Configuration-Multiple-1"/>
+        &lt;name&gt;test&lt;/name&gt;
+        &lt;test&gt;
+          ...
+        &lt;/test&gt;
+    &lt;/virtualhost&gt;
+
+    &lt;virtualhost&gt;                 <co id="Java-Broker-Virtual-Hosts-Configuration-Multiple-2"/>
+        &lt;name&gt;development&lt;/name&gt;
+        &lt;development&gt;
+          ...
+        &lt;/development&gt;
+    &lt;/virtualhost&gt;
+    ...
+&lt;/virtualhosts&gt;
+        </programlisting>
+        <calloutlist>
+            <callout arearefs="Java-Broker-Virtual-Hosts-Configuration-Multiple-1"><para>A configuration section for a virtual host "test"</para></callout>
+            <callout arearefs="Java-Broker-Virtual-Hosts-Configuration-Multiple-2"><para>A configuration section for a virtual host "development"</para></callout>
+        </calloutlist>
+
+    <section id="Java-Broker-Virtual-Hosts-Configuration-File-ACL">
+        <title>Configuring ACL</title>
+        <para><xref linkend="Java-Broker-Security-ACLs"/> provides the details of ACL, rules, formats, etc.</para>
+        <para>
+        To apply an ACL on a single virtualhost named <replaceable>test</replaceable>, add the following to the config.xml:
+        </para>
+
+        <programlisting>
+&lt;virtualhost&gt;
+...
+    &lt;name&gt;test&lt;/name&gt;
+    &lt;test&gt;
+      ...
+      &lt;security&gt;                          <co id="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-1"/>
+        ...
+        &lt;acl&gt;<replaceable>${conf}/vhost_test.acl</replaceable>&lt;/acl&gt; <co  id="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-2"/>
+        ...
+      &lt;/security&gt;
+      ...
+    &lt;/test&gt;
+&lt;/virtualhost&gt;
+        </programlisting>
+        <calloutlist>
+            <callout arearefs="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-1"><para>A security section of configuration is used to declare the ACL</para></callout>
+            <callout arearefs="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-2"><para>A path to an ACL file is configured (assuming that <replaceable>conf</replaceable> has been set to a suitable
+      location such as ${QPID_HOME}/etc)</para></callout>
+        </calloutlist>
+    </section>
+
+    <section role="h3" id="Java-Broker-Stores-Memory-Store-Configuration">
+        <title>Configuring MemoryMessageStore</title>
+        <para>
+        An example of MemoryMessageStore configuration for a virtual host is shown below:
+        </para>
+
+        <example>
+          <title>Configuring a VirtualHost to use the MemoryMessageStore</title>
+          <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+        <class>org.apache.qpid.server.store.MemoryMessageStore</class
+      </store>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+    ]]></programlisting>
+        </example>
+      </section>
+
+      <section role="h3" id="Java-Broker-Stores-BDB-Store-Configuration">
+        <title>Configuring BDBMessageStore</title>
+        <para>
+          In order to use the BDBMessageStore, you must configure it for each VirtualHost desired by updating the store element
+          to specify the associated store class and provide a directory location for the data to be written, as shown below.
+        </para>
+
+        <example>
+          <title>Configuring a VirtualHost to use the BDBMessageStore</title>
+          <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+        <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+        <environment-path>${QPID_WORK}/bdbstore/vhostname</environment-path>
+      </store>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+    ]]></programlisting>
+        </example>
+      </section>
+
+      <section role="h3" id="Java-Broker-Stores-Derby-Store-Configuration">
+        <title>Configuring DerbyMessageStore</title>
+        <para>
+          In order to use the DerbyMessageStore, you must configure it for each VirtualHost desired by updating the store element
+          to specify the associated store class and provide a directory location for the data to be written, as shown below.
+        </para>
+
+        <example>
+          <title>Configuring a VirtualHost to use the DerbyMessageStore</title>
+          <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+        <class>org.apache.qpid.server.store.DerbyMessageStore</class>
+        <environment-path>${QPID_WORK}/derbystore/vhostname</environment-path>
+      </store>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+    ]]></programlisting>
+        </example>
+      </section>
+
+    <section role="h3" id="Java-Broker-Stores-JDBC-Store-Configuration">
+    <title>Configuring JDBCMessageStore</title>
+    <para>
+    JDBCMessageStore can be configured on VirtualHost as in example shown below:
+    </para>
+
+    <example>
+      <title>Configuring a VirtualHost to use the JDBCMessageStore</title>
+      <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+        <class>org.apache.qpid.server.store.jdbc.JDBCMessageStore</class>
+        <connectionUrl>jdbc:oracle:thin:guest@guest//localhost:1521/orcl</connectionUrl>
+      </store>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+]]></programlisting>
+    </example>
+  </section>
+
+
+    <section role="h3" id="Java-Broker-Virtual-Host-Configuration-Exchange">
+    <title>Configuring Exchanges</title>
+    <para>
+    To declare Exchanges within Virtual Host configuration, add the appropriate xml
+    to the virtualhost.xml configuration file within the <varname>exchanges</varname> element.
+    An example of such declaration is shown below:
+    </para>
+
+    <example>
+      <title>Configuring Exchanges on VirtualHost</title>
+      <programlisting><![CDATA[
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+      ...
+            <exchanges>
+                <exchange>
+                    <type>direct</type>
+                    <name>test.direct</name>
+                    <durable>true</durable>
+                </exchange>
+                <exchange>
+                    <type>topic</type>
+                    <name>test.topic</name>
+                </exchange>
+            </exchanges>
+      ...
+    </vhostname>
+  </virtualhost>
+</virtualhosts>
+]]></programlisting>
+    </example>
+    </section>
+
+    <section role="h2" id="Java-Broker-Virtual-Host-Declare-Queues">
+      <title>Configuring Queues</title>
+      <para>To create a priority, sorted or LVQ queue within configuration, add the appropriate xml
+        to the virtualhost.xml configuration file within the <varname>queues</varname>
+        element.</para>
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Simple">
+        <title>Simple</title>
+        <para>For declaration of a simple queue define a queue entry in the virtual host configuration as in example below</para>
+        <example>
+          <title>Configuring a simple queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>my-simple-queue</name>
+    <my-simple-queue>
+        <exchange>amq.direct</exchange>
+        <durable>true</durable>
+    </my-simple-queue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Priority">
+        <title>Priority</title>
+        <para> To defining a priority queue, add a &lt;priority&gt;true&lt;/priority&gt; element. By
+          default the queue will have 10 distinct priorities. </para>
+        <example>
+          <title>Configuring a priority queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <priority>true</priority>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+        <para> If you require fewer priorities, it is possible to specify a
+            <varname>priorities</varname> element (whose value is a integer value between 2 and 10
+          inclusive) which will give the queue that number of distinct priorities. When messages are
+          sent to that queue, their effective priority will be calculated by partitioning the
+          priority space. If the number of effective priorities is 2, then messages with priority
+          0-4 are treated the same as "lower priority" and messages with priority 5-9 are treated
+          equivalently as "higher priority". </para>
+        <example>
+          <title>Configuring a priority queue with fewer priorities</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <priority>true</priority>
+        <priorities>4</priorities>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Sorted">
+        <title>Sorted</title>
+        <para> To define a sorted queue, add a <varname>sortKey</varname> element. The value of the
+            <varname>sortKey</varname> element defines the message property to use the value of when
+          sorting the messages put onto the queue. </para>
+        <example>
+          <title>Configuring a sorted queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <sortKey>message-property-to-sort-by</sortKey>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-LVQ">
+        <title>LVQ</title>
+        <para> To define a LVQ, add a <varname>lvq</varname> element with the value
+            <constant>true</constant>. Without any further configuration this will define an LVQ
+          which uses the JMS message property <constant>qpid.LVQ_key</constant> as the key for
+          replacement. </para>
+        <example>
+          <title>Configuring a LVQ queue</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <lvq>true</lvq>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+        <para> If you wish to define your own property then you can do so using the
+            <varname>lvqKey</varname> element.</para>
+        <example>
+          <title>Configuring a LVQ queue with custom message property name</title>
+          <programlisting><![CDATA[<queue>
+    <name>myqueue</name>
+    <myqueue>
+        <exchange>amq.direct</exchange>
+        <lvq>true</lvq>
+        <lvqKey>ISIN</lvqKey>
+    </myqueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
+    </section>
+
+    <section role="h2" id="Java-Broker-Virtual-Host-Configure-Flow-Control">
+      <title>Configuring of Producer Flow Control</title>
+      <para>Flow control capacity and flow resume capacity are required to set on a queue or virtual host to enable Producer flow control.</para>
+
+             <example>
+               <title>Configuring a queue depth limit</title>
+                <programlisting>
+                <![CDATA[
+<queue>
+    <name>test</name>
+    <test>
+        <exchange>amq.direct</exchange>
+
+        <!-- set the queue capacity to 10Mb -->
+        <capacity>10485760</capacity>
+
+        <!-- set the resume capacity to 8Mb -->
+        <flowResumeCapacity>8388608</flowResumeCapacity>
+    </test>
+</queue>
+                ]]>
+                </programlisting>
+             </example>
+
+                The default for all queues on a virtual host can also be set
+
+             <example>
+               <title>Configuring of default queue depth limit on virtualhost</title>
+                <programlisting>
+                <![CDATA[
+<virtualhosts>
+    <virtualhost>
+        <name>localhost</name>
+        <localhost>
+
+            <!-- set the queue capacity to 10Mb -->
+            <capacity>10485760</capacity>
+
+            <!-- set the resume capacity to 8Mb -->
+            <flowResumeCapacity>8388608</flowResumeCapacity>
+        </localhost>
+    </virtualhost>
+</virtualhosts>
+                ]]>
+                </programlisting>
+             </example>
+    </section>
+
+    <section role="h2" id="Java-Broker-Virtual-Host-Configure-Disk-Quotas">
+      <title>Configuring of Disk Quota-based Flow Control</title>
+        <para>
+                An example of quota configuration for the BDB message store is provided below.
+        </para>
+
+            <example>
+               <title>Configuring a limit on a store</title>
+            <programlisting>
+            <![CDATA[
+<store>
+   <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+   <environment-path>${work}/bdbstore/test</environment-path>
+   <overfull-size>50000000</overfull-size>
+   <underfull-size>45000000</underfull-size>
+</store>
+            ]]>
+            </programlisting>
+            </example>
+    </section>
+
+
+<section role="h3"
+   id="Java-Broker-Virtual-Host-Transaction-Timeout-Configuring">
+   <title>Configuring Transaction Timeouts</title>
+   <para> The JMS transaction timeouts are configured on each virtual host defined in the XML
+    configuration files.</para>
+   <para> The default values for each of the parameters is 0, indicating that the particular check
+    is disabled.</para>
+   <para> Any or all of the parameters can be set, using the desired value in milliseconds, and will
+    be checked each time the housekeeping process runs, usually set to run every 30 seconds in
+    standard configuration. The meaning of each property is as follows:</para>
+   <para>
+    <itemizedlist>
+     <listitem>
+      <para>openWarn - the time a transaction can be open for (with activity occurring on it) after
+       which a warning alert will be issued.</para>
+     </listitem>
+     <listitem>
+      <para>openClose - the time a transaction can be open for before the connection it is on is
+       closed.</para>
+     </listitem>
+     <listitem>
+      <para>idleWarn - the time a transaction can be idle for (with no activity occurring on it)
+       after which a warning alert will be issued.</para>
+     </listitem>
+     <listitem>
+      <para>idleClose - the time a transaction can be idle for before the connection it is on is
+       closed.</para>
+     </listitem>
+    </itemizedlist>
+   </para>
+   <para> The virtualhosts configuration is shown below, and must occur inside the
+   //virtualhosts/virtualhost/name/ elements: </para>
+   <example>
+<title>Configuring producer transaction timeout</title>
+   <programlisting><![CDATA[
+<transactionTimeout>
+    <openWarn>10000</openWarn>
+    <openClose>20000</openClose>
+    <idleWarn>5000</idleWarn>
+    <idleClose>15000</idleClose>
+</transactionTimeout>
+   ]]></programlisting>
+   </example>
+  </section>
+
+   <section role="h2" id="Java-Broker-Virtual-Host-Configuring-DLQ">
+  <title>Configuring DLQs/Maximum Delivery Count</title>
+  <para>In the below configuration it can be seen that DLQs/Maximum Delivery Count are enabled at
+   the virtual host "localhost" with maximum delivery count set to 5 and disable for virtual host "dev-only".</para>
+  <para>As 'dev-only-main-queue' has its own configuration specified, this value overrides all
+   others and causes the features to be enabled for this queue. In contrast to this,
+   'dev-only-other-queue' does not specify its own value and picks up the false value specified for
+   its parent virtualhost, causing the DLQ/Maximum Delivery Count features to be disabled for this
+   queue. Any such queue in the 'dev-only' virtualhost which does not specify its own configuration
+   value will have the DLQ/Maximum Delivery Count feature disabled.</para>
+  <para>The queue 'localhost-queue' has the DLQ/Maximum Delivery Count features disabled.
+  Any other queue in the 'localhost' virtualhost which does not specify
+   its own configuration value will have the features enabled (inherited from parent virtual host).</para>
+
+  <example>
+   <title>Enabling DLQs and maximum delivery count at virtualhost and queue level within
+    virtualhosts.xml</title>
+   <programlisting><![CDATA[<virtualhosts>
+ ...
+ <virtualhost>
+  <name>dev-only</name>
+  <dev-only>
+   <queues>
+    <deadLetterQueues>false</deadLetterQueues>
+    <maximumDeliveryCount>0</maximumDeliveryCount>
+    <queue>
+     <name>dev-only-main-queue</name>
+     <dev-only-main-queue>
+      <deadLetterQueues>true</deadLetterQueues>
+      <maximumDeliveryCount>3</maximumDeliveryCount>
+     </dev-only-main-queue>
+    </queue>
+    <queue>
+     <name>dev-only-other-queue</name>
+    </queue>
+   </queues>
+  </dev-only>
+ </virtualhost>
+ <virtualhost>
+  <name>localhost</name>
+  <localhost>
+   <queues>
+    <deadLetterQueues>true</deadLetterQueues>
+    <maximumDeliveryCount>5</maximumDeliveryCount>
+    <queue>
+     <name>localhost-queue</name>
+     <deadLetterQueues>false</deadLetterQueues>
+    </queue>
+   </queues>
+  </localhost>
+ </virtualhost>
+ ...
+</virtualhosts>]]>
+   </programlisting>
+  </example>
+ </section>
+
+
+  <section role="h2" id="Java-Broker-Virtual-Host-Configuration-Example">
+  <title>An example of virtual host configuration file</title>
+  <example>
+        <title>An example of virtual host configuration file</title>
+        <programlisting><![CDATA[
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<virtualhosts>
+    <virtualhost>
+        <name>localhost</name>
+        <localhost>
+            <store>
+                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                <!--<class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
+                <environment-path>${QPID_WORK}/derbystore</environment-path>-->
+            </store>
+
+            <housekeeping>
+                <threadCount>2</threadCount>
+                <checkPeriod>20000</checkPeriod>
+            </housekeeping>
+
+            <exchanges>
+                <exchange>
+                    <type>direct</type>
+                    <name>test.direct</name>
+                    <durable>true</durable>
+                </exchange>
+                <exchange>
+                    <type>topic</type>
+                    <name>test.topic</name>
+                </exchange>
+            </exchanges>
+            <queues>
+                <exchange>amq.direct</exchange>
+                <maximumQueueDepth>4235264</maximumQueueDepth>
+                <!-- 4Mb -->
+                <maximumMessageSize>2117632</maximumMessageSize>
+                <!-- 2Mb -->
+                <maximumMessageAge>600000</maximumMessageAge>
+                <!-- 10 mins -->
+                <maximumMessageCount>50</maximumMessageCount>
+                <!-- 50 messages -->
+
+                <queue>
+                    <name>queue</name>
+                </queue>
+                <queue>
+                    <name>ping</name>
+                </queue>
+                <queue>
+                    <name>test-queue</name>
+                    <test-queue>
+                        <exchange>test.direct</exchange>
+                        <durable>true</durable>
+                    </test-queue>
+                </queue>
+                <queue>
+                    <name>test-ping</name>
+                    <test-ping>
+                        <exchange>test.direct</exchange>
+                    </test-ping>
+                </queue>
+
+            </queues>
+        </localhost>
+    </virtualhost>
+
+    <virtualhost>
+        <name>development</name>
+        <development>
+            <store>
+                <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                <!--<class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
+                <environment-path>${QPID_WORK}/derbystore</environment-path>-->
+            </store>
+
+            <queues>
+                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                <maximumMessageCount>50</maximumMessageCount>
+                <queue>
+                    <name>queue</name>
+                    <queue>
+                        <exchange>amq.direct</exchange>
+                        <maximumQueueDepth>4235264</maximumQueueDepth>
+                        <!-- 4Mb -->
+                        <maximumMessageSize>2117632</maximumMessageSize>
+                        <!-- 2Mb -->
+                        <maximumMessageAge>600000</maximumMessageAge>
+                        <!-- 10 mins -->
+                    </queue>
+                </queue>
+                <queue>
+                    <name>ping</name>
+                    <ping>
+                        <exchange>amq.direct</exchange>
+                        <maximumQueueDepth>4235264</maximumQueueDepth>
+                        <!-- 4Mb -->
+                        <maximumMessageSize>2117632</maximumMessageSize>
+                        <!-- 2Mb -->
+                        <maximumMessageAge>600000</maximumMessageAge>
+                        <!-- 10 mins -->
+                    </ping>
+                </queue>
+            </queues>
+        </development>
+    </virtualhost>
+
+    <virtualhost>
+        <name>test</name>
+        <test>
+            <store>
+                <!--<class>org.apache.qpid.server.store.MemoryMessageStore</class>-->
+                <class>org.apache.qpid.server.store.derby.DerbyMessageStore</class>
+                <environment-path>${QPID_WORK}/derbystore</environment-path>
+            </store>
+
+            <queues>
+                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                <maximumMessageCount>50</maximumMessageCount>
+                <queue>
+                    <name>queue</name>
+                    <queue>
+                        <exchange>amq.direct</exchange>
+                        <maximumQueueDepth>4235264</maximumQueueDepth>
+                        <!-- 4Mb -->
+                        <maximumMessageSize>2117632</maximumMessageSize>
+                        <!-- 2Mb -->
+                        <maximumMessageAge>600000</maximumMessageAge>
+                        <!-- 10 mins -->
+                    </queue>
+                </queue>
+                <queue>
+                    <name>ping</name>
+                    <ping>
+                        <exchange>amq.direct</exchange>
+                        <maximumQueueDepth>4235264</maximumQueueDepth>
+                        <!-- 4Mb -->
+                        <maximumMessageSize>2117632</maximumMessageSize>
+                        <!-- 2Mb -->
+                        <maximumMessageAge>600000</maximumMessageAge>
+                        <!-- 10 mins -->
+                    </ping>
+                </queue>
+            </queues>
+        </test>
+    </virtualhost>
+</virtualhosts>
+        ]]></programlisting>
+      </example>
+  </section>
+
+</section>
