@@ -31,7 +31,6 @@ public abstract class CompoundWriter<V> implements ValueWriter<V>
     private Registry _registry;
     private static final int LARGE_COMPOUND_THRESHOLD_COUNT = 25;
     private ValueWriter _delegate;
-    private Map<Class, ValueWriter> _writerCache = new HashMap<Class, ValueWriter>();
 
     public CompoundWriter(final Registry registry)
     {
@@ -305,7 +304,7 @@ public abstract class CompoundWriter<V> implements ValueWriter<V>
         for(int i = 0; i < getCount(); i++)
         {
             Object val = next();
-            ValueWriter writer = _registry.getValueWriter(val, _writerCache);
+            ValueWriter writer = _registry.getValueWriter(val);
             if(writer == null)
             {
                 // TODO

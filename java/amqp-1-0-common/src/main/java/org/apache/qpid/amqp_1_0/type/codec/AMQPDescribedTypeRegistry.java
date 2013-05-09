@@ -298,101 +298,70 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
 
 
     private final Map<Class, ValueWriter.Factory> _writerMap = new HashMap<Class, ValueWriter.Factory>();
-    private final Map<Class, ValueWriter> _cachedWriters = new HashMap<Class,ValueWriter>();
 
     public <V extends Object> ValueWriter<V> getValueWriter(V value, Map<Class, ValueWriter> localCache)
     {
-        Class<? extends Object> clazz = value == null ? Void.TYPE : value.getClass();
-        ValueWriter writer = null; // TODO localCache.get(clazz);
-        if(writer == null || !writer.isComplete())
-        {
-            writer = getValueWriter(value);
-            localCache.put(clazz, writer);
-        }
-        else
-        {
-            writer.setValue(value);
-        }
+        return getValueWriter(value);
 
-
-        return writer;
     }
 
 
     public <V extends Object> ValueWriter<V> getValueWriter(V value)
     {
+        ValueWriter writer;
 
         Class<? extends Object> clazz = value == null ? Void.TYPE : value.getClass();
 
-        ValueWriter writer = null; // TODO _cachedWriters.get(clazz);
-        if(writer == null || !writer.isComplete())
+        ValueWriter.Factory<V> factory = (ValueWriter.Factory<V>) (_writerMap.get(clazz));
+
+        if(factory == null)
         {
-            ValueWriter.Factory<V> factory = (ValueWriter.Factory<V>) (_writerMap.get(clazz));
-
-            if(factory == null)
+            if(value instanceof List)
             {
-                if(value instanceof List)
-                {
-                    factory = _writerMap.get(List.class);
-                    _writerMap.put(value.getClass(), factory);
-                    writer = factory.newInstance(this);
-                    if(writer.isCacheable())
-                    {
-                        _cachedWriters.put(clazz, writer);
-                    }
-                    writer.setValue(value);
+                factory = _writerMap.get(List.class);
+                _writerMap.put(value.getClass(), factory);
+                writer = factory.newInstance(this);
+                writer.setValue(value);
 
-                }
-                else if(value instanceof Map)
-                {
-                    factory = _writerMap.get(Map.class);
-                    _writerMap.put(value.getClass(), factory);
-                    writer = factory.newInstance(this);
-                    if(writer.isCacheable())
-                    {
-                        _cachedWriters.put(clazz, writer);
-                    }
-                    writer.setValue(value);
+            }
+            else if(value instanceof Map)
+            {
+                factory = _writerMap.get(Map.class);
+                _writerMap.put(value.getClass(), factory);
+                writer = factory.newInstance(this);
+                writer.setValue(value);
 
-                }
-                else if(value.getClass().isArray())
+            }
+            else if(value.getClass().isArray())
+            {
+                if(RestrictedType.class.isAssignableFrom(value.getClass().getComponentType()))
                 {
-                    if(RestrictedType.class.isAssignableFrom(value.getClass().getComponentType()))
+                    RestrictedType[] restrictedTypes = (RestrictedType[]) value;
+                    Object[] newVals = (Object[]) Array.newInstance(restrictedTypes[0].getValue().getClass(),
+                                                                    restrictedTypes.length);
+                    for(int i = 0; i < restrictedTypes.length; i++)
                     {
-                        RestrictedType[] restrictedTypes = (RestrictedType[]) value;
-                        Object[] newVals = (Object[]) Array.newInstance(restrictedTypes[0].getValue().getClass(),
-                                                                        restrictedTypes.length);
-                        for(int i = 0; i < restrictedTypes.length; i++)
-                        {
-                            newVals[i] = restrictedTypes[i].getValue();
-                        }
-                        return (ValueWriter<V>) getValueWriter(newVals);
+                        newVals[i] = restrictedTypes[i].getValue();
                     }
-                    // TODO primitive array types
-                    factory = _writerMap.get(List.class);
-                    writer = factory.newInstance(this);
-                    writer.setValue(Arrays.asList((Object[])value));
+                    return (ValueWriter<V>) getValueWriter(newVals);
+                }
+                // TODO primitive array types
+                factory = _writerMap.get(List.class);
+                writer = factory.newInstance(this);
+                writer.setValue(Arrays.asList((Object[])value));
 
-                }
-                else
-                {
-                    return null;
-                }
             }
             else
             {
-                writer = factory.newInstance(this);
-                if(writer.isCacheable())
-                {
-                    _cachedWriters.put(clazz, writer);
-                }
-                writer.setValue(value);
+                return null;
             }
         }
         else
         {
+            writer = factory.newInstance(this);
             writer.setValue(value);
         }
+
 
         return writer;
 
