@@ -43,47 +43,17 @@
                 as overfull when the size (in bytes) of the messages on the queue exceeds the
                 "capacity" of the Queue. A Queue becomes "underfull" when its size becomes
                 less than the "flowResumeCapacity".
-
-
-             <example>
-               <title>Configuring a queue depth limit</title>
-                <programlisting>
-                <![CDATA[
-<queue>
-    <name>test</name>
-    <test>
-        <exchange>amq.direct</exchange>
-        <capacity>10485760</capacity>                     <!-- set the queue capacity to 10Mb -->
-        <flowResumeCapacity>8388608</flowResumeCapacity>  <!-- set the resume capacity to 8Mb -->
-    </test>
-</queue>
-                ]]>
-                </programlisting>
-             </example>
-
-                The default for all queues on a virtual host can also be set
-
-             <example>
-               <title>Configuring a default queue depth limit on a virtualhost</title>
-                <programlisting>
-                <![CDATA[
-<virtualhosts>
-    <virtualhost>
-        <name>localhost</name>
-        <localhost>
-            <capacity>10485760</capacity>                     <!-- set the queue capacity to 10Mb -->
-            <flowResumeCapacity>8388608</flowResumeCapacity>  <!-- set the resume capacity to 8Mb -->
-        </localhost>
-    </virtualhost>
-</virtualhosts>
-                ]]>
-                </programlisting>
-             </example>
-
+            </para>
+            <para>
+                Examples how to configure flow control in virtual host configuration are provided in
+                <xref linkend="Java-Broker-Virtual-Host-Configure-Flow-Control"/>.
+            </para>
+            <para>
                 Where no flowResumeCapacity is set, the flowResumeCapacity is set to be equal
                 to the capacity. Where no capacity is set, capacity is defaulted to 0 meaning
                 there is no capacity limit.
             </para>
+            <important>Flow control can be configured globally for all virtual hosts by specifying threshold values for Broker flow control attributes.</important>
             <section role="h4">
                 <title>Broker Log Messages</title>
                 <para>
@@ -131,23 +101,12 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
             <para>
                 underfull limit - when the space on disk drops below this limit, producers are allowed to resume publishing.
             </para>
+
             <para>
-                An example of quota configuration for the BDB message store is provided below.
+                An example how to configure disk quota-based flow control in virtual host configuration is provided in
+                <xref linkend="Java-Broker-Virtual-Host-Configure-Disk-Quotas"/>.
             </para>
 
-            <example>
-               <title>Configuring a limit on a store</title>
-            <programlisting>
-            <![CDATA[
-<store>
-   <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-   <environment-path>${work}/bdbstore/test</environment-path>
-   <overfull-size>50000000</overfull-size>
-   <underfull-size>45000000</underfull-size>
-</store>
-            ]]>
-            </programlisting>
-            </example>
             <para>
                 The disk quota functionality is based on "best effort" principle. This means the broker
                 cannot guarantee that the disk space limit will not be exceeded. If several concurrent

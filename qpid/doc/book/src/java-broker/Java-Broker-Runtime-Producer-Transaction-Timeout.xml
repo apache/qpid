@@ -113,7 +113,8 @@ CHN-1003 : Close]]>
   <title>Configuration</title>
   <section role="h3" id="Java-Broker-Runtime-Producer-Transaction-Timeout-Configuration-Overview">
    <title>Configuration</title>
-   <para>Transaction timeouts are configurable separately on each defined virtual host, using the
+   <important>Transaction timeouts can be configured globally for all virtual hosts by setting corresponding Broker transaction timeout attributes.</important>
+   <para>Transaction timeouts can be configured separately on each defined virtual host, using the
     virtualhosts.xml file.</para>
    <para>We would recommend that only warnings are configured at first, which should allow broker
     administrators to obtain an idea of the distribution of transaction lengths on their systems,
@@ -135,47 +136,9 @@ CHN-1003 : Close]]>
   </section>
   <section role="h3"
    id="Java-Broker-Runtime-Producer-Transaction-Timeout-Configuration-Virtualhosts">
-   <title>Virtualhosts.xml</title>
-   <para> The JMS transaction timeouts are configured on each virtual host defined in the XML
-    configuration files.</para>
-   <para> The default values for each of the parameters is 0, indicating that the particular check
-    is disabled.</para>
-   <para> Any or all of the parameters can be set, using the desired value in milliseconds, and will
-    be checked each time the housekeeping process runs, usually set to run every 30 seconds in
-    standard configuration. The meaning of each property is as follows:</para>
-   <para>
-    <itemizedlist>
-     <listitem>
-      <para>openWarn - the time a transaction can be open for (with activity occurring on it) after
-       which a warning alert will be issued.</para>
-     </listitem>
-     <listitem>
-      <para>openClose - the time a transaction can be open for before the connection it is on is
-       closed.</para>
-     </listitem>
-     <listitem>
-      <para>idleWarn - the time a transaction can be idle for (with no activity occurring on it)
-       after which a warning alert will be issued.</para>
-     </listitem>
-     <listitem>
-      <para>idleClose - the time a transaction can be idle for before the connection it is on is
-       closed.</para>
-     </listitem>
-    </itemizedlist>
-   </para>
-   <para> The virtualhosts configuration is shown below, and must occur inside the
-   //virtualhosts/virtualhost/name/ elements: </para>
-   <example>
-<title>Configuring producer transaction timeout</title>
-   <programlisting><![CDATA[
-<transactionTimeout>
-    <openWarn>10000</openWarn>
-    <openClose>20000</openClose>
-    <idleWarn>5000</idleWarn>
-    <idleClose>15000</idleClose>
-</transactionTimeout>
-   ]]></programlisting>
-   </example>
+   <title>Virtualhost configuration</title>
+   <para>The details how to configure Transaction Timeouts in Virtual Host configuration file
+   are provided in <xref linkend="Java-Broker-Virtual-Host-Transaction-Timeout-Configuring"/></para>
   </section>
  </section>
 </section>

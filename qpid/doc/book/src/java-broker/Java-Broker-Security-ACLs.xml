@@ -25,53 +25,45 @@
   <title>Access Control Lists</title>
   <para>
     In Qpid, Access Control Lists (ACLs) specify which actions can be performed by each authenticated user.
-    To enable, the &lt;acl/&gt; element is used within the &lt;security/&gt; element of the configuration XML.
-    In the Java Broker, the ACL may be imposed broker wide or applied to individual virtual
-    hosts.  The  &lt;acl/&gt; configuration references a text file containing the ACL rules.
+    To enable, an <emphasis>Access Control Provider</emphasis> needs to be configured on the <emphasis>Broker</emphasis>
+    level or/and ACL configuration should be provided on a <emphasis>Virtual Host</emphasis> level.
+    The first imposes the ACL broker wide, and the second is applied to individual virtual hosts.
+    The <emphasis>Access Control Provider</emphasis> of type "AclFile" uses local file to specify the ACL rules.
     By convention, this file should have a .acl extension.
   </para>
 
+  <para>
+    A Group Provider can be configured with ACL to define the user groups which can be used in ACL
+    to determine the ACL rules applicable to the entire group. The configuration details for the Group Providers are described in
+    <xref linkend="Java-Broker-Security-Group-Providers"/>. On creation of ACL Provider with group rules,
+    the Group Provider should be added first. Otherwise, if the individual ACL rules are not defined for the logged principal
+    the following invocation of management operations could be denied due to absence of the required groups.</para>
 
-  <section role="h3" id="Java-Broker-Security-ACLs-EnablingACL">
-    <title>
-       Enabling ACLs
-    </title>
+  <para>Only one <emphasis>Access Control Provider</emphasis> can be used by the Broker.
+    If several <emphasis>Access Control Providers</emphasis> are configured on Broker level
+    only one of them will be used (the latest one). <xref linkend="Java-Broker-Virtual-Hosts-Configuration-File-ACL"/>
+    shows how to configure ACL on <emphasis>Virtual Host</emphasis> using virtual host configuration xml.
+    If both Broker <emphasis>Access Control Provider</emphasis> and <emphasis>Virtual Host</emphasis> ACL are configured,
+    the <emphasis>Virtual Host</emphasis> ACL is used for authorization of operations on <emphasis>Virtual Host</emphasis> and
+    Virtual Host objects and Broker level ACL is used to authorization of operations on Broker and Broker children
+    (excluding Virtual Hosts having ACL configured).
+  </para>
 
-    <para>
-      To apply an ACL broker-wide, add the following to the config.xml (assuming that <replaceable>conf</replaceable> has been set to a suitable
-      location such as ${QPID_HOME}/etc):
-    </para>
+ <para>
+    The ACL Providers can be configured using <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
+    and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>.
+  </para>
 
-    <programlisting>
-      &lt;broker&gt;
-        ...
-        &lt;security&gt;
-          ...
-          &lt;acl&gt;<replaceable>${conf}/broker.acl</replaceable>&lt;/acl&gt;
-        &lt;/security&gt;
-      &lt;/broker&gt;
-    </programlisting>
-
-    <para>
-    </para>
-
-    <para>
-      To apply an ACL on a single virtualhost named <replaceable>test</replaceable>, add the following to the config.xml:
-    </para>
-
-    <programlisting>
-      &lt;virtualhost&gt;
-        ...
-        &lt;name&gt;test&lt;/name&gt;
-        &lt;test&gt;
-          ...
-          &lt;security&gt;
-            &lt;acl&gt;<replaceable>${conf}/vhost_test.acl</replaceable>&lt;/acl&gt;
-          &lt;/security&gt;
-        &lt;/test&gt;
-      &lt;/virtualhost&gt;
-    </programlisting>
-  </section>
+  <para>The following ACL Provider managing operations are available from Web Management Console:
+    <itemizedlist>
+        <listitem><para>A new ACL Provider can be added by clicking onto "Add Access Control Provider" on the Broker tab.</para></listitem>
+        <listitem><para>An ACL Provider details can be viewed on the Access Control Provider tab.
+        The tab is shown after clicking onto ACL Provider name in the Broker object tree or after clicking
+        onto ACL Provider row in ACL Providers grid on the Broker tab.</para></listitem>
+        <listitem><para>An existing ACL Provider can be deleted by clicking onto buttons "Delete Access Control Provider"
+        on the Broker tab or Access Control Provider tab.</para></listitem>
+    </itemizedlist>
+  </para>
 
   <section role="h3" id="Java-Broker-Security-ACLs-WriteACL">
     <title>
@@ -209,6 +201,10 @@
           <entry> <command>UPDATE</command> </entry>
           <entry> <para> Applied when an object is updated </para> </entry>
         </row>
+        <row>
+          <entry> <command>CONFIGURE</command> </entry>
+          <entry> <para> Applied when an object is configured via REST management interfaces(Java Broker only).</para> </entry>
+        </row>
       </tbody>
     </tgroup>
   </table>
@@ -250,7 +246,7 @@
         </row>
         <row>
           <entry> <command>BROKER</command> </entry>
-          <entry> <para>The broker (not currently used in Java Broker)</para> </entry>
+          <entry> <para>The broker</para> </entry>
         </row>
       </tbody>
     </tgroup>
@@ -528,6 +524,52 @@ ACL DENY-LOG messaging-users ACCESS VIRTUALHOST \
 # using wildcard notation.
 ACL DENY-LOG messaging-users ACCESS VIRTUALHOST \
   from_network="192.169.1.*,192.169.2.*"
+
+ACL DENY-LOG all all
+      </programlisting>
+    </section>
+        <section role="h4" id="Java-Broker-Security-ACLs-WorkedExample5">
+      <title>
+        Worked example 5 - REST management ACL example
+      </title>
+      <para>
+        This example illustrates how to set up an ACL that restricts usage of REST management interfaces.
+      </para>
+      <programlisting>
+# allow to the users from webadmins group to change broker model
+# this rule allows adding/removing/editing of Broker level objects:
+# Broker, Virtual Host, Group Provider, Authentication Provider, Port, Access Control Provider etc
+ACL ALLOW-LOG webadmins CONFIGURE BROKER
+
+# allow to the users from webadmins group to perform
+# create/update/delete on Virtual Host children
+ACL ALLOW-LOG webadmins CREATE QUEUE
+ACL ALLOW-LOG webadmins UPDATE QUEUE
+ACL ALLOW-LOG webadmins DELETE QUEUE
+ACL ALLOW-LOG webadmins PURGE  QUEUE
+ACL ALLOW-LOG webadmins CREATE EXCHANGE
+ACL ALLOW-LOG webadmins DELETE EXCHANGE
+ACL ALLOW-LOG webadmins BIND   EXCHANGE
+ACL ALLOW-LOG webadmins UNBIND EXCHANGE
+
+# allow to the users from webadmins group to create/update/delete groups on Group Providers
+ACL ALLOW-LOG webadmins CREATE GROUP
+ACL ALLOW-LOG webadmins DELETE GROUP
+ACL ALLOW-LOG webadmins UPDATE GROUP
+
+# allow to the users from webadmins group to create/update/delete users for Authentication Providers
+ACL ALLOW-LOG webadmins CREATE USER
+ACL ALLOW-LOG webadmins DELETE USER
+ACL ALLOW-LOG webadmins UPDATE USER
+
+# allow to the users from webadmins group to move, copy and delete messagaes
+# using REST management interfaces
+ACL ALLOW-LOG webadmins UPDATE METHOD
+
+# at the moment only the following UPDATE METHOD rules are supported by web management console
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
 
 ACL DENY-LOG all all
       </programlisting>

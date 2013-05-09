@@ -21,36 +21,22 @@
 -->
 
 <section id="Java-Broker-Stores-Derby-Store">
-<title>Derby Store</title>
+<title>Derby Message Store</title>
   <para>
     The Java broker has a message store implementation backed by Apache Derby.
     This section will detail configuration for using the DerbyMessageStore.
   </para>
 
-  <section role="h3" id="Java-Broker-Stores-Derby-Store-Configuration">
-    <title>Configuration</title>
-    <para>
-      In order to use the DerbyMessageStore, you must configure it for each VirtualHost desired by updating the store element
-      to specify the associated store class and provide a directory location for the data to be written, as shown below.
-    </para>
+  <para>
+    The DerbyMessageStore can be selected on Virtual Host creation
+    via <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
+    and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>.
+    For details, see <xref linkend="Java-Broker-Virtual-Hosts"/>.
+  </para>
 
-    <example>
-      <title>Configuring a VirtualHost to use the DerbyMessageStore</title>
-      <programlisting><![CDATA[
-<virtualhosts>
-  <virtualhost>
-    <name>vhostname</name>
-    <vhostname>
-      <store>
-        <class>org.apache.qpid.server.store.DerbyMessageStore</class>
-        <environment-path>${QPID_WORK}/derbystore/vhostname</environment-path>
-      </store>
-      ...
-    </vhostname>
-  </virtualhost>
-</virtualhosts>
-]]></programlisting>
-    </example>
-  </section>
+  <para>
+    Alternatively, the DerbyMessageStore can configured in Virtual Host configuration xml.
+    For details, see <xref linkend="Java-Broker-Stores-Derby-Store-Configuration"/>.
+  </para>
 
 </section>

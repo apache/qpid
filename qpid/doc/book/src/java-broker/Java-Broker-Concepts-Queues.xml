@@ -22,5 +22,18 @@
 
 <section id="Java-Broker-Concepts-Queues">
 <title>Queues</title>
-
+<para>Message queues are named entities that store messages in memory or on the disk and deliver them in sequence
+to connected consumer applications.</para>
+<para>The queues are hosted by the <link linkend="Java-Broker-Concepts-Virtual-Hosts">Virtual Hosts</link>.
+Any number of queues can be created on <emphasis>Virtual Host</emphasis>.</para>
+<para>The following types of Queues are currently supported:
+    <itemizedlist>
+        <listitem><para><link linkend="Java-Broker-Queues">Simple</link> is a simple FIFO queue</para></listitem>
+        <listitem><para><link linkend="Java-Broker-Queues-OtherTypes-Priority">Priority</link> where messages delivery order depends from the message priority</para></listitem>
+        <listitem><para><link linkend="Java-Broker-Queues-OtherTypes-Sorted">Sorted</link> where messages delivery order depends from the message sorting key value</para></listitem>
+        <listitem><para><link linkend="Java-Broker-Queues-OtherTypes-LVQ">Last Value Queue</link> automatically discards older message when
+        a newer message arrives with the same key value</para></listitem>
+     </itemizedlist>
+</para>
+<para>Queue configuration details are covered in <xref linkend="Java-Broker-Queues"/>.</para>
 </section>

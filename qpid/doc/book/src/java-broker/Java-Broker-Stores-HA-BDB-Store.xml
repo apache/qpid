@@ -21,7 +21,7 @@
 -->
 
 <section id="Java-Broker-Stores-HA-BDB-Store">
-  <title>High Availability BDB Store</title>
+  <title>High Availability BDB Message Store</title>
   <para>
     The Java broker has an <emphasis>optional</emphasis> High Availability message store implementation backed by Oracle BDB JE HA.
     This section references information on where to download the optional dependency from, how to add it to the broker

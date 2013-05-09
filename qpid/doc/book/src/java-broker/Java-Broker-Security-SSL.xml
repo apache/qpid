@@ -25,45 +25,42 @@
 -->
 
 <section id="Java-Broker-Security-SSL">
-    <title>SSL</title>
+<title>SSL</title>
 
     <para>
-        This section will show how to use SSL to enable secure
-        connections between an AMQP message client and the broker.
+        This section guides through the details of configuration of Keystores and Trsustores
+        required for enabling of SSL transport and Client Certificate Authentication on Broker ports.
+        The details how to configure SSL on Broker ports are provided in <xref linkend="Java-Broker-Ports"/>.
     </para>
-    <section role="h2" id="SSL-Keystore">
+
+    <section role="h2" id="Java-Broker-SSL-Keystore">
         <title>Keystore Configuration</title>
         <para>
-            The broker configuration file (config.xml) needs to be updated to include the required SSL keystore
-            configuration, an example of which can be found below.
+            A Keystore can be added/deleted/edited using <link linkend="Java-Broker-Configuring-And-Managing-REST-API">
+            REST Management interfaces</link> and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">
+            Web Management Console</link>. Any number of Keystores can be configured on the Broker.
+            SSL ports can be configured with different Keystores.
         </para>
 
-        <example>
-        <title>Configuring an SSL Keystore</title>
-        <programlisting><![CDATA[
-<connector>
-  ...
-  <ssl>
-    <enabled>true</enabled>
-    <port>5671</port>
-    <sslOnly>false</sslOnly>
-    <keyStorePath>/path/to/keystore.ks</keyStorePath>
-    <keyStorePassword>keystorepass</keyStorePassword>
-    <certAlias>alias<certAlias>
-  </ssl>
-  ...
-<connector>]]></programlisting>
-        </example>
-
-        <para>
-            The certAlias element is an optional way of specifying which certificate the broker should use
-            if the keystore contains multiple entries.
+        <para>The following Keystore managing operations are available from
+        <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>:
+        <itemizedlist>
+            <listitem><para>A new Keystore can be added by clicking on "Add Key Store" button on the Broker tab.</para></listitem>
+            <listitem><para>Keystore details can be viewed on the Keystore tab which is displayed after clicking
+            on Keystore name in the Broker object tree or after clicking on Keystore row in Keystores grid on the Broker tab.</para></listitem>
+            <listitem><para>Editing of Keystore can be performed by clicking on "Edit" button on the Keystore tab.
+            Changing of Keystore name is unsupported at the moment. If changed Keystore is used by the Port
+            the changes on Port object will take effect after Broker restart.</para></listitem>
+            <listitem><para>An existing Keystore can be deleted by clicking on "Delete Key Store" button on Broker tab
+            or hitting "Delete" button on the Keystore tab. Only unused Keystores can be deleted.
+            The deletion of the Keystore configured on any Broker Port is not allowed.</para></listitem>
+        </itemizedlist>
         </para>
 
         <para>
-            The sslOnly element controls whether the broker will <emphasis role="bold">only</emphasis> bind
-            the configured SSL port(s) or will also bind the non-SSL port(s). Setting sslOnly to true will
-            disable the non-SSL ports.
+            The "Keystore certificate alias" field is an optional way of specifying which certificate the broker should use
+            if the keystore contains multiple entries. Optionally "Key manager factory algorithm" and "Key store type" can
+            be specified on Keystore creation.
         </para>
 
         <important>
@@ -80,39 +77,35 @@
     <section role="h2" id="SSL-Truststore-ClientCertificate">
         <title>Truststore / Client Certificate Authentication</title>
         <para>
-            The SSL trustore and related Client Certificate Authentication behaviour can be configured with
-            additional configuration as shown in the example below, in which the broker requires client
-            certificate authentication.
+            The SSL trustore and related Client Certificate Authentication behaviour can be configured
+            by adding a Trustore configured object and associating it with the SSL port.
+            A Truststore can be added/deleted/edited using <link linkend="Java-Broker-Configuring-And-Managing-REST-API">
+            REST Management interfaces</link> and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">
+            Web Management Console</link>. Any number of Trustores can be configured on the Broker.
+            Multiple Trustores can be configured on Broker SSL Ports.
         </para>
 
-        <example>
-        <title>Configuring an SSL Truststore and client auth</title>
-        <programlisting><![CDATA[
-<connector>
-  ...
-  <ssl>
-    ...
-    <trustStorePath>/path/to/truststore.ks</trustStorePath>
-    <trustStorePassword>truststorepass</trustStorePassword>
-    <needClientAuth>true</needClientAuth>
-    <wantClientAuth>false</wantClientAuth>
-    ...
-  </ssl>
-  ...
-<connector>]]></programlisting>
-        </example>
-
-        <para>
-            The needClientAuth and wantClientAuth elements allow control of whether the client must present an
-            SSL certificate. Only one of these elements is needed but both may be used at the same time.
-            A socket's client authentication setting is one of three states: required (needClientAuth = true),
-            requested (wantClientAuth = true), or none desired (both false, the default). If both elements are
-            set to true, needClientAuth takes precedence.
+        <para>The following Truststore managing operations are available from
+        <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>:
+        <itemizedlist>
+            <listitem><para>A new Truststore can be added by clicking on "Add Trust Store" button on the Broker tab.</para></listitem>
+            <listitem><para>Truststore details can be viewed on the Truststore tab which is displayed after clicking
+            onto Truststore name in the Broker object tree or after clicking onto Truststore row in Truststores grid on the Broker tab.</para></listitem>
+            <listitem><para>Trustore can be edited by clicking onto "Edit" button on the Trustore tab.
+            Changing of Trustore name is unsupported at the moment.</para></listitem>
+            <listitem><para>An existing Trustore can be deleted by clicking onto "Delete Trust Store" button
+            on Broker tab or "Delete" button on the Truststore tab. Only unused Truststores can be deleted.
+            The deletion of the Truststore configured on any Broker Port is not allowed.</para></listitem>
+        </itemizedlist>
         </para>
 
-        <para>
-            When using Client Certificate Authentication it may be desirable to use the External Authentication
-            Manager, for details see <xref linkend="ExternalAuthManager"></xref>
+        <para>When "Peers Only" option is selected for the Truststore it will allow logging in for the clients
+        with the certificate exactly matching the certificate loaded in the Truststore database,
+        thus, authenticating the connections with self signed certificates not nessesary signed by CA.
+        </para>
+
+        <para>"Trust manager factory algorithm" and "Trust store type" can
+            be optionally specified for the Trustore.
         </para>
 
     </section>
