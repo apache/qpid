@@ -27,11 +27,12 @@
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Installation.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Getting-Started.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts.xml"/>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing.xml"/>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Ports.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Virtual-Hosts.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Exchanges.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Queues.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Stores.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-High-Availability.xml"/>
