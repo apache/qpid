@@ -115,7 +115,16 @@
                     <!-- x-qpid-maximum-message-count -->
                     <tr>
                         <td valign="top"><strong>Queue Depth:  </strong></td>
-                        <td><input type="text" required="false" name="alertThresholdQueueDepthMessages" id="formAddQueue.maximumMessageCount" placeholder="Count of messages"
+                        <td><input type="text" required="false" name="alertThresholdQueueDepthMessages" id="formAddQueue.maximumMessageCount" placeholder="Number of messages"
+                            dojoType="dijit.form.ValidationTextBox"
+                            trim="true"
+                            regexp="[0-9]+"
+                            invalidMessage= "Invalid value" /></td>
+                    </tr>
+                    <!-- x-qpid-maximum-queue-depth -->
+                    <tr>
+                        <td valign="top"><strong>Queue Depth:  </strong></td>
+                        <td><input type="text" required="false" name="alertThresholdQueueDepthBytes" id="formAddQueue.maximumQueueDepth" placeholder="Total message size in bytes"
                             dojoType="dijit.form.ValidationTextBox"
                             trim="true"
                             regexp="[0-9]+"

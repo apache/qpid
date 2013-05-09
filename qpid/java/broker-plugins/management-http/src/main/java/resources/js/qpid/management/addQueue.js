@@ -63,6 +63,7 @@ define(["dojo/_base/xhr",
                 queueFlowResumeSizeBytes:         parseInt,
                 alertThresholdMessageSize:        parseInt,
                 alertThresholdQueueDepthMessages: parseInt,
+                alertThresholdQueueDepthBytes:    parseInt,
                 maximumDeliveryAttempts:          parseInt,
                 alertThresholdMessageAge:         parseInt,
                 alertRepeatGap:                   parseInt
