@@ -20,15 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jms.Destination;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class AMQMessageDelegate_0_10Test extends QpidTestCase
 {
@@ -105,4 +107,35 @@ public class AMQMessageDelegate_0_10Test extends QpidTestCase
         assertEquals("Min short value not retrieved successfully", Short.MIN_VALUE, delegate.getShortProperty(MIN_SHORT));
     }
 
+    // See QPID_3838
+    public void testJMSComplainceForQpidProviderProperties() throws Exception
+    {
+        MessageProperties msgProps = new MessageProperties();
+        Map<String, Object> appHeaders = new HashMap<String, Object>();
+        appHeaders.put(QpidMessageProperties.QPID_SUBJECT, "Hello");
+        msgProps.setApplicationHeaders(appHeaders);
+
+        System.setProperty("strict-jms", "true");
+        try
+        {
+            AMQMessageDelegate_0_10 delegate = new AMQMessageDelegate_0_10(AMQDestination.DestSyntax.ADDR,msgProps,new DeliveryProperties(),1L);
+
+            boolean propFound = false;
+            for (Enumeration props = delegate.getPropertyNames(); props.hasMoreElements();)
+            {
+                String key = (String)props.nextElement();
+                System.out.println("PropName : " + key);
+                if (key.equals("JMS_" + QpidMessageProperties.QPID_SUBJECT))
+                {
+                    propFound = true;
+                }
+            }
+            assertTrue("qpid.subject was not prefixed with 'JMS_' as expected",propFound);
+            assertEquals("qpid.subject should still return the correct value","Hello",delegate.getStringProperty(QpidMessageProperties.QPID_SUBJECT));
+        }
+        finally
+        {
+            System.setProperty("strict-jms", "false");
+        }
+    }
 }

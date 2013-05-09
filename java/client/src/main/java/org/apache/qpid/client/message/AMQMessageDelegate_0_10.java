@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
@@ -92,6 +93,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     private MessageProperties _messageProps;
     private DeliveryProperties _deliveryProps;
     private String _messageID;
+    private boolean isStrictJMS = Boolean.getBoolean("strict-jms");
 
     protected AMQMessageDelegate_0_10()
     {
@@ -101,6 +103,11 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
     protected AMQMessageDelegate_0_10(MessageProperties messageProps, DeliveryProperties deliveryProps, long deliveryTag)
     {
+        this(AMQDestination.getDefaultDestSyntax(),messageProps,deliveryProps,deliveryTag);
+    }
+
+    protected AMQMessageDelegate_0_10(DestSyntax destSyntax,MessageProperties messageProps, DeliveryProperties deliveryProps, long deliveryTag)
+    {
         super(deliveryTag);
         _messageProps = messageProps;
         _deliveryProps = deliveryProps;
@@ -108,7 +115,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
         AMQDestination dest;
 
-        if (AMQDestination.getDefaultDestSyntax() == AMQDestination.DestSyntax.BURL)
+        if (destSyntax == AMQDestination.DestSyntax.BURL)
         {
             dest = generateDestination(new AMQShortString(_deliveryProps.getExchange()),
                                    new AMQShortString(_deliveryProps.getRoutingKey()));
@@ -116,9 +123,15 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         else
         {
             String subject = null;
-            if (messageProps != null && messageProps.getApplicationHeaders() != null)
+            if (isStrictJMS && messageProps != null && messageProps.getApplicationHeaders() != null)
             {
+                System.out.println("%%%% Going to set subject");
                 subject = (String)messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT);
+                if (subject != null)
+                {
+                    messageProps.getApplicationHeaders().remove(QpidMessageProperties.QPID_SUBJECT);
+                    messageProps.getApplicationHeaders().put("JMS_" + QpidMessageProperties.QPID_SUBJECT,subject);
+                }
             }
             dest = (AMQDestination) convertToAddressBasedDestination(_deliveryProps.getExchange(),
                     _deliveryProps.getRoutingKey(), subject);
@@ -732,6 +745,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return _deliveryProps.getRoutingKey();
         }
+        else if (isStrictJMS && QpidMessageProperties.QPID_SUBJECT.equals(propertyName))
+        {
+            return (String)getApplicationHeaders().get("JMS_" + QpidMessageProperties.QPID_SUBJECT);
+        }
         else
         {
             checkPropertyName(propertyName);
@@ -976,7 +993,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 //          JMSType. JMSMessageID, JMSCorrelationID, and JMSType values may be
 //          null and if so are treated as a NULL value.
 
-        if (Boolean.getBoolean("strict-jms"))
+        if (isStrictJMS)
         {
             // JMS start character
             if (!(Character.isJavaIdentifierStart(propertyName.charAt(0))))
