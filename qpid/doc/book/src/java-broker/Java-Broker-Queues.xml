@@ -22,6 +22,5 @@
 
 <chapter id="Java-Broker-Queues">
   <title>Queues</title>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Queues-Messaging-Groups.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Queues-OtherTypes.xml"/>
 </chapter>

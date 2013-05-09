@@ -25,22 +25,23 @@
 -->
 
 <section id="Java-Broker-Queues-OtherTypes">
-  <title>Other Queue Types</title>
+  <title>Queue Types</title>
 
   <section role="h2" id="Java-Broker-Queues-OtherTypes-Introduction">
     <title>Introduction</title>
     <para> In addition to the standard queue type where messages are delivered in the same order
-      that they were sent, the Java Broker supports four additional queue types which allows for
+      that they were sent, the Java Broker supports three additional queue types which allows for
       alternative delivery behaviours. These are
       <link linkend="Java-Broker-Queues-OtherTypes-Priority">priority-queues</link>,
       <link linkend="Java-Broker-Queues-OtherTypes-Sorted">sorted-queues</link>-,
-      <link linkend="Java-Broker-Queues-OtherTypes-LVQ">last-value-queues</link> (LVQs), and
-      <link linkend="Java-Broker-Queues-OtherTypes-Message-Grouping">grouped queues</link>.
+      <link linkend="Java-Broker-Queues-OtherTypes-LVQ">last-value-queues</link> (LVQs).
+      Additionally, Java Broker supports <link linkend="Java-Broker-Queues-OtherTypes-Message-Grouping">message grouping</link>.
     </para>
     <para> In the following sections, the semantics of each queue type is described, followed by a
       description of how instances of these queue can be created via <link
-        linkend="Java-Broker-Queues-OtherTypes-CreateUsingConfig">configuration</link> or <link
-        linkend="Java-Broker-Queues-OtherTypes-CreateUsingJmsOrJmx">programmatically</link>. </para>
+        linkend="Java-Broker-Queues-OtherTypes-CreateUsingConfig">configuration</link>, <link
+        linkend="Java-Broker-Queues-OtherTypes-CreateUsingJmsOrJmx">programmatically</link> or
+        <link linkend="Java-Broker-Queues-OtherTypes-CreateUsingManagement">Web Management Console</link>.</para>
     <para>The final section discusses the importance of using a <link
         linkend="Java-Broker-Queues-OtherTypes-SetLowPrefetch">low client pre-fetch</link> with these queued.
     </para>
@@ -85,95 +86,28 @@
   <section role="h2" id="Java-Broker-Queues-OtherTypes-Create">
     <title>Creating a Priority, Sorted or LVQ Queue</title>
     <para>To create a priority, sorted or LVQ queue, it can be defined in the virtualhost
-      configuration file, or the queue can be created programmtically from a client via AMQP (using
-      an extension to JMS), or using JMX. These methods are described below. </para>
+      configuration file, can be created programmtically from a client via AMQP (using
+      an extension to JMS), using JMX, using REST interfaces or created in Web Management Console.
+      These methods are described below. </para>
     <para>Once a queue is created you cannot change its type (without deleting it and re-creating).
       Also note you cannot currently mix the natures of these queue types, for instance, you cannot
       define a queue which it both an LVQ and a priority-queue.</para>
+    <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingManagement">
+      <title>Using Web Management Console</title>
+      <para>On clicking on "Add Queue" button on Virtual Host tab the pop-up dialog to create a queue is displayed.</para>
+      <para>For a Simple queue a Queue Type "Standard" should be selected</para>
+      <para>For a Priority queue a Queue Type "Priority" and the priority value (10 by default) should be selected.</para>
+      <para>For a Sorted queue a Queue Type "Sorted" and Sort Message Property should be specified.</para>
+      <para>For a LVQ queue a Queue Type "LVQ" and LVQ Message Property should be specified.</para>
+      <para>Additionally, for each type of the queue Flow Control Thresholds and Alert Thresholds can be specified in optional fields.</para>
+      <para>Also, a Dead Letter Queue can be configured for the Queue by checking "Create DLQ" check box.
+      The maximum number of delivery retries before message is sent to the DLQ can be specified in "Maximum Delivery Retries" field.
+      However, configuring of maximum delivery retries on a queue without DLQ(AlternateExchange) will result in messages
+      being discarded after the limit is reached.</para>
+    </section>
     <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig">
-      <title>Using configuration</title>
-      <para>To create a priority, sorted or LVQ queue within configuration, add the appropriate xml
-        to the virtualhost.xml configuration file within the <varname>queues</varname>
-        element.</para>
-      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Priority">
-        <title>Priority</title>
-        <para> To defining a priority queue, add a &lt;priority&gt;true&lt;/priority&gt; element. By
-          default the queue will have 10 distinct priorities. </para>
-        <example>
-          <title>Configuring a priority queue</title>
-          <programlisting><![CDATA[<queue>
-    <name>myqueue</name>
-    <myqueue>
-        <exchange>amq.direct</exchange>
-        <priority>true</priority>
-    </myqueue>
-</queue>]]></programlisting>
-        </example>
-        <para> If you require fewer priorities, it is possible to specify a
-            <varname>priorities</varname> element (whose value is a integer value between 2 and 10
-          inclusive) which will give the queue that number of distinct priorities. When messages are
-          sent to that queue, their effective priority will be calculated by partitioning the
-          priority space. If the number of effective priorities is 2, then messages with priority
-          0-4 are treated the same as "lower priority" and messages with priority 5-9 are treated
-          equivalently as "higher priority". </para>
-        <example>
-          <title>Configuring a priority queue with fewer priorities</title>
-          <programlisting><![CDATA[<queue>
-    <name>myqueue</name>
-    <myqueue>
-        <exchange>amq.direct</exchange>
-        <priority>true</priority>
-        <priorities>4</priorities>
-    </myqueue>
-</queue>]]></programlisting>
-        </example>
-      </section>
-      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-Sorted">
-        <title>Sorted</title>
-        <para> To define a sorted queue, add a <varname>sortKey</varname> element. The value of the
-            <varname>sortKey</varname> element defines the message property to use the value of when
-          sorting the messages put onto the queue. </para>
-        <example>
-          <title>Configuring a sorted queue</title>
-          <programlisting><![CDATA[<queue>
-    <name>myqueue</name>
-    <myqueue>
-        <exchange>amq.direct</exchange>
-        <sortKey>message-property-to-sort-by</sortKey>
-    </myqueue>
-</queue>]]></programlisting>
-        </example>
-      </section>
-      <section role="h3" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig-LVQ">
-        <title>LVQ</title>
-        <para> To define a LVQ, add a <varname>lvq</varname> element with the value
-            <constant>true</constant>. Without any further configuration this will define an LVQ
-          which uses the JMS message property <constant>qpid.LVQ_key</constant> as the key for
-          replacement. </para>
-        <example>
-          <title>Configuring a LVQ queue</title>
-          <programlisting><![CDATA[<queue>
-    <name>myqueue</name>
-    <myqueue>
-        <exchange>amq.direct</exchange>
-        <lvq>true</lvq>
-    </myqueue>
-</queue>]]></programlisting>
-        </example>
-        <para> If you wish to define your own property then you can do so using the
-            <varname>lvqKey</varname> element.</para>
-        <example>
-          <title>Configuring a LVQ queue with custom message property name</title>
-          <programlisting><![CDATA[<queue>
-    <name>myqueue</name>
-    <myqueue>
-        <exchange>amq.direct</exchange>
-        <lvq>true</lvq>
-        <lvqKey>ISIN</lvqKey>
-    </myqueue>
-</queue>]]></programlisting>
-        </example>
-      </section>
+        <title>Using configuration</title>
+        <para>How to declare queues in the Virtual Host configuration file is described in <xref linkend="Java-Broker-Virtual-Host-Declare-Queues"/>.</para>
     </section>
     <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingJmsOrJmx">
       <title>Using JMX or AMQP</title>

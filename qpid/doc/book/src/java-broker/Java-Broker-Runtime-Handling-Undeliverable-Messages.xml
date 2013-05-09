@@ -102,67 +102,12 @@
 
  <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">
   <title>Configuration</title>
-  <para>In the below configuration it can be seen that DLQs/Maximum Delivery Count are enabled at
-   the broker level with maximum delivery count set to 5, disabled at the virtualhost level for the
-   'dev-only' virtualhost, and enabled specifically for the 'dev-only-main-queue' with maximum
-   delivery count overridden to 5. </para>
-  <para>As 'dev-only-main-queue' has its own configuration specified, this value overrides all
-   others and causes the features to be enabled for this queue. In contrast to this,
-   'dev-only-other-queue' does not specify its own value and picks up the false value specified for
-   its parent virtualhost, causing the DLQ/Maximum Delivery Count features to be disabled for this
-   queue. Any such queue in the 'dev-only' virtualhost which does not specify its own configuration
-   value will have the DLQ/Maximum Delivery Count feature disabled.</para>
-  <para>The queue 'localhost-queue' has the DLQ/Maximum Delivery Count features enabled, as neither
-   the queue itself or the 'localhost' virtualhost specifies a configuration value and so the broker
-   level value of true is used. Any such queue in the 'localhost' virtualhost which does not specify
-   its own configuration value will have the features enabled.</para>
-  <example>
-   <title>Enabling DLQs and maximum delivery count at broker level within config.xml</title>
-   <programlisting><![CDATA[<broker>
- ...
- <deadLetterQueues>true</deadLetterQueues>
- <maximumDeliveryCount>5</maximumDeliveryCount>
- ...
-</broker>]]></programlisting>
-  </example>
-  <example>
-   <title>Enabling DLQs and maximum delivery count at virtualhost and queue level within
-    virtualhosts.xml</title>
-   <programlisting><![CDATA[<virtualhosts>
- ...
- <virtualhost>
-  <name>dev-only</name>
-  <dev-only>
-   <queues>
-    <deadLetterQueues>false</deadLetterQueues>
-    <maximumDeliveryCount>0</maximumDeliveryCount>
-    <queue>
-     <name>dev-only-main-queue</name>
-     <dev-only-main-queue>
-      <deadLetterQueues>true</deadLetterQueues>
-      <maximumDeliveryCount>3</maximumDeliveryCount>
-     </dev-only-main-queue>
-    </queue>
-    <queue>
-     <name>dev-only-other-queue</name>
-    </queue>
-   </queues>
-  </dev-only>
- </virtualhost>
- <virtualhost>
-  <name>localhost</name>
-  <localhost>
-   <queues>
-    <queue>
-     <name>localhost-queue</name>
-    </queue>
-   </queues>
-  </localhost>
- </virtualhost>
- ...
-</virtualhosts>]]>
-   </programlisting>
-  </example>
+  <important>DLQs/Maximum Delivery can be configured globally for all Virtual Hosts by
+  specifying non-zero value for global Broker attribute
+  "queue.maximumDeliveryAttempts" and setting of Broker attribute "queue.deadLetterQueueEnabled" to true.</important>
+
+  <para>An examples of configuring DLQs/Maximum Delivery Count using Virtual Hosts configuration file
+   are described in <xref linkend="Java-Broker-Virtual-Host-Configuring-DLQ"/>.</para>
  </section>
 
 

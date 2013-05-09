@@ -22,4 +22,45 @@
 
 <chapter id="Java-Broker-Virtual-Hosts">
   <title>Virtual Hosts</title>
+
+  <section id="Java-Broker-Virtual-Hosts-Configuring-Managing">
+      <title>Configuring And Managing</title>
+      <para>One or more Virtual Hosts can be configured on the Broker. The
+      <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
+      and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>
+      can be used to add and delete Virtual Hosts.</para>
+
+      <para>A new Virtual Host can be created in two ways by specifying either:
+        <itemizedlist>
+            <listitem><para>A <link linkend="Java-Broker-Stores">store type</link> and a store path</para></listitem>
+            <listitem><para>A path to Virtual Host XML configuration file</para></listitem>
+        </itemizedlist>
+        In first case the virtual host attributes are derived from Broker global attributes.
+        In the second case, the Virtual Host specific configuration can be set in the configuration XML,
+        for example, alert thresholds, message store, queues, exchanges, ACL etc. The first way of Virtual Host creation
+        is more preferable as it will reduce the burden of configuration changes when migrating to a newer version,
+        especially, when the support of Virtual Host configuration XML will be removed. However, the second way
+        is the only way at the moment to configure <link linkend="Java-Broker-Stores-HA-BDB-Store">HA Message Store</link>,
+        Virtual Host <link linkend="Java-Broker-Security-ACLs">ACL</link> and virtual host specific attributes.
+      </para>
+
+      <para>The following Virtual Host Managing operations are available from
+        <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>:
+        <itemizedlist>
+            <listitem><para>A new Virtual Host can be added into Broker by pressing "Add Virtual Host" button
+            on the Broker tab.</para></listitem>
+            <listitem><para>The existing Virtual Host(s) can be removed by pressing "Remove Virtual Host" button on the Broker tab.</para></listitem>
+            <listitem><para>The Virtual Host details can be viewed on the Virtual Host tab.
+            This tab can be displayed after clicking onto Virtual Host Name in the Broker object tree
+            or onto the Virtual Host row in the Virtual Hosts grid on the Broker tab.</para></listitem>
+            <listitem><para>Queues can be configured (added/removed) from Virtual Host tab</para></listitem>
+            <listitem><para>Exchange can be configured (added/removed) from Virtual Host tab</para></listitem>
+            <listitem><para>Existing Exchange/Queue tabs can be navigated from Virtual Host tab</para></listitem>
+        </itemizedlist>
+      </para>
+
+  </section>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Virtual-Hosts-Configuration.xml"/>
+
 </chapter>

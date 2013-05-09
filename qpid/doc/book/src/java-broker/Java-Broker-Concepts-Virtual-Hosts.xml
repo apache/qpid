@@ -22,5 +22,36 @@
 
 <section id="Java-Broker-Concepts-Virtual-Hosts">
 <title>Virtual Hosts</title>
-
+<para>Broker comprises from one or many <emphasis>Virtual Hosts</emphasis>.
+<emphasis>Virtual Host</emphasis> can be defined as a collection of exchanges, message queues and associated objects and
+is an independent server domain that share a common authentication, encryption and transport environment.
+</para>
+<para>
+    The following diagram depicts the Virtual Host model:
+    <figure>
+        <title>Virtual Host Model</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="images/VirtualHost-Model.png" format="PNG" scalefit="1"/>
+          </imageobject>
+          <textobject>
+            <phrase>Virtual Host Model</phrase>
+          </textobject>
+        </mediaobject>
+    </figure>
+</para>
+<para>Each <emphasis>Virtual Host</emphasis> has its own <emphasis>Message Store</emphasis>
+which is used to store the persistent messages from all <link linkend="Java-Broker-Concepts-Queues">Queues</link>
+declared on the <emphasis>Virtual Host</emphasis>.</para>
+<para>
+    The following message stores are currently supported:
+    <itemizedlist>
+        <listitem><para><link linkend="Java-Broker-Stores-SQL-Store">JDBC Message Store</link></para></listitem>
+        <listitem><para><link linkend="Java-Broker-Stores-Derby-Store">Derby Message Store</link></para></listitem>
+        <listitem><para><link linkend="Java-Broker-Stores-BDB-Store">Berkeley DB Message Store</link></para></listitem>
+        <listitem><para><link linkend="Java-Broker-Stores-HA-BDB-Store">Berkeley DB HA Message Store</link></para></listitem>
+        <listitem><para><link linkend="Java-Broker-Stores-Memory-Store">Memory Message Store</link></para></listitem>
+     </itemizedlist>
+</para>
+<para>Virtual Hosts configuration is covered in <xref linkend="Java-Broker-Virtual-Hosts"/>.</para>
 </section>

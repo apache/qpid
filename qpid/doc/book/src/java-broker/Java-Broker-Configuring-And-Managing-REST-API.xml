@@ -24,12 +24,12 @@
 <title>REST API</title>
     <section id="Java-Broker-Configuring-And-Managing-REST-API-Overview">
         <title>REST API Overview</title>
-        <para>This section provides an overview of REST management API.</para>
-        <para>If web management is enabled (see <xref linkend="Java-Broker-Configuring-And-Managing-Config-Files-Web-Management"/>) 
-            the REST API can be used to monitor and manage the broker instance.</para>
-        <para>The Qpid broker REST services support traditional REST model which uses the GET method requests to retrieve 
+        <para>This section provides an overview of REST management interfaces.</para>
+        <para>If web management plugin is configured
+            the REST interfaces can be used to monitor and manage the Broker instance.</para>
+        <para>The Qpid broker REST interfaces support traditional REST model which uses the GET method requests to retrieve
             the information about broker configured objects, DELETE method requests to delete the configured object,
-            PUT to create the configured object and POST to update the configured objects.</para>
+            PUT to create or update the configured object and POST to perform the configured objects updates not available with the PUT requests.</para>
         <para>The table below lists the available REST services with brief description how they can be used.</para>
 
        <table>
@@ -50,7 +50,7 @@
               <entry><para>/rest/broker</para></entry>
               <entry><para>Rest service to manage broker instance</para></entry>
               <entry><para>Retrieves the details of broker configuration</para></entry>
-              <entry><para>Not implemented yet</para></entry>
+              <entry><para>Updates broker attributes</para></entry>
               <entry><para>Not implemented yet</para></entry>
               <entry><para>Not implemented yet</para></entry>
             </row>
@@ -60,9 +60,9 @@
               </entry>
               <entry>Rest service to manage authentication providers on the broker</entry>
               <entry>Retrieves the details about authentication providers</entry>
+              <entry>Creates or updates authentication providers</entry>
               <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
+              <entry>Deletes authentication providers</entry>
             </row>
             <row>
               <entry><para>/rest/user</para>
@@ -70,8 +70,8 @@
               </entry>
               <entry>Rest service to manage user account</entry>
               <entry>Retrieves the details about user account</entry>
-              <entry>Creates user account</entry>
-              <entry>Updates user password</entry>
+              <entry>Creates user account, updates user password</entry>
+              <entry>Not implemented yet</entry>
               <entry>Deletes user account</entry>
             </row>
             <row>
@@ -80,9 +80,9 @@
               </entry>
               <entry>Rest service to manage group providers</entry>
               <entry>Retrieves the details about group provider(s)</entry>
+              <entry>Creates group provider</entry>
               <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
+              <entry>Deletes groups providers</entry>
             </row>
             <row>
               <entry><para>/rest/group</para>
@@ -111,20 +111,9 @@
               </entry>
               <entry>Rest service to manage broker ports(s)</entry>
               <entry>Retrieves the details about the broker port(s)</entry>
+              <entry>Creates or updates port</entry>
               <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
-            </row>
-            <row>
-              <entry>
-                    <para>/rest/port</para>
-                    <para>/rest/port/&lt;port name&gt;</para>
-              </entry>
-              <entry>Rest service to manage broker ports(s)</entry>
-              <entry>Retrieves the details about the broker port(s)</entry>
-              <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
-              <entry>Not implemented yet</entry>
+              <entry>Deletes ports</entry>
             </row>
             <row>
               <entry>
@@ -231,10 +220,50 @@
               <entry>Not implemented yet</entry>
               <entry>Not implemented yet</entry>
             </row>
+            <row>
+              <entry>
+                    <para>/rest/accesscontrolprovider</para>
+              </entry>
+              <entry>Rest service to manage access control providers</entry>
+              <entry>Retrieves the details about access control providers</entry>
+              <entry>Creates access control provider</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes access control provider(s)</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/keystore</para>
+              </entry>
+              <entry>Rest service to manage KeyStores</entry>
+              <entry>Retrieves the details about KeyStore</entry>
+              <entry>Creates or updates KeyStore</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes KeyStore(s)</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/truststore</para>
+              </entry>
+              <entry>Rest service to manage TrustStore</entry>
+              <entry>Retrieves the details about TrustStore</entry>
+              <entry>Creates or updates TrustStore</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Deletes TrustStore(s)</entry>
+            </row>
+            <row>
+              <entry>
+                    <para>/rest/plugin</para>
+              </entry>
+              <entry>Rest service to manage plugins</entry>
+              <entry>Retrieves the details about plugins</entry>
+              <entry>Updates plugin attributes</entry>
+              <entry>Not implemented yet</entry>
+              <entry>Not implemented yet</entry>
+            </row>
           </tbody>
           </tgroup>
         </table>
-        <para>Rest URL are hierarchical. It is permitted to replace rest URL elements with an "asterisks" in GET requests to denote
+        <para>Rest URLs are hierarchical. It is permitted to replace rest URL elements with an "asterisks" in GET requests to denote
         all object of a particular type. Additionally, trailing object type in the URL hierarchy can be omitted.
         In this case GET request will return all of the object underneath of the current object.</para>
         <para>For example, for binding URL http://localhost:8080/rest/binding/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;
@@ -258,6 +287,6 @@ curl -X PUT  -d '{"durable":true,"type":"priority"}' http://localhost:8080/rest/
 curl  -X PUT  -d '{}' http://localhost:8080/rest/binding/<vhostname>/<exchangename>/<queue-name>/<binding-name>
             ]]></programlisting>
         </example>
-        <para>Qpid broker web management console calls rest interfaces internally to manage the broker.</para>
+        <para>Qpid broker Web Management Console calls rest interfaces internally to manage the broker.</para>
     </section>
 </section>

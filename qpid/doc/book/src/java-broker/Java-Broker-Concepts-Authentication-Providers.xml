@@ -22,5 +22,31 @@
 
 <section id="Java-Broker-Concepts-Authentication-Providers">
 <title>Authentication Providers</title>
-
+<para><emphasis>Authentication Providers</emphasis> authenticate AMQP and non-AMQP connections on Broker <emphasis>Ports</emphasis>.
+Multiple <emphasis>Authentication Providers</emphasis> can be configured on the Broker at the same time,
+however, only one can be assigned to the concrete Port.</para>
+<para>
+    The following authentication providers are implemented and supported:
+    <itemizedlist>
+        <listitem><para><link linkend= "Java-Broker-Security-Anonymous-Provider">Anonymous</link>
+        allows anonymous connections to the broker</para></listitem>
+        <listitem><para><link linkend= "Java-Broker-Security-External-Provider">External</link>
+        delegates authentication to the external authentication mechanisms like Client Certificate Authentication etc</para></listitem>
+        <listitem><para><link linkend= "Java-Broker-Security-Kerberos-Provider">Kerberos</link>
+        uses GSS-API SASL mechanism to authenticate connections</para></listitem>
+        <listitem><para><link linkend= "Java-Broker-Security-LDAP-Provider">SimpleLDAP</link>
+        authenticate users against LDAP server.</para></listitem>
+        <listitem><para><link linkend= "Java-Broker-Security-PlainPasswordFile-Provider">PlainPasswordFile</link>
+        authenticate users against credentials stored in local file.</para></listitem>
+        <listitem><para><link linkend= "Java-Broker-Security-Base64MD5PasswordFile-Provider">Base64MD5PasswordFile</link>
+        similar to the above but the password credentials are encoded and different SASL mechanisms are used for authentication.</para></listitem>
+    </itemizedlist>
+</para>
+<para><emphasis>Authentication Providers</emphasis> can be split into two categories:
+    <itemizedlist>
+        <listitem><para><emphasis>User managing providers</emphasis> allowing to add/delete credentials using Broker management interfaces.</para></listitem>
+        <listitem><para><emphasis>User non-managing providers</emphasis> using externally stored credentials for authentication.</para></listitem>
+    </itemizedlist>
+</para>
+<para>The configuration details for Authentication Providers are covered in <xref linkend= "Java-Broker-Security-Authentication-Providers"/>.</para>
 </section>

@@ -25,11 +25,23 @@
 -->
 
 <section id="Java-Broker-Stores-BDB-Store">
-  <title>BDB Store</title>
+  <title>BDB Message Store</title>
   <para>
     The Java broker has an <emphasis>optional</emphasis> message store implementation backed by Oracle BDB JE.
     This section will detail where to download the optional dependency from, how to add it to the broker installation,
     and provide an example configuration for using the BDBMessageStore.
+  </para>
+
+  <para>
+    The BDBMessageStore can be selected on Virtual Host creation
+    via <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
+    and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>.
+    For details, see <xref linkend="Java-Broker-Virtual-Hosts"/>.
+  </para>
+
+  <para>
+    Alternatively, the BDBMessageStore can configured in Virtual Host configuration xml.
+    For details, see <xref linkend="Java-Broker-Stores-BDB-Store-Configuration"/>.
   </para>
 
   <section role="h3" id="Java-Broker-Stores-BDB-Store-BDBJE-Download">
@@ -61,34 +73,6 @@ cp je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;/lib/opt</pr
 
       <programlisting>Windows:
 copy je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;\lib\opt</programlisting>
-  </section>
-
-
-
-  <section role="h3" id="Java-Broker-Stores-BDB-Store-Configuration">
-    <title>Configuration</title>
-    <para>
-      In order to use the BDBMessageStore, you must configure it for each VirtualHost desired by updating the store element
-      to specify the associated store class and provide a directory location for the data to be written, as shown below.
-    </para>
-
-    <example>
-      <title>Configuring a VirtualHost to use the BDBMessageStore</title>
-      <programlisting><![CDATA[
-<virtualhosts>
-  <virtualhost>
-    <name>vhostname</name>
-    <vhostname>
-      <store>
-        <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-        <environment-path>${QPID_WORK}/bdbstore/vhostname</environment-path>
-      </store>
-      ...
-    </vhostname>
-  </virtualhost>
-</virtualhosts>
-]]></programlisting>
-    </example>
   </section>
 
 </section>
