@@ -129,7 +129,7 @@ if (BUILD_LEGACYSTORE)
       message(STATUS "Including BDB from ${DB_INCLUDE_DIR}/db_cxx.h")
         file(WRITE 
              ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h
-             "#include <${DB_INCLUDE_DIR}/db_cxx.h>")
+             "#include <${DB_INCLUDE_DIR}/db_cxx.h>\n")
     endif()
 
     add_library (legacystore MODULE
