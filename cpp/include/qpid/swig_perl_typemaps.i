@@ -17,6 +17,7 @@
  * under the License.
  */
 
+%newobject VariantToPerl;
 %wrapper %{
 
 #include <stdarg.h>

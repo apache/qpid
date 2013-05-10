@@ -69,47 +69,41 @@ if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
   endif (PERL_FOUND)
 endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
 
-set (SWIG_MINIMUM_VERSION "1.3.32")
-
 if (SWIG_FOUND)
-  if (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
-    message("Found Swig < ${SWIG_MINIMUM_VERSION} - skipping language bindings")
-  else()
-    set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
+  set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
 
-    if (PYTHONLIBS_FOUND)
-        message("Building Python bindings")
-        execute_process(COMMAND ${PYTHON_EXECUTABLE}
-                        -c "from distutils.sysconfig import get_python_lib; print get_python_lib(True, prefix='${CMAKE_INSTALL_PREFIX}')"
-                        OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
-                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if (PYTHONLIBS_FOUND)
+      message("Building Python bindings")
+      execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                      -c "from distutils.sysconfig import get_python_lib; print get_python_lib(True, prefix='${CMAKE_INSTALL_PREFIX}')"
+                      OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-        add_subdirectory(qpid/python)
-        add_subdirectory(qmf2/python)
-        add_subdirectory(qmf/python)
-    endif (PYTHONLIBS_FOUND)
+      add_subdirectory(qpid/python)
+      add_subdirectory(qmf2/python)
+      add_subdirectory(qmf/python)
+  endif (PYTHONLIBS_FOUND)
 
-    if (RUBY_FOUND)
-        message("Building Ruby bindings")
-        execute_process(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e "puts RbConfig::CONFIG['prefix']"
-                        OUTPUT_VARIABLE RUBY_PREFIX
-                        OUTPUT_STRIP_TRAILING_WHITESPACE)
-        string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_SITEARCH_DIR})
-#       string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_ARCH_DIR})
-        add_subdirectory(qpid/ruby)
-        add_subdirectory(qmf2/ruby)
-        add_subdirectory(qmf/ruby)
-    endif (RUBY_FOUND)
+  if (RUBY_FOUND)
+      message("Building Ruby bindings")
+      execute_process(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e "puts RbConfig::CONFIG['prefix']"
+                      OUTPUT_VARIABLE RUBY_PREFIX
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_SITEARCH_DIR})
+#     string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_ARCH_DIR})
+      add_subdirectory(qpid/ruby)
+      add_subdirectory(qmf2/ruby)
+      add_subdirectory(qmf/ruby)
+  endif (RUBY_FOUND)
 
-    if (PERL_FOUND)
-        message("Building Perl bindings")
-        execute_process(COMMAND ${PERL_EXECUTABLE} "-V::prefix:"
-                        OUTPUT_VARIABLE QPERL_PREFIX
-                        OUTPUT_STRIP_TRAILING_WHITESPACE)
-        string(REGEX REPLACE "'(.*)'" "\\1" PERL_PREFIX ${QPERL_PREFIX})
-        string(REPLACE ${PERL_PREFIX} ${CMAKE_INSTALL_PREFIX} PERL_PFX_ARCHLIB ${PERL_ARCHLIB})
+  if (PERL_FOUND)
+      message("Building Perl bindings")
+      execute_process(COMMAND ${PERL_EXECUTABLE} "-V::prefix:"
+                      OUTPUT_VARIABLE QPERL_PREFIX
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      string(REGEX REPLACE "'(.*)'" "\\1" PERL_PREFIX ${QPERL_PREFIX})
+      string(REPLACE ${PERL_PREFIX} ${CMAKE_INSTALL_PREFIX} PERL_PFX_ARCHLIB ${PERL_ARCHLIB})
 
-        add_subdirectory(qpid/perl)
-    endif (PERL_FOUND)
-  endif (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
+      add_subdirectory(qpid/perl)
+  endif (PERL_FOUND)
 endif (SWIG_FOUND)
