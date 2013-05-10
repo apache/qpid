@@ -991,7 +991,8 @@ target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
-                       VERSION ${qpidcommon_version})
+                       VERSION ${qpidcommon_version} 
+                       SOVERSION ${qpidcommon_version_major})
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
@@ -1006,7 +1007,9 @@ set(qpidtypes_SOURCES
 add_msvc_version (qpidtypes library dll)
 add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
 target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
-set_target_properties (qpidtypes PROPERTIES VERSION ${qpidtypes_version})
+set_target_properties (qpidtypes PROPERTIES 
+                       VERSION ${qpidtypes_version}
+                       SOVERSION ${qpidtypes_version_major})
 install(TARGETS qpidtypes
   DESTINATION ${QPID_INSTALL_LIBDIR}
   COMPONENT ${QPID_COMPONENT_COMMON})
@@ -1053,7 +1056,8 @@ add_msvc_version (qpidclient library dll)
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
-set_target_properties (qpidclient PROPERTIES VERSION ${qpidclient_version})
+set_target_properties (qpidclient PROPERTIES VERSION ${qpidclient_version}
+SOVERSION ${qpidclient_version_major})
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
@@ -1120,7 +1124,9 @@ add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
 target_link_libraries (qpidmessaging qpidclient)
-set_target_properties (qpidmessaging PROPERTIES VERSION ${qpidmessaging_version})
+set_target_properties (qpidmessaging PROPERTIES 
+                       VERSION ${qpidmessaging_version} 
+                       SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
@@ -1247,7 +1253,10 @@ set (qpidbroker_SOURCES
 add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
-set_target_properties (qpidbroker PROPERTIES VERSION ${qpidbroker_version} COMPILE_DEFINITIONS _IN_QPID_BROKER)
+set_target_properties (qpidbroker PROPERTIES 
+                       VERSION ${qpidbroker_version}
+                       SOVERSION ${qpidbroker_version_major} 
+                       COMPILE_DEFINITIONS _IN_QPID_BROKER)
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
@@ -1293,7 +1302,8 @@ add_msvc_version (qmf library dll)
 add_library (qmf SHARED ${qmf_SOURCES})
 target_link_libraries (qmf qmfengine)
 set_target_properties (qmf PROPERTIES
-                       VERSION ${qmf_version})
+                       VERSION ${qmf_version} 
+                       SOVERSION ${qmf_version_major})
 install (TARGETS qmf OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
@@ -1374,7 +1384,8 @@ if(NOT WIN32)
     add_library (qmf2 SHARED ${qmf2_SOURCES})
     target_link_libraries (qmf2 qpidmessaging qpidtypes qpidclient qpidcommon)
     set_target_properties (qmf2 PROPERTIES
-                        VERSION ${qmf2_version})
+                           VERSION ${qmf2_version} 
+                           SOVERSION ${qmf2_version_major})
     install (TARGETS qmf2 OPTIONAL
             DESTINATION ${QPID_INSTALL_LIBDIR}
             COMPONENT ${QPID_COMPONENT_QMF})
@@ -1439,7 +1450,8 @@ add_msvc_version (qmfengine library dll)
 add_library (qmfengine SHARED ${qmfengine_SOURCES})
 target_link_libraries (qmfengine qpidclient)
 set_target_properties (qmfengine PROPERTIES
-                       VERSION ${qmfengine_version})
+                       VERSION ${qmfengine_version} 
+                       SOVERSION ${qmfengine_version_major})
 install (TARGETS qmfengine OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
@@ -1477,7 +1489,8 @@ add_msvc_version (qmfconsole library dll)
 add_library (qmfconsole SHARED ${qmfconsole_SOURCES})
 target_link_libraries (qmfconsole qpidclient)
 set_target_properties (qmfconsole PROPERTIES
-                       VERSION ${qmfconsole_version})
+                       VERSION ${qmfconsole_version}
+                       SOVERSION ${qmfconsole_version_major})
 install (TARGETS qmfconsole
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
