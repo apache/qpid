@@ -38,7 +38,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ChartingDefinitionCreatorTest extends QpidTestCase
 {
-    private static final String TEST_CHART_TITLE = "CHART_TITLE";
+    private static final String TEST_CHART_TITLE = "CHART_TITLE ${ChartingDefinitionSysProp}";
     private static final String TEST_CHART_SUBTITLE = "CHART_SUBTITLE";
     private static final String TEST_CHART_DESCRIPTION = "CHART_DESCRIPTION";
     private static final String TEST_XAXIS_TITLE = "XAXIS_TITLE";
@@ -46,6 +46,8 @@ public class ChartingDefinitionCreatorTest extends QpidTestCase
     private static final ChartType TEST_CHART_TYPE = ChartType.LINE;
 
     private static final String TEST_SERIES_SELECT_STATEMENT = "SERIES_SELECT_STATEMENT";
+
+    private static final String SYSTEM_PROPERTY_NAME = "ChartingDefinitionSysProp";
 
     private ChartingDefinitionCreator _chartingDefinitionLoader = new ChartingDefinitionCreator();
     private File _testTempDir;
@@ -79,13 +81,14 @@ public class ChartingDefinitionCreatorTest extends QpidTestCase
 
     public void testDefinitionsProperties() throws Exception
     {
+        setTestSystemProperty(SYSTEM_PROPERTY_NAME, "propValue");
         File testDefFile = createTestDefinitionWithin(_testTempDir);
 
         List<ChartingDefinition> definitions = _chartingDefinitionLoader.createFromFileOrDirectory(testDefFile.getAbsolutePath());
         assertEquals(1, definitions.size());
 
         ChartingDefinition definition1 = definitions.get(0);
-        assertEquals(TEST_CHART_TITLE, definition1.getChartTitle());
+        assertEquals("CHART_TITLE propValue", definition1.getChartTitle());
         assertEquals(TEST_CHART_SUBTITLE, definition1.getChartSubtitle());
         assertEquals(TEST_CHART_DESCRIPTION, definition1.getChartDescription());
         assertEquals(TEST_XAXIS_TITLE, definition1.getXAxisTitle());

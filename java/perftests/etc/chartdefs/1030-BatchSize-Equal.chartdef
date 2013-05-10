@@ -31,7 +31,7 @@ series.1.dir=${csvCurrentDir}
 series.1.colourName=red
 
 series.2.statement=SELECT batchSize, throughputMessagesPerS FROM BatchSize WHERE participantName = 'All'
-series.2.legend=Equal Producer/Consumer (Baseline)
+series.2.legend=Equal Producer/Consumer (Baseline ${baselineName})
 series.2.dir=${csvBaselineDir}
 series.2.colourName=dark_red
 series.2.strokeWidth=-1

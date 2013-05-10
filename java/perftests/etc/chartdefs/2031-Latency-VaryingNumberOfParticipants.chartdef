@@ -46,6 +46,6 @@ series.4.dir=${csvCurrentDir}
 series.4.colourName=red
 
 series.5.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-VaryingNumberOfParticipants WHERE participantName = 'All Consumers' and testName like '% - 10 producers - PERSISTENT'
-series.5.legend=10 producers (baseline)
+series.5.legend=10 producers (baseline ${baselineName})
 series.5.dir=${csvBaselineDir}
 series.5.colourName=dark_red
