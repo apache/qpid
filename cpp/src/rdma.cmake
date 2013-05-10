@@ -66,7 +66,8 @@ if (BUILD_RDMA)
   target_link_libraries (rdmawrap qpidcommon rdmacm ibverbs)
   set_target_properties (rdmawrap PROPERTIES
                          LINK_FLAGS "${CATCH_UNDEFINED}"
-                         VERSION ${rdmawrap_version})
+                         VERSION ${rdmawrap_version} 
+                         SOVERSION ${rdmawrap_version_major})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(rdmawrap PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers)

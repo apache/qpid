@@ -78,6 +78,7 @@ if (BUILD_SSL)
     target_link_libraries (sslcommon qpidcommon)
     set_target_properties (sslcommon PROPERTIES
                            VERSION ${sslcommon_version}
+                           SOVERSION ${sslcommon_version_major}
                            COMPILE_FLAGS ${NSS_COMPILE_FLAGS}
                            LINK_FLAGS -L${NSS_LIBDIR})
 
