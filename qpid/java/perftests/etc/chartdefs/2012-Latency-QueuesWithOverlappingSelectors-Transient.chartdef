@@ -36,7 +36,7 @@ series.2.dir=${csvCurrentDir}
 series.2.colourName=red
 
 series.3.statement=SELECT totalNumberOfConsumers, averageLatency,latencyStandardDeviation FROM Latency-QueuesWithSelectors WHERE participantName = 'All Consumers'  and testName like '%overlapping 50% - NON_PERSISTENT%'
-series.3.legend=Average latency (baseline)
+series.3.legend=Average latency (baseline ${baselineName})
 series.3.dir=${csvBaselineDir}
 series.3.colourName=dark_red
 

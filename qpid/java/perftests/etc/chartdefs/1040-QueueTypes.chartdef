@@ -31,6 +31,6 @@ series.1.dir=${csvCurrentDir}
 series.1.colourName=blue
 
 series.2.statement=SELECT testName, throughputMessagesPerS FROM QueueTypes WHERE participantName = 'All'
-series.2.legend=Baseline
+series.2.legend=Baseline ${baselineName}
 series.2.dir=${csvBaselineDir}
 series.2.colourName=dark_red
