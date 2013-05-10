@@ -25,6 +25,6 @@ chartDescription=10 P/Cs, persistent, auto-ack, with message payload 1KB.
 xAxisTitle=Date
 yAxisTitle=Throughput (KB/s)
 
-series.1.statement=SELECT insertedTimestamp, throughputKbPerS FROM RESULTS WHERE participantName = 'All' AND testName = 'Varying number of participants: 10 consumers - 10 producers - PERSISTENT'
+series.1.statement=SELECT insertedTimestamp, throughputKbPerS FROM RESULTS WHERE participantName = 'All' AND testName = 'Varying number of participants: 10 consumers - 10 producers - PERSISTENT' and acknowledgemode=1
 series.1.colourName=red
 series.1.legend=Throughput
