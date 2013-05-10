@@ -19,11 +19,11 @@
  */
 package org.apache.qpid.disttest.charting.definition;
 
+import static org.apache.commons.lang.text.StrSubstitutor.replaceSystemProperties;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-import org.apache.commons.lang.text.StrSubstitutor;
 
 public class SeriesDefinitionCreator
 {
@@ -41,10 +41,10 @@ public class SeriesDefinitionCreator
         boolean moreSeriesDefinitions = true;
         while(moreSeriesDefinitions)
         {
-            String seriesStatement = properties.getProperty(String.format(SERIES_STATEMENT_KEY_FORMAT, index));
-            String seriesLegend = properties.getProperty(String.format(SERIES_LEGEND_KEY_FORMAT, index));
-            String seriesDir = StrSubstitutor.replaceSystemProperties(properties.getProperty(String.format(SERIES_DIRECTORY_KEY_FORMAT, index)));
-            String seriesColourName = properties.getProperty(String.format(SERIES_COLOUR_NAME_FORMAT, index));
+            String seriesStatement = replaceSystemProperties(properties.getProperty(String.format(SERIES_STATEMENT_KEY_FORMAT, index)));
+            String seriesLegend = replaceSystemProperties(properties.getProperty(String.format(SERIES_LEGEND_KEY_FORMAT, index)));
+            String seriesDir = replaceSystemProperties(properties.getProperty(String.format(SERIES_DIRECTORY_KEY_FORMAT, index)));
+            String seriesColourName = replaceSystemProperties(properties.getProperty(String.format(SERIES_COLOUR_NAME_FORMAT, index)));
             Integer seriesStrokeWidth = properties.getProperty(String.format(SERIES_STROKE_WIDTH_FORMAT, index)) == null
                     ? null : Integer.parseInt(properties.getProperty(String.format(SERIES_STROKE_WIDTH_FORMAT, index)));
 

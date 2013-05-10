@@ -32,13 +32,15 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class SeriesDefinitionCreatorTest extends QpidTestCase
 {
+    private static final String SYSTEM_PROPERTY_NAME = "SeriesDefinitionProp";
     private static final String TEST_SERIES_1_SELECT_STATEMENT = "SERIES_1_SELECT_STATEMENT";
     private static final String TEST_SERIES_1_LEGEND = "SERIES_1_LEGEND";
+    private static final String TEST_SERIES_1_LEGEND_WITH_SYSPROP = "SERIES_1_LEGEND ${SeriesDefinitionProp}";
     private static final String TEST_SERIES_1_DIR = "SERIES_1_DIR";
     private static final String TEST_SERIES_1_COLOUR_NAME = "seriesColourName";
     private static final Integer TEST_SERIES_1_STROKE_WIDTH = 1;;
 
-    private static final String TEST_SERIES_1_DIR_WITH_SYSPROP = "${java.io.tmpdir}/mydir";
+    private static final String TEST_SERIES_1_DIR_WITH_SYSPROP = "${SeriesDefinitionProp}/mydir";
 
     private static final String TEST_SERIES_2_SELECT_STATEMENT = "SERIES_2_SELECT_STATEMENT";
     private static final String TEST_SERIES_2_LEGEND = "SERIES_2_LEGEND";
@@ -97,16 +99,17 @@ public class SeriesDefinitionCreatorTest extends QpidTestCase
         assertEquals(1, definitions.size());
     }
 
-    public void testSeriesDirectorySubstitution() throws Exception
+    public void testSeriesDirectoryAndNameSubstitution() throws Exception
     {
-        final String tmpDir = System.getProperty("java.io.tmpdir");
-        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND, TEST_SERIES_1_DIR_WITH_SYSPROP, null, null);
+        setTestSystemProperty(SYSTEM_PROPERTY_NAME, "propValue");
+        createTestProperties(1, TEST_SERIES_1_SELECT_STATEMENT, TEST_SERIES_1_LEGEND_WITH_SYSPROP, TEST_SERIES_1_DIR_WITH_SYSPROP, null, null);
 
         List<SeriesDefinition> definitions = _seriesDefinitionLoader.createFromProperties(_properties);
         assertEquals(1, definitions.size());
 
         SeriesDefinition seriesDefinition1 = definitions.get(0);
-        assertTrue(seriesDefinition1.getSeriesDirectory().startsWith(tmpDir));
+        assertEquals("propValue/mydir", seriesDefinition1.getSeriesDirectory());
+        assertEquals("SERIES_1_LEGEND propValue", seriesDefinition1.getSeriesLegend());
     }
 
     private void createTestProperties(int index, String selectStatement, String seriesLegend, String seriesDir, String seriesColourName, Integer seriesStrokeWidth) throws Exception

@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.disttest.charting.definition;
 
+import static org.apache.commons.lang.text.StrSubstitutor.replaceSystemProperties;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -80,12 +82,12 @@ public class ChartingDefinitionCreator
 
             final String chartStemName = getStemNameFrom(file);
 
-            final ChartType chartType = ChartType.valueOf(props.getProperty(CHART_TYPE_KEY));
-            final String chartTitle = props.getProperty(CHART_TITLE_KEY);
-            final String chartSubtitle = props.getProperty(CHART_SUBTITLE_KEY);
-            final String chartDescription = props.getProperty(CHART_DESCRIPTION_KEY);
-            final String xAxisTitle = props.getProperty(XAXIS_TITLE_KEY);
-            final String yAxisTitle = props.getProperty(YAXIS_TITLE_KEY);
+            final ChartType chartType = ChartType.valueOf(replaceSystemProperties(props.getProperty(CHART_TYPE_KEY)));
+            final String chartTitle = replaceSystemProperties(props.getProperty(CHART_TITLE_KEY));
+            final String chartSubtitle = replaceSystemProperties(props.getProperty(CHART_SUBTITLE_KEY));
+            final String chartDescription = replaceSystemProperties(props.getProperty(CHART_DESCRIPTION_KEY));
+            final String xAxisTitle = replaceSystemProperties(props.getProperty(XAXIS_TITLE_KEY));
+            final String yAxisTitle = replaceSystemProperties(props.getProperty(YAXIS_TITLE_KEY));
 
             final List<SeriesDefinition> seriesDefinitions = createSeriesDefinitions(props);
 

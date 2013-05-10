@@ -41,7 +41,7 @@ series.3.dir=${csvCurrentDir}
 series.3.colourName=red
 
 series.4.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '10' and acknowledgeMode = '0'
-series.4.legend=10 Producers (baseline)
+series.4.legend=10 Producers (baseline ${baselineName})
 series.4.dir=${csvBaselineDir}
 series.4.colourName=dark_red
 series.4.strokeWidth=-1

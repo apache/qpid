@@ -30,7 +30,7 @@ series.1.dir=${csvCurrentDir}
 series.1.colourName=blue
 
 series.2.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM QueueConsumersWithOverlappingSelectors WHERE participantName = 'All' and testName like '%50_ overlapping - PERSISTENT%'
-series.2.legend=Baseline
+series.2.legend=Baseline ${baselineName}
 series.2.dir=${csvBaselineDir}
 series.2.colourName=dark_red
 series.2.stokeWidth=-1

@@ -32,7 +32,7 @@ series.1.colourName=blue
 
 
 series.2.statement=SELECT acknowledgeMode, throughputMessagesPerS FROM AcknowledgementModes WHERE testName like 'Persistent%' AND participantName = 'All' ORDER BY acknowledgeMode
-series.2.legend=Baseline
+series.2.legend=Baseline ${baselineName}
 series.2.dir=${csvBaselineDir}
 series.2.colourName=dark_red
 

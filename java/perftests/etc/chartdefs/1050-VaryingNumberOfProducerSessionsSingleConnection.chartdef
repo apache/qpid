@@ -37,13 +37,13 @@ series.2.dir=${csvCurrentDir}
 series.2.colourName=blue
 
 series.3.statement=SELECT testName, throughputKbPerS FROM VaryingNumberOfProducerSessionsSingleConnection WHERE participantName = 'All'
-series.3.legend=Baseline - End-to-end throughput
+series.3.legend=Baseline ${baselineName} - End-to-end throughput
 series.3.dir=${csvBaselineDir}
 series.3.colourName=dark_red
 series.3.strokeWidth=-1
 
 series.4.statement=SELECT testName, throughputKbPerS FROM VaryingNumberOfProducerSessionsSingleConnection WHERE participantName = 'All Producers'
-series.4.legend=Baseline - Producer only throughput
+series.4.legend=Baseline ${baselineName} - Producer only throughput
 series.4.dir=${csvBaselineDir}
 series.4.colourName=dark_blue
 series.4.strokeWidth=-1
