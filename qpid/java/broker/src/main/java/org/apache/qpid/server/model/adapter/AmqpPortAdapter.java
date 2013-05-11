@@ -253,4 +253,9 @@ public class AmqpPortAdapter extends PortAdapter
             return _bindingSocketAddress;
         }
     };
+
+    public String toString()
+    {
+        return getName();
+    }
 }
