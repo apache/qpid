@@ -60,7 +60,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
     public InternalTestProtocolSession(VirtualHost virtualHost, Broker broker) throws AMQException
     {
-        super(broker, new TestNetworkConnection(), ID_GENERATOR.getAndIncrement());
+        super(broker, new TestNetworkConnection(), ID_GENERATOR.getAndIncrement(), null, null);
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 

@@ -35,6 +35,8 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
@@ -66,10 +68,12 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private final long _connectionId;
     private final Object _reference = new Object();
     private VirtualHost _virtualHost;
+    private Port _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
     private Principal _peerPrincipal;
     private NetworkConnection _networkConnection;
+    private Transport _transport;
 
     public ServerConnection(final long connectionId)
     {
@@ -146,6 +150,28 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         _virtualHost = virtualHost;
 
         initialiseStatistics();
+    }
+
+    @Override
+    public Port getPort()
+    {
+        return _port;
+    }
+
+    public void setPort(Port port)
+    {
+        _port = port;
+    }
+
+    @Override
+    public Transport getTransport()
+    {
+        return _transport;
+    }
+
+    public void setTransport(Transport transport)
+    {
+        _transport = transport;
     }
 
     public void onOpen(final Runnable task)
@@ -450,6 +476,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     {
         return _lastIoTime.longValue();
     }
+
 
     public String getClientId()
     {

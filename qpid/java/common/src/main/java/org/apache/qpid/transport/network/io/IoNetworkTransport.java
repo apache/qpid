@@ -239,7 +239,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                                                                                ticker);
                         ticker.setConnection(connection);
 
-                        if(_sslContext != null)
+                        if(_sslContext != null && socket instanceof SSLSocket)
                         {
                             try
                             {

@@ -154,7 +154,8 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(_broker, versions, null);
+            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, null, null,
+                    org.apache.qpid.server.model.Transport.TCP);
 
         //create a dummy to retrieve the 'current' ID number
         long previousId = factory.newProtocolEngine().getConnectionId();
@@ -192,7 +193,8 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         try
         {
-            new MultiVersionProtocolEngineFactory(_broker, versions, AmqpProtocolVersion.v0_9);
+            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, AmqpProtocolVersion.v0_9, null,
+                    org.apache.qpid.server.model.Transport.TCP);
             fail("should not have been allowed to create the factory");
         }
         catch(IllegalArgumentException iae)

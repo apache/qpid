@@ -20,12 +20,15 @@
 */
 package org.apache.qpid.server.protocol;
 
+import javax.net.ssl.SSLContext;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
@@ -34,9 +37,20 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private final Broker _broker;
     private final Set<AmqpProtocolVersion> _supported;
     private final AmqpProtocolVersion _defaultSupportedReply;
+    private final SSLContext _sslContext;
+    private final boolean _wantClientAuth;
+    private final boolean _needClientAuth;
+    private final Port _port;
+    private final Transport _transport;
 
     public MultiVersionProtocolEngineFactory(Broker broker,
-            final Set<AmqpProtocolVersion> supportedVersions, final AmqpProtocolVersion defaultSupportedReply)
+                                             SSLContext sslContext,
+                                             boolean wantClientAuth,
+                                             boolean needClientAuth,
+                                             final Set<AmqpProtocolVersion> supportedVersions,
+                                             final AmqpProtocolVersion defaultSupportedReply,
+                                             Port port,
+                                             Transport transport)
     {
         if(defaultSupportedReply != null && !supportedVersions.contains(defaultSupportedReply))
         {
@@ -45,13 +59,20 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         }
 
         _broker = broker;
+        _sslContext = sslContext;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
+        _wantClientAuth = wantClientAuth;
+        _needClientAuth = needClientAuth;
+        _port = port;
+        _transport = transport;
     }
 
     public ServerProtocolEngine newProtocolEngine()
     {
-        return new MultiVersionProtocolEngine(_broker, _supported, _defaultSupportedReply, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_broker, _sslContext, _wantClientAuth, _needClientAuth,
+                                              _supported, _defaultSupportedReply, _port, _transport,
+                                              ID_GENERATOR.getAndIncrement()
+        );
     }
-
 }
