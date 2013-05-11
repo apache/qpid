@@ -145,11 +145,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                             });
                         }
                     }
-                    Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
-
-                    virtualHost.getBindingFactory().addBinding(String.valueOf(queueName), queue, defaultExchange,
-                            Collections.<String, Object> emptyMap());
-                    _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getNameShortString() + ")");
                 }
             }
             else if (queue.isExclusive() && !queue.isDurable() && (owningSession == null || owningSession.getConnectionModel() != protocolConnection))

@@ -103,13 +103,13 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
         }
 
-        if(virtualHost.getBindingFactory().getBinding(String.valueOf(routingKey), queue, exch, FieldTable.convertToMap(body.getArguments())) == null)
+        if(exch.getBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments())) == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND,"No such binding");
         }
         else
         {
-            virtualHost.getBindingFactory().removeBinding(String.valueOf(routingKey), queue, exch, FieldTable.convertToMap(body.getArguments()));
+            exch.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments()));
         }
 
         

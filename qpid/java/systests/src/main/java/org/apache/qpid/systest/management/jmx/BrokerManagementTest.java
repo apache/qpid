@@ -64,11 +64,7 @@ public class BrokerManagementTest extends QpidBrokerTestCase
     public void testCreateQueueAndDeletion() throws Exception
     {
         final String queueName = getTestQueueName();
-        final ManagedExchange defaultExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
 
-        // Check that bind does not exist before queue creation
-        assertFalse("Binding to " + queueName + " should not exist in default exchange before queue creation",
-                     defaultExchange.bindings().containsKey(new String[] {queueName}));
 
         _managedBroker.createNewQueue(queueName, "testowner", true);
 
@@ -76,16 +72,11 @@ public class BrokerManagementTest extends QpidBrokerTestCase
         assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName(VIRTUAL_HOST, queueName));
         assertNotNull("Manager queue expected to be available", _jmxUtils.getManagedQueue(queueName));
 
-        // Now verify that the default exchange has been bound.
-        assertTrue("Binding to " + queueName + " should exist in default exchange after queue creation",
-                     defaultExchange.bindings().containsKey(new String[] {queueName}));
 
         // Now delete the queue
         _managedBroker.deleteQueue(queueName);
 
-        // Finally ensure that the binding has been removed.
-        assertFalse("Binding to " + queueName + " should not exist in default exchange after queue deletion",
-                defaultExchange.bindings().containsKey(new String[] {queueName}));
+
     }
 
     /**
@@ -105,24 +96,24 @@ public class BrokerManagementTest extends QpidBrokerTestCase
     /**
      * Tests that it is disallowed to unregister the default exchange.
      */
-    public void testUnregisterOfDefaultExchangeDisallowed() throws Exception
+    public void testUnregisterOfAmqDirectExchangeDisallowed() throws Exception
     {
-        String defaultExchangeName = ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString();
+        String amqDirectExchangeName = "amq.direct";
 
-        ManagedExchange defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
-        assertNotNull("Exchange should exist", defaultExchange);
+        ManagedExchange amqDirectExchange = _jmxUtils.getManagedExchange(amqDirectExchangeName);
+        assertNotNull("Exchange should exist", amqDirectExchange);
         try
         {
-            _managedBroker.unregisterExchange(defaultExchangeName);
+            _managedBroker.unregisterExchange(amqDirectExchangeName);
             fail("Exception not thrown");
         }
         catch (UnsupportedOperationException e)
         {
             // PASS
-            assertEquals("'<<default>>' is a reserved exchange and can't be deleted", e.getMessage());
+            assertEquals("'"+amqDirectExchangeName+"' is a reserved exchange and can't be deleted", e.getMessage());
         }
-        defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
-        assertNotNull("Exchange should exist", defaultExchange);
+        amqDirectExchange = _jmxUtils.getManagedExchange(amqDirectExchangeName);
+        assertNotNull("Exchange should exist", amqDirectExchange);
     }
 
 }

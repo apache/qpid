@@ -1020,7 +1020,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     try
                     {
-                        virtualHost.getBindingFactory().addBinding(method.getBindingKey(), queue, exchange, method.getArguments());
+                        exchange.addBinding(method.getBindingKey(), queue, method.getArguments());
                     }
                     catch (AMQException e)
                     {
@@ -1075,7 +1075,7 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 try
                 {
-                    virtualHost.getBindingFactory().removeBinding(method.getBindingKey(), queue, exchange, null);
+                    exchange.removeBinding(method.getBindingKey(), queue, null);
                 }
                 catch (AMQException e)
                 {
@@ -1265,12 +1265,6 @@ public class ServerSessionDelegate extends SessionDelegate
                             }
                         }
                         queueRegistry.registerQueue(queue);
-
-                        ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
-
-                        Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
-
-                        virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
 
                         if (method.hasAutoDelete()
                             && method.getAutoDelete()

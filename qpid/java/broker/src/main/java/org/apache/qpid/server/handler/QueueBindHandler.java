@@ -127,14 +127,14 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
                 String bindingKey = String.valueOf(routingKey);
                 Map<String,Object> arguments = FieldTable.convertToMap(body.getArguments());
 
-                if(!virtualHost.getBindingFactory().addBinding(bindingKey, queue, exch, arguments))
+                if(!exch.addBinding(bindingKey, queue, arguments))
                 {
-                    Binding oldBinding = virtualHost.getBindingFactory().getBinding(bindingKey, queue, exch, arguments);
+                    Binding oldBinding = exch.getBinding(bindingKey, queue, arguments);
 
                     Map<String, Object> oldArgs = oldBinding.getArguments();
                     if((oldArgs == null && !arguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(arguments)))
                     {
-                        virtualHost.getBindingFactory().replaceBinding(oldBinding.getId(), bindingKey, queue, exch, arguments);
+                        exch.replaceBinding(oldBinding.getId(), bindingKey, queue, arguments);
                     }
                 }
             }

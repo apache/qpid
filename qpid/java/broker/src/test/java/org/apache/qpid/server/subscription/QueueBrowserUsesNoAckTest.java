@@ -55,8 +55,6 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         _queueName = getTestName();
         _queue = BrokerTestHelper.createQueue(_queueName, virtualHost);
         _messageStore = virtualHost.getMessageStore();
-        Exchange defaultExchange = virtualHost.getExchangeRegistry().getDefaultExchange();
-        virtualHost.getBindingFactory().addBinding(_queueName, _queue, defaultExchange, null);
     }
 
     @Override

@@ -106,19 +106,13 @@ public class BindingLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches(BND_PREFIX);
 
-        // We will have two binds as we bind all queues to the default exchange
-        assertEquals("Result set larger than expected.", 2, results.size());
+        assertEquals("Result set larger than expected.", 1, results.size());
 
-        String exchange = "direct/<<default>>";
         String messageID = "BND-1001";
-        String message = "Create";
         String queueName = _queue.getQueueName();
-
+        String exchange = "direct/amq.direct";
+        String message = "Create : Arguments : {x-filter-jms-selector=}";
         validateLogMessage(getLogMessage(results, 0), messageID, message, exchange, queueName, queueName);
-
-        exchange = "direct/amq.direct";
-        message = "Create : Arguments : {x-filter-jms-selector=}";
-        validateLogMessage(getLogMessage(results, 1), messageID, message, exchange, queueName, queueName);
     }
 
     /**
@@ -145,23 +139,14 @@ public class BindingLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches(BND_PREFIX);
 
-        // We will have two binds as we bind all queues to the default exchange
-        assertEquals("Result set larger than expected.", 2, results.size());
+        assertEquals("Result set larger than expected.", 1, results.size());
 
-        //Verify the first entry is the default binding       
         String messageID = "BND-1001";
-        String message = "Create";
-        
-        validateLogMessage(getLogMessage(results, 0), messageID, message, 
-                "direct/<<default>>", "clientid:" + getName(), "clientid:" + getName());
 
-        //Default binding will be without the selector
-        assertTrue("JMSSelector identified in binding:"+message, !message.contains("jms-selector"));
-
-        // Perform full testing on the second non default binding
-        message = getMessageString(fromMessage(getLogMessage(results, 1)));
+        // Perform full testing on the binding
+        String message = getMessageString(fromMessage(getLogMessage(results, 0)));
         
-        validateLogMessage(getLogMessage(results, 1), messageID, message, 
+        validateLogMessage(getLogMessage(results, 0), messageID, message,
                 "topic/amq.topic", "topic", "clientid:" + getName());
 
         assertTrue("JMSSelector not identified in binding:"+message, message.contains("jms-selector"));
@@ -204,7 +189,7 @@ public class BindingLoggingTest extends AbstractTestLogging
         List<String> results = waitAndFindMatches(BND_PREFIX);
 
         // We will have two binds as we bind all queues to the default exchange
-        assertEquals("Result not as expected." + results, 4, results.size());
+        assertEquals("Result not as expected." + results, 2, results.size());
 
 
         String messageID = "BND-1001";
@@ -214,49 +199,20 @@ public class BindingLoggingTest extends AbstractTestLogging
         validateMessageID(messageID, log);
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
-        log = getLogMessage(results, 1);
-        validateMessageID(messageID, log);
-        assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
-
-
-        String DEFAULT = "direct/<<default>>";
         String DIRECT = "direct/amq.direct";
 
         messageID = "BND-1002";
         message = "Deleted";
 
-        log = getLogMessage(results, 2);
+        log = getLogMessage(results, 1);
         validateMessageID(messageID, log);
 
         String subject = fromSubject(log);
         
         validateBindingDeleteArguments(subject, "/test");
 
-        boolean defaultFirst = DEFAULT.equals(AbstractTestLogSubject.getSlice("ex", subject));
-        boolean directFirst = DIRECT.equals(AbstractTestLogSubject.getSlice("ex", subject));
-
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
-        log = getLogMessage(results, 3);
-
-        validateMessageID(messageID, log);
-
-        subject = fromSubject(log);
-
-        validateBindingDeleteArguments(subject, "/test");
-        
-        if (!defaultFirst)
-        {
-            assertEquals(DEFAULT, AbstractTestLogSubject.getSlice("ex", subject));
-            assertTrue("First Exchange Log was not a direct exchange delete",directFirst);
-        }
-        else
-        {
-            assertEquals(DIRECT, AbstractTestLogSubject.getSlice("ex", subject));
-            assertTrue("First Exchange Log was not a default exchange delete",defaultFirst);
-        }
-
-        assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
     }
     
     private void validateBindingDeleteArguments(String subject, String vhostName)

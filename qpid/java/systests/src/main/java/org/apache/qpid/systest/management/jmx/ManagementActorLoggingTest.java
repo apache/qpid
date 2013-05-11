@@ -365,7 +365,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("BND-1001");
 
-        assertEquals("Unexpected number of bindings logged", 2, results.size());
+        assertEquals("Unexpected number of bindings logged", 1, results.size());
 
         String log = getLogMessage(results, 0);
 
@@ -392,7 +392,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("BND-1001");
 
-        assertEquals("Unexpected number of bindings logged", 2, results.size());
+        assertEquals("Unexpected number of bindings logged", 1, results.size());
 
         String log = getLogMessage(results, 0);
 
@@ -419,7 +419,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("BND-1001");
 
-        assertEquals("Unexpected number of bindings logged", 2, results.size());
+        assertEquals("Unexpected number of bindings logged", 1, results.size());
 
         String log = getLogMessage(results, 0);
 

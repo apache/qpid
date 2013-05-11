@@ -41,7 +41,7 @@ public class ExchangeDefaults
     }
 
     /** The default direct exchange, which is a special internal exchange that cannot be explicitly bound to. */
-    public static final AMQShortString DEFAULT_EXCHANGE_NAME = new AMQShortString("<<default>>");
+    public static final AMQShortString DEFAULT_EXCHANGE_NAME = AMQShortString.EMPTY_STRING;
 
     /** The pre-defined topic exchange, the broker SHOULD provide this. */
     public static final AMQShortString TOPIC_EXCHANGE_NAME = new AMQShortString("amq.topic");
