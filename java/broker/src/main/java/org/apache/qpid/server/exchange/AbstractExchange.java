@@ -23,13 +23,18 @@ package org.apache.qpid.server.exchange;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
+import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -60,7 +65,7 @@ public abstract class AbstractExchange implements Exchange
 
     private VirtualHost _virtualHost;
 
-    private final List<Exchange.Task> _closeTaskList = new CopyOnWriteArrayList<Exchange.Task>();
+    private final List<Task> _closeTaskList = new CopyOnWriteArrayList<Task>();
 
     /**
      * Whether the exchange is automatically deleted once all queues have detached from it
@@ -228,7 +233,7 @@ public abstract class AbstractExchange implements Exchange
         _closeTaskList.remove(task);
     }
 
-    public final void addBinding(final Binding binding)
+    public final void doAddBinding(final Binding binding)
     {
         _bindings.add(binding);
         int bindingCountSize = _bindings.size();
@@ -249,7 +254,7 @@ public abstract class AbstractExchange implements Exchange
         return _bindingCountHigh.get();
     }
 
-    public final void removeBinding(final Binding binding)
+    public final void doRemoveBinding(final Binding binding)
     {
         onUnbind(binding);
         for(BindingListener listener : _listeners)
@@ -380,4 +385,220 @@ public abstract class AbstractExchange implements Exchange
     {
         _listeners.remove(listener);
     }
+
+    @Override
+    public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+            throws AMQSecurityException, AMQInternalException
+    {
+        return makeBinding(null, bindingKey, queue, arguments, false, false);
+    }
+
+    @Override
+    public boolean replaceBinding(final UUID id, final String bindingKey,
+                                  final AMQQueue queue,
+                                  final Map<String, Object> arguments)
+            throws AMQSecurityException, AMQInternalException
+    {
+        return makeBinding(id, bindingKey, queue, arguments, false, true);
+    }
+
+    @Override
+    public void restoreBinding(final UUID id, final String bindingKey, final AMQQueue queue,
+                               final Map<String, Object> argumentMap)
+            throws AMQSecurityException, AMQInternalException
+    {
+        makeBinding(id, bindingKey,queue, argumentMap,true, false);
+    }
+
+    @Override
+    public void removeBinding(final Binding b) throws AMQSecurityException, AMQInternalException
+    {
+        removeBinding(b.getBindingKey(), b.getQueue(), b.getArguments());
+    }
+
+    @Override
+    public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+            throws AMQSecurityException, AMQInternalException
+    {
+        assert queue != null;
+
+        if (bindingKey == null)
+        {
+            bindingKey = "";
+        }
+        if (arguments == null)
+        {
+            arguments = Collections.emptyMap();
+        }
+
+        // The default exchange bindings must reflect the existence of queues, allow
+        // all operations on it to succeed. It is up to the broker to prevent illegal
+        // attempts at binding to this exchange, not the ACLs.
+        // Check access
+        if (!_virtualHost.getSecurityManager().authoriseUnbind(this, new AMQShortString(bindingKey), queue))
+        {
+            throw new AMQSecurityException("Permission denied: unbinding " + bindingKey);
+        }
+
+        BindingImpl b = _bindingsMap.remove(new BindingImpl(null, bindingKey,queue,arguments));
+
+        if (b != null)
+        {
+            doRemoveBinding(b);
+            queue.removeBinding(b);
+            removeCloseTask(b);
+            queue.removeQueueDeleteTask(b);
+
+            if (b.isDurable())
+            {
+                _virtualHost.getMessageStore().unbindQueue(b);
+            }
+            b.logDestruction();
+        }
+
+        return b;
+    }
+
+
+    @Override
+    public Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+    {
+        assert queue != null;
+
+        if(bindingKey == null)
+        {
+            bindingKey = "";
+        }
+
+        if(arguments == null)
+        {
+            arguments = Collections.emptyMap();
+        }
+
+        BindingImpl b = new BindingImpl(null, bindingKey,queue,arguments);
+        return _bindingsMap.get(b);
+    }
+
+    private final ConcurrentHashMap<BindingImpl, BindingImpl> _bindingsMap = new ConcurrentHashMap<BindingImpl, BindingImpl>();
+
+    private boolean makeBinding(UUID id,
+                                String bindingKey,
+                                AMQQueue queue,
+                                Map<String, Object> arguments,
+                                boolean restore,
+                                boolean force) throws AMQSecurityException, AMQInternalException
+    {
+        assert queue != null;
+
+        if (bindingKey == null)
+        {
+            bindingKey = "";
+        }
+        if (arguments == null)
+        {
+            arguments = Collections.emptyMap();
+        }
+
+        //Perform ACLs
+        if (!_virtualHost.getSecurityManager().authoriseBind(AbstractExchange.this, queue, new AMQShortString(bindingKey)))
+        {
+            throw new AMQSecurityException("Permission denied: binding " + bindingKey);
+        }
+
+        if (id == null)
+        {
+            id = UUIDGenerator.generateBindingUUID(getName(),
+                                                   queue.getName(),
+                                                   bindingKey,
+                                                   _virtualHost.getName());
+        }
+        BindingImpl b = new BindingImpl(id, bindingKey, queue, arguments);
+        BindingImpl existingMapping = _bindingsMap.putIfAbsent(b, b);
+        if (existingMapping == null || force)
+        {
+            if (existingMapping != null)
+            {
+                removeBinding(existingMapping);
+            }
+
+            if (b.isDurable() && !restore)
+            {
+                _virtualHost.getMessageStore().bindQueue(b);
+            }
+
+            queue.addQueueDeleteTask(b);
+            addCloseTask(b);
+            queue.addBinding(b);
+            doAddBinding(b);
+            b.logCreation();
+
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private final class BindingImpl extends Binding implements AMQQueue.Task, Task
+    {
+        private final BindingLogSubject _logSubject;
+        //TODO : persist creation time
+        private long _createTime = System.currentTimeMillis();
+
+        private BindingImpl(UUID id,
+                            String bindingKey,
+                            final AMQQueue queue,
+                            final Map<String, Object> arguments)
+        {
+            super(id, bindingKey, queue, AbstractExchange.this, arguments);
+            _logSubject = new BindingLogSubject(bindingKey,AbstractExchange.this,queue);
+
+        }
+
+
+        public void doTask(final AMQQueue queue) throws AMQException
+        {
+            removeBinding(this);
+        }
+
+        public void onClose(final Exchange exchange) throws AMQSecurityException, AMQInternalException
+        {
+            removeBinding(this);
+        }
+
+        void logCreation()
+        {
+            CurrentActor.get().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
+                                                                            getArguments() != null
+                                                                            && !getArguments().isEmpty()));
+        }
+
+        void logDestruction()
+        {
+            CurrentActor.get().message(_logSubject, BindingMessages.DELETED());
+        }
+
+        public String getOrigin()
+        {
+            return (String) getArguments().get("qpid.fed.origin");
+        }
+
+        public long getCreateTime()
+        {
+            return _createTime;
+        }
+
+        public boolean isDurable()
+        {
+            return getQueue().isDurable() && getExchange().isDurable();
+        }
+
+    }
+
+    public static interface Task
+    {
+        public void onClose(Exchange exchange) throws AMQSecurityException, AMQInternalException;
+    }
+
 }

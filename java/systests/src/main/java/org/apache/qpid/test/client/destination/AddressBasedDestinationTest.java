@@ -108,7 +108,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                 (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getAddressName(),dest.getAddressName(), dest.getNode().getDeclareArgs()));
+                    dest.getAddressName(),dest.getAddressName(), null));
         
         // create receiver -----------------------------------------
         addr1 = "ADDR:testQueue2; { create: receiver }";
@@ -133,7 +133,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                 (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getAddressName(),dest.getAddressName(), dest.getNode().getDeclareArgs()));
+                    dest.getAddressName(),dest.getAddressName(), null));
         
         // create never --------------------------------------------
         addr1 = "ADDR:testQueue3; { create: never }";
@@ -182,7 +182,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                 (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getAddressName(),dest.getAddressName(), dest.getNode().getDeclareArgs()));
+                    dest.getAddressName(),dest.getAddressName(), null));
         
     }
  

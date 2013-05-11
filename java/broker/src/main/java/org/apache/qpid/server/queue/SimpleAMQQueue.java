@@ -1321,9 +1321,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         if (!_deleted.getAndSet(true))
         {
 
-            for (Binding b : getBindings())
+            for (Binding b : _bindings)
             {
-                _virtualHost.getBindingFactory().removeBinding(b);
+                b.getExchange().removeBinding(b);
             }
 
             SubscriptionList.SubscriptionNodeIterator subscriptionIter = _subscriptionList.iterator();

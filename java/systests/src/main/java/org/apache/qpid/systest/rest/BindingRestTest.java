@@ -46,7 +46,7 @@ public class BindingRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test");
         assertNotNull("Bindings cannot be null", bindings);
-        assertEquals("Unexpected number of bindings", EXPECTED_QUEUES.length * 2, bindings.size());
+        assertEquals("Unexpected number of bindings", EXPECTED_QUEUES.length, bindings.size());
         for (String queueName : EXPECTED_QUEUES)
         {
             Map<String, Object> searchAttributes = new HashMap<String, Object>();
@@ -55,11 +55,6 @@ public class BindingRestTest extends QpidRestTestCase
 
             Map<String, Object> binding = getRestTestHelper().find(searchAttributes, bindings);
             Asserts.assertBinding(queueName, "amq.direct", binding);
-
-            searchAttributes.put(Binding.EXCHANGE, "<<default>>");
-
-            binding = getRestTestHelper().find(searchAttributes, bindings);
-            Asserts.assertBinding(queueName, "<<default>>", binding);
         }
     }
 

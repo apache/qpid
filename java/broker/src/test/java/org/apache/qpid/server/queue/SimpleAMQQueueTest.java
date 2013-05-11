@@ -37,6 +37,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
@@ -164,7 +165,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testBinding() throws AMQSecurityException, AMQInternalException
     {
-        _virtualHost.getBindingFactory().addBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
+        _exchange.addBinding(String.valueOf(_routingKey), _queue, Collections.EMPTY_MAP);
 
         assertTrue("Routing key was not bound",
                         _exchange.isBound(_routingKey));
@@ -177,7 +178,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals("Wrong exchange bound", _exchange,
                 _queue.getBindings().get(0).getExchange());
 
-        _virtualHost.getBindingFactory().removeBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
+        _exchange.removeBinding(String.valueOf(_routingKey), _queue, Collections.EMPTY_MAP);
         assertFalse("Routing key was still bound",
                 _exchange.isBound(_routingKey));
 

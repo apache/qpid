@@ -33,13 +33,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.MessageTransferMessage;
@@ -382,17 +380,15 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                     }
                 }
 
-                BindingFactory bf = _virtualHost.getBindingFactory();
-
                 Map<String, Object> argumentMap = FieldTable.convertToMap(argumentsFT);
 
-                if(bf.getBinding(bindingKey, queue, exchange, argumentMap) == null)
+                if(exchange.getBinding(bindingKey, queue, argumentMap) == null)
                 {
 
                     _logger.info("Restoring binding: (Exchange: " + exchange.getNameShortString() + ", Queue: " + queue.getName()
                         + ", Routing Key: " + bindingKey + ", Arguments: " + argumentsFT + ")");
 
-                    bf.restoreBinding(bindingId, bindingKey, queue, exchange, argumentMap);
+                    exchange.restoreBinding(bindingId, bindingKey, queue, argumentMap);
                 }
             }
         }

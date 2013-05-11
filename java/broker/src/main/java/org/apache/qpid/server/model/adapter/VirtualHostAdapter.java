@@ -396,7 +396,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                         AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
                                                            durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
                                                            exclusive, _virtualHost, attributes);
-                _virtualHost.getBindingFactory().addBinding(name, queue, _virtualHost.getExchangeRegistry().getDefaultExchange(), null);
 
                 if(durable)
                 {
