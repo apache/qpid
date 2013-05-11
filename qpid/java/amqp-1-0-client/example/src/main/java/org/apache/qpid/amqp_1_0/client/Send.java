@@ -219,19 +219,10 @@ public class Send extends Util
             session.close();
             conn.close();
         }
-        catch (Sender.SenderClosingException e)
+        catch (Exception e)
         {
             e.printStackTrace();  //TODO.
         }
-        catch (ConnectionException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (Sender.SenderCreationException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-
 
     }
 

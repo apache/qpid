@@ -19,17 +19,21 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.ConnectionClosedException;
+import org.apache.qpid.amqp_1_0.client.LinkDetachedException;
 import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
+import org.apache.qpid.amqp_1_0.jms.MessageRejectedException;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
 import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.util.UUID;
+import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 
 public class MessageProducerImpl implements MessageProducer, QueueSender, TopicPublisher
 {
@@ -43,6 +47,8 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
     private SessionImpl _session;
     private Sender _sender;
     private boolean _closed;
+    private boolean _syncPublish = Boolean.getBoolean("qpid.sync_publish");
+    private long _syncPublishTimeout = Long.getLong("qpid.sync_publish_timeout", 30000l);
 
     protected MessageProducerImpl(final Destination destination,
                                final SessionImpl session) throws JMSException
@@ -251,7 +257,28 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
 
         final org.apache.qpid.amqp_1_0.client.Message clientMessage = new org.apache.qpid.amqp_1_0.client.Message(msg.getSections());
 
-        _sender.send(clientMessage, _session.getTxn());
+        DispositionAction action = null;
+
+        if(_syncPublish)
+        {
+            action = new DispositionAction(_sender);
+        }
+
+        try
+        {
+            _sender.send(clientMessage, _session.getTxn(), action);
+        }
+        catch (LinkDetachedException e)
+        {
+            JMSException jmsException = new InvalidDestinationException("Sender has been closed");
+            jmsException.setLinkedException(e);
+            throw jmsException;
+        }
+
+        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout + System.currentTimeMillis()))
+        {
+            throw new MessageRejectedException("Message was rejected");
+        }
 
         if(getDestination() != null)
         {
@@ -376,5 +403,62 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             throws JMSException
     {
         send(topic, message, deliveryMode, priority, ttl);
+    }
+
+    private static class DispositionAction implements Sender.OutcomeAction
+    {
+        private final Sender _sender;
+        private final Object _lock;
+        private Outcome _outcome;
+
+        public DispositionAction(Sender sender)
+        {
+            _sender = sender;
+            _lock = sender.getEndpoint().getLock();
+        }
+
+        @Override
+        public void onOutcome(Binary deliveryTag, Outcome outcome)
+        {
+            synchronized (_lock)
+            {
+                _outcome = outcome;
+                _lock.notifyAll();
+            }
+        }
+
+        public boolean wasAccepted(long timeout) throws JMSException
+        {
+            synchronized(_lock)
+            {
+                while(_outcome == null && !_sender.getEndpoint().isDetached())
+                {
+                    try
+                    {
+                        _lock.wait(timeout - System.currentTimeMillis());
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                if(_outcome == null)
+                {
+
+                    if(_sender.getEndpoint().isDetached())
+                    {
+                        throw new JMSException("Link was detached");
+                    }
+                    else
+                    {
+                        throw new JMSException("Timed out waiting for message acceptance");
+                    }
+                }
+                else
+                {
+                    return _outcome instanceof Accepted;
+                }
+            }
+        }
     }
 }

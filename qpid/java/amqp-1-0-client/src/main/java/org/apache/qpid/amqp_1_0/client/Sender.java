@@ -22,7 +22,9 @@ package org.apache.qpid.amqp_1_0.client;
 
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
+import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
+import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
 import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.Source;
 import org.apache.qpid.amqp_1_0.type.Target;
@@ -35,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class Sender implements DeliveryStateHandler
 {
@@ -44,6 +47,7 @@ public class Sender implements DeliveryStateHandler
     private int _windowSize;
     private Map<Binary, OutcomeAction> _outcomeActions = Collections.synchronizedMap(new HashMap<Binary, OutcomeAction>());
     private boolean _closed;
+    private Error _error;
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr)
             throws SenderCreationException, ConnectionClosedException
@@ -166,6 +170,17 @@ public class Sender implements DeliveryStateHandler
                 throw new SenderCreationException("Peer did not create remote endpoint for link, target: " + target.getAddress());
             };
         }
+
+        _endpoint.setLinkEventListener(new SendingLinkListener.DefaultLinkEventListener()
+        {
+
+            @Override
+            public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
+            {
+                _error = detach.getError();
+                super.remoteDetached(endpoint, detach);
+            }
+        });
     }
 
     public Source getSource()
@@ -178,22 +193,22 @@ public class Sender implements DeliveryStateHandler
         return _endpoint.getTarget();
     }
 
-    public void send(Message message)
+    public void send(Message message) throws LinkDetachedException
     {
         send(message, null, null);
     }
 
-    public void send(Message message, final OutcomeAction action)
+    public void send(Message message, final OutcomeAction action) throws LinkDetachedException
     {
         send(message, null, action);
     }
 
-    public void send(Message message, final Transaction txn)
+    public void send(Message message, final Transaction txn) throws LinkDetachedException
     {
         send(message, txn, null);
     }
 
-    public void send(Message message, final Transaction txn, OutcomeAction action)
+    public void send(Message message, final Transaction txn, OutcomeAction action) throws LinkDetachedException
     {
 
         List<Section> sections = message.getPayload();
@@ -245,7 +260,7 @@ public class Sender implements DeliveryStateHandler
         final Object lock = _endpoint.getLock();
         synchronized(lock)
         {
-            while(!_endpoint.hasCreditToSend())
+            while(!_endpoint.hasCreditToSend() && !_endpoint.isDetached())
             {
                 try
                 {
@@ -255,6 +270,10 @@ public class Sender implements DeliveryStateHandler
                 {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
+            }
+            if(_endpoint.isDetached())
+            {
+                throw new LinkDetachedException(_error);
             }
             if(action != null)
             {
@@ -352,6 +371,21 @@ public class Sender implements DeliveryStateHandler
                 _endpoint.updateDisposition(deliveryTag, state, true);
             }
         }
+        else if(state instanceof TransactionalState)
+        {
+            OutcomeAction action;
+
+            if((action = _outcomeActions.remove(deliveryTag)) != null)
+            {
+                action.onOutcome(deliveryTag, ((TransactionalState) state).getOutcome());
+            }
+
+        }
+    }
+
+    public SendingLinkEndpoint getEndpoint()
+    {
+        return _endpoint;
     }
 
     public Map<Binary, DeliveryState> getRemoteUnsettled()

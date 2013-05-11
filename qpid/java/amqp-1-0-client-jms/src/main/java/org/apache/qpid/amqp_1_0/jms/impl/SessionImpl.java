@@ -21,10 +21,12 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
@@ -52,9 +54,11 @@ import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.jms.TopicSession;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
+import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
-import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class SessionImpl implements Session, QueueSession, TopicSession
 {
@@ -90,6 +94,45 @@ public class SessionImpl implements Session, QueueSession, TopicSession
             jmsException.setLinkedException(e);
             throw jmsException;
         }
+        _session.getEndpoint().setSessionEventListener(new SessionEventListener.DefaultSessionEventListener()
+        {
+            @Override
+            public void remoteEnd(End end)
+            {
+                if(!_closed)
+                {
+                    try
+                    {
+                        close();
+                    }
+                    catch (JMSException e)
+                    {
+                    }
+                    try
+                    {
+                        final Error error = end.getError();
+                        final ExceptionListener exceptionListener = _connection.getExceptionListener();
+                        if(exceptionListener != null)
+                        {
+                            if(error != null)
+                            {
+                                exceptionListener.onException(new JMSException(error.getDescription(),
+                                        error.getCondition().toString()));
+                            }
+                            else
+                            {
+                                exceptionListener.onException(new JMSException("Session remotely closed"));
+                            }
+                        }
+                    }
+                    catch (JMSException e)
+                    {
+
+                    }
+
+                }
+            }
+        });
         if(_acknowledgeMode == AcknowledgeMode.SESSION_TRANSACTED)
         {
             _txn = _session.createSessionLocalTransaction();
@@ -846,7 +889,28 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                         }
 
                     }
+                    Iterator<MessageConsumerImpl> consumers = _consumers.iterator();
+                    while(consumers.hasNext())
+                    {
+                        MessageConsumerImpl consumer = consumers.next();
+                        try
+                        {
+                            consumer.checkReceiverError();
+                        }
+                        catch (JMSException e)
+                        {
 
+                            consumers.remove();
+                            try
+                            {
+                                _connection.getExceptionListener().onException(e);
+                                consumer.close();
+                            }
+                            catch (JMSException e1)
+                            {
+                            }
+                        }
+                    }
 
                 }
             }
