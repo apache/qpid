@@ -220,6 +220,14 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         {
             return _connection.getSessionCountLimit();
         }
+        else if(name.equals(TRANSPORT))
+        {
+            return String.valueOf(_connection.getTransport());
+        }
+        else if(name.equals(PORT))
+        {
+            return String.valueOf(_connection.getPort());
+        }
         return super.getAttribute(name);
     }
 
