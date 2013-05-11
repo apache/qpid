@@ -163,12 +163,18 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 connect();
                 started = true;
             }
+
             try
             {
                 SessionImpl session = new SessionImpl(this, acknowledgeMode);
                 session.setQueueSession(_isQueueConnection);
                 session.setTopicSession(_isTopicConnection);
                 _sessions.add(session);
+
+                if(_state == State.STARTED)
+                {
+                    session.start();
+                }
 
                 return session;
             }
@@ -191,9 +197,17 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     throw e;
                 }
             }
-
         }
 
+
+    }
+
+    void removeSession(SessionImpl session)
+    {
+        synchronized (_lock)
+        {
+            _sessions.remove(session);
+        }
     }
 
     private void reconnect(String networkHost, int port, String hostName)
@@ -410,10 +424,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public boolean isStarted()
     {
-        synchronized (_lock)
-        {
-            return _state == State.STARTED;
-        }
+        return _state == State.STARTED;
     }
 
     void setQueueConnection(final boolean queueConnection)

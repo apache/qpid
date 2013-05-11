@@ -230,6 +230,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                 producer.close();
             }
             _session.close();
+            _connection.removeSession(this);
         }
     }
 
@@ -765,7 +766,6 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         return _txn;
     }
 
-
     private class Dispatcher implements Runnable
     {
 
@@ -815,7 +815,6 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                             consumer = _messageConsumerList.remove(0);
                             msg = consumer.receive0(0L);
                         }
-
 
                         MessageListener listener = consumer._messageListener;
 
