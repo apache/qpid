@@ -23,6 +23,8 @@ package org.apache.qpid.server.protocol;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
 import java.util.List;
@@ -82,4 +84,9 @@ public interface AMQConnectionModel extends StatisticsGatherer
     long getSessionCountLimit();
 
     long getLastIoTime();
+
+    Port getPort();
+
+    Transport getTransport();
+
 }

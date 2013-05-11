@@ -29,6 +29,8 @@ import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -43,7 +45,9 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTIO
 public class Connection_1_0 implements ConnectionEventListener
 {
 
+    private final Port _port;
     private VirtualHost _vhost;
+    private final Transport _transport;
     private final ConnectionEndpoint _conn;
     private final long _connectionId;
     private final Collection<Session_1_0> _sessions = Collections.synchronizedCollection(new ArrayList<Session_1_0>());
@@ -60,9 +64,15 @@ public class Connection_1_0 implements ConnectionEventListener
 
 
 
-    public Connection_1_0(VirtualHost virtualHost, ConnectionEndpoint conn, long connectionId)
+    public Connection_1_0(VirtualHost virtualHost,
+                          ConnectionEndpoint conn,
+                          long connectionId,
+                          Port port,
+                          Transport transport)
     {
         _vhost = virtualHost;
+        _port = port;
+        _transport = transport;
         _conn = conn;
         _connectionId = connectionId;
         _vhost.getConnectionRegistry().registerConnection(_model);
@@ -227,6 +237,18 @@ public class Connection_1_0 implements ConnectionEventListener
         public long getLastIoTime()
         {
             return 0;  // TODO
+        }
+
+        @Override
+        public Port getPort()
+        {
+            return _port;
+        }
+
+        @Override
+        public Transport getTransport()
+        {
+            return _transport;
         }
 
         @Override

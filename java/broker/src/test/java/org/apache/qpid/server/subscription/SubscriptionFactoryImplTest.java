@@ -73,7 +73,7 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
     }
 
     /**
-     * Tests that while creating Subscriptions of various types, the 
+     * Tests that while creating Subscriptions of various types, the
      * ID numbers assigned are allocated from a common sequence
      * (in increasing order).
      */
@@ -104,7 +104,7 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
 
         //create a 0-10 subscription
         ServerConnection conn = new ServerConnection(1);
-        ProtocolEngine_0_10 engine = new ProtocolEngine_0_10(conn, new TestNetworkConnection());
+        ProtocolEngine_0_10 engine = new ProtocolEngine_0_10(conn, new TestNetworkConnection(), null, null);
         conn.setVirtualHost(_session.getVirtualHost());
         ServerSessionDelegate sesDel = new ServerSessionDelegate();
         Binary name = new Binary(new byte[]{new Byte("1")});

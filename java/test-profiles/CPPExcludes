@@ -180,6 +180,8 @@ org.apache.qpid.client.failover.MultipleBrokersFailoverTest#*
 
 // Uses Java broker specific configuration
 org.apache.qpid.client.ssl.SSLTest#testClientCertMissingWhilstWanting
+org.apache.qpid.client.ssl.SSLTest#testCreateSSLandTCPonSamePort
+
 
 // QPID-2796 : Java 0-10 client only sends heartbeats in response to heartbeats from the server, not timeout based
 org.apache.qpid.client.HeartbeatTest#testReadOnlyConnectionHeartbeats

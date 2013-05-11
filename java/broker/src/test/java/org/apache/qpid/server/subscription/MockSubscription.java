@@ -27,6 +27,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -538,6 +540,18 @@ public class MockSubscription implements Subscription
         public long getLastIoTime()
         {
             return 0;
+        }
+
+        @Override
+        public Port getPort()
+        {
+            return null;
+        }
+
+        @Override
+        public Transport getTransport()
+        {
+            return null;
         }
     }
 }
