@@ -216,23 +216,10 @@ public class Request extends Util
                 conn2.close();
             }
         }
-        catch (ConnectionException e)
+        catch (Exception e)
         {
             e.printStackTrace();  //TODO.
         }
-        catch (Sender.SenderClosingException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (Sender.SenderCreationException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (AmqpErrorException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-
     }
 
     protected boolean hasSingleLinkPerConnectionMode()

@@ -173,7 +173,14 @@ public class Demo extends Util
             Section[] sections = { properties, appProperties, amqpValue};
             final Message message1 = new Message(Arrays.asList(sections));
 
-            s.send(message1);
+            try
+            {
+                s.send(message1);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
 
             Map<Object, Sender> sendingLinks = new HashMap<Object, Sender>();
             Map<Object, Receiver> receivingLinks = new HashMap<Object, Receiver>();
@@ -295,7 +302,14 @@ public class Demo extends Util
                         m2propmap.put(VENDOR, vendor);
                         ApplicationProperties m2appProps = new ApplicationProperties(m2propmap);
                         Message m2 = new Message(Arrays.asList(m2props, m2appProps, new AmqpValue("AMQP-"+messageId)));
-                        sender.send(m2);
+                        try
+                        {
+                            sender.send(m2);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
+                        }
 
                         Map m3propmap = new HashMap();
                         m3propmap.put(OPCODE, LOG);
@@ -307,8 +321,14 @@ public class Demo extends Util
 
                         Message m3 = new Message(Arrays.asList(new ApplicationProperties(m3propmap),
                                                                new AmqpValue("AMQP-"+messageId)));
-                        s.send(m3);
-
+                        try
+                        {
+                            s.send(m3);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                     responseReceiver.acknowledge(m);
@@ -336,7 +356,14 @@ public class Demo extends Util
 
                             Message m3 = new Message(Arrays.asList(new ApplicationProperties(m3propmap),
                                                                    new AmqpValue("AMQP-"+mp.getMessageId())));
-                            s.send(m3);
+                            try
+                            {
+                                s.send(m3);
+                            }
+                            catch (Exception e)
+                            {
+                                throw new RuntimeException(e);
+                            }
 
                             entry.getValue().acknowledge(m);
                         }
