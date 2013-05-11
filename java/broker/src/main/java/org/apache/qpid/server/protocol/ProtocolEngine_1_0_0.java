@@ -40,6 +40,8 @@ import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -50,6 +52,8 @@ import org.apache.qpid.transport.network.NetworkConnection;
 public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHandler
 {
     static final AtomicLong _connectionIdSource = new AtomicLong(0L);
+    private final Port _port;
+    private final Transport _transport;
 
     //private NetworkConnection _networkDriver;
     private long _readBytes;
@@ -100,9 +104,15 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
 
 
-    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver, final Broker broker, long id)
+    public ProtocolEngine_1_0_0(final NetworkConnection networkDriver,
+                                final Broker broker,
+                                long id,
+                                Port port,
+                                Transport transport)
     {
         _broker = broker;
+        _port = port;
+        _transport = transport;
         _connectionId = id;
         if(networkDriver != null)
         {
@@ -153,7 +163,7 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(
                 getLocalAddress())));
         _conn.setRemoteAddress(_network.getRemoteAddress());
-        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId, _port, _transport));
         _conn.setFrameOutputHandler(this);
 
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());

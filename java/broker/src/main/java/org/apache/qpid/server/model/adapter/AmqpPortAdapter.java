@@ -99,9 +99,11 @@ public class AmqpPortAdapter extends PortAdapter
 
         _transport = org.apache.qpid.transport.network.Transport.getIncomingTransportInstance();
         final MultiVersionProtocolEngineFactory protocolEngineFactory = new MultiVersionProtocolEngineFactory(
-                _broker, supported, defaultSupportedProtocolReply);
+                _broker, transports.contains(Transport.TCP) ? sslContext : null,
+                settings.wantClientAuth(), settings.needClientAuth(),
+                supported, defaultSupportedProtocolReply, this, transports.contains(Transport.TCP) ? Transport.TCP : Transport.SSL);
 
-        _transport.accept(settings, protocolEngineFactory, sslContext);
+        _transport.accept(settings, protocolEngineFactory, transports.contains(Transport.TCP) ? null : sslContext);
         for(Transport transport : getTransports())
         {
             CurrentActor.get().message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));

@@ -62,6 +62,8 @@ import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -86,6 +88,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     // channels.  This value must be of the form 2^x - 1.
     private static final int CHANNEL_CACHE_SIZE = 0xff;
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
+    private final Port _port;
 
     private AMQShortString _contextKey;
 
@@ -153,11 +156,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private final Lock _receivedLock;
     private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
     private final Broker _broker;
+    private final Transport _transport;
 
 
-    public AMQProtocolEngine(Broker broker, NetworkConnection network, final long connectionId)
+    public AMQProtocolEngine(Broker broker,
+                             NetworkConnection network,
+                             final long connectionId,
+                             Port port,
+                             Transport transport)
     {
         _broker = broker;
+        _port = port;
+        _transport = transport;
         _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
         _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(broker, this);
@@ -1140,6 +1150,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public long getLastIoTime()
     {
         return _lastIoTime;
+    }
+
+    @Override
+    public Port getPort()
+    {
+        return _port;
+    }
+
+    @Override
+    public Transport getTransport()
+    {
+        return _transport;
     }
 
     public long getLastReceivedTime()

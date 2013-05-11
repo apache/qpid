@@ -41,6 +41,8 @@ import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -50,50 +52,52 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
-       private long _readBytes;
-       private long _writtenBytes;
+    private final Port _port;
+    private final Transport _transport;
+    private long _readBytes;
+    private long _writtenBytes;
 
-       private long _lastReadTime;
-       private long _lastWriteTime;
-       private final Broker _broker;
-       private long _createTime = System.currentTimeMillis();
-       private ConnectionEndpoint _conn;
-       private long _connectionId;
+    private long _lastReadTime;
+    private long _lastWriteTime;
+    private final Broker _broker;
+    private long _createTime = System.currentTimeMillis();
+    private ConnectionEndpoint _conn;
+    private long _connectionId;
 
-       private static final ByteBuffer HEADER =
-               ByteBuffer.wrap(new byte[]
-                       {
-                           (byte)'A',
-                           (byte)'M',
-                           (byte)'Q',
-                           (byte)'P',
-                           (byte) 3,
-                           (byte) 1,
-                           (byte) 0,
-                           (byte) 0
-                       });
+    private static final ByteBuffer HEADER =
+           ByteBuffer.wrap(new byte[]
+                   {
+                       (byte)'A',
+                       (byte)'M',
+                       (byte)'Q',
+                       (byte)'P',
+                       (byte) 3,
+                       (byte) 1,
+                       (byte) 0,
+                       (byte) 0
+                   });
 
-        private static final ByteBuffer PROTOCOL_HEADER =
-            ByteBuffer.wrap(new byte[]
-                    {
-                        (byte)'A',
-                        (byte)'M',
-                        (byte)'Q',
-                        (byte)'P',
-                        (byte) 0,
-                        (byte) 1,
-                        (byte) 0,
-                        (byte) 0
-                    });
+    private static final ByteBuffer PROTOCOL_HEADER =
+        ByteBuffer.wrap(new byte[]
+                {
+                    (byte)'A',
+                    (byte)'M',
+                    (byte)'Q',
+                    (byte)'P',
+                    (byte) 0,
+                    (byte) 1,
+                    (byte) 0,
+                    (byte) 0
+                });
 
 
-       private FrameWriter _frameWriter;
-       private ProtocolHandler _frameHandler;
-       private ByteBuffer _buf = ByteBuffer.allocate(1024 * 1024);
-       private Object _sendLock = new Object();
-       private byte _major;
-       private byte _minor;
-       private byte _revision;
+    private FrameWriter _frameWriter;
+    private ProtocolHandler _frameHandler;
+    private ByteBuffer _buf = ByteBuffer.allocate(1024 * 1024);
+    private Object _sendLock = new Object();
+    private byte _major;
+    private byte _minor;
+    private byte _revision;
     private PrintWriter _out;
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
@@ -111,14 +115,16 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
            FRAME
        }
 
-       private State _state = State.A;
+    private State _state = State.A;
 
 
     public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker broker,
-                                     long id)
+                                     long id, Port port, Transport transport)
     {
         _connectionId = id;
         _broker = broker;
+        _port = port;
+        _transport = transport;
         if(networkDriver != null)
         {
             setNetworkConnection(networkDriver, networkDriver.getSender());
@@ -167,7 +173,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress());
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
         _conn.setRemoteAddress(getRemoteAddress());
-        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId));
+        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId, _port, _transport));
         _conn.setFrameOutputHandler(this);
         _conn.setSaslFrameOutput(this);
 
@@ -333,102 +339,102 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
      }
 
-     public void exception(Throwable t)
-     {
-         t.printStackTrace();
-     }
+    public void exception(Throwable t)
+    {
+        t.printStackTrace();
+    }
 
-     public void closed()
-     {
-         // todo
+    public void closed()
+    {
+        // todo
         _conn.inputClosed();
-        if(_conn != null && _conn.getConnectionEventListener() != null)
+        if (_conn != null && _conn.getConnectionEventListener() != null)
         {
-            ((Connection_1_0)_conn.getConnectionEventListener()).closed();
+            ((Connection_1_0) _conn.getConnectionEventListener()).closed();
         }
 
-     }
+    }
 
-     public long getCreateTime()
-     {
-         return _createTime;
-     }
-
-
-     public boolean canSend()
-     {
-         return true;
-     }
-
-     public void send(final AMQFrame amqFrame)
-     {
-         send(amqFrame, null);
-     }
-
-     private static final Logger FRAME_LOGGER = Logger.getLogger("FRM");
+    public long getCreateTime()
+    {
+        return _createTime;
+    }
 
 
-     public void send(final AMQFrame amqFrame, ByteBuffer buf)
-     {
+    public boolean canSend()
+    {
+        return true;
+    }
 
-         synchronized(_sendLock)
-         {
-             _lastWriteTime = System.currentTimeMillis();
-             if(FRAME_LOGGER.isLoggable(Level.FINE))
-             {
-                 FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
-             }
+    public void send(final AMQFrame amqFrame)
+    {
+        send(amqFrame, null);
+    }
 
-             _frameWriter.setValue(amqFrame);
-
-             ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
-
-             int size = _frameWriter.writeToBuffer(dup);
-             if(size > _conn.getMaxFrameSize())
-             {
-                 throw new OversizeFrameException(amqFrame,size);
-             }
-
-             dup.flip();
-             _writtenBytes += dup.limit();
-
-             if(RAW_LOGGER.isLoggable(Level.FINE))
-              {
-                 ByteBuffer dup2 = dup.duplicate();
-                 byte[] data = new byte[dup2.remaining()];
-                 dup2.get(data);
-                 Binary bin = new Binary(data);
-                 RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
-              }
-
-             _sender.send(dup);
-             _sender.flush();
+    private static final Logger FRAME_LOGGER = Logger.getLogger("FRM");
 
 
-         }
-     }
+    public void send(final AMQFrame amqFrame, ByteBuffer buf)
+    {
 
-     public void send(short channel, FrameBody body)
-     {
-         AMQFrame frame = AMQFrame.createAMQFrame(channel, body);
-         send(frame);
+        synchronized (_sendLock)
+        {
+            _lastWriteTime = System.currentTimeMillis();
+            if (FRAME_LOGGER.isLoggable(Level.FINE))
+            {
+                FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
+            }
 
-     }
+            _frameWriter.setValue(amqFrame);
 
-     public void close()
-     {
-         _sender.close();
-     }
+            ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
 
-     public void setLogOutput(final PrintWriter out)
-     {
-         _out = out;
-     }
+            int size = _frameWriter.writeToBuffer(dup);
+            if (size > _conn.getMaxFrameSize())
+            {
+                throw new OversizeFrameException(amqFrame, size);
+            }
 
-     public long getConnectionId()
-     {
-         return _connectionId;
-     }
+            dup.flip();
+            _writtenBytes += dup.limit();
+
+            if (RAW_LOGGER.isLoggable(Level.FINE))
+            {
+                ByteBuffer dup2 = dup.duplicate();
+                byte[] data = new byte[dup2.remaining()];
+                dup2.get(data);
+                Binary bin = new Binary(data);
+                RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
+            }
+
+            _sender.send(dup);
+            _sender.flush();
+
+
+        }
+    }
+
+    public void send(short channel, FrameBody body)
+    {
+        AMQFrame frame = AMQFrame.createAMQFrame(channel, body);
+        send(frame);
+
+    }
+
+    public void close()
+    {
+        _sender.close();
+    }
+
+    public void setLogOutput(final PrintWriter out)
+    {
+        _out = out;
+    }
+
+    public long getConnectionId()
+    {
+        return _connectionId;
+    }
 
     public long getLastReadTime()
     {
