@@ -188,15 +188,16 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         checkClosed();
         _messageListener = messageListener;
-        _session.messageListenerSet( this );
         _receiver.setMessageArrivalListener(new Receiver.MessageArrivalListener()
-        {
+                {
 
-            public void messageArrived(final Receiver receiver)
-            {
-                _session.messageArrived(MessageConsumerImpl.this);
-            }
-        });
+                    public void messageArrived(final Receiver receiver)
+                    {
+                        _session.messageArrived(MessageConsumerImpl.this);
+                    }
+                });
+        _session.messageListenerSet( this );
+
     }
 
     public MessageImpl receive() throws JMSException

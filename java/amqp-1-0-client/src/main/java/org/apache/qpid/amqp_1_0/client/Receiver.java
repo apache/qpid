@@ -566,6 +566,11 @@ public class Receiver implements DeliveryStateHandler
         synchronized(_endpoint.getLock())
         {
             _messageArrivalListener = messageArrivalListener;
+            int prefetchSize = _prefetchQueue.size();
+            for(int i = 0; i < prefetchSize; i++)
+            {
+                postPrefetchAction();
+            }
         }
     }
 
