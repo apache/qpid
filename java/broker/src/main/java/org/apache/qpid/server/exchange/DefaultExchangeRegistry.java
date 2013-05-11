@@ -26,6 +26,7 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -54,14 +55,21 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public DefaultExchangeRegistry(VirtualHost host)
     {
-        //create 'standard' exchanges:
         _host = host;
-
     }
 
     public void initialise() throws AMQException
     {
+        //create 'standard' exchanges:
         new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this, getDurableConfigurationStore());
+
+        _defaultExchange = new DefaultExchange();
+
+        UUID defaultExchangeId =
+                UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(), _host.getName());
+
+        _defaultExchange.initialise(defaultExchangeId, _host, ExchangeDefaults.DEFAULT_EXCHANGE_NAME,false,0,false);
+
     }
 
     public DurableConfigurationStore getDurableConfigurationStore()
@@ -104,11 +112,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         if (exchange == null)
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Unknown exchange " + name, null);
-        }
-
-        if (ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(name))
-        {
-            throw new AMQException(AMQConstant.NOT_ALLOWED, "Cannot unregister the default exchange", null);
         }
 
         if (!_host.getSecurityManager().authoriseDelete(exchange))
@@ -228,7 +231,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public boolean isReservedExchangeName(String name)
     {
-        if (name == null || "".equals(name) || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(name)
+        if (name == null || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(name)
                 || name.startsWith("amq.") || name.startsWith("qpid."))
         {
             return true;

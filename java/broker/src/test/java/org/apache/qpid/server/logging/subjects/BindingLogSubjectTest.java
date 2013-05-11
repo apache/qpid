@@ -45,7 +45,7 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
 
         _testVhost = BrokerTestHelper.createVirtualHost("test");
         _routingKey = new AMQShortString("RoutingKey");
-        _exchange = _testVhost.getExchangeRegistry().getDefaultExchange();
+        _exchange = _testVhost.getExchangeRegistry().getExchange("amq.direct");
         _queue = new MockAMQQueue("BindingLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 

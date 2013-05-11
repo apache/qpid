@@ -33,7 +33,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -96,8 +95,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final ConnectionRegistry _connectionRegistry;
 
-    private final BindingFactory _bindingFactory;
-
     private final DtxRegistry _dtxRegistry;
 
     private final MessageStore _messageStore;
@@ -143,8 +140,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _exchangeFactory = new DefaultExchangeFactory(this);
 
         _exchangeRegistry = new DefaultExchangeRegistry(this);
-
-        _bindingFactory = new BindingFactory(this);
 
         _messageStore = initialiseMessageStore(hostConfig);
 
@@ -385,13 +380,18 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         {
             String routingKey = String.valueOf(routingKeyNameObj);
 
-            if (exchange.equals(defaultExchange) && !queueName.equals(routingKey))
+            if (exchange.equals(defaultExchange))
             {
-                throw new ConfigurationException("Illegal attempt to bind queue '" + queueName +
-                        "' to the default exchange with a key other than the queue name: " + routingKey);
+                if(!queueName.equals(routingKey))
+                {
+                    throw new ConfigurationException("Illegal attempt to bind queue '" + queueName +
+                                                     "' to the default exchange with a key other than the queue name: " + routingKey);
+                }
             }
-
-            configureBinding(queue, exchange, routingKey);
+            else
+            {
+                configureBinding(queue, exchange, routingKey);
+            }
         }
 
         if (!exchange.equals(defaultExchange))
@@ -400,8 +400,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             configureBinding(queue, exchange, queueName);
         }
 
-        //ensure the queue is bound to the default exchange using its name
-        configureBinding(queue, defaultExchange, queueName);
     }
 
     private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey) throws AMQException
@@ -410,7 +408,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         {
             _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + exchange.getName());
         }
-        _bindingFactory.addBinding(routingKey, queue, exchange, null);
+        exchange.addBinding(routingKey, queue, null);
     }
 
     public String getName()
@@ -477,11 +475,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     public VirtualHostRegistry getVirtualHostRegistry()
     {
         return _virtualHostRegistry;
-    }
-
-    public BindingFactory getBindingFactory()
-    {
-        return _bindingFactory;
     }
 
     public void registerMessageDelivered(long messageSize)

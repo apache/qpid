@@ -829,7 +829,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            getVirtualHost().getBindingFactory().addBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
+            exchange.addBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(bindArguments));
         }
         catch (Exception e)
         {
@@ -849,7 +849,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            getVirtualHost().getBindingFactory().removeBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
+            exchange.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(bindArguments));
         }
         catch (Exception e)
         {

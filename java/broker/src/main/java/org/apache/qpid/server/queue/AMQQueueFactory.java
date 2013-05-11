@@ -329,7 +329,7 @@ public class AMQQueueFactory
             {
                 //actual routing key used does not matter due to use of fanout exchange,
                 //but we will make the key 'dlq' as it can be logged at creation.
-                virtualHost.getBindingFactory().addBinding(DLQ_ROUTING_KEY, dlQueue, dlExchange, null);
+                dlExchange.addBinding(DLQ_ROUTING_KEY, dlQueue, null);
             }
             q.setAlternateExchange(dlExchange);
         }

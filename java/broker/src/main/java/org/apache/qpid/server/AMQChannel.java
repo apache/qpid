@@ -79,6 +79,8 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.InboundMessageAdapter;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
@@ -269,7 +271,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQSecurityException
     {
         String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
-        if (!getVirtualHost().getSecurityManager().authorisePublish(info.isImmediate(), routingKey, e.getName()))
+        SecurityManager securityManager = getVirtualHost().getSecurityManager();
+        if (!securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName()))
         {
             throw new AMQSecurityException("Permission denied: " + e.getName());
         }

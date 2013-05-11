@@ -142,7 +142,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     {
         try
         {
-            _queue.getAMQQueue().getVirtualHost().getBindingFactory().removeBinding(_binding);
+            _exchange.getExchange().removeBinding(_binding);
         }
         catch(AMQSecurityException e)
         {

@@ -23,6 +23,7 @@ package org.apache.qpid.systest.rest;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -79,7 +80,8 @@ public class StructureRestTest extends QpidRestTestCase
                 Map<String, Object> exchange = getRestTestHelper().find("name", exchangeName, exchanges);
                 assertNotNull("Exchange " + exchangeName + " is not found ", exchange);
                 assertNode(exchange, exchangeName);
-                if ("amq.direct".equalsIgnoreCase(exchangeName) || "<<default>>".equalsIgnoreCase(exchangeName))
+                if (ExchangeDefaults.DIRECT_EXCHANGE_NAME.asString().equalsIgnoreCase(exchangeName) ||
+                    ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equalsIgnoreCase(exchangeName))
                 {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> bindings = (List<Map<String, Object>>) exchange.get("bindings");

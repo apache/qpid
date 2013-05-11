@@ -32,7 +32,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.JMException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +39,32 @@ import java.util.UUID;
 
 public interface Exchange extends ExchangeReferrer
 {
+    void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+            throws AMQException;
+
+
+    UUID getId();
 
     String getName();
 
+    AMQShortString getNameShortString();
+
     ExchangeType getType();
+
+    AMQShortString getTypeShortString();
+
+    boolean isDurable();
+
+    /**
+     * @return true if the exchange will be deleted after all queues have been detached
+     */
+    boolean isAutoDelete();
+
+    int getTicket();
+
+    Exchange getAlternateExchange();
+
+    void setAlternateExchange(Exchange exchange);
 
     long getBindingCount();
 
@@ -55,27 +76,25 @@ public interface Exchange extends ExchangeReferrer
 
     long getMsgReceives();
 
-    public interface BindingListener
-    {
-        void bindingAdded(Exchange exchange, Binding binding);
-        void bindingRemoved(Exchange exchange, Binding binding);
-    }
 
-    AMQShortString getNameShortString();
+    boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+            throws AMQSecurityException, AMQInternalException;
 
-    AMQShortString getTypeShortString();
+    boolean replaceBinding(UUID id, String bindingKey,
+                           AMQQueue queue,
+                           Map<String, Object> arguments)
+                    throws AMQSecurityException, AMQInternalException;
 
-    void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
-            throws AMQException, JMException;
+    void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
+                        Map<String, Object> argumentMap)
+                    throws AMQSecurityException, AMQInternalException;
 
-    boolean isDurable();
+    void removeBinding(Binding b) throws AMQSecurityException, AMQInternalException;
 
-    /**
-     * @return true if the exchange will be deleted after all queues have been detached
-     */
-    boolean isAutoDelete();
+    Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+                    throws AMQSecurityException, AMQInternalException;
 
-    int getTicket();
+    Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
     void close() throws AMQException;
 
@@ -124,6 +143,8 @@ public interface Exchange extends ExchangeReferrer
      */
     boolean hasBindings();
 
+    Collection<Binding> getBindings();
+
 
     boolean isBound(String bindingKey, AMQQueue queue);
 
@@ -131,36 +152,20 @@ public interface Exchange extends ExchangeReferrer
 
     boolean isBound(String bindingKey);
 
-    void addCloseTask(Task task);
-
-    void removeCloseTask(Task task);
-
-
-    Exchange getAlternateExchange();
-
-    void setAlternateExchange(Exchange exchange);
-
     void removeReference(ExchangeReferrer exchange);
 
     void addReference(ExchangeReferrer exchange);
 
     boolean hasReferrers();
 
-    void addBinding(Binding binding);
-
-    void removeBinding(Binding binding);
-
-    Collection<Binding> getBindings();
+    public interface BindingListener
+    {
+        void bindingAdded(Exchange exchange, Binding binding);
+        void bindingRemoved(Exchange exchange, Binding binding);
+    }
 
     public void addBindingListener(BindingListener listener);
 
     public void removeBindingListener(BindingListener listener);
 
-
-    public static interface Task
-    {
-        public void onClose(Exchange exchange) throws AMQSecurityException, AMQInternalException;
-    }
-
-    UUID getId();
 }

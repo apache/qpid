@@ -134,18 +134,17 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
 
         try
         {
-            if(!virtualHost.getBindingFactory().addBinding(bindingKey, amqQueue, _exchange, bindingArguments))
+            if(!_exchange.addBinding(bindingKey, amqQueue, bindingArguments))
             {
-                Binding oldBinding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange,
-                                                                                bindingArguments);
+                Binding oldBinding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
 
                 Map<String, Object> oldArgs = oldBinding.getArguments();
                 if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
                 {
-                    virtualHost.getBindingFactory().replaceBinding(oldBinding.getId(), bindingKey, amqQueue, _exchange, bindingArguments);
+                    _exchange.replaceBinding(oldBinding.getId(), bindingKey, amqQueue, bindingArguments);
                 }
             }
-            Binding binding = virtualHost.getBindingFactory().getBinding(bindingKey, amqQueue, _exchange, bindingArguments);
+            Binding binding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
 
             synchronized (_bindingAdapters)
             {
@@ -311,8 +310,12 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
         if(adapter != null)
         {
-            _vhost.getQueueAdapter(binding.getQueue()).bindingUnregistered(binding);
-            childRemoved(adapter);
+            QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getQueue());
+            if(queueAdapter != null)
+            {
+                queueAdapter.bindingUnregistered(binding);
+                childRemoved(adapter);
+            }
         }
     }
 

@@ -25,7 +25,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.store.MessageStore;
@@ -53,8 +52,6 @@ public class AcknowledgeTest extends QpidTestCase
         _queueName = getTestName();
         _queue = BrokerTestHelper.createQueue(_queueName, virtualHost);
         _messageStore = virtualHost.getMessageStore();
-        Exchange defaultExchange = virtualHost.getExchangeRegistry().getDefaultExchange();
-        virtualHost.getBindingFactory().addBinding(_queueName, _queue, defaultExchange, null);
     }
 
     @Override

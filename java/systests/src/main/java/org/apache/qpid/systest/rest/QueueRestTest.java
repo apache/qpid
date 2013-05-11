@@ -94,11 +94,9 @@ public class QueueRestTest extends QpidRestTestCase
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> bindings = (List<Map<String, Object>>) queueDetails.get(QUEUE_ATTRIBUTE_BINDINGS);
             assertNotNull("Queue bindings are not found", bindings);
-            assertEquals("Unexpected number of bindings", 2, bindings.size());
+            assertEquals("Unexpected number of bindings", 1, bindings.size());
 
-            Map<String, Object> defaultExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "<<default>>", bindings);
             Map<String, Object> directExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "amq.direct", bindings);
-            Asserts.assertBinding(name, "<<default>>", defaultExchangeBinding);
             Asserts.assertBinding(name, "amq.direct", directExchangeBinding);
         }
     }
@@ -113,11 +111,9 @@ public class QueueRestTest extends QpidRestTestCase
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> bindings = (List<Map<String, Object>>) queueDetails.get(QUEUE_ATTRIBUTE_BINDINGS);
         assertNotNull("Queue bindings are not found", bindings);
-        assertEquals("Unexpected number of bindings", 2, bindings.size());
+        assertEquals("Unexpected number of bindings", 1, bindings.size());
 
-        Map<String, Object> defaultExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "<<default>>", bindings);
         Map<String, Object> directExchangeBinding = getRestTestHelper().find(Binding.EXCHANGE, "amq.direct", bindings);
-        Asserts.assertBinding(queueName, "<<default>>", defaultExchangeBinding);
         Asserts.assertBinding(queueName, "amq.direct", directExchangeBinding);
 
         @SuppressWarnings("unchecked")
@@ -169,7 +165,7 @@ public class QueueRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName();
         String bindingName = queueName + 2;
-        String[] exchanges = { "amq.direct", "amq.fanout", "amq.topic", "amq.match", "<<default>>" };
+        String[] exchanges = { "amq.direct", "amq.fanout", "amq.topic", "amq.match" };
 
         for (int i = 0; i < exchanges.length; i++)
         {
@@ -182,7 +178,7 @@ public class QueueRestTest extends QpidRestTestCase
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> bindings = (List<Map<String, Object>>) queueDetails.get(QUEUE_ATTRIBUTE_BINDINGS);
         assertNotNull("Queue bindings are not found", bindings);
-        assertEquals("Unexpected number of bindings", exchanges.length + 2, bindings.size());
+        assertEquals("Unexpected number of bindings", exchanges.length + 1, bindings.size());
 
         Map<String, Object> searchAttributes = new HashMap<String, Object>();
         searchAttributes.put(Binding.NAME, bindingName);
@@ -244,7 +240,7 @@ public class QueueRestTest extends QpidRestTestCase
                 statistics.get(Queue.CONSUMER_COUNT));
         assertEquals("Unexpected queue statistics attribute " + Queue.CONSUMER_COUNT_WITH_CREDIT, 1,
                 statistics.get(Queue.CONSUMER_COUNT_WITH_CREDIT));
-        assertEquals("Unexpected queue statistics attribute " + Queue.BINDING_COUNT, 2, statistics.get(Queue.BINDING_COUNT));
+        assertEquals("Unexpected queue statistics attribute " + Queue.BINDING_COUNT, 1, statistics.get(Queue.BINDING_COUNT));
         assertEquals("Unexpected queue statistics attribute " + Queue.PERSISTENT_DEQUEUED_MESSAGES, DEQUEUED_MESSAGES,
                 statistics.get(Queue.PERSISTENT_DEQUEUED_MESSAGES));
         assertEquals("Unexpected queue statistics attribute " + Queue.TOTAL_DEQUEUED_MESSAGES, DEQUEUED_MESSAGES,

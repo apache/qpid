@@ -41,7 +41,7 @@ public class QpidRestTestCase extends QpidBrokerTestCase
 
     public static final String[] EXPECTED_VIRTUALHOSTS = { TEST1_VIRTUALHOST, TEST2_VIRTUALHOST, TEST3_VIRTUALHOST};
     public static final String[] EXPECTED_QUEUES = { "queue", "ping" };
-    public static final String[] EXPECTED_EXCHANGES = { "amq.fanout", "amq.match", "amq.direct","amq.topic","<<default>>" };
+    public static final String[] EXPECTED_EXCHANGES = { "amq.fanout", "amq.match", "amq.direct","amq.topic" };
 
     private RestTestHelper _restTestHelper = new RestTestHelper(findFreePort());
 

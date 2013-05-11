@@ -21,9 +21,9 @@
 package org.apache.qpid.server.virtualhost;
 
 import java.util.concurrent.ScheduledFuture;
-import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
+import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
@@ -57,11 +57,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public AuthenticationManager getAuthenticationManager()
-    {
-        return null;
-    }
-
-    public BindingFactory getBindingFactory()
     {
         return null;
     }

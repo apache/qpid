@@ -296,7 +296,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-                vhost.getBindingFactory().addBinding(binding,queue,exchange,null);
+                exchange.addBinding(binding,queue,null);
                 source.setDistributionMode(StdDistMode.COPY);
 
                 if(!isDurable)
