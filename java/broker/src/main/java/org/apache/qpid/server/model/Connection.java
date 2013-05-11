@@ -78,6 +78,9 @@ public interface Connection extends ConfiguredObject
     public static final String REMOTE_PROCESS_NAME = "remoteProcessName";
     public static final String REMOTE_PROCESS_PID = "remoteProcessPid";
     public static final String SESSION_COUNT_LIMIT = "sessionCountLimit";
+    public static final String TRANSPORT = "transport";
+    public static final String PORT = "port";
+
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableCollection(
@@ -98,7 +101,9 @@ public interface Connection extends ConfiguredObject
                                     REMOTE_ADDRESS,
                                     REMOTE_PROCESS_NAME,
                                     REMOTE_PROCESS_PID,
-                                    SESSION_COUNT_LIMIT));
+                                    SESSION_COUNT_LIMIT,
+                                    TRANSPORT,
+                                    PORT));
 
     //children
     Collection<Session> getSessions();

@@ -86,6 +86,8 @@ define(["dojo/_base/xhr",
                            "state",
                            "durable",
                            "principal",
+                           "port",
+                           "transport",
                            "lifetimePolicy",
                            "msgInRate",
                            "bytesInRate",
@@ -125,6 +127,8 @@ define(["dojo/_base/xhr",
               this.state.innerHTML = this.connectionData[ "state" ];
               this.durable.innerHTML = this.connectionData[ "durable" ];
               this.principal.innerHTML = this.connectionData[ "principal" ];
+              this.port.innerHTML = this.connectionData[ "port" ];
+              this.transport.innerHTML = this.connectionData[ "transport" ];
               this.lifetimePolicy.innerHTML = this.connectionData[ "lifetimePolicy" ];
 
            };
