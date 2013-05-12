@@ -71,7 +71,7 @@ public class SSLBufferingSender implements Sender<ByteBuffer>
                 return;
             }
             log.debug("Closing SSL connection");
-
+            doSend();
             engine.closeOutbound();
             try
             {
@@ -140,7 +140,10 @@ public class SSLBufferingSender implements Sender<ByteBuffer>
 
     public void send()
     {
-        doSend();
+        if(!closed.get())
+        {
+            doSend();
+        }
     }
 
     public synchronized void send(ByteBuffer appData)
@@ -153,6 +156,10 @@ public class SSLBufferingSender implements Sender<ByteBuffer>
             newBuf.put(appData);
             newBuf.flip();
             _appData = newBuf;
+        }
+        if (closed.get())
+        {
+            throw new SenderException("SSL Sender is closed");
         }
         doSend();
         if(!appData.hasRemaining())
@@ -169,10 +176,6 @@ public class SSLBufferingSender implements Sender<ByteBuffer>
 
     private synchronized void doSend()
     {
-        if (closed.get())
-        {
-            throw new SenderException("SSL Sender is closed");
-        }
 
         HandshakeStatus handshakeStatus;
         Status status;
