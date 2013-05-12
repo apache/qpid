@@ -758,6 +758,11 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
     private boolean looksLikeSSL(byte[] headerBytes)
     {
+        return looksLikeSSLv3ClientHello(headerBytes) || looksLikeSSLv2ClientHello(headerBytes);
+    }
+
+    private boolean looksLikeSSLv3ClientHello(byte[] headerBytes)
+    {
         return headerBytes[0] == 22 && // SSL Handshake
                (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
                 (headerBytes[2] == 0 || // SSL 3.0
@@ -766,6 +771,17 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                  headerBytes[2] == 3)) && // TLS1.2
                (headerBytes[5] == 1); // client_hello
     }
+
+    private boolean looksLikeSSLv2ClientHello(byte[] headerBytes)
+    {
+        return headerBytes[0] == -128 &&
+               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
+                (headerBytes[4] == 0 || // SSL 3.0
+                 headerBytes[4] == 1 || // TLS 1.0
+                 headerBytes[4] == 2 || // TLS 1.1
+                 headerBytes[4] == 3);
+    }
+
 
     private static class SSLNetworkConnection implements NetworkConnection
     {
