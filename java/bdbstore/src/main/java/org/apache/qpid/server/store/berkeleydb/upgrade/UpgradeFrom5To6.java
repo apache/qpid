@@ -487,7 +487,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                 {
                     ExchangeRecord exchangeRecord = exchangeBinding.entryToObject(value);
                     String exchangeName = exchangeRecord.getNameShortString().asString();
-                    if (!DEFAULT_EXCHANGES_SET.contains(exchangeName))
+                    if (!DEFAULT_EXCHANGES_SET.contains(exchangeName) && !"<<default>>".equals(exchangeName))
                     {
                         String exchangeType = exchangeRecord.getType().asString();
                         boolean autoDelete = exchangeRecord.isAutoDelete();
