@@ -25,22 +25,17 @@ chartDescription=1P 1C, persistent, auto-ack with message payload 1KB. Sorted qu
 xAxisTitle=Queue type
 yAxisTitle=Latency (millis)
 
-series.1.statement=SELECT testName, maxLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
-series.1.legend=Maximum latency
+series.1.statement=SELECT testName, averageLatency,latencyStandardDeviation FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.1.legend=Average Latency
 series.1.dir=${csvCurrentDir}
-series.1.colourName=blue
+series.1.colourName=red
 
 series.2.statement=SELECT testName, averageLatency,latencyStandardDeviation FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
-series.2.legend=Average Latency
-series.2.dir=${csvCurrentDir}
-series.2.colourName=red
+series.2.legend=Average Latency (baseline ${baselineName})
+series.2.dir=${csvBaselineDir}
+series.2.colourName=dark_red
 
-series.3.statement=SELECT testName, averageLatency,latencyStandardDeviation FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
-series.3.legend=Average Latency (baseline ${baselineName})
-series.3.dir=${csvBaselineDir}
-series.3.colourName=dark_red
-
-series.4.statement=SELECT testName, minLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
-series.4.legend=Minimum latency
-series.4.dir=${csvCurrentDir}
-series.4.colourName=green
+series.3.statement=SELECT testName, minLatency,0 FROM Latency-QueueTypes WHERE participantName = 'All Consumers'
+series.3.legend=Minimum latency
+series.3.dir=${csvCurrentDir}
+series.3.colourName=green

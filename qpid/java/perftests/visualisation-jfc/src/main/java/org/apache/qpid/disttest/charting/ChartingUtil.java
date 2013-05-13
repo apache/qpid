@@ -115,12 +115,19 @@ public class ChartingUtil
 
         for (ChartingDefinition chartingDefinition : loadChartDefinitions())
         {
-            ChartBuilder chartBuilder = ChartBuilderFactory.createChartBuilder(
-                    chartingDefinition.getChartType(),
-                    seriesBuilder);
+            try
+            {
+                ChartBuilder chartBuilder = ChartBuilderFactory.createChartBuilder(
+                        chartingDefinition.getChartType(),
+                        seriesBuilder);
 
-            JFreeChart chart = chartBuilder.buildChart(chartingDefinition);
-            writer.writeChartToFileSystem(chart, chartingDefinition);
+                JFreeChart chart = chartBuilder.buildChart(chartingDefinition);
+                writer.writeChartToFileSystem(chart, chartingDefinition);
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Couldn't produce chart " + chartingDefinition, e);
+            }
         }
 
         final String summaryChartTitle = _cliOptions.get(SUMMARY_TITLE_PROP);
