@@ -138,6 +138,10 @@ class DefaultExchangeRuleTests(TestBase, StandardExchangeVerifier):
         # Test automatic binding by queue name.
         self.queue_declare(queue="d")
         self.assertPublishConsume(queue="d", routing_key="d")
+
+    def testDefaultExchangeExplicitBind(self):
+        # Test automatic binding by queue name.
+        self.queue_declare(queue="d")
         # Test explicit bind to default queue
         self.verifyDirectExchange("")
 
