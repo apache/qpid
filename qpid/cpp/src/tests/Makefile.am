@@ -350,7 +350,6 @@ EXTRA_DIST +=								\
   run_interlink_tests							\
   interlink_tests.py							\
   brokertest.py								\
-  ha_store_tests.py							\
   test_env.ps1.in
 
 check_LTLIBRARIES += libdlclose_noop.la
