@@ -22,6 +22,7 @@ package org.apache.qpid.disttest.charting.definition;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.qpid.disttest.charting.ChartType;
 
 public class ChartingDefinition
@@ -92,6 +93,12 @@ public class ChartingDefinition
     public List<SeriesDefinition> getSeriesDefinitions()
     {
         return Collections.unmodifiableList(_seriesDefinitions);
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this).append("chartTitle", _chartTitle).toString();
     }
 
 }
