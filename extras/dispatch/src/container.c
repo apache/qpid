@@ -306,14 +306,15 @@ static int process_handler(dx_container_t *container, void* unused, pn_connectio
 
     delivery = pn_work_head(conn);
     while (delivery) {
-        if      (pn_delivery_readable(delivery))
+        if (pn_delivery_readable(delivery))
             process_receive(delivery);
         else if (pn_delivery_writable(delivery))
             do_send(delivery);
 
-        if (pn_delivery_updated(delivery)) 
+        if (pn_delivery_updated(delivery)) {
             do_updated(delivery);
-
+            pn_delivery_clear(delivery);
+        }
         delivery = pn_work_next(delivery);
         event_count++;
     }
