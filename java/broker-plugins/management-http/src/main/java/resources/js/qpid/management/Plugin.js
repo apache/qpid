@@ -27,8 +27,9 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "dijit/registry",
         "dojo/_base/event",
+        "dojox/html/entities",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, registry, event) {
+       function (xhr, parser, query, connect, properties, updater, util, registry, event, entities) {
 
            function Plugin(name, parent, controller) {
                this.name = name;
@@ -88,8 +89,8 @@ define(["dojo/_base/xhr",
 
            PluginUpdater.prototype.updateHeader = function()
            {
-               this.name.innerHTML = this.pluginData[ "name" ];
-               this.type.innerHTML = this.pluginData[ "pluginType" ];
+               this.name.innerHTML = entities.encode(String(this.pluginData[ "name" ]));
+               this.type.innerHTML = entities.encode(String(this.pluginData[ "pluginType" ]));
            };
 
            return Plugin;

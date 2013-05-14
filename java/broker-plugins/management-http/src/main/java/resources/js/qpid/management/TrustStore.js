@@ -24,13 +24,14 @@ define(["dojo/dom",
         "dojo/query",
         "dojo/_base/connect",
         "dijit/registry",
+        "dojox/html/entities",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/management/addKeystore",
         "dojo/domReady!"],
-       function (dom, xhr, parser, query, connect, registry, properties, updater, util, formatter, addKeystore) {
+       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addKeystore) {
 
            function TrustStore(name, parent, controller) {
                this.keyStoreName = name;
@@ -118,10 +119,10 @@ define(["dojo/dom",
 
            KeyStoreUpdater.prototype.updateHeader = function()
            {
-              this.name.innerHTML = this.keyStoreData[ "name" ];
-              this.path.innerHTML = this.keyStoreData[ "path" ];
-              this.type.innerHTML = this.keyStoreData[ "type" ];
-              this.trustManagerFactoryAlgorithm.innerHTML = this.keyStoreData[ "trustManagerFactoryAlgorithm" ];
+              this.name.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
+              this.path.innerHTML = entities.encode(String(this.keyStoreData[ "path" ]));
+              this.type.innerHTML = entities.encode(String(this.keyStoreData[ "type" ]));
+              this.trustManagerFactoryAlgorithm.innerHTML = entities.encode(String(this.keyStoreData[ "trustManagerFactoryAlgorithm" ]));
               this.peersOnly.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "peersOnly" ] ? "checked='checked'": "")+" />" ;
            };
 
