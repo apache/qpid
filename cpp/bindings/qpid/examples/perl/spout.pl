@@ -70,7 +70,7 @@ sub setProperties {
 
     foreach (@properties) {
         my ( $name, $value ) = split( "=", $_ );
-        $message->setProperty( $name, $value );
+        $message->set_property( $name, $value );
     }
 }
 
