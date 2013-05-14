@@ -240,7 +240,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
 
         if(!getDisableMessageID() && msg.getMessageId() == null)
         {
-            final Binary messageId = generateMessageId();
+            final Object messageId = generateMessageId();
             msg.setMessageId(messageId);
 
         }
@@ -297,10 +297,11 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         send((Destination)queue, message, deliveryMode, priority, ttl);
     }
 
-    private Binary generateMessageId()
+    private Object generateMessageId()
     {
         UUID uuid = UUID.randomUUID();
-        return new Binary(uuid.toString().getBytes());
+        final String messageIdString = uuid.toString();
+        return _session.getConnection().useBinaryMessageId() ? new Binary(messageIdString.getBytes()) : messageIdString;
     }
 
     public void send(final Destination destination, final Message message) throws JMSException
