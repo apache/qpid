@@ -106,7 +106,7 @@ session = connection.create_session
 sender = session.create_sender options[:address]
 message = Qpid::Messaging::Message.new
 
-options[:properties].each_key {|key| message.properties[key] = options[:properties][key]}
+options[:properties].each_key {|key| message[key] = options[:properties][key]}
 
 (1..options[:count]).each do |count|
   if !options[:mapped].keys.empty?
