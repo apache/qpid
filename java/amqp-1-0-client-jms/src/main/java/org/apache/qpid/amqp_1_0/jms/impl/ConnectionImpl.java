@@ -56,7 +56,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private String _clientId;
     private String _queuePrefix;
     private String _topicPrefix;
-
+    private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
 
     private static enum State
     {
@@ -509,5 +509,16 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         }
         return new DecodedDestination(address, kind);
     }
+
+    void setUseBinaryMessageId(boolean useBinaryMessageId)
+    {
+        _useBinaryMessageId = useBinaryMessageId;
+    }
+
+    boolean useBinaryMessageId()
+    {
+        return _useBinaryMessageId;
+    }
+
 
 }
