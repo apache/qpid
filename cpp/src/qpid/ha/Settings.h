@@ -37,7 +37,7 @@ class Settings
 {
   public:
     Settings() : cluster(false), queueReplication(false),
-                 replicateDefault(NONE), backupTimeout(5*sys::TIME_SEC),
+                 replicateDefault(NONE), backupTimeout(10*sys::TIME_SEC),
                  flowMessages(100), flowBytes(0)
     {}
 

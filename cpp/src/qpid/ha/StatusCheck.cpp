@@ -47,12 +47,12 @@ class StatusCheckThread : public sys::Runnable {
   private:
     Url url;
     StatusCheck& statusCheck;
-    sys::Duration linkHeartbeatInterval;
     BrokerInfo brokerInfo;
 };
 
 void StatusCheckThread::run() {
     QPID_LOG(debug, statusCheck.logPrefix << "Checking status of " << url);
+    Connection c;
     try {
         Variant::Map options, clientProperties;
         clientProperties = brokerInfo.asMap(); // Detect self connections.
@@ -62,7 +62,7 @@ void StatusCheckThread::run() {
 
         options["client-properties"] = clientProperties;
         options["heartbeat"] = statusCheck.linkHeartbeatInterval/sys::TIME_SEC;
-        Connection c(url.str(), options);
+        c = Connection(url.str(), options);
 
         c.open();
         Session session = c.createSession();
@@ -81,7 +81,8 @@ void StatusCheckThread::run() {
         content["_object_id"] = oid;
         encode(content, request);
         s.send(request);
-        Message response = r.fetch(messaging::Duration(linkHeartbeatInterval/TIME_MSEC));
+        messaging::Duration timeout(statusCheck.linkHeartbeatInterval/sys::TIME_MSEC);
+        Message response = r.fetch(timeout);
         session.acknowledge();
         Variant::List contentIn;
         decode(response, contentIn);
@@ -96,7 +97,11 @@ void StatusCheckThread::run() {
             QPID_LOG(debug, statusCheck.logPrefix << "Status of " << url << ": " << status);
         }
     } catch(const exception& error) {
-        QPID_LOG(info, "Checking status of " << url <<  ": " << error.what());
+        QPID_LOG(info, statusCheck.logPrefix << "Checking status of " << url <<  ": " << error.what());
+    }
+    try { c.close(); }
+    catch(const exception& e) {
+        QPID_LOG(warning, statusCheck.logPrefix << "Error closing status check connection to " << url);
     }
     delete this;
 }
