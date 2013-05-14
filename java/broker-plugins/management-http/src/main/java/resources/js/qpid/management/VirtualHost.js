@@ -23,6 +23,7 @@ define(["dojo/_base/xhr",
         "dojo/query",
         "dojo/_base/connect",
         "dijit/registry",
+        "dojox/html/entities",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
@@ -32,7 +33,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addExchange",
         "dojox/grid/EnhancedGrid",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange, EnhancedGrid) {
+       function (xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange, EnhancedGrid) {
 
            function VirtualHost(name, parent, controller) {
                this.name = name;
@@ -240,13 +241,13 @@ define(["dojo/_base/xhr",
 
            Updater.prototype.updateHeader = function()
            {
-               this.name.innerHTML = this.vhostData[ "name" ];
-               this.state.innerHTML = this.vhostData[ "state" ];
-               this.durable.innerHTML = this.vhostData[ "durable" ];
-               this.lifetimePolicy.innerHTML = this.vhostData[ "lifetimePolicy" ];
-               this.storeType.innerHTML = this.vhostData[ "storeType" ];
-               this.storePath.innerHTML = this.vhostData[ "storePath" ];
-               this.configPath.innerHTML = this.vhostData[ "configPath" ];
+               this.name.innerHTML = entities.encode(String(this.vhostData[ "name" ]));
+               this.state.innerHTML = entities.encode(String(this.vhostData[ "state" ]));
+               this.durable.innerHTML = entities.encode(String(this.vhostData[ "durable" ]));
+               this.lifetimePolicy.innerHTML = entities.encode(String(this.vhostData[ "lifetimePolicy" ]));
+               this.storeType.innerHTML = entities.encode(String(this.vhostData[ "storeType" ]));
+               this.storePath.innerHTML = entities.encode(String(this.vhostData[ "storePath" ]));
+               this.configPath.innerHTML = entities.encode(String(this.vhostData[ "configPath" ]));
            };
 
            Updater.prototype.update = function()
@@ -287,7 +288,7 @@ define(["dojo/_base/xhr",
                        thisObj.alertThresholdQueueDepthBytes.innerHTML = alertQueueDepth.value;
                        thisObj.alertThresholdQueueDepthBytesUnits.innerHTML = alertQueueDepth.units;
 
-                       thisObj.alertThresholdQueueDepthMessages.innerHTML = thisObj.vhostData["queue.alertThresholdQueueDepthMessages"];
+                       thisObj.alertThresholdQueueDepthMessages.innerHTML = entities.encode(String(thisObj.vhostData["queue.alertThresholdQueueDepthMessages"]));
 
                        var stats = thisObj.vhostData[ "statistics" ];
 

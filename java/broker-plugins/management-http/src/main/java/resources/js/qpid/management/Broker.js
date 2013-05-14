@@ -28,6 +28,7 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "dojox/grid/EnhancedGrid",
         "dijit/registry",
+        "dojox/html/entities",
         "qpid/management/addAuthenticationProvider",
         "qpid/management/addVirtualHost",
         "qpid/management/addPort",
@@ -44,7 +45,7 @@ define(["dojo/_base/xhr",
         "dijit/form/CheckBox",
         "dojo/store/Memory",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, addAuthenticationProvider, addVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities, addAuthenticationProvider, addVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -719,7 +720,7 @@ define(["dojo/_base/xhr",
                      {
                        container.style.display = "block";
                      }
-                     element.innerHTML = brokerData [propertyName];
+                     element.innerHTML = entities.encode(String(brokerData [propertyName]));
                    }
                    else
                    {
@@ -817,14 +818,14 @@ define(["dojo/_base/xhr",
            BrokerUpdater.prototype.showReadOnlyAttributes = function()
            {
                var brokerData = this.brokerData;
-               dojo.byId("brokerAttribute.name").innerHTML = brokerData.name;
-               dojo.byId("brokerAttribute.operatingSystem").innerHTML = brokerData.operatingSystem;
-               dojo.byId("brokerAttribute.platform").innerHTML = brokerData.platform;
-               dojo.byId("brokerAttribute.productVersion").innerHTML = brokerData.productVersion;
-               dojo.byId("brokerAttribute.modelVersion").innerHTML = brokerData.modelVersion;
-               dojo.byId("brokerAttribute.storeType").innerHTML = brokerData.storeType;
-               dojo.byId("brokerAttribute.storeVersion").innerHTML = brokerData.storeVersion;
-               dojo.byId("brokerAttribute.storePath").innerHTML = brokerData.storePath;
+               dojo.byId("brokerAttribute.name").innerHTML = entities.encode(String(brokerData.name));
+               dojo.byId("brokerAttribute.operatingSystem").innerHTML = entities.encode(String(brokerData.operatingSystem));
+               dojo.byId("brokerAttribute.platform").innerHTML = entities.encode(String(brokerData.platform));
+               dojo.byId("brokerAttribute.productVersion").innerHTML = entities.encode(String(brokerData.productVersion));
+               dojo.byId("brokerAttribute.modelVersion").innerHTML = entities.encode(String(brokerData.modelVersion));
+               dojo.byId("brokerAttribute.storeType").innerHTML = entities.encode(String(brokerData.storeType));
+               dojo.byId("brokerAttribute.storeVersion").innerHTML = entities.encode(String(brokerData.storeVersion));
+               dojo.byId("brokerAttribute.storePath").innerHTML = entities.encode(String(brokerData.storePath));
            }
 
            return Broker;

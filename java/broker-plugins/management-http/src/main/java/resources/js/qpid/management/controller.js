@@ -21,6 +21,7 @@
 define(["dojo/dom",
         "dijit/registry",
         "dijit/layout/ContentPane",
+        "dojox/html/entities",
         "qpid/management/Broker",
         "qpid/management/VirtualHost",
         "qpid/management/Exchange",
@@ -36,7 +37,7 @@ define(["dojo/dom",
         "qpid/management/Plugin",
         "dojo/ready",
         "dojo/domReady!"],
-       function (dom, registry, ContentPane, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider,
+       function (dom, registry, ContentPane, entities, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider,
                  GroupProvider, Group, KeyStore, TrustStore, AccessControlProvider, Port, Plugin, ready) {
            var controller = {};
 
@@ -86,7 +87,7 @@ define(["dojo/dom",
                        this.viewedObjects[ objId ] = obj;
 
                        var contentPane = new ContentPane({ region: "center" ,
-                                                           title: obj.getTitle(),
+                                                           title: entities.encode(obj.getTitle()),
                                                            closable: true,
                                                            onClose: function() {
                                                                obj.close();

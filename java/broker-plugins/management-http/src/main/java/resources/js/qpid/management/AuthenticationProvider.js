@@ -31,10 +31,11 @@ define(["dojo/_base/xhr",
         "dojo/_base/event",
         "dijit/registry",
         "dojo/dom-style",
+        "dojox/html/entities",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, addAuthenticationProvider, event, registry, domStyle) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, addAuthenticationProvider, event, registry, domStyle, entities) {
 
            function AuthenticationProvider(name, parent, controller) {
                this.name = name;
@@ -151,9 +152,9 @@ define(["dojo/_base/xhr",
            AuthProviderUpdater.prototype.updateHeader = function()
            {
                this.authenticationProvider.name = this.authProviderData[ "name" ]
-               this.name.innerHTML = this.authProviderData[ "name" ];
-               this.type.innerHTML = this.authProviderData[ "type" ];
-               this.state.innerHTML = this.authProviderData[ "state" ];
+               this.name.innerHTML = entities.encode(String(this.authProviderData[ "name" ]));
+               this.type.innerHTML = entities.encode(String(this.authProviderData[ "type" ]));
+               this.state.innerHTML = entities.encode(String(this.authProviderData[ "state" ]));
            };
 
            AuthProviderUpdater.prototype.update = function()

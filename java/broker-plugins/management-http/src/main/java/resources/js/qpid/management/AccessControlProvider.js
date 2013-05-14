@@ -29,10 +29,11 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "dijit/registry",
         "dojo/_base/event",
+        "dojox/html/entities",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, event) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, event, entities) {
 
            function AccessControlProvider(name, parent, controller) {
                this.name = name;
@@ -124,9 +125,9 @@ define(["dojo/_base/xhr",
 
            AccessControlProviderUpdater.prototype.updateHeader = function()
            {
-               this.name.innerHTML = this.accessControlProviderData[ "name" ];
-               this.type.innerHTML = this.accessControlProviderData[ "type" ];
-               this.state.innerHTML = this.accessControlProviderData[ "state" ];
+               this.name.innerHTML = entities.encode(String(this.accessControlProviderData[ "name" ]));
+               this.type.innerHTML = entities.encode(String(this.accessControlProviderData[ "type" ]));
+               this.state.innerHTML = entities.encode(String(this.accessControlProviderData[ "state" ]));
            };
 
            return AccessControlProvider;

@@ -27,8 +27,9 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
+        "dojox/html/entities",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore) {
+       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore, entities) {
 
            function Connection(name, parent, controller) {
                this.name = name;
@@ -123,13 +124,13 @@ define(["dojo/_base/xhr",
 
            ConnectionUpdater.prototype.updateHeader = function()
            {
-              this.name.innerHTML = this.connectionData[ "name" ];
-              this.state.innerHTML = this.connectionData[ "state" ];
-              this.durable.innerHTML = this.connectionData[ "durable" ];
-              this.principal.innerHTML = this.connectionData[ "principal" ];
-              this.port.innerHTML = this.connectionData[ "port" ];
-              this.transport.innerHTML = this.connectionData[ "transport" ];
-              this.lifetimePolicy.innerHTML = this.connectionData[ "lifetimePolicy" ];
+              this.name.innerHTML = entities.encode(String(this.connectionData[ "name" ]));
+              this.state.innerHTML = entities.encode(String(this.connectionData[ "state" ]));
+              this.durable.innerHTML = entities.encode(String(this.connectionData[ "durable" ]));
+              this.principal.innerHTML = entities.encode(String(this.connectionData[ "principal" ]));
+              this.port.innerHTML = entities.encode(String(this.connectionData[ "port" ]));
+              this.transport.innerHTML = entities.encode(String(this.connectionData[ "transport" ]));
+              this.lifetimePolicy.innerHTML = entities.encode(String(this.connectionData[ "lifetimePolicy" ]));
 
            };
 
