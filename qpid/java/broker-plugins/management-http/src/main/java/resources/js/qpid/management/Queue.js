@@ -36,11 +36,12 @@ define(["dojo/_base/xhr",
         "dojo/store/JsonRest",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
+        "dojox/html/entities",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, registry, connect, event, json, properties, updater, util, formatter,
-                 UpdatableStore, addBinding, moveMessages, showMessage, JsonRest, EnhancedGrid, ObjectStore) {
+                 UpdatableStore, addBinding, moveMessages, showMessage, JsonRest, EnhancedGrid, ObjectStore, entities) {
 
            function Queue(name, parent, controller) {
                this.name = name;
@@ -331,29 +332,29 @@ define(["dojo/_base/xhr",
            {
 
                var bytesDepth;
-               this.name.innerHTML = this.queueData[ "name" ];
-               this.state.innerHTML = this.queueData[ "state" ];
-               this.durable.innerHTML = this.queueData[ "durable" ];
-               this.lifetimePolicy.innerHTML = this.queueData[ "lifetimePolicy" ];
-               this.alternateExchange.innerHTML = this.queueData[ "alternateExchange" ] ? this.queueData[ "alternateExchange" ]: "" ;
+               this.name.innerHTML = entities.encode(String(this.queueData[ "name" ]));
+               this.state.innerHTML = entities.encode(String(this.queueData[ "state" ]));
+               this.durable.innerHTML = entities.encode(String(this.queueData[ "durable" ]));
+               this.lifetimePolicy.innerHTML = entities.encode(String(this.queueData[ "lifetimePolicy" ]));
+               this.alternateExchange.innerHTML = this.queueData[ "alternateExchange" ] ? entities.encode(String(this.queueData[ "alternateExchange" ])) : "" ;
 
-               this.queueDepthMessages.innerHTML = this.queueData["queueDepthMessages"];
+               this.queueDepthMessages.innerHTML = entities.encode(String(this.queueData["queueDepthMessages"]));
                bytesDepth = formatter.formatBytes( this.queueData["queueDepthBytes"] );
                this.queueDepthBytes.innerHTML = "(" + bytesDepth.value;
                this.queueDepthBytesUnits.innerHTML = bytesDepth.units + ")";
 
-               this.unacknowledgedMessages.innerHTML = this.queueData["unacknowledgedMessages"];
+               this.unacknowledgedMessages.innerHTML = entities.encode(String(this.queueData["unacknowledgedMessages"]));
                bytesDepth = formatter.formatBytes( this.queueData["unacknowledgedBytes"] );
                this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
                this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")";
-               this.type.innerHTML = this.queueData[ "type" ];
+               this.type.innerHTML = entities.encode(this.queueData[ "type" ]);
                if (this.queueData.type == "standard")
                {
                    this.typeQualifier.style.display = "none";
                }
                else
                {
-                   this.typeQualifier.innerHTML = "(" + queueTypeKeyNames[this.queueData.type] + ": " + this.queueData[queueTypeKeys[this.queueData.type]] + ")";
+                   this.typeQualifier.innerHTML = entities.encode("(" + queueTypeKeyNames[this.queueData.type] + ": " + this.queueData[queueTypeKeys[this.queueData.type]] + ")");
                }
 
            };
@@ -400,7 +401,7 @@ define(["dojo/_base/xhr",
                        thisObj.alertThresholdQueueDepthBytes.innerHTML = alertQueueDepth.value;
                        thisObj.alertThresholdQueueDepthBytesUnits.innerHTML = alertQueueDepth.units;
 
-                       thisObj.alertThresholdQueueDepthMessages.innerHTML = thisObj.queueData["alertThresholdQueueDepthMessages"];
+                       thisObj.alertThresholdQueueDepthMessages.innerHTML = entities.encode(String(thisObj.queueData["alertThresholdQueueDepthMessages"]));
 
                        var sampleTime = new Date();
                        var messageIn = thisObj.queueData["totalEnqueuedMessages"];
