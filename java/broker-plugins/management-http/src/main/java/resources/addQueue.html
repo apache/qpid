@@ -182,6 +182,22 @@
                         <td valign="top">NOTE: Configuring maximum delivery retries on a queue which has no DLQ / AlternateExchange will result in messages being discarded after the limit is reached.</td>
                     </tr>
                 </table>
+                <table cellpadding="0" cellspacing="2">
+
+                    <!-- qpid.group_header_key -->
+                    <tr>
+                        <td valign="top"><strong>Message Group Key:  </strong></td>
+                        <td><input type="text" required="false" name="messageGroupKey" id="formAddQueue.messageGroupKey"
+                            dojoType="dijit.form.ValidationTextBox"
+                            trim="true"/></td>
+                    </tr>
+
+                    <!-- qpid.qpid.shared_msg_group -->
+                    <tr>
+                        <td valign="top"><strong>Shared Message Groups? </strong></td>
+                        <td><input type="checkbox" name="messageGroupSharedGroups" id="formAddQueue.messageGroupSharedGroups" value="messageGroupSharedGroups" dojoType="dijit.form.CheckBox" /></td>
+                    </tr>
+                </table>
             </div>
             </div>
           <div class="dijitDialogPaneActionBar">

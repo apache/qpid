@@ -282,6 +282,9 @@ define(["dojo/_base/xhr",
                            "alertThresholdQueueDepthBytesUnits",
                            "alertThresholdQueueDepthMessages",
                            "alternateExchange",
+                           "messageGroups",
+                           "messageGroupKey",
+                           "messageGroupSharedGroups",
                            "queueDepthMessages",
                            "queueDepthBytes",
                            "queueDepthBytesUnits",
@@ -357,6 +360,16 @@ define(["dojo/_base/xhr",
                    this.typeQualifier.innerHTML = entities.encode("(" + queueTypeKeyNames[this.queueData.type] + ": " + this.queueData[queueTypeKeys[this.queueData.type]] + ")");
                }
 
+               if(this.queueData["messageGroupKey"])
+               {
+                   this.messageGroupKey.innerHTML = entities.encode(String(this.queueData["messageGroupKey"]));
+                   this.messageGroupSharedGroups.innerHTML = entities.encode(String(this.queueData["messageGroupSharedGroups"]));
+                   this.messageGroups.style.display = "block";
+               }
+               else
+               {
+                   this.messageGroups.style.display = "none";
+               }
            };
 
            QueueUpdater.prototype.update = function()

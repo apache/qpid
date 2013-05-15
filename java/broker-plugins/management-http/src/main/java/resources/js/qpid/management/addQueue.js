@@ -89,6 +89,12 @@ define(["dojo/_base/xhr",
                                 newQueue["x-qpid-dlq-enabled"] = true;
                             }
                         }
+                        else if(propName === "messageGroupSharedGroups")
+                        {
+                            if (formValues.messageGroupSharedGroups[0] && formValues.messageGroupSharedGroups[0] == "messageGroupSharedGroups") {
+                                newQueue["messageGroupSharedGroups"] = true;
+                            }
+                        }
                         else if (!typeSpecificFields.hasOwnProperty(propName) ||
                                         formValues.type === typeSpecificFields[ propName ]) {
                             if(formValues[ propName ] !== "") {
