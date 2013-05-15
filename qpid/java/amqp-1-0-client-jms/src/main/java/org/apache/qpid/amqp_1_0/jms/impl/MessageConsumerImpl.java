@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.InvalidSelectorException;
@@ -117,6 +118,29 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         _session = session;
 
         _receiver = createClientReceiver();
+        _receiver.setRemoteErrorListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    final ExceptionListener exceptionListener = _session.getConnection().getExceptionListener();
+
+                    if(exceptionListener != null)
+                    {
+                        final Error receiverError = _receiver.getError();
+                        exceptionListener.onException(new JMSException(receiverError.getDescription(),
+                                receiverError.getCondition().getValue().toString()));
+
+                    }
+                }
+                catch (JMSException e)
+                {
+
+                }
+            }
+        });
 
 
     }
@@ -125,8 +149,8 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         try
         {
-            return _session.getClientSession(). createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
-                                                               _linkName, _durable, getFilters(), null);
+            return _session.getClientSession().createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
+                    _linkName, _durable, getFilters(), null);
         }
         catch (ConnectionErrorException e)
         {
@@ -188,15 +212,16 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         checkClosed();
         _messageListener = messageListener;
-        _session.messageListenerSet( this );
         _receiver.setMessageArrivalListener(new Receiver.MessageArrivalListener()
-        {
+                {
 
-            public void messageArrived(final Receiver receiver)
-            {
-                _session.messageArrived(MessageConsumerImpl.this);
-            }
-        });
+                    public void messageArrived(final Receiver receiver)
+                    {
+                        _session.messageArrived(MessageConsumerImpl.this);
+                    }
+                });
+        _session.messageListenerSet( this );
+
     }
 
     public MessageImpl receive() throws JMSException
@@ -219,12 +244,14 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         return receiveImpl(0L);
     }
 
-    private MessageImpl receiveImpl(long timeout) throws IllegalStateException
+    private MessageImpl receiveImpl(long timeout) throws JMSException
     {
+
         org.apache.qpid.amqp_1_0.client.Message msg;
         boolean redelivery;
         if(_replaymessages.isEmpty())
         {
+            checkReceiverError();
             msg = receive0(timeout);
             redelivery = false;
         }
@@ -241,8 +268,21 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         return createJMSMessage(msg, redelivery);
     }
 
+    void checkReceiverError() throws JMSException
+    {
+        final Error receiverError = _receiver.getError();
+        if(receiverError != null)
+        {
+            JMSException jmsException =
+                    new JMSException(receiverError.getDescription(), receiverError.getCondition().toString());
+
+            throw jmsException;
+        }
+    }
+
     Message receive0(final long timeout)
     {
+
         Message message = _receiver.receive(timeout);
         if(_session.getAckModeEnum() == Session.AcknowledgeMode.CLIENT_ACKNOWLEDGE)
         {

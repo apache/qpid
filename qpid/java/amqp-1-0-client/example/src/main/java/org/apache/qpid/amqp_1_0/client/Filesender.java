@@ -248,27 +248,10 @@ public class Filesender extends Util
             session.close();
             conn.close();
         }
-        catch (ConnectionException e)
+        catch (Exception e)
         {
             e.printStackTrace();
         }
-        catch (Sender.SenderCreationException e)
-        {
-            e.printStackTrace();
-        } catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        } catch (IOException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (NoSuchAlgorithmException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (Sender.SenderClosingException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-
     }
 
     private Message createMessageFromFile(MessageDigest md5, String fileName, File file) throws IOException

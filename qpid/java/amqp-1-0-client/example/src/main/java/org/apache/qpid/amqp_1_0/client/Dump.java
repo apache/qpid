@@ -121,14 +121,7 @@ public class Dump extends Util
             session.close();
             conn.close();
 
-        } catch (ConnectionException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        catch (Sender.SenderCreationException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (Sender.SenderClosingException e)
+        } catch (Exception e)
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }

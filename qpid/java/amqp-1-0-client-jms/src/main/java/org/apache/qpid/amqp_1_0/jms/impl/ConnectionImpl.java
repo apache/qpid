@@ -56,7 +56,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private String _clientId;
     private String _queuePrefix;
     private String _topicPrefix;
-
+    private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
 
     private static enum State
     {
@@ -163,12 +163,18 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 connect();
                 started = true;
             }
+
             try
             {
                 SessionImpl session = new SessionImpl(this, acknowledgeMode);
                 session.setQueueSession(_isQueueConnection);
                 session.setTopicSession(_isTopicConnection);
                 _sessions.add(session);
+
+                if(_state == State.STARTED)
+                {
+                    session.start();
+                }
 
                 return session;
             }
@@ -191,9 +197,17 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     throw e;
                 }
             }
-
         }
 
+
+    }
+
+    void removeSession(SessionImpl session)
+    {
+        synchronized (_lock)
+        {
+            _sessions.remove(session);
+        }
     }
 
     private void reconnect(String networkHost, int port, String hostName)
@@ -410,10 +424,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public boolean isStarted()
     {
-        synchronized (_lock)
-        {
-            return _state == State.STARTED;
-        }
+        return _state == State.STARTED;
     }
 
     void setQueueConnection(final boolean queueConnection)
@@ -498,5 +509,16 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         }
         return new DecodedDestination(address, kind);
     }
+
+    void setUseBinaryMessageId(boolean useBinaryMessageId)
+    {
+        _useBinaryMessageId = useBinaryMessageId;
+    }
+
+    boolean useBinaryMessageId()
+    {
+        return _useBinaryMessageId;
+    }
+
 
 }

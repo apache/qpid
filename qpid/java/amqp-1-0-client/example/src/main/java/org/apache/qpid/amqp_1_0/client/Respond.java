@@ -274,21 +274,13 @@ public class Respond extends Util
             _conn.close();
             System.out.println("Received: " + receivedCount);
         }
-        catch (ConnectionException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (Sender.SenderClosingException e)
-        {
-            e.printStackTrace();  //TODO.
-        }
-        catch (Sender.SenderCreationException e)
+        catch (Exception e)
         {
             e.printStackTrace();  //TODO.
         }
     }
 
-    private void respond(Message m) throws Sender.SenderCreationException, ConnectionClosedException
+    private void respond(Message m) throws Sender.SenderCreationException, ConnectionClosedException, LinkDetachedException
     {
         List<Section> sections = m.getPayload();
         String replyTo = null;

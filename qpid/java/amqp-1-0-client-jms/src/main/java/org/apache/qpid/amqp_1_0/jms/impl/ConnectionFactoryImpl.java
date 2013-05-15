@@ -45,6 +45,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     private String _queuePrefix;
     private String _topicPrefix;
+    private boolean _useBinaryMessageId;
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
@@ -100,6 +101,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         ConnectionImpl connection = new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
         connection.setQueuePrefix(_queuePrefix);
         connection.setTopicPrefix(_topicPrefix);
+        connection.setUseBinaryMessageId(_useBinaryMessageId);
         return connection;
     }
 
@@ -149,6 +151,9 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String password = null;
         String clientId = null;
         String remoteHost = null;
+
+        boolean binaryMessageId = true;
+
         if(userInfo != null)
         {
             String[] components = userInfo.split(":",2);
@@ -161,22 +166,26 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String query = url.getQuery();
         if(query != null)
         {
-           for(String param : query.split("&"))
-           {
-               String[] keyValuePair = param.split("=",2);
-               if(keyValuePair[0].equalsIgnoreCase("clientid"))
-               {
-                   clientId = keyValuePair[1];
-               }
-               else if(keyValuePair[0].equalsIgnoreCase("ssl"))
-               {
-                   ssl = Boolean.valueOf(keyValuePair[1]);
-               }
-               else if(keyValuePair[0].equalsIgnoreCase("remote-host"))
-               {
-                   remoteHost = keyValuePair[1];
-               }
-           }
+            for(String param : query.split("&"))
+            {
+                String[] keyValuePair = param.split("=",2);
+                if(keyValuePair[0].equalsIgnoreCase("clientid"))
+                {
+                    clientId = keyValuePair[1];
+                }
+                else if(keyValuePair[0].equalsIgnoreCase("ssl"))
+                {
+                    ssl = Boolean.valueOf(keyValuePair[1]);
+                }
+                else if(keyValuePair[0].equalsIgnoreCase("remote-host"))
+                {
+                    remoteHost = keyValuePair[1];
+                }
+                else if (keyValuePair[0].equalsIgnoreCase("binary-messageid"))
+                {
+                    binaryMessageId = Boolean.parseBoolean(keyValuePair[1]);
+                }
+            }
         }
 
         if(remoteHost == null)
@@ -184,7 +193,11 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
             remoteHost = host;
         }
 
-        return new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
+        ConnectionFactoryImpl connectionFactory =
+                new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
+        connectionFactory.setUseBinaryMessageId(binaryMessageId);
+
+        return connectionFactory;
 
     }
 
@@ -234,5 +247,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     public void setQueuePrefix(String queuePrefix)
     {
         _queuePrefix = queuePrefix;
+    }
+
+    public void setUseBinaryMessageId(boolean useBinaryMessageId)
+    {
+        _useBinaryMessageId = useBinaryMessageId;
     }
 }

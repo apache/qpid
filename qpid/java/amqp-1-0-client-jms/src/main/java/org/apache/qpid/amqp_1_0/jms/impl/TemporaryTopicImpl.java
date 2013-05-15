@@ -34,6 +34,7 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic
     private SessionImpl _session;
     private final Set<MessageConsumer> _consumers =
             Collections.synchronizedSet(new HashSet<MessageConsumer>());
+    private boolean _deleted;
 
     protected TemporaryTopicImpl(String address, Sender sender, SessionImpl session)
     {
@@ -57,6 +58,7 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic
     {
         if(_consumers.isEmpty())
         {
+            _deleted = true;
             close();
         }
         else
@@ -105,6 +107,6 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic
 
     public boolean isDeleted()
     {
-        return _sender == null;
+        return _deleted;
     }
 }
