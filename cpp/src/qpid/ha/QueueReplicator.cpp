@@ -162,6 +162,7 @@ QueueReplicator::~QueueReplicator() {}
 
 // Called from Queue::destroyed()
 void QueueReplicator::destroy() {
+    QPID_LOG(debug, logPrefix << " destroyed");
     boost::shared_ptr<Bridge> bridge2; // To call outside of lock
     {
         Mutex::ScopedLock l(lock);

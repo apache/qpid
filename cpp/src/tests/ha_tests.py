@@ -972,19 +972,13 @@ class LongTests(HaBrokerTest):
                         brokers.bounce(victim) # Next one is promoted
                         primary = next
                     else:
-                        brokers.kill(victim, promote_next=False, final=False)
-                        dead = victim
+                        brokers.bounce(victim, promote_next=False)
 
                     # Make sure we are not stalled
                     map(wait_passed, receivers, checkpoint)
                     # Run another checkpoint to ensure things work in this configuration
                     checkpoint = [ r.received+100 for r in receivers ]
                     map(wait_passed, receivers, checkpoint)
-
-                    if dead is not None:
-                        brokers.restart(dead) # Restart backup
-                        brokers[dead].ready()
-                        dead = None
                     i += 1
             except:
                 traceback.print_exc()
