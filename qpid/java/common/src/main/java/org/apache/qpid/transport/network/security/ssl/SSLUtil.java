@@ -95,8 +95,9 @@ public class SSLUtil
                     
           if (dn.contains("CN="))
           {
-              id.append(dn.substring(3,
-                      dn.indexOf(",") == -1? dn.length(): dn.indexOf(",")));
+              String str = dn.substring(dn.indexOf("CN=")+3, dn.length());
+              id.append(str.substring(0,
+                      str.indexOf(",") == -1? str.length(): str.indexOf(",")));
           } 
           
           if (dn.contains("DC="))
