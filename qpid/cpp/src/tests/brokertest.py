@@ -134,14 +134,8 @@ class Popen(subprocess.Popen):
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.id)
         if stdout == FILE: stdout = open(self.outfile("out"), "w")
         if stderr == FILE: stderr = open(self.outfile("err"), "w")
-        try:
-            subprocess.Popen.__init__(self, self.cmd, bufsize=0, executable=None,
-                                      stdin=stdin, stdout=stdout, stderr=stderr,
-                                      close_fds=True)
-        except ValueError: # Windows can't do close_fds
-            subprocess.Popen.__init__(self, self.cmd, bufsize=0, executable=None,
-                                      stdin=stdin, stdout=stdout, stderr=stderr)
-
+        subprocess.Popen.__init__(self, self.cmd, bufsize=0, executable=None,
+                                  stdin=stdin, stdout=stdout, stderr=stderr)
         f = open(self.outfile("cmd"), "w")
         try: f.write("%s\n%d"%(self.cmd_str(), self.pid))
         finally: f.close()
@@ -179,6 +173,7 @@ class Popen(subprocess.Popen):
                     self.unexpected("expected error")
         finally:
             self.wait()                 # Clean up the process.
+
 
     def communicate(self, input=None):
         ret = subprocess.Popen.communicate(self, input)
