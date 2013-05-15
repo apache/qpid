@@ -29,10 +29,11 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "dijit/registry",
         "dojo/_base/event",
+        "dojox/html/entities",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, event) {
+       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, event, entities) {
 
            function GroupProvider(name, parent, controller) {
                this.name = name;
@@ -133,9 +134,9 @@ define(["dojo/_base/xhr",
 
            GroupProviderUpdater.prototype.updateHeader = function()
            {
-               this.name.innerHTML = this.groupProviderData[ "name" ];
-               this.type.innerHTML = this.groupProviderData[ "type" ];
-               this.state.innerHTML = this.groupProviderData[ "state" ];
+               this.name.innerHTML = entities.encode(String(this.groupProviderData[ "name" ]));
+               this.type.innerHTML = entities.encode(String(this.groupProviderData[ "type" ]));
+               this.state.innerHTML = entities.encode(String(this.groupProviderData[ "state" ]));
            };
 
            GroupProviderUpdater.prototype.update = function()

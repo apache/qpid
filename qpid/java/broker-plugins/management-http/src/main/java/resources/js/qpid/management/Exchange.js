@@ -30,8 +30,9 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "qpid/management/addBinding",
         "dojox/grid/EnhancedGrid",
+        "dojox/html/entities",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addBinding, EnhancedGrid) {
+       function (xhr, parser, query, connect, registry, properties, updater, util, formatter, UpdatableStore, addBinding, EnhancedGrid, entities) {
 
            function Exchange(name, parent, controller) {
                this.name = name;
@@ -191,10 +192,10 @@ define(["dojo/_base/xhr",
 
            ExchangeUpdater.prototype.updateHeader = function()
            {
-              this.name.innerHTML = this.exchangeData[ "name" ];
-              this.state.innerHTML = this.exchangeData[ "state" ];
-              this.durable.innerHTML = this.exchangeData[ "durable" ];
-              this.lifetimePolicy.innerHTML = this.exchangeData[ "lifetimePolicy" ];
+              this.name.innerHTML = entities.encode(String(this.exchangeData[ "name" ]));
+              this.state.innerHTML = entities.encode(String(this.exchangeData[ "state" ]));
+              this.durable.innerHTML = entities.encode(String(this.exchangeData[ "durable" ]));
+              this.lifetimePolicy.innerHTML = entities.encode(String(this.exchangeData[ "lifetimePolicy" ]));
 
            };
 

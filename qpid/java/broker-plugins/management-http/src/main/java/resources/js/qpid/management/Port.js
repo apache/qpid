@@ -24,13 +24,14 @@ define(["dojo/dom",
         "dojo/query",
         "dojo/_base/connect",
         "dijit/registry",
+        "dojox/html/entities",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/management/addPort",
         "dojo/domReady!"],
-       function (dom, xhr, parser, query, connect, registry, properties, updater, util, formatter, addPort) {
+       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addPort) {
 
            function Port(name, parent, controller) {
                this.name = name;
@@ -163,20 +164,20 @@ define(["dojo/dom",
                    var data = "<div>";
                    if (array) {
                        for(var i = 0; i < array.length; i++) {
-                           data+= "<div>" + array[i] + "</div>";
+                           data+= "<div>" + entities.encode(array[i]) + "</div>";
                        }
                    }
                    return data + "</div>";
                }
 
-              this.nameValue.innerHTML = this.keyStoreData[ "name" ];
-              this.stateValue.innerHTML = this.keyStoreData[ "state" ];
-              this.portValue.innerHTML = this.keyStoreData[ "port" ];
-              this.authenticationProviderValue.innerHTML = this.keyStoreData[ "authenticationProvider" ] ? this.keyStoreData[ "authenticationProvider" ] : "";
+              this.nameValue.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
+              this.stateValue.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
+              this.portValue.innerHTML = entities.encode(String(this.keyStoreData[ "port" ]));
+              this.authenticationProviderValue.innerHTML = this.keyStoreData[ "authenticationProvider" ] ? entities.encode(String(this.keyStoreData[ "authenticationProvider" ])) : "";
               this.protocolsValue.innerHTML = printArray( "protocols", this.keyStoreData);
               this.transportsValue.innerHTML = printArray( "transports", this.keyStoreData);
-              this.bindingAddressValue.innerHTML = this.keyStoreData[ "bindingAddress" ] ? this.keyStoreData[ "bindingAddress" ] : "" ;
-              this.keyStoreValue.innerHTML = this.keyStoreData[ "keyStore" ] ? this.keyStoreData[ "keyStore" ] : "";
+              this.bindingAddressValue.innerHTML = this.keyStoreData[ "bindingAddress" ] ? entities.encode(String(this.keyStoreData[ "bindingAddress" ])) : "" ;
+              this.keyStoreValue.innerHTML = this.keyStoreData[ "keyStore" ] ? entities.encode(String(this.keyStoreData[ "keyStore" ])) : "";
               this.needClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "needClientAuth" ] ? "checked='checked'": "")+" />" ;
               this.wantClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "wantClientAuth" ] ? "checked='checked'": "")+" />" ;
               this.trustStoresValue.innerHTML = printArray( "trustStores", this.keyStoreData);

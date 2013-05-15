@@ -28,6 +28,7 @@ define(["dojo/_base/xhr",
         "dojo/_base/event",
         "dojo/_base/json",
         "dijit/registry",
+        "dojox/html/entities",
         "qpid/common/util",
         "qpid/common/properties",
         "qpid/common/updater",
@@ -43,7 +44,7 @@ define(["dojo/_base/xhr",
         "dijit/form/Form",
         "dijit/form/DateTextBox",
         "dojo/domReady!"],
-    function (xhr, dom, parser, query, construct, connect, win, event, json, registry, util, properties, updater, UpdatableStore, EnhancedGrid) {
+    function (xhr, dom, parser, query, construct, connect, win, event, json, registry, entities, util, properties, updater, UpdatableStore, EnhancedGrid) {
         function DatabaseGroupManager(containerNode, groupProviderObj, controller) {
             var node = construct.create("div", null, containerNode, "last");
             var that = this;
@@ -176,7 +177,7 @@ define(["dojo/_base/xhr",
             xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                 .then(function(data) {
                     that.groupProviderData = data[0];
-                    that.path.innerHTML = that.groupProviderData.path;
+                    that.path.innerHTML = entities.encode(String(that.groupProviderData.path));
                     util.flattenStatistics( that.groupProviderData );
 
                     that.groupsGrid.update(that.groupProviderData.groups);

@@ -21,13 +21,14 @@
 
 require(["dojo/dom",
          "qpid/authorization/sasl",
-         "dojo/domReady!"], function(dom, sasl){
+         "dojox/html/entities",
+         "dojo/domReady!"], function(dom, sasl, entities){
 
 var updateUI = function updateUI(data)
 {
     if(data.user)
     {
-        dom.byId("authenticatedUser").innerHTML = data.user;
+        dom.byId("authenticatedUser").innerHTML = entities.encode(String(data.user));
         dom.byId("login").style.display = "block";
     }
 };
