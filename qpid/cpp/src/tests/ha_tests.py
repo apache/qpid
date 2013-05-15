@@ -412,7 +412,7 @@ class ReplicationTests(HaBrokerTest):
             def __init__(self, queue, arguments, expect):
                 self.queue = queue
                 self.address = "%s;{create:always,node:{x-declare:{arguments:{%s}}}}"%(
-                    self.queue, ",".join(arguments + ["'qpid.replicate':all"]))
+                    self.queue, ",".join(arguments))
                 self.expect = [str(i) for i in expect]
 
             def send(self, connection):
@@ -420,9 +420,6 @@ class ReplicationTests(HaBrokerTest):
                 s = connection.session()
                 for m in range(10): s.sender(self.address).send(str(m))
                 s.receiver(self.address).fetch()
-
-            def wait(self, brokertest, backup):
-                backup.wait_backup(self.queue)
 
             def verify(self, brokertest, backup):
                 backup.assert_browse_backup(self.queue, self.expect, msg=self.queue)
@@ -435,20 +432,18 @@ class ReplicationTests(HaBrokerTest):
             Test("lvq", ["'qpid.last_value_queue_key':lvq-key"], [9])
             ]
 
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup1 = HaBroker(self, name="backup1", brokers_url=primary.host_port())
-        c = primary.connect()
+        cluster = HaCluster(self, 3)
+        cluster.kill(2, final=False) # restart after messages are sent to test catch-up
+
+        c = cluster[0].connect()
         for t in tests: t.send(c) # Send messages, leave one unacknowledged.
 
-        backup2 = HaBroker(self, name="backup2", brokers_url=primary.host_port())
-        # Wait for backups to catch up.
-        for t in tests:
-            t.wait(self, backup1)
-            t.wait(self, backup2)
+        cluster.restart(2)
+        cluster[2].wait_status("ready")
+
         # Verify acquired message was replicated
-        for t in tests: t.verify(self, backup1)
-        for t in tests: t.verify(self, backup2)
+        for t in tests: t.verify(self, cluster[1])
+        for t in tests: t.verify(self, cluster[2])
 
     def test_replicate_default(self):
         """Make sure we don't replicate if ha-replicate is unspecified or none"""
