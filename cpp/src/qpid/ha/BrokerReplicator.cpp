@@ -878,7 +878,7 @@ namespace {
 
 // Called by ConnectionObserver::disconnected, disconnected from the network side.
 void BrokerReplicator::disconnected() {
-    QPID_LOG(info, logPrefix << "Disconnected from " << primary);
+    QPID_LOG(info, logPrefix << "Disconnected from primary " << primary);
     connection = 0;
     // Clean up auto-delete queues
     vector<boost::shared_ptr<Exchange> > collect;

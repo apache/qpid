@@ -103,6 +103,10 @@ void StatusCheckThread::run() {
     catch(const exception& e) {
         QPID_LOG(warning, statusCheck.logPrefix << "Error closing status check connection to " << url);
     }
+    try { c.close(); }
+    catch(const exception& e) {
+        QPID_LOG(warning, "Error closing status check connection to " << url);
+    }
     delete this;
 }
 

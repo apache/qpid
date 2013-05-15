@@ -230,25 +230,17 @@ class ReplicationTests(HaBrokerTest):
 
     def test_failover_cpp(self):
         """Verify that failover works in the C++ client."""
-        primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
-        url="%s,%s"%(primary.host_port(), backup.host_port())
-        primary.connect().session().sender("q;{create:always}")
-        backup.wait_backup("q")
-
-        sender = NumberedSender(primary, url=url, queue="q", failover_updates = False)
-        receiver = NumberedReceiver(primary, url=url, queue="q", failover_updates = False)
+        cluster = HaCluster(self, 2)
+        cluster[0].connect().session().sender("q;{create:always}")
+        cluster[1].wait_backup("q")
+        sender = NumberedSender(cluster[0], url=cluster.url, queue="q", failover_updates = False)
+        receiver = NumberedReceiver(cluster[0], url=cluster.url, queue="q", failover_updates = False)
         receiver.start()
         sender.start()
-        backup.wait_backup("q")
         assert retry(lambda: receiver.received > 10) # Wait for some messages to get thru
-
-        primary.kill()
-        assert retry(lambda: not is_running(primary.pid)) # Wait for primary to die
-        backup.promote()
-        n = receiver.received       # Make sure we are still running
-        assert retry(lambda: receiver.received > n + 10)
+        cluster.kill(0)
+        n = receiver.received
+        assert retry(lambda: receiver.received > n + 10) # Verify we are still going
         sender.stop()
         receiver.stop()
 
@@ -372,16 +364,14 @@ class ReplicationTests(HaBrokerTest):
 
     def test_priority(self):
         """Verify priority queues replicate correctly"""
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
-        session = primary.connect().session()
+        cluster = HaCluster(self, 2)
+        session = cluster[0].connect().session()
         s = session.sender("priority-queue; {create:always, node:{x-declare:{arguments:{'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
         # Can't use browse_backup as browser sees messages in delivery order not priority.
-        backup.wait_backup("priority-queue")
-        r = backup.connect_admin().session().receiver("priority-queue")
+        cluster[1].wait_backup("priority-queue")
+        r = cluster[1].connect_admin().session().receiver("priority-queue")
         received = [r.fetch().priority for i in priorities]
         self.assertEqual(sorted(priorities, reverse=True), received)
 
@@ -480,9 +470,8 @@ class ReplicationTests(HaBrokerTest):
 
     def test_replicate_binding(self):
         """Verify that binding replication can be disabled"""
-        primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
+        cluster = HaCluster(self, 2)
+        primary, backup = cluster[0], cluster[1]
         ps = primary.connect().session()
         ps.sender("ex;{create:always,node:{type:topic,x-declare:{arguments:{'qpid.replicate':all}, type:'fanout'}}}")
         ps.sender("q;{create:always,node:{type:queue,x-declare:{arguments:{'qpid.replicate':all}},x-bindings:[{exchange:'ex',queue:'q',key:'',arguments:{'qpid.replicate':none}}]}}")
@@ -867,7 +856,7 @@ acl deny all all
         self.assertEqual(cluster[2].agent().getExchange("xx").values["bindingCount"], 1)
 
         # Simulate the race by re-creating the objects before promoting the new primary
-        cluster.kill(0, False)
+        cluster.kill(0, promote_next=False)
         xdecl = "x-declare:{arguments:{'qpid.replicate':'all'}}"
         node = "node:{%s}"%(xdecl)
         sn = cluster[1].connect_admin().session()
@@ -946,9 +935,10 @@ class LongTests(HaBrokerTest):
 
         # Start sender and receiver threads
         n = 10
-        senders = [NumberedSender(brokers[0], max_depth=1024, failover_updates=False,
+        senders = [NumberedSender(brokers[0], url=brokers.url,
+                                  max_depth=1024, failover_updates=False,
                                  queue="test%s"%(i)) for i in xrange(n)]
-        receivers = [NumberedReceiver(brokers[0], sender=senders[i],
+        receivers = [NumberedReceiver(brokers[0], url=brokers.url, sender=senders[i],
                                       failover_updates=False,
                                       queue="test%s"%(i)) for i in xrange(n)]
         for r in receivers: r.start()
@@ -987,10 +977,9 @@ class LongTests(HaBrokerTest):
                         brokers.bounce(victim) # Next one is promoted
                         primary = next
                     else:
-                        brokers.kill(victim, False)
+                        brokers.kill(victim, promote_next=False, final=False)
                         dead = victim
 
-                    # At this point the primary is running with 1 or 2 backups
                     # Make sure we are not stalled
                     map(wait_passed, receivers, checkpoint)
                     # Run another checkpoint to ensure things work in this configuration
@@ -1090,11 +1079,11 @@ class RecoveryTests(HaBrokerTest):
             # Create a queue before the failure.
             s1 = cluster.connect(0).session().sender("q1;{create:always}")
             for b in cluster: b.wait_backup("q1")
-            for i in xrange(100): s1.send(str(i))
+            for i in xrange(10): s1.send(str(i))
 
             # Kill primary and 2 backups
             cluster[3].wait_status("ready")
-            for i in [0,1,2]: cluster.kill(i, False)
+            for i in [0,1,2]: cluster.kill(i, promote_next=False, final=False)
             cluster[3].promote()    # New primary, backups will be 1 and 2
             cluster[3].wait_status("recovering")
 
@@ -1108,31 +1097,33 @@ class RecoveryTests(HaBrokerTest):
             s2 = cluster.connect(3).session().sender("q2;{create:always}")
 
             # Verify that messages sent are not completed
-            for i in xrange(100,200):
-                s1.send(str(i), sync=False);
-                s2.send(str(i), sync=False)
+            for i in xrange(10,20):
+                s1.send(str(i), sync=False, timeout=0.1);
+                s2.send(str(i), sync=False, timeout=0.1)
+
             assertSyncTimeout(s1)
-            self.assertEqual(s1.unsettled(), 100)
+            self.assertEqual(s1.unsettled(), 10)
             assertSyncTimeout(s2)
-            self.assertEqual(s2.unsettled(), 100)
+            self.assertEqual(s2.unsettled(), 10)
 
             # Verify we can receive even if sending is on hold:
-            cluster[3].assert_browse("q1", [str(i) for i in range(200)])
+            cluster[3].assert_browse("q1", [str(i) for i in range(10)])
 
             # Restart backups, verify queues are released only when both backups are up
             cluster.restart(1)
             assertSyncTimeout(s1)
-            self.assertEqual(s1.unsettled(), 100)
+            self.assertEqual(s1.unsettled(), 10)
             assertSyncTimeout(s2)
-            self.assertEqual(s2.unsettled(), 100)
+            self.assertEqual(s2.unsettled(), 10)
             cluster.restart(2)
+            cluster.restart(0)
 
             # Verify everything is up to date and active
             def settled(sender): sender.sync(timeout=1); return sender.unsettled() == 0;
             assert retry(lambda: settled(s1)), "Unsetttled=%s"%(s1.unsettled())
             assert retry(lambda: settled(s2)), "Unsetttled=%s"%(s2.unsettled())
-            cluster[1].assert_browse_backup("q1", [str(i) for i in range(100)+range(100,200)])
-            cluster[1].assert_browse_backup("q2", [str(i) for i in range(100,200)])
+            cluster[1].assert_browse_backup("q1", [str(i) for i in range(10)+range(10,20)])
+            cluster[1].assert_browse_backup("q2", [str(i) for i in range(10,20)])
             cluster[3].wait_status("active"),
             s1.session.connection.close()
             s2.session.connection.close()
@@ -1164,8 +1155,7 @@ class RecoveryTests(HaBrokerTest):
         """If we join a cluster where the primary is dead, the new primary is
         not yet promoted and there are ready backups then we should refuse
         promotion so that one of the ready backups can be chosen."""
-        # FIXME aconway 2012-10-05: smaller timeout
-        cluster = HaCluster(self, 2, args=["--link-heartbeat-interval", 1])
+        cluster = HaCluster(self, 2)
         cluster[0].wait_status("active")
         cluster[1].wait_status("ready")
         cluster.bounce(0, promote_next=False)
@@ -1206,9 +1196,9 @@ class ConfigurationTests(HaBrokerTest):
         b = start("none", "none")
         check(b, "", "")
 
-
 class StoreTests(BrokerTest):
     """Test for HA with persistence."""
+
     def check_skip(self):
         if not BrokerTest.store_lib:
             print "WARNING: skipping HA+store tests, no store lib found."
@@ -1255,7 +1245,7 @@ class StoreTests(BrokerTest):
         doing catch-up from the primary."""
         if self.check_skip(): return
         cluster = HaCluster(self, 2)
-        sn = cluster[0].connect().session()
+        sn = cluster[0].connect(heartbeat=1).session()
         s1 = sn.sender("q1;{create:always,node:{durable:true}}")
         for m in ["foo","bar"]: s1.send(Message(m, durable=True))
         s2 = sn.sender("q2;{create:always,node:{durable:true}}")
@@ -1264,10 +1254,9 @@ class StoreTests(BrokerTest):
         # Wait for backup to catch up.
         cluster[1].assert_browse_backup("q1", ["foo","bar"])
         cluster[1].assert_browse_backup("q2", ["hello"])
-
         # Make changes that the backup doesn't see
-        cluster.kill(1, promote_next=False)
-        r1 = cluster[0].connect().session().receiver("q1")
+        cluster.kill(1, promote_next=False, final=False)
+        r1 = cluster[0].connect(heartbeat=1).session().receiver("q1")
         for m in ["foo", "bar"]: self.assertEqual(r1.fetch().content, m)
         r1.session.acknowledge()
         for m in ["x","y","z"]: s1.send(Message(m, durable=True))
@@ -1285,7 +1274,8 @@ class StoreTests(BrokerTest):
         # Verify state
         cluster[0].assert_browse("q1",  ["x","y","z"])
         cluster[1].assert_browse_backup("q1",  ["x","y","z"])
-        sn = cluster[0].connect().session() # FIXME aconway 2012-09-25: should fail over!
+
+        sn = cluster[0].connect(heartbeat=1).session() # FIXME aconway 2012-09-25: should fail over!
         sn.sender("ex/k1").send("boo")
         cluster[0].assert_browse_backup("q1", ["x","y","z", "boo"])
         cluster[1].assert_browse_backup("q1", ["x","y","z", "boo"])
@@ -1298,8 +1288,6 @@ if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
     qpid_ha = os.getenv("QPID_HA_EXEC")
     if  qpid_ha and os.path.exists(qpid_ha):
-        os.execvp("qpid-python-test",
-                  ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
+        os.execvp("qpid-python-test", ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
     else:
         print "Skipping ha_tests, %s not available"%(qpid_ha)
-
