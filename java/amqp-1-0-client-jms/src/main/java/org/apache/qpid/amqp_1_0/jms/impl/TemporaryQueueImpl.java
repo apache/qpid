@@ -34,6 +34,7 @@ public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue
     private SessionImpl _session;
     private final Set<MessageConsumer> _consumers =
             Collections.synchronizedSet(new HashSet<MessageConsumer>());
+    private boolean _deleted;
 
     protected TemporaryQueueImpl(String address, Sender sender, SessionImpl session)
     {
@@ -56,7 +57,8 @@ public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue
     {
         if(_consumers.isEmpty())
         {
-           close();
+            close();
+            _deleted = true;
         }
         else
         {
@@ -100,6 +102,6 @@ public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue
 
     public boolean isDeleted()
     {
-        return _sender == null;
+        return _deleted;
     }
 }
