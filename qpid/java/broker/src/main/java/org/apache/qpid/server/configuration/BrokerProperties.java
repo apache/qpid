@@ -50,6 +50,8 @@ public class BrokerProperties
     public static final String PROPERTY_MANAGEMENT_RIGHTS_INFER_ALL_ACCESS = "qpid.broker_jmx_method_rights_infer_all_access";
     public static final String PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY = "qpid.broker_jmx_use_custom_rmi_socket_factory";
 
+    public static final String PROPERTY_DEFAULT_SHARED_MESSAGE_GROUP = "qpid.broker_default-shared-message-group";
+
     public static final String PROPERTY_QPID_HOME = "QPID_HOME";
     public static final String PROPERTY_QPID_WORK = "QPID_WORK";
 

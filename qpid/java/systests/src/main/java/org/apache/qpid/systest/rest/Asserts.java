@@ -88,8 +88,7 @@ public class Asserts
         assertNotNull("Queue " + queueName + " is not found!", queueData);
         Asserts.assertAttributesPresent(queueData, Queue.AVAILABLE_ATTRIBUTES, Queue.CREATED, Queue.UPDATED,
                 Queue.DESCRIPTION, Queue.TIME_TO_LIVE, Queue.ALTERNATE_EXCHANGE, Queue.OWNER, Queue.NO_LOCAL, Queue.LVQ_KEY,
-                Queue.SORT_KEY, Queue.MESSAGE_GROUP_KEY, Queue.MESSAGE_GROUP_DEFAULT_GROUP,
-                Queue.MESSAGE_GROUP_SHARED_GROUPS, Queue.PRIORITIES);
+                Queue.SORT_KEY, Queue.MESSAGE_GROUP_KEY, Queue.MESSAGE_GROUP_SHARED_GROUPS, Queue.PRIORITIES);
 
         assertEquals("Unexpected value of queue attribute " + Queue.NAME, queueName, queueData.get(Queue.NAME));
         assertNotNull("Unexpected value of queue attribute " + Queue.ID, queueData.get(Queue.ID));

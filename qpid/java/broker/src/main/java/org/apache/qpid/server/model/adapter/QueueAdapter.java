@@ -308,10 +308,6 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             {
                 // TODO
             }
-            else if(MESSAGE_GROUP_DEFAULT_GROUP.equals(name))
-            {
-                // TODO
-            }
             else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
             {
                 // TODO
@@ -416,15 +412,13 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(MESSAGE_GROUP_KEY.equals(name))
         {
-            // TODO
-        }
-        else if(MESSAGE_GROUP_DEFAULT_GROUP.equals(name))
-        {
-            // TODO
+            return _queue.getArguments().get(SimpleAMQQueue.QPID_GROUP_HEADER_KEY);
         }
         else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
         {
-            // TODO
+            //We only return the boolean value if message groups are actually in use
+            return getAttribute(MESSAGE_GROUP_KEY) == null ? null :
+                        SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE.equals(_queue.getArguments().get(SimpleAMQQueue.QPID_SHARED_MSG_GROUP));
         }
         else if(LVQ_KEY.equals(name))
         {
