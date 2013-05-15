@@ -70,6 +70,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -338,6 +339,23 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 throw new IllegalArgumentException("Sort key is not specified for sorted queue");
             }
         }
+
+        if (attributes.containsKey(Queue.MESSAGE_GROUP_KEY))
+        {
+            String key = MapValueConverter.getStringAttribute(Queue.MESSAGE_GROUP_KEY, attributes);
+            attributes.remove(Queue.MESSAGE_GROUP_KEY);
+            attributes.put(SimpleAMQQueue.QPID_GROUP_HEADER_KEY, key);
+        }
+
+        if (attributes.containsKey(Queue.MESSAGE_GROUP_SHARED_GROUPS))
+        {
+            if(MapValueConverter.getBooleanAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS, attributes))
+            {
+                attributes.remove(Queue.MESSAGE_GROUP_SHARED_GROUPS);
+                attributes.put(SimpleAMQQueue.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
+            }
+        }
+
         String         name     = MapValueConverter.getStringAttribute(Queue.NAME, attributes, null);
         State          state    = MapValueConverter.getEnumAttribute(State.class, Queue.STATE, attributes, State.ACTIVE);
         boolean        durable  = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);

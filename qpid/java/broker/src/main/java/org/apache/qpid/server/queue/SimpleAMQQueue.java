@@ -41,8 +41,8 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -65,12 +65,15 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, MessageGroupManager.SubscriptionResetHelper
 {
+
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
 
-    private static final String QPID_GROUP_HEADER_KEY = "qpid.group_header_key";
-    private static final String QPID_SHARED_MSG_GROUP = "qpid.shared_msg_group";
-    private static final String QPID_DEFAULT_MESSAGE_GROUP = "qpid.default-message-group";
+    public static final String QPID_GROUP_HEADER_KEY = "qpid.group_header_key";
+    public static final String QPID_SHARED_MSG_GROUP = "qpid.shared_msg_group";
+    public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
+    private static final String QPID_DEFAULT_MESSAGE_GROUP_ARG = "qpid.default-message-group";
     private static final String QPID_NO_GROUP = "qpid.no-group";
+    private static final String DEFAULT_SHARED_MESSAGE_GROUP = System.getProperty(BrokerProperties.PROPERTY_DEFAULT_SHARED_MESSAGE_GROUP, QPID_NO_GROUP);
     // TODO - should make this configurable at the vhost / broker level
     private static final int DEFAULT_MAX_GROUPS = 255;
 
@@ -254,12 +257,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         if(arguments != null && arguments.containsKey(QPID_GROUP_HEADER_KEY))
         {
-            if(arguments.containsKey(QPID_SHARED_MSG_GROUP) && String.valueOf(arguments.get(QPID_SHARED_MSG_GROUP)).equals("1"))
+            if(arguments.containsKey(QPID_SHARED_MSG_GROUP) && String.valueOf(arguments.get(QPID_SHARED_MSG_GROUP)).equals(SHARED_MSG_GROUP_ARG_VALUE))
             {
-                Object defaultGroup = arguments.get(QPID_DEFAULT_MESSAGE_GROUP);
+                Object defaultGroup = arguments.get(QPID_DEFAULT_MESSAGE_GROUP_ARG);
                 _messageGroupManager =
                         new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)),
-                                defaultGroup == null ? QPID_NO_GROUP : defaultGroup.toString(),
+                                defaultGroup == null ? DEFAULT_SHARED_MESSAGE_GROUP : defaultGroup.toString(),
                                 this);
             }
             else

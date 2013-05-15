@@ -88,7 +88,6 @@ public interface Queue extends ConfiguredObject
     public static final String ALTERNATE_EXCHANGE = "alternateExchange";
     public static final String EXCLUSIVE = "exclusive";
     public static final String MESSAGE_GROUP_KEY = "messageGroupKey";
-    public static final String MESSAGE_GROUP_DEFAULT_GROUP = "messageGroupDefaultGroup";
     public static final String MESSAGE_GROUP_SHARED_GROUPS = "messageGroupSharedGroups";
     public static final String LVQ_KEY = "lvqKey";
     public static final String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
@@ -122,7 +121,6 @@ public interface Queue extends ConfiguredObject
                                   LVQ_KEY,
                                   SORT_KEY,
                                   MESSAGE_GROUP_KEY,
-                                  MESSAGE_GROUP_DEFAULT_GROUP,
                                   MESSAGE_GROUP_SHARED_GROUPS,
                                   MAXIMUM_DELIVERY_ATTEMPTS,
                                   QUEUE_FLOW_CONTROL_SIZE_BYTES,
