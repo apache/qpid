@@ -107,6 +107,37 @@ class AmqpBrokerTest(BrokerTest):
     def test_translate2(self):
         self.send_and_receive(send_config=Config(self.broker, version="amqp0-10"))
 
+    def send_and_receive_empty(self, send_config=None, recv_config=None):
+        sconfig = send_config or self.default_config
+        rconfig = recv_config or self.default_config
+        send_cmd = ["qpid-send",
+               "--broker", sconfig.url,
+               "--address=%s" % sconfig.address,
+               "--connection-options={protocol:%s}" % sconfig.version,
+               "--content-size=0",
+               "--messages=1",
+               "-P", "my-header=abc"
+               ]
+        sender = self.popen(send_cmd)
+        sender.wait()
+        receive_cmd = ["qpid-receive",
+               "--broker", rconfig.url,
+               "--address=%s" % rconfig.address,
+               "--connection-options={protocol:%s}" % rconfig.version,
+               "--messages=1",
+               "--print-content=false", "--print-headers=true"
+               ]
+        receiver = self.popen(receive_cmd, stdout=PIPE)
+        l = receiver.stdout.read()
+        assert "my-header:abc" in l
+        receiver.wait()
+
+    def test_translate_empty_1(self):
+        self.send_and_receive_empty(recv_config=Config(self.broker, version="amqp0-10"))
+
+    def test_translate_empty_2(self):
+        self.send_and_receive_empty(send_config=Config(self.broker, version="amqp0-10"))
+
     def test_domain(self):
         brokerB = self.amqp_broker()
         self.agent.create("domain", "BrokerB", {"url":brokerB.host_port()})

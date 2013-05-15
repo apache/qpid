@@ -230,7 +230,7 @@ void Translation::write(OutgoingFromQueue& out)
             qpid::amqp::MessageEncoder encoder(&buffer[0], buffer.size());
             encoder.writeProperties(properties);
             encoder.writeApplicationProperties(applicationProperties);
-            encoder.writeBinary(content, &qpid::amqp::message::DATA);
+            if (content.size()) encoder.writeBinary(content, &qpid::amqp::message::DATA);
             out.write(&buffer[0], encoder.getPosition());
         } else {
             QPID_LOG(error, "Could not write message data in AMQP 1.0 format");
