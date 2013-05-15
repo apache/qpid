@@ -334,7 +334,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             if(_state != State.CLOSED)
             {
                 stop();
-                for(SessionImpl session : _sessions)
+                List<SessionImpl> sessions = new ArrayList<SessionImpl>(_sessions);
+                for(SessionImpl session : sessions)
                 {
                     session.close();
                 }
