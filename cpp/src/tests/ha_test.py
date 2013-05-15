@@ -63,18 +63,57 @@ class Credentials(object):
 
     def add_user(self, url): return "%s/%s@%s"%(self.username, self.password, url)
 
+class HaPort:
+    """Many HA tests need to allocate a broker port dynamically and then kill
+    and restart a broker on that same port multiple times. qpidd --port=0 only
+    ensures the port for the initial broker process, subsequent brokers re-using
+    the same port may fail with "address already in use".
+
+    HaPort binds and listens to the port and returns a file descriptor to pass
+    to qpidd --socket-fd. It holds on to the port untill the end of the test so
+    the broker can restart multiple times.
+    """
+
+    def __init__(self, test, port=0):
+        """Bind and listen to port. port=0 allocates a port dynamically.
+        self.port is the allocated port, self.fileno is the file descriptor for
+        qpid --socket-fd."""
+
+        self.test = test
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind(("", port))
+        self.socket.listen(5)
+        self.port = self.socket.getsockname()[1]
+        self.fileno = self.socket.fileno()
+        self.stopped = False
+        test.cleanup_stop(self) # Stop during test.tearDown
+
+    def stop(self):             # Called in tearDown
+        if not self.stopped:
+            self.stopped = True
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+
+    def __str__(self): return "HaPort<port:%s, fileno:%s>"%(self.port, self.fileno)
+
+
 class HaBroker(Broker):
     """Start a broker with HA enabled
     @param client_cred: (user, password, mechanism) for admin clients started by the HaBroker.
     """
-    def __init__(self, test, args=[], brokers_url=None, ha_cluster=True, ha_replicate="all",
-                 client_credentials=None, **kwargs):
+    def __init__(self, test, ha_port=None, args=[], brokers_url=None, ha_cluster=True,
+                 ha_replicate="all", client_credentials=None, **kwargs):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
+        ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
                  "--log-enable=debug+:ha::",
-                 # FIXME aconway 2012-02-13: workaround slow link failover.
+                 # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
+                 # Heartbeat and negotiate time are needed so that a broker wont
+                 # stall on an address that doesn't currently have a broker running.
+                 "--link-heartbeat-interval=1",
+                 "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]
@@ -89,7 +128,8 @@ acl allow all all
             aclf.close()
         if not "--acl-file" in args:
             args += [ "--acl-file", acl, "--load-module", os.getenv("ACL_LIB") ]
-        Broker.__init__(self, test, args, **kwargs)
+        args += ["--socket-fd=%s"%ha_port.fileno, "--listen-disable=tcp"]
+        Broker.__init__(self, test, args, port=ha_port.port, **kwargs)
         self.qpid_ha_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-ha")
         assert os.path.exists(self.qpid_ha_path)
         self.qpid_config_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-config")
@@ -97,6 +137,7 @@ acl allow all all
         self.qpid_ha_script=import_script(self.qpid_ha_path)
         self._agent = None
         self.client_credentials = client_credentials
+        self.ha_port = ha_port
 
     def __str__(self): return Broker.__str__(self)
 
@@ -108,8 +149,7 @@ acl allow all all
             args = args + ["--sasl-mechanism", cred.mechanism]
         self.qpid_ha_script.main_except(["", "-b", url]+args)
 
-    def promote(self):
-        self.ready(); self.qpid_ha(["promote"])
+    def promote(self): self.ready(); self.qpid_ha(["promote"])
     def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
     def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url])
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
@@ -211,14 +251,16 @@ acl allow all all
     def ready(self):
         return Broker.ready(self, client_properties={"qpid.ha-admin":1})
 
-    def kill(self):
+    def kill(self, final=True):
+        if final: self.ha_port.stop()
         self._agent = None
         return Broker.kill(self)
+
 
 class HaCluster(object):
     _cluster_count = 0
 
-    def __init__(self, test, n, promote=True, wait=True, **kwargs):
+    def __init__(self, test, n, promote=True, wait=True, args=[], **kwargs):
         """Start a cluster of n brokers.
 
         @test: The test being run
@@ -227,36 +269,49 @@ class HaCluster(object):
         @wait: wait for primary active and backups ready. Ignored if promote=False
         """
         self.test = test
+        self.args = args
         self.kwargs = kwargs
+        self._ports = [HaPort(test) for i in xrange(n)]
+        self._set_url()
         self._brokers = []
         self.id = HaCluster._cluster_count
         self.broker_id = 0
         HaCluster._cluster_count += 1
-        for i in xrange(n): self.start(False)
-        self.update_urls()
+        for i in xrange(n): self.start()
         if promote:
             self[0].promote()
             if wait:
                 self[0].wait_status("active")
                 for b in self[1:]: b.wait_status("ready")
 
-
     def next_name(self):
         name="cluster%s-%s"%(self.id, self.broker_id)
         self.broker_id += 1
         return name
 
-    def start(self, update_urls=True, args=[]):
-        """Start a new broker in the cluster"""
-        b = HaBroker(self.test, name=self.next_name(), **self.kwargs)
+    def _ha_broker(self, ha_port, name):
+        b = HaBroker(ha_port.test, ha_port, brokers_url=self.url, name=name,
+                     args=self.args, **self.kwargs)
         b.ready()
-        self._brokers.append(b)
-        if update_urls: self.update_urls()
         return b
 
-    def update_urls(self):
-        self.url = ",".join([b.host_port() for b in self])
-        if len(self) > 1:          # No failover addresses on a 1 cluster.
+    def start(self):
+        """Start a new broker in the cluster"""
+        i = len(self)
+        assert i <= len(self._ports)
+        if i == len(self._ports):
+            self._ports.append(HaPort(self.test))
+            self._set_url()
+            self._update_urls()
+        b = self._ha_broker(self._ports[i], self.next_name())
+        self._brokers.append(b)
+        return b
+
+    def _set_url(self):
+        self.url = ",".join("127.0.0.1:%s"%(p.port) for p in self._ports)
+
+    def _update_urls(self):
+        if len(self) > 1: # No failover addresses on a 1 cluster.
             for b in self:
                 b.set_brokers_url(self.url)
                 b.set_public_url(self.url)
@@ -265,29 +320,28 @@ class HaCluster(object):
         """Connect with reconnect_urls"""
         return self[i].connect(reconnect=True, reconnect_urls=self.url.split(","))
 
-    def kill(self, i, promote_next=True):
+    def kill(self, i, promote_next=True, final=True):
         """Kill broker i, promote broker i+1"""
-        self[i].kill()
+        self[i].kill(final=final)
         if promote_next: self[(i+1) % len(self)].promote()
 
     def restart(self, i):
         """Start a broker with the same port, name and data directory. It will get
         a separate log file: foo.n.log"""
+        if self._ports[i].stopped: raise Exception("Restart after final kill: %s"%(self))
         b = self._brokers[i]
-        self._brokers[i] = HaBroker(
-            self.test, name=b.name, port=b.port(), brokers_url=self.url,
-            **self.kwargs)
+        self._brokers[i] = self._ha_broker(self._ports[i], b.name)
         self._brokers[i].ready()
 
     def bounce(self, i, promote_next=True):
         """Stop and restart a broker in a cluster."""
         if (len(self) == 1):
-            self.kill(i, promote_next=False)
+            self.kill(i, promote_next=False, final=False)
             self.restart(i)
             self[i].ready()
             if promote_next: self[i].promote()
         else:
-            self.kill(i, promote_next)
+            self.kill(i, promote_next, final=False)
             self.restart(i)
 
     # Behave like a list of brokers.
