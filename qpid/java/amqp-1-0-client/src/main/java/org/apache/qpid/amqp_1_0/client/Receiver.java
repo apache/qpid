@@ -50,6 +50,7 @@ public class Receiver implements DeliveryStateHandler
     private Map<Binary, SettledAction> _unsettledMap = new HashMap<Binary, SettledAction>();
     private MessageArrivalListener _messageArrivalListener;
     private org.apache.qpid.amqp_1_0.type.transport.Error _error;
+    private Runnable _remoteErrorTask;
 
     public Receiver(final Session session,
                     final String linkName,
@@ -125,6 +126,10 @@ public class Receiver implements DeliveryStateHandler
             public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
             {
                 _error = detach.getError();
+                if(detach.getError()!=null)
+                {
+                    remoteError();
+                }
                 super.remoteDetached(endpoint, detach);
             }
         });
@@ -168,6 +173,14 @@ public class Receiver implements DeliveryStateHandler
         else
         {
 
+        }
+    }
+
+    private void remoteError()
+    {
+        if(_remoteErrorTask != null)
+        {
+            _remoteErrorTask.run();
         }
     }
 
@@ -595,4 +608,8 @@ public class Receiver implements DeliveryStateHandler
         void messageArrived(Receiver receiver);
     }
 
+    public void setRemoteErrorListener(Runnable listener)
+    {
+        _remoteErrorTask = listener;
+    }
 }

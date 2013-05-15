@@ -48,6 +48,7 @@ public class Sender implements DeliveryStateHandler
     private Map<Binary, OutcomeAction> _outcomeActions = Collections.synchronizedMap(new HashMap<Binary, OutcomeAction>());
     private boolean _closed;
     private Error _error;
+    private Runnable _remoteErrorTask;
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr)
             throws SenderCreationException, ConnectionClosedException
@@ -178,6 +179,10 @@ public class Sender implements DeliveryStateHandler
             public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
             {
                 _error = detach.getError();
+                if(_error != null)
+                {
+                    remoteError();
+                }
                 super.remoteDetached(endpoint, detach);
             }
         });
@@ -396,6 +401,26 @@ public class Sender implements DeliveryStateHandler
     public Session getSession()
     {
         return _session;
+    }
+
+
+    private void remoteError()
+    {
+        if(_remoteErrorTask != null)
+        {
+            _remoteErrorTask.run();
+        }
+    }
+
+
+    public void setRemoteErrorListener(Runnable listener)
+    {
+        _remoteErrorTask = listener;
+    }
+
+    public Error getError()
+    {
+        return _error;
     }
 
     public class SenderCreationException extends Exception

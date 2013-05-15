@@ -34,6 +34,7 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.util.UUID;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
+import org.apache.qpid.amqp_1_0.type.transport.*;
 
 public class MessageProducerImpl implements MessageProducer, QueueSender, TopicPublisher
 {
@@ -87,6 +88,29 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
                 jmsEx.setLinkedException(e);
                 throw jmsEx;
             }
+            _sender.setRemoteErrorListener(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            try
+                            {
+                                final ExceptionListener exceptionListener = _session.getConnection().getExceptionListener();
+
+                                if(exceptionListener != null)
+                                {
+                                    final org.apache.qpid.amqp_1_0.type.transport.Error receiverError = _sender.getError();
+                                    exceptionListener.onException(new JMSException(receiverError.getDescription(),
+                                            receiverError.getCondition().getValue().toString()));
+
+                                }
+                            }
+                            catch (JMSException e)
+                            {
+
+                            }
+                        }
+                    });
         }
     }
 

@@ -117,7 +117,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                             if(error != null)
                             {
                                 exceptionListener.onException(new JMSException(error.getDescription(),
-                                        error.getCondition().toString()));
+                                        error.getCondition().getValue().toString()));
                             }
                             else
                             {
