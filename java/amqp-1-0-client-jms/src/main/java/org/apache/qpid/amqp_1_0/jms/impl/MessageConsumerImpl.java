@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.InvalidSelectorException;
@@ -117,6 +118,29 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         _session = session;
 
         _receiver = createClientReceiver();
+        _receiver.setRemoteErrorListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    final ExceptionListener exceptionListener = _session.getConnection().getExceptionListener();
+
+                    if(exceptionListener != null)
+                    {
+                        final Error receiverError = _receiver.getError();
+                        exceptionListener.onException(new JMSException(receiverError.getDescription(),
+                                receiverError.getCondition().getValue().toString()));
+
+                    }
+                }
+                catch (JMSException e)
+                {
+
+                }
+            }
+        });
 
 
     }
@@ -125,8 +149,8 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         try
         {
-            return _session.getClientSession(). createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
-                                                               _linkName, _durable, getFilters(), null);
+            return _session.getClientSession().createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
+                    _linkName, _durable, getFilters(), null);
         }
         catch (ConnectionErrorException e)
         {
