@@ -33,7 +33,7 @@ if HAVE_PERL_DEVEL
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/bindings -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
 
-EXTRA_DIST = perl/perl.i perl/CMakeLists.txt perl/Makefile.PL perl/qpid.pm perl/lib
+EXTRA_DIST = perl/perl.i perl/CMakeLists.txt perl/Makefile.PL perl/lib/qpid.pm perl/lib
 BUILT_SOURCES = perl/cqpid_perl.cpp
 SWIG_FLAGS = -w362,401
 
