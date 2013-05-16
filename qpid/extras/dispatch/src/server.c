@@ -145,18 +145,21 @@ static void block_if_paused_LH(dx_server_t *dx_server)
 }
 
 
-static void process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
+static int process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
 {
     dx_connection_t *ctx = pn_connector_context(cxtr);
     int events      = 0;
     int auth_passes = 0;
+    int passes      = 0;
 
     if (ctx->state == CONN_STATE_USER) {
         dx_server->ufd_handler(ctx->ufd->context, ctx->ufd);
-        return;
+        return 0;
     }
 
     do {
+        passes++;
+
         //
         // Step the engine for pre-handler processing
         //
@@ -239,6 +242,8 @@ static void process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
             break;
         }
     } while (events > 0);
+
+    return passes > 1;
 }
 
 
@@ -444,7 +449,7 @@ static void *thread_run(void *arg)
         // Process the connector that we now have exclusive access to.
         //
         if (work) {
-            process_connector(dx_server, work);
+            int work_done = process_connector(dx_server, work);
 
             //
             // Check to see if the connector was closed during processing
@@ -454,11 +459,16 @@ static void *thread_run(void *arg)
                 // Connector is closed.  Free the context and the connector.
                 //
                 conn = pn_connector_connection(work);
+
+                //
+                // If this is a dispatch connector, schedule the re-connect timer
+                //
                 if (ctx->connector) {
                     ctx->connector->ctx = 0;
                     ctx->connector->state = CXTR_STATE_CONNECTING;
                     dx_timer_schedule(ctx->connector->timer, ctx->connector->delay);
                 }
+
                 sys_mutex_lock(dx_server->lock);
                 free_dx_connection_t(ctx);
                 pn_connector_free(work);
@@ -480,7 +490,8 @@ static void *thread_run(void *arg)
             // Wake up the proton driver to force it to reconsider its set of FDs
             // in light of the processing that just occurred.
             //
-            pn_driver_wakeup(dx_server->driver);
+            if (work_done)
+                pn_driver_wakeup(dx_server->driver);
         }
     }
 
