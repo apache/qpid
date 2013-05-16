@@ -34,6 +34,7 @@ namespace ha {
 
 namespace {
 const std::string SYSTEM_ID="system-id";
+const std::string PROTOCOL="protocol";
 const std::string HOST_NAME="host-name";
 const std::string PORT="port";
 const std::string STATUS="status";
@@ -43,11 +44,10 @@ using types::Uuid;
 using types::Variant;
 using framing::FieldTable;
 
-BrokerInfo::BrokerInfo() : port(0), status(JOINING) {}
+BrokerInfo::BrokerInfo() : status(JOINING) {}
 
-BrokerInfo::BrokerInfo(const types::Uuid& id, BrokerStatus s,
-                       const std::string& host, uint16_t port_) :
-    hostName(host), port(port_), systemId(id), status(s)
+BrokerInfo::BrokerInfo(const types::Uuid& id, BrokerStatus s, const Address& a)
+  : address(a), systemId(id), status(s)
 {}
 
 FieldTable BrokerInfo::asFieldTable() const {
@@ -60,8 +60,9 @@ FieldTable BrokerInfo::asFieldTable() const {
 Variant::Map BrokerInfo::asMap() const {
     Variant::Map m;
     m[SYSTEM_ID] = systemId;
-    m[HOST_NAME] = hostName;
-    m[PORT] = port;
+    m[PROTOCOL] = address.protocol;
+    m[HOST_NAME] = address.host;
+    m[PORT] = address.port;
     m[STATUS] = status;
     return m;
 }
@@ -79,19 +80,20 @@ const Variant& get(const Variant::Map& m, const std::string& k) {
         QPID_MSG("Missing field '" << k << "' in broker information"));
     return i->second;
 }
+const Address empty;
 }
 
 void BrokerInfo::assign(const Variant::Map& m) {
     systemId = get(m, SYSTEM_ID).asUuid();
-    hostName = get(m, HOST_NAME).asString();
-    port = get(m, PORT).asUint16();
+    address = Address(get(m, PROTOCOL).asString(),
+                      get(m, HOST_NAME).asString(),
+                      get(m, PORT).asUint16());
     status = BrokerStatus(get(m, STATUS).asUint8());
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
     o  << b.getSystemId().str().substr(0,7);
-    if (!b.getHostName().empty())
-        o << "@" << b.getHostName() << ":" << b.getPort();
+    if (b.getAddress() != empty) o << "@" << b.getAddress();
     o << "(" << printable(b.getStatus()) << ")";
     return o;
 }

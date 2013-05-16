@@ -201,7 +201,7 @@ BrokerStatus HaBroker::getStatus() const {
 
 void HaBroker::setAddress(const Address& a) {
     QPID_LOG(info, role->getLogPrefix() << "Set self address to: " << a);
-    BrokerInfo b(membership.getSelf(), membership.getStatus(), a.host, a.port);
+    BrokerInfo b(membership.getSelf(), membership.getStatus(), a);
     membership.add(b);
 }
 
