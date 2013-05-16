@@ -40,5 +40,5 @@ ostream& operator<<(ostream& os, const Address& a) {
 bool operator==(const Address& x, const Address& y) {
     return y.protocol==x.protocol && y.host==x.host && y.port == x.port;
 }
-
+bool operator!=(const Address& x, const Address& y) { return !(x == y); }
 } // namespace qpid

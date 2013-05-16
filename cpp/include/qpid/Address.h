@@ -29,13 +29,13 @@ namespace client { struct ConnectionSettings; }
 
 
 /**
- * Contains the protocol address of an AMQP broker. 
+ * Contains the protocol address of an AMQP broker.
  */
 struct Address  {
 public:
     static const std::string TCP; // Default TCP protocol tag.
     static const uint16_t AMQP_PORT=5672; // Default AMQP port.
-    
+
     QPID_COMMON_INLINE_EXTERN explicit Address(
         const std::string& protocol_=std::string(),
         const std::string& host_=std::string(),
@@ -49,6 +49,7 @@ public:
 
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Address& addr);
 QPID_COMMON_EXTERN bool operator==(const Address& x, const Address& y);
+QPID_COMMON_EXTERN bool operator!=(const Address& x, const Address& y);
 
 } // namespace qpid
 
