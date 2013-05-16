@@ -267,9 +267,9 @@ static void router_disp_handler(void* context, dx_link_t *link, pn_delivery_t *d
 
             return;
         }
+    } else {
+        // TODO - Handle disposition updates from upstream
     }
-
-    pn_delivery_settle(delivery);
 }
 
 
