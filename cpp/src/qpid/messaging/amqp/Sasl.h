@@ -42,6 +42,7 @@ class Sasl : public qpid::sys::Codec, qpid::amqp::SaslClient
 {
   public:
     Sasl(const std::string& id, ConnectionContext& context, const std::string& hostname);
+    ~Sasl();
     std::size_t decode(const char* buffer, std::size_t size);
     std::size_t encode(char* buffer, std::size_t size);
     bool canEncode();
