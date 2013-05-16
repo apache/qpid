@@ -4,13 +4,19 @@ Migrating to new HA
 ===================
 
 Up to version 0.20, Qpid provided the `cluster` module to support active-active
-clustering for Qpid C++ brokers. In version 0.20 the `ha` module was introduced
-supporting active-passive HA clustering. From version 0.22 the older `cluster`
-module is no longer available so users will have to migrate to the new `ha`
-module.
+clustering for Qpid C++ brokers. There were some issues with this module. It
+relied on synchronization of too much broker state, so that unrelated changes to
+the broker often required additional work on the cluster. It also had a design
+that could not take advantage of multiple CPUs - it was effectively single
+threaded.
 
-This document summarizes the differences between the old and new HA modules and
-the steps to migrate to new HA. It assumes you have read the
+In version 0.20 the `ha` module was introduced supporting active-passive HA
+clustering that does not suffer these problems. From version 0.22 the older
+`cluster` module is no longer available so users will have to migrate to the new
+`ha` module.
+
+This note summarizes the differences between the old and new HA modules and the
+steps to migrate to new HA. It assumes you have read the
 [HA chapter of the C++ Broker Book][chapter-ha]
 
 Client connections and fail-over
