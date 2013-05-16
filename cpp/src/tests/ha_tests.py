@@ -112,14 +112,18 @@ class ReplicationTests(HaBrokerTest):
 
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
-            primary = HaBroker(self, name="primary")
-            primary.promote()
+            cluster = HaCluster(self, 2)
+            primary = cluster[0]
+            backup  = cluster[1]
+
             p = primary.connect().session()
 
-            # Create config, send messages before starting the backup, to test catch-up replication.
+            # Send messages before re-starting the backup, test catch-up replication.
+            cluster.kill(1, promote_next=False, final=False)
             setup(p, "1", primary)
-            backup  = HaBroker(self, name="backup", brokers_url=primary.host_port())
-            # Create config, send messages after starting the backup, to test steady-state replication.
+            cluster.restart(1)
+
+            # Send messages after re-starting the backup, to test steady-state replication.
             setup(p, "2", primary)
 
             # Verify the data on the backup
@@ -203,7 +207,7 @@ class ReplicationTests(HaBrokerTest):
         """Verify that backups rejects connections and that fail-over works in python client"""
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
-            primary = HaBroker(self, name="primary", expect=EXPECT_EXIT_FAIL)
+            primary  = HaBroker(self, name="primary")
             primary.promote()
             backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
             # Check that backup rejects normal connections
@@ -325,35 +329,31 @@ class ReplicationTests(HaBrokerTest):
 
     def test_lvq(self):
         """Verify that we replicate to an LVQ correctly"""
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
-        s = primary.connect().session().sender("lvq; {create:always, node:{x-declare:{arguments:{'qpid.last_value_queue_key':lvq-key}}}}")
+        cluster = HaCluster(self, 2)
+        s = cluster[0].connect().session().sender("lvq; {create:always, node:{x-declare:{arguments:{'qpid.last_value_queue_key':lvq-key}}}}")
         def send(key,value): s.send(Message(content=value,properties={"lvq-key":key}))
         for kv in [("a","a-1"),("b","b-1"),("a","a-2"),("a","a-3"),("c","c-1"),("c","c-2")]:
             send(*kv)
-        backup.assert_browse_backup("lvq", ["b-1", "a-3", "c-2"])
+        cluster[1].assert_browse_backup("lvq", ["b-1", "a-3", "c-2"])
         send("b","b-2")
-        backup.assert_browse_backup("lvq", ["a-3", "c-2", "b-2"])
+        cluster[1].assert_browse_backup("lvq", ["a-3", "c-2", "b-2"])
         send("c","c-3")
-        backup.assert_browse_backup("lvq", ["a-3", "b-2", "c-3"])
+        cluster[1].assert_browse_backup("lvq", ["a-3", "b-2", "c-3"])
         send("d","d-1")
-        backup.assert_browse_backup("lvq", ["a-3", "b-2", "c-3", "d-1"])
+        cluster[1].assert_browse_backup("lvq", ["a-3", "b-2", "c-3", "d-1"])
 
     def test_ring(self):
         """Test replication with the ring queue policy"""
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
-        s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5}}}}")
+        """Verify that we replicate to an LVQ correctly"""
+        cluster = HaCluster(self, 2)
+        s = cluster[0].connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5}}}}")
         for i in range(10): s.send(Message(str(i)))
-        backup.assert_browse_backup("q", [str(i) for i in range(5,10)])
+        cluster[1].assert_browse_backup("q", [str(i) for i in range(5,10)])
 
     def test_reject(self):
         """Test replication with the reject queue policy"""
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
+        cluster = HaCluster(self, 2)
+        primary, backup = cluster
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':reject, 'qpid.max_count':5}}}}")
         try:
             for i in range(10): s.send(Message(str(i)), sync=False)
@@ -377,9 +377,8 @@ class ReplicationTests(HaBrokerTest):
 
     def test_priority_fairshare(self):
         """Verify priority queues replicate correctly"""
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
+        cluster = HaCluster(self, 2)
+        primary, backup = cluster
         session = primary.connect().session()
         levels = 8
         priorities = [4,5,3,7,8,8,2,8,2,8,8,16,6,6,6,6,6,6,8,3,5,8,3,5,5,3,3,8,8,3,7,3,7,7,7,8,8,8,2,3]
@@ -396,9 +395,8 @@ class ReplicationTests(HaBrokerTest):
         self.assertEqual(received, fair)
 
     def test_priority_ring(self):
-        primary  = HaBroker(self, name="primary")
-        primary.promote()
-        backup = HaBroker(self, name="backup", brokers_url=primary.host_port())
+        cluster = HaCluster(self, 2)
+        primary, backup = cluster
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':ring, 'qpid.max_count':5, 'qpid.priorities':10}}}}")
         priorities = [8,9,5,1,2,2,3,4,9,7,8,9,9,2]
         for p in priorities: s.send(Message(priority=p))
@@ -823,7 +821,7 @@ acl deny all all
         cluster = HaCluster(self, 2)
         s = cluster[0].connect().session()
         s.sender("keep;{create:always}") # Leave this queue in place.
-        for i in xrange(1000):
+        for i in xrange(100):
             s.sender("deleteme%s;{create:always,delete:always}"%(i)).close()
         # It is possible for the backup to attempt to subscribe after the queue
         # is deleted. This is not an error, but is logged as an error on the primary.
