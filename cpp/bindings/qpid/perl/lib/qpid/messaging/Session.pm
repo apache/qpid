@@ -112,7 +112,7 @@ sub rollback {
 
 =over
 
-=item $session->acknowledge( msg )
+=item $session->acknowledge
 
 Acknowledges that a specific message that has been received.
 
@@ -149,7 +149,7 @@ sub reject {
     my ($self) = @_;
     my $impl = $self->{_impl};
 
-    $impl->reject($_[1]);
+    $impl->reject($_[1]->get_implementation);
 }
 
 =pod
@@ -168,7 +168,7 @@ sub release {
     my ($self) = @_;
     my $impl = $self->{_impl};
 
-    $impl->release($_[1]);
+    $impl->release($_[1]->get_implementation);
 }
 
 =pod
