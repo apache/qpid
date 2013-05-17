@@ -173,9 +173,9 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 }
 
             }
-            catch(JMException e)
+            catch(Exception e)
             {
-                LOGGER.error("Failed to add mbean for child : " + child.getName(), e);
+                LOGGER.error("Exception while creating mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
             }
         }
     }
@@ -191,9 +191,9 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 {
                     mbean.unregister();
                 }
-                catch(JMException e)
+                catch(Exception e)
                 {
-                    LOGGER.error("Failed to remove mbean for child : " + child.getName(), e);
+                    LOGGER.error("Exception while unregistering mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
                 }
             }
         }
@@ -233,6 +233,8 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
     @Override
     public void unregister() throws JMException
     {
+        _virtualHost.removeChangeListener(this);
+
         synchronized (_children)
         {
             for (AMQManagedObject mbean : _children.values())
@@ -243,9 +245,9 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                     {
                         mbean.unregister();
                     }
-                    catch(JMException e)
+                    catch(Exception e)
                     {
-                        LOGGER.error("Failed to remove mbean for child : " + mbean, e);
+                        LOGGER.error("Exception while unregistering mbean : " + mbean, e);
                     }
                 }
             }
