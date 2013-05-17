@@ -225,4 +225,18 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
         // TODO : Add state management
         return false;
     }
+
+    @Override
+    public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
+            AccessControlException, IllegalArgumentException
+    {
+        throw new UnsupportedOperationException("Changing attributes on consumer is not supported.");
+    }
+
+    @Override
+    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
+            IllegalArgumentException
+    {
+        throw new UnsupportedOperationException("Changing attributes on consumer is not supported.");
+    }
 }
