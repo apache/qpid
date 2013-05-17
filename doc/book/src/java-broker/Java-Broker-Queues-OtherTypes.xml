@@ -127,7 +127,7 @@
           <tbody>
             <row>
               <entry>priority</entry>
-              <entry>priorities</entry>
+              <entry>x-qpid-priorities</entry>
               <entry>java.lang.Integer</entry>
               <entry>Specifies a priority queue with given number priorities</entry>
             </row>
@@ -155,7 +155,14 @@
         <title>Creation of an LVQ using the Qpid extension to JMS</title>
         <programlisting><![CDATA[Map<String,Object> arguments = new HashMap<String, Object>();
 arguments.put("qpid.last_value_queue_key","ISIN");
-((AMQSession<?,?>) session).createQueue(queueName, autoDelete, durable, exclusive, arguments);]]></programlisting>
+AMQDestination amqQueue = (AMQDestination) context.lookup("myqueue");
+((AMQSession<?,?>) session).createQueue(
+        AMQShortString.valueOf(amqQueue.getQueueName()),
+        amqQueue.isAutoDelete(),
+        amqQueue.isDurable(),
+        amqQueue.isExclusive(),
+        arguments);
+]]></programlisting>
 
       </example>
       <para> The following example illustrates the creation of the sorted queue from a the JMX
