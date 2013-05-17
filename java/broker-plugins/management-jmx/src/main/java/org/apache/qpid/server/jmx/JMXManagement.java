@@ -33,6 +33,7 @@ import java.util.UUID;
 import javax.management.JMException;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
@@ -362,4 +363,24 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         return AVAILABLE_ATTRIBUTES;
     }
 
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+        validateAttributes(convertedAttributes);
+
+        super.changeAttributes(convertedAttributes);
+    }
+
+    private void validateAttributes(Map<String, Object> convertedAttributes)
+    {
+        if(convertedAttributes.containsKey(JMXManagement.NAME))
+        {
+            String newName = (String) convertedAttributes.get(JMXManagement.NAME);
+            if(!getName().equals(newName))
+            {
+                throw new IllegalConfigurationException("Changing the name of jmx management plugin is not allowed");
+            }
+        }
+    }
 }

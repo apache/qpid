@@ -276,4 +276,18 @@ final class SessionAdapter extends AbstractAdapter implements Session
         // TODO : add state management
         return false;
     }
+
+    @Override
+    public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
+            AccessControlException, IllegalArgumentException
+    {
+        throw new UnsupportedOperationException("Changing attributes on session is not supported.");
+    }
+
+    @Override
+    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
+            IllegalArgumentException
+    {
+        throw new UnsupportedOperationException("Changing attributes on session is not supported.");
+    }
 }
