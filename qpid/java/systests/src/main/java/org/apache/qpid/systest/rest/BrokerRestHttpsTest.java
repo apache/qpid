@@ -52,7 +52,7 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
         super.customizeConfiguration();
         getRestTestHelper().setUseSsl(true);
         Map<String, Object> newAttributes = new HashMap<String, Object>();
-        newAttributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.HTTPS));
+        newAttributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.HTTP));
         newAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
         newAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT,newAttributes);

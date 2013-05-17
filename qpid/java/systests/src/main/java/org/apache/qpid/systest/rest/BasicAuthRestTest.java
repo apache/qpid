@@ -33,6 +33,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BasicAuthRestTest extends QpidRestTestCase
@@ -58,9 +59,8 @@ public class BasicAuthRestTest extends QpidRestTestCase
         getRestTestHelper().setUseSsl(useSsl);
         if (useSsl)
         {
-            getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PROTOCOLS, Collections.singleton(Protocol.HTTPS));
+            getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
             getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
-
         }
         super.customizeConfiguration();
     }
