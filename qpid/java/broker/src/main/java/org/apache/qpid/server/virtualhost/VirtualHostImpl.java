@@ -467,6 +467,9 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             }
         }
 
+        // clear exchange objects
+        _exchangeRegistry.clearAndUnregisterMbeans();
+
         _state = State.STOPPED;
 
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
