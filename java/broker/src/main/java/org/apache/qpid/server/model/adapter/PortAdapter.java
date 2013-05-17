@@ -411,7 +411,6 @@ public class PortAdapter extends AbstractAdapter implements Port
                 || (wantClientCertificate != null && wantClientCertificate.booleanValue());
 
         String keyStoreName = (String) merged.get(KEY_STORE);
-        boolean hasKeyStore = keyStoreName != null;
         if(keyStoreName != null)
         {
             if (_broker.findKeyStoreByName(keyStoreName) == null)
@@ -452,11 +451,6 @@ public class PortAdapter extends AbstractAdapter implements Port
             {
                 throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
             }
-        }
-
-        if (protocols != null && protocols.contains(Protocol.HTTPS) && !hasKeyStore)
-        {
-            throw new IllegalConfigurationException("Can't create port which requires SSL but has no key store configured.");
         }
 
         if (protocols != null && protocols.contains(Protocol.RMI) && usesSsl)

@@ -239,17 +239,6 @@ define(["dojo/_base/xhr",
                                     }
                                     disableTransportWidget = true;
                                 }
-                                else if (newValue == "HTTP" && registry.byId("formAddPort.protocolsHTTP").value == "HTTPS")
-                                {
-                                    if  (transportWidget.value != "SSL")
-                                    {
-                                      transportWidget.set("value", "SSL");
-
-                                      // changing of transport widget value will cause the call to toggleSslWidgets
-                                      toggleSsl = false;
-                                    }
-                                    disableTransportWidget = true;
-                                }
                                 if (toggleSsl)
                                 {
                                   toggleSslWidgets(newValue, transportWidget.value);
@@ -288,15 +277,6 @@ define(["dojo/_base/xhr",
                                 transportWidget.set("disabled", isRMI);
                                 registry.byId("formAddPort:fieldsAuthenticationProvider").domNode.style.display = isRMI? "none" : "block";
                                 registry.byId("formAddPort.authenticationProvider").set("disabled", isRMI);
-                            });
-
-                            registry.byId("formAddPort.protocolsHTTP").on("change", function(newValue){
-                                var isHTTPS = newValue == "HTTPS";
-                                var transportWidget = registry.byId("formAddPort.transports");
-                                if (isHTTPS && transportWidget.value != "SSL") {
-                                    transportWidget.set("value", "SSL");
-                                }
-                                transportWidget.set("disabled", isHTTPS);
                             });
 
                             theForm.on("submit", function(e) {
