@@ -124,7 +124,7 @@ public class PortFactory
             }
             Protocol protocol = protocols.iterator().next();
 
-            if(!broker.isManagementMode())
+            if(!broker.isManagementMode() && protocol.getProtocolType() != ProtocolType.HTTP)
             {
                 //ManagementMode needs this relaxed to allow its overriding management ports to be inserted.
 
@@ -150,7 +150,7 @@ public class PortFactory
             }
         }
 
-        if(port.getTransports().contains(Transport.SSL) || port.getProtocols().contains(Protocol.HTTPS))
+        if(port.getTransports().contains(Transport.SSL))
         {
             if(port.getKeyStore() == null)
             {

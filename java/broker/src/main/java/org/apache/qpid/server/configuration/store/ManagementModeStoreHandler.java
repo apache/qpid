@@ -298,7 +298,6 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
                             quiesce = managementModeRmiPortOverride > 0;
                             break;
                         case HTTP:
-                        case HTTPS:
                             quiesce = managementModeHttpPortOverride > 0;
                             break;
                         default:
