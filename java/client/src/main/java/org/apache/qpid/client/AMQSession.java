@@ -1455,14 +1455,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public TextMessage createTextMessage() throws JMSException
     {
-        synchronized (getFailoverMutex())
-        {
-            checkNotClosed();
+        checkNotClosed();
 
-            JMSTextMessage msg = new JMSTextMessage(getMessageDelegateFactory());
-            msg.setAMQSession(this);
-            return msg;
-        }
+        JMSTextMessage msg = new JMSTextMessage(getMessageDelegateFactory());
+        msg.setAMQSession(this);
+        return msg;
     }
 
     protected Object getFailoverMutex()
