@@ -112,7 +112,7 @@ Fail-over exchange
 ------------------
 
 The fail-over exchange is not supported in new HA, use a
-[virtual IP address][ha-virtual-ip] instead.[]
+[virtual IP address][ha-virtual-ip] instead.
 
 Using a message store in a cluster
 ----------------------------------
@@ -123,9 +123,17 @@ will have its own store. If the entire cluster fails, when restarting the
 brokers will clear their stores and get an update from the primary to ensure
 consistency. See ["Using a message store in a cluster"][ha-store].
 
-[chapter-ha]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html
-[ha-failover]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-failover
-[ha-virtual-ip]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
-[ha-replicate-values]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-replicate-values
-[ha-rm-config]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-rm-config
+Replacing Queue State Replication
+---------------------------------
 
+The queue state replication mechanism implemented by the modules `replicating_listener` and `replication_exchange` is no longer available. Instead you should use the queue replication mechanism provided by the `ha`  module as described in the [HA Queue Replication chapter of the C++ Broker Book][ha-queue-replication]
+
+
+
+
+[chapter-ha]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html
+[ha-failover]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-failover
+[ha-virtual-ip]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
+[ha-replicate-values]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-replicate-values
+[ha-rm-config]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-rm-config
+[ha-queue-replication]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-queue-replication

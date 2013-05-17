@@ -873,30 +873,6 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       or to simulate a cluster on a single node. For deployment, a resource manager is required.
     </para>
   </section>
-  <section id="ha-queue-replication">
-    <title>Replicating specific queues</title>
-    <para>
-      In addition to the automatic replication performed in a cluster, you can
-      set up replication for specific queues between arbitrary brokers, even if
-      the brokers are not members of a cluster. The command:
-    </para>
-    <programlisting>
-      qpid-ha replicate <replaceable>QUEUE</replaceable> <replaceable>REMOTE-BROKER</replaceable>
-    </programlisting>
-    <para>
-    sets up replication of <replaceable>QUEUE</replaceable> on <replaceable>REMOTE-BROKER</replaceable> to <replaceable>QUEUE</replaceable> on the current broker.
-    </para>
-    <para>
-      Set the configuration option
-      <literal>ha-queue-replication=yes</literal> on both brokers to enable this
-      feature on non-cluster brokers. It is automatically enabled for brokers
-      that are part of a cluster.
-    </para>
-    <para>
-      Note that this feature does not provide automatic fail-over, for that you
-      need to run a cluster.
-    </para>
-  </section>
 
   <section id ="ha-store">
     <title>Using a message store in a cluster</title>
