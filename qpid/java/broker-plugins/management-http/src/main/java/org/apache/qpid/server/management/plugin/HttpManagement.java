@@ -273,6 +273,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addFilter(restAuthorizationFilter, "/rest/*", EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), HttpManagementUtil.ENTRY_POINT_PATH, EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/index.html", EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/", EnumSet.of(DispatcherType.REQUEST));
 
         addRestServlet(root, "broker");
         addRestServlet(root, "virtualhost", VirtualHost.class);
@@ -301,6 +302,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new SaslServlet()), "/rest/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), HttpManagementUtil.ENTRY_POINT_PATH);
+        root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), "/");
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
 
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
