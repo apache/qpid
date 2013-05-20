@@ -105,10 +105,6 @@
       However, configuring of maximum delivery retries on a queue without DLQ(AlternateExchange) will result in messages
       being discarded after the limit is reached.</para>
     </section>
-    <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig">
-        <title>Using configuration</title>
-        <para>How to declare queues in the Virtual Host configuration file is described in <xref linkend="Java-Broker-Virtual-Host-Declare-Queues"/>.</para>
-    </section>
     <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingJmsOrJmx">
       <title>Using JMX or AMQP</title>
       <para>To create a priority, sorted or LVQ queue programmatically from JMX or using a Qpid
@@ -185,6 +181,10 @@ Map<String,Object> arguments = new HashMap<String, Object>();
 arguments.put("qpid.queue_sort_key","myheader");
 managedBroker.createNewQueue("myqueue", null, true, arguments);]]></programlisting>
       </example>
+    </section>
+    <section role="h2" id="Java-Broker-Queues-OtherTypes-CreateUsingConfig">
+        <title>Using configuration</title>
+        <para>How to declare queues in the Virtual Host configuration file is described in <xref linkend="Java-Broker-Virtual-Host-Declare-Queues"/>.</para>
     </section>
   </section>
 

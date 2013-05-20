@@ -25,23 +25,29 @@
 
   <section id="Java-Broker-Virtual-Hosts-Configuring-Managing">
       <title>Configuring And Managing</title>
-      <para>One or more Virtual Hosts can be configured on the Broker. The
-      <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
-      and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>
-      can be used to add and delete Virtual Hosts.</para>
+      <para>
+        One or more Virtual Hosts can be configured on the Broker. The
+        <link linkend="Java-Broker-Configuring-And-Managing-HTTP-Management-Introduction">HTTP management interfaces</link>
+        can be used to add and delete Virtual Hosts.
+      </para>
 
-      <para>A new Virtual Host can be created in two ways by specifying either:
+      <para>A new Virtual Host can be created in two ways:
         <itemizedlist>
-            <listitem><para>A <link linkend="Java-Broker-Stores">store type</link> and a store path</para></listitem>
-            <listitem><para>A path to Virtual Host XML configuration file</para></listitem>
+            <listitem>
+                <para>
+                    <emphasis>Supplying simply a <link linkend="Java-Broker-Stores">store type</link> and a store path</emphasis>: In this case,
+                    the virtual host attributes are currently derived from default attribute values defined on the broker. This is the preferred approach.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <emphasis>Supplying the path to a <link linkend="Java-Broker-Virtual-Hosts-Configuration-File">Virtual Host XML configuration file</link></emphasis>: In this case, specific per-virtualhost attribute configuration
+                    can be set in the file, as well as pre-configuring queues, exchanges, etc. This is no longer the preferred approach and will likely be removed in
+                    a future release, however it is currently still neccessary to support certain use-cases such as per-virtualhost attribute configuration, and
+                    specialised store configuration such as for the <link linkend="Java-Broker-Stores-HA-BDB-Store">BDB HA Message Store</link>.
+                </para>
+            </listitem>
         </itemizedlist>
-        In first case the virtual host attributes are derived from Broker global attributes.
-        In the second case, the Virtual Host specific configuration can be set in the configuration XML,
-        for example, alert thresholds, message store, queues, exchanges, ACL etc. The first way of Virtual Host creation
-        is more preferable as it will reduce the burden of configuration changes when migrating to a newer version,
-        especially, when the support of Virtual Host configuration XML will be removed. However, the second way
-        is the only way at the moment to configure <link linkend="Java-Broker-Stores-HA-BDB-Store">HA Message Store</link>,
-        Virtual Host <link linkend="Java-Broker-Security-ACLs">ACL</link> and virtual host specific attributes.
       </para>
 
       <para>The following Virtual Host Managing operations are available from
@@ -58,9 +64,6 @@
             <listitem><para>Existing Exchange/Queue tabs can be navigated from Virtual Host tab</para></listitem>
         </itemizedlist>
       </para>
-
   </section>
-
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Virtual-Hosts-Configuration.xml"/>
 
 </chapter>

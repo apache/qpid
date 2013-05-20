@@ -20,17 +20,34 @@
 
 -->
 
-<section id="Java-Broker-Configuring-And-Managing-JMX">
-    <title>JMX Plugin</title>
+<section id="Java-Broker-Configuring-And-Managing-JMX-Management">
+    <title>JMX Management</title>
 
-    <para>JMX Management Plugin exposes JMX management interfaces to manage the Broker.
-    It is included into initial configuration by default and starts the RMI registry and JMX connector on pre-configured RMI and JMX ports.
-    If any or both JMX Ports are missed but JMX Management Plugin entry is present in the Broker configuration the Broker fails to start.
-    Only one JMX Management Plugin can be configured on the Broker.
-    </para>
+    <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Introduction">
+        <title>Introduction</title>
+        <para>
+            The brokers JMX Management Plugin provides the support for creating JMX MBeans for broker objects such as Queues, Exchanges, Connections etc.
+        </para>
+        <para>
+            It is included into the brokers Initial Configuration by default, and is responsible for servicing the RMI and JMX_RMI ports configured on the broker, with the former serving as the RMI Registry used to advertise the actual JMX Connector Server started on the latter.
+        </para>
+    </section>
 
-    <para>JMX Management Plugin can start its own MBean server or can use a platform MBean server.
-    By default, the platform MBean server is used. This is controlled by the value of the plugin attribute "Use Platform MBean Server".
-    The value of this attribute can be changed through REST management interface but takes effect only on next Broker restart.</para>
 
+    <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-Configuration">
+        <title>JMX Management Plugin Configuration</title>
+
+        <para>
+            The JMX Management Plugin can be configured through the <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>
+            and underlying REST management interface. By double-clicking on the JMX Management Plugin name in the object tree a tab for the plugin
+            is displayed with its current settings, which can be changed by clicking on the "Edit" button.
+
+            The following attributes can be set on the JMX Management Plugin:
+            <itemizedlist>
+                <listitem><para><emphasis>Use Platform MBean Server</emphasis>. The JMX Management Plugin can start its own MBean Server or it can use the JVMs 'Platform MBean Server'.
+                By default this is true, and the Platform MBean Server is used.</para></listitem>
+            </itemizedlist>
+            NOTE: Changes to the "Use Platform MBean Server" attribute only take effect at broker restart.
+        </para>
+    </section>
 </section>
