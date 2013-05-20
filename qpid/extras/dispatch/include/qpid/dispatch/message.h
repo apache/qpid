@@ -24,7 +24,6 @@
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/iterator.h>
 #include <qpid/dispatch/buffer.h>
-#include <qpid/dispatch/iovec.h>
 
 // Callback for status change (confirmed persistent, loaded-in-memory, etc.)
 
@@ -110,7 +109,6 @@ void dx_message_send(dx_message_t *msg, pn_link_t *link);
 
 int dx_message_check(dx_message_t *msg, dx_message_depth_t depth);
 dx_field_iterator_t *dx_message_field_iterator(dx_message_t *msg, dx_message_field_t field);
-dx_iovec_t *dx_message_field_iovec(dx_message_t *msg, dx_message_field_t field);
 
 ssize_t dx_message_field_length(dx_message_t *msg, dx_message_field_t field);
 ssize_t dx_message_field_copy(dx_message_t *msg, dx_message_field_t field, void *buffer);
