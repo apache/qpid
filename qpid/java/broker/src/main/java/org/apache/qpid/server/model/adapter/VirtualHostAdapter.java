@@ -995,7 +995,22 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         if (desiredState == State.ACTIVE)
         {
-            activate();
+            try
+            {
+                activate();
+            }
+            catch(RuntimeException e)
+            {
+                changeAttribute(STATE, State.INITIALISING, State.ERRORED);
+                if (_broker.isManagementMode())
+                {
+                    LOGGER.warn("Failed to activate virtual host: " + getName(), e);
+                }
+                else
+                {
+                    throw e;
+                }
+            }
             return true;
         }
         else if (desiredState == State.STOPPED)
