@@ -436,4 +436,33 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         return getBroker().getSubjectCreator(localAddress);
     }
 
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+        validateAttributes(convertedAttributes);
+
+        super.changeAttributes(convertedAttributes);
+    }
+
+    private void validateAttributes(Map<String, Object> convertedAttributes)
+    {
+        if(convertedAttributes.containsKey(HttpManagement.NAME))
+        {
+            String newName = (String) convertedAttributes.get(HttpManagement.NAME);
+            if(!getName().equals(newName))
+            {
+                throw new IllegalConfigurationException("Changing the name of http management plugin is not allowed");
+            }
+        }
+        if (convertedAttributes.containsKey(TIME_OUT))
+        {
+            Number value = (Number) convertedAttributes.get(TIME_OUT);
+            if (value == null || value.longValue() < 0)
+            {
+                throw new IllegalConfigurationException("Only positive integer value can be specified for the session time out attribute");
+            }
+        }
+    }
+
 }

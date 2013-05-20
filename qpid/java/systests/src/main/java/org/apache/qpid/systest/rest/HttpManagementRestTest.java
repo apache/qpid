@@ -66,4 +66,26 @@ public class HttpManagementRestTest extends QpidRestTestCase
         assertEquals("Unexpected http sasl auth enabled", false, details.get(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED));
         assertEquals("Unexpected https sasl auth enabled", false, details.get(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED));
     }
+
+    public void testUpdateAttributesWithInvalidValues() throws Exception
+    {
+        Map<String, Object> invalidAttributes = new HashMap<String, Object>();
+        invalidAttributes.put(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED, 1);
+        invalidAttributes.put(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED, 2);
+        invalidAttributes.put(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED, 3);
+        invalidAttributes.put(HttpManagement.TIME_OUT, "undefined");
+
+        for (Map.Entry<String, Object> invalidAttribute : invalidAttributes.entrySet())
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(invalidAttribute.getKey(), invalidAttribute.getValue());
+            int response = getRestTestHelper().submitRequest("/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+            assertEquals("Update should fail for attribute " + invalidAttribute.getKey() + " with value " + invalidAttribute.getValue() , 409, response);
+        }
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(HttpManagement.TIME_OUT, -1l);
+        int response  = getRestTestHelper().submitRequest("/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+        assertEquals("Update should fail for invalid session timeout", 409, response);
+    }
 }
