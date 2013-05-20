@@ -142,7 +142,7 @@ public class Connection_1_0 implements ConnectionEventListener
         @Override
         public void close(AMQConstant cause, String message) throws AMQException
         {
-            // TODO
+            _conn.close();
         }
 
         @Override
