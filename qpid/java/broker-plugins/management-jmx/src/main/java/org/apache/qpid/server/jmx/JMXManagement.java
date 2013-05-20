@@ -108,11 +108,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             {
                 start();
             }
-            catch (JMException e)
-            {
-                throw new RuntimeException("Couldn't start JMX management", e);
-            }
-            catch (IOException e)
+            catch (Exception e)
             {
                 throw new RuntimeException("Couldn't start JMX management", e);
             }
@@ -226,9 +222,9 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                 {
                     mbean.unregister();
                 }
-                catch (JMException e)
+                catch (Exception e)
                 {
-                    LOGGER.error("Error unregistering mbean", e);
+                    LOGGER.error("Exception while unregistering mbean for " + object.getClass().getSimpleName() + " " + object.getName(), e);
                 }
             }
             _children.clear();
@@ -270,9 +266,9 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                     createAdditionalMBeansFromProviders(child, mbean);
                 }
             }
-            catch(JMException e)
+            catch(Exception e)
             {
-                LOGGER.error("Error creating mbean", e);
+                LOGGER.error("Exception while creating mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
                 // TODO - Implement error reporting on mbean creation
             }
         }
@@ -281,40 +277,19 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     @Override
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
-        // TODO - implement vhost removal (possibly just removing the instanceof check below)
-
         synchronized (_children)
         {
-            if(child instanceof PasswordCredentialManagingAuthenticationProvider)
+            AMQManagedObject mbean = _children.remove(child);
+            if(mbean != null)
             {
-                AMQManagedObject mbean = _children.remove(child);
-                if(mbean != null)
+                try
                 {
-                    try
-                    {
-                        mbean.unregister();
-                    }
-                    catch(JMException e)
-                    {
-                        LOGGER.error("Error unregistering user management mbean: " + child.getName(), e);
-                        //TODO - report error on removing child MBean
-                    }
+                    mbean.unregister();
                 }
-            }
-            else if (child instanceof VirtualHost)
-            {
-                AMQManagedObject mbean = _children.remove(child);
-                if(mbean != null)
+                catch(Exception e)
                 {
-                    try
-                    {
-                        mbean.unregister();
-                    }
-                    catch(JMException e)
-                    {
-                        LOGGER.error("Error unregistering virtual host mbean :" + child.getName(), e);
-                        //TODO - report error on removing child MBean
-                    }
+                    LOGGER.error("Exception while unregistering mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
+                    //TODO - report error on removing child MBean
                 }
             }
         }
