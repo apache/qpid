@@ -20,6 +20,7 @@
  */
 
 #include <qpid/dispatch/buffer.h>
+#include <qpid/dispatch/iovec.h>
 
 /**
  * The field iterator is used to access fields within a buffer chain.
@@ -149,6 +150,7 @@ int dx_field_iterator_prefix(dx_field_iterator_t *iter, const char *prefix);
 unsigned char *dx_field_iterator_copy(dx_field_iterator_t *iter);
 
 
+dx_iovec_t *dx_field_iterator_iovec(const dx_field_iterator_t *iter);
 
 typedef struct dx_field_map_t dx_field_map_t;
 
