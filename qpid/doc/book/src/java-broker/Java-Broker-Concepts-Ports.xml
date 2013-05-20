@@ -22,29 +22,29 @@
 
 <section id="Java-Broker-Concepts-Ports">
 <title>Ports</title>
-<para><emphasis>Port</emphasis> is a named broker entity serving as a communications end-point
-and providing the AMQP transport layer over the given TCP port. The particular AMQP protocols can be configured on the Port.
-As result, different <emphasis>Ports</emphasis> can support different protocols. Any number of <emphasis>Ports</emphasis>
-can be configured on the Broker.</para>
-<para>
-    The following AMQP protocols are currently supported by the Broker:
-    <itemizedlist>
-        <listitem><para><emphasis>AMQP 0.8</emphasis></para></listitem>
-        <listitem><para><emphasis>AMQP 0.9</emphasis></para></listitem>
-        <listitem><para><emphasis>AMQP 0.9.1</emphasis></para></listitem>
-        <listitem><para><emphasis>AMQP 0.10</emphasis></para></listitem>
-        <listitem><para><emphasis>AMQP 1.0</emphasis></para></listitem>
-    </itemizedlist>
-</para>
-<para>Ports are also responsible for the authentication of all incoming connections
-by mean of <emphasis>Authentication Provider</emphasis> configured on the Port.
-Each Port can have its own <emphasis>Authentication Provider</emphasis>.</para>
+    <para>
+        The Broker supports configuration of <emphasis>Ports</emphasis> to specify the particular AMQP messaging
+        and HTTP/JMX management connectivity it offers for use.
+    </para>
+    <para>
+        Each Port is configured with the particular <emphasis>Protocols</emphasis> and <emphasis>Transports</emphasis> it supports, as well as the <emphasis>Authentication Provider</emphasis> to be used to authenticate connections. Where SSL is in use, the <emphasis>Port</emphasis> configuration also defines which <emphasis>Keystore</emphasis> to use and (where supported) which <emphasis>TrustStore(s)</emphasis> and whether Client Certificates should be requested/required. 
+    </para>
+    <para>
+        Different <emphasis>Ports</emphasis> can support different protocols, and many <emphasis>Ports</emphasis> can be configured on the Broker.</para>
+    <para>
+        The following AMQP protocols are currently supported by the Broker:
+        <itemizedlist>
+            <listitem><para><emphasis>AMQP 0-8</emphasis></para></listitem>
+            <listitem><para><emphasis>AMQP 0-9</emphasis></para></listitem>
+            <listitem><para><emphasis>AMQP 0-9-1</emphasis></para></listitem>
+            <listitem><para><emphasis>AMQP 0-10</emphasis></para></listitem>
+            <listitem><para><emphasis>AMQP 1.0</emphasis></para></listitem>
+        </itemizedlist>
+    </para>
 
-<para>Both TCP and SSL transports are supported and can be configured on the <emphasis>Ports</emphasis>.
-AMQP ports also support Client Certificate Authentication.</para>
+    <para>
+        Addittionally, HTTP and JMX ports can be configured for use by the associated management plugins.
+    </para>
 
-<para>Besides AMQP ports HTTP and JMX ports can be configured for use by management plugins.
-They can be configured by specifying HTTP and RMI/JMX_RMI protocols respectively.</para>
-
-<para>Configuration details for the Ports are covered in <xref linkend="Java-Broker-Ports"/>.</para>
+    <para>Configuration details for the Ports are covered in <xref linkend="Java-Broker-Ports"/>.</para>
 </section>

@@ -22,34 +22,37 @@
 
 <section id="Java-Broker-Concepts-Other-Services">
 <title>Other Services</title>
-<para>The Broker can also contain Access Control Providers, Group Providers, Keystore, Trustores and Management Plugins.</para>
+    <para>
+        The Broker can also have <emphasis>Access Control Providers</emphasis>, <emphasis>Group Providers</emphasis>,
+        <emphasis>Keystores</emphasis>, <emphasis>Trustores</emphasis> and [Management] <emphasis>Plugins</emphasis> configured.
+    </para>
 
     <section id="Java-Broker-Concepts-Access-Control-Providers">
         <title>Access Control Providers</title>
-        <para><emphasis>Access Control Providers</emphasis> are used to authorize the access to the various Broker objects.</para>
-        <para>The ACL configuration and management details are covered in <xref linkend="Java-Broker-Security-ACLs"/>.</para>
+        <para><emphasis>Access Control Providers</emphasis> are used to authorize various operations relating to Broker objects.</para>
+        <para>Access Control Provider configuration and management details are covered in <xref linkend="Java-Broker-Security-ACLs"/>.</para>
     </section>
 
     <section id="Java-Broker-Concepts-Group-Providers">
         <title>Group Providers</title>
-        <para><emphasis>Group Providers</emphasis> are used to aggregate Broker authenticated principals into groups
-        which can be used to define ACL rules applicable to the whole group.</para>
-        <para>The Group Provider configuration and management is covered in <xref linkend="Java-Broker-Security-Group-Providers"/>.</para>
+        <para><emphasis>Group Providers</emphasis> are used to aggregate authenticated user principals into groups
+        which can be then be used in Access Control rules applicable to the whole group.</para>
+        <para>Group Provider configuration and management is covered in <xref linkend="Java-Broker-Security-Group-Providers"/>.</para>
     </section>
 
-    <section id="Java-Broker-Keystore-Providers">
+    <section id="Java-Broker-Concepts-Keystores">
         <title>Keystores</title>
-        <para><emphasis>Keystore</emphasis> are used to configure keystores holding SSL keys and certificates
+        <para><emphasis>Keystores</emphasis> are used to configure details of keystores holding SSL keys and certificates
         for the SSL transports on Ports.</para>
-        <para>The Keystore configuration and management is covered in <xref linkend="Java-Broker-SSL-Keystore"/>.</para>
+        <para>Keystore configuration and management is covered in <xref linkend="Java-Broker-SSL-Keystore"/>.</para>
     </section>
 
-    <section id="Java-Broker-Truststore-Providers">
+    <section id="Java-Broker-Concepts-Truststores">
         <title>Truststores</title>
-        <para><emphasis>Truststore </emphasis> are used to configure keystores holding SSL certificates
-        for Client Certificate Authentication on SSL ports.
+        <para><emphasis>Truststores </emphasis> are used to configure details of keystores holding SSL certificates
+        for trusting Client Certificate on SSL ports.
         </para>
-        <para>The Truststore configuration and management is covered in <xref linkend="SSL-Truststore-ClientCertificate"/>.</para>
+        <para>Truststore configuration and management is covered in <xref linkend="SSL-Truststore-ClientCertificate"/>.</para>
     </section>
 
 </section>
