@@ -148,7 +148,7 @@
     <para>Next extract the &unixBrokerDownloadFileName; package into the directory.</para>
     <programlisting>mkdir /usr/local/qpid
 cd /usr/local/qpid
-tar xvzf &unixBrokerDownloadFileName;></programlisting>
+tar xvzf &unixBrokerDownloadFileName;</programlisting>
     <para>The extraction of the broker package will have created a directory &unixExtractedBrokerDirName; within /usr/local/qpid</para>
     <screen>ls -la &unixExtractedBrokerDirName;/
 total 152

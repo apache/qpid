@@ -47,7 +47,7 @@
     <programlisting><![CDATA[bin\qpid-server.bat]]></programlisting>
     <para>Output similar to the following will be seen:</para>
     <screen>[Broker] BRK-1006 : Using configuration : C:\qpidwork\config.json
-[Broker] BRK-1007 : Using logging configuration : C:\qpid\qpid-broker-&qpidCurrentRelease;\etc\log4j.xml
+[Broker] BRK-1007 : Using logging configuration : C:\qpid\&windowsExtractedBrokerDirName;\etc\log4j.xml
 [Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: 1478262
 [Broker] BRK-1010 : Platform : JVM : Oracle Corporation version: 1.7.0_21-b11 OS : Windows 7 version: 6.1 arch: x86
 [Broker] BRK-1011 : Maximum Memory : 1,060,372,480 bytes
@@ -73,7 +73,7 @@
     <programlisting><![CDATA[bin\qpid-server]]></programlisting>
     <para>Output similar to the following will be seen:</para>
     <screen>[Broker] BRK-1006 : Using configuration : /var/qpidwork/config.json
-[Broker] BRK-1007 : Using logging configuration : /usr/local/qpid/qpid-broker-&qpidCurrentRelease;/etc/log4j.xml
+[Broker] BRK-1007 : Using logging configuration : /usr/local/qpid/&unixExtractedBrokerDirName;/etc/log4j.xml
 [Broker] BRK-1001 : Startup : Version: &qpidCurrentRelease; Build: exported
 [Broker] BRK-1010 : Platform : JVM : Sun Microsystems Inc. version: 1.6.0_32-b05 OS : Linux version: 3.6.10-2.fc16.x86_64 arch: amd64
 [Broker] BRK-1011 : Maximum Memory : 1,065,025,536 bytes
