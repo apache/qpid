@@ -22,12 +22,13 @@
 
 <section id="Java-Broker-Configuring-And-Managing-REST-API">
 <title>REST API</title>
-    <section id="Java-Broker-Configuring-And-Managing-REST-API-Overview">
-        <title>REST API Overview</title>
-        <para>This section provides an overview of REST management interfaces.</para>
-        <para>If web management plugin is configured
-            the REST interfaces can be used to monitor and manage the Broker instance.</para>
-        <para>The Qpid broker REST interfaces support traditional REST model which uses the GET method requests to retrieve
+        <para>
+            The brokers <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link> makes calls to an underlying REST API
+            to manage the broker. This section provides a brief overview of the REST interface, which can be used directly to monitor and manage the Broker
+            instance although it is still evolving toward being fully considered a seperately supported interface.
+        </para>
+
+        <para>The brokers REST interface support traditional REST model which uses the GET method requests to retrieve
             the information about broker configured objects, DELETE method requests to delete the configured object,
             PUT to create or update the configured object and POST to perform the configured objects updates not available with the PUT requests.</para>
         <para>The table below lists the available REST services with brief description how they can be used.</para>
@@ -37,7 +38,7 @@
           <tgroup cols="6">
           <thead>
             <row>
-              <entry>Rest service URL</entry>
+              <entry>REST Service URL</entry>
               <entry>Description</entry>
               <entry>GET</entry>
               <entry>PUT</entry>
@@ -263,7 +264,7 @@
           </tbody>
           </tgroup>
         </table>
-        <para>Rest URLs are hierarchical. It is permitted to replace rest URL elements with an "asterisks" in GET requests to denote
+        <para>The REST URLs are hierarchical. It is permitted to replace rest URL elements with an "asterisks" in GET requests to denote
         all object of a particular type. Additionally, trailing object type in the URL hierarchy can be omitted.
         In this case GET request will return all of the object underneath of the current object.</para>
         <para>For example, for binding URL http://localhost:8080/rest/binding/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;
@@ -272,7 +273,7 @@
         If <emphasis>&lt;binding&gt;</emphasis> and <emphasis>&lt;queue&gt;</emphasis> are omitted in binding REST URL
         (http://localhost:8080/rest/binding/&lt;vhostname&gt;/&lt;exchangename&gt;) the GET request will result in returning 
         all bindings for all queues for the given exchange in the virtual host.
-        </para> 
+        </para>
         <example>
         <title>Examples of queue creation using curl:</title>
             <programlisting><![CDATA[
@@ -287,6 +288,9 @@ curl -X PUT  -d '{"durable":true,"type":"priority"}' http://localhost:8080/rest/
 curl  -X PUT  -d '{}' http://localhost:8080/rest/binding/<vhostname>/<exchangename>/<queue-name>/<binding-name>
             ]]></programlisting>
         </example>
-        <para>Qpid broker Web Management Console calls rest interfaces internally to manage the broker.</para>
-    </section>
+        <para>
+            NOTE: the above examples were performed after editing the
+            <link linkend="Java-Broker-Configuring-And-Managing-HTTP-Management-Plugin-Configuration">HTTP Management Plugin Configuration</link>
+            to enable HTTP Basic Authentication on connections not using SSL (i.e HTTPS).
+        </para>
 </section>

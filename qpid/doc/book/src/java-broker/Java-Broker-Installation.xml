@@ -79,7 +79,7 @@
     <title>Download</title>
     <section role="h3" id="Java-Broker-Installation-Download-Release">
       <title>Broker Release</title>
-      <para>You can download the latest qpid-java-broker-&qpidCurrentRelease;.tar.gz package from the <ulink
+      <para>You can download the latest Java broker package from the <ulink
         url="&qpidDownloadUrl;">Download Page</ulink>.
       </para>
       <para> It is recommended that you confirm the integrity of the download by verifying the PGP signature
@@ -101,14 +101,13 @@
       <link linkend="Java-Broker-Miscellaneous-JVM-Verification-Windows">these instructions.</link>
     </para>
     <para>Now chose a directory for Qpid broker installation.  This directory will be used for the Qpid JARs and configuration files.
-      It need not be the same location as the store used for the persistent messages or the log file (you will chose this
-      location later).   For the remainder this example we will assumed that location c:\qpid has been chosen.</para>
-    <para>Now using WinZip<footnote><para>WinZip is a Registered Trademark of WinZip International LLC</para></footnote> (or similar)
-      extract the Qpid package qpid-java-broker-&qpidCurrentRelease;.tar.gz into the directory.</para>
-    <para>The extraction of the Qpid package will have created a directory qpid-broker-&qpidCurrentRelease; within c:\qpid</para>
-    <screen>Volume in drive C has no label
-
- Directory of c:\qpid\qpid-broker-&qpidCurrentRelease;
+      It need not be the same location as the work directory used for the persistent message store or the log file (you will choose this
+      location later).   For the remainder this example we will assume that location c:\qpid has been chosen.</para>
+    <para>Next extract the &windowsBrokerDownloadFileName; package into the directory, using either the zip file handling offered
+      by Windows (right click the file and select 'Extract All') or a third party tool of your choice.</para>
+    <para>The extraction of the broker package will have created a directory &windowsExtractedBrokerDirName; within c:\qpid</para>
+    <screen>
+ Directory of c:\qpid\&windowsExtractedBrokerDirName;
 
 07/25/2012  11:22 PM                   .
 09/30/2012  10:51 AM                   ..
@@ -118,8 +117,7 @@
 07/20/2012  08:10 PM            65,925 LICENSE
 07/20/2012  08:10 PM             3,858 NOTICE
 07/20/2012  08:10 PM             1,346 README.txt
-               3 File(s)         71,129 bytes
-               5 Dir(s)  743,228,796,928 bytes free</screen>
+</screen>
     <section role="h3" id="Java-Broker-Installation-InstallationWindows-SettingQPIDWORK">
       <title>Setting the working directory</title>
       <para>Qpid requires a work directory.  This directory is used for the default location of the Qpid log
@@ -145,14 +143,14 @@
       <link linkend="Java-Broker-Miscellaneous-JVM-Verification-Unix">these instructions.</link>
     </para>
     <para>Now chose a directory for Qpid broker installation.  This directory will be used for the Qpid JARs and configuration files.
-      It need not be the same location as the store used for the persistent messages or the log file (you will chose this
-      location later).   For the remainder this example we will assumed that location /usr/local/qpid has been chosen.</para>
-    <para>Extract the Qpid package qpid-java-broker-&qpidCurrentRelease;.tar.gz into the directory.</para>
+      It need not be the same location as the work directory used for the persistent message store or the log file (you will choose this
+      location later).   For the remainder this example we will assume that location /usr/local/qpid has been chosen.</para>
+    <para>Next extract the &unixBrokerDownloadFileName; package into the directory.</para>
     <programlisting>mkdir /usr/local/qpid
 cd /usr/local/qpid
-tar xvzf qpid-java-broker-&qpidCurrentRelease;.tar.gz></programlisting>
-    <para>The extraction of the Qpid package will have created a directory qpid-broker-x.x</para>
-    <screen>ls -la qpid-broker-&qpidCurrentRelease;/
+tar xvzf &unixBrokerDownloadFileName;></programlisting>
+    <para>The extraction of the broker package will have created a directory &unixExtractedBrokerDirName; within /usr/local/qpid</para>
+    <screen>ls -la &unixExtractedBrokerDirName;/
 total 152
 drwxr-xr-x   8 qpid  qpid    272 25 Jul 23:22 .
 drwxr-xr-x  45 qpid  qpid   1530 30 Sep 10:51 ..

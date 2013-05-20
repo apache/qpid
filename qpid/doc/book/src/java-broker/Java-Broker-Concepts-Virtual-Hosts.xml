@@ -22,9 +22,10 @@
 
 <section id="Java-Broker-Concepts-Virtual-Hosts">
 <title>Virtual Hosts</title>
-<para>Broker comprises from one or many <emphasis>Virtual Hosts</emphasis>.
-<emphasis>Virtual Host</emphasis> can be defined as a collection of exchanges, message queues and associated objects and
-is an independent server domain that share a common authentication, encryption and transport environment.
+<para>A Broker has one or more <emphasis>Virtual Host</emphasis>s. Each <emphasis>Virtual Host</emphasis>
+has an independant namespace for its collection of <emphasis>Exchanges</emphasis>, <emphasis>Queues</emphasis>,
+and associated objects. Client <emphasis>Connection</emphasis>s are made a specific <emphasis>Virtual Host</emphasis>,
+with one being configured as the default for clients that can't or don't specify which they wish to connect to.
 </para>
 <para>
     The following diagram depicts the Virtual Host model:
@@ -40,9 +41,9 @@ is an independent server domain that share a common authentication, encryption a
         </mediaobject>
     </figure>
 </para>
-<para>Each <emphasis>Virtual Host</emphasis> has its own <emphasis>Message Store</emphasis>
-which is used to store the persistent messages from all <link linkend="Java-Broker-Concepts-Queues">Queues</link>
-declared on the <emphasis>Virtual Host</emphasis>.</para>
+<para>Each <emphasis>Virtual Host</emphasis> has its own <emphasis>Message Store</emphasis> which is used to store persistent
+messages on durable <emphasis>Queues</emphasis> it contains, as well as the configuration of any durable
+<emphasis>Queues</emphasis>, <emphasis>Exchanges</emphasis>, and <emphasis>Bindings</emphasis> made during its operation.</para>
 <para>
     The following message stores are currently supported:
     <itemizedlist>
