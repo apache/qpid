@@ -48,7 +48,8 @@
   <section role="h3" id="Java-Broker-Stores-HA-BDB-Store-Configuration">
     <title>Configuration</title>
     <para>
-      In order to use the BDBHAMessageStore, you must configure it for each VirtualHost desired by updating the store element
+      In order to use the BDBHAMessageStore, you must use a <link linkend="Java-Broker-Virtual-Hosts-Configuration-File">Virtual Host XML configuration file</link>
+        when <link linkend="Java-Broker-Virtual-Hosts-Configuring-Managing">defining a VirtualHost</link>, configuring it for each VirtualHost desired by updating the store element
       to specify the associated store class, provide a directory location for the data to be written, and configure the
       replication group and policies used by BDB JA HA.
     </para>

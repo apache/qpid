@@ -25,13 +25,13 @@
 
     <section id="Java-Broker-Concepts-Broker">
         <title>Broker</title>
-        <para>The Qpid Broker can be defined as a collection of <emphasis>Virtual Hosts</emphasis> (independent containers of <emphasis>Queues</emphasis>,
-        <emphasis>Exchanges</emphasis>, etc) sharing the same authentication model provided by the broker <emphasis>Authentication Providers</emphasis>
-        and the transport model defined as <emphasis>Port</emphasis> configured objects. The authorization model is either provided by the broker
-        <emphasis>Access Control Providers</emphasis> or <emphasis>Access Control List</emphasis> defined on the <emphasis>Virtual Hosts</emphasis>.
-        The Broker also provides the management plugins to manage and configure Broker's and Virtual Hosts' configured objects.
-        Additionally, <emphasis>Keystores</emphasis> and <emphasis>Truststores</emphasis> can be defined on the broker level to configure Port SSL transports.
-        The <emphasis>Group Providers</emphasis> can be configured to use groups with <emphasis>ACL Providers</emphasis>.
+        <para>
+        The Qpid Broker has one or more <emphasis>Virtual Hosts</emphasis> (independent containers of <emphasis>Queues</emphasis>,
+        <emphasis>Exchanges</emphasis>, etc) sharing a connection, authentication, and access control model via the configured
+        <emphasis>Ports</emphasis>, <emphasis>Authentication Providers</emphasis>, <emphasis>Group providers</emphasis> and
+        <emphasis>Access Control Providers</emphasis>. <emphasis>Keystores</emphasis> and <emphasis>Truststores</emphasis> can
+        be defined on the broker level and linked to <emphasis>Ports</emphasis> configured with an SSL transport. The Broker
+        also provides management plugins to allow configuring and monitoring it.
         </para>
         <para>
         The following diagram depicts the Broker model:
@@ -46,6 +46,7 @@
               </textobject>
             </mediaobject>
         </figure>
+        These concepts will be expanded upon in the forthcoming pages.
         </para>
     </section>
 
