@@ -64,6 +64,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
@@ -206,11 +207,6 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         return (Integer)getAttribute(TIME_OUT);
     }
 
-    private boolean isManagementHttp(Port port)
-    {
-        return port.getProtocols().contains(Protocol.HTTP) || port.getProtocols().contains(Protocol.HTTPS);
-    }
-
     @SuppressWarnings("unchecked")
     private Server createServer(Collection<Port> ports)
     {
@@ -227,15 +223,15 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             {
                 continue;
             }
-            final Collection<Protocol> protocols = port.getProtocols();
+
             Connector connector = null;
 
-            //TODO: what to do if protocol HTTP and transport SSL?
-            if (protocols.contains(Protocol.HTTP))
+            Collection<Transport> transports = port.getTransports();
+            if (!transports.contains(Transport.SSL))
             {
                 connector = new SelectChannelConnector();
             }
-            else if (protocols.contains(Protocol.HTTPS))
+            else if (transports.contains(Transport.SSL))
             {
                 KeyStore keyStore = port.getKeyStore();
                 if (keyStore == null)
@@ -253,7 +249,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             else
             {
-                throw new IllegalArgumentException("Unexpected protocol " + protocols);
+                throw new IllegalArgumentException("Unexpected transport on port " + port.getName() + ":" + transports);
             }
             lastPort = port.getPort();
             connector.setPort(port.getPort());
@@ -365,7 +361,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         Collection<Port> httpPorts = new HashSet<Port>();
         for (Port port : ports)
         {
-            if (isManagementHttp(port))
+            if (port.getProtocols().contains(Protocol.HTTP))
             {
                 httpPorts.add(port);
             }
