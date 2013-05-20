@@ -154,7 +154,7 @@ static int process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
 
     if (ctx->state == CONN_STATE_USER) {
         dx_server->ufd_handler(ctx->ufd->context, ctx->ufd);
-        return 0;
+        return 1;
     }
 
     do {
