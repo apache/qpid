@@ -45,7 +45,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     private String _queuePrefix;
     private String _topicPrefix;
-    private boolean _useBinaryMessageId;
+    private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));;
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
