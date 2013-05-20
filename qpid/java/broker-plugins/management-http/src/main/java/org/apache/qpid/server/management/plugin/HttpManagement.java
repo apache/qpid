@@ -244,7 +244,6 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 }
                 String keyStorePath = (String)keyStore.getAttribute(KeyStore.PATH);
                 String keyStorePassword = keyStore.getPassword();
-                validateKeystoreParameters(keyStorePath, keyStorePassword);
 
                 SslContextFactory factory = new SslContextFactory();
                 factory.setKeyStorePath(keyStorePath);
@@ -326,27 +325,6 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
         root.addServlet(new ServletHolder(new RestServlet(hierarchy)), "/rest/" + name + "/*");
-    }
-
-    private void validateKeystoreParameters(String keyStorePath, String password)
-    {
-        if (keyStorePath == null)
-        {
-            throw new RuntimeException("SSL keystore path not defined, unable to start HTTPS connector");
-        }
-        if (password == null)
-        {
-            throw new RuntimeException("SSL keystore password not defined, unable to start HTTPS connector");
-        }
-        File ksf = new File(keyStorePath);
-        if (!ksf.exists())
-        {
-            throw new RuntimeException("Cannot find SSL keystore file for HTTPS management: " + ksf);
-        }
-        if (!ksf.canRead())
-        {
-            throw new RuntimeException("Cannot read SSL keystore file for HTTPS management: " + ksf + ". Check permissions.");
-        }
     }
 
     private void logOperationalListenMessages(Server server)
