@@ -598,7 +598,7 @@ dx_field_iterator_t *dx_field_map_by_key(dx_field_map_t *map, const char *key)
     dx_field_pair_t     *pair  = DEQ_HEAD(map->pairs);
 
     while (pair && !value) {
-        key_string = dx_field_string(pair->key_iter);
+        key_string = dx_field_raw(pair->key_iter);
         if (dx_field_iterator_equal(key_string, (const unsigned char*) key))
             value = pair->value_iter;
         free_dx_field_iterator_t(key_string);
@@ -641,12 +641,10 @@ static unsigned int dx_field_get_length(dx_field_iterator_t *iter, unsigned char
 }
 
 
-dx_field_iterator_t *dx_field_string(dx_field_iterator_t *iter)
+dx_field_iterator_t *dx_field_raw(dx_field_iterator_t *iter)
 {
     dx_field_iterator_reset(iter);
-    unsigned char tag = dx_field_iterator_octet(iter);
-    if (!dx_tag_is_string(tag))
-        return 0;
+    unsigned char tag   = dx_field_iterator_octet(iter);
     unsigned int length = dx_field_get_length(iter, tag);
 
     dx_field_iterator_t *result = new_dx_field_iterator_t();

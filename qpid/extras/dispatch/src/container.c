@@ -414,12 +414,12 @@ static int handler(void *handler_context, void *conn_context, dx_conn_event_t ev
 }
 
 
-static void container_schema_handler(void *context, const void *correlator)
+static void container_schema_handler(void *context, void *correlator)
 {
 }
 
 
-static void container_query_handler(void* context, const char *id, const void *correlator)
+static void container_query_handler(void* context, const char *id, void *correlator)
 {
     container_class_t *cls = (container_class_t*) context;
 

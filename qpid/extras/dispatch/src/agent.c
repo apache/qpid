@@ -56,8 +56,6 @@ typedef struct {
     dx_message_t *response_msg;
 } dx_agent_request_t;
 
-ALLOC_DECLARE(dx_agent_request_t);
-ALLOC_DEFINE(dx_agent_request_t);
 
 static char *log_module = "AGENT";
 
@@ -68,14 +66,19 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map)
     if (cls == 0)
         return;
 
-    dx_field_iterator_t    *cls_string = dx_field_string(cls);
+    dx_field_iterator_t    *cls_string = dx_field_raw(cls);
     const dx_agent_class_t *cls_record;
     hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
-
     if (cls_record == 0)
         return;
 
     dx_log(log_module, LOG_TRACE, "Received GET request for class: %s", cls_record->fqname);
+
+    dx_agent_request_t request;
+    request.agent        = agent;
+    request.response_msg = 0;
+
+    cls_record->query_handler(cls_record->context, 0, &request);
 }
 
 
@@ -116,7 +119,7 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
     //
     // Dispatch the opcode to the appropriate handler
     //
-    dx_field_iterator_t *opcode_string = dx_field_string(opcode);
+    dx_field_iterator_t *opcode_string = dx_field_raw(opcode);
     if (dx_field_iterator_equal(opcode_string, (unsigned char*) "get"))
         dx_agent_process_get(agent, map);
 
@@ -220,42 +223,45 @@ dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
 }
 
 
-void dx_agent_value_string(const void *correlator, const char *key, const char *value)
+void dx_agent_value_string(void *correlator, const char *key, const char *value)
+{
+    printf("STRING: %s => %s\n", key, value);
+}
+
+
+void dx_agent_value_uint(void *correlator, const char *key, uint64_t value)
+{
+    printf("UINT  : %s => %ld\n", key, value);
+}
+
+
+void dx_agent_value_null(void *correlator, const char *key)
+{
+    printf("NULL  : %s\n", key);
+}
+
+
+void dx_agent_value_boolean(void *correlator, const char *key, bool value)
 {
 }
 
 
-void dx_agent_value_uint(const void *correlator, const char *key, uint64_t value)
+void dx_agent_value_binary(void *correlator, const char *key, const uint8_t *value, size_t len)
 {
 }
 
 
-void dx_agent_value_null(const void *correlator, const char *key)
+void dx_agent_value_uuid(void *correlator, const char *key, const uint8_t *value)
 {
 }
 
 
-void dx_agent_value_boolean(const void *correlator, const char *key, bool value)
+void dx_agent_value_timestamp(void *correlator, const char *key, uint64_t value)
 {
 }
 
 
-void dx_agent_value_binary(const void *correlator, const char *key, const uint8_t *value, size_t len)
-{
-}
-
-
-void dx_agent_value_uuid(const void *correlator, const char *key, const uint8_t *value)
-{
-}
-
-
-void dx_agent_value_timestamp(const void *correlator, const char *key, uint64_t value)
-{
-}
-
-
-void dx_agent_value_complete(const void *correlator, bool more)
+void dx_agent_value_complete(void *correlator, bool more)
 {
 }
 

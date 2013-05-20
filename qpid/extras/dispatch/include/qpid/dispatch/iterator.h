@@ -156,6 +156,6 @@ dx_field_map_t *dx_field_map(dx_field_iterator_t *iter, int string_keys_only);
 void dx_field_map_free(dx_field_map_t *map);
 dx_field_iterator_t *dx_field_map_by_key(dx_field_map_t *map, const char *key);
 
-dx_field_iterator_t *dx_field_string(dx_field_iterator_t *iter);
+dx_field_iterator_t *dx_field_raw(dx_field_iterator_t *iter);
 
 #endif
