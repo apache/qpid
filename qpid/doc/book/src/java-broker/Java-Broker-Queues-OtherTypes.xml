@@ -332,7 +332,7 @@ managedBroker.createNewQueue("myqueue", null, true, arguments);]]></programlisti
       <para>
         It is important to note that there is no need to provide the actual group
         identifer values that will be used. The broker learns these values as messages are
-        recieved.  Also, there is no practical limit - aside from resource limitations -
+        received.  Also, there is no practical limit - aside from resource limitations -
         to the number of different groups that the broker can track at run time.
       </para>
     </section>
