@@ -48,11 +48,45 @@ define(["dojo/_base/xhr",
                           that.managementJmxUpdater= new ManagementJmxUpdater(node, pluginObject, controller);
                           that.managementJmxUpdater.update(true);
                           updater.add( that.managementJmxUpdater);
+
+                          var editButton = query(".editPluginButton", node)[0];
+                          connect.connect(registry.byNode(editButton), "onClick", function(evt){ that.edit(); });
                       }});
         }
 
         ManagementJmx.prototype.close = function() {
             updater.remove( this.managementJmxUpdater );
+        };
+
+        ManagementJmx.prototype.edit = function() {
+          var widgetFactories = [{
+                  name: "name",
+                  createWidget: function(plugin) {
+                      return new dijit.form.ValidationTextBox({
+                        required: true,
+                        value: plugin.name,
+                        disabled: true,
+                        label: "Name:",
+                        regexp: "^[\x20-\x2e\x30-\x7F]{1,255}$",
+                        name: "name"});
+                  }
+              }, {
+                    name: "usePlatformMBeanServer",
+                    createWidget: function(plugin) {
+                        return new dijit.form.CheckBox({
+                          required: false,
+                          checked: plugin.usePlatformMBeanServer,
+                          label: "Use Platform MBean Server:",
+                          name: "usePlatformMBeanServer"});
+                }
+              }
+          ];
+          var data = this.managementJmxUpdater.pluginData;
+          util.showSetAttributesDialog(
+              widgetFactories,
+              data,
+              "rest/plugin/" + encodeURIComponent(data.name),
+              "Edit plugin - " + data.name);
         };
 
         function ManagementJmxUpdater(node, pluginObject, controller)
