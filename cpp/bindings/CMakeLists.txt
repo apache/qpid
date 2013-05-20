@@ -96,7 +96,7 @@ if (SWIG_FOUND)
       add_subdirectory(qmf/ruby)
   endif (RUBY_FOUND)
 
-  if (PERL_FOUND)
+  if (PERLLIBS_FOUND)
       message("Building Perl bindings")
       execute_process(COMMAND ${PERL_EXECUTABLE} "-V::prefix:"
                       OUTPUT_VARIABLE QPERL_PREFIX
@@ -105,5 +105,5 @@ if (SWIG_FOUND)
       string(REPLACE ${PERL_PREFIX} ${CMAKE_INSTALL_PREFIX} PERL_PFX_ARCHLIB ${PERL_ARCHLIB})
 
       add_subdirectory(qpid/perl)
-  endif (PERL_FOUND)
+  endif (PERLLIBS_FOUND)
 endif (SWIG_FOUND)
