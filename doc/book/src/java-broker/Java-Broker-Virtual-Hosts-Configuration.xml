@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -116,6 +120,36 @@
 </virtualhosts>
     ]]></programlisting>
         </example>
+
+	<section role="h4" id="Java-Broker-Stores-BDB-Store-Configuration_BDBEnvVars">
+	  <title>Passing BDB environment configuration options</title>
+	  <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">
+	     environment</ulink> from the virtualhost.xml. Environment configuration options are passed using
+	     <varname>envConfig</varname> elements within the <varname>store</varname> element.</para>
+	  <para>For example, to override the BDB environment configuration options <varname>je.cleaner.threads</varname> and
+	    <varname>je.log.fileMax</varname></para>
+	  <example>
+	    <title>Configuring BDB Environment Configuration</title>
+	    <programlisting language="xml"><![CDATA[
+      <store>
+	...
+	<envConfig>
+	  <name>je.cleaner.threads</name>
+	  <value>2</value>
+	</envConfig>
+	<envConfig>
+	  <name>je.log.fileMax</name>
+	  <value>5000000</value>
+	</envConfig>
+	  ...
+      </store>]]></programlisting>
+          </example>
+	</section>
+      </section>
+
+      <section role="h3" id="Java-Broker-Stores-BDBHA-Store-Configuration">
+        <title>Configuring BDBHAMessageStore</title>
+        <para>See <xref linkend="Java-Broker-High-Availability-Configuration"/></para>
       </section>
 
       <section role="h3" id="Java-Broker-Stores-Derby-Store-Configuration">
@@ -142,7 +176,7 @@
 </virtualhosts>
     ]]></programlisting>
         </example>
-      </section>
+    </section>
 
     <section role="h3" id="Java-Broker-Stores-JDBC-Store-Configuration">
     <title>Configuring JDBCMessageStore</title>
