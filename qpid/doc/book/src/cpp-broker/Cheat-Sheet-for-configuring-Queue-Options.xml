@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- 
+
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -9,16 +9,16 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
- 
+
 -->
 
 <section><title>
@@ -50,14 +50,6 @@
                     <xref linkend="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"/>
                   </para></listitem>
                   <listitem><para>
-                    <itemizedlist>
-                      <listitem><para>
-                        <xref linkend="CheatSheetforconfiguringQueueOptions-PersistLastNode"/>
-                      </para></listitem>
-                      <listitem><para>
-                        <xref linkend="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"/>
-                      </para></listitem>
-                    </itemizedlist>
                   </para></listitem>
                   <listitem><para>
                     <xref linkend="CheatSheetforconfiguringQueueOptions-OtherClients"/>
@@ -155,7 +147,7 @@
     ....
     for each message, set the into application headers before transfer
     message.getHeaders().setString(key,"RHT");
-    
+
 </programlisting>
           <para>
             Notes:
@@ -179,68 +171,7 @@
             A fully worked <xref linkend="LVQ-Example"/> can be found here
           </para>
 	  <!--h3--></section>
-	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"><title>
-            Setting additional behaviors
-          </title>
-          <section role="h4" id="CheatSheetforconfiguringQueueOptions-PersistLastNode"><title>
-            Persist
-            Last Node
-          </title>
-          <para>
-            This option is used in conjunction with clustering. It allows for
-            a queue configured with this option to persist transient messages
-            if the cluster fails down to the last node. If additional nodes
-            in the cluster are restored it will stop persisting transient
-            messages.
-          </para><para>
-            Note
-          </para><itemizedlist>
-            <listitem><para>if a cluster is started with only one active node, this mode
-            will not be triggered. It is only triggered the first time the
-            cluster fails down to 1 node.
-            </para></listitem>
-            <listitem><para>The queue MUST be configured durable
-            </para></listitem>
-          </itemizedlist><para>
-            Example:
-          </para>
-            <programlisting>
-#include "qpid/client/QueueOptions.h"
 
-    QueueOptions qo;
-    qo.clearPersistLastNode();
-
-    session.queueDeclare(arg::queue=queue, arg::durable=true, arg::arguments=qo);
-</programlisting>
-	  <!--h4--></section>
-          <section role="h4" id="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"><title>
-            Queue
-            event generation
-          </title>
-          <para>
-            This option is used to determine whether enqueue/dequeue events
-            representing changes made to queue state are generated. These
-            events can then be processed by plugins such as that used for
-            <xref linkend="queue-state-replication"/>.
-          </para><para>
-            Example:
-          </para>
-            <programlisting>
-#include "qpid/client/QueueOptions.h"
-
-    QueueOptions options;
-    options.enableQueueEvents(1);
-    session.queueDeclare(arg::queue="my-queue", arg::arguments=options);
-</programlisting>
-          <para>
-            The boolean option indicates whether only enqueue events should
-            be generated. The key set by this is
-            'qpid.queue_event_generation' and the value is and integer value
-            of 1 (to replicate only enqueue events) or 2 (to replicate both
-            enqueue and dequeue events).
-          </para>
-	  <!--h3--></section>
-	  <!--h4--></section>
 	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-OtherClients"><title>
             Other
             Clients
@@ -252,7 +183,7 @@
           </para>
 
 	  <!--h3--></section>
-	  
+
 	<!--h2--></section>
 
 

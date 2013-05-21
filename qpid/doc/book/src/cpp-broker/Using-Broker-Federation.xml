@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- 
+
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -8,16 +8,16 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
- 
+
 -->
 
 <section id="chap-Messaging_User_Guide-Broker_Federation">
@@ -29,7 +29,7 @@
 		Broker Federation can be used to build large messaging networks, with many brokers, one route at a time. If network connectivity permits, an entire distributed messaging network can be configured from a single location. The rules used for routing can be changed dynamically as servers change, responsibilities change, at different times of day, or to reflect other changing conditions.
 	</para>
 	 <para>
-		Broker Federation is useful in a wide variety of scenarios. Some of these have to do with functional organization; for instance, brokers may be organized by geography, service type, or priority. Here are some use cases for federation: 
+		Broker Federation is useful in a wide variety of scenarios. Some of these have to do with functional organization; for instance, brokers may be organized by geography, service type, or priority. Here are some use cases for federation:
 		<itemizedlist>
 			<listitem>
 				<para>
@@ -98,7 +98,7 @@
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Message_Routes-Exchange_Routes">
 			<title>Exchange Routes</title>
 			 <para>
@@ -109,7 +109,7 @@
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Message_Routes-Dynamic_Exchange_Routes">
 			<title>Dynamic Exchange Routes</title>
 			 <para>
@@ -126,10 +126,10 @@
 			</para>
 
 		</section>
-		
+
 
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-Broker_Federation-Federation_Topologies">
 		<title>Federation Topologies</title>
 		 <para>
@@ -143,18 +143,18 @@
 		</para>
 
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-Broker_Federation-Federation_among_High_Availability_Message_Clusters">
 		<title>Federation among High Availability Message Clusters</title>
 		 <para>
-			Federation is generally used together with High Availability Message Clusters, using clusters to provide high availability on each LAN, and federation to route messages among the clusters. Because message state is replicated within a cluster, it makes little sense to define message routes between brokers in the same cluster.
+			Federation can be used together with High Availability Message Clusters, using clusters to provide high availability on each LAN, and federation to route messages among the clusters.
 		</para>
 		 <para>
-			To create a message route between two clusters, simply create a route between any one broker in the first cluster and any one broker in the second cluster. Each broker in a given cluster can use message routes defined for another broker in the same cluster. If the broker for which a message route is defined should fail, another broker in the same cluster can restore the message route.
+			To create a message route between two clusters, simply create a route between the primaries of each cluster. If the broker for which a message route is defined should fail, another broker in the same cluster can restore the message route.
+			Note that failover of federation routes between clusters is not fully automated, see <xref linkend="ha-link-failover-workaround"/> for a workaround.
 		</para>
-
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-Broker_Federation-The_qpid_route_Utility">
 		<title>The qpid-route Utility</title>
 		 <para>
@@ -163,19 +163,19 @@
 		 <para>
 			The syntax of <command>qpid-route</command> is as follows:
 		</para>
-		 
+
 <screen>
-qpid-route [OPTIONS] dynamic add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; 
+qpid-route [OPTIONS] dynamic add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62;
 qpid-route [OPTIONS] dynamic del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62;
 
-qpid-route [OPTIONS] route add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; &#60;routing-key&#62; 
+qpid-route [OPTIONS] route add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; &#60;routing-key&#62;
 qpid-route [OPTIONS] route del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; &#60;routing-key&#62;
 
 qpid-route [OPTIONS] queue add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;dest-exchange&#62;  &#60;src-queue&#62;
 qpid-route [OPTIONS] queue del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;dest-exchange&#62;  &#60;src-queue&#62;
 
 qpid-route [OPTIONS] list  [&#60;broker&#62;]
-qpid-route [OPTIONS] flush [&#60;broker&#62;]    
+qpid-route [OPTIONS] flush [&#60;broker&#62;]
 qpid-route [OPTIONS] map   [&#60;broker&#62;]
 
 <!--          qpid-route [OPTIONS] add connection &lt;dest-broker&gt; &lt;src-broker&gt;
@@ -185,7 +185,7 @@ qpid-route [OPTIONS] list connections [&#60;broker&#62;]
 		 <para>
 			The syntax for <command>broker</command>, <command>dest-broker</command>, and <command>src-broker</command> is as follows:
 		</para>
-		 
+
 <screen>
 [username/password@] hostname | ip-address [:&#60;port&#62;]
 </screen>
@@ -235,13 +235,13 @@ qpid-route [OPTIONS] list connections [&#60;broker&#62;]
 						</entry>
 
 					</row>
-					 <!--         
+					 <!--
 					<row>
 						<entry>
 							<command>-e</command>
 						</entry>
 						<entry>
-							Delete link after deleting the last route on the link. 
+							Delete link after deleting the last route on the link.
 						</entry>
 					</row>          --> <row>
 						<entry>
@@ -275,7 +275,7 @@ qpid-route [OPTIONS] list connections [&#60;broker&#62;]
 							<command>-t &#60;transport&#62; [ --transport &#60;transport&#62;]</command>
 						</entry>
 						 <entry>
-							Transport protocol to be used for the route. 
+							Transport protocol to be used for the route.
 							<itemizedlist>
 								<listitem>
 									<para>
@@ -312,7 +312,7 @@ qpid-route [OPTIONS] list connections [&#60;broker&#62;]
 			 <para>
 				The syntax for creating and deleting queue routes is as follows:
 			</para>
-			 
+
 <screen>
 qpid-route [OPTIONS] queue add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;dest-exchange&#62; &#60;src-queue&#62;
 qpid-route [OPTIONS] queue del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;dest-exchange&#62; &#60;src-queue&#62;
@@ -320,102 +320,102 @@ qpid-route [OPTIONS] queue del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;d
 			 <para>
 				For instance, the following creates a queue route that routes all messages from the queue named <command>public</command> on the source broker <command>localhost:10002</command> to the <command>amq.fanout</command> exchange on the destination broker <command>localhost:10001</command>:
 			</para>
-			 
+
 <screen>
 $ qpid-route queue add localhost:10001 localhost:10002 amq.fanout public
 </screen>
 			 <para>
 				If the <command>-d</command> option is specified, this queue route is persistent, and will be restored if one or both of the brokers is restarted:
 			</para>
-			 
+
 <screen>
 $ qpid-route -d queue add localhost:10001 localhost:10002 amq.fanout public
 </screen>
 			 <para>
 				The <command>del</command> command takes the same arguments as the <command>add</command> command. The following command deletes the queue route described above:
 			</para>
-			 
+
 <screen>
 $ qpid-route queue del localhost:10001 localhost:10002 amq.fanout public
 </screen>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-The_qpid_route_Utility-Creating_and_Deleting_Exchange_Routes">
 			<title>Creating and Deleting Exchange Routes</title>
 			 <para>
 				The syntax for creating and deleting exchange routes is as follows:
 			</para>
-			 
+
 <screen>
-qpid-route [OPTIONS] route add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; &#60;routing-key&#62; 
+qpid-route [OPTIONS] route add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; &#60;routing-key&#62;
 qpid-route [OPTIONS] route del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; &#60;routing-key&#62;
 qpid-route [OPTIONS] flush [&#60;broker&#62;]
 </screen>
 			 <para>
 				For instance, the following creates an exchange route that routes messages that match the binding key <command>global.#</command> from the <command>amq.topic</command> exchange on the source broker <command>localhost:10002</command> to the <command>amq.topic</command> exchange on the destination broker <command>localhost:10001</command>:
 			</para>
-			 
+
 <screen>
 $ qpid-route route add localhost:10001 localhost:10002 amq.topic global.#
 </screen>
 			 <para>
 				In many applications, messages published to the destination exchange should also be routed to the source exchange. This is accomplished by creating a second exchange route, reversing the roles of the two exchanges:
 			</para>
-			 
+
 <screen>
 $ qpid-route route add localhost:10002 localhost:10001 amq.topic global.#
 </screen>
 			 <para>
 				If the <command>-d</command> option is specified, the exchange route is persistent, and will be restored if one or both of the brokers is restarted:
 			</para>
-			 
+
 <screen>
 $ qpid-route -d route add localhost:10001 localhost:10002 amq.fanout public
 </screen>
 			 <para>
 				The <command>del</command> command takes the same arguments as the <command>add</command> command. The following command deletes the first exchange route described above:
 			</para>
-			 
+
 <screen>
 $ qpid-route route del localhost:10001 localhost:10002 amq.topic global.#
 </screen>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-The_qpid_route_Utility-Deleting_all_routes_for_a_broker">
 			<title>Deleting all routes for a broker</title>
 			 <para>
 				Use the <command>flush</command> command to delete all routes for a given broker:
 			</para>
-			 
+
 <screen>
 qpid-route [OPTIONS] flush [&#60;broker&#62;]
 </screen>
 			 <para>
 				For instance, the following command deletes all routes for the broker <command>localhost:10001</command>:
 			</para>
-			 
+
 <screen>
 $ qpid-route flush localhost:10001
 </screen>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-The_qpid_route_Utility-Creating_and_Deleting_Dynamic_Exchange_Routes">
 			<title>Creating and Deleting Dynamic Exchange Routes</title>
 			 <para>
 				The syntax for creating and deleting dynamic exchange routes is as follows:
 			</para>
-			 
+
 <screen>
-qpid-route [OPTIONS] dynamic add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62; 
+qpid-route [OPTIONS] dynamic add &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62;
 qpid-route [OPTIONS] dynamic del &#60;dest-broker&#62; &#60;src-broker&#62; &#60;exchange&#62;
 </screen>
 			 <para>
 				In the following examples, we will route messages from a topic exchange. We will create a new topic exchange and federate it so that we are not affected by other all clients that use the built-in <command>amq.topic</command> exchange. The following commands create a new topic exchange on each of two brokers:
 			</para>
-			 
+
 <screen>
 $ qpid-config -a localhost:10003 add exchange topic fed.topic
 $ qpid-config -a localhost:10004 add exchange topic fed.topic
@@ -423,7 +423,7 @@ $ qpid-config -a localhost:10004 add exchange topic fed.topic
 			 <para>
 				Now let&#39;s create a dynamic exchange route that routes messages from the <command>fed.topic</command> exchange on the source broker <command>localhost:10004</command> to the <command>fed.topic</command> exchange on the destination broker <command>localhost:10003</command> if they match any binding on the destination broker&#39;s <command>fed.topic</command> exchange:
 			</para>
-			 
+
 <screen>
 $ qpid-route dynamic add localhost:10003 localhost:10004 fed.topic
 </screen>
@@ -433,14 +433,14 @@ $ qpid-route dynamic add localhost:10003 localhost:10004 fed.topic
 			 <para>
 				In many applications, messages published to the destination exchange should also be routed to the source exchange. This is accomplished by creating a second dynamic exchange route, reversing the roles of the two exchanges:
 			</para>
-			 
+
 <screen>
 $ qpid-route dynamic add localhost:10004 localhost:10003 fed.topic
 </screen>
 			 <para>
 				If the <command>-d</command> option is specified, the exchange route is persistent, and will be restored if one or both of the brokers is restarted:
 			</para>
-			 
+
 <screen>
 $ qpid-route -d dynamic add localhost:10004 localhost:10003 fed.topic
 </screen>
@@ -450,7 +450,7 @@ $ qpid-route -d dynamic add localhost:10004 localhost:10003 fed.topic
 			 <para>
 				The <command>del</command> command takes the same arguments as the <command>add</command> command. The following command deletes the first exchange route described above:
 			</para>
-			 
+
 <screen>
 $ qpid-route dynamic del localhost:10004 localhost:10003 fed.topic
 </screen>
@@ -459,13 +459,13 @@ $ qpid-route dynamic del localhost:10004 localhost:10003 fed.topic
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-The_qpid_route_Utility-Viewing_Routes">
 			<title>Viewing Routes</title>
 			 <para>
 				The <command>route list</command> command shows the routes associated with an individual broker. For instance, suppose we have created the following two routes:
 			</para>
-			 
+
 <screen>
 $ qpid-route dynamic add localhost:10003 localhost:10004 fed.topic
 $ qpid-route dynamic add localhost:10004 localhost:10003 fed.topic
@@ -473,7 +473,7 @@ $ qpid-route dynamic add localhost:10004 localhost:10003 fed.topic
 			 <para>
 				We can now use <command>route list</command> to show all routes for the broker <command>localhost:10003</command>:
 			</para>
-			 
+
 <screen>
 $ qpid-route route list localhost:10003
 localhost:10003 localhost:10004 fed.topic &#60;dynamic&#62;
@@ -481,7 +481,7 @@ localhost:10003 localhost:10004 fed.topic &#60;dynamic&#62;
 			 <para>
 				Note that this shows only one of the two routes we created, the route for which <command>localhost:10003</command> is a destination. If we want to see the route for which <command>localhost:10004</command> is a destination, we need to do another route list:
 			</para>
-			 
+
 <screen>
 $ qpid-route route list localhost:10004
 localhost:10004 localhost:10003 fed.topic &#60;dynamic&#62;
@@ -489,7 +489,7 @@ localhost:10004 localhost:10003 fed.topic &#60;dynamic&#62;
 			 <para>
 				The <command>route map</command> command shows all routes associated with a broker, and recursively displays all routes for brokers involved in federation relationships with the given broker. For instance, here is the output for the two brokers configured above:
 			</para>
-			 
+
 <screen>
 $ qpid-route route map localhost:10003
 
@@ -508,7 +508,7 @@ Static Routes:
 			 <para>
 				Note that the two dynamic exchange links are displayed as though they were one bidirectional link. The <command>route map</command> command is particularly helpful for larger, more complex networks. Let&#39;s configure a somewhat more complex network with 16 dynamic exchange routes:
 			</para>
-			 
+
 <screen>
 qpid-route dynamic add localhost:10001 localhost:10002 fed.topic
 qpid-route dynamic add localhost:10002 localhost:10001 fed.topic
@@ -534,7 +534,7 @@ qpid-route dynamic add localhost:10008 localhost:10006 fed.topic
 			 <para>
 				Now we can use <command>route map</command> starting with any one broker, and see the entire network:
 			</para>
-			 
+
 <screen>
 $ ./qpid-route route map localhost:10001
 
@@ -564,7 +564,7 @@ Static Routes:
 </screen>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-The_qpid_route_Utility-Resilient_Connections">
 			<title>Resilient Connections</title>
 			 <para>
@@ -573,14 +573,14 @@ Static Routes:
 			 <para>
 				The command <command>list connections</command> can be used to show the resilient connections for a broker:
 			</para>
-			 
+
 <screen>
 $ qpid-route list connections localhost:10001
 
 Host            Port    Transport Durable  State             Last Error
 =============================================================================
-localhost       10002   tcp          N     Operational       
-localhost       10003   tcp          N     Operational       
+localhost       10002   tcp          N     Operational
+localhost       10003   tcp          N     Operational
 localhost       10009   tcp          N     Waiting           Connection refused
 </screen>
 			 <para>
@@ -635,15 +635,6 @@ localhost       10009   tcp          N     Waiting           Connection refused
 							</entry>
 
 						</row>
-						 <row>
-							<entry>
-								Passive
-							</entry>
-							 <entry>
-								If a cluster is federated to another cluster, only one of the nodes has an actual connection to remote node. Other nodes in the cluster have a passive connection.
-							</entry>
-
-						</row>
 
 					</tbody>
 
@@ -652,10 +643,9 @@ localhost       10009   tcp          N     Waiting           Connection refused
 			</table>
 
 		</section>
-		
+
 
 	</section>
-	
+
 
 </section>
-

@@ -4,10 +4,15 @@ Migrating to new HA
 ===================
 
 Up to version 0.20, Qpid provided the `cluster` module to support active-active
-clustering for Qpid C++ brokers. In version 0.20 the `ha` module was introduced
-supporting active-passive HA clustering. From version 0.22 the older `cluster`
-module is no longer available so users will have to migrate to the new `ha`
-module.
+clustering for Qpid C++ brokers. There were some issues with this module. It
+relied on synchronization of too much broker state, which made it difficult to
+maintain.  It also had a design limitation that made it effectively
+single-threaded.
+
+In version 0.20, a new `ha` module was introduced, providing active-passive
+clustering. This module is more maintainable and fits better into the
+broker threading modle. From version 0.22 the older `cluster` module
+is no longer available so users will have to migrate to the new `ha` module.
 
 This document summarizes the differences between the old and new HA modules and
 the steps to migrate to new HA. It assumes you have read the
@@ -106,7 +111,7 @@ Fail-over exchange
 ------------------
 
 The fail-over exchange is not supported in new HA, use a
-[virtual IP address][ha-virtual-ip] instead.[]
+[virtual IP address][ha-virtual-ip] instead.
 
 Using a message store in a cluster
 ----------------------------------
@@ -117,9 +122,16 @@ will have its own store. If the entire cluster fails, when restarting the
 brokers will clear their stores and get an update from the primary to ensure
 consistency. See ["Using a message store in a cluster"][ha-store].
 
-[chapter-ha]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html
-[ha-failover]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-failover
-[ha-virtual-ip]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
-[ha-replicate-values]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-replicate-values
-[ha-rm-config]: http://qpid.apache.org/books/trunk/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-rm-config
+Replacing Queue State Replication
+---------------------------------
 
+The queue state replication mechanism implemented by the modules `replicating_listener` and `replication_exchange` is no longer available. Instead you should use the queue replication mechanism provided by the `ha`  module as described in the [HA Queue Replication chapter of the C++ Broker Book][ha-queue-replication]
+
+
+
+[chapter-ha]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html
+[ha-failover]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-failover
+[ha-virtual-ip]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
+[ha-replicate-values]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-replicate-values
+[ha-rm-config]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-rm-config
+[ha-queue-replication]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-queue-replication

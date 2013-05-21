@@ -317,7 +317,15 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>ha-backup-timeout <replaceable>SECONDS</replaceable></literal> </entry>
+	    <entry><literal>ha-backup-timeout<replaceable>SECONDS</replaceable></literal>
+	    <footnote id="ha-seconds-spec">
+	      <para>
+		Values specified as <replaceable>SECONDS</replaceable> can be a
+		fraction of a second, e.g. "0.1" for a tenth of a second.
+		They can also have an explicit unit, e.g. 10s, 10ms, 10us, 10ns
+	      </para>
+	    </footnote>
+	    </entry>
 	    <entry>
 	      <para>
 		Maximum time that a recovering primary will wait for an expected
@@ -326,7 +334,10 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>link-maintenance-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <literal>link-maintenance-interval <replaceable>SECONDS</replaceable></literal>
+	      <footnoteref linkend="ha-seconds-spec"/>
+	    </entry>
 	    <entry>
 	      <para>
 		Interval for the broker to check link health and re-connect links if need
@@ -336,7 +347,10 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	  </row>
 	  <row>
-	    <entry><literal>link-heartbeat-interval <replaceable>SECONDS</replaceable></literal></entry>
+	    <entry>
+	      <literal>link-heartbeat-interval <replaceable>SECONDS</replaceable></literal>
+	      <footnoteref linkend="ha-seconds-spec"/>
+	    </entry>
 	    <entry>
 	      <para>
 		Heartbeat interval for replication links. The link will be assumed broken
@@ -859,30 +873,6 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       or to simulate a cluster on a single node. For deployment, a resource manager is required.
     </para>
   </section>
-  <section id="ha-queue-replication">
-    <title>Replicating specific queues</title>
-    <para>
-      In addition to the automatic replication performed in a cluster, you can
-      set up replication for specific queues between arbitrary brokers, even if
-      the brokers are not members of a cluster. The command:
-    </para>
-    <programlisting>
-      qpid-ha replicate <replaceable>QUEUE</replaceable> <replaceable>REMOTE-BROKER</replaceable>
-    </programlisting>
-    <para>
-    sets up replication of <replaceable>QUEUE</replaceable> on <replaceable>REMOTE-BROKER</replaceable> to <replaceable>QUEUE</replaceable> on the current broker.
-    </para>
-    <para>
-      Set the configuration option
-      <literal>ha-queue-replication=yes</literal> on both brokers to enable this
-      feature on non-cluster brokers. It is automatically enabled for brokers
-      that are part of a cluster.
-    </para>
-    <para>
-      Note that this feature does not provide automatic fail-over, for that you
-      need to run a cluster.
-    </para>
-  </section>
 
   <section id ="ha-store">
     <title>Using a message store in a cluster</title>
@@ -895,6 +885,60 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
   </section>
 
+  <section id="ha-link-failover-workaround">
+    <title>Failover of federation links and queue replication.</title>
+    <para>
+      Failover for Federation links (<xref
+      linkend="chap-Messaging_User_Guide-Broker_Federation"/>) and queue
+      replication (<xref linkend="ha-queue-replication"/>) is not fully
+      automated. Until it is you can use the following workaround.
+    </para>
+    <para>
+      Note: In the following we will <emphasis>source</emphasis> to refer to the
+      source of a federation link or the <emphasis>original</emphasis> of a
+      replicated queue.  We will use <emphasis>destination</emphasis> to refer
+      to the destination of a federation link or the
+      <emphasis>replica</emphasis> of a replicated queue.
+    </para>
+    <para>
+      If the primary <emphasis>source</emphasis> broker fails, the destination
+      broker will automatically failover to the new source primary and
+      re-establish the link or queue replication.
+    </para>
+    <para>
+      However if the <emphasis>destination</emphasis> broker fails, there is no
+      automatic failover. You can use the following workaround:
+    </para>
+    <para>
+      When the primary broker fails, the cluster resource manager calls a script
+      to promote a backup broker to be the new primary. By default this script
+      is <filename>/etc/init.d/qpidd-primary</filename> but you can modify that
+      in your <filename>cluster.conf</filename> file (see <xref
+      linkend="ha-rm-config"/>.)
+    </para>
+    <para>
+      You can modify this script (on each host in your cluster) by adding
+      commands to re-create your replica queues or federation links just before
+      the broker is promoted, as illustrated in the following excerpt from the
+      script:
+      <programlisting>
+	start() {
+	    service qpidd start
+
+	    ################################
+	    #### Add your commands here ####
+	    ################################
+
+	    echo -n $"Promoting qpid daemon to cluster primary: "
+	    $QPID_HA -b localhost:$QPID_PORT promote
+	    [ "$?" -eq 0 ] &amp;&amp; success || failure
+	}
+      </programlisting>
+      Whenever the system fails over to a new primary your commands will be run
+      and your replicas or links created before the primary begins to accept
+      connections from backups and clients.
+    </para>
+  </section>
 </section>
 
 <!-- LocalWords:  scalability rgmanager multicast RGManager mailto LVQ qpidd IP dequeued Transactional username API
