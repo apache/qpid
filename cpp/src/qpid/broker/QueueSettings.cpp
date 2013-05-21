@@ -63,6 +63,7 @@ const std::string LVQ_LEGACY("qpid.last_value_queue");
 const std::string LVQ_LEGACY_KEY("qpid.LVQ_key");
 const std::string LVQ_LEGACY_NOBROWSE("qpid.last_value_queue_no_browse");
 
+const std::string SEQUENCING("qpid.queue_msg_sequence");
 
 bool handleFairshareSetting(const std::string& basename, const std::string& key, const qpid::types::Variant& value, QueueSettings& settings)
 {
@@ -97,7 +98,8 @@ QueueSettings::QueueSettings(bool d, bool a) :
     noLocal(false),
     isBrowseOnly(false),
     autoDeleteDelay(0),
-    alertRepeatInterval(60)
+    alertRepeatInterval(60),
+    sequencing(false)
 {}
 
 bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& value)
@@ -202,6 +204,10 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
         return true;
     } else if (key == PAGE_FACTOR) {
         pageFactor = value;
+        return true;
+    } else if (key == SEQUENCING) {
+        sequenceKey = value.getString();
+        sequencing = !sequenceKey.empty();
         return true;
     } else if (key == FILTER) {
         filter = value.asString();

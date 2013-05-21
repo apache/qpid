@@ -123,3 +123,83 @@ class GeneralTests(Base):
         self.assertEqual(rx_alt.available(), 0, "No further messages should be received via the alternate exchange")
 
         sess4.close()
+
+class SequenceNumberTests(Base):
+    """
+    Tests of ring queue sequence number
+    """
+
+    def fail(self, text=None):
+        if text:
+            print "Fail: %r" % text
+        assert None
+
+    def setup_connection(self):
+        return Connection.establish(self.broker, **self.connection_options())
+
+    def setup_session(self):
+        return self.conn.session()
+
+    def setup_sender(self, name="ring-sequence-queue", key="qpid.queue_msg_sequence"):
+        addr = "%s; {create:sender, delete:always, node: {x-declare: {arguments: {'qpid.queue_msg_sequence':'%s', 'qpid.policy_type':'ring', 'qpid.max_count':4}}}}"  % (name, key)
+        sender = self.ssn.sender(addr)
+        return sender
+
+    def test_create_sequence_queue(self):
+        """
+        Test a queue with sequencing can be created
+        """
+
+        #setup, declare a queue
+        try:
+            sender = self.setup_sender()
+        except:
+            self.fail("Unable to create ring queue with sequencing enabled")
+
+    def test_get_sequence_number(self):
+        """
+        Test retrieving sequence number for queues 
+        """
+
+        key = "k"
+        sender = self.setup_sender("ring-sequence-queue2", key=key)
+
+        # send and receive 1 message and test the sequence number
+        msg = Message()
+        sender.send(msg)
+
+        receiver = self.ssn.receiver("ring-sequence-queue2")
+        msg = receiver.fetch(1)
+        try:
+            seqNo = msg.properties[key]
+            if int(seqNo) != 1:
+                txt = "Unexpected sequence number. Should be 1. Received (%s)" % seqNo
+                self.fail(txt)
+        except:
+            txt = "Unable to get key (%s) from message properties" % key
+            self.fail(txt)
+        receiver.close()
+
+    def test_sequence_number_gap(self):
+        """
+        Test that sequence number for ring queues shows gaps when queue
+        messages are overwritten
+        """
+        key = "qpid.seq"
+        sender = self.setup_sender("ring-sequence-queue3", key=key)
+        receiver = self.ssn.receiver("ring-sequence-queue3")
+
+        msg = Message()
+        sender.send(msg)
+        msg = receiver.fetch(1)
+
+        # send 5 more messages to overflow the queue
+        for i in range(5):
+            sender.send(msg)
+
+        msg = receiver.fetch(1)
+        seqNo = msg.properties[key]
+        if int(seqNo) != 3:
+            txt = "Unexpected sequence number. Should be 3. Received (%s)" % seqNo
+            self.fail(txt)
+        receiver.close()
