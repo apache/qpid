@@ -755,6 +755,7 @@ void Queue::push(Message& message, bool /*isRecovery*/)
     {
         Mutex::ScopedLock locker(messageLock);
         message.setSequence(++sequence);
+        if (settings.sequencing) message.addAnnotation(settings.sequenceKey, (uint32_t)sequence);
         messages->publish(message);
         listeners.populate(copy);
         observeEnqueue(message, locker);
