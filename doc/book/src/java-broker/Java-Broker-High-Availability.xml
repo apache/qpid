@@ -298,25 +298,27 @@
     <example>
       <title>Configuring a VirtualHost to use the BDBHAMessageStore</title>
       <programlisting language="xml"><![CDATA[
-<virtualhost>
-  <name>myhost</name>
-  <myvhost>
-    <store>
-      <class>org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore</class>
-      <environment-path>${work}/bdbhastore</environment-path>
-      <highAvailability>
-        <groupName>myclustername</groupName>
-        <nodeName>mynode1</nodeName>
-        <nodeHostPort>node1host:port</nodeHostPort>
-        <helperHostPort>node1host:port</helperHostPort>
-        <durability>NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY</durability>
-        <coalescingSync>true|false</coalescingSync>
-        <designatedPrimary>true|false</designatedPrimary>
-      </highAvailability>
-    </store>
-    ...
- </myvhost>
-</virtualhost>]]></programlisting>
+<virtualhosts>
+  <virtualhost>
+    <name>vhostname</name>
+    <vhostname>
+      <store>
+	<class>org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore</class>
+	<environment-path>${QPID_WORK}/bdbhastore/vhostname</environment-path>
+	<highAvailability>
+	  <groupName>myclustername</groupName>
+	  <nodeName>mynode1</nodeName>
+	  <nodeHostPort>node1host:port</nodeHostPort>
+	  <helperHostPort>node1host:port</helperHostPort>
+	  <durability>NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY</durability>
+	  <coalescingSync>true|false</coalescingSync>
+	  <designatedPrimary>true|false</designatedPrimary>
+	</highAvailability>
+      </store>
+      ...
+   </vhostname>
+  </virtualhost>
+</virtualhosts>]]></programlisting>
     </example>
     </para>
     <para>The <varname>groupName</varname> is the name of logical name of the cluster.  All nodes within the
@@ -355,26 +357,12 @@
 
     <section role="h4" id="Java-Broker-High-Availability-Configuration_BDBEnvVars">
       <title>Passing BDB environment and replication configuration options</title>
-      <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">
-         environment</ulink> and <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/ReplicationConfig.html">
-         replication</ulink> configuration options from the virtualhost.xml. Environment configuration options are passed using
-         the <varname>envConfig</varname> element, and replication config using <varname>repConfig</varname>.</para>
-      <para>For example, to override the BDB environment configuration options <varname>je.cleaner.threads</varname> and
-        <varname>je.txn.timeout</varname></para>
-      <programlisting language="xml"><![CDATA[
-         ...
-      </highAvailability>
-      <envConfig>
-        <name>je.cleaner.threads</name>
-        <value>2</value>
-      </envConfig>
-      <envConfig>
-        <name>je.txn.timeout</name>
-        <value>15 min</value>
-      </envConfig>
-      ...
-    </store>]]></programlisting>
-      <para>And to override the BDB replication configuration options <varname>je.rep.electionsPrimaryRetries</varname>.</para>
+      <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">environment</ulink> and
+        <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/ReplicationConfig.html">replication</ulink> configuration options from the
+        virtualhost.xml.</para>
+      <para>Environment configuration options are passed as described in <xref linkend="Java-Broker-Stores-BDB-Store-Configuration_BDBEnvVars"/></para>
+      <para>Replication configuration option are passed using <varname>repConfig</varname> elements with the <varname>store</varname> element.</para>
+      <para>For example, to override the BDB replication configuration option <varname>je.rep.electionsPrimaryRetries</varname>.</para>
       <programlisting language="xml"><![CDATA[
          ...
       </highAvailability>
