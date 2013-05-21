@@ -83,6 +83,10 @@ struct QueueSettings
     uint64_t maxFileSize;
     uint64_t maxFileCount;
 
+    std::string sequenceKey;
+    // store bool to avoid testing string value
+    bool sequencing;
+
     std::string filter;
 
     //yuck, yuck
