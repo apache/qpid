@@ -139,6 +139,11 @@ else:
 
       self.socket.setblocking(0)
       self.state = None
+      # See qpid-4872: need to store the parameters last passed to
+      # tls.recv_into() and tls.write() in case the calls fail with an
+      # SSL_ERROR_WANT_* error and we have to retry the call.
+      self.write_retry = None   # buffer passed to last call of tls.write()
+      self.read_retry = None    # buffer passed to last call of tls.recv_into()
 
     def reading(self, reading):
       if self.state is None:
@@ -153,24 +158,41 @@ else:
         return self.state == SSL_ERROR_WANT_WRITE
 
     def send(self, bytes):
+      if self.write_retry is None:
+        self.write_retry = bytes
       self._clear_state()
       try:
-        return self.tls.write(bytes)
+        n = self.tls.write( self.write_retry )
+        self.write_retry = None
+        return n
       except SSLError, e:
         if self._update_state(e.args[0]):
+          # will retry on next invokation
           return 0
-        else:
-          raise
+        self.write_retry = None
+        raise
+      except:
+        self.write_retry = None
+        raise
 
     def recv(self, n):
+      if self.read_retry == None:
+        self.read_retry = bytearray( n )
       self._clear_state()
       try:
-        return self.tls.read(n)
+        n = self.tls.recv_into( self.read_retry )
+        r = str(self.read_retry[:n])
+        self.read_retry = None
+        return r
       except SSLError, e:
         if self._update_state(e.args[0]):
+          # will retry on next invokation
           return None
-        else:
-          raise
+        self.read_retry = None
+        raise
+      except:
+        self.read_retry = None
+        raise
 
     def _clear_state(self):
       self.state = None
