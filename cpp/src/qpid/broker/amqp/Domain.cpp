@@ -168,7 +168,7 @@ qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::framing::ProtocolV
 qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::sys::OutputControl& out, const std::string& id, const qpid::sys::SecuritySettings& t)
 {
     bool useSasl = domain.getMechanisms() != NONE;
-    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, broker, true, incoming, name, source, target, domain, registry));
+    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, broker, useSasl, incoming, name, source, target, domain, registry));
     if (!relay) registry.add(name, connection);
     else connection->setRelay(relay);
 
