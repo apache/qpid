@@ -128,7 +128,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
     public void testPutCreateVirtualHostUsingConfigPath() throws Exception
     {
-        String hostName = getTestName();
+        String hostName = getName();
         File configFile = TestFileUtils.createTempFile(this, hostName + "-config.xml");
         String configPath = configFile.getAbsolutePath();
         String storeLocation = getStoreLocation(hostName);
@@ -575,9 +575,9 @@ public class VirtualHostRestTest extends QpidRestTestCase
             throws ConfigurationException
     {
         XMLConfiguration testConfiguration = new XMLConfiguration();
-        testConfiguration.setProperty("virtualhosts.virtualhost." + hostName + ".store.class",
+        testConfiguration.setProperty("virtualhost." + hostName + ".store.class",
                 getTestProfileMessageStoreClassName());
-        testConfiguration.setProperty("virtualhosts.virtualhost." + hostName + ".store.environment-path", storeLocation);
+        testConfiguration.setProperty("virtualhost." + hostName + ".store.environment-path", storeLocation);
         testConfiguration.save(configFile);
         return testConfiguration;
     }
