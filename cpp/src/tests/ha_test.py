@@ -151,9 +151,8 @@ acl allow all all
 
     def promote(self): self.ready(); self.qpid_ha(["promote"])
     def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
-    def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url])
+    def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url]);
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
-
     def agent(self):
         if not self._agent:
             cred = self.client_credentials
@@ -191,7 +190,7 @@ acl allow all all
         agent = self.agent()
         assert retry(lambda: agent.getQueue(queue) is None, timeout=timeout)
 
-    # FIXME aconway 2012-05-01: do direct python call to qpid-config code.
+    # TODO aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
         assert subprocess.call(
             [self.qpid_config_path, "--broker", self.host_port()]+args,
@@ -299,7 +298,7 @@ class HaCluster(object):
         """Start a new broker in the cluster"""
         i = len(self)
         assert i <= len(self._ports)
-        if i == len(self._ports):
+        if i == len(self._ports): # Adding new broker after cluster init
             self._ports.append(HaPort(self.test))
             self._set_url()
             self._update_urls()
@@ -311,10 +310,9 @@ class HaCluster(object):
         self.url = ",".join("127.0.0.1:%s"%(p.port) for p in self._ports)
 
     def _update_urls(self):
-        if len(self) > 1: # No failover addresses on a 1 cluster.
-            for b in self:
-                b.set_brokers_url(self.url)
-                b.set_public_url(self.url)
+        for b in self:
+            b.set_brokers_url(self.url)
+            b.set_public_url(self.url)
 
     def connect(self, i):
         """Connect with reconnect_urls"""

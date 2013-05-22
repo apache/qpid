@@ -19,6 +19,7 @@
  *
  */
 
+#include "makeMessage.h"
 #include "QueueGuard.h"
 #include "QueueRange.h"
 #include "QueueReplicator.h"
@@ -41,6 +42,7 @@ using namespace framing;
 using namespace broker;
 using namespace std;
 using sys::Mutex;
+using broker::amqp_0_10::MessageTransfer;
 
 const string ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION("qpid.ha-replicating-subscription");
 const string ReplicatingSubscription::QPID_BACK("qpid.ha-back");
@@ -289,7 +291,7 @@ void ReplicatingSubscription::acknowledged(const broker::DeliveryRecord& r) {
 }
 
 // Called with lock held. Called in subscription's connection thread.
-void ReplicatingSubscription::sendDequeueEvent(Mutex::ScopedLock&)
+void ReplicatingSubscription::sendDequeueEvent(Mutex::ScopedLock& l)
 {
     if (dequeues.empty()) return;
     QPID_LOG(trace, logPrefix << "Sending dequeues " << dequeues);
@@ -300,7 +302,7 @@ void ReplicatingSubscription::sendDequeueEvent(Mutex::ScopedLock&)
     buffer.reset();
     {
         Mutex::ScopedUnlock u(lock);
-        sendEvent(QueueReplicator::DEQUEUE_EVENT_KEY, buffer);
+        sendEvent(QueueReplicator::DEQUEUE_EVENT_KEY, buffer, l);
     }
 }
 
@@ -328,7 +330,7 @@ void ReplicatingSubscription::dequeued(SequenceNumber first, SequenceNumber last
 }
 
 // Called with lock held. Called in subscription's connection thread.
-void ReplicatingSubscription::sendPositionEvent(SequenceNumber pos, Mutex::ScopedLock&)
+void ReplicatingSubscription::sendPositionEvent(SequenceNumber pos, Mutex::ScopedLock& l)
 {
     if (pos == backupPosition) return; // No need to send.
     QPID_LOG(trace, logPrefix << "Sending position " << pos << ", was " << backupPosition);
@@ -338,38 +340,24 @@ void ReplicatingSubscription::sendPositionEvent(SequenceNumber pos, Mutex::Scope
     buffer.reset();
     {
         Mutex::ScopedUnlock u(lock);
-        sendEvent(QueueReplicator::POSITION_EVENT_KEY, buffer);
+        sendEvent(QueueReplicator::POSITION_EVENT_KEY, buffer, l);
     }
 }
 
-void ReplicatingSubscription::sendEvent(const std::string& key, framing::Buffer& buffer)
+void ReplicatingSubscription::sendEvent(const std::string& key,
+                                        const framing::Buffer& buffer,
+                                        Mutex::ScopedLock&)
 {
-    //generate event message
-    boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> event(new qpid::broker::amqp_0_10::MessageTransfer());
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), string(), 0, 0)));
-    AMQFrame header((AMQHeaderBody()));
-    AMQFrame content((AMQContentBody()));
-    content.castBody<AMQContentBody>()->decode(buffer, buffer.getSize());
-    header.setBof(false);
-    header.setEof(false);
-    header.setBos(true);
-    header.setEos(true);
-    content.setBof(false);
-    content.setEof(true);
-    content.setBos(true);
-    content.setEos(true);
-    event->getFrames().append(method);
-    event->getFrames().append(header);
-    event->getFrames().append(content);
-
+    broker::Message message = makeMessage(buffer);
+    MessageTransfer& transfer = MessageTransfer::get(message);
     DeliveryProperties* props =
-        event->getFrames().getHeaders()->get<DeliveryProperties>(true);
+        transfer.getFrames().getHeaders()->get<DeliveryProperties>(true);
     props->setRoutingKey(key);
-    // Send the event directly to the base consumer implementation.
-    //dummy consumer prevents acknowledgements being handled, which is what we want for events
-    ConsumerImpl::deliver(QueueCursor(), Message(event, 0), boost::shared_ptr<Consumer>());
+    // Send the event directly to the base consumer implementation.  The dummy
+    // consumer prevents acknowledgements being handled, which is what we want
+    // for events
+    ConsumerImpl::deliver(QueueCursor(), message, boost::shared_ptr<Consumer>());
 }
-
 
 // Called in subscription's connection thread.
 bool ReplicatingSubscription::doDispatch()
