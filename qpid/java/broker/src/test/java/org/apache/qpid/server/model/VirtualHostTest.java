@@ -132,12 +132,14 @@ public class VirtualHostTest extends TestCase
 
     public void testReplicaState()
     {
-        File configPath = TestFileUtils.createTempFile(this, ".xml",
-                "<virtualhost><store><class>" + ReplicaMessageStore.class.getName() + "</class></store></virtualhost>");
+        String hostName = getName();
+        File configPath = TestFileUtils.createTempFile(this, ".xml", "<virtualhosts><virtualhost><" + hostName
+                + "><store><class>" + ReplicaMessageStore.class.getName() + "</class></store></" + hostName
+                + "></virtualhost></virtualhosts>");
         try
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
-            attributes.put(VirtualHost.NAME, getName());
+            attributes.put(VirtualHost.NAME, hostName);
             attributes.put(VirtualHost.CONFIG_PATH, configPath.getAbsolutePath());
 
             VirtualHost host = createHost(attributes);

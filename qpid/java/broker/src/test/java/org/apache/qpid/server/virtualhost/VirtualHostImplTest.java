@@ -179,6 +179,21 @@ public class VirtualHostImplTest extends QpidTestCase
         }
     }
 
+    public void testCreateVirtualHostWithoutConfigurationInConfigFile() throws Exception
+    {
+        File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
+        String hostName = getName() + "-not-existing";
+        try
+        {
+            createVirtualHost(hostName, config);
+            fail("virtualhost creation should have failed due to illegal configuration");
+        }
+        catch (RuntimeException e)
+        {
+            assertEquals("No configuration found for virtual host '" + hostName + "' in " + config.getAbsolutePath(), e.getMessage());
+        }
+    }
+
     private void customBindingTestImpl(final String[] routingKeys) throws Exception
     {
         String exchangeName = getName() +".direct";

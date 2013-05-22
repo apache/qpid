@@ -68,12 +68,11 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         {
             Configuration virtualHostConfig = XmlConfigurationUtilities.parseConfig(configurationFile);
 
-            // check if it is an old virtual host configuration file which has an element of the same name as virtual host
+            // check for the element with the same name as virtual host
             Configuration config = virtualHostConfig.subset("virtualhost." + XmlConfigurationUtilities.escapeTagName(name));
             if (config.isEmpty())
             {
-                // assume it is a new configuration which does not have an element of the same name as the virtual host
-                configuration = virtualHostConfig;
+                throw new IllegalConfigurationException("No configuration found for virtual host '" + name + "' in " + configurationFile.getAbsolutePath());
             }
             else
             {
