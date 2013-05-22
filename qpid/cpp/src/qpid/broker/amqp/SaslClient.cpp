@@ -36,7 +36,7 @@ namespace amqp {
 SaslClient::SaslClient(qpid::sys::OutputControl& out_, const std::string& id, boost::shared_ptr<Interconnect> c, std::auto_ptr<qpid::Sasl> s,
                        const std::string& hostname_, const std::string& mechs, const qpid::sys::SecuritySettings& t)
     : qpid::amqp::SaslClient(id), out(out_), connection(c), sasl(s),
-      hostname(hostname_), allowedMechanisms(mechs), transport(t), readHeader(true), writeHeader(true), haveOutput(false), state(NONE) {}
+      hostname(hostname_), allowedMechanisms(mechs), transport(t), readHeader(true), writeHeader(false), haveOutput(false), state(NONE) {}
 
 SaslClient::~SaslClient()
 {
@@ -103,7 +103,8 @@ void SaslClient::mechanisms(const std::string& offered)
         std::stringstream intersection;
         for (std::vector<std::string>::const_iterator i = allowed.begin(); i != allowed.end(); ++i) {
             if (std::find(supported.begin(), supported.end(), *i) != supported.end()) {
-                intersection << *i << " ";
+                if (!intersection.str().empty()) intersection << " ";
+                intersection << *i;
             }
         }
         mechanisms = intersection.str();
@@ -172,7 +173,7 @@ bool SaslClient::isClosed() const
 }
 qpid::framing::ProtocolVersion SaslClient::getVersion() const
 {
-    return connection->getVersion();
+    return qpid::framing::ProtocolVersion(1,0,qpid::framing::ProtocolVersion::SASL);
 }
 
 }}} // namespace qpid::broker::amqp
