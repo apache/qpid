@@ -642,9 +642,13 @@ if (BUILD_HA)
         qpid/ha/BrokerReplicator.h
         qpid/ha/ConnectionObserver.cpp
         qpid/ha/ConnectionObserver.h
+        qpid/ha/FailoverExchange.cpp
+        qpid/ha/FailoverExchange.h
         qpid/ha/HaBroker.cpp
         qpid/ha/HaBroker.h
         qpid/ha/HaPlugin.cpp
+	qpid/ha/makeMessage.cpp
+	qpid/ha/makeMessage.h
         qpid/ha/Membership.cpp
         qpid/ha/Membership.h
         qpid/ha/Primary.cpp

@@ -132,7 +132,8 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     void sendDequeueEvent(sys::Mutex::ScopedLock&);
     void sendPositionEvent(framing::SequenceNumber, sys::Mutex::ScopedLock&);
     void setReady();
-    void sendEvent(const std::string& key, framing::Buffer&);
+    void sendEvent(const std::string& key, const framing::Buffer&,
+                   sys::Mutex::ScopedLock&);
   friend struct Factory;
 };
 
