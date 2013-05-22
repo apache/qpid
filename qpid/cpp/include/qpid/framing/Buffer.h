@@ -51,10 +51,11 @@ class QPID_COMMON_CLASS_EXTERN Buffer
 
     QPID_COMMON_EXTERN void reset();
 
-    QPID_COMMON_INLINE_EXTERN uint32_t available() { return size - position; }
-    QPID_COMMON_INLINE_EXTERN uint32_t getSize() { return size; }
-    QPID_COMMON_INLINE_EXTERN uint32_t getPosition() { return position; }
+    QPID_COMMON_INLINE_EXTERN uint32_t available() const{ return size - position; }
+    QPID_COMMON_INLINE_EXTERN uint32_t getSize() const { return size; }
+    QPID_COMMON_INLINE_EXTERN uint32_t getPosition() const { return position; }
     QPID_COMMON_INLINE_EXTERN void setPosition(uint32_t p) { position = p; }
+    QPID_COMMON_INLINE_EXTERN const char * getPointer() const { return data; }
     QPID_COMMON_INLINE_EXTERN char* getPointer() { return data; }
 
     QPID_COMMON_EXTERN void putOctet(uint8_t i);
