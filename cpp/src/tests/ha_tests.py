@@ -549,7 +549,7 @@ class ReplicationTests(HaBrokerTest):
 
     def test_auth(self):
         """Verify that authentication does not interfere with replication."""
-        # FIXME aconway 2012-07-09: generate test sasl config portably for cmake
+        # TODO aconway 2012-07-09: generate test sasl config portably for cmake
         sasl_config=os.path.join(self.rootdir, "sasl_config")
         if not os.path.exists(sasl_config):
             print "WARNING: Skipping test, SASL test configuration %s not found."%sasl_config
@@ -1183,6 +1183,24 @@ class ConfigurationTests(HaBrokerTest):
         b = start("none", "none")
         check(b, "", "")
 
+    def test_failover_exchange(self):
+        """Verify that the failover exchange correctly reports cluster membership"""
+
+        def strip_url(url): return re.sub('amqp:|tcp:', '', url)
+
+        def assert_url(m, url):
+            urls = m.properties['amq.failover']
+            self.assertEqual(1, len(urls))
+            self.assertEqual(strip_url(urls[0]), url)
+
+        cluster = HaCluster(self, 1, args=["--ha-public-url=foo:1234"])
+        r = cluster[0].connect().session().receiver("amq.failover")
+        assert_url(r.fetch(1), "foo:1234")
+        cluster[0].set_public_url("bar:1234")
+        assert_url(r.fetch(1), "bar:1234")
+        cluster[0].set_brokers_url(cluster.url+",xxx:1234")
+        self.assertRaises(Empty, r.fetch, 0) # Not updated for brokers URL
+
 class StoreTests(BrokerTest):
     """Test for HA with persistence."""
 
@@ -1203,8 +1221,7 @@ class StoreTests(BrokerTest):
         r = cluster[0].connect().session().receiver("qq")
         self.assertEqual(r.fetch().content, "foo")
         r.session.acknowledge()
-        # FIXME aconway 2012-09-21: sending this message is an ugly hack to flush
-        # the dequeue operation on qq.
+        # Sending this message is a hack to flush the dequeue operation on qq.
         s.send(Message("flush", durable=True))
 
         def verify(broker, x_count):

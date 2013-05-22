@@ -27,6 +27,7 @@
 #include "types.h"
 #include "Settings.h"
 #include "qpid/Url.h"
+#include "FailoverExchange.h"
 #include "qpid/sys/Mutex.h"
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qpid/management/Manageable.h"
@@ -115,6 +116,7 @@ class HaBroker : public management::Manageable
     boost::shared_ptr<ConnectionObserver> observer; // Used by Backup and Primary
     boost::shared_ptr<Role> role;
     Membership membership;
+    boost::shared_ptr<FailoverExchange> failoverExchange;
 };
 }} // namespace qpid::ha
 

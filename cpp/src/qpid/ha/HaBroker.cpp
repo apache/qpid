@@ -64,7 +64,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       broker(b),
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),
-      membership(BrokerInfo(systemId, STANDALONE), *this)
+      membership(BrokerInfo(systemId, STANDALONE), *this),
+      failoverExchange(new FailoverExchange(*b.GetVhostObject(), b))
 {
     // If we are joining a cluster we must start excluding clients now,
     // otherwise there's a window for a client to connect before we get to
@@ -74,6 +75,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         shared_ptr<broker::ConnectionObserver> excluder(new BackupConnectionExcluder);
         observer->setObserver(excluder, "Backup: ");
         broker.getConnectionObservers().add(observer);
+        broker.getExchanges().registerExchange(failoverExchange);
     }
 }
 
@@ -171,7 +173,9 @@ void HaBroker::setPublicUrl(const Url& url) {
     mgmtObject->set_publicUrl(url.str());
     knownBrokers.clear();
     knownBrokers.push_back(url);
-    QPID_LOG(debug, role->getLogPrefix() << "Setting public URL to: " << url);
+    vector<Url> urls(1, url);
+    failoverExchange->updateUrls(urls);
+    QPID_LOG(debug, role->getLogPrefix() << "Public URL set to: " << url);
 }
 
 void HaBroker::setBrokerUrl(const Url& url) {
