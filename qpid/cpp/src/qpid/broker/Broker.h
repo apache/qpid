@@ -165,6 +165,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
                                             const ConnectionState* context);
     Manageable::status_t setTimestampConfig(const bool receive,
                                             const ConnectionState* context);
+    Manageable::status_t queueRedirect(const std::string& srcQueue, const std::string& tgtQueue);
+    void queueRedirectDestroy(boost::shared_ptr<Queue> srcQ, boost::shared_ptr<Queue> tgtQ, bool moveMsgs);
     boost::shared_ptr<sys::Poller> poller;
     std::auto_ptr<sys::Timer> timer;
     Options config;

@@ -292,6 +292,11 @@ class BrokerAgent(object):
             'routingKey':   key}
     return self._method('LookupPublish', args, "org.apache.qpid.acl:acl:org.apache.qpid.broker:broker:amqp-broker")
 
+  def Redirect(self, sourceQueue, targetQueue):
+    args = {'sourceQueue': sourceQueue,
+            'targetQueue': targetQueue}
+    return self._method('queueRedirect', args, "org.apache.qpid.broker:broker:amqp-broker")
+
   def create(self, _type, name, properties={}, strict=False):
     """Create an object of the specified type"""
     args = {'type': _type,

@@ -189,6 +189,10 @@
       <arg name="logHires" dir="I" type="bool"  desc="True to enable enable high resolution timestamp in logs."/>
     </method>
 
+    <method name="queueRedirect" desc="Enable/disable delivery redirect for indicated queues">
+        <arg name="sourceQueue" dir="I" type="sstr"   desc="Source queue."/>
+        <arg name="targetQueue" dir="I" type="sstr"   desc="Redirect target queue. Blank disables redirect."/>
+    </method>
 
   </class>
 
@@ -277,6 +281,9 @@
     <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
     <statistic name="flowStopped"         type="bool"     desc="Flow control active."/>
     <statistic name="flowStoppedCount"    type="count32"  desc="Number of times flow control was activated for this queue"/>
+
+   <statistic name="redirectPeer"         type="sstr"     desc="Partner queue for redirected pair"/>
+   <statistic name="redirectSource"       type="bool"     desc="This queue is the redirect source"/>
 
     <method name="purge" desc="Discard all or some messages on a queue">
       <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
@@ -546,6 +553,7 @@
     <arg name="reason"  type="lstr"   desc="Reason for a failure"/>
     <arg name="rhost"   type="sstr"   desc="Address (i.e. DNS name, IP address, etc.) of a remotely connected host"/>
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
+    <arg name="qTarget" type="sstr"   desc="Redirect target queue"/>
     <arg name="msgDepth" type="count64" desc="Current size of queue in messages"/>
     <arg name="byteDepth" type="count64" desc="Current size of queue in bytes"/>
     <arg name="properties" type="map" desc="optional identifying information sent by the remote"/>
@@ -566,6 +574,8 @@
   <event name="unsubscribe"       sev="inform" args="rhost, user, dest"/>
   <event name="queueThresholdCrossedUpward"   sev="inform" args="qName, msgDepth, byteDepth"/>
   <event name="queueThresholdCrossedDownward" sev="inform" args="qName, msgDepth, byteDepth"/>
+  <event name="queueRedirect"          sev="inform" args="qName, qTarget"/>
+  <event name="queueRedirectCancelled" sev="inform" args="qName, qTarget"/>
 
   <!-- The following are deprecated -->
   <event name="queueThresholdExceeded" sev="warn" args="qName, msgDepth, byteDepth"/>

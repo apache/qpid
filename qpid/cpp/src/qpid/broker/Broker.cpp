@@ -52,10 +52,13 @@
 #include "qmf/org/apache/qpid/broker/ArgsBrokerSetLogHiresTimestamp.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerSetTimestampConfig.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetTimestampConfig.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerQueueRedirect.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
 #include "qmf/org/apache/qpid/broker/EventBind.h"
 #include "qmf/org/apache/qpid/broker/EventUnbind.h"
+#include "qmf/org/apache/qpid/broker/EventQueueRedirect.h"
+#include "qmf/org/apache/qpid/broker/EventQueueRedirectCancelled.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/management/ManagementDirectExchange.h"
 #include "qpid/management/ManagementTopicExchange.h"
@@ -576,6 +579,14 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         status = Manageable::STATUS_OK;
         break;
     }
+    case _qmf::Broker::METHOD_QUEUEREDIRECT:
+    {
+        string srcQueue(dynamic_cast<_qmf::ArgsBrokerQueueRedirect&>(args).i_sourceQueue);
+        string tgtQueue(dynamic_cast<_qmf::ArgsBrokerQueueRedirect&>(args).i_targetQueue);
+        QPID_LOG (debug, "Broker::queueRedirect source queue:" << srcQueue << " to target queue " << tgtQueue);
+        status =  queueRedirect(srcQueue, tgtQueue);
+        break;
+    }
     default:
         QPID_LOG (debug, "Broker ManagementMethod not implemented: id=" << methodId << "]");
         status = Manageable::STATUS_NOT_IMPLEMENTED;
@@ -1046,6 +1057,120 @@ bool Broker::getLogHiresTimestamp()
 }
 
 
+Manageable::status_t Broker::queueRedirect(const std::string& srcQueue,
+                                           const std::string& tgtQueue)
+{
+    Queue::shared_ptr srcQ(queues.find(srcQueue));
+    if (!srcQ) {
+        QPID_LOG(error, "Queue redirect failed: source queue not found: "
+            << srcQueue);
+        return Manageable::STATUS_UNKNOWN_OBJECT;
+    }
+
+    if (!tgtQueue.empty()) {
+        // NonBlank target queue creates partnership
+        Queue::shared_ptr tgtQ(queues.find(tgtQueue));
+        if (!tgtQ) {
+            QPID_LOG(error, "Queue redirect failed: target queue not found: "
+                << tgtQueue);
+            return Manageable::STATUS_UNKNOWN_OBJECT;
+        }
+
+        if (srcQueue.compare(tgtQueue) == 0) {
+            QPID_LOG(error, "Queue redirect source queue: "
+                << tgtQueue << " cannot be its own target");
+            return Manageable::STATUS_USER;
+        }
+
+        if (srcQ->isAutoDelete()) {
+            QPID_LOG(error, "Queue redirect source queue: "
+                << srcQueue << " is autodelete and can not be part of redirect");
+            return Manageable::STATUS_USER;
+        }
+
+        if (tgtQ->isAutoDelete()) {
+            QPID_LOG(error, "Queue redirect target queue: "
+                << tgtQueue << " is autodelete and can not be part of redirect");
+            return Manageable::STATUS_USER;
+        }
+
+        if (srcQ->getRedirectPeer()) {
+            QPID_LOG(error, "Queue redirect source queue: "
+                << srcQueue << " is already redirected");
+            return Manageable::STATUS_USER;
+        }
+
+        if (tgtQ->getRedirectPeer()) {
+            QPID_LOG(error, "Queue redirect target queue: "
+                << tgtQueue << " is already redirected");
+            return Manageable::STATUS_USER;
+        }
+
+        // Start the backup overflow partnership
+        srcQ->setRedirectPeer(tgtQ, true);
+        tgtQ->setRedirectPeer(srcQ, false);
+
+        // Set management state
+        srcQ->setMgmtRedirectState(tgtQueue, true, true);
+        tgtQ->setMgmtRedirectState(srcQueue, true, false);
+
+        // Management event
+        if (managementAgent.get()) {
+            managementAgent->raiseEvent(_qmf::EventQueueRedirect(srcQueue, tgtQueue));
+        }
+
+        QPID_LOG(info, "Queue redirect complete. queue: "
+            << srcQueue << " target queue: " << tgtQueue);
+        return Manageable::STATUS_OK;
+    } else {
+        // Blank target queue destroys partnership
+        Queue::shared_ptr tgtQ(srcQ->getRedirectPeer());
+        if (!tgtQ) {
+            QPID_LOG(error, "Queue redirect source queue: "
+                << srcQueue << " is not in redirected");
+            return Manageable::STATUS_USER;
+        }
+
+        if (!srcQ->isRedirectSource()) {
+            QPID_LOG(error, "Queue redirect source queue: "
+                << srcQueue << " is not a redirect source");
+            return Manageable::STATUS_USER;
+        }
+
+        queueRedirectDestroy(srcQ, tgtQ, true);
+
+        return Manageable::STATUS_OK;
+    }
+}
+
+
+void Broker::queueRedirectDestroy(Queue::shared_ptr srcQ,
+                                  Queue::shared_ptr tgtQ,
+                                  bool moveMsgs) {
+    QPID_LOG(notice, "Queue redirect destroyed. queue: " << srcQ->getName()
+        << " target queue: " << tgtQ->getName());
+
+    tgtQ->setMgmtRedirectState(empty, false, false);
+    srcQ->setMgmtRedirectState(empty, false, false);
+
+    if (moveMsgs) {
+        // TODO: this 'move' works in the static case but has no
+        // actual locking that does what redirect needs when
+        // there is a lot of traffic in flight.
+        tgtQ->move(srcQ, 0);
+    }
+
+    Queue::shared_ptr np;
+
+    tgtQ->setRedirectPeer(np, false);
+    srcQ->setRedirectPeer(np, false);
+
+    if (managementAgent.get()) {
+        managementAgent->raiseEvent(_qmf::EventQueueRedirectCancelled(srcQ->getName(), tgtQ->getName()));
+    }
+}
+
+
 const Broker::TransportInfo& Broker::getTransportInfo(const std::string& name) const {
     static TransportInfo nullTransportInfo;
     TransportMap::const_iterator i
@@ -1135,7 +1260,6 @@ bool Broker::deferDeliveryImpl(const std::string&, const Message&)
 
 const std::string Broker::TCP_TRANSPORT("tcp");
 
-
 std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     const std::string& name,
     const QueueSettings& settings,
@@ -1210,6 +1334,11 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
         if (check) check(queue);
         if (acl)
             acl->recordDestroyQueue(name);
+        Queue::shared_ptr peerQ(queue->getRedirectPeer());
+        if (peerQ)
+            queueRedirectDestroy(queue->isRedirectSource() ? queue : peerQ,
+                                 queue->isRedirectSource() ? peerQ : queue,
+                                 false);
         queues.destroy(name, connectionId, userId);
         queue->destroyed();
     } else {
