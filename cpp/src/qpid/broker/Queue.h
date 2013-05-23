@@ -82,6 +82,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
               public PersistableQueue, public management::Manageable {
   public:
     typedef boost::function1<bool, const Message&> MessagePredicate;
+
+    typedef boost::shared_ptr<Queue> shared_ptr;
+
   protected:
     struct UsageBarrier
     {
@@ -169,6 +172,10 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     boost::shared_ptr<MessageDistributor> allocator;
     boost::scoped_ptr<Selector> selector;
 
+    // Redirect source and target refer to each other. Only one is source.
+    Queue::shared_ptr redirectPeer;
+    bool redirectSource;
+
     virtual void push(Message& msg, bool isRecovery=false);
     bool accept(const Message&);
     void process(Message& msg);
@@ -201,8 +208,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     virtual bool checkDepth(const QueueDepth& increment, const Message&);
 
   public:
-
-    typedef boost::shared_ptr<Queue> shared_ptr;
 
     typedef std::vector<shared_ptr> vector;
 
@@ -250,10 +255,16 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN bool dequeueMessageAt(const qpid::framing::SequenceNumber& position);
 
     /**
+     * Delivers a message to the queue or to overflow partner.
+     */
+    QPID_BROKER_EXTERN void deliver(Message, TxBuffer* = 0);
+    /**
      * Delivers a message to the queue. Will record it as
      * enqueued if persistent then process it.
      */
-    QPID_BROKER_EXTERN void deliver(Message, TxBuffer* = 0);
+  private:
+    QPID_BROKER_EXTERN void deliverTo(Message, TxBuffer* = 0);
+  public:
     /**
      * Returns a message to the in-memory queue (due to lack
      * of acknowledegement from a receiver). If a consumer is
@@ -427,6 +438,14 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /** Add an argument to be included in management messages about this queue. */
     QPID_BROKER_EXTERN void addArgument(const std::string& key, const types::Variant& value);
+
+    /**
+     * Atomic Redirect
+     */
+    QPID_BROKER_EXTERN void setRedirectPeer ( Queue::shared_ptr peer, bool isSrc );
+    QPID_BROKER_EXTERN Queue::shared_ptr getRedirectPeer() { return redirectPeer; }
+    QPID_BROKER_EXTERN bool isRedirectSource() const { return redirectSource; }
+    QPID_BROKER_EXTERN void setMgmtRedirectState( std::string peer, bool enabled, bool isSrc );
 
   friend class QueueFactory;
 };

@@ -349,6 +349,7 @@ endif (BUILD_MSSQL)
 if (BUILD_MSCLFS)
   add_test (store_tests_clfs ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_store_tests${test_script_suffix} MSSQL-CLFS)
 endif (BUILD_MSCLFS)
+add_test (queue_redirect ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_queue_redirect${test_script_suffix})
 endif (PYTHON_EXECUTABLE)
 
 add_library(test_store MODULE test_store.cpp)
