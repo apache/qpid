@@ -108,8 +108,8 @@ public:
 
     QPID_BROKER_EXTERN uint64_t getContentSize() const;
 
-    Encoding& getEncoding();
-    const Encoding& getEncoding() const;
+    QPID_BROKER_EXTERN Encoding& getEncoding();
+    QPID_BROKER_EXTERN const Encoding& getEncoding() const;
     QPID_BROKER_EXTERN operator bool() const;
 
     bool getIsManagementMessage() const;
