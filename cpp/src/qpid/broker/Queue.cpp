@@ -138,6 +138,7 @@ QueueSettings merge(const QueueSettings& inputs, const Broker::Options& globalOp
 
 }
 
+
 Queue::TxPublish::TxPublish(const Message& m, boost::shared_ptr<Queue> q) : message(m), queue(q), prepared(false) {}
 bool Queue::TxPublish::prepare(TransactionContext* ctxt) throw()
 {
@@ -186,7 +187,8 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
     broker(b),
     deleted(false),
     barrier(*this),
-    allocator(new FifoDistributor( *messages ))
+    allocator(new FifoDistributor( *messages )),
+    redirectSource(false)
 {
     if (settings.maxDepth.hasCount()) current.setCount(0);
     if (settings.maxDepth.hasSize()) current.setSize(0);
@@ -266,6 +268,15 @@ bool Queue::accept(const Message& msg)
 }
 
 void Queue::deliver(Message msg, TxBuffer* txn)
+{
+    if (redirectPeer) {
+        redirectPeer->deliverTo(msg, txn);
+    } else {
+        deliverTo(msg, txn);
+    }
+}
+
+void Queue::deliverTo(Message msg, TxBuffer* txn)
 {
     if (accept(msg)) {
         if (txn) {
@@ -1123,6 +1134,7 @@ void Queue::unbind(ExchangeRegistry& exchanges)
     bindings.unbind(exchanges, shared_from_this());
 }
 
+
 uint64_t Queue::getPersistenceId() const
 {
     return persistenceId;
@@ -1624,6 +1636,20 @@ void Queue::addArgument(const string& key, const types::Variant& value) {
     qpid::amqp_0_10::translate(value, v);
     settings.storeSettings.set(key, v);
     if (mgmtObject != 0) mgmtObject->set_arguments(settings.asMap());
+}
+
+
+void Queue::setRedirectPeer ( Queue::shared_ptr peer, bool isSrc) {
+    Mutex::ScopedLock locker(messageLock);
+    redirectPeer = peer;
+    redirectSource = isSrc;
+}
+
+void Queue::setMgmtRedirectState( std::string peer, bool enabled, bool isSrc ) {
+    if (mgmtObject != 0) {
+        mgmtObject->set_redirectPeer(enabled ? peer : "");
+        mgmtObject->set_redirectSource(isSrc);
+    }
 }
 
 }}
