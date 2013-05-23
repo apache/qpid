@@ -96,6 +96,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     void setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::string& name);
     void setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::string& name);
     std::string generateName(pn_link_t*);
+    std::string qualifyName(const std::string&);
 };
 }}} // namespace qpid::broker::amqp
 
