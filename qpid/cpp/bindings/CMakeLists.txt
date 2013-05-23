@@ -111,4 +111,5 @@ if (SWIG_FOUND)
 
       add_subdirectory(qpid/perl)
   endif (PERLLIBS_FOUND)
+  endif (${SWIG_VERSION} VERSION_LESS ${SWIG_MINIMUM_VERSION})
 endif (SWIG_FOUND)
