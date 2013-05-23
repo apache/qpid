@@ -21,14 +21,13 @@
 
 package org.apache.qpid.client.messaging.address;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQDestination.Binding;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQDestination.Binding;
 
 public class Node
 { 
@@ -39,7 +38,7 @@ public class Node
     private boolean _isExclusive;
     private String _alternateExchange;
     private String _exchangeType = "topic"; // used when node is an exchange instead of a queue.
-    private List<Binding> _bindings = new ArrayList<Binding>();
+    private List<Binding> _bindings = Collections.emptyList();
     private Map<String,Object> _declareArgs = new HashMap<String,Object>();
 
     protected Node(String name)
@@ -110,10 +109,6 @@ public class Node
     public void setBindings(List<Binding> bindings)
     {
         _bindings = bindings;
-    }
-    
-    public void addBinding(Binding binding) {
-        this._bindings.add(binding);
     }
     
     public Map<String,Object> getDeclareArgs()

@@ -123,10 +123,10 @@ public class AddressHelper
     @SuppressWarnings("unchecked")
     public List<Binding> getBindings(Map props)
     {
-        List<Binding> bindings = new ArrayList<Binding>();
         List<Map> bindingList = (props == null) ? Collections.EMPTY_LIST : (List<Map>) props.get(X_BINDINGS);
-        if (bindingList != null)
+        if (bindingList != null && !bindingList.isEmpty())
         {
+            List<Binding> bindings = new ArrayList<Binding>(bindingList.size());
             for (Map bindingMap : bindingList)
             {
                 Binding binding = new Binding(
@@ -138,8 +138,12 @@ public class AddressHelper
                                         .get(ARGUMENTS));
                 bindings.add(binding);
             }
+            return bindings;
         }
-        return bindings;
+        else
+        {
+            return Collections.emptyList();
+        }
     }
 
     public Map getDeclareArgs(Map props)
