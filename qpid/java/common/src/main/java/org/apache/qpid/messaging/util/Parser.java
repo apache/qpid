@@ -74,7 +74,7 @@ class Parser
 
     List<Token> eat_until(Token.Type ... types)
     {
-        List<Token> result = new ArrayList();
+        List<Token> result = new ArrayList<Token>();
         while (!matches(types))
         {
             result.add(eat());
@@ -82,4 +82,16 @@ class Parser
         return result;
     }
 
+    /**
+     * Returns the remaining list of tokens, without eating them
+     */
+    List<Token> remainder()
+    {
+        List<Token> result = new ArrayList<Token>();
+        for (int i = idx; i < tokens.size(); i++)
+        {
+            result.add(tokens.get(i));
+        }
+        return result;
+    }
 }

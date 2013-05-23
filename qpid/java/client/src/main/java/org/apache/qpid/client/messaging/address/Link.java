@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.messaging.address;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +42,7 @@ public class Link
     private int _producerCapacity = 0;
     private Subscription subscription;
     private Reliability reliability = Reliability.AT_LEAST_ONCE;
-    private List<Binding> _bindings = new ArrayList<Binding>();
+    private List<Binding> _bindings = Collections.emptyList();
     private SubscriptionQueue _subscriptionQueue;
 
     public Reliability getReliability()
@@ -206,7 +205,7 @@ public class Link
     
     public static class Subscription
     {
-        private Map<String,Object> args = new HashMap<String,Object>();        
+        private Map<String,Object> args = Collections.emptyMap();
         private boolean exclusive = false;
         
         public Map<String, Object> getArgs()
