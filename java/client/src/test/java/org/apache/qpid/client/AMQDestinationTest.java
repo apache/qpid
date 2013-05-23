@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.client;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.TestCase;
 
 public class AMQDestinationTest extends TestCase
@@ -63,4 +67,95 @@ public class AMQDestinationTest extends TestCase
         assertTrue(dest7.hashCode() != dest8.hashCode());
         assertTrue(dest6.hashCode() != dest9.hashCode());
     }
+
+    /**
+     * Tests that destinations created with the same options string will share the same address options map.
+     */
+    public void testCacheAddressOptionsMaps() throws Exception
+    {
+        // Create destinations 1 and 3 with the same options string, and destinations 2 and 4 with a different one
+        String optionsStringA = "{create: always, node: {type: topic}}";
+        String optionsStringB = "{}";   // empty options
+        AMQDestination dest1 = createDestinationWithOptions("testDest1", optionsStringA);
+        AMQDestination dest2 = createDestinationWithOptions("testDest2", optionsStringB);
+        AMQDestination dest3 = createDestinationWithOptions("testDest3", optionsStringA);
+        AMQDestination dest4 = createDestinationWithOptions("testDest4", optionsStringB);
+
+        // Destinations 1 and 3 should refer to the same address options map
+        assertSame("Destinations 1 and 3 were created with the same options and should refer to the same options map.",
+                dest1.getAddress().getOptions(), dest3.getAddress().getOptions());
+        // Destinations 2 and 4 should refer to the same address options map
+        assertSame("Destinations 2 and 4 were created with the same options and should refer to the same options map.",
+                dest2.getAddress().getOptions(), dest4.getAddress().getOptions());
+        // Destinations 1 and 2 should have a different options map
+        assertNotSame("Destinations 1 and 2 should not have the same options map.",
+                dest1.getAddress().getOptions(), dest2.getAddress().getOptions());
+
+        // Verify the contents of the shared map are as expected
+        Map<String, Object> optionsA = new HashMap<String, Object>();
+        optionsA.put("create", "always");
+        optionsA.put("node", Collections.singletonMap("type", "topic"));
+        assertEquals("Contents of the shared address options map are not as expected.",
+                optionsA, dest1.getAddress().getOptions());
+        assertEquals("Contents of the empty shared address options map are not as expected.",
+                Collections.emptyMap(), dest2.getAddress().getOptions());
+
+        // Verify that address options map is immutable
+        try
+        {
+            dest1.getAddress().getOptions().put("testKey", "testValue");
+            fail("Should not be able able to modify an address's options map.");
+        }
+        catch (UnsupportedOperationException e)
+        {
+            // expected
+        }
+    }
+
+    private AMQDestination createDestinationWithOptions(String destName, String optionsString) throws Exception
+    {
+        String addr = "ADDR:" + destName + "; " + optionsString;
+        return new AMQAnyDestination(addr);
+    }
+
+    /**
+     * Tests that when a queue has no link subscription arguments and no link bindings, its Subscription
+     * arguments and its bindings list refer to constant empty collections.
+     */
+    public void testEmptyLinkBindingsAndSubscriptionArgs() throws Exception
+    {
+        // no link properties
+        assertEmptyLinkBindingsAndSubscriptionArgs(new AMQAnyDestination("ADDR:testQueue"));
+
+        // has link properties but no x-bindings; has link x-subscribes but no arguments
+        String xSubscribeAddr = "ADDR:testQueueWithXSubscribes; {link: {x-subscribes: {exclusive: true}}}";
+        assertEmptyLinkBindingsAndSubscriptionArgs(new AMQAnyDestination(xSubscribeAddr));
+    }
+
+    private void assertEmptyLinkBindingsAndSubscriptionArgs(AMQDestination dest) {
+        assertEquals("Default link subscription arguments should be the constant Collections empty map.",
+                Collections.emptyMap(), dest.getLink().getSubscription().getArgs());
+        assertSame("Defaultl link bindings should be the constant Collections empty list.",
+                Collections.emptyList(), dest.getLink().getBindings());
+    }
+
+    /**
+     * Tests that when a node has no bindings specified, its bindings list refers to a constant empty list,
+     * so that we are not consuming extra memory unnecessarily.
+     */
+    public void testEmptyNodeBindings() throws Exception
+    {
+        // no node properties
+        assertEmptyNodeBindings(new AMQAnyDestination("ADDR:testDest1"));
+        // has node properties but no x-bindings
+        assertEmptyNodeBindings(new AMQAnyDestination("ADDR:testDest2; {node: {type: queue}}"));
+        assertEmptyNodeBindings(new AMQAnyDestination("ADDR:testDest3; {node: {type: topic}}"));
+    }
+
+    private void assertEmptyNodeBindings(AMQDestination dest)
+    {
+        assertSame("Empty node bindings should refer to the constant Collections empty list.",
+                Collections.emptyList(), dest.getNode().getBindings());
+    }
+
 }

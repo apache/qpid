@@ -20,12 +20,17 @@
  */
 package org.apache.qpid.messaging.util;
 
-import org.apache.qpid.messaging.Address;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.messaging.Address;
 
 
 /**
@@ -57,6 +62,23 @@ public class AddressParser extends Parser
     private static Token.Type EOF = lxi.eof("EOF");
 
     private static Lexer LEXER = lxi.compile();
+
+    private static final int MAX_CACHED_ENTRIES = Integer.getInteger(ClientProperties.QPID_MAX_CACHED_ADDR_OPTION_STRINGS,
+                                                                     ClientProperties.DEFAULT_MAX_CACHED_ADDR_OPTION_STRINGS);
+
+    // stores address options maps for options strings that we have encountered; using a synchronizedMap wrapper
+    // in case multiple threads are parsing addresses.
+    private static Map<String, Map<Object, Object>> optionsMaps =
+            Collections.synchronizedMap(
+                    new LinkedHashMap<String, Map<Object, Object>>(MAX_CACHED_ENTRIES +1,1.1f,true)
+            {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String,Map<Object, Object>> eldest)
+                {
+                    return size() > MAX_CACHED_ENTRIES;
+                }
+
+            });
 
     public static List<Token> lex(String input)
     {
@@ -267,11 +289,27 @@ public class AddressParser extends Parser
             subject = null;
         }
 
-        Map options;
+        Map<Object, Object> options;
         if (matches(SEMI))
         {
             eat(SEMI);
-            options = map();
+
+            // get the remaining string denoting the options and see if we've already encountered an address
+            // with the same options before
+            String optionsString = toks2str(remainder());
+            Map<Object,Object> storedMap = optionsMaps.get(optionsString);
+            if (storedMap == null)
+            {
+                // if these are new options, construct a new map and store it in the encountered collection
+                options = Collections.unmodifiableMap(map());
+                optionsMaps.put(optionsString, options);
+            }
+            else
+            {
+                // if we already have the map for these options, use the stored map
+                options = storedMap;
+                eat_until(EOF);
+            }
         }
         else
         {

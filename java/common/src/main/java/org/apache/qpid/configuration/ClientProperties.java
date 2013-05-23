@@ -205,6 +205,8 @@ public class ClientProperties
     public static final String QPID_DECLARE_EXCHANGES_PROP_NAME = "qpid.declare_exchanges";
     public static final String VERIFY_QUEUE_ON_SEND = "qpid.verify_queue_on_send";
 
+    public static final String QPID_MAX_CACHED_ADDR_OPTION_STRINGS = "qpid.max_cached_address_option_strings";
+    public static final int DEFAULT_MAX_CACHED_ADDR_OPTION_STRINGS = 10;
 
     private ClientProperties()
     {
