@@ -76,7 +76,7 @@ except ImportError:
       # supplied CA certs. Since this version cannot validate, the peer cannot
       # be trusted.
       if conn.ssl_trustfile:
-        raise SSLError("This version of Python does not support verification of the peer's certificate.")
+        raise socket.error("This version of Python does not support verification of the peer's certificate.")
 
       self.ssl = ssl(self.socket, keyfile=ssl_keyfile, certfile=ssl_certfile)
       self.socket.setblocking(1)
