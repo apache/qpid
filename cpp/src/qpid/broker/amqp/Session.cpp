@@ -171,10 +171,18 @@ std::string Session::generateName(pn_link_t* link)
 {
     std::stringstream s;
     s << qpid::types::Uuid(true) << "::" << pn_link_name(link);
-    if (!connection.getDomain().empty()) {
-        s << "@" << connection.getDomain();
-    }
     return s.str();
+}
+
+std::string Session::qualifyName(const std::string& name)
+{
+    if (connection.getDomain().empty()) {
+        return name;
+    } else {
+        std::stringstream s;
+        s << name << "@" << connection.getDomain();
+        return s.str();
+    }
 }
 
 void Session::attach(pn_link_t* link)
@@ -187,11 +195,13 @@ void Session::attach(pn_link_t* link)
             throw qpid::Exception("No source specified!");/*invalid-field?*/
         } else if (pn_terminus_is_dynamic(source)) {
             name = generateName(link);
+            QPID_LOG(debug, "Received attach request for outgoing link from " << name);
+            pn_terminus_set_address(pn_link_source(link), qualifyName(name).c_str());
         } else {
             name = pn_terminus_get_address(source);
+            QPID_LOG(debug, "Received attach request for outgoing link from " << name);
+            pn_terminus_set_address(pn_link_source(link), name.c_str());
         }
-        QPID_LOG(debug, "Received attach request for outgoing link from " << name);
-        pn_terminus_set_address(pn_link_source(link), name.c_str());
 
         setupOutgoing(link, source, name);
     } else {
@@ -201,11 +211,13 @@ void Session::attach(pn_link_t* link)
             throw qpid::Exception("No target specified!");/*invalid field?*/
         } else if (pn_terminus_is_dynamic(target)) {
             name = generateName(link);
+            QPID_LOG(debug, "Received attach request for incoming link to " << name);
+            pn_terminus_set_address(pn_link_target(link), qualifyName(name).c_str());
         } else {
             name  = pn_terminus_get_address(target);
+            QPID_LOG(debug, "Received attach request for incoming link to " << name);
+            pn_terminus_set_address(pn_link_target(link), name.c_str());
         }
-        QPID_LOG(debug, "Received attach request for incoming link to " << name);
-        pn_terminus_set_address(pn_link_target(link), name.c_str());
 
         setupIncoming(link, target, name);
     }
