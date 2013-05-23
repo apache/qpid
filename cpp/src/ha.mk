@@ -33,6 +33,8 @@ ha_la_SOURCES =					\
   qpid/ha/BrokerReplicator.h			\
   qpid/ha/ConnectionObserver.cpp		\
   qpid/ha/ConnectionObserver.h			\
+  qpid/ha/FailoverExchange.cpp				\
+  qpid/ha/FailoverExchange.h				\
   qpid/ha/HaBroker.cpp				\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
