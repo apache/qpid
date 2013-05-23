@@ -84,12 +84,12 @@ REM start parsing -run arguments
 set QPID_ARGS=
 if "%1" == "" goto endRunArgs
 :runLoop
-set var=%1
+set var=%~1
 if "%var:~0,5%" == "-run:" goto runFound
 set QPID_ARGS=%QPID_ARGS% %1 
 :beforeRunShift
 shift
-if not "%1"=="" goto runLoop
+if "%~1" neq "" goto runLoop
 goto endRunArgs
 
 :runFound
