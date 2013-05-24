@@ -1,3 +1,4 @@
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,7 +22,7 @@
 
 
 #include "qpid/broker/PersistableMessage.h"
-#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/Queue.h"
 #include <iostream>
 
 using namespace qpid::broker;
@@ -32,7 +33,7 @@ namespace broker {
 PersistableMessage::~PersistableMessage() {}
 PersistableMessage::PersistableMessage() : ingressCompletion(0), persistenceId(0) {}
 
-void PersistableMessage::setIngressCompletion(boost::intrusive_ptr<AsyncCompletion> i)
+void PersistableMessage::setIngressCompletion(boost::intrusive_ptr<IngressCompletion> i)
 {
     ingressCompletion = i.get();
     /**
@@ -57,21 +58,13 @@ void PersistableMessage::setIngressCompletion(boost::intrusive_ptr<AsyncCompleti
     }
 }
 
-
-void PersistableMessage::flush()
-{
-    //TODO: is this really the right place for this?
-}
-
-
-void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr, MessageStore*)
+void PersistableMessage::enqueueAsync(boost::shared_ptr<Queue> q)
 {
     enqueueStart();
+    ingressCompletion->enqueueAsync(q);
 }
 
-bool PersistableMessage::isDequeueComplete() { return false; }
 void PersistableMessage::dequeueComplete() {}
-void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
 
 }}
 

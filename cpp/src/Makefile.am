@@ -635,6 +635,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
   qpid/broker/AsyncCompletion.h \
+  qpid/broker/IngressCompletion.h \
+  qpid/broker/IngressCompletion.cpp \
   qpid/broker/IndexedDeque.h \
   qpid/broker/Link.cpp \
   qpid/broker/Link.h \

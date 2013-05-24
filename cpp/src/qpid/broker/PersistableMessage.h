@@ -31,8 +31,8 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/broker/PersistableQueue.h"
-#include "qpid/broker/AsyncCompletion.h"
+#include "qpid/broker/IngressCompletion.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace types {
@@ -57,36 +57,27 @@ class PersistableMessage : public Persistable
      * operations have completed, the transfer of this message from the client
      * may be considered complete.
      */
-    AsyncCompletion* ingressCompletion;
-    boost::intrusive_ptr<AsyncCompletion> holder;
+    IngressCompletion* ingressCompletion;
+    boost::intrusive_ptr<IngressCompletion> holder;
     mutable uint64_t persistenceId;
 
   public:
     virtual ~PersistableMessage();
     PersistableMessage();
 
-    void flush();
-
-    QPID_BROKER_EXTERN void setStore(MessageStore*);
-
     virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
 
     /** track the progress of a message received by the broker - see ingressCompletion above */
     QPID_BROKER_INLINE_EXTERN bool isIngressComplete() { return ingressCompletion->isDone(); }
-    QPID_BROKER_INLINE_EXTERN AsyncCompletion& getIngressCompletion() { return *ingressCompletion; }
-    QPID_BROKER_EXTERN void setIngressCompletion(boost::intrusive_ptr<AsyncCompletion> i);
+    QPID_BROKER_INLINE_EXTERN IngressCompletion& getIngressCompletion() { return *ingressCompletion; }
+    QPID_BROKER_EXTERN void setIngressCompletion(boost::intrusive_ptr<IngressCompletion> i);
 
     QPID_BROKER_INLINE_EXTERN void enqueueStart() { ingressCompletion->startCompleter(); }
     QPID_BROKER_INLINE_EXTERN void enqueueComplete() { ingressCompletion->finishCompleter(); }
 
-    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
-                                         MessageStore* _store);
+    QPID_BROKER_EXTERN void enqueueAsync(boost::shared_ptr<Queue> queue);
 
-
-    QPID_BROKER_EXTERN bool isDequeueComplete();
     QPID_BROKER_EXTERN void dequeueComplete();
-    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
-                                         MessageStore* _store);
 
     uint64_t getPersistenceId() const { return persistenceId; }
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }

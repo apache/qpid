@@ -1198,6 +1198,7 @@ set (qpidbroker_SOURCES
      qpid/broker/ExchangeRegistry.cpp
      qpid/broker/FanOutExchange.cpp
      qpid/broker/HeadersExchange.cpp
+     qpid/broker/IngressCompletion.cpp
      qpid/broker/Link.cpp
      qpid/broker/LinkRegistry.cpp
      qpid/broker/LossyQueue.cpp
