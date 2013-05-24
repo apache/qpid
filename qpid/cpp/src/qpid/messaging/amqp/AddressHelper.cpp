@@ -164,8 +164,8 @@ void flatten(Variant::Map& base, const std::string& nested)
     Variant::Map::iterator i = base.find(nested);
     if (i != base.end()) {
         add(base, i->second.asMap());
+        base.erase(i);
     }
-    base.erase(i);
 }
 }
 
