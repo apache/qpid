@@ -50,7 +50,7 @@ enum MessageState
 
 class Message {
 public:
-    class Encoding : public AsyncCompletion
+    class Encoding : public IngressCompletion
     {
       public:
         virtual ~Encoding() {}
