@@ -37,6 +37,7 @@ Sasl::Sasl(const std::string& id, ConnectionContext& c, const std::string& hostn
       sasl(qpid::SaslFactory::getInstance().create(c.username, c.password, c.service, hostname_, c.minSsf, c.maxSsf, false)),
       hostname(hostname_), readHeader(true), writeHeader(true), haveOutput(false), state(NONE) {}
 
+Sasl::~Sasl() {}
 std::size_t Sasl::decode(const char* buffer, std::size_t size)
 {
     size_t decoded = 0;
