@@ -39,12 +39,13 @@ const std::string SUPPORTED_DIST_MODES("supported-dist-modes");
 
 //AMQP 0-10 standard parameters:
 const std::string DURABLE("durable");
+const std::string EXCLUSIVE("exclusive");
 const std::string AUTO_DELETE("auto-delete");
 const std::string ALTERNATE_EXCHANGE("alternate-exchange");
 const std::string EXCHANGE_TYPE("exchange-type");
 }
 
-NodeProperties::NodeProperties() : queue(true), durable(false), autoDelete(false), exchangeType("topic") {}
+NodeProperties::NodeProperties() : queue(true), durable(false), autoDelete(false), exclusive(false), exchangeType("topic") {}
 
 void NodeProperties::read(pn_data_t* data)
 {
@@ -60,6 +61,8 @@ void NodeProperties::process(const std::string& key, const qpid::types::Variant&
         else if (value == COPY) queue = false;
     } else if (key == DURABLE) {
         durable = value;
+    } else if (key == EXCLUSIVE) {
+        exclusive = value;
     } else if (key == AUTO_DELETE) {
         autoDelete = value;
     } else if (key == ALTERNATE_EXCHANGE) {
@@ -166,6 +169,10 @@ bool NodeProperties::isQueue() const
 bool NodeProperties::isDurable() const
 {
     return durable;
+}
+bool NodeProperties::isExclusive() const
+{
+    return exclusive;
 }
 std::string NodeProperties::getExchangeType() const
 {

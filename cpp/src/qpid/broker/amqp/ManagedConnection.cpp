@@ -22,6 +22,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/log/Statement.h"
+#include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/EventClientConnect.h"
 #include "qmf/org/apache/qpid/broker/EventClientDisconnect.h"
 
@@ -75,6 +76,20 @@ void ManagedConnection::setSaslSsf(int ssf)
     if (connection) {
         connection->set_saslSsf(ssf);
     }
+}
+
+void ManagedConnection::setContainerId(const std::string& container)
+{
+    containerid = container;
+    if (connection) {
+        qpid::types::Variant::Map props;
+        props["container-id"] = containerid;
+        connection->set_remoteProperties(props);
+    }
+}
+const std::string& ManagedConnection::getContainerId() const
+{
+    return containerid;
 }
 
 qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementObject() const

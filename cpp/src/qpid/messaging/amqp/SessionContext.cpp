@@ -43,12 +43,8 @@ SessionContext::~SessionContext()
 
 boost::shared_ptr<SenderContext> SessionContext::createSender(const qpid::messaging::Address& address)
 {
-    std::string name = address.getName();
-
-    int count = 1;
-    for (SenderMap::const_iterator i = senders.find(name); i != senders.end(); i = senders.find(name)) {
-        name = (boost::format("%1%_%2%") % address.getName() % ++count).str();
-    }
+    std::string name = AddressHelper::getLinkName(address);
+    if (senders.find(name) != senders.end()) throw LinkError("Link name must be unique within the scope of the connection");
     boost::shared_ptr<SenderContext> s(new SenderContext(session, name, address));
     senders[name] = s;
     return s;
@@ -56,12 +52,8 @@ boost::shared_ptr<SenderContext> SessionContext::createSender(const qpid::messag
 
 boost::shared_ptr<ReceiverContext> SessionContext::createReceiver(const qpid::messaging::Address& address)
 {
-    std::string name = address.getName();
-
-    int count = 1;
-    for (ReceiverMap::const_iterator i = receivers.find(name); i != receivers.end(); i = receivers.find(name)) {
-        name = (boost::format("%1%_%2%") % address.getName() % ++count).str();
-    }
+    std::string name = AddressHelper::getLinkName(address);
+    if (receivers.find(name) != receivers.end()) throw LinkError("Link name must be unique within the scope of the connection");
     boost::shared_ptr<ReceiverContext> r(new ReceiverContext(session, name, address));
     receivers[name] = r;
     return r;

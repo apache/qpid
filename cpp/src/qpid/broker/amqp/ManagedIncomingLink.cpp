@@ -19,6 +19,7 @@
  *
  */
 #include "ManagedIncomingLink.h"
+#include "qpid/broker/amqp/ManagedConnection.h"
 #include "qpid/broker/amqp/ManagedSession.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
@@ -35,7 +36,7 @@ ManagedIncomingLink::ManagedIncomingLink(Broker& broker, ManagedSession& p, cons
 {
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent) {
-        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, source, target, _name));
+        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, parent.getParent().getContainerId(), _name, source, target));
         agent->addObject(incoming);
     }
 }

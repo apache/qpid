@@ -179,6 +179,7 @@ void Connection::process()
     if ((pn_connection_state(connection) & REQUIRES_OPEN) == REQUIRES_OPEN) {
         QPID_LOG_CAT(debug, model, id << " connection opened");
         pn_connection_set_container(connection, broker.getFederationTag().c_str());
+        setContainerId(pn_connection_remote_container(connection));
         pn_connection_open(connection);
     }
 
