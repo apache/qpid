@@ -152,10 +152,10 @@
  -os                                            Overwrite the broker configuration store
  --overwrite-store                              with the current initial configuration
 
- -prop <name=value>                             Set a configuration property to use when
- --config-property <name=value>                 resolving variables in the broker
+ -prop "<name=value>"                           Set a configuration property to use when
+ --config-property "<name=value>"               resolving variables in the broker
                                                 configuration store, with format
-                                                'name=value'
+                                                "name=value"
 
  -sp <path>                                     Use given configuration store location
  --store-path <path>

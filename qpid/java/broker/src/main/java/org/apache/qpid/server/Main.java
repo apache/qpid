@@ -61,7 +61,7 @@ public class Main
             .withLongOpt("create-initial-config").create("cic");
 
     private static final Option OPTION_CONFIGURATION_PROPERTY = OptionBuilder.withArgName("name=value").hasArg()
-            .withDescription("set a configuration property to use when resolving variables in the broker configuration store, with format 'name=value'")
+            .withDescription("set a configuration property to use when resolving variables in the broker configuration store, with format \"name=value\"")
             .withLongOpt("config-property").create("prop");
 
     private static final Option OPTION_LOG_CONFIG_FILE =

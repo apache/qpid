@@ -278,7 +278,7 @@ $ ./qpid-server -st memory
         </para>
 
         <screen>
-$ ./qpid-server -prop qpid.amqp_port=10000 -prop qpid.http_port=10001
+$ ./qpid-server -prop "qpid.amqp_port=10000" -prop "qpid.http_port=10001"
         </screen>
         <para>
             In the example above, property used to set the port number of the default AMQP port is specified with the value 10000, overriding the default value of 5672, and similarly the vlaue 10001 is used to override the default HTTP port number of 8080.
@@ -289,10 +289,9 @@ $ ./qpid-server -prop qpid.amqp_port=10000 -prop qpid.http_port=10001
             NOTE: when saving the broker Configuration Store, either during initialisation when generating any required IDs for the 'Initial Configuration', or when required following user-prompted change via the managmenet interface, values are
             stored in their resolved state. As such, if a Configuration Store already exists when the broker is started, it is likely that setting a Configuration Property to a value different than it was previously set could have no effect.
         </para>
-
-
-
-
+        <para>
+            NOTE: When running the broker on Windows and starting it via the qpid-server.bat file, the "name=value" argument MUST be quoted.
+        </para>
 
     </section>
 
