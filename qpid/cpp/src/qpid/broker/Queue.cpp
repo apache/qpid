@@ -846,7 +846,7 @@ bool Queue::enqueue(TransactionContext* ctxt, Message& msg)
         // when it considers the message stored.
         boost::intrusive_ptr<PersistableMessage> pmsg = msg.getPersistentContext();
         assert(pmsg);
-        pmsg->enqueueAsync(shared_from_this(), store);
+        pmsg->enqueueAsync(shared_from_this());
         try {
             store->enqueue(ctxt, pmsg, *this);
         } catch (...) {
