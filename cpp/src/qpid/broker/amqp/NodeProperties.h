@@ -54,12 +54,14 @@ class NodeProperties : public qpid::amqp::MapReader
     bool isQueue() const;
     QueueSettings getQueueSettings();
     bool isDurable() const;
+    bool isExclusive() const;
     std::string getExchangeType() const;
     std::string getAlternateExchange() const;
   private:
     bool queue;
     bool durable;
     bool autoDelete;
+    bool exclusive;
     std::string exchangeType;
     std::string alternateExchange;
     qpid::types::Variant::Map properties;

@@ -48,6 +48,7 @@ class ManagedSession : public qpid::management::Manageable, public OwnershipToke
     void outgoingMessageSent();
     void outgoingMessageAccepted();
     void outgoingMessageRejected();
+    ManagedConnection& getParent();
   private:
     ManagedConnection& parent;
     const std::string id;

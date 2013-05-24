@@ -394,9 +394,10 @@
   -->
   <class name="Incoming">
     <property name="sessionRef"     type="objId"    references="Session" access="RC" parentRef="y"/>
-    <property name="source"         type="sstr"     access="RC" index="y"/>
-    <property name="target"         type="sstr"     access="RC" index="y"/>
+    <property name="containerid"    type="sstr"     access="RC" index="y"/>
     <property name="name"           type="sstr"     access="RC" index="y"/>
+    <property name="source"         type="sstr"     access="RC"/>
+    <property name="target"         type="sstr"     access="RC"/>
     <statistic name="transfers"     type="count64"  unit="message" desc="Messages transfered"/>
   </class>
   <!--
@@ -406,9 +407,10 @@
   -->
   <class name="Outgoing">
     <property name="sessionRef"     type="objId"    references="Session" access="RC" parentRef="y"/>
-    <property name="source"         type="sstr"     access="RC" index="y"/>
-    <property name="target"         type="sstr"     access="RC" index="y"/>
+    <property name="containerid"    type="sstr"     access="RC" index="y"/>
     <property name="name"           type="sstr"     access="RC" index="y"/>
+    <property name="source"         type="sstr"     access="RC"/>
+    <property name="target"         type="sstr"     access="RC"/>
     <statistic name="transfers"     type="count64"  unit="message" desc="Messages transfered"/>
   </class>
   <!--
