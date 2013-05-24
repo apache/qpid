@@ -210,8 +210,14 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
                 pn_delivery_settle(delivery);
             }
 
+            sys_mutex_unlock(router->lock); // TOINVESTIGATE Move this higher?
             dx_free_message(msg);
-            sys_mutex_unlock(router->lock);
+
+            //
+            // If this was a pre-settled delivery, we must also locally settle it.
+            //
+            if (pn_delivery_settled(delivery))
+                pn_delivery_settle(delivery);
         }
     } else {
         //
@@ -292,7 +298,7 @@ static int router_incoming_link_handler(void* context, dx_link_t *link)
 
         pn_terminus_copy(pn_link_source(pn_link), pn_link_remote_source(pn_link));
         pn_terminus_copy(pn_link_target(pn_link), pn_link_remote_target(pn_link));
-        pn_link_flow(pn_link, 32);
+        pn_link_flow(pn_link, 1000);
         pn_link_open(pn_link);
     } else {
         pn_link_close(pn_link);
