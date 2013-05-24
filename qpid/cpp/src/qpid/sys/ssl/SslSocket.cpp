@@ -336,16 +336,19 @@ std::string SslSocket::getClientAuthId() const
     std::string authId;
     CERTCertificate* cert = SSL_PeerCertificate(nssSocket);
     if (cert) {
-        authId = CERT_GetCommonName(&(cert->subject));
-        /*
-         * The NSS function CERT_GetDomainComponentName only returns
-         * the last component of the domain name, so we have to parse
-         * the subject manually to extract the full domain.
-         */
-        std::string domain = getDomainFromSubject(cert->subjectName);
-        if (!domain.empty()) {
-            authId += DOMAIN_SEPARATOR;
-            authId += domain;
+        char *cn = CERT_GetCommonName(&(cert->subject));
+        if (cn) {
+            authId = std::string(cn);
+            /*
+             * The NSS function CERT_GetDomainComponentName only returns
+             * the last component of the domain name, so we have to parse
+             * the subject manually to extract the full domain.
+             */
+            std::string domain = getDomainFromSubject(cert->subjectName);
+            if (!domain.empty()) {
+                authId += DOMAIN_SEPARATOR;
+                authId += domain;
+            }
         }
         CERT_DestroyCertificate(cert);
     }
