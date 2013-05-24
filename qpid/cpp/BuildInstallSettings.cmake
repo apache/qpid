@@ -93,7 +93,7 @@ if (WIN32)
     "Directory to install SASL configuration files")
   set (QPID_INSTALL_DATADIR conf CACHE STRING
     "Directory to install read-only arch.-independent data root")
-  set (QPID_INSTALL_EXAMPLESDIR examples CACHE STRING
+  set (QPID_INSTALL_EXAMPLESDIR qpid/examples CACHE STRING
     "Directory to install programming examples in")
   set (QPID_INSTALL_DOCDIR docs CACHE STRING
     "Directory to install documentation")
@@ -174,7 +174,7 @@ if (UNIX)
   set (QPID_INSTALL_CONFDIR ${SYSCONF_INSTALL_DIR})
   set (QPID_INSTALL_SASLDIR ${SYSCONF_INSTALL_DIR}/sasl2)
   set (QPID_INSTALL_DATADIR ${SHARE_INSTALL_DIR}/qpid)
-  set (QPID_INSTALL_EXAMPLESDIR ${SHARE_INSTALL_DIR}/examples)
+  set (QPID_INSTALL_EXAMPLESDIR ${SHARE_INSTALL_DIR}/qpid/examples)
   set (QPID_INSTALL_DOCDIR ${DOC_INSTALL_DIR}) # Directory to install documentation
   set (QPID_INSTALL_INCLUDEDIR ${INCLUDE_INSTALL_DIR})
   set (QPID_INSTALL_LIBDIR ${LIB_INSTALL_DIR})
