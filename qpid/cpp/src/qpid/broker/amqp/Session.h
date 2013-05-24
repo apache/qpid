@@ -24,8 +24,10 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/broker/amqp/ManagedSession.h"
+#include "qpid/broker/amqp/NodeProperties.h"
 #include <deque>
 #include <map>
+#include <set>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -85,11 +87,13 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     std::deque<pn_delivery_t*> completed;
     bool deleted;
     qpid::sys::Mutex lock;
+    std::set< boost::shared_ptr<Queue> > exclusiveQueues;
     struct ResolvedNode
     {
         boost::shared_ptr<qpid::broker::Exchange> exchange;
         boost::shared_ptr<qpid::broker::Queue> queue;
         boost::shared_ptr<Relay> relay;
+        NodeProperties properties;
     };
 
     ResolvedNode resolve(const std::string name, pn_terminus_t* terminus, bool incoming);

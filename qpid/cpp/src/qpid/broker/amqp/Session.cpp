@@ -36,7 +36,6 @@
 #include "qpid/broker/Selector.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/amqp/Filter.h"
-#include "qpid/broker/amqp/NodeProperties.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -133,13 +132,12 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     if (!node.queue && !node.exchange) {
         if (pn_terminus_is_dynamic(terminus)  || is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
             //is it a queue or an exchange?
-            NodeProperties properties;
-            properties.read(pn_terminus_properties(terminus));
-            if (properties.isQueue()) {
-                node.queue = broker.createQueue(name, properties.getQueueSettings(), this, properties.getAlternateExchange(), connection.getUserid(), connection.getId()).first;
+            node.properties.read(pn_terminus_properties(terminus));
+            if (node.properties.isQueue()) {
+                node.queue = broker.createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserid(), connection.getId()).first;
             } else {
                 qpid::framing::FieldTable args;
-                node.exchange = broker.createExchange(name, properties.getExchangeType(), properties.isDurable(), properties.getAlternateExchange(),
+                node.exchange = broker.createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
                                                       args, connection.getUserid(), connection.getId()).first;
             }
         } else {
@@ -164,6 +162,11 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
         QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
         node.exchange.reset();
     }
+
+    if (node.properties.isExclusive() && node.queue && node.queue->setExclusiveOwner(this)) {
+        exclusiveQueues.insert(node.queue);
+    }
+
     return node;
 }
 
@@ -283,14 +286,17 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         }
         outgoing[link] = q;
     } else if (node.exchange) {
-        QueueSettings settings(false, true);
+        bool durable = pn_terminus_get_durability(source);
+        QueueSettings settings(durable, !durable);
         if (filter.hasSelectorFilter()) {
             settings.filter = filter.getSelectorFilter();
             QPID_LOG(debug, "Selector specified for outgoing link from exchange " << node.exchange->getName() << ": " << settings.filter);
         }
         //TODO: populate settings from source details when available from engine
+        std::stringstream queueName;//combination of container id and link name is unique
+        queueName << connection.getContainerId() << "_" << pn_link_name(link);
         boost::shared_ptr<qpid::broker::Queue> queue
-            = broker.createQueue(name + qpid::types::Uuid(true).str(), settings, this, "", connection.getUserid(), connection.getId()).first;
+            = broker.createQueue(queueName.str(), settings, this, "", connection.getUserid(), connection.getId()).first;
         queue->setExclusiveOwner(this);
         if (filter.hasSubjectFilter()) {
             filter.bind(node.exchange, queue);
@@ -430,6 +436,7 @@ bool Session::dispatch()
 
 void Session::close()
 {
+    exclusiveQueues.clear();
     for (OutgoingLinks::iterator i = outgoing.begin(); i != outgoing.end(); ++i) {
         i->second->detached();
     }
@@ -439,6 +446,9 @@ void Session::close()
     outgoing.clear();
     incoming.clear();
     QPID_LOG(debug, "Session closed, all links detached.");
+    for (std::set< boost::shared_ptr<Queue> >::const_iterator i = exclusiveQueues.begin(); i != exclusiveQueues.end(); ++i) {
+        (*i)->releaseExclusiveOwnership();
+    }
     qpid::sys::Mutex::ScopedLock l(lock);
     deleted = true;
 }

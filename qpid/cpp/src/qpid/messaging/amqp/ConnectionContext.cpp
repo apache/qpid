@@ -60,7 +60,10 @@ ConnectionContext::ConnectionContext(const std::string& u, const qpid::types::Va
     if (pn_transport_bind(engine, connection)) {
         //error
     }
-    pn_connection_set_container(connection, "qpid::messaging");//TODO: take this from a connection option
+    if (identifier.empty()) {
+        identifier = qpid::types::Uuid(true).str();
+    }
+    pn_connection_set_container(connection, identifier.c_str());
     bool enableTrace(false);
     QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
     if (enableTrace) pn_transport_trace(engine, PN_TRACE_FRM);

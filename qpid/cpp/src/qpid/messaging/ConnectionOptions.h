@@ -42,6 +42,7 @@ struct ConnectionOptions : qpid::client::ConnectionSettings
     double maxReconnectInterval;
     int32_t retries;
     bool reconnectOnLimitExceeded;
+    std::string identifier;
 
     ConnectionOptions(const std::map<std::string, qpid::types::Variant>&);
     void set(const std::string& name, const qpid::types::Variant& value);

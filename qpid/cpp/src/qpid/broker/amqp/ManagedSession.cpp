@@ -84,5 +84,9 @@ void ManagedSession::incomingMessageRejected()
 {
 
 }
+ManagedConnection& ManagedSession::getParent()
+{
+    return parent;
+}
 
 }}} // namespace qpid::broker::amqp

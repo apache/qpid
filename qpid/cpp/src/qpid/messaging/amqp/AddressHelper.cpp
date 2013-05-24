@@ -24,7 +24,9 @@
 #include "qpid/log/Statement.h"
 #include <vector>
 #include <set>
+#include <sstream>
 #include <boost/assign.hpp>
+#include <boost/format.hpp>
 extern "C" {
 #include <proton/engine.h>
 }
@@ -59,6 +61,9 @@ const std::string TYPE("type");
 const std::string TOPIC("topic");
 const std::string QUEUE("queue");
 const std::string DURABLE("durable");
+const std::string NAME("name");
+const std::string RELIABILITY("reliability");
+const std::string SELECTOR("selector");
 
 //distribution modes:
 const std::string MOVE("move");
@@ -76,6 +81,17 @@ const std::string ARGUMENTS("arguments");
 
 const std::vector<std::string> RECEIVER_MODES = boost::assign::list_of<std::string>(ALWAYS) (RECEIVER);
 const std::vector<std::string> SENDER_MODES = boost::assign::list_of<std::string>(ALWAYS) (SENDER);
+
+class Verifier
+{
+  public:
+    Verifier();
+    void verify(const Address& address) const;
+  private:
+    Variant::Map defined;
+    void verify(const Variant::Map& allowed, const Variant::Map& actual) const;
+};
+const Verifier verifier;
 
 pn_bytes_t convert(const std::string& s)
 {
@@ -177,6 +193,7 @@ AddressHelper::AddressHelper(const Address& address) :
     durableLink(false),
     browse(false)
 {
+    verifier.verify(address);
     bind(address, CREATE, createPolicy);
     bind(address, DELETE, deletePolicy);
     bind(address, ASSERT, assertPolicy);
@@ -191,6 +208,7 @@ AddressHelper::AddressHelper(const Address& address) :
     if (bind(address, MODE, mode)) {
         if (mode == BROWSE) {
             browse = true;
+            throw qpid::messaging::AddressError("Browse mode not yet supported over AMQP 1.0.");
         } else if (mode != CONSUME) {
             throw qpid::messaging::AddressError("Invalid value for mode; must be 'browse' or 'consume'.");
         }
@@ -325,6 +343,19 @@ void AddressHelper::setCapabilities(pn_terminus_t* terminus, bool create)
         pn_data_put_symbol(data, convert(i->asString()));
     }
 }
+std::string AddressHelper::getLinkName(const Address& address)
+{
+    AddressHelper helper(address);
+    const qpid::types::Variant::Map& linkProps = helper.getLinkProperties();
+    qpid::types::Variant::Map::const_iterator i = linkProps.find(NAME);
+    if (i != linkProps.end()) {
+        return i->second.asString();
+    } else {
+        std::stringstream name;
+        name << address.getName() << "_" << qpid::types::Uuid(true);
+        return name.str();
+    }
+}
 
 void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
 {
@@ -345,6 +376,47 @@ void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
             pn_data_put_string(data, convert(i->second.asString()));
         }
         pn_data_exit(data);
+    }
+}
+
+Verifier::Verifier()
+{
+    defined[CREATE] = true;
+    defined[ASSERT] = true;
+    defined[DELETE] = true;
+    defined[MODE] = true;
+    Variant::Map node;
+    node[TYPE] = true;
+    node[DURABLE] = true;
+    node[PROPERTIES] = true;
+    node[CAPABILITIES] = true;
+    node[X_DECLARE] = true;
+    node[X_BINDINGS] = true;
+    defined[NODE] = node;
+    Variant::Map link;
+    link[NAME] = true;
+    link[DURABLE] = true;
+    link[RELIABILITY] = true;
+    link[X_SUBSCRIBE] = true;
+    link[X_DECLARE] = true;
+    link[X_BINDINGS] = true;
+    link[SELECTOR] = true;
+    defined[LINK] = link;
+}
+void Verifier::verify(const Address& address) const
+{
+    verify(defined, address.getOptions());
+}
+
+void Verifier::verify(const Variant::Map& allowed, const Variant::Map& actual) const
+{
+    for (Variant::Map::const_iterator i = actual.begin(); i != actual.end(); ++i) {
+        Variant::Map::const_iterator option = allowed.find(i->first);
+        if (option == allowed.end()) {
+            throw AddressError((boost::format("Unrecognised option: %1%") % i->first).str());
+        } else if (option->second.getType() == qpid::types::VAR_MAP) {
+            verify(option->second.asMap(), i->second.asMap());
+        }
     }
 }
 

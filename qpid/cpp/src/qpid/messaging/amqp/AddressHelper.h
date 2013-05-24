@@ -41,6 +41,7 @@ class AddressHelper
 
     const qpid::types::Variant::Map& getNodeProperties() const;
     const qpid::types::Variant::Map& getLinkProperties() const;
+    static std::string getLinkName(const Address& address);
   private:
     bool isTemporary;
     std::string createPolicy;

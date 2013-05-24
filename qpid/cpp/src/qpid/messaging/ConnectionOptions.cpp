@@ -113,6 +113,8 @@ void ConnectionOptions::set(const std::string& name, const qpid::types::Variant&
         sslCertName = value.asString();
     } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
         reconnectOnLimitExceeded = value;
+    } else if (name == "container-id" || name == "container_id") {
+        identifier = value.asString();
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }
