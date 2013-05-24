@@ -24,6 +24,7 @@
 #include "AsyncCompletion.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include <vector>
 
 namespace qpid {
@@ -42,7 +43,7 @@ class IngressCompletion : public AsyncCompletion
     void enqueueAsync(boost::shared_ptr<Queue>);
     void flush();
   private:
-    typedef std::vector<boost::shared_ptr<Queue> > Queues;
+    typedef std::vector<boost::weak_ptr<Queue> > Queues;
     Queues queues;
     qpid::sys::Mutex lock;
 };

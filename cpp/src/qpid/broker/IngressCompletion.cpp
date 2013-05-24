@@ -39,7 +39,10 @@ void IngressCompletion::flush()
         queues.swap(copy);
     }
     for (Queues::const_iterator i = copy.begin(); i != copy.end(); ++i) {
-        (*i)->flush();
+        boost::shared_ptr<Queue> q(i->lock());
+        if (q) {
+            q->flush();
+        }
     }
 }
 }} // namespace qpid::broker
