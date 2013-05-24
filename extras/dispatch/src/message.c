@@ -785,62 +785,6 @@ dx_field_iterator_t *dx_message_field_iterator(dx_message_t *msg, dx_message_fie
 }
 
 
-dx_iovec_t *dx_message_field_iovec(dx_message_t *msg, dx_message_field_t field)
-{
-    dx_field_location_t *loc = dx_message_field_location(msg, field);
-    if (!loc)
-        return 0;
-
-    //
-    // Count the number of buffers this field straddles
-    //
-    int          bufcnt    = 1;
-    dx_buffer_t *buf       = loc->buffer;
-    size_t       bufsize   = dx_buffer_size(buf) - loc->offset;
-    ssize_t      remaining = loc->length - bufsize;
-
-    while (remaining > 0) {
-        bufcnt++;
-        buf = buf->next;
-        if (!buf)
-            return 0;
-        remaining -= dx_buffer_size(buf);
-    }
-
-    //
-    // Allocate an iovec object big enough to hold the number of buffers
-    //
-    dx_iovec_t *iov = dx_iovec(bufcnt);
-    if (!iov)
-        return 0;
-
-    //
-    // Build out the io vectors with pointers to the segments of the field in buffers
-    //
-    bufcnt     = 0;
-    buf        = loc->buffer;
-    bufsize    = dx_buffer_size(buf) - loc->offset;
-    void *base = dx_buffer_base(buf) + loc->offset;
-    remaining  = loc->length;
-
-    while (remaining > 0) {
-        if (bufsize > remaining)
-            bufsize = remaining;
-        dx_iovec_array(iov)[bufcnt].iov_base = base;
-        dx_iovec_array(iov)[bufcnt].iov_len  = bufsize;
-        bufcnt++;
-        remaining -= bufsize;
-        if (remaining > 0) {
-            buf     = buf->next;
-            base    = dx_buffer_base(buf);
-            bufsize = dx_buffer_size(buf);
-        }
-    }
-
-    return iov;
-}
-
-
 ssize_t dx_message_field_length(dx_message_t *msg, dx_message_field_t field)
 {
     dx_field_location_t *loc = dx_message_field_location(msg, field);
