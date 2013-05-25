@@ -209,7 +209,7 @@ class QueueredirectTests(TestBase010):
 
         self.assertEqual(count, 3)
 
-        session.close()
+        ###session.close()
 
     def test_140_verify_redirect_to_source(self):
         session = self.get_session('bob','bob')
@@ -249,7 +249,7 @@ class QueueredirectTests(TestBase010):
 
         self.assertEqual(count, 3)
 
-        session.close()
+        ###session.close()
 
     def test_150_queue_deletion_destroys_redirect(self):
         session = self.get_session('bob','bob')
