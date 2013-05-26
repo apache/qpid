@@ -243,6 +243,7 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp qpid-${VER}/java/amqp-1-0-client-jms/release/*.tar.gz artifacts/qpid-java-amqp-1-0-client-jms-${VER}.tar.gz
 
   # copy the Maven artifacts
+  cp -a qpid-${VER}/java/jca/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-client/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-client-jms/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
