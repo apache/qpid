@@ -73,6 +73,7 @@ class AmqpBrokerTest(BrokerTest):
             print "sender config is %s" % (send_config or self.default_config)
             print "receiver config is %s" % (recv_config or self.default_config)
         sender = self.sender(send_config or self.default_config)
+        sender._set_cloexec_flag(sender.stdin) #required for older python, see http://bugs.python.org/issue4112
         receiver = self.receiver(recv_config or self.default_config)
 
         messages = ["message-%s" % (i+1) for i in range(count)]
