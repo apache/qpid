@@ -44,10 +44,9 @@ namespace qpid {
 namespace messaging {
 namespace amqp {
 
-
 ConnectionContext::ConnectionContext(const std::string& u, const qpid::types::Variant::Map& o)
     : qpid::messaging::ConnectionOptions(o),
-      url(u),
+      url(u, protocol.empty() ? qpid::Address::TCP : protocol),
       engine(pn_transport()),
       connection(pn_connection()),
       //note: disabled read/write of header as now handled by engine
@@ -85,6 +84,8 @@ void ConnectionContext::open()
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
     if (!driver) driver = DriverImpl::getDefault();
+    if (url.getUser().size()) username = url.getUser();
+    if (url.getPass().size()) password = url.getPass();
 
     for (Url::const_iterator i = url.begin(); state != CONNECTED && i != url.end(); ++i) {
         transport = driver->getTransport(i->protocol, *this);
