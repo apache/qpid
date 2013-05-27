@@ -368,13 +368,15 @@ void Sender::sendByRate()
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
         if (opts.sync) session.sync();
         ++sent;
-        if (Duration(last, sentAt) > TIME_SEC*2) {
+        if (Duration(last, sentAt) > (opts.reportFrequency*TIME_MSEC)) {
             Duration t(start, now());
             //check rate actually achieved thus far
-            uint actualRate = sent / (t/TIME_SEC);
-            //report inability to stay within 1% of desired rate
-            if (actualRate < opts.rate && opts.rate - actualRate > opts.rate/100) {
-                std::cerr << "WARNING: Desired send rate: " << opts.rate << ", actual send rate: " << actualRate << std::endl;
+            if (t/TIME_SEC) {
+                uint actualRate = sent / (t/TIME_SEC);
+                //report inability to stay within 1% of desired rate
+                if (actualRate < opts.rate && opts.rate - actualRate > opts.rate/100) {
+                    std::cerr << "WARNING: Desired send rate: " << opts.rate << ", actual send rate: " << actualRate << std::endl;
+                }
             }
             last = sentAt;
         }
