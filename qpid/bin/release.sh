@@ -285,7 +285,7 @@ if [ "SIGN" == "$SIGN" ] ; then
   if [ ! -z $SIGNING_KEY ] ; then
     KEYOPTION="--default-key $SIGNING_KEY"
   fi
-  for i in `find . | egrep 'jar$|pom$|gz$|zip$|svnversion$|SHA1SUM'`; do gpg --sign --armor --detach $KEYOPTION $i; done;
+  for i in `find . | egrep 'jar$|rar$|pom$|gz$|zip$|svnversion$|SHA1SUM'`; do gpg --sign --armor --detach $KEYOPTION $i; done;
   popd
 fi
 
