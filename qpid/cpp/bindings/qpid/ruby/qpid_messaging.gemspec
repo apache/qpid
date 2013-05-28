@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
                    "TODO",
                    "lib/**/*.rb",
                    "ext/**/*",
+                   "examples/**/*.rb"
                 ]
   s.require_path = 'lib'
 end
