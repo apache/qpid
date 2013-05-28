@@ -250,10 +250,9 @@ int main(int argc, char ** argv)
                     if (s.isNull()) {
                         s = session.createSender(msg.getReplyTo());
                         s.setCapacity(opts.capacity);
+                        replyTo[msg.getReplyTo().str()] = s;
                     }
-                    if (!opts.replyto.empty()) {
-                        msg.setReplyTo(Address(opts.replyto));
-                    }
+                    msg.setReplyTo(Address(opts.replyto));
                     s.send(msg);
                 }
                 if (opts.receiveRate) {
