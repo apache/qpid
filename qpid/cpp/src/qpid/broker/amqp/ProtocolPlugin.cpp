@@ -114,7 +114,7 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
 
 boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> ProtocolImpl::translate(const qpid::broker::Message& m)
 {
-    qpid::broker::amqp::Translation t(m);
+    qpid::broker::amqp::Translation t(m, &broker);
     return t.getTransfer();
 }
 
