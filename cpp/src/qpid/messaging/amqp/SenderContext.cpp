@@ -134,6 +134,7 @@ class HeaderAdapter : public qpid::amqp::MessageEncoder::Header
     const qpid::messaging::MessageImpl& msg;
 };
 const std::string EMPTY;
+const std::string FORWARD_SLASH("/");
 
 class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 {
@@ -185,7 +186,12 @@ class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 
     std::string getReplyTo() const
     {
-        return msg.getReplyTo().str();
+        Address a = msg.getReplyTo();
+        if (a.getSubject().size()) {
+            return a.getName() + FORWARD_SLASH + a.getSubject();
+        } else {
+            return a.getName();
+        }
     }
 
     bool hasCorrelationId() const

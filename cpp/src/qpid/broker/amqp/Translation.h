@@ -25,6 +25,7 @@
 
 namespace qpid {
 namespace broker {
+class Broker;
 class Message;
 namespace amqp_0_10 {
 class MessageTransfer;
@@ -38,7 +39,7 @@ class OutgoingFromQueue;
 class Translation
 {
   public:
-    Translation(const qpid::broker::Message& message);
+    Translation(const qpid::broker::Message& message, Broker* broker = 0);
 
     /**
      * @returns a pointer to an AMQP 0-10 message transfer suitable
@@ -52,6 +53,7 @@ class Translation
     void write(OutgoingFromQueue&);
   private:
     const qpid::broker::Message& original;
+    Broker* broker;
 };
 }}} // namespace qpid::broker::amqp
 

@@ -21,6 +21,7 @@
 #include "qpid/broker/amqp/Translation.h"
 #include "qpid/broker/amqp/Outgoing.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/amqp/Decoder.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
@@ -38,10 +39,30 @@ namespace {
 const std::string EMPTY;
 const std::string FORWARD_SLASH("/");
 
+qpid::framing::ReplyTo translate(const std::string address, Broker* broker)
+{
+    size_t i = address.find(FORWARD_SLASH);
+    if (i == std::string::npos) {
+        //is it a queue or an exchange?
+        if (broker && broker->getQueues().find(address)) {
+            return qpid::framing::ReplyTo(EMPTY, address);
+        } else if (broker && broker->getExchanges().find(address)) {
+            return qpid::framing::ReplyTo(address, EMPTY);
+        } else {
+            return qpid::framing::ReplyTo();
+        }
+    } else {
+        return qpid::framing::ReplyTo(i > 0 ? address.substr(0, i) : EMPTY, (i+1) < address.size() ? address.substr(i+1) : EMPTY);
+    }
+}
+qpid::framing::ReplyTo translate(const qpid::amqp::CharSequence& address, Broker* broker)
+{
+    return translate(std::string(address.data, address.size), broker);
+}
 std::string translate(const qpid::framing::ReplyTo r)
 {
-    if (r.hasExchange()) {
-        if (r.hasRoutingKey()) return r.getExchange() + FORWARD_SLASH + r.getRoutingKey();
+    if (r.getExchange().size()) {
+        if (r.getRoutingKey().size()) return r.getExchange() + FORWARD_SLASH + r.getRoutingKey();
         else return r.getExchange();
     } else return r.getRoutingKey();
 }
@@ -115,7 +136,7 @@ class Properties_0_10 : public qpid::amqp::MessageEncoder::Properties
 };
 }
 
-Translation::Translation(const qpid::broker::Message& m) : original(m) {}
+Translation::Translation(const qpid::broker::Message& m, Broker* b) : original(m), broker(b) {}
 
 
 boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation::getTransfer()
@@ -175,10 +196,7 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
                 props->setCorrelationId(boost::lexical_cast<std::string>(cid.value.ulong));
                 break;
             }
-            // TODO: ReplyTo - there is no way to reliably determine
-            // the type of the node from just its name, unless we
-            // query the brokers registries
-
+            if (message->getReplyTo()) props->setReplyTo(translate(message->getReplyTo(), broker));
             if (message->getContentType()) props->setContentType(translate(message->getContentType()));
             if (message->getContentEncoding()) props->setContentEncoding(translate(message->getContentEncoding()));
             props->setUserId(message->getUserId());
