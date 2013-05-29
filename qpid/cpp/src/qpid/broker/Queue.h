@@ -27,6 +27,7 @@
 #include "qpid/broker/Consumer.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Messages.h"
+#include "qpid/broker/MessageInterceptor.h"
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/QueueListeners.h"
@@ -164,6 +165,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     sys::AtomicValue<uint32_t> dequeueSincePurge; // Count dequeues since last purge.
     int eventMode;
     Observers observers;
+    MessageInterceptors interceptors;
     std::string seqNoKey;
     Broker* broker;
     bool deleted;
@@ -414,6 +416,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void removeObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
+
+    QPID_BROKER_EXTERN MessageInterceptors& getMessageInterceptors() { return interceptors; }
     /**
      * Notify queue that recovery has completed.
      */
