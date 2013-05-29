@@ -59,13 +59,13 @@ class Connection(Endpoint):
   """
 
   @static
-  def establish(url=None, **options):
+  def establish(url=None, timeout=None, **options):
     """
     Constructs a L{Connection} with the supplied parameters and opens
     it.
     """
     conn = Connection(url, **options)
-    conn.open()
+    conn.open(timeout=timeout)
     return conn
 
   def __init__(self, url=None, **options):
@@ -257,14 +257,13 @@ class Connection(Endpoint):
     self.sessions.pop(ssn.name, 0)
 
   @synchronized
-  def open(self):
+  def open(self, timeout=None):
     """
     Opens a connection.
     """
     if self._open:
       raise ConnectionError("already open")
     self._open = True
-    timeout = None
     if self.reconnect and self.reconnect_timeout > 0:
         timeout = self.reconnect_timeout
     self.attach(timeout=timeout)
