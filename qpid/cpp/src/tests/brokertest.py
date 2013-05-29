@@ -305,9 +305,9 @@ class Broker(Popen):
     def unexpected(self,msg):
         raise BadProcessStatus("%s: %s (%s)" % (msg, self.name, self.pname))
 
-    def connect(self, **kwargs):
+    def connect(self, timeout=5, **kwargs):
         """New API connection to the broker."""
-        return messaging.Connection.establish(self.host_port(), **kwargs)
+        return messaging.Connection.establish(self.host_port(), timeout=timeout, **kwargs)
 
     def connect_old(self):
         """Old API connection to the broker."""
