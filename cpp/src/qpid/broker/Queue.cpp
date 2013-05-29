@@ -429,7 +429,8 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
                             continue; //try another message
                         }
                     }
-                    QPID_LOG(debug, "Message retrieved from '" << name << "'");
+                    QPID_LOG(debug, "Message " << msg->getSequence() << " retrieved from '"
+                             << name << "'");
                     m = *msg;
                     return true;
                 } else {
@@ -767,6 +768,7 @@ void Queue::push(Message& message, bool /*isRecovery*/)
         Mutex::ScopedLock locker(messageLock);
         message.setSequence(++sequence);
         if (settings.sequencing) message.addAnnotation(settings.sequenceKey, (uint32_t)sequence);
+        interceptors.publish(message);
         messages->publish(message);
         listeners.populate(copy);
         observeEnqueue(message, locker);
