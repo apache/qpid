@@ -225,19 +225,16 @@ dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
 
 void dx_agent_value_string(void *correlator, const char *key, const char *value)
 {
-    printf("STRING: %s => %s\n", key, value);
 }
 
 
 void dx_agent_value_uint(void *correlator, const char *key, uint64_t value)
 {
-    printf("UINT  : %s => %ld\n", key, value);
 }
 
 
 void dx_agent_value_null(void *correlator, const char *key)
 {
-    printf("NULL  : %s\n", key);
 }
 
 
