@@ -34,8 +34,6 @@
 
 static char *module="CONTAINER";
 
-typedef struct dx_container_t dx_container_t;
-
 struct dx_node_t {
     dx_container_t       *container;
     const dx_node_type_t *ntype;

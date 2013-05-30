@@ -20,11 +20,10 @@
  */
 
 #include <proton/engine.h>
+#include <qpid/dispatch/dispatch.h>
 #include <qpid/dispatch/server.h>
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/ctools.h>
-
-typedef struct dx_dispatch_t dx_dispatch_t;
 
 typedef uint8_t dx_dist_mode_t;
 #define DX_DIST_COPY 0x01

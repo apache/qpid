@@ -19,9 +19,8 @@
  * under the License.
  */
 
+#include <qpid/dispatch/dispatch.h>
 #include <proton/engine.h>
-
-typedef struct dx_dispatch_t dx_dispatch_t;
 
 /**
  * \defgroup Control Server Control Functions
