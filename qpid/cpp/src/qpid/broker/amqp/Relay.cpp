@@ -28,7 +28,7 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-Relay::Relay(size_t max_) : credit(0), max(max_), current(0), isDetached(false), out(0), in(0) {}
+Relay::Relay(size_t max_) : credit(0), max(max_), head(0), tail(0), isDetached(false), out(0), in(0) {}
 void Relay::check()
 {
     if (isDetached) throw qpid::Exception("other end of relay has been detached");
@@ -38,8 +38,8 @@ bool Relay::send(pn_link_t* link)
     BufferedTransfer* c(0);
     {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
-        if (current < buffer.size()) {
-            c = &buffer[current++];
+        if (head < tail) {
+            c = &buffer[head++];
         } else {
             return false;
         }
@@ -59,6 +59,10 @@ void Relay::received(pn_link_t* link, pn_delivery_t* delivery)
 {
     BufferedTransfer& received = push();
     received.initIn(link, delivery);
+    {
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
+        ++tail;
+    }
     if (out) out->wakeup();
 }
 size_t Relay::size() const
@@ -66,7 +70,7 @@ size_t Relay::size() const
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     return buffer.size();
 }
-BufferedTransfer& Relay::head()
+BufferedTransfer& Relay::front()
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     return buffer.front();
@@ -75,7 +79,8 @@ void Relay::pop()
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     buffer.pop_front();
-    if (current) --current;
+    if (head) --head;
+    if (tail) --tail;
 }
 void Relay::setCredit(int c)
 {
@@ -100,12 +105,14 @@ void Relay::detached(Outgoing*)
 {
     out = 0;
     isDetached = true;
+    std::cerr << "Outgoing link detached from relay" << std::endl;
     if (in) in->wakeup();
 }
 void Relay::detached(Incoming*)
 {
     in = 0;
     isDetached = true;
+    std::cerr << "Incoming link detached from relay" << std::endl;
     if (out) out->wakeup();
 }
 
@@ -182,7 +189,7 @@ IncomingToRelay::IncomingToRelay(pn_link_t* link, Broker& broker, Session& paren
 bool IncomingToRelay::settle()
 {
     bool result(false);
-    while (relay->size() && relay->head().settle()) {
+    while (relay->size() && relay->front().settle()) {
         result = true;
         relay->pop();
     }
