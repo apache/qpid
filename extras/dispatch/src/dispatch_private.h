@@ -19,7 +19,8 @@
  * under the License.
  */
 
-typedef struct dx_server_t    dx_server_t;
+#include "server_private.h"
+
 typedef struct dx_container_t dx_container_t;
 typedef struct dx_router_t    dx_router_t;
 typedef struct dx_agent_t     dx_agent_t;

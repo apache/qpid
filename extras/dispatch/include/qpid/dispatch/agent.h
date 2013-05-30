@@ -19,11 +19,10 @@
  * under the License.
  */
 
+#include <qpid/dispatch/dispatch.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-typedef struct dx_dispatch_t dx_dispatch_t;
 
 /**
  * \defgroup Container Management Agent

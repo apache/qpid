@@ -19,9 +19,8 @@
  * under the License.
  */
 
+#include <qpid/dispatch/dispatch.h>
 #include <qpid/dispatch/server.h>
-
-typedef struct dx_dispatch_t dx_dispatch_t;
 
 /**
  * \defgroup Timer Server Timer Functions
