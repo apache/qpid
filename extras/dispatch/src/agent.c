@@ -32,7 +32,7 @@
 #include <string.h>
 #include <stdio.h>
 
-typedef struct dx_agent_t {
+struct dx_agent_t {
     dx_server_t       *server;
     hash_t            *class_hash;
     dx_message_list_t  in_fifo;
@@ -40,7 +40,7 @@ typedef struct dx_agent_t {
     sys_mutex_t       *lock;
     dx_timer_t        *timer;
     dx_address_t      *address;
-} dx_agent_t;
+};
 
 
 struct dx_agent_class_t {

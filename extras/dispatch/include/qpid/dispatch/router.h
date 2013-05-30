@@ -19,11 +19,11 @@
  * under the License.
  */
 
+#include <qpid/dispatch/dispatch.h>
+#include <qpid/dispatch/message.h>
 #include <stdbool.h>
 
-typedef struct dx_dispatch_t dx_dispatch_t;
-typedef struct dx_message_t  dx_message_t;
-typedef struct dx_address_t  dx_address_t;
+typedef struct dx_address_t dx_address_t;
 
 
 typedef void (*dx_router_message_cb)(void *context, dx_message_t *msg);
