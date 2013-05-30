@@ -68,7 +68,7 @@ class Relay
     Relay(size_t max);
     void check();
     size_t size() const;
-    BufferedTransfer& head();
+    BufferedTransfer& front();
     void pop();
     bool send(pn_link_t*);
     void received(pn_link_t* link, pn_delivery_t* delivery);
@@ -82,7 +82,8 @@ class Relay
     std::deque<BufferedTransfer> buffer;//TODO: optimise by replacing with simple circular array
     int credit;//issued by outgoing peer, decremented everytime we send a message on outgoing link
     size_t max;
-    size_t current;
+    size_t head;
+    size_t tail;
     bool isDetached;
     Outgoing* out;
     Incoming* in;
