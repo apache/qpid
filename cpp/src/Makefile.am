@@ -653,6 +653,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageBuilder.h \
   qpid/broker/MessageDeque.h \
   qpid/broker/MessageDeque.cpp \
+  qpid/broker/MessageInterceptor.h \
   qpid/broker/MessageMap.h \
   qpid/broker/MessageMap.cpp \
   qpid/broker/Messages.h \
