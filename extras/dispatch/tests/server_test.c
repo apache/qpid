@@ -159,7 +159,17 @@ static char* test_user_fd(void *context)
     dx_timer_schedule(timer, 0);
 
     stored_error[0] = 0x0;
-    res = pipe2(fd, O_NONBLOCK);
+
+    res = pipe(fd); // Don't use pipe2 because it's not available on RHEL5
+    for (int i = 0; i < 2; i++) {
+        int flags = fcntl(fd[i], F_GETFL);
+        flags |= O_NONBLOCK;
+        if (fcntl(fd[i], F_SETFL, flags) < 0) {
+            perror("fcntl");
+            return "Failed to set socket to non-blocking";
+        }
+    }
+    
     if (res != 0) return "Error creating pipe2";
 
     ufd_write = dx_user_fd(dx, fd[1], (void*) 1);
