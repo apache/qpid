@@ -401,7 +401,7 @@ static dx_field_iterator_t *dx_field_parse_amqp_value(dx_field_iterator_t *iter,
     value->view_prefix   = 0;
 
     unsigned char tag = dx_field_iterator_octet(iter);
-    unsigned int  length;
+    unsigned int  length      = 0;
     unsigned int  length_size = 0;
 
     (*available)--;
