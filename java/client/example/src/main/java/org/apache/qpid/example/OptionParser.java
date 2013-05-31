@@ -70,6 +70,8 @@ public class OptionParser
     
     private Map<String,Object> optMap = new HashMap<String,Object>();
     private static final List<Option> optDefs = new ArrayList<Option>();
+
+    private static final String CLIENTID = "test";
     
     private String usage;
     private String desc;
@@ -270,7 +272,9 @@ public class OptionParser
             broker = broker + "?" + bOps + "'";
         }
         buf.append(userPass);
-        buf.append("@test/test?brokerlist='tcp://");
+        buf.append("@");
+        buf.append(CLIENTID);
+        buf.append("/?brokerlist='tcp://");
         buf.append(broker).append("'");
         if(containsOp(CON_OPTIONS))
         {
