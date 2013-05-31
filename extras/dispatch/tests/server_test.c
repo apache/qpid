@@ -161,6 +161,8 @@ static char* test_user_fd(void *context)
     stored_error[0] = 0x0;
 
     res = pipe(fd); // Don't use pipe2 because it's not available on RHEL5
+    if (res != 0) return "Error creating pipe2";
+
     for (int i = 0; i < 2; i++) {
         int flags = fcntl(fd[i], F_GETFL);
         flags |= O_NONBLOCK;
@@ -169,8 +171,6 @@ static char* test_user_fd(void *context)
             return "Failed to set socket to non-blocking";
         }
     }
-    
-    if (res != 0) return "Error creating pipe2";
 
     ufd_write = dx_user_fd(dx, fd[1], (void*) 1);
     ufd_read  = dx_user_fd(dx, fd[0], (void*) 0);
