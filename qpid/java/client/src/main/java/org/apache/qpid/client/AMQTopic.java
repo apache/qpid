@@ -42,7 +42,7 @@ public class AMQTopic extends AMQDestination implements Topic
     {
         super(address);
     }
-    
+
     protected AMQTopic()
     {
         super();
@@ -89,6 +89,12 @@ public class AMQTopic extends AMQDestination implements Topic
         super(exchangeName, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete, queueName, isDurable);
     }
 
+
+    protected AMQTopic(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString name, boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
+    {
+        super(exchangeName, exchangeClass, name, true, isAutoDelete, queueName, isDurable);
+    }
+
     protected AMQTopic(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
                                boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
     {
@@ -114,10 +120,10 @@ public class AMQTopic extends AMQDestination implements Topic
                     AMQTopic t = new AMQTopic(qpidTopic.getAddress());
                     AMQShortString queueName = getDurableTopicQueueName(subscriptionName, connection);
                     // link is never null if dest was created using an address string.
-                    t.getLink().setName(queueName.asString());               
+                    t.getLink().setName(queueName.asString());
                     t.getLink().getSubscriptionQueue().setAutoDelete(false);
                     t.getLink().setDurable(true);
-                    
+
                     // The legacy fields are also populated just in case.
                     t.setQueueName(queueName);
                     t.setAutoDelete(false);
@@ -134,7 +140,7 @@ public class AMQTopic extends AMQDestination implements Topic
             }
             else
             {
-                return new AMQTopic(qpidTopic.getExchangeName(), qpidTopic.getRoutingKey(), false,
+                return new AMQTopic(qpidTopic.getExchangeName(), qpidTopic.getExchangeClass(), qpidTopic.getRoutingKey(), false,
                                 getDurableTopicQueueName(subscriptionName, connection),
                                 true);
             }
@@ -165,7 +171,7 @@ public class AMQTopic extends AMQDestination implements Topic
             return null;
         }
     }
-    
+
     @Override
     public AMQShortString getExchangeName()
     {
@@ -181,9 +187,9 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQShortString getRoutingKey()
     {
-        if (super.getRoutingKey() != null)            
+        if (super.getRoutingKey() != null)
         {
-            return super.getRoutingKey();            
+            return super.getRoutingKey();
         }
         else if (getSubject() != null)
         {

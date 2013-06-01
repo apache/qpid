@@ -83,9 +83,12 @@ public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase imp
             AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             queue = new AMQHeadersExchange(new AMQBindingURL(ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
+
             FieldTable ft = new FieldTable();
             ft.setString("F1000", "1");
-            consumer = consumerSession.createConsumer(queue, Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT) /2 ,  false, false, (String) null, ft);
+            consumerSession.declareAndBind(queue, ft);
+
+            consumer = consumerSession.createConsumer(queue);
 
             //force synch to ensure the consumer has resulted in a bound queue
             //((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);

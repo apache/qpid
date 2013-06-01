@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -173,20 +174,106 @@ public abstract class AbstractExchange implements Exchange
         return getVirtualHost().getQueueRegistry();
     }
 
-    public boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue)
+    public final boolean isBound(AMQShortString routingKey, FieldTable ft, AMQQueue queue)
     {
-        return isBound(new AMQShortString(bindingKey), queue);
+        return isBound(routingKey == null ? "" : routingKey.asString(), FieldTable.convertToMap(ft), queue);
     }
 
-
-    public boolean isBound(String bindingKey, AMQQueue queue)
+    public final boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue)
     {
-        return isBound(new AMQShortString(bindingKey), queue);
+        for(Binding b : _bindings)
+        {
+            if(bindingKey.equals(b.getBindingKey()) && queue == b.getQueue())
+            {
+                return (b.getArguments() == null || b.getArguments().isEmpty())
+                       ? (arguments == null || arguments.isEmpty())
+                       : b.getArguments().equals(arguments);
+            }
+        }
+        return false;
     }
 
-    public boolean isBound(String bindingKey)
+    public final boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
-        return isBound(new AMQShortString(bindingKey));
+        return isBound(routingKey==null ? "" : routingKey.asString(), queue);
+    }
+
+    public final boolean isBound(String bindingKey, AMQQueue queue)
+    {
+        for(Binding b : _bindings)
+        {
+            if(bindingKey.equals(b.getBindingKey()) && queue == b.getQueue())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public final boolean isBound(AMQShortString routingKey)
+    {
+        return isBound(routingKey == null ? "" : routingKey.asString());
+    }
+
+    public final boolean isBound(String bindingKey)
+    {
+        for(Binding b : _bindings)
+        {
+            if(bindingKey.equals(b.getBindingKey()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public final boolean isBound(AMQQueue queue)
+    {
+        for(Binding b : _bindings)
+        {
+            if(queue == b.getQueue())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean isBound(Map<String, Object> arguments, AMQQueue queue)
+    {
+        for(Binding b : _bindings)
+        {
+            if(queue == b.getQueue() &&
+               ((b.getArguments() == null || b.getArguments().isEmpty())
+                       ? (arguments == null || arguments.isEmpty())
+                       : b.getArguments().equals(arguments)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean isBound(String bindingKey, Map<String, Object> arguments)
+    {
+        for(Binding b : _bindings)
+        {
+            if(b.getBindingKey().equals(bindingKey) &&
+               ((b.getArguments() == null || b.getArguments().isEmpty())
+                       ? (arguments == null || arguments.isEmpty())
+                       : b.getArguments().equals(arguments)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public final boolean hasBindings()
+    {
+        return !_bindings.isEmpty();
     }
 
     public Exchange getAlternateExchange()

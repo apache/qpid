@@ -207,21 +207,21 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
         }
         assertTrue("No exception thrown!", caught);
         caught = false;
-        
+
     }
-    
+
     public void testRuntimeSelectorError() throws JMSException
     {
         Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         MessageConsumer consumer = session.createConsumer(_destination , "testproperty % 5 = 1");
         MessageProducer producer = session.createProducer(_destination);
         Message sentMsg = session.createTextMessage();
-        
+
         sentMsg.setIntProperty("testproperty", 1); // 1 % 5
         producer.send(sentMsg);
         Message recvd = consumer.receive(RECIEVE_TIMEOUT);
         assertNotNull(recvd);
-        
+
         sentMsg.setStringProperty("testproperty", "hello"); // "hello" % 5 makes no sense
         producer.send(sentMsg);
         try
@@ -231,47 +231,47 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
         }
         catch (Exception e)
         {
-            
+
         }
         assertFalse("Connection should not be closed", _connection.isClosed());
     }
-        
+
     public void testSelectorWithJMSMessageID() throws Exception
     {
         Session session = _connection.createSession(true, Session.SESSION_TRANSACTED);
-        
+
         MessageProducer prod = session.createProducer(_destination);
         MessageConsumer consumer = session.createConsumer(_destination,"JMSMessageID IS NOT NULL");
-        
+
         for (int i=0; i<2; i++)
         {
             Message msg = session.createTextMessage("Msg" + String.valueOf(i));
             prod.send(msg);
         }
         session.commit();
-        
+
         Message msg1 = consumer.receive(1000);
         Message msg2 = consumer.receive(1000);
-        
+
         Assert.assertNotNull("Msg1 should not be null", msg1);
         Assert.assertNotNull("Msg2 should not be null", msg2);
-        
+
         session.commit();
-        
+
         prod.setDisableMessageID(true);
-        
-        for (int i=0; i<2; i++)
+
+        for (int i=2; i<4; i++)
         {
             Message msg = session.createTextMessage("Msg" + String.valueOf(i));
             prod.send(msg);
         }
-        
+
         session.commit();
-        Message msg3 = consumer.receive(1000);        
+        Message msg3 = consumer.receive(1000);
         Assert.assertNull("Msg3 should be null", msg3);
         session.commit();
         consumer = session.createConsumer(_destination,"JMSMessageID IS NULL");
-        
+
         Message msg4 = consumer.receive(1000);
         Message msg5 = consumer.receive(1000);
         session.commit();

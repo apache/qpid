@@ -40,7 +40,6 @@ public enum AMQPFilterTypes
     /** The identifying string for the filter type. */
     private final AMQShortString _value;
 
-
     /**
      * Creates a new filter type from its identifying string.
      *
@@ -59,5 +58,11 @@ public enum AMQPFilterTypes
     public AMQShortString getValue()
     {
         return _value;
+    }
+
+    @Override
+    public String toString()
+    {
+        return _value.asString();
     }
 }
