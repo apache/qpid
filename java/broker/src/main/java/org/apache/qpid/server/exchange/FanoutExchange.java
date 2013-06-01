@@ -20,11 +20,21 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -42,7 +52,18 @@ public class FanoutExchange extends AbstractExchange
     /**
      * Maps from queue name to queue instances
      */
-    private final ConcurrentHashMap<AMQQueue,Integer> _queues = new ConcurrentHashMap<AMQQueue,Integer>();
+    private final Map<AMQQueue,Integer> _queues = new HashMap<AMQQueue,Integer>();
+    private final CopyOnWriteArrayList<AMQQueue> _unfilteredQueues = new CopyOnWriteArrayList<AMQQueue>();
+    private final CopyOnWriteArrayList<AMQQueue> _filteredQueues = new CopyOnWriteArrayList<AMQQueue>();
+
+    private final AtomicReference<Map<AMQQueue,Map<Binding, MessageFilter>>>  _filteredBindings =
+            new AtomicReference<Map<AMQQueue,Map<Binding, MessageFilter>>>();
+    {
+        Map<AMQQueue,Map<Binding, MessageFilter>> emptyMap = Collections.emptyMap();
+        _filteredBindings.set(emptyMap);
+    }
+
+
 
     public static final ExchangeType<FanoutExchange> TYPE = new FanoutExchangeType();
 
@@ -54,115 +75,150 @@ public class FanoutExchange extends AbstractExchange
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
 
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Publishing message to queue " + _queues);
-        }
-
         for(Binding b : getBindings())
         {
             b.incrementMatches();
         }
 
-        return new ArrayList<BaseQueue>(_queues.keySet());
+        final ArrayList<BaseQueue> result = new ArrayList<BaseQueue>(_unfilteredQueues);
 
-    }
 
-    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
-    {
-        return isBound(routingKey, queue);
-    }
-
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
-    {
-        return isBound(queue);
-    }
-
-    public boolean isBound(AMQShortString routingKey)
-    {
-
-        return (_queues != null) && !_queues.isEmpty();
-    }
-
-    public boolean isBound(AMQQueue queue)
-    {
-        if (queue == null)
+        final Map<AMQQueue, Map<Binding, MessageFilter>> filteredBindings = _filteredBindings.get();
+        if(!_filteredQueues.isEmpty())
         {
-            return false;
-        }
-        return _queues.containsKey(queue);
-    }
-
-    public boolean hasBindings()
-    {
-        return !_queues.isEmpty();
-    }
-
-    protected void onBind(final Binding binding)
-    {
-        AMQQueue queue = binding.getQueue();
-        assert queue != null;
-
-        Integer oldVal;
-
-        if((oldVal = _queues.putIfAbsent(queue, ONE)) != null)
-        {
-            Integer newVal = oldVal+1;
-            while(!_queues.replace(queue, oldVal, newVal))
+            for(AMQQueue q : _filteredQueues)
             {
-                oldVal = _queues.get(queue);
-                if(oldVal == null)
+                final Map<Binding, MessageFilter> bindingMessageFilterMap = filteredBindings.get(q);
+                if(!(bindingMessageFilterMap == null || result.contains(q)))
                 {
-                    oldVal = _queues.putIfAbsent(queue, ONE);
-                    if(oldVal == null)
+                    for(MessageFilter filter : bindingMessageFilterMap.values())
                     {
-                        break;
+                        if(filter.matches(payload))
+                        {
+                            result.add(q);
+                            break;
+                        }
                     }
                 }
-                newVal = oldVal + 1;
             }
+
         }
+
 
         if (_logger.isDebugEnabled())
         {
+            _logger.debug("Publishing message to queue " + result);
+        }
+
+        return result;
+
+    }
+
+
+    protected synchronized void onBind(final Binding binding)
+    {
+        AMQQueue queue = binding.getQueue();
+        assert queue != null;
+        if(binding.getArguments() == null || binding.getArguments().isEmpty() || !FilterSupport.argumentsContainFilter(binding.getArguments()))
+        {
+
+            Integer oldVal;
+            if(_queues.containsKey(queue))
+            {
+                _queues.put(queue,_queues.get(queue)+1);
+            }
+            else
+            {
+                _queues.put(queue, ONE);
+                _unfilteredQueues.add(queue);
+                // No longer any reason to check filters for this queue
+                _filteredQueues.remove(queue);
+            }
+
+        }
+        else
+        {
+            try
+            {
+
+                HashMap<AMQQueue,Map<Binding, MessageFilter>> filteredBindings =
+                        new HashMap<AMQQueue,Map<Binding, MessageFilter>>(_filteredBindings.get());
+
+                Map<Binding, MessageFilter> bindingsForQueue = filteredBindings.remove(binding.getQueue());
+                final
+                MessageFilter messageFilter =
+                        FilterSupport.createMessageFilter(binding.getArguments(), binding.getQueue());
+
+                if(bindingsForQueue != null)
+                {
+                    bindingsForQueue = new HashMap<Binding,MessageFilter>(bindingsForQueue);
+                    bindingsForQueue.put(binding, messageFilter);
+                }
+                else
+                {
+                    bindingsForQueue = Collections.singletonMap(binding, messageFilter);
+                    if(!_unfilteredQueues.contains(queue))
+                    {
+                        _filteredQueues.add(queue);
+                    }
+                }
+
+                filteredBindings.put(binding.getQueue(), bindingsForQueue);
+
+                _filteredBindings.set(filteredBindings);
+
+            }
+            catch (AMQInvalidArgumentException e)
+            {
+                _logger.warn("Cannoy bind queue " + queue + " to exchange this " + this + " beacuse selector cannot be parsed.", e);
+                return;
+            }
+        }
+        if (_logger.isDebugEnabled())
+        {
             _logger.debug("Binding queue " + queue
-                          + " with routing key " + new AMQShortString(binding.getBindingKey()) + " to exchange " + this);
+                          + " with routing key " + binding.getBindingKey() + " to exchange " + this);
         }
     }
 
-    protected void onUnbind(final Binding binding)
+    protected synchronized void onUnbind(final Binding binding)
     {
         AMQQueue queue = binding.getQueue();
-        Integer oldValue = _queues.get(queue);
-
-        boolean done = false;
-
-        while(!(done || oldValue == null))
+        if(binding.getArguments() == null || binding.getArguments().isEmpty() || !FilterSupport.argumentsContainFilter(binding.getArguments()))
         {
-            while(!(done || oldValue == null) && oldValue.intValue() == 1)
+            Integer oldValue = _queues.remove(queue);
+            if(ONE.equals(oldValue))
             {
-                if(!_queues.remove(queue, oldValue))
+                // should start checking filters for this queue
+                if(_filteredBindings.get().containsKey(queue))
                 {
-                    oldValue = _queues.get(queue);
+                    _filteredQueues.add(queue);
                 }
-                else
-                {
-                    done = true;
-                }
+                _unfilteredQueues.remove(queue);
             }
-            while(!(done || oldValue == null) && oldValue.intValue() != 1)
+            else
             {
-                Integer newValue = oldValue - 1;
-                if(!_queues.replace(queue, oldValue, newValue))
-                {
-                    oldValue = _queues.get(queue);
-                }
-                else
-                {
-                    done = true;
-                }
+                _queues.put(queue,oldValue-1);
             }
+        }
+        else // we are removing a binding with filters
+        {
+            HashMap<AMQQueue,Map<Binding, MessageFilter>> filteredBindings =
+                    new HashMap<AMQQueue,Map<Binding, MessageFilter>>(_filteredBindings.get());
+
+            Map<Binding,MessageFilter> bindingsForQueue = filteredBindings.remove(binding.getQueue());
+            if(bindingsForQueue.size()>1)
+            {
+                bindingsForQueue = new HashMap<Binding,MessageFilter>(bindingsForQueue);
+                bindingsForQueue.remove(binding);
+                filteredBindings.put(binding.getQueue(),bindingsForQueue);
+            }
+            else
+            {
+                _filteredQueues.remove(queue);
+            }
+            _filteredBindings.set(filteredBindings);
+
         }
     }
 }

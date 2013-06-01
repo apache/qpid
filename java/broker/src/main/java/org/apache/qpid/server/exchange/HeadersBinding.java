@@ -22,15 +22,19 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.AMQMessageHeader;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * Defines binding and matching based on a set of headers.
@@ -44,13 +48,14 @@ class HeadersBinding
     private final Set<String> required = new HashSet<String>();
     private final Map<String,Object> matches = new HashMap<String,Object>();
     private boolean matchAny;
+    private MessageFilter _filter;
 
     /**
      * Creates a header binding for a set of mappings. Those mappings whose value is
      * null or the empty string are assumed only to be required headers, with
      * no constraint on the value. Those with a non-null value are assumed to
      * define a required match of value.
-     * 
+     *
      * @param binding the binding to create a header binding using
      */
     public HeadersBinding(Binding binding)
@@ -66,9 +71,30 @@ class HeadersBinding
             _mappings = null;
         }
     }
-    
+
     private void initMappings()
     {
+        if(FilterSupport.argumentsContainFilter(_mappings))
+        {
+            try
+            {
+                _filter = FilterSupport.createMessageFilter(_mappings,_binding.getQueue());
+            }
+            catch (AMQInvalidArgumentException e)
+            {
+                _logger.warn("Invalid filter in binding queue '"+_binding.getQueue().getName()
+                             +"' to exchange '"+_binding.getExchange().getName()
+                             +"' with arguments: " + _binding.getArguments());
+                _filter = new MessageFilter()
+                    {
+                        @Override
+                        public boolean matches(Filterable message)
+                        {
+                            return false;
+                        }
+                    };
+            }
+        }
         for(Map.Entry<String, Object> entry : _mappings.entrySet())
         {
             String propertyName = entry.getKey();
@@ -87,7 +113,7 @@ class HeadersBinding
             }
         }
     }
-    
+
     public Binding getBinding()
     {
         return _binding;
@@ -109,6 +135,11 @@ class HeadersBinding
         {
             return matchAny ? or(headers) : and(headers);
         }
+    }
+
+    public boolean matches(InboundMessage message)
+    {
+        return matches(message.getMessageHeader()) && (_filter == null || _filter.matches(message));
     }
 
     private boolean and(AMQMessageHeader headers)
@@ -215,7 +246,7 @@ class HeadersBinding
     {
         return key.startsWith("X-") || key.startsWith("x-");
     }
-    
+
     @Override
     public boolean equals(final Object o)
     {

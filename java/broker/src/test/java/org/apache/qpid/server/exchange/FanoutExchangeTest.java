@@ -21,22 +21,32 @@
 package org.apache.qpid.server.exchange;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class FanoutExchangeTest extends TestCase
 {
@@ -51,7 +61,9 @@ public class FanoutExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseBind(any(Exchange.class),any(AMQQueue.class),any(AMQShortString.class))).thenReturn(true);
+        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), any(AMQShortString.class))).thenReturn(true);
+        when(securityManager.authoriseUnbind(any(Exchange.class), any(AMQShortString.class), any(AMQQueue.class))).thenReturn(true);
+
         _exchange.initialise(UUID.randomUUID(), _virtualHost, AMQShortString.valueOf("test"), false, 0, false);
     }
 
@@ -76,14 +88,14 @@ public class FanoutExchangeTest extends TestCase
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
-                _exchange.isBound((AMQShortString) null, (FieldTable) null, queue));
+                _exchange.isBound(new AMQShortString("matters"), (FieldTable) null, queue));
     }
 
     public void testIsBoundAMQShortStringAMQQueue() throws AMQSecurityException, AMQInternalException
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
-                _exchange.isBound((AMQShortString) null, queue));
+                _exchange.isBound(new AMQShortString("matters"), queue));
     }
 
     public void testIsBoundAMQQueue() throws AMQSecurityException, AMQInternalException
@@ -95,9 +107,86 @@ public class FanoutExchangeTest extends TestCase
 
     private AMQQueue bindQueue() throws AMQSecurityException, AMQInternalException
     {
+        AMQQueue queue = mockQueue();
+        _exchange.addBinding("matters", queue, null);
+        return queue;
+    }
+
+    private AMQQueue mockQueue()
+    {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
-        _exchange.addBinding("does not matter", queue, null);
         return queue;
+    }
+
+    public void testRoutingWithSelectors() throws Exception
+    {
+        AMQQueue queue1 = mockQueue();
+        AMQQueue queue2 = mockQueue();
+
+        _exchange.addBinding("key",queue1, null);
+        _exchange.addBinding("key",queue2, null);
+
+
+        List<? extends BaseQueue> result = _exchange.route(mockMessage(true));
+
+        assertEquals("Expected message to be routed to both queues", 2, result.size());
+        assertTrue("Expected queue1 to be routed to", result.contains(queue1));
+        assertTrue("Expected queue2 to be routed to", result.contains(queue2));
+
+        _exchange.addBinding("key2",queue2, Collections.singletonMap(AMQPFilterTypes.JMS_SELECTOR.toString(),(Object)"select = True"));
+
+
+        result = _exchange.route(mockMessage(true));
+
+        assertEquals("Expected message to be routed to both queues", 2, result.size());
+        assertTrue("Expected queue1 to be routed to", result.contains(queue1));
+        assertTrue("Expected queue2 to be routed to", result.contains(queue2));
+
+        _exchange.removeBinding("key",queue2,null);
+
+        result = _exchange.route(mockMessage(true));
+
+        assertEquals("Expected message to be routed to both queues", 2, result.size());
+        assertTrue("Expected queue1 to be routed to", result.contains(queue1));
+        assertTrue("Expected queue2 to be routed to", result.contains(queue2));
+
+
+        result = _exchange.route(mockMessage(false));
+
+        assertEquals("Expected message to be routed to queue1 only", 1, result.size());
+        assertTrue("Expected queue1 to be routed to", result.contains(queue1));
+        assertFalse("Expected queue2 not to be routed to", result.contains(queue2));
+
+        _exchange.addBinding("key",queue2, Collections.singletonMap(AMQPFilterTypes.JMS_SELECTOR.toString(),(Object)"select = False"));
+
+
+        result = _exchange.route(mockMessage(false));
+        assertEquals("Expected message to be routed to both queues", 2, result.size());
+        assertTrue("Expected queue1 to be routed to", result.contains(queue1));
+        assertTrue("Expected queue2 to be routed to", result.contains(queue2));
+
+
+    }
+
+    private InboundMessage mockMessage(boolean val)
+    {
+        final AMQMessageHeader header = mock(AMQMessageHeader.class);
+        when(header.containsHeader("select")).thenReturn(true);
+        when(header.getHeader("select")).thenReturn(val);
+        when(header.getHeaderNames()).thenReturn(Collections.singleton("select"));
+        when(header.containsHeaders(anySet())).then(new Answer<Object>()
+        {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                final Set names = (Set) invocation.getArguments()[0];
+                return names.size() == 1 && names.contains("select");
+
+            }
+        });
+        final InboundMessage inboundMessage = mock(InboundMessage.class);
+        when(inboundMessage.getMessageHeader()).thenReturn(header);
+        return inboundMessage;
     }
 }

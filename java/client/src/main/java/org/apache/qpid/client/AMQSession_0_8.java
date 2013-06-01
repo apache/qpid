@@ -184,7 +184,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         // thread.
         // We can't close the session if we are already in the process of
         // closing/closed the connection.
-                
+
         if (!(getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSED)
             || getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSING)))
         {
@@ -381,10 +381,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                     {
                         public AMQMethodEvent execute() throws AMQException, FailoverException
                         {
-                            AMQFrame boundFrame = getProtocolHandler().getMethodRegistry().createExchangeBoundBody
-                                                    (exchangeName, routingKey, queueName).generateFrame(getChannelId());
-
-                            return getProtocolHandler().syncWrite(boundFrame, ExchangeBoundOkBody.class);
+                            return sendExchangeBound(exchangeName, routingKey, queueName);
 
                         }
                     }, getAMQConnection()).execute();
@@ -398,7 +395,38 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         {
             throw new JMSAMQException("Queue bound query failed: " + e.getMessage(), e);
         }
-    }    
+    }
+
+    @Override
+    protected boolean isBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
+            throws AMQException
+    {
+
+        AMQMethodEvent response = new FailoverNoopSupport<AMQMethodEvent, AMQException>(
+                new FailoverProtectedOperation<AMQMethodEvent, AMQException>()
+                {
+                    public AMQMethodEvent execute() throws AMQException, FailoverException
+                    {
+                        return sendExchangeBound(exchangeName, routingKey, queueName);
+
+                    }
+                }, getAMQConnection()).execute();
+
+        // Extract and return the response code from the query.
+        ExchangeBoundOkBody responseBody = (ExchangeBoundOkBody) response.getMethod();
+
+        return (responseBody.getReplyCode() == 0);
+    }
+
+    private AMQMethodEvent sendExchangeBound(AMQShortString exchangeName,
+                                             AMQShortString routingKey,
+                                             AMQShortString queueName) throws AMQException, FailoverException
+    {
+        AMQFrame boundFrame = getProtocolHandler().getMethodRegistry().createExchangeBoundBody
+                                (exchangeName, routingKey, queueName).generateFrame(getChannelId());
+
+        return getProtocolHandler().syncWrite(boundFrame, ExchangeBoundOkBody.class);
+    }
 
     @Override
     public void sendConsume(BasicMessageConsumer_0_8 consumer,
@@ -527,7 +555,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
            JMSException ex = new JMSException("Error creating producer");
            ex.initCause(e);
            ex.setLinkedException(e);
-           
+
            throw ex;
        }
     }
@@ -609,7 +637,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                         // todo send low water mark when protocol allows.
                         // todo Be aware of possible changes to parameter order as versions change.
                         getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
-                  
+
                         return null;
                     }
                  }, getAMQConnection()).execute();
@@ -671,7 +699,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                                        false,
                                                        null).generateFrame(getChannelId());
         QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
-        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);        
+        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
         return okHandler.getMessageCount();
     }
 
@@ -689,9 +717,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     {
         return AMQMessageDelegateFactory.FACTORY_0_8;
     }
-    
+
     public void sync() throws AMQException
-    {    
+    {
         declareExchange(new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
     }
 
@@ -702,10 +730,10 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         throw new UnsupportedOperationException("The new addressing based syntax is "
                 + "not supported for AMQP 0-8/0-9 versions");
     }
-    
+
     protected void flushAcknowledgments()
     {
-        
+
     }
 
     @Override
@@ -744,7 +772,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         // if the Connection has closed then we should throw any exception that
         // has occurred that we were not waiting for
         AMQStateManager manager = getProtocolHandler().getStateManager();
-        
+
         Exception e = manager.getLastException();
         if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED)
                 && e != null)
@@ -752,15 +780,15 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             if (e instanceof AMQException)
             {
                 return (AMQException) e;
-            } 
+            }
             else
             {
                 AMQException amqe = new AMQException(AMQConstant
-                        .getConstant(AMQConstant.INTERNAL_ERROR.getCode()), 
+                        .getConstant(AMQConstant.INTERNAL_ERROR.getCode()),
                         e.getMessage(), e.getCause());
                 return amqe;
             }
-        } 
+        }
         else
         {
             return null;

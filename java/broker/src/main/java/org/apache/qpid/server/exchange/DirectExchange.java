@@ -20,9 +20,18 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -36,10 +45,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class DirectExchange extends AbstractExchange
 {
+
+    private static final Logger _logger = Logger.getLogger(DirectExchange.class);
+
     private static final class BindingSet
     {
         private CopyOnWriteArraySet<Binding> _bindings = new CopyOnWriteArraySet<Binding>();
-        private List<BaseQueue> _queues = new ArrayList<BaseQueue>();
+        private List<BaseQueue> _unfilteredQueues = new ArrayList<BaseQueue>();
+        private Map<BaseQueue, MessageFilter> _filteredQueues = new HashMap<BaseQueue, MessageFilter>();
 
         public synchronized void addBinding(Binding binding)
         {
@@ -56,26 +69,58 @@ public class DirectExchange extends AbstractExchange
         private void recalculateQueues()
         {
             List<BaseQueue> queues = new ArrayList<BaseQueue>(_bindings.size());
+            Map<BaseQueue, MessageFilter> filteredQueues = new HashMap<BaseQueue,MessageFilter>();
 
             for(Binding b : _bindings)
             {
-                if(!queues.contains(b.getQueue()))
+
+                if(FilterSupport.argumentsContainFilter(b.getArguments()))
                 {
-                    queues.add(b.getQueue());
+                    try
+                    {
+                        MessageFilter filter = FilterSupport.createMessageFilter(b.getArguments(), b.getQueue());
+                        filteredQueues.put(b.getQueue(),filter);
+                    }
+                    catch (AMQInvalidArgumentException e)
+                    {
+                        _logger.warn("Binding ignored: cannot parse filter on binding of queue '"+b.getQueue().getName()
+                                     + "' to exchange '" + b.getExchange().getName()
+                                     + "' with arguments: " + b.getArguments(), e);
+                    }
+
+                }
+                else
+                {
+
+                    if(!queues.contains(b.getQueue()))
+                    {
+                        queues.add(b.getQueue());
+                    }
                 }
             }
-            _queues = queues;
+            _unfilteredQueues = queues;
+            _filteredQueues = filteredQueues;
         }
 
 
-        public List<BaseQueue> getQueues()
+        public List<BaseQueue> getUnfilteredQueues()
         {
-            return _queues;
+            return _unfilteredQueues;
         }
 
         public CopyOnWriteArraySet<Binding> getBindings()
         {
             return _bindings;
+        }
+
+        public boolean hasFilteredQueues()
+        {
+            return !_filteredQueues.isEmpty();
+        }
+
+        public Map<BaseQueue,MessageFilter> getFilteredQueues()
+        {
+            return _filteredQueues;
         }
     }
 
@@ -98,7 +143,30 @@ public class DirectExchange extends AbstractExchange
 
         if(bindings != null)
         {
-            return bindings.getQueues();
+            List<BaseQueue> queues = bindings.getUnfilteredQueues();
+
+            if(bindings.hasFilteredQueues())
+            {
+                Set<BaseQueue> queuesSet = new HashSet<BaseQueue>(queues);
+
+                Map<BaseQueue, MessageFilter> filteredQueues = bindings.getFilteredQueues();
+                for(Map.Entry<BaseQueue, MessageFilter> entry : filteredQueues.entrySet())
+                {
+                    if(!queuesSet.contains(entry.getKey()))
+                    {
+                        MessageFilter filter = entry.getValue();
+                        if(filter.matches(payload))
+                        {
+                            queuesSet.add(entry.getKey());
+                        }
+                    }
+                }
+                if(queues.size() != queuesSet.size())
+                {
+                    queues = new ArrayList<BaseQueue>(queuesSet);
+                }
+            }
+            return queues;
         }
         else
         {
@@ -106,50 +174,6 @@ public class DirectExchange extends AbstractExchange
         }
 
 
-
-    }
-
-    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
-    {
-        return isBound(routingKey,queue);
-    }
-
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
-    {
-        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
-        BindingSet bindings = _bindingsByKey.get(bindingKey);
-        if(bindings != null)
-        {
-            return bindings.getQueues().contains(queue);
-        }
-        return false;
-
-    }
-
-    public boolean isBound(AMQShortString routingKey)
-    {
-        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
-        BindingSet bindings = _bindingsByKey.get(bindingKey);
-        return bindings != null && !bindings.getQueues().isEmpty();
-    }
-
-    public boolean isBound(AMQQueue queue)
-    {
-
-        for (BindingSet bindings : _bindingsByKey.values())
-        {
-            if(bindings.getQueues().contains(queue))
-            {
-                return true;
-            }
-
-        }
-        return false;
-    }
-
-    public boolean hasBindings()
-    {
-        return !getBindings().isEmpty();
     }
 
     protected void onBind(final Binding binding)
@@ -188,6 +212,5 @@ public class DirectExchange extends AbstractExchange
         }
 
     }
-
 
 }

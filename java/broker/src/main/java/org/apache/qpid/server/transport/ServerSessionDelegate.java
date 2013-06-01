@@ -1130,22 +1130,22 @@ public class ServerSessionDelegate extends SessionDelegate
 
                     if(queueMatched)
                     {
-                        result.setKeyNotMatched(!exchange.isBound(method.getBindingKey(), queue));
+                        final boolean keyMatched = exchange.isBound(method.getBindingKey(), queue);
+                        result.setKeyNotMatched(!keyMatched);
+                        if(method.hasArguments() && keyMatched)
+                        {
+                            result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments(), queue));
+                        }
                     }
                     else
                     {
                         result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
                     }
 
-                    if(method.hasArguments())
-                    {
-                        result.setArgsNotMatched(!exchange.isBound(result.getKeyNotMatched() ? null : method.getBindingKey(), method.getArguments(), queueMatched ? queue : null));
-                    }
-
                 }
                 else if (method.hasArguments())
                 {
-                    result.setArgsNotMatched(!exchange.isBound(null, method.getArguments(), queueMatched ? queue : null));
+                    result.setArgsNotMatched(!exchange.isBound(method.getArguments(), queue));
                 }
 
             }
@@ -1166,7 +1166,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             if(method.hasArguments())
             {
-                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments(), null));
+                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments()));
             }
             result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
 

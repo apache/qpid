@@ -111,7 +111,7 @@ public class BindingLoggingTest extends AbstractTestLogging
         String messageID = "BND-1001";
         String queueName = _queue.getQueueName();
         String exchange = "direct/amq.direct";
-        String message = "Create : Arguments : {x-filter-jms-selector=}";
+        String message = "Create";
         validateLogMessage(getLogMessage(results, 0), messageID, message, exchange, queueName, queueName);
     }
 
@@ -145,7 +145,7 @@ public class BindingLoggingTest extends AbstractTestLogging
 
         // Perform full testing on the binding
         String message = getMessageString(fromMessage(getLogMessage(results, 0)));
-        
+
         validateLogMessage(getLogMessage(results, 0), messageID, message,
                 "topic/amq.topic", "topic", "clientid:" + getName());
 
@@ -208,17 +208,17 @@ public class BindingLoggingTest extends AbstractTestLogging
         validateMessageID(messageID, log);
 
         String subject = fromSubject(log);
-        
+
         validateBindingDeleteArguments(subject, "/test");
 
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
     }
-    
+
     private void validateBindingDeleteArguments(String subject, String vhostName)
     {
         String routingKey = AbstractTestLogSubject.getSlice("rk", subject);
-        
+
         assertTrue("Routing Key does not start with TempQueue:"+routingKey,
                 routingKey.startsWith("TempQueue"));
         assertEquals("Virtualhost not correct.", vhostName,

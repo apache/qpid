@@ -159,9 +159,15 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 else
                 {
 
+                    String message = "Queue " + queueName + " not bound with routing key " +
+                                        body.getRoutingKey() + " to exchange " + exchangeName;
+
+                    if(message.length()>255)
+                    {
+                        message = message.substring(0,254);
+                    }
                     response = methodRegistry.createExchangeBoundOkBody(SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,	// replyCode
-                        new AMQShortString("Queue " + queueName + " not bound with routing key " +
-                        body.getRoutingKey() + " to exchange " + exchangeName));	// replyText
+                        new AMQShortString(message));	// replyText
                 }
             }
         }
