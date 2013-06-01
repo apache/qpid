@@ -440,7 +440,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                              // If the session has been closed don't waste time creating a thread to do
                                                              // flow control
                                                              if (!(AMQSession.this.isClosed() || AMQSession.this.isClosing()))
-                                                             {   
+                                                             {
                                                                  // Only execute change if previous state
                                                                  // was False
                                                                  if (!_suspendState.getAndSet(true))
@@ -535,7 +535,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract AMQException getLastException();
-    
+
     public void checkNotClosed() throws JMSException
     {
         try
@@ -553,7 +553,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 ssnClosed.setLinkedException(ex);
                 ssnClosed.initCause(ex);
                 throw ssnClosed;
-            } 
+            }
             else
             {
                 throw ise;
@@ -987,13 +987,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         // Delegate the work to the {@link #createDurableSubscriber(Topic, String, String, boolean)} method
         return createDurableSubscriber(topic, name, null, false);
     }
-    
+
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String selector, boolean noLocal)
             throws JMSException
     {
         checkNotClosed();
         Topic origTopic = checkValidTopic(topic, true);
-        
+
         AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
         if (dest.getDestSyntax() == DestSyntax.ADDR &&
             !dest.isAddressResolved())
@@ -1015,20 +1015,20 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 throw toJMSException("Error when verifying destination", e);
             }
         }
-        
+
         String messageSelector = ((selector == null) || (selector.trim().length() == 0)) ? null : selector;
-        
+
         _subscriberDetails.lock();
         try
         {
             TopicSubscriberAdaptor<C> subscriber = _subscriptions.get(name);
-            
+
             // Not subscribed to this name in the current session
             if (subscriber == null)
             {
                 // After the address is resolved routing key will not be null.
                 AMQShortString topicName = dest.getRoutingKey();
-                
+
                 if (_strictAMQP)
                 {
                     if (_strictAMQPFATAL)
@@ -1046,8 +1046,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 else
                 {
                     Map<String,Object> args = new HashMap<String,Object>();
-                    
-                    // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a 
+
+                    // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a
                     // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
                     // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
                     // argument, as specifying null for the arguments when querying means they should not be checked at all
@@ -1060,16 +1060,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // if the queue is bound to the exchange but NOT for this topic and selector, then the JMS spec
                     // says we must trash the subscription.
                     boolean isQueueBound = isQueueBound(dest.getExchangeName(), dest.getAMQQueueName());
-                    boolean isQueueBoundForTopicAndSelector = 
+                    boolean isQueueBoundForTopicAndSelector =
                                 isQueueBound(dest.getExchangeName().asString(), dest.getAMQQueueName().asString(), topicName.asString(), args);
 
                     if (isQueueBound && !isQueueBoundForTopicAndSelector)
                     {
                         deleteQueue(dest.getAMQQueueName());
                     }
+                    else if(isQueueBound) // todo - this is a hack for 0-8/9/9-1 which cannot check if arguments on a binding match
+                    {
+                        try
+                        {
+                            bindQueue(dest.getAMQQueueName(), dest.getRoutingKey(),
+                                                    FieldTable.convertToFieldTable(args), dest.getExchangeName(), dest, true);
+                        }
+                        catch(AMQException e)
+                        {
+                            throw toJMSException("Error when checking binding",e);
+                        }
+                    }
                 }
             }
-            else 
+            else
             {
                 // Subscribed with the same topic and no current / previous or same selector
                 if (subscriber.getTopic().equals(topic)
@@ -1100,7 +1112,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 _subscriberAccess.unlock();
             }
-    
+
             return subscriber;
         }
         catch (TransportException e)
@@ -1193,19 +1205,19 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 if (syntax == AMQDestination.DestSyntax.BURL)
                 {
                     // For testing we may want to use the prefix
-                    return new AMQQueue(getDefaultQueueExchangeName(), 
+                    return new AMQQueue(getDefaultQueueExchangeName(),
                                         new AMQShortString(AMQDestination.stripSyntaxPrefix(queueName)));
                 }
                 else
                 {
                     AMQQueue queue = new AMQQueue(queueName);
                     return queue;
-                    
+
                 }
             }
             else
             {
-                return new AMQQueue(queueName);            
+                return new AMQQueue(queueName);
             }
         }
         catch (URISyntaxException urlse)
@@ -1341,7 +1353,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         return new QueueReceiverAdaptor(dest, consumer);
     }
-    
+
     private Queue validateQueue(Destination dest) throws InvalidDestinationException
     {
         if (dest instanceof AMQDestination && dest instanceof javax.jms.Queue)
@@ -1497,9 +1509,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             else
             {
-                return new AMQTopic(topicName);            
+                return new AMQTopic(topicName);
             }
-        
+
         }
         catch (URISyntaxException urlse)
         {
@@ -1646,16 +1658,24 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _logger.debug("Message[" + message.toString() + "] received in session");
         }
         _highestDeliveryTag.set(message.getDeliveryTag());
-        _queue.add(message);        
+        _queue.add(message);
     }
 
     public void declareAndBind(AMQDestination amqd)
             throws
             AMQException
     {
+        declareAndBind(amqd, new FieldTable());
+    }
+
+
+    public void declareAndBind(AMQDestination amqd, FieldTable arguments)
+            throws
+            AMQException
+    {
         declareExchange(amqd, false);
         AMQShortString queueName = declareQueue(amqd, false);
-        bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName(), amqd);
+        bindQueue(queueName, amqd.getRoutingKey(), arguments, amqd.getExchangeName(), amqd);
     }
 
     /**
@@ -1681,7 +1701,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      *                      Not that this does not necessarily mean that the recovery has failed, but simply that it is
      *                      not possible to tell if it has or not.
      * @todo Be aware of possible changes to parameter order as versions change.
-     * 
+     *
      * Strategy for handling recover.
      * Flush any acks not yet sent.
      * Stop the message flow.
@@ -1730,7 +1750,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
 
             sendRecover();
-            
+
             markClean();
 
             if (!isSuspended)
@@ -1755,7 +1775,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected abstract void sendRecover() throws AMQException, FailoverException;
 
     protected abstract void flushAcknowledgments();
-    
+
     public void rejectMessage(UnprocessedMessage message, boolean requeue)
     {
 
@@ -1851,7 +1871,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setMessageListener(MessageListener listener) throws JMSException
     {
     }
-    
+
     /**
      * @see #unsubscribe(String, boolean)
      */
@@ -1866,20 +1886,20 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throw toJMSException("Exception while unsubscribing:" + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Unsubscribe from a subscription.
-     * 
+     *
      * @param name the name of the subscription to unsubscribe
      * @param safe allows safe unsubscribe operation that will not throw an {@link InvalidDestinationException} if the
      * queue is not bound, possibly due to the subscription being closed.
-     * @throws JMSException on 
+     * @throws JMSException on
      * @throws InvalidDestinationException
      */
     private void unsubscribe(String name, boolean safe) throws JMSException
     {
         TopicSubscriberAdaptor<C> subscriber;
-        
+
         _subscriberDetails.lock();
         try
         {
@@ -1896,11 +1916,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _subscriberDetails.unlock();
         }
-        
+
         if (subscriber != null)
         {
             subscriber.close();
-            
+
             // send a queue.delete for the subscription
             deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
         }
@@ -1917,7 +1937,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     _logger.warn("Unable to determine if subscription already exists for '" + name + "' for unsubscribe."
                                  + " Requesting queue deletion regardless.");
                 }
-                
+
                 deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
             }
             else // Queue Browser
@@ -1936,8 +1956,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     protected C createConsumerImpl(final Destination destination, final int prefetchHigh,
-                                                 final int prefetchLow, final boolean noLocal, final boolean exclusive, String selector, final FieldTable rawSelector,
-                                                 final boolean noConsume, final boolean autoClose) throws JMSException
+                                   final int prefetchLow, final boolean noLocal,
+                                   final boolean exclusive, String selector, final FieldTable rawSelector,
+                                   final boolean noConsume, final boolean autoClose) throws JMSException
     {
         checkTemporaryDestination(destination);
 
@@ -2111,7 +2132,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws JMSException;
 
     public abstract boolean isQueueBound(final AMQDestination destination) throws JMSException;
-    
+
     public abstract boolean isQueueBound(String exchangeName, String queueName, String bindingKey, Map<String,Object> args) throws JMSException;
 
     /**
@@ -2844,14 +2865,19 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 declareExchange(amqd, nowait);
             }
-    
+
             if (_delareQueues || amqd.isNameRequired())
             {
                 declareQueue(amqd, consumer.isNoLocal(), nowait);
             }
-            bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
+            if(!isBound(amqd.getExchangeName(), amqd.getAMQQueueName(), amqd.getRoutingKey()))
+            {
+                bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(),
+                        amqd instanceof AMQTopic ? consumer.getArguments() : null, amqd.getExchangeName(), amqd, nowait);
+            }
+
         }
-        
+
         AMQShortString queueName = amqd.getAMQQueueName();
 
         // store the consumer queue name
@@ -2895,10 +2921,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
+    protected abstract boolean isBound(AMQShortString exchangeName, AMQShortString amqQueueName, AMQShortString routingKey)
+            throws AMQException;
+
     public abstract void resolveAddress(AMQDestination dest,
                                                        boolean isConsumer,
                                                        boolean noLocal) throws AMQException;
-    
+
     private void registerProducer(long producerId, MessageProducer producer)
     {
         _producers.put(new Long(producerId), producer);
@@ -3189,7 +3218,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         }
 
-        
+
         public void run()
         {
             if (_dispatcherLogger.isDebugEnabled())
@@ -3304,7 +3333,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             if (updateRollbackMark(current, deliveryTag))
             {
                 _rollbackMark.compareAndSet(current, deliveryTag);
-            }            
+            }
         }
 
         private void notifyConsumer(UnprocessedMessage message)
@@ -3424,7 +3453,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         return super.isClosing() || _connection.isClosing();
     }
-    
+
     public boolean isDeclareExchanges()
     {
     	return _declareExchanges;

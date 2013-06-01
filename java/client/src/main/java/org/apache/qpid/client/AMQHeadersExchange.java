@@ -31,7 +31,7 @@ public class AMQHeadersExchange extends AMQDestination
 {
     public AMQHeadersExchange(BindingURL binding)
     {
-        this(binding.getExchangeName());
+        super(binding);
     }
 
     public AMQHeadersExchange(String name)

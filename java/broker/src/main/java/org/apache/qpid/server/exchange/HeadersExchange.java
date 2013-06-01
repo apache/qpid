@@ -69,14 +69,14 @@ public class HeadersExchange extends AbstractExchange
 {
 
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
-    
+
     private final ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>> _bindingsByKey =
                             new ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>>();
-    
+
     private final CopyOnWriteArrayList<HeadersBinding> _bindingHeaderMatchers =
                             new CopyOnWriteArrayList<HeadersBinding>();
 
-    
+
     public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
 
     public HeadersExchange()
@@ -87,112 +87,31 @@ public class HeadersExchange extends AbstractExchange
 
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
-        AMQMessageHeader header = payload.getMessageHeader();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Exchange " + getNameShortString() + ": routing message with headers " + header);
+            _logger.debug("Exchange " + getNameShortString() + ": routing message with headers " + payload.getMessageHeader());
         }
-        
+
         LinkedHashSet<BaseQueue> queues = new LinkedHashSet<BaseQueue>();
-        
+
         for (HeadersBinding hb : _bindingHeaderMatchers)
         {
-            if (hb.matches(header))
+            if (hb.matches(payload))
             {
                 Binding b = hb.getBinding();
-                
+
                 b.incrementMatches();
-                
+
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Exchange " + getNameShortString() + ": delivering message with headers " +
-                                  header + " to " + b.getQueue().getNameShortString());
+                                  payload.getMessageHeader() + " to " + b.getQueue().getNameShortString());
                 }
                 queues.add(b.getQueue());
             }
         }
-        
+
         return new ArrayList<BaseQueue>(queues);
-    }
-
-
-    public boolean isBound(String bindingKey, Map<String, Object> arguments, AMQQueue queue)
-    {
-        CopyOnWriteArraySet<Binding> bindings;
-        if(bindingKey == null)
-        {
-            bindings = new CopyOnWriteArraySet<Binding>(getBindings());
-        }
-        else
-        {
-            bindings = _bindingsByKey.get(bindingKey);
-        }
-
-        if(bindings != null)
-        {
-            for(Binding binding : bindings)
-            {
-                if(queue == null || binding.getQueue().equals(queue))
-                {
-                    return arguments == null ? binding.getArguments() == null : binding.getArguments().equals(arguments);
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
-    {
-        //fixme isBound here should take the arguements in to consideration.
-        return isBound(routingKey, queue);
-    }
-
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
-    {
-        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
-        
-        if(bindings != null)
-        {
-            for(Binding binding : bindings)
-            {
-                if(binding.getQueue().equals(queue))
-                {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-
-    public boolean isBound(AMQShortString routingKey)
-    {
-        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
-        return bindings != null && !bindings.isEmpty();
-    }
-
-    public boolean isBound(AMQQueue queue)
-    {
-        for (CopyOnWriteArraySet<Binding> bindings : _bindingsByKey.values())
-        {
-            for(Binding binding : bindings)
-            {
-                if(binding.getQueue().equals(queue))
-                {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-
-    public boolean hasBindings()
-    {
-        return !getBindings().isEmpty();
     }
 
     protected void onBind(final Binding binding)
@@ -216,7 +135,7 @@ public class HeadersExchange extends AbstractExchange
                 bindings = newBindings;
             }
         }
-        
+
         if(_logger.isDebugEnabled())
         {
             _logger.debug("Exchange " + getNameShortString() + ": Binding " + queue.getNameShortString() +

@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.test.unit.topic;
 
+import javax.jms.JMSException;
+import javax.naming.NamingException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -37,6 +40,7 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
+import org.apache.qpid.url.URLSyntaxException;
 
 
 /** @author Apache Software Foundation */
@@ -225,6 +229,44 @@ public class TopicSessionTest extends QpidBrokerTestCase
 
         AMQTopic topic = new AMQTopic(con, "testNoLocal");
 
+        noLocalTest(con, topic);
+
+
+        con.close();
+    }
+
+
+    public void testNoLocalDirectExchange() throws Exception
+    {
+
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+
+        AMQTopic topic = new AMQTopic("direct://amq.direct/testNoLocal/testNoLocal?routingkey='testNoLocal',exclusive='true',autodelete='true'");
+
+        noLocalTest(con, topic);
+
+
+        con.close();
+    }
+
+
+
+    public void testNoLocalFanoutExchange() throws Exception
+    {
+
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+
+        AMQTopic topic = new AMQTopic("fanout://amq.fanout/testNoLocal/testNoLocal?routingkey='testNoLocal',exclusive='true',autodelete='true'");
+
+        noLocalTest(con, topic);
+
+        con.close();
+    }
+
+
+    private void noLocalTest(AMQConnection con, AMQTopic topic)
+            throws JMSException, URLSyntaxException, AMQException, NamingException
+    {
         TopicSession session1 = con.createTopicSession(true, AMQSession.AUTO_ACKNOWLEDGE);
         TopicSubscriber noLocal = session1.createSubscriber(topic,  "", true);
 
@@ -304,9 +346,6 @@ public class TopicSessionTest extends QpidBrokerTestCase
         //test nolocal subscriber does message
         m = (TextMessage) noLocal.receive(1000);
         assertNotNull(m);
-
-
-        con.close();
         con2.close();
     }
 

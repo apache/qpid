@@ -56,19 +56,19 @@ public class StreamMessageTest extends QpidBrokerTestCase
 
     public void testStreamMessageEOF() throws Exception
     {
-        Connection con = (AMQConnection) getConnection("guest", "guest");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
         AMQHeadersExchange queue =
             new AMQHeadersExchange(new AMQBindingURL(
                     ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME
                     + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
+
         FieldTable ft = new FieldTable();
         ft.setString("x-match", "any");
         ft.setString("F1000", "1");
-        MessageConsumer consumer =
-            consumerSession.createConsumer(queue, Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), false, false, (String) null, ft);
-
+        consumerSession.declareAndBind(queue, ft);
+        MessageConsumer consumer = consumerSession.createConsumer(queue);
         // force synch to ensure the consumer has resulted in a bound queue
         // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         // This is the default now

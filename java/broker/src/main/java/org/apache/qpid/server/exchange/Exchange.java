@@ -145,18 +145,23 @@ public interface Exchange extends ExchangeReferrer
 
     Collection<Binding> getBindings();
 
+    boolean isBound(String bindingKey);
 
     boolean isBound(String bindingKey, AMQQueue queue);
 
-    public boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
+    boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
 
-    boolean isBound(String bindingKey);
+    boolean isBound(Map<String, Object> arguments, AMQQueue queue);
+
+    boolean isBound(String bindingKey, Map<String, Object> arguments);
 
     void removeReference(ExchangeReferrer exchange);
 
     void addReference(ExchangeReferrer exchange);
 
     boolean hasReferrers();
+
+
 
     public interface BindingListener
     {
