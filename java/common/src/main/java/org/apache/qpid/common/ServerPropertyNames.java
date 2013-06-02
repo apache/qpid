@@ -44,4 +44,11 @@ public final class ServerPropertyNames
      * Feature: Signifies that a server supports JMS selectors.
      */
     public static final String FEATURE_QPID_JMS_SELECTOR = "qpid.jms-selector";
+
+
+    public static final String QPID_PRODUCT = "qpid.product";
+    public static final String QPID_SERVER_VERSION = "qpid.server_version";
+    public static final String QPID_SERVER_NAME = "qpid.server_name";
+    public static final String QPID_SERVER_BUILD_VERSION = "qpid.server_build_version";
+
 }
