@@ -23,6 +23,7 @@ package org.apache.qpid.server.configuration;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -200,5 +201,11 @@ public class QueueConfiguration extends AbstractConfiguration
     public Map<String,String> getArguments()
     {
         return getMap("argument");
+    }
+
+    public Map<String,String> getBindingArguments(String routingKey)
+    {
+
+        return getConfig().containsKey(routingKey+".bindingArgument") ? getMap(routingKey+".bindingArgument") : null;
     }
 }
