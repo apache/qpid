@@ -255,6 +255,22 @@ public abstract class AbstractExchange implements Exchange
         return false;
     }
 
+
+    public final boolean isBound(Map<String, Object> arguments)
+    {
+        for(Binding b : _bindings)
+        {
+            if(((b.getArguments() == null || b.getArguments().isEmpty())
+                                   ? (arguments == null || arguments.isEmpty())
+                                   : b.getArguments().equals(arguments)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     @Override
     public final boolean isBound(String bindingKey, Map<String, Object> arguments)
     {
