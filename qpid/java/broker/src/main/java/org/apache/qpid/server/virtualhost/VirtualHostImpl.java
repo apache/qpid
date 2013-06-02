@@ -390,25 +390,26 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             }
             else
             {
-                configureBinding(queue, exchange, routingKey);
+
+                configureBinding(queue, exchange, routingKey, (Map) queueConfiguration.getBindingArguments(routingKey));
             }
         }
 
-        if (!exchange.equals(defaultExchange))
+        if (!exchange.equals(defaultExchange) && !routingKeys.contains(queueName))
         {
             //bind the queue to the named exchange using its name
-            configureBinding(queue, exchange, queueName);
+            configureBinding(queue, exchange, queueName, null);
         }
 
     }
 
-    private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey) throws AMQException
+    private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey, Map<String,Object> arguments) throws AMQException
     {
         if (_logger.isInfoEnabled())
         {
             _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + exchange.getName());
         }
-        exchange.addBinding(routingKey, queue, null);
+        exchange.addBinding(routingKey, queue, arguments);
     }
 
     public String getName()
