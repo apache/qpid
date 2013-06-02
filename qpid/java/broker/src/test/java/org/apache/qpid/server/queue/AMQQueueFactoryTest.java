@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import static org.mockito.Mockito.when;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -29,6 +31,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
@@ -44,6 +47,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 {
     private QueueRegistry _queueRegistry;
     private VirtualHost _virtualHost;
+    private Broker _broker;
 
     @Override
     public void setUp() throws Exception
@@ -55,14 +59,14 @@ public class AMQQueueFactoryTest extends QpidTestCase
         configXml.addProperty("store.class", TestableMemoryMessageStore.class.getName());
 
 
-        Broker broker = BrokerTestHelper.createBrokerMock();
+        _broker = BrokerTestHelper.createBrokerMock();
         if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
         {
-            when(broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
-            when(broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
+            when(_broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
+            when(_broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
         }
 
-        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, broker));
+        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, _broker));
 
         _queueRegistry = _virtualHost.getQueueRegistry();
 
@@ -376,6 +380,21 @@ public class AMQQueueFactoryTest extends QpidTestCase
         }
     }
 
+    public void testMessageGroupFromConfig() throws Exception
+    {
+
+        PropertiesConfiguration queueConfig = new PropertiesConfiguration();
+        queueConfig.addProperty("queues.queue.test.argument", "qpid.group_header_key=mykey");
+        queueConfig.addProperty("queues.queue.test.argument", "qpid.shared_msg_group=1");
+
+
+        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration("test", queueConfig, _broker);;
+        QueueConfiguration qConf = new QueueConfiguration("test", vhostConfig);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(qConf, _virtualHost);
+        assertEquals("mykey", queue.getArguments().get(SimpleAMQQueue.QPID_GROUP_HEADER_KEY));
+        assertEquals("1", queue.getArguments().get(SimpleAMQQueue.QPID_SHARED_MSG_GROUP));
+    }
+
     private String generateStringWithLength(char ch, int length)
     {
         StringBuilder sb = new StringBuilder();
@@ -385,4 +404,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
         }
         return sb.toString();
     }
+
+
 }

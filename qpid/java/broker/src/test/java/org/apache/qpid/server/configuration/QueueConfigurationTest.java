@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration;
 
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -237,6 +238,43 @@ public class QueueConfigurationTest extends TestCase
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals("mydescription", qConf.getDescription());
     }
+
+
+    public void testQueueSingleArgument() throws ConfigurationException
+    {
+        //Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertTrue(qConf.getArguments().isEmpty());
+
+        // Check explicit value
+        final VirtualHostConfiguration vhostConfig = overrideConfiguration("argument", "qpid.group_header_key=mykey");
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals(Collections.singletonMap("qpid.group_header_key","mykey"), qConf.getArguments());
+    }
+
+
+    public void testQueueMultipleArguments() throws ConfigurationException
+    {
+        //Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertTrue(qConf.getArguments().isEmpty());
+
+
+        PropertiesConfiguration queueConfig = new PropertiesConfiguration();
+        queueConfig.addProperty("queues.queue.test.argument", "qpid.group_header_key=mykey");
+        queueConfig.addProperty("queues.queue.test.argument", "qpid.shared_msg_group=1");
+
+        CompositeConfiguration config = new CompositeConfiguration();
+        config.addConfiguration(_fullHostConf.getConfig());
+        config.addConfiguration(queueConfig);
+
+        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration("test", config, _broker);;
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals(2, qConf.getArguments().size());
+        assertEquals("mykey", qConf.getArguments().get("qpid.group_header_key"));
+        assertEquals("1", qConf.getArguments().get("qpid.shared_msg_group"));
+    }
+
 
     private VirtualHostConfiguration overrideConfiguration(String property, Object value)
             throws ConfigurationException

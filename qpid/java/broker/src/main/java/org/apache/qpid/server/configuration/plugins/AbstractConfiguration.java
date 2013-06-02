@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.server.configuration.plugins;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
@@ -323,6 +325,19 @@ public abstract class AbstractConfiguration
     protected void setConfig(Configuration config)
     {
         _config = config;
+    }
+
+    protected Map<String,String> getMap(String name)
+    {
+        List elements = getListValue(name,Collections.emptyList());
+
+        Map<String,String> map = new LinkedHashMap();
+        for(Object item : elements)
+        {
+            String[] keyValue = String.valueOf(item).split("=",2);
+            map.put(keyValue[0].trim(), keyValue.length > 1 ? keyValue[1].trim() : null);
+        }
+        return map;
     }
 }
 
