@@ -45,6 +45,7 @@ import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.codec.AMQCodecFactory;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
@@ -387,9 +388,20 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
             String locales = "en_US";
 
+
+            FieldTable serverProperties = FieldTableFactory.newFieldTable();
+
+            serverProperties.setString(ConnectionStartProperties.PRODUCT,
+                    QpidProperties.getProductName());
+            serverProperties.setString(ConnectionStartProperties.VERSION_0_8,
+                    QpidProperties.getReleaseVersion());
+            serverProperties.setString(ConnectionStartProperties.CLIENT_ID_0_8,
+                    _broker.getName());
+
+
             AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
                                                                                        (short) pv.getActualMinorVersion(),
-                                                                                       null,
+                                                                                       serverProperties,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
             _sender.send(asByteBuffer(responseBody.generateFrame(0)));
