@@ -239,6 +239,21 @@ public class AMQQueueFactory
                 {
                     priorities = ((Number)prioritiesObj).intValue();
                 }
+                else if(prioritiesObj instanceof String)
+                {
+                    try
+                    {
+                        priorities = Integer.parseInt(prioritiesObj.toString());
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        // TODO - should warn here of invalid format
+                    }
+                }
+                else
+                {
+                    // TODO - should warn here of invalid format
+                }
             }
             else if(arguments.containsKey(QPID_QUEUE_SORT_KEY))
             {
@@ -444,6 +459,11 @@ public class AMQQueueFactory
     private static Map<String, Object> createQueueArgumentsFromConfig(QueueConfiguration config)
     {
         Map<String,Object> arguments = new HashMap<String,Object>();
+
+        if(config.getArguments() != null && !config.getArguments().isEmpty())
+        {
+            arguments.putAll(config.getArguments());
+        }
 
         if(config.isLVQ() || config.getLVQKey() != null)
         {
