@@ -284,6 +284,12 @@ public class DefaultExchange implements Exchange
     }
 
     @Override
+    public boolean isBound(Map<String, Object> arguments)
+    {
+        return (arguments == null || arguments.isEmpty()) && hasBindings();
+    }
+
+    @Override
     public boolean isBound(String bindingKey)
     {
         return _virtualHost.getQueueRegistry().getQueue(bindingKey) != null;
