@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -93,7 +94,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     private static Map<String, Object> createConnectionProperties(final Broker broker)
     {
-        final Map<String,Object> map = new HashMap<String,Object>(2);
+        final Map<String,Object> map = new HashMap<String,Object>();
         // Federation tag is used by the client to identify the broker instance
         map.put(ServerPropertyNames.FEDERATION_TAG, broker.getId().toString());
         final List<String> features = getFeatures(broker);
@@ -101,6 +102,12 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             map.put(ServerPropertyNames.QPID_FEATURES, features);
         }
+
+        map.put(ServerPropertyNames.QPID_PRODUCT, QpidProperties.getProductName());
+        map.put(ServerPropertyNames.QPID_SERVER_VERSION, QpidProperties.getReleaseVersion());
+        map.put(ServerPropertyNames.QPID_SERVER_BUILD_VERSION, QpidProperties.getBuildVersion());
+        map.put(ServerPropertyNames.QPID_SERVER_NAME, broker.getName());
+
         return map;
     }
 

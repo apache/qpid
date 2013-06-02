@@ -23,6 +23,8 @@ package org.apache.qpid.server.protocol;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +40,9 @@ import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -162,6 +167,15 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
 
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(_broker.getSubjectCreator(
                 getLocalAddress())));
+
+        Map<Symbol,Object> serverProperties = new LinkedHashMap<Symbol, Object>();
+        serverProperties.put(Symbol.valueOf("qpid.product"), QpidProperties.getProductName());
+        serverProperties.put(Symbol.valueOf("qpid.version"), QpidProperties.getReleaseVersion());
+        serverProperties.put(Symbol.valueOf("qpid.build"), QpidProperties.getBuildVersion());
+        serverProperties.put(Symbol.valueOf("qpid.instanceName"), _broker.getName());
+
+        _conn.setProperties(serverProperties);
+
         _conn.setRemoteAddress(_network.getRemoteAddress());
         _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId, _port, _transport));
         _conn.setFrameOutputHandler(this);

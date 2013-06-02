@@ -22,6 +22,7 @@
 package org.apache.qpid.amqp_1_0.transport;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
@@ -119,6 +120,8 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private String _remoteHostname;
     private Error _remoteError;
 
+    private Map _properties;
+
     public ConnectionEndpoint(Container container, SaslServerProvider cbs)
     {
         _container = container;
@@ -170,6 +173,11 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     public void setFrameOutputHandler(final FrameOutputHandler<FrameBody> frameOutputHandler)
     {
         _frameOutputHandler = frameOutputHandler;
+    }
+
+    public void setProperties(Map<Symbol,Object> properties)
+    {
+        _properties = properties;
     }
 
     public synchronized SessionEndpoint createSession(String name)
@@ -231,7 +239,10 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         open.setContainerId(_container.getId());
         open.setMaxFrameSize(getDesiredMaxFrameSize());
         open.setHostname(getRemoteHostname());
-
+        if(_properties != null)
+        {
+            open.setProperties(_properties);
+        }
 
         send(CONNECTION_CONTROL_CHANNEL, open);
     }
