@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.util.Collections;
+import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 
@@ -66,7 +68,8 @@ public class QueueConfiguration extends AbstractConfiguration
                             "lvqKey",
                             "sortKey",
                             "maximumDeliveryCount",
-                            "deadLetterQueues"
+                            "deadLetterQueues",
+                            "argument"
         };
     }
 
@@ -85,7 +88,7 @@ public class QueueConfiguration extends AbstractConfiguration
     {
         return getBooleanValue("durable");
     }
-    
+
     public boolean getExclusive()
     {
         return getBooleanValue("exclusive");
@@ -192,5 +195,10 @@ public class QueueConfiguration extends AbstractConfiguration
     public boolean isDeadLetterQueueEnabled()
     {
         return getBooleanValue("deadLetterQueues", _vHostConfig.isDeadLetterQueueEnabled());
+    }
+
+    public Map<String,String> getArguments()
+    {
+        return getMap("argument");
     }
 }
