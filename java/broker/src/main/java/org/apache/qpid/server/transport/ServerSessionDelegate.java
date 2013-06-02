@@ -1132,30 +1132,64 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         final boolean keyMatched = exchange.isBound(method.getBindingKey(), queue);
                         result.setKeyNotMatched(!keyMatched);
-                        if(method.hasArguments() && keyMatched)
+                        if(method.hasArguments())
                         {
-                            result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments(), queue));
+                            if(keyMatched)
+                            {
+                                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments(), queue));
+                            }
+                            else
+                            {
+                                result.setArgsNotMatched(!exchange.isBound(method.getArguments(), queue));
+                            }
                         }
                     }
                     else
                     {
-                        result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+                        boolean keyMatched = exchange.isBound(method.getBindingKey());
+                        result.setKeyNotMatched(!keyMatched);
+                        if(method.hasArguments())
+                        {
+                            if(keyMatched)
+                            {
+                                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments()));
+                            }
+                            else
+                            {
+                                result.setArgsNotMatched(!exchange.isBound(method.getArguments()));
+                            }
+                        }
                     }
 
                 }
                 else if (method.hasArguments())
                 {
-                    result.setArgsNotMatched(!exchange.isBound(method.getArguments(), queue));
+                    if(queueMatched)
+                    {
+                        result.setArgsNotMatched(!exchange.isBound(method.getArguments(), queue));
+                    }
+                    else
+                    {
+                        result.setArgsNotMatched(!exchange.isBound(method.getArguments()));
+                    }
                 }
 
             }
             else if(exchange != null && method.hasBindingKey())
             {
-                result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+                final boolean keyMatched = exchange.isBound(method.getBindingKey());
+                result.setKeyNotMatched(!keyMatched);
 
                 if(method.hasArguments())
                 {
-                    result.setArgsNotMatched(!exchange.isBound(result.getKeyNotMatched() ? null : method.getBindingKey(), method.getArguments(), queue));
+                    if(keyMatched)
+                    {
+                        result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments()));
+                    }
+                    else
+                    {
+                        result.setArgsNotMatched(!exchange.isBound(method.getArguments()));
+                    }
                 }
 
 
@@ -1164,11 +1198,20 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else if(exchange != null && method.hasBindingKey())
         {
+            final boolean keyMatched = exchange.isBound(method.getBindingKey());
+            result.setKeyNotMatched(!keyMatched);
+
             if(method.hasArguments())
             {
-                result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments()));
+                if(keyMatched)
+                {
+                    result.setArgsNotMatched(!exchange.isBound(method.getBindingKey(), method.getArguments()));
+                }
+                else
+                {
+                    result.setArgsNotMatched(!exchange.isBound(method.getArguments()));
+                }
             }
-            result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
 
         }
         else if(exchange != null && method.hasArguments())
