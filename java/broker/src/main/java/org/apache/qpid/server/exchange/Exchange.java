@@ -155,6 +155,8 @@ public interface Exchange extends ExchangeReferrer
 
     boolean isBound(String bindingKey, Map<String, Object> arguments);
 
+    boolean isBound(Map<String, Object> arguments);
+
     void removeReference(ExchangeReferrer exchange);
 
     void addReference(ExchangeReferrer exchange);
