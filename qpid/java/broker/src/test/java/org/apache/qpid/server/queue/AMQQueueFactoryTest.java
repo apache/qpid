@@ -156,7 +156,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
-        assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
+        assertEquals("Alternate exchange name was not as expected", dlExchangeName.asString(), altExchange.getName());
         assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType().getName());
 
         assertNotNull("The alternate exchange was not registered as expected", exReg.getExchange(dlExchangeName));
@@ -195,7 +195,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryCount());
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
-        assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
+        assertEquals("Alternate exchange name was not as expected", dlExchangeName.toString(), altExchange.getName());
         assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType().getName());
 
         assertNotNull("The alternate exchange was not registered as expected", exReg.getExchange(dlExchangeName));

@@ -126,7 +126,7 @@ public class AMQShortStringTest extends TestCase
         }
         AMQShortString string = new AMQShortString(bytes);
         assertEquals("constructed amq short string length differs from expected", 4, string.length());
-        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+        assertTrue("constructed amq short string differs from expected", string.equalsCharSequence("test"));
     }
 
     /**
@@ -139,7 +139,7 @@ public class AMQShortStringTest extends TestCase
     {
         AMQShortString string = new AMQShortString("test");
         assertEquals("constructed amq short string length differs from expected", 4, string.length());
-        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+        assertTrue("constructed amq short string differs from expected", string.equalsCharSequence("test"));
     }
 
     /**
@@ -153,7 +153,7 @@ public class AMQShortStringTest extends TestCase
         char[] chars = "test".toCharArray();
         AMQShortString string = new AMQShortString(chars);
         assertEquals("constructed amq short string length differs from expected", 4, string.length());
-        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+        assertTrue("constructed amq short string differs from expected", string.equalsCharSequence("test"));
     }
 
     /**
@@ -166,7 +166,7 @@ public class AMQShortStringTest extends TestCase
     {
         AMQShortString string = new AMQShortString((CharSequence) "test");
         assertEquals("constructed amq short string length differs from expected", 4, string.length());
-        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+        assertTrue("constructed amq short string differs from expected", string.equalsCharSequence("test"));
     }
 
     /**
