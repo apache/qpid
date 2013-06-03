@@ -519,9 +519,9 @@ public class MessageStoreTest extends QpidTestCase
         if (useSelectors)
         {
             assertTrue("Binding does not contain a Selector argument.",
-                    binding.getArguments().containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue()));
+                    binding.getArguments().containsKey(AMQPFilterTypes.JMS_SELECTOR.toString()));
             assertEquals("The binding selector argument is incorrect", SELECTOR_VALUE,
-                    binding.getArguments().get(AMQPFilterTypes.JMS_SELECTOR.getValue()).toString());
+                    binding.getArguments().get(AMQPFilterTypes.JMS_SELECTOR.toString()).toString());
         }
     }
 
