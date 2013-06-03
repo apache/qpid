@@ -461,26 +461,15 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     public boolean equals(Object o)
     {
 
-
-        if(o instanceof AMQShortString)
-        {
-            return equals((AMQShortString)o);
-        }
-        if(o instanceof CharSequence)
-        {
-            return equals((CharSequence)o);
-        }
-
-        if (o == null)
-        {
-            return false;
-        }
-
         if (o == this)
         {
             return true;
         }
 
+        if(o instanceof AMQShortString)
+        {
+            return equals((AMQShortString) o);
+        }
 
         return false;
 
@@ -544,11 +533,11 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     }
 
-    public boolean equals(CharSequence s)
+    public boolean equalsCharSequence(CharSequence s)
     {
         if(s instanceof AMQShortString)
         {
-            return equals((AMQShortString)s);
+            return equals((AMQShortString) s);
         }
 
         if (s == null)
@@ -602,7 +591,11 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public int compareTo(AMQShortString name)
     {
-        if (name == null)
+        if(name == this)
+        {
+            return 0;
+        }
+        else if (name == null)
         {
             return 1;
         }
