@@ -52,7 +52,7 @@ public class FilterSupport
 
     static MessageFilter createJMSSelectorFilter(Map<String, Object> args) throws AMQInvalidArgumentException
     {
-        final String selectorString = (String) args.get(AMQPFilterTypes.JMS_SELECTOR.getValue());
+        final String selectorString = (String) args.get(AMQPFilterTypes.JMS_SELECTOR.toString());
         return getMessageFilter(selectorString);
     }
 
