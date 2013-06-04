@@ -479,7 +479,6 @@ bool Connection::isOpen() { return adapter.isOpen(); }
 
 Connection::OutboundFrameTracker::OutboundFrameTracker(Connection& _con) : con(_con), next(0) {}
 void Connection::OutboundFrameTracker::close() { next->close(); }
-size_t Connection::OutboundFrameTracker::getBuffered() const { return next->getBuffered(); }
 void Connection::OutboundFrameTracker::abort() { next->abort(); }
 void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
 void Connection::OutboundFrameTracker::send(framing::AMQFrame& f)

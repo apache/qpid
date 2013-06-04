@@ -96,10 +96,6 @@ class SessionState : public qpid::SessionState,
 
     void setTimeout(uint32_t seconds);
 
-    /** OutputControl **/
-    void abort();
-    void activateOutput();
-
     void senderCompleted(const framing::SequenceSet& ranges);
 
     void sendCompletion();
