@@ -48,7 +48,6 @@ class AsynchIOHandler : public OutputControl {
     AsynchIO* aio;
     ConnectionCodec::Factory* factory;
     ConnectionCodec* codec;
-    uint32_t reads;
     bool readError;
     bool isClient;
     bool nodict;
