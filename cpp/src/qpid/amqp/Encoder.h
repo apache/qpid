@@ -98,6 +98,9 @@ class Encoder
     char* skip(size_t);
     void writeBytes(const char* bytes, size_t count);
     virtual ~Encoder() {}
+    size_t getSize() const;
+  protected:
+    char* getData();
   private:
     char* data;
     size_t size;

@@ -26,7 +26,7 @@
 
 namespace qpid {
 namespace amqp {
-
+class MapHandler;
 /**
  *
  */
@@ -77,23 +77,36 @@ class MessageEncoder : public Encoder
         virtual std::string getReplyToGroupId() const = 0;
     };
 
+    class ApplicationProperties
+    {
+      public:
+        virtual ~ApplicationProperties() {}
+        virtual void handle(MapHandler&) const = 0;
+    };
+
     MessageEncoder(char* d, size_t s, bool o=false) : Encoder(d, s), optimise(o) {}
     void writeHeader(const Header&);
     void writeProperties(const Properties&);
+    void writeApplicationProperties(const ApplicationProperties&);
     void writeApplicationProperties(const qpid::types::Variant::Map& properties);
     void writeApplicationProperties(const qpid::types::Variant::Map& properties, bool useLargeMap);
 
     void writeMap(const qpid::types::Variant::Map& map, const Descriptor*, bool useLargeMap);
 
-    static size_t getEncodedSize(const Header&, const Properties&, const qpid::types::Variant::Map&, const std::string&);
-    static size_t getEncodedSize(const Properties&, const qpid::types::Variant::Map&, const std::string&);
+    static size_t getEncodedSize(const Header&);
+    static size_t getEncodedSize(const Properties&);
+    static size_t getEncodedSize(const ApplicationProperties&);
+    static size_t getEncodedSize(const Header&, const Properties&, const ApplicationProperties&, const std::string&);
+
     static size_t getEncodedSize(const qpid::types::Variant::Map&, bool useLargeMap);
     static size_t getEncodedSize(const qpid::types::Variant::Map&);
-
+    static size_t getEncodedSize(const Header&, const Properties&, const qpid::types::Variant::Map&, const std::string&);
+    static size_t getEncodedSize(const Properties&, const qpid::types::Variant::Map&, const std::string&);
   private:
     bool optimise;
 
     static size_t getEncodedSizeForElements(const qpid::types::Variant::Map&);
+    static size_t getEncodedSizeForContent(const std::string&);
 };
 }} // namespace qpid::amqp
 

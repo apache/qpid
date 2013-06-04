@@ -28,7 +28,7 @@
 
 #include "qpid/log/Statement.h"
 #include "qpid/broker/FedOps.h"
-#include "qpid/broker/MapHandler.h"
+#include "qpid/amqp/MapHandler.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -208,26 +208,26 @@ bool XmlExchange::unbindLH(Queue::shared_ptr queue, const std::string& bindingKe
 }
 
 namespace {
-class DefineExternals : public MapHandler
+class DefineExternals : public qpid::amqp::MapHandler
 {
   public:
     DefineExternals(DynamicContext* c) : context(c) { assert(context); }
-    void handleBool(const MapHandler::CharSequence& key, bool value) { process(std::string(key.data, key.size), (int) value); }
-    void handleUint8(const MapHandler::CharSequence& key, uint8_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleUint16(const MapHandler::CharSequence& key, uint16_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleUint32(const MapHandler::CharSequence& key, uint32_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleUint64(const MapHandler::CharSequence& key, uint64_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleInt8(const MapHandler::CharSequence& key, int8_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleInt16(const MapHandler::CharSequence& key, int16_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleInt32(const MapHandler::CharSequence& key, int32_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleInt64(const MapHandler::CharSequence& key, int64_t value) { process(std::string(key.data, key.size), (int) value); }
-    void handleFloat(const MapHandler::CharSequence& key, float value) { process(std::string(key.data, key.size), value); }
-    void handleDouble(const MapHandler::CharSequence& key, double value) { process(std::string(key.data, key.size), value); }
-    void handleString(const MapHandler::CharSequence& key, const MapHandler::CharSequence& value, const MapHandler::CharSequence& /*encoding*/)
+    void handleBool(const qpid::amqp::CharSequence& key, bool value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint8(const qpid::amqp::CharSequence& key, uint8_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint16(const qpid::amqp::CharSequence& key, uint16_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint32(const qpid::amqp::CharSequence& key, uint32_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleUint64(const qpid::amqp::CharSequence& key, uint64_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt8(const qpid::amqp::CharSequence& key, int8_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt16(const qpid::amqp::CharSequence& key, int16_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt32(const qpid::amqp::CharSequence& key, int32_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleInt64(const qpid::amqp::CharSequence& key, int64_t value) { process(std::string(key.data, key.size), (int) value); }
+    void handleFloat(const qpid::amqp::CharSequence& key, float value) { process(std::string(key.data, key.size), value); }
+    void handleDouble(const qpid::amqp::CharSequence& key, double value) { process(std::string(key.data, key.size), value); }
+    void handleString(const qpid::amqp::CharSequence& key, const qpid::amqp::CharSequence& value, const qpid::amqp::CharSequence& /*encoding*/)
     {
         process(std::string(key.data, key.size), std::string(value.data, value.size));
     }
-    void handleVoid(const MapHandler::CharSequence&) {}
+    void handleVoid(const qpid::amqp::CharSequence&) {}
   private:
     void process(const std::string& key, double value)
     {

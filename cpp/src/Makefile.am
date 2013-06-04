@@ -537,6 +537,11 @@ libqpidcommon_la_SOURCES +=			\
   qpid/amqp/Encoder.cpp                       	\
   qpid/amqp/ListReader.h			\
   qpid/amqp/LoggingReader.h			\
+  qpid/amqp/MapHandler.h                       	\
+  qpid/amqp/MapEncoder.h                       	\
+  qpid/amqp/MapEncoder.cpp                      \
+  qpid/amqp/MapSizeCalculator.h                 \
+  qpid/amqp/MapSizeCalculator.cpp               \
   qpid/amqp/MapReader.h                       	\
   qpid/amqp/MapReader.cpp                       \
   qpid/amqp/MessageEncoder.h                    \
@@ -644,7 +649,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/LinkRegistry.h \
   qpid/broker/Lvq.h \
   qpid/broker/Lvq.cpp \
-  qpid/broker/MapHandler.h \
   qpid/broker/Message.cpp \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.cpp \
