@@ -34,7 +34,6 @@ class ConnectionOutputHandler : public virtual qpid::framing::OutputHandler, pub
 {
   public:
     virtual void close() = 0;
-    virtual size_t getBuffered() const { return 0; }
 };
 
 }}
