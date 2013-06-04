@@ -63,6 +63,7 @@ class AsynchIOHandler : public OutputControl {
 
     // Output side
     QPID_COMMON_EXTERN void abort();
+    QPID_COMMON_EXTERN void connectionEstablished();
     QPID_COMMON_EXTERN void activateOutput();
 
     // Input side

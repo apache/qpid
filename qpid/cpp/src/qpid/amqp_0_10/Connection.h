@@ -65,6 +65,7 @@ class Connection  : public sys::ConnectionCodec,
     bool isClosed() const;
     bool canEncode();
     void abort();
+    void connectionEstablished();
     void activateOutput();
     void closed();              // connection closed by peer.
     void close();               // closing from this end.

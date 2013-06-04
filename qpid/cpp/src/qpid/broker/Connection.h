@@ -189,6 +189,7 @@ class Connection : public sys::ConnectionInputHandler,
         OutboundFrameTracker(Connection&);
         void close();
         void abort();
+        void connectionEstablished();
         void activateOutput();
         void send(framing::AMQFrame&);
         void wrap(sys::ConnectionOutputHandlerPtr&);
