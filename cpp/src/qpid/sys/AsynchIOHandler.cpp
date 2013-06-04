@@ -100,6 +100,13 @@ void AsynchIOHandler::abort() {
     aio->queueWriteClose();
 }
 
+void AsynchIOHandler::connectionEstablished() {
+    if (timeoutTimerTask) {
+        timeoutTimerTask->cancel();
+        timeoutTimerTask.reset();
+    }
+}
+
 void AsynchIOHandler::activateOutput() {
     aio->notifyPendingWrite();
 }
@@ -123,13 +130,6 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (codec) {                // Already initiated
         try {
             decoded = codec->decode(buff->bytes+buff->dataStart, buff->dataCount);
-            // When we've decoded 3 reads (probably frames) we will have authenticated and
-            // started heartbeats, if specified, in many (but not all) cases so now we will cancel
-            // the idle connection timeout - this is really hacky, and would be better implemented
-            // in the connection, but that isn't actually created until the first decode.
-            if (reads == 3) {
-                timeoutTimerTask->cancel();
-            }
         }catch(const std::exception& e){
             QPID_LOG(error, e.what());
             readError = true;
@@ -203,10 +203,6 @@ void AsynchIOHandler::idle(AsynchIO&){
     if (isClient && codec == 0) {
         codec = factory->create(*this, identifier, getSecuritySettings(aio, nodict));
         write(framing::ProtocolInitiation(codec->getVersion()));
-        // We've just sent the protocol negotiation so we can cancel the timeout for that
-        // This is not ideal, because we've not received anything yet, but heartbeats will
-        // be active soon
-        timeoutTimerTask->cancel();
         return;
     }
     if (codec == 0) return;

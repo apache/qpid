@@ -118,6 +118,7 @@ size_t  Connection::encode(char* buffer, size_t size) {
 }
 
 void Connection::abort() { output.abort(); }
+void Connection::connectionEstablished() { output.connectionEstablished(); }
 void Connection::activateOutput() { output.activateOutput(); }
 
 void  Connection::close() {

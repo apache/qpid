@@ -48,6 +48,7 @@ class TcpTransport : public Transport
 
     void activateOutput();
     void abort();
+    void connectionEstablished() {};
     void close();
 
   private:

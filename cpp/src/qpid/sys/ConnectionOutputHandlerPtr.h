@@ -43,6 +43,7 @@ class ConnectionOutputHandlerPtr : public ConnectionOutputHandler
 
     void close() { next->close(); }
     void abort() { next->abort(); }
+    void connectionEstablished() { next->connectionEstablished(); }
     void activateOutput() { next->activateOutput(); }
     void send(framing::AMQFrame& f) { next->send(f); }
 
