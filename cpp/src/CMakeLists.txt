@@ -965,6 +965,11 @@ set (qpidcommon_SOURCES
      qpid/amqp/Descriptor.cpp
      qpid/amqp/Encoder.h
      qpid/amqp/Encoder.cpp
+     qpid/amqp/MapHandler.h
+     qpid/amqp/MapEncoder.h
+     qpid/amqp/MapEncoder.cpp
+     qpid/amqp/MapSizeCalculator.h
+     qpid/amqp/MapSizeCalculator.cpp
      qpid/amqp/MapReader.h
      qpid/amqp/MapReader.cpp
      qpid/amqp/MessageEncoder.h

@@ -45,6 +45,7 @@ struct Descriptor
     Descriptor(uint64_t code);
     Descriptor(const CharSequence& symbol);
     bool match(const std::string&, uint64_t) const;
+    size_t getSize() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Descriptor& d);

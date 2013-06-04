@@ -49,7 +49,7 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     std::string getAnnotationAsString(const std::string& key) const;
     bool getTtl(uint64_t&) const;
     std::string getContent() const;
-    void processProperties(MapHandler&) const;
+    void processProperties(qpid::amqp::MapHandler&) const;
     std::string getUserId() const;
 
     qpid::amqp::MessageId getMessageId() const;

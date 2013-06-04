@@ -22,7 +22,7 @@
 #include "qpid/broker/Message.h"
 
 #include "qpid/amqp/CharSequence.h"
-#include "qpid/broker/MapHandler.h"
+#include "qpid/amqp/MapHandler.h"
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
 
@@ -35,6 +35,8 @@ using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::sys::TIME_MSEC;
 using qpid::sys::FAR_FUTURE;
+using qpid::amqp::CharSequence;
+using qpid::amqp::MapHandler;
 using std::string;
 
 namespace qpid {

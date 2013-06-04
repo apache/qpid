@@ -23,7 +23,7 @@
 
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/broker/Message.h"
-#include "qpid/broker/MapHandler.h"
+#include "qpid/amqp/MapHandler.h"
 #include "qpid/broker/SelectorExpression.h"
 #include "qpid/broker/SelectorValue.h"
 #include "qpid/log/Statement.h"
@@ -41,6 +41,8 @@ namespace broker {
 
 using std::string;
 using qpid::sys::unordered_map;
+using qpid::amqp::CharSequence;
+using qpid::amqp::MapHandler;
 
 /**
  * Identifier  (amqp.)  | JMS...       | amqp 1.0 equivalent

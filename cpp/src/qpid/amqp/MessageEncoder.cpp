@@ -19,8 +19,11 @@
  *
  */
 #include "qpid/amqp/MessageEncoder.h"
+#include "qpid/amqp/MapEncoder.h"
+#include "qpid/amqp/MapSizeCalculator.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/log/Statement.h"
+#include <assert.h>
 
 namespace qpid {
 namespace amqp {
@@ -132,6 +135,17 @@ void MessageEncoder::writeProperties(const Properties& msg)
     }
 }
 
+void MessageEncoder::writeApplicationProperties(const ApplicationProperties& properties)
+{
+    MapSizeCalculator calc;
+    properties.handle(calc);
+    size_t required = calc.getTotalSizeRequired(&qpid::amqp::message::APPLICATION_PROPERTIES);
+    assert(required <= getSize() - getPosition());
+    MapEncoder encoder(skip(required), required);
+    encoder.writeMetaData(calc.getSize(), calc.getCount()*2, &qpid::amqp::message::APPLICATION_PROPERTIES);
+    properties.handle(encoder);
+}
+
 void MessageEncoder::writeApplicationProperties(const qpid::types::Variant::Map& properties)
 {
     writeApplicationProperties(properties, !optimise || properties.size()*2 > 255 || getEncodedSizeForElements(properties) > 255);
@@ -206,26 +220,47 @@ void MessageEncoder::writeMap(const qpid::types::Variant::Map& properties, const
 
 size_t MessageEncoder::getEncodedSize(const Header& h, const Properties& p, const qpid::types::Variant::Map& ap, const std::string& d)
 {
-    //NOTE: this does not take optional optimisation into account,
-    //i.e. it is a 'worst case' estimate for required buffer space
-    size_t total(0);
+    return getEncodedSize(h) + getEncodedSize(p, ap, d);
+}
 
-    //header:
-    total += 3/*descriptor*/ + 1/*code*/ + 1/*size*/ + 1/*count*/ + 5/*codes for each field*/;
-    if (h.getPriority() != 4) total += 1;
-    if (h.getDeliveryCount()) total += 4;
-    if (h.hasTtl()) total += 4;
-    return total + getEncodedSize(p, ap, d);
+size_t MessageEncoder::getEncodedSize(const Header& h, const Properties& p, const ApplicationProperties& ap, const std::string& d)
+{
+    return getEncodedSize(h) + getEncodedSize(p) + getEncodedSize(ap) + getEncodedSizeForContent(d);
 }
 
 size_t MessageEncoder::getEncodedSize(const Properties& p, const qpid::types::Variant::Map& ap, const std::string& d)
 {
+    size_t total(getEncodedSize(p));
+    //application-properties:
+    total += 3/*descriptor*/ + getEncodedSize(ap, true);
+    //body:
+    if (d.size()) total += 3/*descriptor*/ + 1/*code*/ + encodedSize(d);
+
+    return total;
+}
+
+size_t MessageEncoder::getEncodedSizeForContent(const std::string& d)
+{
+    if (d.size()) return 3/*descriptor*/ + 1/*code*/ + encodedSize(d);
+    else return 0;
+}
+
+size_t MessageEncoder::getEncodedSize(const Header& h)
+{
     //NOTE: this does not take optional optimisation into account,
     //i.e. it is a 'worst case' estimate for required buffer space
-    size_t total(0);
+    size_t total(3/*descriptor*/ + 1/*code*/ + 1/*size*/ + 1/*count*/ + 5/*codes for each field*/);
+    if (h.getPriority() != 4) total += 1;
+    if (h.getDeliveryCount()) total += 4;
+    if (h.hasTtl()) total += 4;
+    return total;
+}
 
-    //properties:
-    total += 3/*descriptor*/ + 1/*code*/ + 4/*size*/ + 4/*count*/ + 13/*codes for each field*/;
+size_t MessageEncoder::getEncodedSize(const Properties& p)
+{
+    //NOTE: this does not take optional optimisation into account,
+    //i.e. it is a 'worst case' estimate for required buffer space
+    size_t total(3/*descriptor*/ + 1/*code*/ + 4/*size*/ + 4/*count*/ + 13/*codes for each field*/);
     if (p.hasMessageId()) total += encodedSize(p.getMessageId());
     if (p.hasUserId()) total += encodedSize(p.getUserId());
     if (p.hasTo()) total += encodedSize(p.getTo());
@@ -239,14 +274,14 @@ size_t MessageEncoder::getEncodedSize(const Properties& p, const qpid::types::Va
     if (p.hasGroupId()) total += encodedSize(p.getGroupId());
     if (p.hasGroupSequence()) total += 4;
     if (p.hasReplyToGroupId()) total += encodedSize(p.getReplyToGroupId());
-
-
-    //application-properties:
-    total += 3/*descriptor*/ + getEncodedSize(ap, true);
-    //body:
-    if (d.size()) total += 3/*descriptor*/ + 1/*code*/ + encodedSize(d);
-
     return total;
+}
+
+size_t MessageEncoder::getEncodedSize(const ApplicationProperties& p)
+{
+    MapSizeCalculator calc;
+    p.handle(calc);
+    return calc.getTotalSizeRequired(&qpid::amqp::message::APPLICATION_PROPERTIES);
 }
 
 size_t MessageEncoder::getEncodedSizeForElements(const qpid::types::Variant::Map& map)
