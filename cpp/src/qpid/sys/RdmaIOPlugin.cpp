@@ -67,6 +67,7 @@ class RdmaIOHandler : public OutputControl {
     // Output side
     void close();
     void abort();
+    void connectionEstablished();
     void activateOutput();
     void initProtocolOut();
 
@@ -129,6 +130,10 @@ void RdmaIOHandler::close() {
 
 // TODO: Dummy implementation, need to fill this in for heartbeat timeout to work
 void RdmaIOHandler::abort() {
+}
+
+// TODO: Dummy implementation, need to fill this in for connection establishment timeout to work
+void RdmaIOHandler::connectionEstablished() {
 }
 
 void RdmaIOHandler::activateOutput() {

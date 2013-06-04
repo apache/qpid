@@ -456,6 +456,7 @@ void Connection::setHeartbeatInterval(uint16_t heartbeat)
             timer.add(timeoutTimer);
         }
     }
+    out.connectionEstablished();
 }
 
 void Connection::startLinkHeartbeatTimeoutTask() {
@@ -463,6 +464,7 @@ void Connection::startLinkHeartbeatTimeoutTask() {
         linkHeartbeatTimer = new LinkHeartbeatTask(timer, 2 * heartbeat * TIME_SEC, *this);
         timer.add(linkHeartbeatTimer);
     }
+    out.connectionEstablished();
 }
 
 void Connection::restartTimeout()
@@ -480,6 +482,7 @@ bool Connection::isOpen() { return adapter.isOpen(); }
 Connection::OutboundFrameTracker::OutboundFrameTracker(Connection& _con) : con(_con), next(0) {}
 void Connection::OutboundFrameTracker::close() { next->close(); }
 void Connection::OutboundFrameTracker::abort() { next->abort(); }
+void Connection::OutboundFrameTracker::connectionEstablished() { next->connectionEstablished(); }
 void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
 void Connection::OutboundFrameTracker::send(framing::AMQFrame& f)
 {

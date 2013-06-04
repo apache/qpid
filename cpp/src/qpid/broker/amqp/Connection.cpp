@@ -181,6 +181,7 @@ void Connection::process()
         pn_connection_set_container(connection, broker.getFederationTag().c_str());
         setContainerId(pn_connection_remote_container(connection));
         pn_connection_open(connection);
+        out.connectionEstablished();
     }
 
     for (pn_session_t* s = pn_session_head(connection, REQUIRES_OPEN); s; s = pn_session_next(s, REQUIRES_OPEN)) {
