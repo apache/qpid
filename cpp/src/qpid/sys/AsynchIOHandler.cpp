@@ -56,7 +56,6 @@ AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory
     aio(0),
     factory(f),
     codec(0),
-    reads(0),
     readError(false),
     isClient(isClient0),
     nodict(nodict0)
@@ -125,7 +124,6 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         return;
     }
 
-    ++reads;
     size_t decoded = 0;
     if (codec) {                // Already initiated
         try {
