@@ -506,7 +506,7 @@ void SemanticStateConsumerImpl::requestDispatch()
 {
     if (blocked) {
         parent->session.getConnection().outputTasks.addOutputTask(this);
-        parent->session.getConnection().outputTasks.activateOutput();
+        parent->session.getConnection().getOutput().activateOutput();
         blocked = false;
     }
 }
@@ -736,7 +736,7 @@ void SemanticStateConsumerImpl::notify()
     Mutex::ScopedLock l(lock);
     if (notifyEnabled) {
         parent->session.getConnection().outputTasks.addOutputTask(this);
-        parent->session.getConnection().outputTasks.activateOutput();
+        parent->session.getConnection().getOutput().activateOutput();
     }
 }
 
@@ -806,7 +806,7 @@ void SemanticState::attached()
         i->second->enableNotify();
         session.getConnection().outputTasks.addOutputTask(i->second.get());
     }
-    session.getConnection().outputTasks.activateOutput();
+    session.getConnection().getOutput().activateOutput();
 }
 
 void SemanticState::detached()

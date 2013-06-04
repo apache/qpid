@@ -145,9 +145,4 @@ framing::ProtocolVersion Connection::getVersion() const {
     return version;
 }
 
-size_t Connection::getBuffered() const {
-    Mutex::ScopedLock l(frameQueueLock);
-    return buffered;
-}
-
 }} // namespace qpid::amqp_0_10

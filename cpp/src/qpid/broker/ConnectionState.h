@@ -46,7 +46,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     ConnectionState(qpid::sys::ConnectionOutputHandler* o, Broker& b) :
         out(o),
         broker(b),
-        outputTasks(out),
         framemax(65535),
         heartbeat(0),
         heartbeatmax(120),

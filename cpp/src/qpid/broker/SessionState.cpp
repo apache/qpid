@@ -133,16 +133,6 @@ void SessionState::attach(SessionHandler& h) {
     asyncCommandCompleter->attached();
 }
 
-void SessionState::abort() {
-    if (isAttached())
-        getConnection().outputTasks.abort();
-}
-
-void SessionState::activateOutput() {
-    if (isAttached())
-        getConnection().outputTasks.activateOutput();
-}
-
 ManagementObject::shared_ptr SessionState::GetManagementObject(void) const
 {
     return mgmtObject;

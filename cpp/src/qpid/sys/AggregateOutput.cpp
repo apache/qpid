@@ -26,11 +26,7 @@
 namespace qpid {
 namespace sys {
 
-AggregateOutput::AggregateOutput(OutputControl& c) : busy(false), control(c) {}
-
-void AggregateOutput::abort() { control.abort(); }
-
-void AggregateOutput::activateOutput() { control.activateOutput(); }
+AggregateOutput::AggregateOutput() : busy(false) {}
 
 namespace {
 // Clear the busy flag and notify waiting threads in destructor.

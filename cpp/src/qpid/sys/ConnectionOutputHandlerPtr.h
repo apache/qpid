@@ -42,7 +42,6 @@ class ConnectionOutputHandlerPtr : public ConnectionOutputHandler
     const ConnectionOutputHandler* get() const { return next; }
 
     void close() { next->close(); }
-    size_t getBuffered() const { return next->getBuffered(); }
     void abort() { next->abort(); }
     void activateOutput() { next->activateOutput(); }
     void send(framing::AMQFrame& f) { next->send(f); }

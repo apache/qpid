@@ -70,7 +70,6 @@ class Connection  : public sys::ConnectionCodec,
     void close();               // closing from this end.
     void send(framing::AMQFrame&);
     framing::ProtocolVersion getVersion() const;
-    size_t getBuffered() const;
 };
 
 }} // namespace qpid::amqp_0_10
