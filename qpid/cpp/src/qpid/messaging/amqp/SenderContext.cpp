@@ -22,6 +22,7 @@
 #include "qpid/messaging/amqp/EncodedMessage.h"
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/amqp/MapHandler.h"
 #include "qpid/amqp/MessageEncoder.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Message.h"
@@ -102,10 +103,14 @@ uint32_t SenderContext::processUnsettled()
     return deliveries.size();
 }
 namespace {
+const std::string X_AMQP("x-amqp-");
+const std::string X_AMQP_FIRST_ACQUIRER("x-amqp-first-acquirer");
+const std::string X_AMQP_DELIVERY_COUNT("x-amqp-delivery-count");
+
 class HeaderAdapter : public qpid::amqp::MessageEncoder::Header
 {
   public:
-    HeaderAdapter(const qpid::messaging::MessageImpl& impl) : msg(impl) {}
+    HeaderAdapter(const qpid::messaging::MessageImpl& impl) : msg(impl), headers(msg.getHeaders()) {}
     virtual bool isDurable() const
     {
         return msg.isDurable();
@@ -124,22 +129,42 @@ class HeaderAdapter : public qpid::amqp::MessageEncoder::Header
     }
     virtual bool isFirstAcquirer() const
     {
-        return false;
+        qpid::types::Variant::Map::const_iterator i = headers.find(X_AMQP_FIRST_ACQUIRER);
+        if (i != headers.end()) {
+            return i->second;
+        } else {
+            return false;
+        }
     }
     virtual uint32_t getDeliveryCount() const
     {
-        return msg.isRedelivered() ? 1 : 0;
+        qpid::types::Variant::Map::const_iterator i = headers.find(X_AMQP_DELIVERY_COUNT);
+        if (i != headers.end()) {
+            return i->second;
+        } else {
+            return msg.isRedelivered() ? 1 : 0;
+        }
     }
   private:
     const qpid::messaging::MessageImpl& msg;
+    const qpid::types::Variant::Map& headers;
 };
 const std::string EMPTY;
 const std::string FORWARD_SLASH("/");
+const std::string X_AMQP_TO("x-amqp-to");
+const std::string X_AMQP_CONTENT_ENCODING("x-amqp-content-encoding");
+const std::string X_AMQP_CREATION_TIME("x-amqp-creation-time");
+const std::string X_AMQP_ABSOLUTE_EXPIRY_TIME("x-amqp-absolute-expiry-time");
+const std::string X_AMQP_GROUP_ID("x-amqp-group-id");
+const std::string X_AMQP_GROUP_SEQUENCE("x-amqp-group-sequence");
+const std::string X_AMQP_REPLY_TO_GROUP_ID("x-amqp-reply-to-group-id");
+const std::string X_AMQP_MESSAGE_ANNOTATIONS("x-amqp-message-annotations");
+const std::string X_AMQP_DELIVERY_ANNOTATIONS("x-amqp-delivery-annotations");
 
 class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 {
   public:
-    PropertiesAdapter(const qpid::messaging::MessageImpl& impl, const std::string& s) : msg(impl), subject(s) {}
+    PropertiesAdapter(const qpid::messaging::MessageImpl& impl, const std::string& s) : msg(impl), headers(msg.getHeaders()), subject(s) {}
     bool hasMessageId() const
     {
         return getMessageId().size();
@@ -161,12 +186,12 @@ class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 
     bool hasTo() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_TO);
     }
 
     std::string getTo() const
     {
-        return EMPTY;//not yet supported
+        return headers.find(X_AMQP_TO)->second;
     }
 
     bool hasSubject() const
@@ -216,66 +241,153 @@ class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 
     bool hasContentEncoding() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_CONTENT_ENCODING);
     }
 
     std::string getContentEncoding() const
     {
-        return EMPTY;//not yet supported
+        return headers.find(X_AMQP_CONTENT_ENCODING)->second;
     }
 
     bool hasAbsoluteExpiryTime() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_ABSOLUTE_EXPIRY_TIME);
     }
 
     int64_t getAbsoluteExpiryTime() const
     {
-        return 0;//not yet supported
+        return headers.find(X_AMQP_ABSOLUTE_EXPIRY_TIME)->second;
     }
 
     bool hasCreationTime() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_CREATION_TIME);
     }
 
     int64_t getCreationTime() const
     {
-        return 0;//not yet supported
+        return headers.find(X_AMQP_CREATION_TIME)->second;
     }
 
     bool hasGroupId() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_GROUP_ID);
     }
 
     std::string getGroupId() const
     {
-        return EMPTY;//not yet supported
+        return headers.find(X_AMQP_GROUP_ID)->second;
     }
 
     bool hasGroupSequence() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_GROUP_SEQUENCE);
     }
 
     uint32_t getGroupSequence() const
     {
-        return 0;//not yet supported
+        return headers.find(X_AMQP_GROUP_SEQUENCE)->second;
     }
 
     bool hasReplyToGroupId() const
     {
-        return false;//not yet supported
+        return hasHeader(X_AMQP_REPLY_TO_GROUP_ID);
     }
 
     std::string getReplyToGroupId() const
     {
-        return EMPTY;//not yet supported
+        return headers.find(X_AMQP_REPLY_TO_GROUP_ID)->second;
     }
   private:
     const qpid::messaging::MessageImpl& msg;
+    const qpid::types::Variant::Map& headers;
     const std::string subject;
+
+    bool hasHeader(const std::string& key) const
+    {
+        return headers.find(key) != headers.end();
+    }
+};
+
+bool startsWith(const std::string& input, const std::string& pattern)
+{
+    if (input.size() < pattern.size()) return false;
+    for (std::string::const_iterator b = pattern.begin(), a = input.begin(); b != pattern.end(); ++b, ++a) {
+        if (*a != *b) return false;
+    }
+    return true;
+}
+class ApplicationPropertiesAdapter : public qpid::amqp::MessageEncoder::ApplicationProperties
+{
+  public:
+    ApplicationPropertiesAdapter(const qpid::types::Variant::Map& h) : headers(h) {}
+    void handle(qpid::amqp::MapHandler& h) const
+    {
+        for (qpid::types::Variant::Map::const_iterator i = headers.begin(); i != headers.end(); ++i) {
+            //strip out values with special keys as they are sent in standard fields
+            if (!startsWith(i->first, X_AMQP)) {
+                qpid::amqp::CharSequence key(convert(i->first));
+                switch (i->second.getType()) {
+                  case qpid::types::VAR_VOID:
+                    h.handleVoid(key);
+                    break;
+                  case qpid::types::VAR_BOOL:
+                    h.handleBool(key, i->second);
+                    break;
+                  case qpid::types::VAR_UINT8:
+                    h.handleUint8(key, i->second);
+                    break;
+                  case qpid::types::VAR_UINT16:
+                    h.handleUint16(key, i->second);
+                    break;
+                  case qpid::types::VAR_UINT32:
+                    h.handleUint32(key, i->second);
+                    break;
+                  case qpid::types::VAR_UINT64:
+                    h.handleUint64(key, i->second);
+                    break;
+                  case qpid::types::VAR_INT8:
+                    h.handleInt8(key, i->second);
+                    break;
+                  case qpid::types::VAR_INT16:
+                    h.handleInt16(key, i->second);
+                    break;
+                  case qpid::types::VAR_INT32:
+                    h.handleInt32(key, i->second);
+                    break;
+                  case qpid::types::VAR_INT64:
+                    h.handleInt64(key, i->second);
+                    break;
+                  case qpid::types::VAR_FLOAT:
+                    h.handleFloat(key, i->second);
+                    break;
+                  case qpid::types::VAR_DOUBLE:
+                    h.handleDouble(key, i->second);
+                    break;
+                  case qpid::types::VAR_STRING:
+                    h.handleString(key, convert(i->second), convert(i->second.getEncoding()));
+                    break;
+                  case qpid::types::VAR_UUID:
+                    QPID_LOG(warning, "Skipping UUID  in application properties; not yet handled correctly.");
+                    break;
+                  case qpid::types::VAR_MAP:
+                  case qpid::types::VAR_LIST:
+                    QPID_LOG(warning, "Skipping nested list and map; not allowed in application properties.");
+                    break;
+                }
+            }
+        }
+    }
+  private:
+    const qpid::types::Variant::Map& headers;
+
+    static qpid::amqp::CharSequence convert(const std::string& in)
+    {
+        qpid::amqp::CharSequence out;
+        out.data = in.data();
+        out.size = in.size();
+        return out;
+    }
 };
 
 bool changedSubject(const qpid::messaging::MessageImpl& msg, const qpid::messaging::Address& address)
@@ -310,8 +422,9 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
     } else {
         HeaderAdapter header(msg);
         PropertiesAdapter properties(msg, address.getSubject());
+        ApplicationPropertiesAdapter applicationProperties(msg.getHeaders());
         //compute size:
-        encoded.resize(qpid::amqp::MessageEncoder::getEncodedSize(header, properties, msg.getHeaders(), msg.getBytes()));
+        encoded.resize(qpid::amqp::MessageEncoder::getEncodedSize(header, properties, applicationProperties, msg.getBytes()));
         QPID_LOG(debug, "Sending message, buffer is " << encoded.getSize() << " bytes")
         qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
         //write header:
@@ -320,7 +433,7 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         //write properties
         encoder.writeProperties(properties);
         //write application-properties
-        encoder.writeApplicationProperties(msg.getHeaders());
+        encoder.writeApplicationProperties(applicationProperties);
         //write body
         if (msg.getBytes().size()) encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
         if (encoder.getPosition() < encoded.getSize()) {

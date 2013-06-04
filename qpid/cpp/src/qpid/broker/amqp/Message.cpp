@@ -23,7 +23,7 @@
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/Reader.h"
 #include "qpid/amqp/MessageEncoder.h"
-#include "qpid/broker/MapHandler.h"
+#include "qpid/amqp/MapHandler.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/Buffer.h"
 #include <string.h>
@@ -35,6 +35,7 @@ namespace amqp {
 using qpid::amqp::CharSequence;
 using qpid::amqp::Constructor;
 using qpid::amqp::Descriptor;
+using qpid::amqp::MapHandler;
 using qpid::amqp::Reader;
 
 namespace {

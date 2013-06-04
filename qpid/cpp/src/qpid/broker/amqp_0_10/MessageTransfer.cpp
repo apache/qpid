@@ -22,7 +22,7 @@
 
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp_0_10/Codecs.h"
-#include "qpid/broker/MapHandler.h"
+#include "qpid/amqp/MapHandler.h"
 #include "qpid/broker/Message.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/MessageProperties.h"
@@ -309,7 +309,7 @@ bool MessageTransfer::isLastQMFResponse(const qpid::broker::Message& message, co
 }
 
 
-void MessageTransfer::processProperties(qpid::broker::MapHandler& handler) const
+void MessageTransfer::processProperties(qpid::amqp::MapHandler& handler) const
 {
     const qpid::framing::MessageProperties* mp = getProperties<qpid::framing::MessageProperties>();
     if (mp && mp->hasApplicationHeaders()) {
@@ -317,7 +317,7 @@ void MessageTransfer::processProperties(qpid::broker::MapHandler& handler) const
         for (FieldTable::const_iterator i = ft.begin(); i != ft.end(); ++i) {
             qpid::types::Variant v;
             qpid::amqp_0_10::translate(i->second, v);
-            qpid::broker::MapHandler::CharSequence key = {i->first.data(), i->first.size()};
+            qpid::amqp::CharSequence key = {i->first.data(), i->first.size()};
             switch (v.getType()) {
             case qpid::types::VAR_VOID:
                 handler.handleVoid(key); break;
@@ -345,8 +345,8 @@ void MessageTransfer::processProperties(qpid::broker::MapHandler& handler) const
                 handler.handleDouble(key, v); break;
             case qpid::types::VAR_STRING: {
                 std::string s(v);
-                qpid::broker::MapHandler::CharSequence value = {s.data(), s.size()};
-                qpid::broker::MapHandler::CharSequence encoding = {0, 0};
+                qpid::amqp::CharSequence value = {s.data(), s.size()};
+                qpid::amqp::CharSequence encoding = {0, 0};
                 handler.handleString(key, value, encoding);
                 break;
             }

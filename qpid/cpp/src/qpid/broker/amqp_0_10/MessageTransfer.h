@@ -50,7 +50,7 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
     bool getTtl(uint64_t&) const;
     bool hasExpiration() const;
     std::string getExchangeName() const;
-    void processProperties(MapHandler&) const;
+    void processProperties(qpid::amqp::MapHandler&) const;
     std::string getUserId() const;
 
     bool requiresAccept() const;

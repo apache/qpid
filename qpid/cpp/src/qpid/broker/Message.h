@@ -36,9 +36,11 @@
 #include "qpid/broker/PersistableMessage.h"
 
 namespace qpid {
+namespace amqp {
+class MapHandler;
+}
 namespace broker {
 class ConnectionToken;
-class MapHandler;
 
 enum MessageState
 {
@@ -62,7 +64,7 @@ public:
         virtual std::string getAnnotationAsString(const std::string& key) const = 0;
         virtual bool getTtl(uint64_t&) const = 0;
         virtual std::string getContent() const = 0;
-        virtual void processProperties(MapHandler&) const = 0;
+        virtual void processProperties(qpid::amqp::MapHandler&) const = 0;
         virtual std::string getUserId() const = 0;
     };
 
@@ -104,7 +106,7 @@ public:
     QPID_BROKER_EXTERN uint8_t getPriority() const;
     QPID_BROKER_EXTERN std::string getPropertyAsString(const std::string& key) const;
     QPID_BROKER_EXTERN qpid::types::Variant getProperty(const std::string& key) const;
-    void processProperties(MapHandler&) const;
+    void processProperties(qpid::amqp::MapHandler&) const;
 
     QPID_BROKER_EXTERN uint64_t getContentSize() const;
 

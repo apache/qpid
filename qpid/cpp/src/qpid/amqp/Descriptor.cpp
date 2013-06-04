@@ -35,6 +35,21 @@ bool Descriptor::match(const std::string& symbol, uint64_t code) const
     return false;
 }
 
+size_t Descriptor::getSize() const
+{
+    size_t size = 1/*descriptor indicator*/ + 1/*type code*/;
+    switch (type) {
+        case Descriptor::NUMERIC:
+          if (value.code > 0)  size += value.code < 256 ? 1/*encode as byte*/ : 8/*encode as long*/;
+          //else value will be indicated through ULONG_ZERO typecode
+        break;
+        case Descriptor::SYMBOLIC:
+          size += value.symbol.size < 256? 1/*size field is a byte*/ : 4/*size field is an int*/;
+          size += value.symbol.size;
+          break;
+    }
+    return size;
+}
 
 std::ostream& operator<<(std::ostream& os, const Descriptor& d)
 {

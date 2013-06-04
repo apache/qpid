@@ -353,7 +353,6 @@ void Encoder::endMap32(uint32_t count, void* token)
     end<uint32_t>(count, token, data+position);
 }
 
-
 void* Encoder::startArray8(const Constructor& c, const Descriptor* d)
 {
     return startArray<uint8_t>(typecodes::ARRAY8, d, c);
@@ -397,6 +396,8 @@ void Encoder::check(size_t s)
 }
 Encoder::Encoder(char* d, size_t s) : data(d), size(s), position(0) {}
 size_t Encoder::getPosition() { return position; }
+size_t Encoder::getSize() const { return size; }
+char* Encoder::getData() { return data + position; }
 void Encoder::resetPosition(size_t p) { assert(p <= size); position = p; }
 
 }} // namespace qpid::amqp

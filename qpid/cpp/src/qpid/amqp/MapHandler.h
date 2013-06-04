@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_MAPHANDLER_H
-#define QPID_BROKER_MAPHANDLER_H
+#ifndef QPID_AMQP_MAPHANDLER_H
+#define QPID_AMQP_MAPHANDLER_H
 
 /*
  *
@@ -24,21 +24,14 @@
 #include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
-
 namespace amqp {
 struct CharSequence;
-}
-
-namespace broker {
-
 /**
  * Interface for processing entries in some map-like object
  */
 class MapHandler
 {
   public:
-    typedef qpid::amqp::CharSequence CharSequence;
-
     virtual ~MapHandler() {}
     virtual void handleVoid(const CharSequence& key) = 0;
     virtual void handleBool(const CharSequence& key, bool value) = 0;
@@ -55,6 +48,6 @@ class MapHandler
     virtual void handleString(const CharSequence& key, const CharSequence& value, const CharSequence& encoding) = 0;
   private:
 };
-}} // namespace qpid::broker
+}} // namespace qpid::amqp
 
-#endif  /*!QPID_BROKER_MAPHANDLER_H*/
+#endif  /*!QPID_AMQP_MAPHANDLER_H*/
