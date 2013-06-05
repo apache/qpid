@@ -102,7 +102,7 @@ void AsynchIOHandler::abort() {
 void AsynchIOHandler::connectionEstablished() {
     if (timeoutTimerTask) {
         timeoutTimerTask->cancel();
-        timeoutTimerTask.reset();
+        timeoutTimerTask = 0;
     }
 }
 
