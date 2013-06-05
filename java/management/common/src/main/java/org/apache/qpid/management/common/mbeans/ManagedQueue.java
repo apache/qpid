@@ -401,7 +401,7 @@ public interface ManagedQueue
      * Gets the message group key
      * @since Qpid JMX API 2.7
      */
-    @MBeanAttribute(name="MessageGroupSharedGroups", description="Indicates C++ compatibility mode, the Broker enforces a looser guarantee, nameley that all the currently unacknowledged messages in a group will be sent to the same consumer. This means that only one consumer can be processing messages from a particular group at a given time. When the consumer acknowledges all of its acquired messages, then the broker may pass the next pending message from that group to a different consumer")
+    @MBeanAttribute(name="MessageGroupSharedGroups", description="If set indicates that while two messages of the same group cannot be processed by different consumers concurrently, no guarantee is made that subsequent messages are always sent to the same consumer")
     boolean isMessageGroupSharedGroups();
 
     //********** Operations *****************//
