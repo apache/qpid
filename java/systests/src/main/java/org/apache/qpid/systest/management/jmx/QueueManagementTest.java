@@ -28,6 +28,7 @@ import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.NotificationCheckTest;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueueTest;
 import org.apache.qpid.test.client.destination.AddressBasedDestinationTest;
 import org.apache.qpid.test.utils.JMXTestUtils;
@@ -633,6 +634,40 @@ public class QueueManagementTest extends QpidBrokerTestCase
 
         // Verify the message indices with a consumer
         assertMessageIndicesOn(_sourceQueue, 1,2,3,4,5,6,13);
+    }
+
+    public void testGetMessageGroupKey() throws Exception
+    {
+        final String queueName = getName();
+        final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+
+        final Object messageGroupKey = "test";
+        final Map<String, Object> arguments = Collections.singletonMap(SimpleAMQQueue.QPID_GROUP_HEADER_KEY, messageGroupKey);
+        managedBroker.createNewQueue(queueName, null, true, arguments);
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+
+        assertNotNull("Manager queue expected to be available", managedQueue);
+        assertEquals("Unexpected message group key", messageGroupKey, managedQueue.getMessageGroupKey());
+        assertEquals("Unexpected message group sharing", false, managedQueue.isMessageGroupSharedGroups());
+    }
+
+    public void testIsMessageGroupSharedGroups() throws Exception
+    {
+        final String queueName = getName();
+        final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+
+        final Object messageGroupKey = "test";
+        final Map<String, Object> arguments = new HashMap<String, Object>(2);
+        arguments.put(SimpleAMQQueue.QPID_GROUP_HEADER_KEY, messageGroupKey);
+        arguments.put(SimpleAMQQueue.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
+        managedBroker.createNewQueue(queueName, null, true, arguments);
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+
+        assertNotNull("Manager queue expected to be available", managedQueue);
+        assertEquals("Unexpected message group key", messageGroupKey, managedQueue.getMessageGroupKey());
+        assertEquals("Unexpected message group sharing", true, managedQueue.isMessageGroupSharedGroups());
     }
 
     @Override

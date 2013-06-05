@@ -436,4 +436,16 @@ public class QueueMBeanTest extends QpidTestCase
         byte[] data = (byte[]) comp.get(ManagedQueue.CONTENT);
         assertEquals(messageSize, data.length);
     }
+
+    public void testGetMessageGroupKey()
+    {
+        when(_mockQueue.getAttribute(Queue.MESSAGE_GROUP_KEY)).thenReturn(getTestName());
+        assertEquals("Unexpected message group key", getTestName(), _queueMBean.getMessageGroupKey());
+    }
+
+    public void testIsSharedMessageGroup()
+    {
+        when(_mockQueue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS)).thenReturn(true);
+        assertEquals("Unexpected message group sharing", true, _queueMBean.isMessageGroupSharedGroups());
+    }
 }
