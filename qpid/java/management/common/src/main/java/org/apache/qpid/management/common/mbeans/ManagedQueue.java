@@ -89,6 +89,8 @@ public interface ManagedQueue
     static final String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
     static final String ATTR_EXCLUSIVE = "Exclusive";
     static final String ATTR_ALT_EXCHANGE = "AlternateExchange";
+    static final String ATTR_SHARED_MESSAGE_GROUP  = "MessageGroupSharedGroups";
+    static final String ATTR_MESSAGE_GROUP_KEY = "MessageGroupKey";
 
     //All attribute names constant
     static final List<String> QUEUE_ATTRIBUTES
@@ -116,7 +118,9 @@ public interface ManagedQueue
                                     ATTR_FLOW_OVERFULL,
                                     ATTR_FLOW_RESUME_CAPACITY,
                                     ATTR_EXCLUSIVE,
-                                    ATTR_ALT_EXCHANGE
+                                    ATTR_ALT_EXCHANGE,
+                                    ATTR_SHARED_MESSAGE_GROUP,
+                                    ATTR_MESSAGE_GROUP_KEY
                                     ))));
 
     /**
@@ -309,13 +313,6 @@ public interface ManagedQueue
     void setDescription(String string);
 
     /**
-     * Gets the queue type
-     * @since Qpid JMX API 2.5
-     */
-    @MBeanAttribute(name="QueueType", description="Type of the queue e.g. standard, priority, etc")
-    String getQueueType();
-    
-    /**
      * Returns the current flow control FlowResumeCapacity of the queue in bytes.
      * 
      * @since Qpid JMX API 1.6
@@ -384,6 +381,28 @@ public interface ManagedQueue
      * @throws IOException
      */
     String getAlternateExchange() throws IOException;
+
+
+    /**
+     * Gets the queue type
+     * @since Qpid JMX API 2.5
+     */
+    @MBeanAttribute(name="QueueType", description="Type of the queue e.g. standard, priority, etc")
+    String getQueueType();
+
+    /**
+     * Gets the message group key
+     * @since Qpid JMX API 2.7
+     */
+    @MBeanAttribute(name="MessageGroupKey", description="Message header name to hold message group value")
+    String getMessageGroupKey();
+
+    /**
+     * Gets the message group key
+     * @since Qpid JMX API 2.7
+     */
+    @MBeanAttribute(name="MessageGroupSharedGroups", description="Indicates C++ compatibility mode, the Broker enforces a looser guarantee, nameley that all the currently unacknowledged messages in a group will be sent to the same consumer. This means that only one consumer can be processing messages from a particular group at a given time. When the consumer acknowledges all of its acquired messages, then the broker may pass the next pending message from that group to a different consumer")
+    boolean isMessageGroupSharedGroups();
 
     //********** Operations *****************//
 
