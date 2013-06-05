@@ -662,4 +662,17 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         final Number statistic = (Number) _queue.getStatistics().getStatistic(name);
         return statistic == null ? Integer.valueOf(0) : statistic;
     }
+
+    @Override
+    public String getMessageGroupKey()
+    {
+        return (String) _queue.getAttribute(Queue.MESSAGE_GROUP_KEY);
+    }
+
+    @Override
+    public boolean isMessageGroupSharedGroups()
+    {
+        Boolean value = (Boolean) _queue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS);
+        return value == null ? false : value.booleanValue();
+    }
 }
