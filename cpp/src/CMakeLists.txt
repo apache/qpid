@@ -1322,7 +1322,16 @@ install (FILES ${qmf_HEADERS}
          COMPONENT ${QPID_COMPONENT_QMF})
 install_pdb (qmf ${QPID_COMPONENT_QMF})
 
-if(NOT WIN32)
+if (NOT WIN32)
+    set (qmf2_platform_headers
+        ../include/qmf/posix/EventNotifier.h
+    )
+    set (qmf2_platform_sources
+        qmf/PosixEventNotifier.cpp
+        qmf/PosixEventNotifierImpl.cpp
+    )
+endif (NOT WIN32)
+
     set (qmf2_HEADERS
         ../include/qmf/AgentEvent.h
         ../include/qmf/Agent.h
@@ -1334,7 +1343,6 @@ if(NOT WIN32)
         ../include/qmf/exceptions.h
         ../include/qmf/Handle.h
         ../include/qmf/ImportExport.h
-        ../include/qmf/posix/EventNotifier.h
         ../include/qmf/Query.h
         ../include/qmf/Schema.h
         ../include/qmf/SchemaId.h
@@ -1342,6 +1350,7 @@ if(NOT WIN32)
         ../include/qmf/SchemaProperty.h
         ../include/qmf/SchemaTypes.h
         ../include/qmf/Subscription.h
+        ${qmf2_platform_headers}
         )
 
     set (qmf2_SOURCES
@@ -1366,8 +1375,6 @@ if(NOT WIN32)
         qmf/DataImpl.h
         qmf/EventNotifierImpl.h
         qmf/EventNotifierImpl.cpp
-        qmf/PosixEventNotifier.cpp
-        qmf/PosixEventNotifierImpl.cpp
         qmf/exceptions.cpp
         qmf/Expression.cpp
         qmf/Expression.h
@@ -1388,6 +1395,7 @@ if(NOT WIN32)
         qmf/SchemaPropertyImpl.h
         qmf/Subscription.cpp
         qmf/SubscriptionImpl.h
+        ${qmf2_platform_sources}
         )
 
     add_msvc_version (qmf2 library dll)
@@ -1403,7 +1411,6 @@ if(NOT WIN32)
             DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf
             COMPONENT ${QPID_COMPONENT_QMF})
     install_pdb (qmf2 ${QPID_COMPONENT_QMF})
-endif (NOT WIN32)
 
 set (qmfengine_SOURCES
      qmf/engine/Agent.cpp
