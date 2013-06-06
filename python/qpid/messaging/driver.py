@@ -233,7 +233,7 @@ class LinkIn:
                                  exclusive=True,
                                  auto_delete=(reliability == "unreliable")),
                     overrides=declare)
-      _rcv.on_unlink = [QueueDelete(_rcv._queue)]
+      if declare.get("exclusive", True): _rcv.on_unlink = [QueueDelete(_rcv._queue)]
       subject = _rcv.subject or SUBJECT_DEFAULTS.get(subtype)
       bindings = get_bindings(link_opts, _rcv._queue, _rcv.name, subject)
       if not bindings:
