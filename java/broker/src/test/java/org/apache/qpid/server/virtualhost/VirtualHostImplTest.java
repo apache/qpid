@@ -26,6 +26,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
 import org.apache.qpid.server.exchange.Exchange;
@@ -41,6 +42,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class VirtualHostImplTest extends QpidTestCase
 {
@@ -194,6 +198,50 @@ public class VirtualHostImplTest extends QpidTestCase
         }
     }
 
+    public void testBindingArguments() throws Exception
+    {
+        String exchangeName = getName() +".direct";
+        String vhostName = getName();
+        String queueName = getName();
+
+        Map<String, String[]> bindingArguments = new HashMap<String, String[]>();
+        bindingArguments.put("ping", new String[]{"x-filter-jms-selector=select=1", "x-qpid-no-local"});
+        bindingArguments.put("pong", new String[]{"x-filter-jms-selector=select='pong'"});
+        File config = writeConfigFile(vhostName, queueName, exchangeName, false, new String[]{"ping","pong"}, bindingArguments);
+        VirtualHost vhost = createVirtualHost(vhostName, config);
+
+        Exchange exch = vhost.getExchangeRegistry().getExchange(getName() +".direct");
+        Collection<Binding> bindings = exch.getBindings();
+        assertNotNull("Bindings cannot be null", bindings);
+        assertEquals("Unexpected number of bindings", 3, bindings.size());
+
+        boolean foundPong = false;
+        boolean foundPing = false;
+        for (Binding binding : bindings)
+        {
+            String qn = binding.getQueue().getName();
+            assertEquals("Unexpected queue name", getName(), qn);
+            Map<String, Object> arguments = binding.getArguments();
+
+            if ("ping".equals(binding.getBindingKey()))
+            {
+                foundPing = true;
+                assertEquals("Unexpected number of binding arguments for ping", 2, arguments.size());
+                assertEquals("Unexpected x-filter-jms-selector for ping", "select=1", arguments.get("x-filter-jms-selector"));
+                assertTrue("Unexpected x-qpid-no-local for ping", arguments.containsKey("x-qpid-no-local"));
+            }
+            else if ("pong".equals(binding.getBindingKey()))
+            {
+                foundPong = true;
+                assertEquals("Unexpected number of binding arguments for pong", 1, arguments.size());
+                assertEquals("Unexpected x-filter-jms-selector for pong", "select='pong'", arguments.get("x-filter-jms-selector"));
+            }
+        }
+
+        assertTrue("Pong binding is not found", foundPong);
+        assertTrue("Ping binding is not found", foundPing);
+    }
+
     private void customBindingTestImpl(final String[] routingKeys) throws Exception
     {
         String exchangeName = getName() +".direct";
@@ -244,6 +292,11 @@ public class VirtualHostImplTest extends QpidTestCase
      */
     private File writeConfigFile(String vhostName, String queueName, String exchangeName, boolean dontDeclare, String[] routingKeys)
     {
+        return writeConfigFile(vhostName, queueName, exchangeName, dontDeclare, routingKeys, null);
+    }
+
+    private File writeConfigFile(String vhostName, String queueName, String exchangeName, boolean dontDeclare, String[] routingKeys, Map<String, String[]> bindingArguments)
+    {
         File tmpFile = null;
         try
         {
@@ -282,7 +335,17 @@ public class VirtualHostImplTest extends QpidTestCase
             }
             for(String routingKey: routingKeys)
             {
-                writer.write("                      <routingKey>" + routingKey + "</routingKey>");
+                writer.write("                      <routingKey>" + routingKey + "</routingKey>\n");
+                if (bindingArguments!= null && bindingArguments.containsKey(routingKey))
+                {
+                    writer.write("                      <" + routingKey + ">\n");
+                    String[] arguments = (String[])bindingArguments.get(routingKey);
+                    for (String argument : arguments)
+                    {
+                        writer.write("                          <bindingArgument>" + argument + "</bindingArgument>\n");
+                    }
+                    writer.write("                      </" + routingKey + ">\n");
+                }
             }
             writer.write("                  </" + queueName + ">");
             writer.write("              </queue>");
