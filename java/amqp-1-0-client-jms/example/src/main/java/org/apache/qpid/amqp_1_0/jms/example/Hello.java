@@ -59,7 +59,7 @@ public class Hello
 
 
             Session consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageConsumer messageConsumer = consumerSession.createConsumer(queue, "hello='true' and 7");
+            MessageConsumer messageConsumer = consumerSession.createConsumer(queue, "hello='true'");
 
             messageConsumer.setMessageListener(new MessageListener()
             {
@@ -125,6 +125,7 @@ public class Hello
                     }
                     catch (JMSException e)
                     {
+                        System.out.println("Caught exception in onMessage(): " + e.getMessage());
                         e.printStackTrace();  //TODO
                     }
 
@@ -172,6 +173,7 @@ public class Hello
         }
         catch (Exception exp)
         {
+            System.out.println("Caught exception: " + exp.getMessage());
             exp.printStackTrace();
         }
     }
