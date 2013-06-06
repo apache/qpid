@@ -42,7 +42,7 @@ import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.properties.ConnectionStartProperties;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -169,10 +169,10 @@ public class ProtocolEngine_1_0_0 implements ServerProtocolEngine, FrameOutputHa
                 getLocalAddress())));
 
         Map<Symbol,Object> serverProperties = new LinkedHashMap<Symbol, Object>();
-        serverProperties.put(Symbol.valueOf("qpid.product"), QpidProperties.getProductName());
-        serverProperties.put(Symbol.valueOf("qpid.version"), QpidProperties.getReleaseVersion());
-        serverProperties.put(Symbol.valueOf("qpid.build"), QpidProperties.getBuildVersion());
-        serverProperties.put(Symbol.valueOf("qpid.instanceName"), _broker.getName());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.PRODUCT), QpidProperties.getProductName());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.VERSION), QpidProperties.getReleaseVersion());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.QPID_BUILD), QpidProperties.getBuildVersion());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.QPID_INSTANCE_NAME), _broker.getName());
 
         _conn.setProperties(serverProperties);
 

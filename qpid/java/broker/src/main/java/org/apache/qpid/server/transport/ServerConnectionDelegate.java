@@ -103,10 +103,10 @@ public class ServerConnectionDelegate extends ServerDelegate
             map.put(ServerPropertyNames.QPID_FEATURES, features);
         }
 
-        map.put(ServerPropertyNames.QPID_PRODUCT, QpidProperties.getProductName());
-        map.put(ServerPropertyNames.QPID_SERVER_VERSION, QpidProperties.getReleaseVersion());
-        map.put(ServerPropertyNames.QPID_SERVER_BUILD_VERSION, QpidProperties.getBuildVersion());
-        map.put(ServerPropertyNames.QPID_SERVER_NAME, broker.getName());
+        map.put(ServerPropertyNames.PRODUCT, QpidProperties.getProductName());
+        map.put(ServerPropertyNames.VERSION, QpidProperties.getReleaseVersion());
+        map.put(ServerPropertyNames.QPID_BUILD, QpidProperties.getBuildVersion());
+        map.put(ServerPropertyNames.QPID_INSTANCE_NAME, broker.getName());
 
         return map;
     }
