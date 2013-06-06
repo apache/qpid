@@ -375,7 +375,7 @@ void AgentSessionImpl::authAccept(AgentEvent& authEvent)
     if (query.getSchemaId().isValid()) {
         {
             qpid::sys::Mutex::ScopedLock l(lock);
-            map<SchemaId, DataIndex>::const_iterator iter = schemaIndex.find(query.getSchemaId());
+            map<SchemaId, DataIndex, SchemaIdCompareNoHash>::const_iterator iter = schemaIndex.find(query.getSchemaId());
             if (iter != schemaIndex.end())
                 for (DataIndex::const_iterator dIter = iter->second.begin(); dIter != iter->second.end(); dIter++)
                     if (query.matchesPredicate(dIter->second.getProperties()))
@@ -751,7 +751,7 @@ void AgentSessionImpl::handleV1SchemaRequest(qpid::management::Buffer& buffer, u
     QPID_LOG(trace, "RCVD QMFv1 SchemaRequest for " << packageName << ":" << className);
 
     qpid::types::Uuid hash(hashBits);
-    map<SchemaId, Schema>::const_iterator iter;
+    map<SchemaId, Schema, SchemaIdCompare>::const_iterator iter;
     string replyContent;
 
     SchemaId dataId(SCHEMA_TYPE_DATA, packageName, className);
