@@ -18,40 +18,29 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.anyMap;
-
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 import javax.management.JMException;
-import javax.management.ListenerNotFoundException;
-import javax.management.Notification;
-import javax.management.NotificationListener;
 import javax.management.OperationsException;
+
+import junit.framework.TestCase;
 
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.NotificationCheck;
-import org.mockito.ArgumentMatcher;
-
-import junit.framework.TestCase;
 
 public class ExchangeMBeanTest extends TestCase
 {
@@ -124,6 +113,13 @@ public class ExchangeMBeanTest extends TestCase
             assertEquals("No such queue \"unknown\"", oe.getMessage());
         }
         verify(_mockExchange, never()).createBinding(anyString(), any(Queue.class), anyMap(), anyMap());
+    }
+
+    public void testCreateNewBindingWithArguments() throws Exception
+    {
+        Map<String, Object> arguments = Collections.<String, Object>singletonMap("x-filter-jms-selector", "ID='test'");
+        _exchangeMBean.createNewBinding(QUEUE1_NAME, BINDING1, arguments);
+        verify(_mockExchange).createBinding(BINDING1, _mockQueue1, arguments, Collections.<String, Object>emptyMap());
     }
 
     public void testRemoveBinding() throws Exception
