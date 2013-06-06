@@ -24,6 +24,8 @@ import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.security.sasl.SaslException;
@@ -39,6 +41,9 @@ import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -172,6 +177,15 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
         SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress());
         _conn = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
+
+        Map<Symbol,Object> serverProperties = new LinkedHashMap<Symbol, Object>();
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.PRODUCT), QpidProperties.getProductName());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.VERSION), QpidProperties.getReleaseVersion());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.QPID_BUILD), QpidProperties.getBuildVersion());
+        serverProperties.put(Symbol.valueOf(ServerPropertyNames.QPID_INSTANCE_NAME), _broker.getName());
+
+        _conn.setProperties(serverProperties);
+
         _conn.setRemoteAddress(getRemoteAddress());
         _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId, _port, _transport));
         _conn.setFrameOutputHandler(this);

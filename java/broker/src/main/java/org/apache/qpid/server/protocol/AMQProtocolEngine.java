@@ -46,6 +46,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
@@ -391,13 +392,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
             FieldTable serverProperties = FieldTableFactory.newFieldTable();
 
-            serverProperties.setString(ConnectionStartProperties.PRODUCT,
+            serverProperties.setString(ServerPropertyNames.PRODUCT,
                     QpidProperties.getProductName());
-            serverProperties.setString(ConnectionStartProperties.VERSION_0_8,
+            serverProperties.setString(ServerPropertyNames.VERSION,
                     QpidProperties.getReleaseVersion());
-            serverProperties.setString(ConnectionStartProperties.CLIENT_ID_0_8,
+            serverProperties.setString(ServerPropertyNames.QPID_BUILD,
+                    QpidProperties.getBuildVersion());
+            serverProperties.setString(ServerPropertyNames.QPID_INSTANCE_NAME,
                     _broker.getName());
-
 
             AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
                                                                                        (short) pv.getActualMinorVersion(),
