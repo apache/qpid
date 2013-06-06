@@ -127,6 +127,12 @@ class StoreTests(BrokerTest):
     self.ssn.exchange_declare(exchange="DB_E1", type="direct", durable=True)
     self.ssn.exchange_bind(exchange="DB_E1", queue="DB_Q1", binding_key="K1")
 
+    # Queue up 2 messages, one with non-zero body, one with zero-length.
+    # 2 = delivery_mode.persistent
+    dp = self.ssn.delivery_properties(routing_key="DB_Q1", delivery_mode=2)
+    self.ssn.message_transfer(message=Message(dp, "normal message"))
+    self.ssn.message_transfer(message=Message(dp, ""))
+
     # Cycle the broker and make sure the binding recovers
     self.cycle_broker()
     response = self.ssn.exchange_bound(exchange="DB_E1", queue="DB_Q1", binding_key="K1")
@@ -134,6 +140,17 @@ class StoreTests(BrokerTest):
     self.assert_(not response.queue_not_found)
     self.assert_(not response.queue_not_matched)
     self.assert_(not response.key_not_matched)
+
+    # Are the messages still there?
+    self.ssn.message_subscribe(destination="msgs", queue="DB_Q1", accept_mode=1, acquire_mode=0)
+    self.ssn.message_flow(unit = 1, value = 0xFFFFFFFFL, destination = "msgs")
+    self.ssn.message_flow(unit = 0, value = 10, destination = "msgs")
+    message_arrivals = self.ssn.incoming("msgs")
+    try:
+      message_arrivals.get(timeout=1)
+      message_arrivals.get(timeout=1)
+    except Empty:
+      assert False, 'Durable message(s) not recovered'
 
     self.ssn.exchange_unbind(queue="DB_Q1", exchange="DB_E1", binding_key="K1")
     self.ssn.exchange_delete(exchange="DB_E1")
