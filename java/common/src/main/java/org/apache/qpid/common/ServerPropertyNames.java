@@ -22,7 +22,7 @@ package org.apache.qpid.common;
 
 /**
  * Keys names used within the serverProperties argument of the ConnectionStart
- * method.  These property names are Qpid specific.
+ * method. Property names which start with "qpid." are Qpid specific.
  */
 public final class ServerPropertyNames
 {
@@ -45,10 +45,16 @@ public final class ServerPropertyNames
      */
     public static final String FEATURE_QPID_JMS_SELECTOR = "qpid.jms-selector";
 
+    /**
+     * Server property: 'name' attribute of the server instance.
+     */
+    public static final String QPID_INSTANCE_NAME = "qpid.instance_name";
 
-    public static final String QPID_PRODUCT = "qpid.product";
-    public static final String QPID_SERVER_VERSION = "qpid.server_version";
-    public static final String QPID_SERVER_NAME = "qpid.server_name";
-    public static final String QPID_SERVER_BUILD_VERSION = "qpid.server_build_version";
+    /**
+     * Server property: build number.
+     */
+    public static final String QPID_BUILD = "qpid.build";
 
+    public static final String PRODUCT = "product";
+    public static final String VERSION = "version";
 }
