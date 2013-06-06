@@ -220,7 +220,7 @@ uint32_t AgentImpl::getPackageCount() const
     //
     // Populate the package set.
     //
-    for (set<SchemaId>::const_iterator iter = schemaIdSet.begin(); iter != schemaIdSet.end(); iter++)
+    for (set<SchemaId, SchemaIdCompare>::const_iterator iter = schemaIdSet.begin(); iter != schemaIdSet.end(); iter++)
         packageSet.insert(iter->getPackageName());
 
     return packageSet.size();
@@ -244,7 +244,7 @@ uint32_t AgentImpl::getSchemaIdCount(const string& pname) const
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     uint32_t count(0);
-    for (set<SchemaId>::const_iterator iter = schemaIdSet.begin(); iter != schemaIdSet.end(); iter++)
+    for (set<SchemaId, SchemaIdCompare>::const_iterator iter = schemaIdSet.begin(); iter != schemaIdSet.end(); iter++)
         if (iter->getPackageName() == pname)
             count++;
     return count;
@@ -255,7 +255,7 @@ SchemaId AgentImpl::getSchemaId(const string& pname, uint32_t idx) const
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     uint32_t count(0);
-    for (set<SchemaId>::const_iterator iter = schemaIdSet.begin(); iter != schemaIdSet.end(); iter++) {
+    for (set<SchemaId, SchemaIdCompare>::const_iterator iter = schemaIdSet.begin(); iter != schemaIdSet.end(); iter++) {
         if (iter->getPackageName() == pname) {
             if (idx == count)
                 return *iter;
