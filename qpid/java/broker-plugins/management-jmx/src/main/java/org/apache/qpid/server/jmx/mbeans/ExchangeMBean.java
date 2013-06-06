@@ -261,8 +261,15 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     {
         final Map<String,Object> arguments = new HashMap<String, Object>();
 
+        createNewBinding(queueName, binding, arguments);
+    }
+
+    @Override
+    public void createNewBinding(String queueName, String binding, Map<String, Object> arguments) throws JMException
+    {
         if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getExchangeType()))
         {
+            arguments = new HashMap<String, Object>(arguments);
             final String[] bindings = binding.split(",");
             for (int i = 0; i < bindings.length; i++)
             {
