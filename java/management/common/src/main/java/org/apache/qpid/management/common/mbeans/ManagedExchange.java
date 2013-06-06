@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The management interface exposed to allow management of an Exchange.
@@ -113,7 +114,23 @@ public interface ManagedExchange
     void createNewBinding(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue name") String queueName,
                           @MBeanOperationParameter(name="Binding", description="New binding")String binding)
         throws JMException;
-    
+
+    /**
+     * Creates new binding with the given queue using given binding key and binding arguments.
+     * @param queueName
+     * @param binding
+     * @param arguments
+     * @throws JMException
+     * @since Qpid JMX API 2.7
+     */
+    @MBeanOperation(name="createNewBinding",
+                    description="create a new binding with this exchange",
+                    impact= MBeanOperationInfo.ACTION)
+    void createNewBinding(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue name") String queueName,
+                          @MBeanOperationParameter(name="Binding", description="New binding")String binding,
+                          @MBeanOperationParameter(name="Arguments", description="Binding arguments")Map<String, Object> arguments)
+        throws JMException;
+
     /**
      * Removes an exchange binding from a queue.
      * 
