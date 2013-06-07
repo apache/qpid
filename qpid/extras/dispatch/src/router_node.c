@@ -509,6 +509,8 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
     //
     dx_field_iterator_set_address(area, id);
 
+    dx_log(module, LOG_INFO, "Router started, area=%s id=%s", area, id);
+
     return router;
 }
 
