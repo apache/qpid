@@ -188,6 +188,78 @@ managedBroker.createNewQueue("myqueue", null, true, arguments);]]></programlisti
     </section>
   </section>
 
+  <section role="h2" id="Java-Broker-Queues-OtherTypes-Binding">
+    <title>Binding queues to exchanges</title>
+    <para>Queues can be bound to the broker exchanges in the virtualhost
+      configuration file or programmtically from a client using AMQP bind API (using
+      an extension to JMS), using JMX API, using REST interfaces or Web Management Console.</para>
+    <para>A queue can be bound to different exchanges at the same time.
+    Also, a queue can be bound to the same exchange multiple times.
+    Differenent binding keys can be used to bind a queue to the same topic or direct exchanges.</para>
+    <para>Binding attributes can be specified on binding creation to allow filtering of messages accepted by the queue using a selector expression
+    or/and specifying whether messages published by its own connection should be delivered to it.</para>
+    <section role="h3" id="Java-Broker-Queues-OtherTypes-BindingUsingManagement">
+      <title>Using Web Management Console</title>
+      <para>A queue can be bound to an exchange by clicking on "Add Binding" button on a Queue tab or an Exchange tab.</para>
+    </section>
+    <section role="h3" id="Java-Broker-Queues-OtherTypes-BindingUsingJmsOrJmx">
+      <title>Using JMX or AMQP</title>
+      <para>The following example illustrates the creation of queue binding to topic exchange with JMS client.</para>
+      <example>
+        <title>Binding a queue using JMS</title>
+        <programlisting><![CDATA[ConnectionFactory connectionFactory = ...
+Connection connection = connectionFactory.createConnection();
+AMQSession<?, ?> session = (AMQSession<?,?>)connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+...
+
+AMQShortString queueName = new AMQShortString("testQueue");
+AMQShortString routingKey = new AMQShortString("testRoutingKey");
+AMQDestination destination = (AMQDestination) session.createQueue(queueName.asString());
+
+...
+
+// binding arguments
+Map<String, Object> arguments = new HashMap<String, Object>();
+arguments.put("x-filter-jms-selector", "application='app1'");
+
+// create binding
+session.bindQueue(queueName, routingKey, FieldTable.convertToFieldTable(arguments),
+    new AMQShortString("amq.topic"), destination);]]></programlisting>
+      </example>
+      <para> The following example illustrates the creation of queue binding to topic exchange with JMX
+        interface using the ManagedExchange interface. </para>
+      <example>
+        <title>Binding a queue using JMX</title>
+        <programlisting><![CDATA[Map<String, Object> environment = new HashMap<String, Object>();
+environment.put(JMXConnector.CREDENTIALS, new String[] {"admin","password"});
+
+// Connect to service
+JMXServiceURL url =  new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi");
+JMXConnector jmxConnector = JMXConnectorFactory.connect(url, environment);
+MBeanServerConnection mbsc =  jmxConnector.getMBeanServerConnection();
+
+// Object name for topic Exchange MBean for virtualhost 'default'
+ObjectName objectName = new ObjectName("org.apache.qpid:type=VirtualHost.Exchange,"
+    + "VirtualHost=\"default\",name=\"amq.topic\",ExchangeType=topic");
+
+// Get the ManagedExchange object
+ManagedExchange topicExchange = JMX.newMBeanProxy(mbsc, objectName, ManagedExchange.class);;
+
+// Create the binding arguments
+Map<String,Object> arguments = new HashMap<String, Object>();
+arguments.put("x-filter-jms-selector", "application='app1'");
+
+// create binding
+topicExchange.createNewBinding("queue", "testBindingKey", arguments);]]></programlisting>
+      </example>
+    </section>
+    <section role="h3" id="Java-Broker-Queues-OtherTypes-BindingUsingConfig">
+        <title>Using configuration</title>
+        <para>How to bind queues in the Virtual Host configuration file is shown in <xref linkend="Java-Broker-Virtual-Host-Binding-Queue"/>.</para>
+    </section>
+  </section>
+
   <section role="h2" id="Java-Broker-Queues-OtherTypes-Message-Grouping">
     <title>
       Messaging Grouping

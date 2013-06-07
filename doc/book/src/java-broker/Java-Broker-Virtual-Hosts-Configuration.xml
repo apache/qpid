@@ -338,6 +338,31 @@
       </section>
     </section>
 
+    <section role="h2" id="Java-Broker-Virtual-Host-Binding-Queue">
+      <title>Queue Binding</title>
+      <para>Element <emphasis>routingKey</emphasis> is used to specify a binding key.
+      Also, elements <emphasis>bindingArgument</emphasis> is used to specify the binding arguments.
+      They have to be contained in the element having the same name as a binding key.</para>
+      <para>The following example demonstrates how to bind queue <emphasis>testQueue</emphasis> to a topic exchange
+      using routing key <emphasis>testRoutingKey</emphasis> and binding arguments for message selector and no local.</para>
+      <example>
+        <title>Queue Binding Example</title>
+          <programlisting><![CDATA[<queue>
+    <name>testQueue</name>
+    <testQueue>
+        <exchange>amq.topic</exchange>
+        <routingKey>testRoutingKey</routingKey>
+        <testRoutingKey>
+            <bindingArgument>x-filter-jms-selector=application='app1'</bindingArgument>
+            <bindingArgument>x-qpid-no-local=</bindingArgument>
+        </testRoutingKey>
+    </testQueue>
+</queue>]]>
+            </programlisting>
+         </example>
+         <para>Additionally, the queue is bound to the exchange with a binding key equal to the queue name.</para>
+    </section>
+
     <section role="h2" id="Java-Broker-Virtual-Host-Configure-Flow-Control">
       <title>Configuring of Producer Flow Control</title>
       <para>Flow control capacity and flow resume capacity are required to set on a queue or virtual host to enable Producer flow control.</para>
