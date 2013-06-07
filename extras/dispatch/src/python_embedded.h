@@ -1,5 +1,5 @@
-#ifndef __dispatch_dispatch_h__
-#define __dispatch_dispatch_h__ 1
+#ifndef __python_embedded_h__
+#define __python_embedded_h__ 1
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,31 +19,11 @@
  * under the License.
  */
 
-/**
- * \defgroup General Dispatch Definitions
- * @{
- */
+#include <Python.h>
 
-typedef struct dx_dispatch_t dx_dispatch_t;
-
-/**
- * \brief Initialize the Dispatch library and prepare it for operation.
- *
- * @return A handle to be used in API calls for this instance.
- */
-dx_dispatch_t *dx_dispatch();
-
-
-/**
- * \brief Finalize the Dispatch library after it has stopped running.
- *
- * @param dispatch The dispatch handle returned by dx_dispatch
- */
-void dx_dispatch_free(dx_dispatch_t *dispatch);
-
-
-/**
- * @}
- */
+void dx_python_initialize();
+void dx_python_finalize();
+void dx_python_start();
+void dx_python_stop();
 
 #endif

@@ -17,14 +17,21 @@
 ## under the License.
 ##
 
+project(qpid-dispatch C)
+
 cmake_minimum_required(VERSION 2.6)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
-
-project(qpid-dispatch C)
+include(CheckFunctionExists)
+include(CheckIncludeFiles)
+include(FindPythonLibs)
 
 enable_testing()
 include (CTest)
+
+if (NOT PYTHONLIBS_FOUND)
+     message(FATAL_ERROR "Python Development Libraries are needed.")
+endif (NOT PYTHONLIBS_FOUND)
 
 set (SO_VERSION_MAJOR 0)
 set (SO_VERSION_MINOR 1)
@@ -49,6 +56,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${proton_include}
+    ${PYTHON_INCLUDE_DIRS}
     )
 
 ##
@@ -70,6 +78,7 @@ set(server_SOURCES
     src/alloc.c
     src/auth.c
     src/buffer.c
+    src/config.c
     src/container.c
     src/dispatch.c
     src/hash.c
@@ -78,6 +87,7 @@ set(server_SOURCES
     src/log.c
     src/message.c
     src/posix/threading.c
+    src/python_embedded.c
     src/router_node.c
     src/server.c
     src/timer.c
@@ -85,7 +95,7 @@ set(server_SOURCES
     )
 
 add_library(qpid-dispatch SHARED ${server_SOURCES})
-target_link_libraries(qpid-dispatch ${proton_lib} ${pthread_lib} ${rt_lib})
+target_link_libraries(qpid-dispatch ${proton_lib} ${pthread_lib} ${rt_lib} ${PYTHON_LIBRARIES})
 set_target_properties(qpid-dispatch PROPERTIES
                       VERSION "${SO_VERSION}"
                       SOVERSION "${SO_VERSION_MAJOR}"

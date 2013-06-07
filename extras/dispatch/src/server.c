@@ -605,6 +605,8 @@ dx_server_t *dx_server(int thread_count, const char *container_name)
     dx_server->pause_now_serving   = 0;
     dx_server->pending_signal      = 0;
 
+    dx_log(module, LOG_INFO, "Container Name: %s", dx_server->container_name);
+
     return dx_server;
 }
 
@@ -727,6 +729,7 @@ void dx_server_signal(dx_dispatch_t *dx, int signum)
 
     dx_server->pending_signal = signum;
     sys_cond_signal_all(dx_server->cond);
+    pn_driver_wakeup(dx_server->driver);
 }
 
 
