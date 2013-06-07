@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 {
     dx_log_set_mask(LOG_INFO | LOG_TRACE | LOG_ERROR);
 
-    dispatch = dx_dispatch(4, "Qpid.Dispatch", "area", "Router.A");
+    dispatch = dx_dispatch();
 
     dx_server_set_signal_handler(dispatch, server_signal_handler, 0);
     dx_server_set_start_handler(dispatch, thread_start_handler, 0);
