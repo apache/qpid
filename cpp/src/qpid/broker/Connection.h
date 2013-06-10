@@ -136,11 +136,6 @@ class Connection : public sys::ConnectionInputHandler,
     void sendHeartbeat();
     void restartTimeout();
 
-    template <class F> void eachSessionHandler(F f) {
-        for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
-            f(*ptr_map_ptr(i));
-    }
-
     void setSecureConnection(SecureConnection* secured);
 
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
