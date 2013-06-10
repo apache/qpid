@@ -192,7 +192,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
       released(false)
 {
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
-    handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
+    handler.out = boost::bind(&Connector::handle, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   CLOSE_CODE_NORMAL, std::string());
     //only set error handler once  open
@@ -312,7 +312,7 @@ void ConnectionImpl::idleIn()
 void ConnectionImpl::idleOut()
 {
     AMQFrame frame((AMQHeartbeatBody()));
-    connector->send(frame);
+    connector->handle(frame);
 }
 
 void ConnectionImpl::close()

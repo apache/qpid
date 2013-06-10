@@ -22,7 +22,7 @@
 #define _Connector_
 
 
-#include "qpid/framing/OutputHandler.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolVersion.h"
 
 #include <boost/shared_ptr.hpp>
@@ -49,7 +49,7 @@ struct ConnectionSettings;
 class ConnectionImpl;
 
 ///@internal
-class Connector : public framing::OutputHandler
+class Connector : public framing::FrameHandler
 {
   public:
     // Protocol connector factory related stuff (it might be better to separate this code from the TCP Connector in the future)
@@ -64,7 +64,7 @@ class Connector : public framing::OutputHandler
     virtual void connect(const std::string& host, const std::string& port) = 0;
     virtual void init() {};
     virtual void close() = 0;
-    virtual void send(framing::AMQFrame& frame) = 0;
+    virtual void handle(framing::AMQFrame& frame) = 0;
     virtual void abort() = 0;
 
     virtual void setInputHandler(framing::InputHandler* handler) = 0;

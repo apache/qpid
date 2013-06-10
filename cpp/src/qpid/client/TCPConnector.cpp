@@ -181,7 +181,7 @@ const std::string& TCPConnector::getIdentifier() const {
     return identifier;
 }
 
-void TCPConnector::send(AMQFrame& frame) {
+void TCPConnector::handle(AMQFrame& frame) {
     bool notifyWrite = false;
     {
     Mutex::ScopedLock l(lock);

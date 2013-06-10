@@ -433,7 +433,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/MethodBodyFactory.h		\
   qpid/framing/MethodContent.h			\
   qpid/framing/ModelMethod.h			\
-  qpid/framing/OutputHandler.h			\
   qpid/framing/ProtocolInitiation.cpp		\
   qpid/framing/ProtocolInitiation.h		\
   qpid/framing/ProtocolVersion.cpp		\

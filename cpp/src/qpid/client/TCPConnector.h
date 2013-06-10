@@ -78,7 +78,7 @@ class TCPConnector : public Connector, public sys::Codec
     void writeDataBlock(const framing::AMQDataBlock& data);
 
     void close();
-    void send(framing::AMQFrame& frame);
+    void handle(framing::AMQFrame& frame);
     void abort();
     void connectAborted();
 

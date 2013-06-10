@@ -45,7 +45,7 @@ class ConnectionOutputHandlerPtr : public ConnectionOutputHandler
     void abort() { next->abort(); }
     void connectionEstablished() { next->connectionEstablished(); }
     void activateOutput() { next->activateOutput(); }
-    void send(framing::AMQFrame& f) { next->send(f); }
+    void handle(framing::AMQFrame& f) { next->handle(f); }
 
   private:
     ConnectionOutputHandler* next;
