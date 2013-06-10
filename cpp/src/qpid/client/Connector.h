@@ -69,8 +69,6 @@ class Connector : public framing::OutputHandler
 
     virtual void setInputHandler(framing::InputHandler* handler) = 0;
     virtual void setShutdownHandler(sys::ShutdownHandler* handler) = 0;
-    virtual sys::ShutdownHandler* getShutdownHandler() const = 0;
-    virtual framing::OutputHandler* getOutputHandler() = 0;
     virtual const std::string& getIdentifier() const = 0;
 
     virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
