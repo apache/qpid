@@ -289,10 +289,6 @@ void Connection::close(connection::CloseCode code, const string& text)
     getOutput().close();
 }
 
-void Connection::idleOut(){}
-
-void Connection::idleIn(){}
-
 void Connection::closed(){ // Physically closed, suspend open sessions.
     if (heartbeatTimer)
         heartbeatTimer->cancel();
