@@ -50,7 +50,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         heartbeat(0),
         heartbeatmax(120),
         userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links)
-        federationLink(true),
         isDefaultRealm(false)
     {}
 
@@ -73,7 +72,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
 
     void setUserProxyAuth(const bool b) { userProxyAuth = b; }
     bool isUserProxyAuth() const { return userProxyAuth || federationPeerTag.size() > 0; } // links can proxy msgs with non-matching auth ids
-    void setFederationLink(bool b) { federationLink = b; } // deprecated - use setFederationPeerTag() instead
     bool isFederationLink() const { return federationPeerTag.size() > 0; }
     void setFederationPeerTag(const std::string& tag) { federationPeerTag = std::string(tag); }
     const std::string& getFederationPeerTag() const { return federationPeerTag; }
@@ -107,7 +105,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     std::string userId;
     std::string url;
     bool userProxyAuth;
-    bool federationLink;
     std::string federationPeerTag;
     std::vector<Url> knownHosts;
     std::string userName;

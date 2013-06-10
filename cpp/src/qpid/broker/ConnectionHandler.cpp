@@ -195,7 +195,6 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
     }
 
     connection.setClientProperties(clientProperties);
-    connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
     if (clientProperties.isSet(QPID_FED_TAG)) {
         connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     }
