@@ -102,8 +102,6 @@ class RdmaConnector : public Connector, public sys::Codec
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
-    sys::ShutdownHandler* getShutdownHandler() const;
-    framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
     const qpid::sys::SecuritySettings* getSecuritySettings() { return 0; }
@@ -308,14 +306,6 @@ void RdmaConnector::setInputHandler(InputHandler* handler){
 
 void RdmaConnector::setShutdownHandler(ShutdownHandler* handler){
     shutdownHandler = handler;
-}
-
-OutputHandler* RdmaConnector::getOutputHandler(){ 
-    return this; 
-}
-
-sys::ShutdownHandler* RdmaConnector::getShutdownHandler() const {
-    return shutdownHandler;
 }
 
 const std::string& RdmaConnector::getIdentifier() const { 
