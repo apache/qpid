@@ -97,7 +97,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
     links(broker_.getLinks()),
     agent(0),
     timer(broker_.getTimer()),
-    errorListener(0),
     objectId(objectId_),
     outboundTracker(*this)
 {

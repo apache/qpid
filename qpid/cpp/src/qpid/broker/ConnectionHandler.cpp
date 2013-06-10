@@ -86,7 +86,6 @@ bool ConnectionHandler::handle(const framing::AMQMethodBody& method)
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
-    Connection::ErrorListener* errorListener = handler->connection.getErrorListener();
     try{
         if (method && handle(*method)) {
             // This is a connection control frame, nothing more to do.
@@ -98,10 +97,8 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
                 "Connection not yet open, invalid frame received.");
         }
     }catch(ConnectionException& e){
-        if (errorListener) errorListener->connectionError(e.what());
         handler->proxy.close(e.code, e.what());
     }catch(std::exception& e){
-        if (errorListener) errorListener->connectionError(e.what());
         handler->proxy.close(541/*internal error*/, e.what());
     }
 }

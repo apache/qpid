@@ -62,17 +62,6 @@ class Connection : public sys::ConnectionInputHandler,
                    public RefCounted
 {
   public:
-    /**
-     * Listener that can be registered with a Connection to be informed of errors.
-     */
-    class ErrorListener
-    {
-      public:
-        virtual ~ErrorListener() {}
-        virtual void sessionError(uint16_t channel, const std::string&) = 0;
-        virtual void connectionError(const std::string&) = 0;
-    };
-
     Connection(sys::ConnectionOutputHandler* out,
                Broker& broker,
                const std::string& mgmtId,
@@ -128,9 +117,6 @@ class Connection : public sys::ConnectionInputHandler,
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
     void setUserProxyAuth(bool b);
-    /** Connection does not delete the listener. 0 resets. */
-    void setErrorListener(ErrorListener* l) { errorListener=l; }
-    ErrorListener* getErrorListener() { return errorListener; }
 
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
@@ -170,7 +156,6 @@ class Connection : public sys::ConnectionInputHandler,
     sys::Timer& timer;
     boost::intrusive_ptr<sys::TimerTask> heartbeatTimer, linkHeartbeatTimer;
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
-    ErrorListener* errorListener;
     uint64_t objectId;
     framing::FieldTable clientProperties;
 
