@@ -44,8 +44,6 @@ void SessionHandler::connectionException(
     framing::connection::CloseCode code, const std::string& msg)
 {
     // NOTE: must tell the error listener _before_ calling connection.close()
-    if (connection.getErrorListener())
-        connection.getErrorListener()->connectionError(msg);
     if (errorListener)
         errorListener->connectionException(code, msg);
     connection.close(code, msg);
@@ -54,8 +52,6 @@ void SessionHandler::connectionException(
 void SessionHandler::channelException(
     framing::session::DetachCode code, const std::string& msg)
 {
-    if (connection.getErrorListener())
-        connection.getErrorListener()->sessionError(getChannel(), msg);
     if (errorListener)
         errorListener->channelException(code, msg);
 }
@@ -63,8 +59,6 @@ void SessionHandler::channelException(
 void SessionHandler::executionException(
     framing::execution::ErrorCode code, const std::string& msg)
 {
-    if (connection.getErrorListener())
-        connection.getErrorListener()->sessionError(getChannel(), msg);
     if (errorListener)
         errorListener->executionException(code, msg);
 }
