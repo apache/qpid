@@ -484,9 +484,9 @@ void Connection::OutboundFrameTracker::close() { next->close(); }
 void Connection::OutboundFrameTracker::abort() { next->abort(); }
 void Connection::OutboundFrameTracker::connectionEstablished() { next->connectionEstablished(); }
 void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
-void Connection::OutboundFrameTracker::send(framing::AMQFrame& f)
+void Connection::OutboundFrameTracker::handle(framing::AMQFrame& f)
 {
-    next->send(f);
+    next->handle(f);
     con.sent(f);
 }
 void Connection::OutboundFrameTracker::wrap(sys::ConnectionOutputHandlerPtr& p)

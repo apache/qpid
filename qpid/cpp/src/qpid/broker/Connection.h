@@ -191,7 +191,7 @@ class Connection : public sys::ConnectionInputHandler,
         void abort();
         void connectionEstablished();
         void activateOutput();
-        void send(framing::AMQFrame&);
+        void handle(framing::AMQFrame&);
         void wrap(sys::ConnectionOutputHandlerPtr&);
       private:
         Connection& con;

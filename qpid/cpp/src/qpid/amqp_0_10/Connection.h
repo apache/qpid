@@ -69,7 +69,7 @@ class Connection  : public sys::ConnectionCodec,
     void activateOutput();
     void closed();              // connection closed by peer.
     void close();               // closing from this end.
-    void send(framing::AMQFrame&);
+    void handle(framing::AMQFrame&);
     framing::ProtocolVersion getVersion() const;
 };
 
