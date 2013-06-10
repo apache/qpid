@@ -177,14 +177,6 @@ void TCPConnector::setShutdownHandler(ShutdownHandler* handler){
     shutdownHandler = handler;
 }
 
-OutputHandler* TCPConnector::getOutputHandler() {
-    return this; 
-}
-
-sys::ShutdownHandler* TCPConnector::getShutdownHandler() const {
-    return shutdownHandler;
-}
-
 const std::string& TCPConnector::getIdentifier() const { 
     return identifier;
 }

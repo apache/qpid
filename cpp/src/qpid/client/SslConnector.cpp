@@ -98,8 +98,6 @@ class SslConnector : public Connector
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
-    sys::ShutdownHandler* getShutdownHandler() const;
-    framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     const SecuritySettings* getSecuritySettings();
     void socketClosed(AsynchIO&, const Socket&);
@@ -250,14 +248,6 @@ void SslConnector::setInputHandler(InputHandler* handler){
 
 void SslConnector::setShutdownHandler(ShutdownHandler* handler){
     shutdownHandler = handler;
-}
-
-OutputHandler* SslConnector::getOutputHandler() {
-    return this;
-}
-
-sys::ShutdownHandler* SslConnector::getShutdownHandler() const {
-    return shutdownHandler;
 }
 
 const std::string& SslConnector::getIdentifier() const {
