@@ -23,7 +23,6 @@
 
 #include "qpid/framing/InputHandler.h"
 #include "qpid/sys/OutputTask.h"
-#include "qpid/sys/TimeoutHandler.h"
 
 namespace qpid {
 namespace sys {
@@ -38,7 +37,7 @@ namespace sys {
 
     class ConnectionInputHandler :
         public qpid::framing::InputHandler, 
-        public TimeoutHandler, public OutputTask
+        public OutputTask
     {
     public:
 
