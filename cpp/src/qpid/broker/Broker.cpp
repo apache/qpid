@@ -79,7 +79,6 @@
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
-#include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/Address.h"
 #include "qpid/StringUtils.h"

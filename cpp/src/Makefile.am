@@ -514,7 +514,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Socket.h				\
   qpid/sys/SocketAddress.h			\
   qpid/sys/StateMonitor.h			\
-  qpid/sys/TimeoutHandler.h			\
   qpid/sys/Timer.cpp				\
   qpid/sys/Timer.h				\
   qpid/sys/TimerWarnings.cpp			\

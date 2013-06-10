@@ -149,16 +149,16 @@ IOThread& theIO() {
 }
 
 class HeartbeatTask : public TimerTask {
-    TimeoutHandler& timeout;
+    ConnectionImpl& timeout;
 
     void fire() {
         // If we ever get here then we have timed out
         QPID_LOG(debug, "Traffic timeout");
-        timeout.idleIn();
+        timeout.timeout();
     }
 
 public:
-    HeartbeatTask(Duration p, TimeoutHandler& t) :
+    HeartbeatTask(Duration p, ConnectionImpl& t) :
         TimerTask(p,"Heartbeat"),
         timeout(t)
     {}
@@ -304,15 +304,9 @@ void ConnectionImpl::open()
     }
 }
 
-void ConnectionImpl::idleIn()
+void ConnectionImpl::timeout()
 {
     connector->abort();
-}
-
-void ConnectionImpl::idleOut()
-{
-    AMQFrame frame((AMQHeartbeatBody()));
-    connector->handle(frame);
 }
 
 void ConnectionImpl::close()
