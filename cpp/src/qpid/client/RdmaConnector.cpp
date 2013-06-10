@@ -70,7 +70,7 @@ class RdmaConnector : public Connector, public sys::Codec
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
     framing::InitiationHandler* initialiser;
-    framing::OutputHandler* output;
+    framing::FrameHandler* output;
 
     Rdma::AsynchIO* aio;
     Rdma::Connector* acon;
@@ -97,7 +97,7 @@ class RdmaConnector : public Connector, public sys::Codec
 
     void connect(const std::string& host, const std::string& port);
     void close();
-    void send(framing::AMQFrame& frame);
+    void handle(framing::AMQFrame& frame);
     void abort() {} // TODO: need to fix this for heartbeat timeouts to work
 
     void setInputHandler(framing::InputHandler* handler);
@@ -312,7 +312,7 @@ const std::string& RdmaConnector::getIdentifier() const {
     return identifier;
 }
 
-void RdmaConnector::send(AMQFrame& frame) {
+void RdmaConnector::handle(AMQFrame& frame) {
     // It is possible that we are called to write after we are already shutting down
     Mutex::ScopedLock l(dataConnectedLock);
     if (!dataConnected) return;

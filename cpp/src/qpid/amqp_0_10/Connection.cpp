@@ -132,7 +132,7 @@ void  Connection::closed() {
     connection->closed();
 }
 
-void Connection::send(framing::AMQFrame& f) {
+void Connection::handle(framing::AMQFrame& f) {
     {
         Mutex::ScopedLock l(frameQueueLock);
 	if (!pushClosed)

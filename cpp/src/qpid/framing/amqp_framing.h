@@ -26,6 +26,5 @@
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeartbeatBody.h"
 #include "qpid/framing/InputHandler.h"
-#include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"

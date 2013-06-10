@@ -92,7 +92,7 @@ class SslConnector : public Connector
     void connectFailed(const std::string& msg);
 
     void close();
-    void send(framing::AMQFrame& frame);
+    void handle(framing::AMQFrame& frame);
     void abort();
     void connectAborted();
 
@@ -254,7 +254,7 @@ const std::string& SslConnector::getIdentifier() const {
     return identifier;
 }
 
-void SslConnector::send(AMQFrame& frame) {
+void SslConnector::handle(AMQFrame& frame) {
     bool notifyWrite = false;
     {
     Mutex::ScopedLock l(lock);
