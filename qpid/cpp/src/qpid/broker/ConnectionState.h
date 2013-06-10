@@ -93,7 +93,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
 
     sys::ConnectionOutputHandler& getOutput() { return out; }
     framing::ProtocolVersion getVersion() const { return version; }
-    void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out.set(o); }
 
     virtual void requestIOProcessing (boost::function0<void>) = 0;
 
