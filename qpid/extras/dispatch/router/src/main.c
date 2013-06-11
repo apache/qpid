@@ -76,28 +76,8 @@ static void server_signal_handler(void* context, int signum)
 
 static void startup(void *context)
 {
-    // TODO - Move this into a configuration framework
-
     dx_server_pause(dispatch);
-
-    static dx_server_config_t server_config;
-    server_config.host            = "0.0.0.0";
-    server_config.port            = "5672";
-    server_config.sasl_mechanisms = "ANONYMOUS";
-    server_config.ssl_enabled     = 0;
-
-    dx_server_listen(dispatch, &server_config, 0);
-
-    /*
-    static dx_server_config_t client_config;
-    client_config.host            = "0.0.0.0";
-    client_config.port            = "10000";
-    client_config.sasl_mechanisms = "ANONYMOUS";
-    client_config.ssl_enabled     = 0;
-
-    dx_server_connect(dispatch, &client_config, 0);
-    */
-
+    dx_dispatch_configure(dispatch);
     dx_server_resume(dispatch);
 }
 
@@ -106,7 +86,7 @@ int main(int argc, char **argv)
 {
     dx_log_set_mask(LOG_INFO | LOG_TRACE | LOG_ERROR);
 
-    dispatch = dx_dispatch();
+    dispatch = dx_dispatch("../etc/qpid-dispatch.conf");
 
     dx_server_set_signal_handler(dispatch, server_signal_handler, 0);
     dx_server_set_start_handler(dispatch, thread_start_handler, 0);

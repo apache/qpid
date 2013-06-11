@@ -18,6 +18,7 @@
  */
 
 #include <qpid/dispatch/buffer.h>
+#include <stdio.h>
 
 int tool_tests();
 int timer_tests();
@@ -26,11 +27,16 @@ int server_tests();
 
 int main(int argc, char** argv)
 {
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s <config-file>\n", argv[0]);
+        exit(1);
+    }
+
     int result = 0;
     result += tool_tests();
     result += timer_tests();
     result += alloc_tests();
-    result += server_tests();
+    result += server_tests(argv[1]);
     return result;
 }
 

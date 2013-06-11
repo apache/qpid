@@ -20,6 +20,7 @@
  */
 
 #include "server_private.h"
+#include "config_private.h"
 
 typedef struct dx_container_t dx_container_t;
 typedef struct dx_router_t    dx_router_t;
@@ -30,6 +31,7 @@ struct dx_dispatch_t {
     dx_container_t *container;
     dx_router_t    *router;
     dx_agent_t     *agent;
+    dx_config_t    *config;
 };
 
 #endif
