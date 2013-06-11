@@ -29,9 +29,10 @@ typedef struct dx_dispatch_t dx_dispatch_t;
 /**
  * \brief Initialize the Dispatch library and prepare it for operation.
  *
+ * #param config_path The path to the configuration file.
  * @return A handle to be used in API calls for this instance.
  */
-dx_dispatch_t *dx_dispatch();
+dx_dispatch_t *dx_dispatch(const char *config_path);
 
 
 /**
@@ -40,6 +41,8 @@ dx_dispatch_t *dx_dispatch();
  * @param dispatch The dispatch handle returned by dx_dispatch
  */
 void dx_dispatch_free(dx_dispatch_t *dispatch);
+
+void dx_dispatch_configure(dx_dispatch_t *dispatch);
 
 
 /**

@@ -29,6 +29,7 @@
 #define THREAD_COUNT 4
 #define OCTET_COUNT  100
 
+static const char    *config_file;
 static dx_dispatch_t *dx;
 static sys_mutex_t   *test_lock;
 
@@ -116,7 +117,7 @@ static char* test_start_handler(void *context)
 {
     int i;
 
-    dx = dx_dispatch(THREAD_COUNT, 0, 0, 0);
+    dx = dx_dispatch(config_file);
 
     expected_context = (void*) 0x00112233;
     stored_error[0] = 0x0;
@@ -139,7 +140,7 @@ static char* test_start_handler(void *context)
 
 static char *test_server_start(void *context)
 {
-    dx = dx_dispatch(THREAD_COUNT, 0, 0, 0);
+    dx = dx_dispatch(config_file);
     dx_server_start(dx);
     dx_server_stop(dx);
     dx_dispatch_free(dx);
@@ -153,7 +154,7 @@ static char* test_user_fd(void *context)
     int res;
     dx_timer_t *timer;
 
-    dx = dx_dispatch(THREAD_COUNT, 0, 0, 0);
+    dx = dx_dispatch(config_file);
     dx_server_set_user_fd_handler(dx, ufd_handler);
     timer = dx_timer(dx, fd_test_start, 0);
     dx_timer_schedule(timer, 0);
@@ -190,11 +191,13 @@ static char* test_user_fd(void *context)
 }
 
 
-int server_tests(void)
+int server_tests(const char *_config_file)
 {
     int result = 0;
     test_lock = sys_mutex();
     dx_log_set_mask(LOG_NONE);
+
+    config_file = _config_file;
 
     TEST_CASE(test_server_start, 0);
     TEST_CASE(test_start_handler, 0);

@@ -283,29 +283,29 @@ typedef struct dx_server_config_t {
     /**
      * Host name or network address to bind to a listener or use in the connector.
      */
-    char *host;
+    const char *host;
 
     /**
      * Port name or number to bind to a listener or use in the connector.
      */
-    char *port;
+    const char *port;
 
     /**
      * Space-separated list of SASL mechanisms to be accepted for the connection.
      */
-    char *sasl_mechanisms;
+    const char *sasl_mechanisms;
 
     /**
      * If appropriate for the mechanism, the username for authentication
      * (connector only)
      */
-    char *sasl_username;
+    const char *sasl_username;
 
     /**
      * If appropriate for the mechanism, the password for authentication
      * (connector only)
      */
-    char *sasl_password;
+    const char *sasl_password;
 
     /**
      * If appropriate for the mechanism, the minimum acceptable security strength factor
@@ -338,23 +338,23 @@ typedef struct dx_server_config_t {
      * Path to the file containing the PEM-formatted public certificate for the local end
      * of the connection.
      */
-    char *ssl_certificate_file;
+    const char *ssl_certificate_file;
 
     /**
      * Path to the file containing the PEM-formatted private key for the local end of the
      * connection.
      */
-    char *ssl_private_key_file;
+    const char *ssl_private_key_file;
 
     /**
      * The password used to sign the private key, or NULL if the key is not protected.
      */
-    char *ssl_password;
+    const char *ssl_password;
 
     /**
      * Path to the file containing the PEM-formatted set of certificates of trusted CAs.
      */
-    char *ssl_trusted_certificate_db;
+    const char *ssl_trusted_certificate_db;
 
     /**
      * Iff non-zero, require that the peer's certificate be supplied and that it be authentic

@@ -23,7 +23,7 @@
 
 void dx_config_initialize();
 void dx_config_finalize();
-dx_config_t *dx_config(char *filename);
+dx_config_t *dx_config(const char *filename);
 void dx_config_free(dx_config_t *config);
 
 #endif

@@ -19,10 +19,11 @@
 
 #include "python_embedded.h"
 #include <qpid/dispatch.h>
+#include <qpid/dispatch/server.h>
+#include <qpid/dispatch/ctools.h>
 #include "dispatch_private.h"
 #include "alloc_private.h"
 #include "log_private.h"
-#include "config_private.h"
 
 /**
  * Private Function Prototypes
@@ -42,9 +43,24 @@ void            dx_agent_free(dx_agent_t *agent);
 
 static const char *CONF_CONTAINER = "container";
 static const char *CONF_ROUTER    = "router";
+static const char *CONF_LISTENER  = "listener";
 
 
-dx_dispatch_t *dx_dispatch()
+typedef struct dx_config_listener_t {
+    DEQ_LINKS(struct dx_config_listener_t);
+    dx_server_config_t  configuration;
+    dx_listener_t      *listener;
+} dx_config_listener_t;
+
+
+ALLOC_DECLARE(dx_config_listener_t);
+ALLOC_DEFINE(dx_config_listener_t);
+DEQ_DECLARE(dx_config_listener_t, listener_list_t);
+
+listener_list_t listeners;
+
+
+dx_dispatch_t *dx_dispatch(const char *config_path)
 {
     dx_dispatch_t *dx = NEW(dx_dispatch_t);
 
@@ -57,20 +73,22 @@ dx_dispatch_t *dx_dispatch()
     dx_log_initialize();
     dx_alloc_initialize();
 
-    dx_config_initialize();
-    dx_config_t *config = dx_config("../etc/qpid-dispatch.conf");
+    DEQ_INIT(listeners);
 
-    if (config) {
-        int count = dx_config_item_count(config, CONF_CONTAINER);
+    dx_config_initialize();
+    dx->config = dx_config(config_path);
+
+    if (dx->config) {
+        int count = dx_config_item_count(dx->config, CONF_CONTAINER);
         if (count == 1) {
-            thread_count   = dx_config_item_value_int(config, CONF_CONTAINER, 0, "worker-threads");
-            container_name = dx_config_item_value_string(config, CONF_CONTAINER, 0, "container-name");
+            thread_count   = dx_config_item_value_int(dx->config, CONF_CONTAINER, 0, "worker-threads");
+            container_name = dx_config_item_value_string(dx->config, CONF_CONTAINER, 0, "container-name");
         }
 
-        count = dx_config_item_count(config, CONF_ROUTER);
+        count = dx_config_item_count(dx->config, CONF_ROUTER);
         if (count == 1) {
-            router_area = dx_config_item_value_string(config, CONF_ROUTER, 0, "area");
-            router_id   = dx_config_item_value_string(config, CONF_ROUTER, 0, "router-id");
+            router_area = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "area");
+            router_id   = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "router-id");
         }
     }
 
@@ -95,14 +113,13 @@ dx_dispatch_t *dx_dispatch()
     dx_container_setup_agent(dx);
     dx_router_setup_agent(dx);
 
-    dx_config_free(config);
-
     return dx;
 }
 
 
 void dx_dispatch_free(dx_dispatch_t *dx)
 {
+    dx_config_free(dx->config);
     dx_config_finalize();
     dx_agent_free(dx->agent);
     dx_router_free(dx->router);
@@ -110,5 +127,34 @@ void dx_dispatch_free(dx_dispatch_t *dx)
     dx_server_free(dx->server);
     dx_log_finalize();
     dx_python_finalize();
+}
+
+
+static void configure_connections(dx_dispatch_t *dx)
+{
+    int count;
+
+    if (!dx->config)
+        return;
+
+    count = dx_config_item_count(dx->config, CONF_LISTENER);
+    for (int i = 0; i < count; i++) {
+        dx_config_listener_t *l = new_dx_config_listener_t();
+        memset(l, 0, sizeof(dx_config_listener_t));
+
+        l->configuration.host = dx_config_item_value_string(dx->config, CONF_LISTENER, i, "addr");
+        l->configuration.port = dx_config_item_value_string(dx->config, CONF_LISTENER, i, "port");
+        l->configuration.sasl_mechanisms =
+            dx_config_item_value_string(dx->config, CONF_LISTENER, i, "sasl-mechansism");
+        l->configuration.ssl_enabled = 0;
+
+        l->listener = dx_server_listen(dx, &l->configuration, l);
+    }
+}
+
+
+void dx_dispatch_configure(dx_dispatch_t *dx)
+{
+    configure_connections(dx);
 }
 
