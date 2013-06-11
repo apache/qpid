@@ -336,6 +336,24 @@
 </queue>]]></programlisting>
         </example>
       </section>
+      <section role="h3" id="Java-Broker-Virtual-Host-Configuring-Queue-With-Arguments">
+        <title>Configuring queue with arguments</title>
+        <para>Queue arguments can be configured in virtual host configuration file.
+        An element <emphasis>argument</emphasis> is used to specify a queue argument as a name-value pair separated with equal character.
+        Any number of queue arguments can be provided for a queue in their own <emphasis>argument</emphasis> elements.</para>
+        <para>The following example demonstrates how to configure queue with two arguments.</para>
+        <example>
+          <title>Setting arbitrary queue arguments</title>
+          <programlisting><![CDATA[
+<queue>
+    <name>myQueue</name>
+    <myQueue>
+        <argument>qpid.group_header_key=JMSXgroupID</argument>
+        <argument>qpid.shared_msg_group=1</argument>
+    </myQueue>
+</queue>]]></programlisting>
+        </example>
+      </section>
     </section>
 
     <section role="h2" id="Java-Broker-Virtual-Host-Binding-Queue">
