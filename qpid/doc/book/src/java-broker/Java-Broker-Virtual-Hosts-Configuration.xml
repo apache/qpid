@@ -340,10 +340,17 @@
 
     <section role="h2" id="Java-Broker-Virtual-Host-Binding-Queue">
       <title>Queue Binding</title>
-      <para>Element <emphasis>routingKey</emphasis> is used to specify a binding key.
-      Also, elements <emphasis>bindingArgument</emphasis> is used to specify the binding arguments.
-      They have to be contained in the element having the same name as a binding key.</para>
-      <para>The following example demonstrates how to bind queue <emphasis>testQueue</emphasis> to a topic exchange
+      <para>A queue can be bound to an exchange in virtual host configuration file by providing an exchange name in element <emphasis>exchange</emphasis>
+      within the queue configuration element having the same name as a queue. If exchange element is omitted in queue configuration
+      then such queue is bound to a default exchange only. With configuration file it is only possible to bind queue to a single exchange.</para>
+      <para>An element <emphasis>routingKey</emphasis> is used to specify a custom binding key. It is an optional element, and,
+       if it is not set then queue is bound to an exchange with a binding key equals to a queue name. Any number of binding keys can be configured.
+      </para>
+      <para>
+       Binding arguments can be set with each binding key. An element <emphasis>bindingArgument</emphasis> is used to specify a binding argument
+       as a name-value pair separated with equal character. Any number of binding arguments can be provided for a binding key in their own <emphasis>bindingArgument</emphasis> elements.
+       All of them should be contained within an element having the same name as a binding key.</para>
+      <para>The following example demonstrates how to bind queue <emphasis>testQueue</emphasis> to a default topic exchange
       using routing key <emphasis>testRoutingKey</emphasis> and binding arguments for message selector and no local.</para>
       <example>
         <title>Queue Binding Example</title>
@@ -360,7 +367,6 @@
 </queue>]]>
             </programlisting>
          </example>
-         <para>Additionally, the queue is bound to the exchange with a binding key equal to the queue name.</para>
     </section>
 
     <section role="h2" id="Java-Broker-Virtual-Host-Configure-Flow-Control">
