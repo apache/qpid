@@ -47,7 +47,7 @@ void dx_config_finalize()
 }
 
 
-dx_config_t *dx_config(char *filename)
+dx_config_t *dx_config(const char *filename)
 {
     dx_config_t *config = new_dx_config_t();
 
@@ -116,8 +116,9 @@ int dx_config_item_count(const dx_config_t *config, const char *section)
     pMethod = PyObject_GetAttrString(config->pObject, "item_count");
     if (!pMethod || !PyCallable_Check(pMethod)) {
         dx_log(log_module, LOG_ERROR, "Problem with configuration module: No callable 'item_count'");
-        if (pMethod)
+        if (pMethod) {
             Py_DECREF(pMethod);
+        }
         return 0;
     }
 
@@ -128,8 +129,9 @@ int dx_config_item_count(const dx_config_t *config, const char *section)
     Py_DECREF(pArgs);
     if (pResult && PyInt_Check(pResult))
         result = (int) PyInt_AsLong(pResult);
-    if (pResult)
+    if (pResult) {
         Py_DECREF(pResult);
+    }
     Py_DECREF(pMethod);
 
     return result;
@@ -148,8 +150,9 @@ static PyObject *item_value(const dx_config_t *config, const char *section, int 
     pMethod = PyObject_GetAttrString(config->pObject, method);
     if (!pMethod || !PyCallable_Check(pMethod)) {
         dx_log(log_module, LOG_ERROR, "Problem with configuration module: No callable '%s'", method);
-        if (pMethod)
+        if (pMethod) {
             Py_DECREF(pMethod);
+        }
         return 0;
     }
 
@@ -179,8 +182,9 @@ const char *dx_config_item_value_string(const dx_config_t *config, const char *s
         strncpy(value, PyString_AsString(pResult), size + 1);
     }
 
-    if (pResult)
+    if (pResult) {
         Py_DECREF(pResult);
+    }
 
     return value;
 }
@@ -194,8 +198,9 @@ uint32_t dx_config_item_value_int(const dx_config_t *config, const char *section
     if (pResult && PyLong_Check(pResult))
         value = (uint32_t) PyLong_AsLong(pResult);
 
-    if (pResult)
+    if (pResult) {
         Py_DECREF(pResult);
+    }
 
     return value;
 }
