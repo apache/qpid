@@ -224,4 +224,22 @@ symbol            | String
         </doc>
 	</type>
   </section>
+  <section name="xquery" title="An xquery based filter">
+      <type class="restricted" name="xquery" source="string" provides="filter">
+          <descriptor name="apache.org:xquery-filter:string" code="0x0000468C:0x00000005"/>
+          <doc>
+            <p>
+            The xquery filter consists of a described string value
+            containing a valid xquery string against which messages
+            are matched.
+            </p>
+            <p>
+            Containers which support the filter defined in this
+            section should advertise the capability
+            <term>APACHE.ORG:XQUERY</term> in their connection
+            capabilities when sending the open performative.
+            </p>
+          </doc>
+     </type>
+ </section>
 </amqp>

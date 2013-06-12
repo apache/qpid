@@ -78,11 +78,15 @@ const Descriptor SASL_OUTCOME(SASL_OUTCOME_CODE);
 namespace filters {
 const std::string LEGACY_DIRECT_FILTER_SYMBOL("apache.org:legacy-amqp-direct-binding:string");
 const std::string LEGACY_TOPIC_FILTER_SYMBOL("apache.org:legacy-amqp-topic-binding:string");
+const std::string LEGACY_HEADERS_FILTER_SYMBOL("apache.org:legacy-amqp-headers-binding:map");
 const std::string SELECTOR_FILTER_SYMBOL("apache.org:selector-filter:string");
+const std::string XQUERY_FILTER_SYMBOL("apache.org:xquery-filter:string");
 
 const uint64_t LEGACY_DIRECT_FILTER_CODE(0x0000468C00000000ULL);
 const uint64_t LEGACY_TOPIC_FILTER_CODE(0x0000468C00000001ULL);
+const uint64_t LEGACY_HEADERS_FILTER_CODE(0x0000468C00000002ULL);
 const uint64_t SELECTOR_FILTER_CODE(0x0000468C00000004ULL);
+const uint64_t XQUERY_FILTER_CODE(0x0000468C00000005ULL);
 }
 
 }} // namespace qpid::amqp

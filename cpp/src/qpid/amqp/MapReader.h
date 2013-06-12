@@ -95,9 +95,15 @@ class MapReader : public Reader
     void onEndArray(uint32_t /*count*/, const Descriptor*);
 
     MapReader();
+    static const int SYMBOL_KEY;
+    static const int STRING_KEY;
+    void setAllowedKeyType(int);
   private:
     CharSequence key;
     size_t level;
+    int keyType;
+
+    void clearKey();
 };
 }} // namespace qpid::amqp
 

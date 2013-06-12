@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/types/Variant.h"
+#include <vector>
 
 struct pn_terminus_t;
 
@@ -29,7 +30,6 @@ namespace qpid {
 namespace messaging {
 class Address;
 namespace amqp {
-
 class AddressHelper
 {
   public:
@@ -43,6 +43,18 @@ class AddressHelper
     const qpid::types::Variant::Map& getLinkProperties() const;
     static std::string getLinkName(const Address& address);
   private:
+    struct Filter
+    {
+        std::string name;
+        std::string descriptorSymbol;
+        uint64_t descriptorCode;
+        qpid::types::Variant value;
+
+        Filter();
+        Filter(const std::string& name, uint64_t descriptor, const qpid::types::Variant& value);
+        Filter(const std::string& name, const std::string& descriptor, const qpid::types::Variant& value);
+    };
+
     bool isTemporary;
     std::string createPolicy;
     std::string assertPolicy;
@@ -56,12 +68,17 @@ class AddressHelper
     bool durableNode;
     bool durableLink;
     bool browse;
+    std::vector<Filter> filters;
 
     bool enabled(const std::string& policy, CheckMode mode) const;
     bool createEnabled(CheckMode mode) const;
     bool assertEnabled(CheckMode mode) const;
     void setCapabilities(pn_terminus_t* terminus, bool create);
     void setNodeProperties(pn_terminus_t* terminus);
+    void addFilter(const qpid::types::Variant::Map&);
+    void addFilter(const std::string& name, uint64_t descriptor, const qpid::types::Variant& value);
+    void addFilter(const std::string& name, const std::string& descriptor, const qpid::types::Variant& value);
+    void addFilters(const qpid::types::Variant::List&);
 };
 }}} // namespace qpid::messaging::amqp
 

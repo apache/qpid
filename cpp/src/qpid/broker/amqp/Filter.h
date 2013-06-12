@@ -23,6 +23,9 @@
  */
 #include "qpid/amqp/MapReader.h"
 #include "qpid/amqp/Descriptor.h"
+#include "qpid/types/Variant.h"
+#include <map>
+#include <vector>
 #include <boost/shared_ptr.hpp>
 
 struct pn_data_t;
@@ -30,37 +33,87 @@ namespace qpid {
 namespace broker {
 class Exchange;
 class Queue;
+class QueueSettings;
 namespace amqp {
-
+class Outgoing;
 
 class Filter : qpid::amqp::MapReader
 {
   public:
+    Filter();
     void read(pn_data_t*);
     void write(pn_data_t*);
+
+    /**
+     * Apply filters where source is a queue
+     */
+    void apply(boost::shared_ptr<Outgoing> queue);
+
+    /**
+     * Configure subscription queue for case where source is an exchange
+     */
+    void configure(QueueSettings&);
+    /**
+     * Bind subscription queue for case where source is an exchange
+     */
+    void bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue);
+  private:
+    struct FilterBase
+    {
+        bool described;
+        bool requested;
+        qpid::amqp::Descriptor descriptor;
+        std::string key;
+        FilterBase();
+        virtual ~FilterBase();
+        void write(pn_data_t*);
+        virtual void writeValue(pn_data_t*) = 0;
+        void setDescriptor(const qpid::amqp::Descriptor&);
+    };
+    struct StringFilter : FilterBase
+    {
+        std::string value;
+        void writeValue(pn_data_t*);
+    };
+    struct MapFilter : FilterBase
+    {
+        typedef std::map<std::string, qpid::types::Variant> ValueType;
+        ValueType value;
+        void writeValue(pn_data_t*);
+    };
+
+    void onStringValue(const qpid::amqp::CharSequence& key, const qpid::amqp::CharSequence& value, const qpid::amqp::Descriptor* descriptor);
+    void onNullValue(const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor*);
+    void onBooleanValue(const qpid::amqp::CharSequence&, bool, const qpid::amqp::Descriptor*);
+    void onUByteValue(const qpid::amqp::CharSequence&, uint8_t, const qpid::amqp::Descriptor*);
+    void onUShortValue(const qpid::amqp::CharSequence&, uint16_t, const qpid::amqp::Descriptor*);
+    void onUIntValue(const qpid::amqp::CharSequence&, uint32_t, const qpid::amqp::Descriptor*);
+    void onULongValue(const qpid::amqp::CharSequence&, uint64_t, const qpid::amqp::Descriptor*);
+    void onByteValue(const qpid::amqp::CharSequence&, int8_t, const qpid::amqp::Descriptor*);
+    void onShortValue(const qpid::amqp::CharSequence&, int16_t, const qpid::amqp::Descriptor*);
+    void onIntValue(const qpid::amqp::CharSequence&, int32_t, const qpid::amqp::Descriptor*);
+    void onLongValue(const qpid::amqp::CharSequence&, int64_t, const qpid::amqp::Descriptor*);
+    void onFloatValue(const qpid::amqp::CharSequence&, float, const qpid::amqp::Descriptor*);
+    void onDoubleValue(const qpid::amqp::CharSequence&, double, const qpid::amqp::Descriptor*);
+    bool onStartMapValue(const qpid::amqp::CharSequence& key, uint32_t count, const qpid::amqp::Descriptor* descriptor);
+    void onEndMapValue(const qpid::amqp::CharSequence& key, uint32_t count, const qpid::amqp::Descriptor* descriptor);
+    void setFilter(StringFilter&, const StringFilter&);
     bool hasSubjectFilter() const;
     std::string getSubjectFilter() const;
     bool hasSelectorFilter() const;
     std::string getSelectorFilter() const;
-    void bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue);
-  private:
-    struct StringFilter
-    {
-        bool described;
-        qpid::amqp::Descriptor descriptor;
-        std::string key;
-        std::string value;
-        StringFilter();
-        void write(pn_data_t*);
-        void bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue);
-    };
-
-    void onStringValue(const qpid::amqp::CharSequence& key, const qpid::amqp::CharSequence& value, const qpid::amqp::Descriptor* descriptor);
-    void setSubjectFilter(const StringFilter&);
-    void setSelectorFilter(const StringFilter&);
+    bool setDefaultSubjectFilter(bool wildcards=false);
+    bool setDefaultSubjectFilter(const qpid::amqp::Descriptor& descriptor, const std::string& value=std::string());
+    bool adjustDirectFilter();
+    void setDefaultHeadersFilter();
+    void setDefaultXQueryFilter();
 
     StringFilter subjectFilter;
     StringFilter selectorFilter;
+    StringFilter xqueryFilter;
+    MapFilter headersFilter;
+    std::vector<FilterBase*> active;
+    bool inHeadersMap;
 };
 }}} // namespace qpid::broker::amqp
 
