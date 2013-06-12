@@ -55,6 +55,7 @@ namespace amqp {
 namespace {
 bool is_capability_requested(const std::string& name, pn_data_t* capabilities)
 {
+    pn_data_rewind(capabilities);
     while (pn_data_next(capabilities)) {
         pn_bytes_t c = pn_data_get_symbol(capabilities);
         std::string s(c.start, c.size);
@@ -69,9 +70,11 @@ const std::string QUEUE("queue");
 const std::string TOPIC("topic");
 const std::string DIRECT_FILTER("legacy-amqp-direct-binding");
 const std::string TOPIC_FILTER("legacy-amqp-topic-binding");
+const std::string SHARED("shared");
 
 void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Queue> node)
 {
+    pn_data_rewind(in);
     while (pn_data_next(in)) {
         pn_bytes_t c = pn_data_get_symbol(in);
         std::string s(c.start, c.size);
@@ -85,11 +88,14 @@ void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Queue> nod
 
 void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Exchange> node)
 {
+    pn_data_rewind(in);
     while (pn_data_next(in)) {
         pn_bytes_t c = pn_data_get_symbol(in);
         std::string s(c.start, c.size);
         if (s == DURABLE) {
             if (node->isDurable()) pn_data_put_symbol(out, c);
+        } else if (s == SHARED) {
+            pn_data_put_symbol(out, c);
         } else if (s == CREATE_ON_DEMAND || s == TOPIC) {
             pn_data_put_symbol(out, c);
         } else if (s == DIRECT_FILTER) {
@@ -281,18 +287,27 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         filter.apply(q);
         outgoing[link] = q;
     } else if (node.exchange) {
+        bool shared = is_capability_requested(SHARED, pn_terminus_capabilities(source));
         bool durable = pn_terminus_get_durability(source);
         QueueSettings settings(durable, !durable);
         filter.configure(settings);
         //TODO: populate settings from source details when available from engine
-        std::stringstream queueName;//combination of container id and link name is unique
-        queueName << connection.getContainerId() << "_" << pn_link_name(link);
+        std::stringstream queueName;
+        if (shared) {
+            //just use link name (TODO: could allow this to be
+            //overridden when acces to link properties is provided
+            //(PROTON-335))
+            queueName << pn_link_name(link);
+        } else {
+            //combination of container id and link name is unique
+            queueName << connection.getContainerId() << "_" << pn_link_name(link);
+        }
         boost::shared_ptr<qpid::broker::Queue> queue
             = broker.createQueue(queueName.str(), settings, this, "", connection.getUserid(), connection.getId()).first;
-        queue->setExclusiveOwner(this);
+        if (!shared) queue->setExclusiveOwner(this);
 
         filter.bind(node.exchange, queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, queue, link, *this, out, true));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, queue, link, *this, out, !shared));
         outgoing[link] = q;
         q->init();
     } else if (node.relay) {
