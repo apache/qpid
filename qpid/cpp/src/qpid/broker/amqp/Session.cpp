@@ -278,34 +278,20 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
     if (node.queue) {
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, node.queue, link, *this, out, false));
         q->init();
-        if (filter.hasSubjectFilter()) {
-            q->setSubjectFilter(filter.getSubjectFilter());
-        }
-        if (filter.hasSelectorFilter()) {
-            q->setSelectorFilter(filter.getSelectorFilter());
-        }
+        filter.apply(q);
         outgoing[link] = q;
     } else if (node.exchange) {
         bool durable = pn_terminus_get_durability(source);
         QueueSettings settings(durable, !durable);
-        if (filter.hasSelectorFilter()) {
-            settings.filter = filter.getSelectorFilter();
-            QPID_LOG(debug, "Selector specified for outgoing link from exchange " << node.exchange->getName() << ": " << settings.filter);
-        }
+        filter.configure(settings);
         //TODO: populate settings from source details when available from engine
         std::stringstream queueName;//combination of container id and link name is unique
         queueName << connection.getContainerId() << "_" << pn_link_name(link);
         boost::shared_ptr<qpid::broker::Queue> queue
             = broker.createQueue(queueName.str(), settings, this, "", connection.getUserid(), connection.getId()).first;
         queue->setExclusiveOwner(this);
-        if (filter.hasSubjectFilter()) {
-            filter.bind(node.exchange, queue);
-            filter.write(pn_terminus_filter(pn_link_source(link)));
-        } else if (node.exchange->getType() == TopicExchange::typeName) {
-            node.exchange->bind(queue, "#", 0);
-        } else {
-            node.exchange->bind(queue, std::string(), 0);
-        }
+
+        filter.bind(node.exchange, queue);
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, queue, link, *this, out, true));
         outgoing[link] = q;
         q->init();
@@ -317,6 +303,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         pn_terminus_set_type(pn_link_source(link), PN_UNSPECIFIED);
         throw qpid::Exception("Node not found: " + name);/*not-found*/
     }
+    filter.write(pn_terminus_filter(pn_link_source(link)));
     QPID_LOG(debug, "Outgoing link attached");
 }
 

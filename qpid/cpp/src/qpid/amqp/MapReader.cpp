@@ -30,7 +30,7 @@ void MapReader::onNull(const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onNullValue(key, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -40,7 +40,7 @@ void MapReader::onBoolean(bool v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onBooleanValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -51,7 +51,7 @@ void MapReader::onUByte(uint8_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onUByteValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -62,7 +62,7 @@ void MapReader::onUShort(uint16_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onUShortValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -73,7 +73,7 @@ void MapReader::onUInt(uint32_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onUIntValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -84,7 +84,7 @@ void MapReader::onULong(uint64_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onULongValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -95,7 +95,7 @@ void MapReader::onByte(int8_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onByteValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -106,7 +106,7 @@ void MapReader::onShort(int16_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onShortValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -117,7 +117,7 @@ void MapReader::onInt(int32_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onIntValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -128,7 +128,7 @@ void MapReader::onLong(int64_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onLongValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -139,7 +139,7 @@ void MapReader::onFloat(float v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onFloatValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -150,7 +150,7 @@ void MapReader::onDouble(double v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onDoubleValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -161,7 +161,7 @@ void MapReader::onUuid(const CharSequence& v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onUuidValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -172,7 +172,7 @@ void MapReader::onTimestamp(int64_t v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onTimestampValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -183,7 +183,7 @@ void MapReader::onBinary(const CharSequence& v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onBinaryValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -194,9 +194,13 @@ void MapReader::onString(const CharSequence& v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onStringValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
-        throw qpid::Exception(QPID_MSG("Expecting symbol as key, got string " << v.str()));
+        if (keyType & STRING_KEY) {
+            key = v;
+        } else {
+            throw qpid::Exception(QPID_MSG("Expecting symbol as key, got string " << v.str()));
+        }
     }
 }
 
@@ -205,9 +209,13 @@ void MapReader::onSymbol(const CharSequence& v, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onSymbolValue(key, v, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
-        key = v;
+        if (keyType & SYMBOL_KEY) {
+            key = v;
+        } else {
+            throw qpid::Exception(QPID_MSG("Expecting string as key, got symbol " << v.str()));
+        }
     }
 }
 
@@ -216,7 +224,7 @@ bool MapReader::onStartList(uint32_t count, const CharSequence&, const Descripto
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         bool step = onStartListValue(key, count, d);
-        key.data = 0; key.size = 0;
+        clearKey();
         return step;
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
@@ -229,7 +237,7 @@ bool MapReader::onStartMap(uint32_t count, const CharSequence&, const Descriptor
     if (level++) {
         if (key) {
             bool step = onStartMapValue(key, count, d);
-            key.data = 0; key.size = 0;
+            clearKey();
             return step;
         } else {
             throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
@@ -243,7 +251,7 @@ bool MapReader::onStartArray(uint32_t count, const CharSequence&, const Construc
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         bool step = onStartArrayValue(key, count, c, d);
-        key.data = 0; key.size = 0;
+        clearKey();
         return step;
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
@@ -256,7 +264,7 @@ void MapReader::onEndList(uint32_t count, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onEndListValue(key, count, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
@@ -266,7 +274,7 @@ void MapReader::onEndMap(uint32_t count, const Descriptor* d)
 {
     if (--level) {
         onEndMapValue(key, count, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     }
 }
 
@@ -275,15 +283,27 @@ void MapReader::onEndArray(uint32_t count, const Descriptor* d)
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
         onEndArrayValue(key, count, d);
-        key.data = 0; key.size = 0;
+        clearKey();
     } else {
         throw qpid::Exception(QPID_MSG("Expecting symbol as key"));
     }
 }
 
-MapReader::MapReader() : level(0)
+MapReader::MapReader() : level(0), keyType(SYMBOL_KEY)
+{
+    clearKey();
+}
+
+void MapReader::setAllowedKeyType(int t)
+{
+    keyType = t;
+}
+
+void MapReader::clearKey()
 {
     key.data = 0; key.size = 0;
 }
 
+const int MapReader::SYMBOL_KEY(1);
+const int MapReader::STRING_KEY(2);
 }} // namespace qpid::amqp
