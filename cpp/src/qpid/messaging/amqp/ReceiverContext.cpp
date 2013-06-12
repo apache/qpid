@@ -22,7 +22,6 @@
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
-#include "qpid/amqp/descriptors.h"
 #include "qpid/log/Statement.h"
 extern "C" {
 #include <proton/engine.h>
@@ -90,24 +89,6 @@ const std::string& ReceiverContext::getSource() const
 {
     return address.getName();
 }
-namespace {
-pn_bytes_t convert(const std::string& s)
-{
-    pn_bytes_t result;
-    result.start = const_cast<char*>(s.data());
-    result.size = s.size();
-    return result;
-}
-bool hasWildcards(const std::string& key)
-{
-    return key.find('*') != std::string::npos || key.find('#') != std::string::npos;
-}
-
-uint64_t getFilterDescriptor(const std::string& key)
-{
-    return hasWildcards(key) ? qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE : qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE;
-}
-}
 void ReceiverContext::verify(pn_terminus_t* source)
 {
     helper.checkAssertion(source, AddressHelper::FOR_RECEIVER);
@@ -119,34 +100,6 @@ void ReceiverContext::configure()
 void ReceiverContext::configure(pn_terminus_t* source)
 {
     helper.configure(source, AddressHelper::FOR_RECEIVER);
-
-    // Look specifically for qpid.selector link property and add a filter for it
-    qpid::types::Variant::Map::const_iterator i = helper.getLinkProperties().find("selector");
-    if (i!=helper.getLinkProperties().end()) {
-        pn_data_t* filter = pn_terminus_filter(source);
-        pn_data_put_map(filter);
-        pn_data_enter(filter);
-        pn_data_put_symbol(filter, convert("selector"));
-        pn_data_put_described(filter);
-        pn_data_enter(filter);
-        pn_data_put_ulong(filter, qpid::amqp::filters::SELECTOR_FILTER_CODE);
-        pn_data_put_string(filter, convert(i->second));
-        pn_data_exit(filter);
-        pn_data_exit(filter);
-    }
-    if (!address.getSubject().empty()) {
-        //filter:
-        pn_data_t* filter = pn_terminus_filter(source);
-        pn_data_put_map(filter);
-        pn_data_enter(filter);
-        pn_data_put_symbol(filter, convert("subject"));
-        pn_data_put_described(filter);
-        pn_data_enter(filter);
-        pn_data_put_ulong(filter, getFilterDescriptor(address.getSubject()));
-        pn_data_put_string(filter, convert(address.getSubject()));
-        pn_data_exit(filter);
-        pn_data_exit(filter);
-    }
 }
 
 Address ReceiverContext::getAddress() const
