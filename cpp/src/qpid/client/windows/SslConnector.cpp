@@ -32,9 +32,7 @@
 #include "qpid/sys/windows/check.h"
 #include "qpid/sys/windows/SslAsynchIO.h"
 
-#include <iostream>
 #include <boost/bind.hpp>
-#include <boost/format.hpp>
 
 #include <memory.h>
 // security.h needs to see this to distinguish from kernel use.
@@ -48,10 +46,7 @@ namespace qpid {
 namespace client {
 namespace windows {
 
-using namespace qpid::sys;
-using boost::format;
-using boost::str;
-
+using qpid::sys::Socket;
 
 class SslConnector : public qpid::client::TCPConnector
 {
@@ -65,22 +60,14 @@ class SslConnector : public qpid::client::TCPConnector
     virtual ~SslConnector();
     void negotiationDone(SECURITY_STATUS status);
 
-    // A number of AsynchIO callbacks go right through to TCPConnector, but
-    // we can't boost::bind to a protected ancestor, so these methods redirect
-    // to those TCPConnector methods.
-    void redirectReadbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
-    void redirectWritebuff(qpid::sys::AsynchIO&);
-    void redirectEof(qpid::sys::AsynchIO&);
-    void redirectDisconnect(qpid::sys::AsynchIO&);
-    void redirectSocketClosed(qpid::sys::AsynchIO&, const qpid::sys::Socket&);
+    void connect(const std::string& host, const std::string& port);
+    void connected(const Socket&);
 
 public:
     SslConnector(boost::shared_ptr<qpid::sys::Poller>,
                  framing::ProtocolVersion pVersion,
                  const ConnectionSettings&, 
                  ConnectionImpl*);
-    virtual void connect(const std::string& host, const std::string& port);
-    virtual void connected(const Socket&);
 };
 
 // Static constructor which registers connector here
@@ -112,27 +99,6 @@ void SslConnector::negotiationDone(SECURITY_STATUS status)
         connectFailed(QPID_MSG(qpid::sys::strError(status)));
 }
 
-void SslConnector::redirectReadbuff(qpid::sys::AsynchIO& a,
-                                    qpid::sys::AsynchIOBufferBase* b) {
-    readbuff(a, b);
-}
-
-void SslConnector::redirectWritebuff(qpid::sys::AsynchIO& a) {
-    writebuff(a);
-}
-
-void SslConnector::redirectEof(qpid::sys::AsynchIO& a) {
-    eof(a);
-}
-
-void SslConnector::redirectDisconnect(qpid::sys::AsynchIO& a) {
-    disconnected(a);
-}
-
-void SslConnector::redirectSocketClosed(qpid::sys::AsynchIO& a, const qpid::sys::Socket& s) {
-    socketClosed(a, s);
-}
-
 SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
                            framing::ProtocolVersion ver,
                            const ConnectionSettings& settings,
@@ -160,8 +126,6 @@ SslConnector::~SslConnector()
     ::FreeCredentialsHandle(&credHandle);
 }
 
-  // Will this get reach via virtual method via boost::bind????
-
 void SslConnector::connect(const std::string& host, const std::string& port) {
     brokerHost = host;
     TCPConnector::connect(host, port);
@@ -171,15 +135,15 @@ void SslConnector::connected(const Socket& s) {
     shim = new qpid::sys::windows::ClientSslAsynchIO(brokerHost,
                                                      s,
                                                      credHandle,
-                                                     boost::bind(&SslConnector::redirectReadbuff, this, _1, _2),
-                                                     boost::bind(&SslConnector::redirectEof, this, _1),
-                                                     boost::bind(&SslConnector::redirectDisconnect, this, _1),
-                                                     boost::bind(&SslConnector::redirectSocketClosed, this, _1, _2),
+                                                     boost::bind(&SslConnector::readbuff, this, _1, _2),
+                                                     boost::bind(&SslConnector::eof, this, _1),
+                                                     boost::bind(&SslConnector::disconnected, this, _1),
+                                                     boost::bind(&SslConnector::socketClosed, this, _1, _2),
                                                      0, // nobuffs
-                                                     boost::bind(&SslConnector::redirectWritebuff, this, _1),
+                                                     boost::bind(&SslConnector::writebuff, this, _1),
                                                      boost::bind(&SslConnector::negotiationDone, this, _1));
     start(shim);
-	shim->start(poller);
+    shim->start(poller);
 }
 
 }}} // namespace qpid::client::windows
