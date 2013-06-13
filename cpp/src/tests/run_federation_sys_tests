@@ -42,7 +42,7 @@ SKIPTESTS="${SKIPTESTS} -i federation_sys.C_* -i federation_sys.D_*"
 
 start_brokers() {
     start_broker() {
-        ${QPIDD_EXEC} --daemon --port 0 --auth no --no-data-dir $1 > qpidd.port
+        ${QPIDD_EXEC} --daemon --port 0 --interface 127.0.0.1 --auth no --no-data-dir $1 > qpidd.port
         PORT=`cat qpidd.port`
         eval "$2=${PORT}"
     }

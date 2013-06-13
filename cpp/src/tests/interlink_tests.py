@@ -250,6 +250,7 @@ class AmqpBrokerTest(BrokerTest):
     def amqp_broker(self):
         assert BrokerTest.amqp_lib, "Cannot locate AMQP 1.0 plug-in"
         args = ["--load-module", BrokerTest.amqp_lib,
+                "--interface=127.0.0.1",
                 "--max-negotiate-time=600000",
                 "--log-enable=trace+:Protocol",
                 "--log-enable=info+"]

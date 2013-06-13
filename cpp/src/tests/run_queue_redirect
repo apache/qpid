@@ -27,7 +27,7 @@ trap stop_brokers INT TERM QUIT
 
 start_brokers() {
     $QPIDD_EXEC --daemon \
-             --port 0 \
+             --port 0 --interface 127.0.0.1 \
              --no-module-dir \
              --data-dir $DATA_DIR \
              --load-module $ACL_LIB \

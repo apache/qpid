@@ -64,7 +64,7 @@ mv ${sasl_config_dir} ${sasl_config_dir}-
 print " Starting broker"
 #--------------------------------------------------
 $QPIDD_EXEC                                  \
-  -p 0                                       \
+  -p 0  --interface 127.0.0.1                \
   --no-data-dir                              \
   --auth=yes                                 \
   --mgmt-enable=yes                          \
