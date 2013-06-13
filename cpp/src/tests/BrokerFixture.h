@@ -56,6 +56,7 @@ struct  BrokerFixture : private boost::noncopyable {
             qpid::log::Logger::instance().configure(logOpts);
         }
         opts.port=0;
+        opts.listenInterfaces.push_back("127.0.0.1");
         // Management doesn't play well with multiple in-process brokers.
         opts.enableMgmt=enableMgmt;
         opts.workerThreads=1;
