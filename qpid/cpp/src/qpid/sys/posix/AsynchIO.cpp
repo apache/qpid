@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/AsynchIO.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/Poller.h"
@@ -28,15 +29,14 @@
 #include "qpid/sys/Time.h"
 #include "qpid/log/Statement.h"
 
-#include "qpid/sys/posix/check.h"
-
 // TODO The basic algorithm here is not really POSIX specific and with a
 // bit more abstraction could (should) be promoted to be platform portable
-#include <unistd.h>
-#include <sys/socket.h>
-#include <signal.h>
+// - The POSIX specific code here is ignoring SIGPIPE which should really
+//   be part of the socket code.
+// - And checking errno to detect specific read/write conditions.
+//
 #include <errno.h>
-#include <string.h>
+#include <signal.h>
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>

@@ -24,7 +24,6 @@
 #include "qpid/CommonImportExport.h"
 
 #include "qpid/sys/IntegerTypes.h"
-#include "qpid/sys/SecuritySettings.h"
 
 #include <string.h>
 
@@ -33,7 +32,8 @@
 
 namespace qpid {
 namespace sys {
-    
+
+class SecuritySettings;
 class Socket;
 class Poller;
 
