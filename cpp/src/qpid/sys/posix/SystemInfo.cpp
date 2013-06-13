@@ -111,7 +111,7 @@ namespace {
         for (::ifaddrs* info = interfaceInfo; info != 0; info = info->ifa_next) {
 
             // Only use IPv4/IPv6 interfaces
-            if (!isInetOrInet6(info->ifa_addr)) continue;
+            if (!info->ifa_addr || !isInetOrInet6(info->ifa_addr)) continue;
 
             int rc=::getnameinfo(info->ifa_addr, sa_len(info->ifa_addr),
                                  name, sizeof(name), 0, 0,
