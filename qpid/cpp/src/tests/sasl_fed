@@ -54,7 +54,7 @@ echo acl allow all all > $tmp_root/sasl_fed.acl
 #echo " Starting broker 1"
 #--------------------------------------------------
 $QPIDD_EXEC                                  \
-  -p 0                                       \
+  -p 0  --interface 127.0.0.1                \
   --data-dir $tmp_root/data_1                \
   --auth=yes                                 \
   --mgmt-enable=yes                          \
@@ -73,7 +73,7 @@ broker_1_port=`cat $tmp_root/broker_1_port`
 #echo " Starting broker 2"
 #--------------------------------------------------
 $QPIDD_EXEC                                  \
-  -p 0                                       \
+  -p 0 --interface 127.0.0.1                 \
   --data-dir $tmp_root/data_2                \
   --auth=yes                                 \
   --mgmt-enable=yes                          \

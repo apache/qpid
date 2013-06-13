@@ -100,7 +100,7 @@ COMMON_OPTS="--daemon --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CER
 start_brokers() {
     local -a ports
     for (( i=0; $i<$1; i++)) do
-    ports[$i]=$($QPIDD_EXEC --port 0 $COMMON_OPTS $2) || error "Could not start broker $i"
+    ports[$i]=$($QPIDD_EXEC --port 0 --interface 127.0.0.1 $COMMON_OPTS $2) || error "Could not start broker $i"
     done
     PORTS=( ${PORTS[@]} ${ports[@]} )
 }

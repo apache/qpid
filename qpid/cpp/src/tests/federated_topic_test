@@ -47,7 +47,7 @@ source ./test_env.sh
 trap stop_brokers EXIT
 
 start_broker() {
-    $QPIDD_EXEC --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
+    $QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-module-dir --no-data-dir --auth no > qpidd.port
 }
 
 start_brokers() {

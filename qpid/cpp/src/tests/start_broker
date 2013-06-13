@@ -21,4 +21,4 @@
 
 # Start a test broker.
 srcdir=`dirname $0`
-exec $srcdir/run_test ../qpidd --auth=no --no-module-dir --daemon --port=0 --log-to-file qpidd.log "$@" > qpidd.port
+exec $srcdir/run_test ../qpidd --auth=no --no-module-dir --daemon --port=0 --interface 127.0.0.1 --log-to-file qpidd.log "$@" > qpidd.port
