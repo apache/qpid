@@ -23,6 +23,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
 #include "qpid/log/Statement.h"
