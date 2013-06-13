@@ -33,7 +33,7 @@
 namespace qpid {
 namespace sys {
 
-class SecuritySettings;
+struct SecuritySettings;
 class Socket;
 class Poller;
 
