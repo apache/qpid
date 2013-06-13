@@ -25,6 +25,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/windows/WinSocket.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Thread.h"
