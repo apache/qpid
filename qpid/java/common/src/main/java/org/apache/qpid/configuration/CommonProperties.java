@@ -33,6 +33,9 @@ public class CommonProperties
     public static final String IO_NETWORK_TRANSPORT_TIMEOUT_PROP_NAME = "qpid.io_network_transport_timeout";
     public static final int IO_NETWORK_TRANSPORT_TIMEOUT_DEFAULT = 60000;
 
+    public static final String HANDSHAKE_TIMEOUT_PROP_NAME = "qpid.handshake_timeout";
+    public static final int HANDSHAKE_TIMEOUT_DEFAULT = 2;
+
 
     private CommonProperties()
     {
