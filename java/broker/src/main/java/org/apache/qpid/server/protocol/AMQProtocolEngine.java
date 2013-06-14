@@ -790,6 +790,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             _network.setMaxWriteIdle(delay);
             _network.setMaxReadIdle(BrokerProperties.HEARTBEAT_TIMEOUT_FACTOR * delay);
         }
+        else
+        {
+            _network.setMaxWriteIdle(0);
+            _network.setMaxReadIdle(0);
+        }
     }
 
     /**

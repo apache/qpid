@@ -236,15 +236,24 @@ public class ServerConnectionDelegate extends ServerDelegate
             return;
         }
 
+        final NetworkConnection networkConnection = sconn.getNetworkConnection();
+
         if(ok.hasHeartbeat())
         {
-            final int heartbeat = ok.getHeartbeat();
-            if(heartbeat > 0)
+            int heartbeat = ok.getHeartbeat();
+            if(heartbeat < 0)
             {
-                final NetworkConnection networkConnection = sconn.getNetworkConnection();
-                networkConnection.setMaxReadIdle(2 * heartbeat);
-                networkConnection.setMaxWriteIdle(heartbeat);
+                heartbeat = 0;
             }
+
+            networkConnection.setMaxReadIdle(2 * heartbeat);
+            networkConnection.setMaxWriteIdle(heartbeat);
+
+        }
+        else
+        {
+            networkConnection.setMaxReadIdle(0);
+            networkConnection.setMaxWriteIdle(0);
         }
 
         setConnectionTuneOkChannelMax(sconn, okChannelMax);

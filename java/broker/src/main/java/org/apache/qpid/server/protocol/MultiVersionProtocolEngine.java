@@ -32,6 +32,8 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
@@ -452,6 +454,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private class SelfDelegateProtocolEngine implements ServerProtocolEngine
     {
         private final ByteBuffer _header = ByteBuffer.allocate(MINIMUM_REQUIRED_HEADER_BYTES);
+        private long _lastReadTime;
 
         public SocketAddress getRemoteAddress()
         {
@@ -475,6 +478,8 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void received(ByteBuffer msg)
         {
+
+            _lastReadTime = System.currentTimeMillis();
             ByteBuffer msgheader = msg.duplicate();
             if(_header.remaining() > msgheader.limit())
             {
@@ -623,7 +628,8 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void readerIdle()
         {
-
+            CurrentActor.get().message(ConnectionMessages.IDLE_CLOSE());
+            _network.close();
         }
 
         public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
@@ -634,7 +640,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         @Override
         public long getLastReadTime()
         {
-            return 0;
+            return _lastReadTime;
         }
 
         @Override
@@ -650,6 +656,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         private final SSLEngine _engine;
         private final SSLReceiver _sslReceiver;
         private final SSLBufferingSender _sslSender;
+        private long _lastReadTime;
 
         private SslDelegateProtocolEngine()
         {
@@ -678,6 +685,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         @Override
         public void received(ByteBuffer msg)
         {
+            _lastReadTime = System.currentTimeMillis();
             _sslReceiver.received(msg);
             _sslSender.send();
             _sslSender.flush();
@@ -746,7 +754,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         @Override
         public long getLastReadTime()
         {
-            return _decryptEngine.getLastReadTime();
+            return _lastReadTime;
         }
 
         @Override
