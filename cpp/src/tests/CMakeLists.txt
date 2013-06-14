@@ -352,6 +352,7 @@ add_test (queue_flow_limit_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_queue_
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
 endif (BUILD_ACL)
+add_test (cli_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_cli_tests${test_script_suffix})
 add_test (dynamic_log_level_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_log_level_test${test_script_suffix})
 add_test (dynamic_log_hires_timestamp ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_log_hires_timestamp${test_script_suffix})
 if (BUILD_MSSQL)
