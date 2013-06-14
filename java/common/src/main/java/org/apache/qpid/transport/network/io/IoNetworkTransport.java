@@ -50,6 +50,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(IoNetworkTransport.class);
     private static final int TIMEOUT = Integer.getInteger(CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_PROP_NAME,
                                                               CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_DEFAULT);
+    private static final int HANSHAKE_TIMEOUT = Integer.getInteger(CommonProperties.HANDSHAKE_TIMEOUT_PROP_NAME ,
+                                                                  CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
+
 
     private Socket _socket;
     private IoNetworkConnection _connection;
@@ -224,7 +227,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                     {
                         socket = _serverSocket.accept();
                         socket.setTcpNoDelay(_config.getTcpNoDelay());
-                        socket.setSoTimeout(_timeout);
+                        socket.setSoTimeout(1000 * HANSHAKE_TIMEOUT);
 
                         final Integer sendBufferSize = _config.getSendBufferSize();
                         final Integer receiveBufferSize = _config.getReceiveBufferSize();
@@ -237,6 +240,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                         final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
                         NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout,
                                                                                ticker);
+
+                        connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
+
                         ticker.setConnection(connection);
 
                         if(_sslContext != null && socket instanceof SSLSocket)
