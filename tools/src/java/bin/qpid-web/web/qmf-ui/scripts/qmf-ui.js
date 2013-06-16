@@ -1313,12 +1313,6 @@ qmfui.Exchanges = new function() {
  * Create a Singleton instance of the AddExchange class managing the id="add-exchange" page.
  */
 qmfui.AddExchange = new function() {
-    // Protected Exchanges are exchanges that we don't permit binding to - default direct and the QMF exchanges.
-    var PROTECTED_EXCHANGES = {"": true, "''": true, "qmf.default.direct": true,
-                               "qmf.default.topic": true, "qpid.management": true};
-
-    var _alternateExchangeName = "None (default)";
-
     var submit = function() {
         var properties = {};
 
@@ -1338,8 +1332,10 @@ qmfui.AddExchange = new function() {
 
         properties["exchange-type"] = $("#exchange-type input[checked]").val();
 
-        if (_alternateExchangeName != "None (default)") {
-            properties["alternate-exchange"] = _alternateExchangeName;
+        var alternateExchangeName = $("#add-exchange-additional-alternate-exchange-name p").text();
+        if (alternateExchangeName != "None (default)") {
+            alternateExchangeName = alternateExchangeName.split(" (")[0]; // Remove the exchange type from the text.
+            properties["alternate-exchange"] = alternateExchangeName;
         }
 
         var exchangeName = $("#exchange-name");
@@ -1361,28 +1357,61 @@ qmfui.AddExchange = new function() {
         }
     };
 
-    /**
-     * This method renders dynamic content in the AdditionalOptions page, it's really there to make sure that
-     * the AlternateExchange name gets properly rendered when it gets selected in the 
-     * "#add-exchange-select-alternate-exchange" page.
-     */
-    var showAdditionalOptions = function() {
-        _alternateExchangeName = $("#add-exchange-select-alternate-exchange-list input[checked]").val();
-        var exchange = qmfui.Exchanges.getExchangeByName(_alternateExchangeName);
-        var exchangeType = (exchange == null) ? "" : exchange.type; 
-        var typeText = (exchangeType == "") ? "" : " (" + exchangeType + ")";
-        $("#add-exchange-additional-alternate-exchange-name p").text(_alternateExchangeName + typeText);
+    var changeType = function(e) {
+        var jthis = $(e.target);
+        if (jthis.attr("checked")) {
+            $("#add-exchange-exchange-type p").text(jthis.siblings("label").text());
+        }
     };
 
+    this.initialise = function() {
+        // Using END_EV avoids the 300ms delay responding to anchor click events that occurs on mobile browsers.
+        $("#add-exchange .right.button").bind(qmfui.END_EV, submit);
+        $("#exchange-type input").change(changeType);
+
+        // Always initialise to default value irrespective of browser caching.
+        $("#direct").click();
+    };
+}; // End of qmfui.AddExchange definition
+
+
+/**
+ * Create a Singleton instance of the ExchangeSelector class managing the id="exchange-selector" page.
+ */
+qmfui.ExchangeSelector = new function() {
+    // Protected Exchanges are exchanges that we don't permit binding to - default direct and the QMF exchanges.
+    var PROTECTED_EXCHANGES = {"": true, "''": true, "qmf.default.direct": true,
+                               "qmf.default.topic": true, "qpid.management": true};
+    var _id;
+
     /**
-     * This method renders the reroute-messages-select-exchange page when its show event is triggered. This page
-     * needs a show handler because it needs to be dynamically updated as the exchanges available in the radio
-     * button selection set will vary as exchanges get added or deleted.
+     * This method renders dynamic content in the ExchangeSelector page. This is necessary because the set
+     * of exchanges to be rendered may change as exchanges are added or deleted.
      */
-    var showSelectExchange = function() {
+    var show = function() {
+        var location = iTablet.location;
+        var data = location.data;
+        if (data == null || location.hash != "#exchange-selector") {
+            return;
+        }
+
+        // We pass in the ID of the list ltem that contains the anchor with an href to exchange-selector.
+        _id = data.id;
+
+        if (_id == "#add-binding-exchange-name") {
+            $("#exchange-selector .header a").text("Add Bin...");
+            $("#exchange-selector .header h1").text("Select Exchange");
+        } else if (_id == "#reroute-messages-exchange-name") {
+            $("#exchange-selector .header a").text("Reroute...");
+            $("#exchange-selector .header h1").text("Select Exchange");
+        } else {
+            $("#exchange-selector .header a").text("Additio...");
+            $("#exchange-selector .header h1").text("Alternate Exchange");
+        }
+
         var exchanges = qmfui.Console.getExchanges();
         var filteredExchanges = [];
-        var currentlySelected = $("#add-exchange-additional-alternate-exchange-name p").text();
+        var currentlySelected = $(_id + " p").text();
 
         // Check the status of any Exchange that the user may have previously selected prior to hitting "Done".
         if (currentlySelected != "None (default)") {
@@ -1395,7 +1424,7 @@ qmfui.AddExchange = new function() {
         }
 
         var checked = (currentlySelected == "None (default)") ? "checked" : "";
-        filteredExchanges.push("<li><label for='add-exchange-select-alternate-exchange-exchangeNone'>None (default)</label><input type='radio' id='add-exchange-select-alternate-exchange-exchangeNone' name='add-exchange-select-alternate-exchange' value='None (default)' " + checked + "/></li>");
+        filteredExchanges.push("<li><label for='exchange-selector-exchangeNone'>None (default)</label><input type='radio' id='exchange-selector-exchangeNone' name='exchange-selector' value='None (default)' " + checked + "/></li>");
 
         var length = exchanges.length;
         for (var i = 0; i < length; i++) {
@@ -1405,34 +1434,32 @@ qmfui.AddExchange = new function() {
 
             // Filter out default direct and QMF exchanges as we don't want to allow binding to those.
             if (!PROTECTED_EXCHANGES[name]) {
-                filteredExchanges.push("<li><label for='add-exchange-select-alternate-exchange-exchange" + i + "'>" + name + " (" + type + ")</label><input type='radio' id='add-exchange-select-alternate-exchange-exchange" + i + "' name='add-exchange-select-alternate-exchange' value='" + name + "' " + checked + "/></li>");
+                filteredExchanges.push("<li><label for='exchange-selector-exchange" + i + "'>" + name + " (" + type + ")</label><input type='radio' id='exchange-selector-exchange" + i + "' name='exchange-selector' value='" + name + "' " + checked + "/></li>");
             }
         }
 
-        iTablet.renderList($("#add-exchange-select-alternate-exchange-list"), function(i) {
+        iTablet.renderList($("#exchange-selector-list"), function(i) {
             return filteredExchanges[i];
         }, filteredExchanges.length);
+
+        $("#exchange-selector-list input").change(changeExchange);
     };
 
-    var changeType = function(e) {
+    /**
+     * Event handler for the change event on "#exchange-selector-list input". Note that this is bound "dynamically"
+     * in the show handler because the exchange list is created dynamically each time the ExchangeSelector is shown.
+     */
+    var changeExchange = function(e) {
         var jthis = $(e.target);
         if (jthis.attr("checked")) {
-            $("#add-exchange-exchange-type p").text(jthis.siblings("label").text());
+            $(_id + " p").text(jthis.siblings("label").text());
         }
     };
 
     this.initialise = function() {
-        $("#add-exchange-additional").unbind("show").bind("show", showAdditionalOptions);
-        $("#add-exchange-select-alternate-exchange").unbind("show").bind("show", showSelectExchange);
-
-        // Using END_EV avoids the 300ms delay responding to anchor click events that occurs on mobile browsers.
-        $("#add-exchange .right.button").bind(qmfui.END_EV, submit);
-        $("#exchange-type input").change(changeType);
-
-        // Always initialise to default value irrespective of browser caching.
-        $("#direct").click();
+        $("#exchange-selector").unbind("show").bind("show", show);
     };
-}; // End of qmfui.AddExchange definition
+}; // End of qmfui.ExchangeSelector definition
 
 
 /**
@@ -1682,11 +1709,7 @@ qmfui.Queues = new function() {
  * Create a Singleton instance of the AddQueue class managing the id="add-queue" page.
  */
 qmfui.AddQueue = new function() {
-    // Protected Exchanges are exchanges that we don't permit binding to - default direct and the QMF exchanges.
-    var PROTECTED_EXCHANGES = {"": true, "''": true, "qmf.default.direct": true,
-                               "qmf.default.topic": true, "qpid.management": true};
     var _properties = {};
-    var _alternateExchangeName = "None (default)";
 
     var parseIntegerProperty = function(selector, name) {
         var value = $(selector).removeClass("error").val();
@@ -1757,8 +1780,10 @@ qmfui.AddQueue = new function() {
             return;
         }
 
-        if (_alternateExchangeName != "None (default)") {
-            _properties["alternate-exchange"] = _alternateExchangeName;
+        var alternateExchangeName = $("#add-queue-additional-alternate-exchange-name p").text();
+        if (alternateExchangeName != "None (default)") {
+            alternateExchangeName = alternateExchangeName.split(" (")[0]; // Remove the exchange type from the text.
+            _properties["alternate-exchange"] = alternateExchangeName;
         }
 
         var queueName = $("#queue-name");
@@ -1778,59 +1803,6 @@ qmfui.AddQueue = new function() {
                 }
             });
         }
-    };
-
-    /**
-     * This method renders dynamic content in the AdditionalOptions page, it's really there to make sure that
-     * the AlternateExchange name gets properly rendered when it gets selected in the 
-     * "#add-exchange-select-alternate-exchange" page.
-     */
-    var showAdditionalOptions = function() {
-        _alternateExchangeName = $("#add-queue-select-alternate-exchange-list input[checked]").val();
-        var exchange = qmfui.Exchanges.getExchangeByName(_alternateExchangeName);
-        var exchangeType = (exchange == null) ? "" : exchange.type; 
-        var typeText = (exchangeType == "") ? "" : " (" + exchangeType + ")";
-        $("#add-queue-additional-alternate-exchange-name p").text(_alternateExchangeName + typeText);
-    };
-
-    /**
-     * This method renders the reroute-messages-select-exchange page when its show event is triggered. This page
-     * needs a show handler because it needs to be dynamically updated as the exchanges available in the radio
-     * button selection set will vary as exchanges get added or deleted.
-     */
-    var showSelectExchange = function() {
-        var exchanges = qmfui.Console.getExchanges();
-        var filteredExchanges = [];
-        var currentlySelected = $("#add-queue-additional-alternate-exchange-name p").text();
-
-        // Check the status of any Exchange that the user may have previously selected prior to hitting "Done".
-        if (currentlySelected != "None (default)") {
-            // Remove the exchange type from the text before testing.
-            currentlySelected = currentlySelected.split(" (")[0];
-            if (qmfui.Exchanges.getExchangeByName(currentlySelected) == null) { // Check if it has been deleted.
-                alert('The currently selected Exchange "' + currentlySelected + '" appears to have been deleted.');
-                currentlySelected = "None (default)";
-            }
-        }
-
-        var checked = (currentlySelected == "None (default)") ? "checked" : "";
-        filteredExchanges.push("<li><label for='add-queue-select-alternate-exchange-exchangeNone'>None (default)</label><input type='radio' id='add-queue-select-alternate-exchange-exchangeNone' name='add-queue-select-alternate-exchange' value='None (default)' " + checked + "/></li>");
-
-        var length = exchanges.length;
-        for (var i = 0; i < length; i++) {
-            var name = exchanges[i].name;
-            var type = exchanges[i].type;
-            checked = (currentlySelected == name) ? "checked" : "";
-
-            // Filter out default direct and QMF exchanges as we don't want to allow binding to those.
-            if (!PROTECTED_EXCHANGES[name]) {
-                filteredExchanges.push("<li><label for='add-queue-select-alternate-exchange-exchange" + i + "'>" + name + " (" + type + ")</label><input type='radio' id='add-queue-select-alternate-exchange-exchange" + i + "' name='add-queue-select-alternate-exchange' value='" + name + "' " + checked + "/></li>");
-            }
-        }
-
-        iTablet.renderList($("#add-queue-select-alternate-exchange-list"), function(i) {
-            return filteredExchanges[i];
-        }, filteredExchanges.length);
     };
 
     var changeLimitPolicy = function(e) {
@@ -1905,9 +1877,6 @@ qmfui.AddQueue = new function() {
     };
 
     this.initialise = function() {
-        $("#add-queue-additional").unbind("show").bind("show", showAdditionalOptions);
-        $("#add-queue-select-alternate-exchange").unbind("show").bind("show", showSelectExchange);
-
         // Using END_EV avoids the 300ms delay responding to anchor click events that occurs on mobile browsers.
         $("#add-queue .right.button").bind(qmfui.END_EV, submit);
         $("#limit-policy input").change(changeLimitPolicy);
@@ -2223,7 +2192,6 @@ qmfui.PurgeQueue = new function() {
     var submit = function() {
         var location = iTablet.location;
         var data = location.data;
-
         if (data == null || location.hash != "#purge-queue") {
             return;
         }
@@ -2276,18 +2244,12 @@ qmfui.PurgeQueue = new function() {
  * Create a Singleton instance of the RerouteMessages class managing the id="reroute-messages" page.
  */
 qmfui.RerouteMessages = new function() {
-    // Protected Exchanges are exchanges that we don't permit binding to - default direct and the QMF exchanges.
-    var PROTECTED_EXCHANGES = {"": true, "''": true, "qmf.default.direct": true,
-                               "qmf.default.topic": true, "qpid.management": true};
-    var _exchangeName = "";
-
     /**
      * Actually reroute the messages using the QMF reroute method on the Queue Management Object.
      */
     var submit = function() {
         var location = iTablet.location;
         var data = location.data;
-
         if (data == null || location.hash != "#reroute-messages") {
             return;
         }
@@ -2310,18 +2272,23 @@ qmfui.RerouteMessages = new function() {
         qmfui.Console.makeConsoleData(queue); // Make queue a QmfConsoleData object with an invokeMethod method.
 
         var useAltExchange = $("#reroute-messages-use-alternate-exchange")[0].checked;
+        var countText = (messageCount == 0) ? "all" : messageCount;
 
+        var exchangeName = $("#reroute-messages-exchange-name p").text();
+        if (exchangeName != "None (default)") {
+            exchangeName = exchangeName.split(" (")[0]; // Remove the exchange type from the text.
+        }
+
+        var exchangeText = useAltExchange ? "Alternate Exchange?" : exchangeName + "?";
         // Wrap in a timeout call because confirm doesn't play nicely with touchend and causes it to trigger twice.
         // Calling confirm within a timeout ensures things are placed correctly onto the event queue.
-        var countText = (messageCount == 0) ? "all" : messageCount;
-        var exchangeText = useAltExchange ? "Alternate Exchange?" : _exchangeName + "?";
         setTimeout(function() {
             if (confirm('Reroute ' + countText + ' messages from "' + queue.name + '" to ' + exchangeText) == false) {
                 return; 
             } else {
                 var arguments = {"request": messageCount, "useAltExchange": useAltExchange};
                 if (!useAltExchange) {
-                    arguments["exchange"] = _exchangeName;
+                    arguments["exchange"] = exchangeName;
                 }
 
                 queue.invokeMethod("reroute", arguments, function(data) {
@@ -2336,72 +2303,23 @@ qmfui.RerouteMessages = new function() {
     };
 
     /**
-     * This method renders the main reroute-messages page when it is made visible by the show event being triggered.
-     * It's mainly just getting the state of the reroute-messages-select-exchange-list and that could have been
-     * set by binding a change handler to that, but as reroute-messages-select-exchange-list is dynamically
-     * constructed that involves rebinding every time it's shown. Getting the state in the show handler here
-     * also ensures that the _exchangeName is always set to something.
+     * This method is the change handler for the use alternate exchange switch, it is used to show or hide the
+     * exchange selector widget. This handler is also bound to "show" because the state of the alternate exchange
+     * switch is cached in some browsers so triggering on change alone wouldn't handle that.
      */
-    var show = function() {
+    var changeUseAlternateExchange = function() {
         if ($("#reroute-messages-use-alternate-exchange")[0].checked) {
             $("#reroute-messages-use-selected-exchange").hide();
         } else {
             $("#reroute-messages-use-selected-exchange").show();
-            _exchangeName = $("#reroute-messages-select-exchange-list input[checked]").val();
-            var exchange = qmfui.Exchanges.getExchangeByName(_exchangeName);
-            var exchangeType = (exchange == null) ? "" : exchange.type; 
-            var typeText = (exchangeType == "") ? "" : " (" + exchangeType + ")";
-            $("#reroute-messages-exchange-name p").text(_exchangeName + typeText);
         }
-    };
-
-    /**
-     * This method renders the reroute-messages-select-exchange page when its show event is triggered. This page
-     * needs a show handler because it needs to be dynamically updated as the exchanges available in the radio
-     * button selection set will vary as exchanges get added or deleted.
-     */
-    var showSelectExchange = function() {
-        var exchanges = qmfui.Console.getExchanges();
-        var filteredExchanges = [];
-        var currentlySelected = $("#reroute-messages-exchange-name p").text();
-
-        // Check the status of any Exchange that the user may have previously selected prior to hitting "Done".
-        if (currentlySelected != "None (default)") {
-            // Remove the exchange type from the text before testing.
-            currentlySelected = currentlySelected.split(" (")[0];
-            if (qmfui.Exchanges.getExchangeByName(currentlySelected) == null) { // Check if it has been deleted.
-                alert('The currently selected Exchange "' + currentlySelected + '" appears to have been deleted.');
-                currentlySelected = "None (default)";
-            }
-        }
-
-        var checked = (currentlySelected == "None (default)") ? "checked" : "";
-        filteredExchanges.push("<li><label for='reroute-messages-exchangeNone'>None (default)</label><input type='radio' id='reroute-messages-exchangeNone' name='reroute-messages-select-exchange' value='None (default)' " + checked + "/></li>");
-
-        var length = exchanges.length;
-        for (var i = 0; i < length; i++) {
-            var name = exchanges[i].name;
-            var type = exchanges[i].type;
-            checked = (currentlySelected == name) ? "checked" : "";
-
-            // Filter out default direct and QMF exchanges as we don't want to allow binding to those.
-            if (!PROTECTED_EXCHANGES[name]) {
-                filteredExchanges.push("<li><label for='reroute-messages-exchange" + i + "'>" + name + " (" + type + ")</label><input type='radio' id='reroute-messages-exchange" + i + "' name='reroute-messages-select-exchange' value='" + name + "' " + checked + "/></li>");
-            }
-        }
-
-        iTablet.renderList($("#reroute-messages-select-exchange-list"), function(i) {
-            return filteredExchanges[i];
-        }, filteredExchanges.length);
     };
 
     this.initialise = function() {
-        $("#reroute-messages").unbind("show").bind("show", show);
-        $("#reroute-messages-select-exchange").unbind("show").bind("show", showSelectExchange);
-
         // Using END_EV avoids the 300ms delay responding to anchor click events that occurs on mobile browsers.
         $("#reroute-messages .right.button").bind(qmfui.END_EV, submit);
-        $("#reroute-messages-use-alternate-exchange").change(show);
+        $("#reroute-messages-use-alternate-exchange").change(changeUseAlternateExchange);
+        $("#reroute-messages").unbind("show").bind("show", changeUseAlternateExchange);
     };
 }; // End of qmfui.RerouteMessages definition
 
@@ -2410,7 +2328,7 @@ qmfui.RerouteMessages = new function() {
  * Create a Singleton instance of the RerouteMessages class managing the id="move-messages" page.
  */
 qmfui.MoveMessages = new function() {
-    var _sourceQueueName = ""; // Get this in the show() method so we can filter it out in showSelectQueue()
+    var _sourceQueueName = "";
     var _destinationQueueName = "";
     var _sourceQueue = {};
 
@@ -2463,23 +2381,18 @@ qmfui.MoveMessages = new function() {
 
     /**
      * This method renders the main move-messages page when it is made visible by the show event being triggered.
-     * It's mainly just getting the state of the move-messages-select-queue-list and that could have been
-     * set by binding a change handler to that, but as move-messages-select-queue-list is dynamically
-     * constructed that involves rebinding every time it's shown. Getting the state in the show handler here
-     * also ensures that the _destinationQueueName is always set to something.
      */
     var show = function() {
         var location = iTablet.location;
         var data = location.data;
-
         if (data == null || location.hash != "#move-messages") {
             return;
         }
 
         var queueId = data.queueId;
         _sourceQueue = qmfui.Queues.getQueue(queueId);
-        _sourceQueueName = (_sourceQueue == null) ? "" : _sourceQueue.name
-        _destinationQueueName = $("#move-messages-select-queue-list input[checked]").val();
+        _sourceQueueName = (_sourceQueue == null) ? "" : _sourceQueue.name;
+        _destinationQueueName = $("#move-messages-queue-name p").text();
 
         if (_sourceQueueName == _destinationQueueName) {
             $("#move-messages-queue-name p").text("None (default)");
@@ -2488,50 +2401,12 @@ qmfui.MoveMessages = new function() {
         }
     };
 
-    /**
-     * This method renders the add-binding-select-queue page when its show event is triggered. This page
-     * needs a show handler because it needs to be dynamically updated as the queues available in the radio
-     * button selection set will vary as queues get added or deleted.
-     */
-    var showSelectQueue = function() {
-        var queues = qmfui.Console.getQueues();
-        var filteredQueues = [];
-        var currentlySelected = $("#move-messages-queue-name p").text();
-
-        // Check the status of any Queue that the user may have previously selected prior to hitting "Done".
-        if (currentlySelected != "None (default)") {
-            if (qmfui.Queues.getQueueByName(currentlySelected) == null) { // Check if it has been deleted.
-                alert('The currently selected Queue "' + currentlySelected + '" appears to have been deleted.');
-                currentlySelected = "None (default)";
-            }
-        }
-
-        var checked = (currentlySelected == "None (default)") ? "checked" : "";
-        filteredQueues.push("<li><label for='move-messages-select-queueNone'>None (default)</label><input type='radio' id='move-messages-select-queueNone' name='move-messages-select-queue' value='None (default)' " + checked + "/></li>");
-
-        var length = queues.length;
-        for (var i = 0; i < length; i++) {
-            var name = queues[i].name;
-            // We do getQueueByName(name) because the _isQmfQueue property is a "fake" property added by the
-            // qmfui.Queues class, it's only stored in QMF objects held in the getQueueByName() and getQueue() caches.
-            var isQmfQueue = qmfui.Queues.getQueueByName(name)._isQmfQueue;
-            checked = (currentlySelected == name) ? "checked" : "";
-
-            // Filter out queues bound to QMF exchanges as we don't want to allow additional binding to those.
-            // We also filter out the sourceQueueName as there's no point moving messages to self.
-            if (!isQmfQueue && (name != _sourceQueueName)) {
-                filteredQueues.push("<li><label for='move-messages-select-queue" + i + "'>" + name + "</label><input type='radio' id='move-messages-select-queue" + i + "' name='move-messages-select-queue' value='" + name + "' " + checked + "/></li>");
-            }
-        }
-
-        iTablet.renderList($("#move-messages-select-queue-list"), function(i) {
-            return filteredQueues[i];
-        }, filteredQueues.length);
+    this.getSourceQueueName = function() {
+        return _sourceQueueName;
     };
 
     this.initialise = function() {
         $("#move-messages").unbind("show").bind("show", show);
-        $("#move-messages-select-queue").unbind("show").bind("show", showSelectQueue);
 
         // Using END_EV avoids the 300ms delay responding to anchor click events that occurs on mobile browsers.
         $("#move-messages .right.button").bind(qmfui.END_EV, submit);
@@ -2821,9 +2696,6 @@ qmfui.Bindings = new function() {
  * Create a Singleton instance of the AddBinding class managing the id="add-binding" page.
  */
 qmfui.AddBinding = new function() {
-    // Protected Exchanges are exchanges that we don't permit binding to - default direct and the QMF exchanges.
-    var PROTECTED_EXCHANGES = {"": true, "''": true, "qmf.default.direct": true,
-                               "qmf.default.topic": true, "qpid.management": true};
     var _queueName = "";
     var _exchangeName = "";
     var _exchangeType = "";
@@ -2900,14 +2772,13 @@ qmfui.AddBinding = new function() {
      * This method renders the main add-binding page when it is made visible by the show event being triggered.
      * It tries to be fairly clever by populating either the queue name or exchange name depending on where
      * add-binding was navigated from. If a queueId or exchangeId isn't available navigation is added to the
-     * add-binding-select-queue or add-binding-select-exchange page by adding the arrow class to
-     * add-binding-queue-name or add-binding-exchange-name. This method then checks the exchange type and
-     * provides additional rendering necessary for XML or Headers exchanges.
+     * queue-selector or exchange-selector page by adding the arrow class to add-binding-queue-name or
+     * add-binding-exchange-name. This method then checks the exchange type and provides additional rendering
+     * necessary for XML or Headers exchanges.
      */
     var show = function() {
         var location = iTablet.location;
         var data = location.data;
-
         if (data == null || location.hash != "#add-binding") {
             return;
         }
@@ -2918,14 +2789,18 @@ qmfui.AddBinding = new function() {
         if (queueId) {
             var queue = qmfui.Queues.getQueue(queueId);
             _queueName = (queue == null) ? "" : queue.name;
-            _exchangeName = $("#add-binding-select-exchange input[checked]").val();
+            _exchangeName = $("#add-binding-exchange-name p").text();
+            if (_exchangeName != "None (default)") {
+                _exchangeName = _exchangeName.split(" (")[0]; // Remove the exchange type from the text.
+            }
+
             var exchange = qmfui.Exchanges.getExchangeByName(_exchangeName);
             _exchangeType = (exchange == null) ? "" : exchange.type;
 
             $("#add-binding-queue-name").removeClass("arrow");
             $("#add-binding-exchange-name").addClass("arrow");
         } else {
-            _queueName = $("#add-binding-select-queue input[checked]").val();
+            _queueName = $("#add-binding-queue-name p").text();
             var exchange = qmfui.Exchanges.getExchange(exchangeId);
             _exchangeName = (exchange == null) ? "" : exchange.name;
             _exchangeType = (exchange == null) ? "" : exchange.type;
@@ -2970,86 +2845,6 @@ qmfui.AddBinding = new function() {
             $("#add-headers-binding").hide();
             $("#add-xml-binding").hide();
         }
-    };
-
-    /**
-     * This method renders the add-binding-select-exchange page when its show event is triggered. This page
-     * needs a show handler because it needs to be dynamically updated as the exchanges available in the radio
-     * button selection set will vary as exchanges get added or deleted.
-     */
-    var showSelectExchange = function() {
-        var exchanges = qmfui.Console.getExchanges();
-        var filteredExchanges = [];
-        var currentlySelected = $("#add-binding-exchange-name p").text();
-
-        // Check the status of any Exchange that the user may have previously selected prior to hitting "Done".
-        if (currentlySelected != "None (default)") {
-            // Remove the exchange type from the text before testing.
-            currentlySelected = currentlySelected.split(" (")[0];
-            if (qmfui.Exchanges.getExchangeByName(currentlySelected) == null) { // Check if it has been deleted.
-                alert('The currently selected Exchange "' + currentlySelected + '" appears to have been deleted.');
-                currentlySelected = "None (default)";
-            }
-        }
-
-        var checked = (currentlySelected == "None (default)") ? "checked" : "";
-        filteredExchanges.push("<li><label for='add-binding-exchangeNone'>None (default)</label><input type='radio' id='add-binding-exchangeNone' name='add-binding-select-exchange' value='None (default)' " + checked + "/></li>");
-
-        var length = exchanges.length;
-        for (var i = 0; i < length; i++) {
-            var name = exchanges[i].name;
-            var type = exchanges[i].type;
-            checked = (currentlySelected == name) ? "checked" : "";
-
-            // Filter out default direct and QMF exchanges as we don't want to allow binding to those.
-            if (!PROTECTED_EXCHANGES[name]) {
-                filteredExchanges.push("<li><label for='add-binding-exchange" + i + "'>" + name + " (" + type + ")</label><input type='radio' id='add-binding-exchange" + i + "' name='add-binding-select-exchange' value='" + name + "' " + checked + "/></li>");
-            }
-        }
-
-        iTablet.renderList($("#add-binding-select-exchange-list"), function(i) {
-            return filteredExchanges[i];
-        }, filteredExchanges.length);
-    };
-
-    /**
-     * This method renders the add-binding-select-queue page when its show event is triggered. This page
-     * needs a show handler because it needs to be dynamically updated as the queues available in the radio
-     * button selection set will vary as queues get added or deleted.
-     */
-    var showSelectQueue = function() {
-        var queues = qmfui.Console.getQueues();
-        var filteredQueues = [];
-        var currentlySelected = $("#add-binding-queue-name p").text();
-
-        // Check the status of any Queue that the user may have previously selected prior to hitting "Done".
-        if (currentlySelected != "None (default)") {
-            if (qmfui.Queues.getQueueByName(currentlySelected) == null) { // Check if it has been deleted.
-                alert('The currently selected Queue "' + currentlySelected + '" appears to have been deleted.');
-                currentlySelected = "None (default)";
-            }
-        }
-
-        var checked = (currentlySelected == "None (default)") ? "checked" : "";
-        filteredQueues.push("<li><label for='add-binding-queueNone'>None (default)</label><input type='radio' id='add-binding-queueNone' name='add-binding-select-queue' value='None (default)' " + checked + "/></li>");
-
-        var length = queues.length;
-        for (var i = 0; i < length; i++) {
-            var name = queues[i].name;
-            // We do getQueueByName(name) because the _isQmfQueue property is a "fake" property added by the
-            // qmfui.Queues class, it's only stored in QMF objects held in the getQueueByName() and getQueue() caches.
-            var isQmfQueue = qmfui.Queues.getQueueByName(name)._isQmfQueue;
-            checked = (currentlySelected == name) ? "checked" : "";
-
-            // Filter out queues bound to QMF exchanges as we don't want to allow additional binding to those.
-            if (!isQmfQueue) {
-                filteredQueues.push("<li><label for='add-binding-queue" + i + "'>" + name + "</label><input type='radio' id='add-binding-queue" + i + "' name='add-binding-select-queue' value='" + name + "' " + checked + "/></li>");
-            }
-        }
-
-        iTablet.renderList($("#add-binding-select-queue-list"), function(i) {
-            return filteredQueues[i];
-        }, filteredQueues.length);
     };
 
     /**
@@ -3128,8 +2923,6 @@ qmfui.AddBinding = new function() {
 
     this.initialise = function() {
         $("#add-binding").unbind("show").bind("show", show);
-        $("#add-binding-select-exchange").unbind("show").bind("show", showSelectExchange);
-        $("#add-binding-select-queue").unbind("show").bind("show", showSelectQueue);
         $("#add-header-match").unbind("show").bind("show", showHeaderMatch);
 
         // Using END_EV avoids the 300ms delay responding to anchor click events that occurs on mobile browsers.
@@ -3146,6 +2939,87 @@ qmfui.AddBinding = new function() {
         $("#add-headers-binding").click(removeHeaderMatch);
     };
 }; // End of qmfui.AddBinding definition
+
+
+/**
+ * Create a Singleton instance of the QueueSelector class managing the id="queue-selector" page.
+ */
+qmfui.QueueSelector = new function() {
+    var _id;
+
+    /**
+     * This method renders dynamic content in the ExchangeSelector page. This is necessary because the set
+     * of exchanges to be rendered may change as exchanges are added or deleted.
+     */
+    var show = function() {
+        var location = iTablet.location;
+        var data = location.data;
+        if (data == null || location.hash != "#queue-selector") {
+            return;
+        }
+
+        // We pass in the ID of the list ltem that contains the anchor with an href to exchange-selector.
+        _id = data.id;
+
+        var sourceQueueName = "";
+        if (_id == "#add-binding-queue-name") {
+            $("#queue-selector .header a").text("Add Bin...");
+        } else if (_id == "#move-messages-queue-name") {
+            $("#queue-selector .header a").text("Move Me...");
+            sourceQueueName = qmfui.MoveMessages.getSourceQueueName(); // Use this to filter out that queue name.
+        }
+
+        var queues = qmfui.Console.getQueues();
+        var filteredQueues = [];
+        var currentlySelected = $(_id + " p").text();
+
+        // Check the status of any Queue that the user may have previously selected prior to hitting "Done".
+        if (currentlySelected != "None (default)") {
+            if (qmfui.Queues.getQueueByName(currentlySelected) == null) { // Check if it has been deleted.
+                alert('The currently selected Queue "' + currentlySelected + '" appears to have been deleted.');
+                currentlySelected = "None (default)";
+            }
+        }
+
+        var checked = (currentlySelected == "None (default)") ? "checked" : "";
+        filteredQueues.push("<li><label for='queue-selector-queueNone'>None (default)</label><input type='radio' id='queue-selector-queueNone' name='queue-selector' value='None (default)' " + checked + "/></li>");
+
+        var length = queues.length;
+        for (var i = 0; i < length; i++) {
+            var name = queues[i].name;
+            // We do getQueueByName(name) because the _isQmfQueue property is a "fake" property added by the
+            // qmfui.Queues class, it's only stored in QMF objects held in the getQueueByName() and getQueue() caches.
+            var isQmfQueue = qmfui.Queues.getQueueByName(name)._isQmfQueue;
+            checked = (currentlySelected == name) ? "checked" : "";
+
+            // Filter out queues bound to QMF exchanges as we don't want to allow additional binding to those.
+            if (!isQmfQueue && (name != sourceQueueName)) {
+                filteredQueues.push("<li><label for='queue-selector-queue" + i + "'>" + name + "</label><input type='radio' id='queue-selector-queue" + i + "' name='queue-selector' value='" + name + "' " + checked + "/></li>");
+            }
+        }
+
+        iTablet.renderList($("#queue-selector-list"), function(i) {
+            return filteredQueues[i];
+        }, filteredQueues.length);
+
+        $("#queue-selector-list input").change(changeQueue);
+    };
+
+    /**
+     * Event handler for the change event on "#queue-selector-list input". Note that this is bound "dynamically"
+     * in the show handler because the queue list is created dynamically each time the QueueSelector is shown.
+     */
+    var changeQueue = function(e) {
+        var jthis = $(e.target);
+        if (jthis.attr("checked")) {
+            $(_id + " p").text(jthis.siblings("label").text());
+        }
+    };
+
+    this.initialise = function() {
+        $("#queue-selector").unbind("show").bind("show", show);
+    };
+}; // End of qmfui.QueueSelector definition.
 
 
 //-------------------------------------------------------------------------------------------------------------------

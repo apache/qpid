@@ -1107,12 +1107,13 @@ var iTablet = new function() {
 
         // Invoked when the animation completes, resets style and hides the old page and rebinds the START_EV.
         var completeCallback = function() {
-            currentPage.hide().trigger("hide"); // Hide the current page after animation completes.
+            currentPage.hide(); // Hide the current page after animation completes.
             currentPage.css({"left": left + "px", "right": "0"}); // Reset css back to original settings.
             BODY.bind(START_EV, handlePointer); // Re-enable START_EV when transition completes.
         };
 
         BODY.unbind(START_EV, handlePointer); // Disable START_EV until transition completes.
+        currentPage.trigger("hide"); // Trigger the hide handler *before* the animation.
         newPage.css({"left": left + width + "px", "right": -width + "px"}).show().trigger("show").
                 animate({left: left, right: 0}, 350);
         var selected = newPage.find(".active").removeClass("active");
@@ -1141,6 +1142,7 @@ var iTablet = new function() {
         BODY.unbind(START_EV, handlePointer); // Disable START_EV until transition completes.
 
         var reverse = isReverse ? " reverse" : "";
+        currentPage.trigger("hide"); // Trigger the hide handler *before* the animation.
         newPage.show().trigger("show").addClass("slideIn" + reverse);
         var selected = newPage.find(".active").removeClass("active");
         if (isReverse) {
@@ -1203,6 +1205,7 @@ var iTablet = new function() {
             }
         };
 
+        currentPage.trigger("hide"); // Trigger the hide handler *before* the animation.
         if (isReverse) {
             // Wrapping in a timeout prevents IE8 glitching button styles when returning from :active state.
             setTimeout(function() {
@@ -1241,6 +1244,7 @@ var iTablet = new function() {
             newPage.trigger("show");
         };
 
+        currentPage.trigger("hide"); // Trigger the hide handler *before* the animation.
         if (isReverse) {
             background.addClass("dissolveOut50");
             container.bind(ANIMATION_END_EV, completeCallback).addClass("slideDown");
