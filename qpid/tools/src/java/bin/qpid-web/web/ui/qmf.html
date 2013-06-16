@@ -755,7 +755,7 @@ these are used to enable a semi-transparent "smoked glass" background behind the
                     <h1 class="first">Alternate Exchange</h1>
                     <ul class="list">
                         <li id="add-exchange-additional-alternate-exchange-name" class="arrow">
-                            <a href="#add-exchange-select-alternate-exchange">Exchange<p>None (default)</p></a>
+                            <a href="#exchange-selector?id=#add-exchange-additional-alternate-exchange-name">Exchange<p>None (default)</p></a>
                         </li>
                     </ul>
                     <p class="note">Route messages here if this exchange is unable to route them elsewhere.</p>
@@ -779,23 +779,24 @@ these are used to enable a semi-transparent "smoked glass" background behind the
             </div> <!-- End of add-exchange-additional-scroller -->
         </div> <!-- End of add-exchange-additional -->
 
-        <div id="add-exchange-select-alternate-exchange" class="popup">
+        <div id="exchange-selector" class="popup">
             <div class="header">
 		        <a class="back button" href="#">Additio...</a>
                 <h1>Alternate Exchange</h1>
             </div>
 
-            <div id="add-exchange-select-alternate-exchange-scroller" class="scroll-area">
+            <div id="exchange-selector-scroller" class="scroll-area">
                 <div class="page">
-	                <ul id="add-exchange-select-alternate-exchange-list" class="list">
+	                <ul id="exchange-selector-list" class="list">
                         <li>
-                            <label for="add-exchange-select-alternate-exchange-exchangeNone">None (default)</label>
-                            <input type="radio" id="add-exchange-select-alternate-exchange-exchangeNone" name="add-exchange-select-alternate-exchange" value="None (default)" checked />
+                            <label for="exchange-selector-exchangeNone">None (default)</label>
+                            <input type="radio" id="exchange-selector-exchangeNone"
+                                                name="exchange-selector" value="None (default)" checked />
                         </li>
 	                </ul>
                 </div> <!-- End of page -->
-            </div> <!-- End of add-exchange-select-alternate-exchange-scroller -->
-        </div> <!-- End of add-exchange-select-alternate-exchange -->
+            </div> <!-- End of exchange-selector-scroller -->
+        </div> <!-- End of exchange-selector -->
 
 <!----------------------------------------------------------------------------------------------------------------->
 
@@ -945,7 +946,7 @@ these are used to enable a semi-transparent "smoked glass" background behind the
                     <h1 class="first">Alternate Exchange</h1>
 	                <ul class="list">
                         <li id="add-queue-additional-alternate-exchange-name" class="arrow">
-                            <a href="#add-queue-select-alternate-exchange">Exchange<p>None (default)</p></a>
+                            <a href="#exchange-selector?id=#add-queue-additional-alternate-exchange-name">Exchange<p>None (default)</p></a>
                         </li>
 	                </ul>
                     <p class="note">Route messages here if rejected by a subscriber or orphaned by queue deletion.</p>
@@ -1001,24 +1002,6 @@ these are used to enable a semi-transparent "smoked glass" background behind the
             </div> <!-- End of add-queue-additional-scroller -->
         </div> <!-- End of add-queue-additional -->
 
-        <div id="add-queue-select-alternate-exchange" class="popup">
-            <div class="header">
-		        <a class="back button" href="#">Additio...</a>
-                <h1>Alternate Exchange</h1>
-            </div>
-
-            <div id="add-queue-select-alternate-exchange-scroller" class="scroll-area">
-                <div class="page">
-	                <ul id="add-queue-select-alternate-exchange-list" class="list">
-                        <li>
-                            <label for="add-queue-select-alternate-exchange-exchangeNone">None (default)</label>
-                            <input type="radio" id="add-queue-select-alternate-exchange-exchangeNone" name="add-queue-select-alternate-exchange" value="None (default)" checked />
-                        </li>
-	                </ul>
-                </div> <!-- End of page -->
-            </div> <!-- End of add-queue-select-alternate-exchange-scroller -->
-        </div> <!-- End of add-exchange-select-alternate-exchange -->
-
 <!----------------------------------------------------------------------------------------------------------------->
 
         <div id="purge-queue" class="popup">
@@ -1072,32 +1055,13 @@ these are used to enable a semi-transparent "smoked glass" background behind the
                         <!-- reroute-messages-use-selected-exchange div is used to show/hide the following  -->
                         <ul id="reroute-messages-use-selected-exchange" class="list">
 	                        <li id="reroute-messages-exchange-name" class="arrow">
-                                <a href="#reroute-messages-select-exchange">Exchange<p>None (default)</p></a>
+                                <a href="#exchange-selector?id=#reroute-messages-exchange-name">Exchange<p>None (default)</p></a>
                             </li>
                         </ul>
                     </form>
                 </div> <!-- End of page -->
             </div> <!-- End of reroute-messages-scroller -->
         </div> <!-- End of reroute-messages -->
-
-
-        <div id="reroute-messages-select-exchange" class="popup">
-            <div class="header">
-		        <a class="back button" href="#">Reroute...</a>
-                <h1>Select Exchange</h1>
-            </div>
-
-            <div id="reroute-messages-select-exchange-scroller" class="scroll-area">
-                <div class="page">
-	                <ul id="reroute-messages-select-exchange-list" class="list">
-                        <li>
-                            <label for="reroute-messages-exchangeNone">None (default)</label>
-                            <input type="radio" id="reroute-messages-exchangeNone" name="reroute-messages-select-exchange" value="None (default)" checked />
-                        </li>
-	                </ul>
-                </div> <!-- End of page -->
-            </div> <!-- End of reroute-messages-select-exchange-scroller -->
-        </div> <!-- End of reroute-messages-select-exchange -->
 
 
         <div id="move-messages" class="popup">
@@ -1120,7 +1084,8 @@ these are used to enable a semi-transparent "smoked glass" background behind the
 
 	                    <ul class="list">
     	                    <li id="move-messages-queue-name" class="arrow">
-                                <a href="#move-messages-select-queue">Queue<p>None (default)</p></a>
+                                <a href="#queue-selector?id=#move-messages-queue-name">Queue<p>None (default)</p></a>
+                                <!--<a href="#move-messages-select-queue">Queue<p>None (default)</p></a>-->
                             </li>
                         </ul>
                         <p class="note">Destination Queue.</p>
@@ -1128,24 +1093,6 @@ these are used to enable a semi-transparent "smoked glass" background behind the
                 </div> <!-- End of page -->
             </div> <!-- End of move-messages-scroller -->
         </div> <!-- End of move-messages -->
-
-        <div id="move-messages-select-queue" class="popup">
-            <div class="header">
-		        <a class="back button" href="#">Move Me...</a>
-                <h1>Select Queue</h1>
-            </div>
-
-            <div id="move-messages-select-queue-scroller" class="scroll-area">
-                <div class="page">
-	                <ul id="move-messages-select-queue-list" class="list">
-                        <li>
-                            <label for="move-messages-select-queueNone">None (default)</label>
-                            <input type="radio" id="move-messages-select-queueNone" name="move-messages-select-queue" value="None (default)" checked />
-                        </li>
-	                </ul>
-                </div> <!-- End of page -->
-            </div> <!-- End of move-messages-select-queue-scroller -->
-        </div> <!-- End of move-messages-select-queue -->
 
 <!----------------------------------------------------------------------------------------------------------------->
 
@@ -1161,10 +1108,10 @@ these are used to enable a semi-transparent "smoked glass" background behind the
                     <form action="#">
 	                    <ul class="list">
     	                    <li id="add-binding-exchange-name" class="arrow">
-                                <a href="#add-binding-select-exchange">Exchange<p>None (default)</p></a>
+                                <a href="#exchange-selector?id=#add-binding-exchange-name">Exchange<p>None (default)</p></a>
                             </li>
     	                    <li id="add-binding-queue-name" class="arrow">
-                                <a href="#add-binding-select-queue">Queue<p>None (default)</p></a>
+                                <a href="#queue-selector?id=#add-binding-queue-name">Queue<p>None (default)</p></a>
                             </li>
     	                    <li>
                                 <label for="add-binding-key-name">Key</label>
@@ -1195,41 +1142,24 @@ these are used to enable a semi-transparent "smoked glass" background behind the
             </div> <!-- End of add-binding-scroller -->
         </div> <!-- End of add-binding -->
 
-        <div id="add-binding-select-exchange" class="popup">
-            <div class="header">
-		        <a class="back button" href="#">Add Bin...</a>
-                <h1>Select Exchange</h1>
-            </div>
-
-            <div id="add-binding-select-exchange-scroller" class="scroll-area">
-                <div class="page">
-	                <ul id="add-binding-select-exchange-list" class="list">
-                        <li>
-                            <label for="add-binding-exchangeNone">None (default)</label>
-                            <input type="radio" id="add-binding-exchangeNone" name="add-binding-select-exchange" value="None (default)" checked />
-                        </li>
-	                </ul>
-                </div> <!-- End of page -->
-            </div> <!-- End of add-binding-select-exchange-scroller -->
-        </div> <!-- End of add-binding-select-exchange -->
-
-        <div id="add-binding-select-queue" class="popup">
+        <div id="queue-selector" class="popup">
             <div class="header">
 		        <a class="back button" href="#">Add Bind...</a>
                 <h1>Select Queue</h1>
             </div>
 
-            <div id="add-binding-select-queue-scroller" class="scroll-area">
+            <div id="queue-selector-scroller" class="scroll-area">
                 <div class="page">
-	                <ul id="add-binding-select-queue-list" class="list">
+	                <ul id="queue-selector-list" class="list">
                         <li>
-                            <label for="add-binding-queueNone">None (default)</label>
-                            <input type="radio" id="add-binding-queueNone" name="add-binding-select-queue" value="None (default)" checked />
+                            <label for="queue-selector-queueNone">None (default)</label>
+                            <input type="radio" id="queue-selector-queueNone"
+                                                name="queue-selector" value="None (default)" checked />
                         </li>
 	                </ul>
                 </div> <!-- End of page -->
-            </div> <!-- End of add-binding-select-queue-scroller -->
-        </div> <!-- End of add-binding-select-queue -->
+            </div> <!-- End of queue-selector-scroller -->
+        </div> <!-- End of queue-selector -->
 
         <div id="x-match" class="popup">
             <div class="header">
