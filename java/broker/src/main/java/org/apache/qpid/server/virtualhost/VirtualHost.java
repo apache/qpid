@@ -49,6 +49,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     ExchangeFactory getExchangeFactory();
 
+    DurableConfigurationStore getDurableConfigurationStore();
+
     MessageStore getMessageStore();
 
     SecurityManager getSecurityManager();

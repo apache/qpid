@@ -134,8 +134,6 @@ public interface Exchange extends ExchangeReferrer
      */
     boolean isBound(AMQShortString routingKey);
 
-    boolean isBound(AMQQueue queue);
-
     /**
      * Returns true if this exchange has at least one binding associated with it.
      * @return
@@ -147,15 +145,17 @@ public interface Exchange extends ExchangeReferrer
 
     boolean isBound(String bindingKey);
 
+    boolean isBound(AMQQueue queue);
+
+    boolean isBound(Map<String, Object> arguments);
+
     boolean isBound(String bindingKey, AMQQueue queue);
-
-    boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
-
-    boolean isBound(Map<String, Object> arguments, AMQQueue queue);
 
     boolean isBound(String bindingKey, Map<String, Object> arguments);
 
-    boolean isBound(Map<String, Object> arguments);
+    boolean isBound(Map<String, Object> arguments, AMQQueue queue);
+
+    boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
 
     void removeReference(ExchangeReferrer exchange);
 

@@ -195,7 +195,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
                 _queue.delete();
                 if (_queue.isDurable())
                 {
-                    _queue.getVirtualHost().getMessageStore().removeQueue(_queue);
+                    _queue.getVirtualHost().getDurableConfigurationStore().removeQueue(_queue);
                 }
             }
         }
@@ -365,7 +365,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             {
                 try
                 {
-                    _queue.getVirtualHost().getMessageStore().updateQueue(_queue);
+                    _queue.getVirtualHost().getDurableConfigurationStore().updateQueue(_queue);
                 }
                 catch (AMQStoreException e)
                 {

@@ -35,7 +35,7 @@
         <itemizedlist>
             <listitem>
                 <para>
-                    <emphasis>Supplying simply a <link linkend="Java-Broker-Stores">store type</link> and a store path</emphasis>: In this case,
+                    <emphasis>Supplying simply a type, store path, and type specific fields (in the case of a "STANDARD" Virtual Host this is simply a <link linkend="Java-Broker-Stores">store type</link>) and a store path</emphasis>: In this case,
                     the virtual host attributes are currently derived from default attribute values defined on the broker. This is the preferred approach.
                 </para>
             </listitem>
@@ -44,7 +44,7 @@
                     <emphasis>Supplying the path to a <link linkend="Java-Broker-Virtual-Hosts-Configuration-File">Virtual Host XML configuration file</link></emphasis>: In this case, specific per-virtualhost attribute configuration
                     can be set in the file, as well as pre-configuring queues, exchanges, etc. This is no longer the preferred approach and will likely be removed in
                     a future release, however it is currently still neccessary to support certain use-cases such as per-virtualhost attribute configuration, and
-                    specialised store configuration such as for the <link linkend="Java-Broker-Stores-HA-BDB-Store">BDB HA Message Store</link>.
+                    specialised Virtual Host configuration such for the <link linkend="Java-Broker-Stores-HA-BDB-Store">BDB HA Message Store</link>.
                 </para>
             </listitem>
         </itemizedlist>

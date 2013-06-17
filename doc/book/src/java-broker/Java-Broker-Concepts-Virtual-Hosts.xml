@@ -45,14 +45,21 @@ with one being configured as the default for clients that can't or don't specify
 messages on durable <emphasis>Queues</emphasis> it contains, as well as the configuration of any durable
 <emphasis>Queues</emphasis>, <emphasis>Exchanges</emphasis>, and <emphasis>Bindings</emphasis> made during its operation.</para>
 <para>
-    The following message stores are currently supported:
+  The Java Broker supports different types of <emphasis>Virtual Host</emphasis>, which providing
+  for different High Availability patterns.  The <emphasis>standard</emphasis> <emphasis>Virtual
+  Host</emphasis> type provides no replication and is designed for standalone environments. It
+  supports a number of different <emphasis>Message Store</emphasis> implementations:
     <itemizedlist>
         <listitem><para><link linkend="Java-Broker-Stores-SQL-Store">JDBC Message Store</link></para></listitem>
         <listitem><para><link linkend="Java-Broker-Stores-Derby-Store">Derby Message Store</link></para></listitem>
         <listitem><para><link linkend="Java-Broker-Stores-BDB-Store">Berkeley DB Message Store</link></para></listitem>
-        <listitem><para><link linkend="Java-Broker-Stores-HA-BDB-Store">Berkeley DB HA Message Store</link></para></listitem>
         <listitem><para><link linkend="Java-Broker-Stores-Memory-Store">Memory Message Store</link></para></listitem>
      </itemizedlist>
+</para>
+<para>
+  The <emphasis>BDB_HA</emphasis> <emphasis>Virtual Host</emphasis> provides clustering for
+  reliability using the HA capabilties of the Oracle Berkeley DB (Java Edition) (see
+  <link linkend="Java-Broker-Stores-HA-BDB-Store">Berkeley DB HA Message Store</link>).
 </para>
 <para>Virtual Hosts configuration is covered in <xref linkend="Java-Broker-Virtual-Hosts"/>.</para>
 </section>

@@ -56,8 +56,6 @@
         do not current offer this feature.</para></footnote> to the new Master and continue their work.</para>
     <para>The Java Broker HA solution is incompatible with the HA solution offered by the CPP Broker.  It is not possible to co-locate Java and CPP
        Brokers within the same cluster.</para>
-    <para>HA is not currently available for those using the the <emphasis role="bold">Derby Store</emphasis> or <emphasis role="bold">Memory
-      Message Store</emphasis>.</para>
   </section>
 
   <section role="h3" id="Java-Broker-High-Availability-TwoNodeCluster">
@@ -302,8 +300,8 @@
   <virtualhost>
     <name>vhostname</name>
     <vhostname>
+      <type>BDB_HA</type>
       <store>
-	<class>org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore</class>
 	<environment-path>${QPID_WORK}/bdbhastore/vhostname</environment-path>
 	<highAvailability>
 	  <groupName>myclustername</groupName>

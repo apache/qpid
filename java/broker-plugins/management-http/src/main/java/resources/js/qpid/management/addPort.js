@@ -60,7 +60,7 @@ define(["dojo/_base/xhr",
 
         var node = construct.create("div", null, win.body(), "last");
 
-         var convertToPort = function convertToPort(formValues)
+        var convertToPort = function convertToPort(formValues)
             {
                 var newPort = {};
                 newPort.name = dijit.byId("formAddPort.name").value;

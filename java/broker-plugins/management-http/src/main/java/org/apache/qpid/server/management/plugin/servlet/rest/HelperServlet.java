@@ -33,8 +33,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAccessControlProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAuthenticationProviderAttributes;
+import org.apache.qpid.server.management.plugin.servlet.rest.action.ListBrokerAttribute;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListGroupProviderAttributes;
-import org.apache.qpid.server.management.plugin.servlet.rest.action.ListMessageStoreTypes;
+import org.apache.qpid.server.model.Broker;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -52,8 +53,10 @@ public class HelperServlet extends AbstractServlet
         _actions = new HashMap<String, Action>();
         Action listProviderAttributes = new ListAuthenticationProviderAttributes();
         _actions.put(listProviderAttributes.getName(), listProviderAttributes);
-        Action listMessageStoreTypes = new ListMessageStoreTypes();
+        Action listMessageStoreTypes = new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, "ListMessageStoreTypes");
         _actions.put(listMessageStoreTypes.getName(), listMessageStoreTypes);
+        Action listVirtualHostTypes = new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes");
+        _actions.put(listVirtualHostTypes.getName(), listVirtualHostTypes);
         Action groupProviderAttributes = new ListGroupProviderAttributes();
         _actions.put(groupProviderAttributes.getName(), groupProviderAttributes);
         Action aclProviderAttributes = new ListAccessControlProviderAttributes();

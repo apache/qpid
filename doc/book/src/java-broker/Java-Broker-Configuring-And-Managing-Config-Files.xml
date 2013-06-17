@@ -305,7 +305,7 @@ $ ./qpid-server -prop "qpid.amqp_port=10000" -prop "qpid.http_port=10001"
 {
   "name" : "Broker",
   "defaultVirtualHost" : "default",
-  "modelVersion" : "1.0",
+  "modelVersion" : "1.1",
   "storeVersion" : 1,
   "authenticationproviders" : [ {
     "name" : "passwordFile",
@@ -332,6 +332,7 @@ $ ./qpid-server -prop "qpid.amqp_port=10000" -prop "qpid.http_port=10001"
   } ],
   "virtualhosts" : [ {
     "name" : "default",
+    "type" : "STANDARD",
     "storePath" : "${qpid.work_dir}/derbystore/default",
     "storeType" : "DERBY"
   } ],
@@ -348,7 +349,7 @@ $ ./qpid-server -prop "qpid.amqp_port=10000" -prop "qpid.http_port=10001"
                 <itemizedlist>
                     <listitem><para>Authentication Provider of type <emphasis>PlainPasswordFile</emphasis> with name "passwordFile"</para></listitem>
                     <listitem><para>Four Port entries: "AMQP", "HTTP", "RMI_REGISTRY", "JMX_CONNECTOR"</para></listitem>
-                    <listitem><para>Virtual Host with name "default" and DERBY message store type at location "${qpid.work_dir}/derbystore/default".</para></listitem>
+                    <listitem><para>A "STANDARD" (i.e. non-HA) Virtual Host with name "default" and DERBY message store type at location "${qpid.work_dir}/derbystore/default".</para></listitem>
                     <listitem><para>Two management plugins: "jmxManagement" of type "MANAGEMENT-JMX" and "httpManagement" of type "MANAGEMENT-HTTP".</para></listitem>
                     <listitem><para>Broker attributes are stored as a root entry.</para></listitem>
                 </itemizedlist>

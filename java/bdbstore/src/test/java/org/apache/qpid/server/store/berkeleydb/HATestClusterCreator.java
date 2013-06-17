@@ -75,6 +75,7 @@ public class HATestClusterCreator
     private final int _numberOfNodes;
     private int _bdbHelperPort;
     private int _primaryBrokerPort;
+    private String _vhostConfigKeyPrefix;
 
     public HATestClusterCreator(QpidBrokerTestCase testcase, String virtualHostName, int numberOfNodes)
     {
@@ -83,7 +84,8 @@ public class HATestClusterCreator
         _groupName = "group" + _testcase.getName();
         _ipAddressOfBroker = getIpAddressOfBrokerHost();
         _numberOfNodes = numberOfNodes;
-        _vhostStoreConfigKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".store.";
+        _vhostConfigKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".";
+        _vhostStoreConfigKeyPrefix = _vhostConfigKeyPrefix + "store.";
         _bdbHelperPort = 0;
     }
 
@@ -350,6 +352,8 @@ public class HATestClusterCreator
     {
         final String nodeName = getNodeNameForNodeAt(bdbPort);
 
+
+        _testcase.setVirtualHostConfigurationProperty(_vhostConfigKeyPrefix + "type", BDBHAVirtualHostFactory.TYPE);
         _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "class", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore");
 
         _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.groupName", _groupName);

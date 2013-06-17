@@ -762,7 +762,7 @@ public class ServerSessionDelegate extends SessionDelegate
                             {
                                 if (exchange.isDurable())
                                 {
-                                    DurableConfigurationStore store = virtualHost.getMessageStore();
+                                    DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
                                     store.createExchange(exchange);
                                 }
                                 exchangeRegistry.registerExchange(exchange);
@@ -917,7 +917,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
                 if (exchange.isDurable() && !exchange.isAutoDelete())
                 {
-                    DurableConfigurationStore store = virtualHost.getMessageStore();
+                    DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
                     store.removeExchange(exchange);
                 }
             }
@@ -1241,7 +1241,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
 
         VirtualHost virtualHost = getVirtualHost(session);
-        DurableConfigurationStore store = virtualHost.getMessageStore();
+        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
         String queueName = method.getQueue();
         AMQQueue queue;
@@ -1468,7 +1468,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         queue.delete();
                         if (queue.isDurable() && !queue.isAutoDelete())
                         {
-                            DurableConfigurationStore store = virtualHost.getMessageStore();
+                            DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
                             store.removeQueue(queue);
                         }
                     }
