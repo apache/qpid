@@ -35,6 +35,7 @@ using std::string;
 
 DeliveryRecord::DeliveryRecord(const QueueCursor& _msg,
                                framing::SequenceNumber _msgId,
+                               framing::SequenceNumber _replicationId,
                                const Queue::shared_ptr& _queue,
                                const std::string& _tag,
                                const boost::shared_ptr<Consumer>& _consumer,
@@ -52,7 +53,8 @@ DeliveryRecord::DeliveryRecord(const QueueCursor& _msg,
                                                    ended(accepted && acquired),
                                                    windowing(_windowing),
                                                    credit(_credit),
-                                                   msgId(_msgId)
+                                                   msgId(_msgId),
+                                                   replicationId(_replicationId)
 {}
 
 bool DeliveryRecord::setEnded()

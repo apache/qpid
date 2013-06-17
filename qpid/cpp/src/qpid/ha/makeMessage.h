@@ -23,6 +23,10 @@
  */
 
 #include "qpid/broker/Message.h"
+#include "qpid/framing/Buffer.h"
+#include <string>
+
+/** Utilities for creating messages used by HA internally. */
 
 namespace qpid {
 namespace framing {
@@ -37,6 +41,25 @@ broker::Message makeMessage(
     const framing::Buffer& content,
     const std::string& destination=std::string()
 );
+
+broker::Message makeMessage(const std::string& content,
+                            const std::string& destination=std::string());
+
+/** Encode value as a string. */
+template <class T> std::string encodeStr(const T& value) {
+    std::string encoded(value.encodedSize(), '\0');
+    framing::Buffer buffer(&encoded[0], encoded.size());
+    value.encode(buffer);
+    return encoded;
+}
+
+/** Decode value from a string. */
+template <class T> T decodeStr(const std::string& encoded) {
+    framing::Buffer buffer(const_cast<char*>(&encoded[0]), encoded.size());
+    T value;
+    value.decode(buffer);
+    return value;
+}
 
 }} // namespace qpid::ha
 

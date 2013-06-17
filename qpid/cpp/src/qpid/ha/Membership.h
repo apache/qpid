@@ -78,6 +78,7 @@ class Membership
     BrokerInfo getInfo() const;
     BrokerStatus getStatus() const;
     void setStatus(BrokerStatus s);
+    void setAddress(const Address&);
 
   private:
     void update(sys::Mutex::ScopedLock&);

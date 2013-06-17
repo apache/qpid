@@ -68,9 +68,12 @@ class DeliveryRecord
      */
     uint32_t credit;
     framing::SequenceNumber msgId;
+    framing::SequenceNumber replicationId;
 
   public:
-    QPID_BROKER_EXTERN DeliveryRecord(const QueueCursor& msgCursor, framing::SequenceNumber msgId,
+    QPID_BROKER_EXTERN DeliveryRecord(const QueueCursor& msgCursor,
+                                      framing::SequenceNumber msgId,
+                                      framing::SequenceNumber replicationId,
                                       const boost::shared_ptr<Queue>& queue, 
                                       const std::string& tag,
                                       const boost::shared_ptr<Consumer>& consumer,
@@ -111,6 +114,7 @@ class DeliveryRecord
     const QueueCursor& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
     framing::SequenceNumber getMessageId() const { return msgId; }
+    framing::SequenceNumber getReplicationId() const { return replicationId; }
     boost::shared_ptr<Queue> getQueue() const { return queue; }
 
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);

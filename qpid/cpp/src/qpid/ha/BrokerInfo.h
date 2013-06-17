@@ -27,6 +27,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/types/Variant.h"
+#include "qpid/sys/unordered_map.h"
 #include <string>
 #include <iosfwd>
 #include <vector>
@@ -41,7 +42,7 @@ class BrokerInfo
 {
   public:
     typedef std::set<BrokerInfo> Set;
-    typedef std::map<types::Uuid, BrokerInfo> Map;
+    typedef qpid::sys::unordered_map<types::Uuid, BrokerInfo, types::Uuid::Hasher> Map;
 
     BrokerInfo();
     BrokerInfo(const types::Uuid& id, BrokerStatus, const Address& = Address());
@@ -50,9 +51,9 @@ class BrokerInfo
 
     types::Uuid getSystemId() const { return systemId; }
     BrokerStatus getStatus() const { return status; }
-    Address getAddress() const { return address; }
-
     void setStatus(BrokerStatus s)  { status = s; }
+    Address getAddress() const { return address; }
+    void setAddress(const Address& a) { address = a; }
 
     framing::FieldTable asFieldTable() const;
     types::Variant::Map asMap() const;

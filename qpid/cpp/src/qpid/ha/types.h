@@ -24,12 +24,20 @@
 
 #include "qpid/types/Variant.h"
 #include "qpid/types/Uuid.h"
+#include "qpid/framing/SequenceSet.h"
+
+#include <boost/shared_ptr.hpp>
+
 #include <string>
 #include <set>
 #include <iosfwd>
 
 namespace qpid {
 
+namespace broker {
+class Message;
+class Queue;
+}
 namespace framing {
 class FieldTable;
 }
@@ -105,6 +113,24 @@ extern const std::string QPID_HA_UUID;
 class IdSet : public std::set<types::Uuid> {};
 
 std::ostream& operator<<(std::ostream& o, const IdSet& ids);
+
+// Use type names to distinguish Positions from Replication Ids
+typedef framing::SequenceNumber QueuePosition;
+typedef framing::SequenceNumber ReplicationId;
+typedef framing::SequenceSet QueuePositionSet;
+typedef framing::SequenceSet ReplicationIdSet;
+
+/** Helper for logging message ID  */
+struct LogMessageId {
+    typedef boost::shared_ptr<broker::Queue> QueuePtr;
+    LogMessageId(const broker::Queue& q, QueuePosition pos, ReplicationId id);
+    LogMessageId(const broker::Queue& q, const broker::Message& m);
+    LogMessageId(const std::string& q, const broker::Message& m);
+    const std::string& queue;
+    QueuePosition position;
+    ReplicationId replicationId;
+};
+std::ostream& operator<<(std::ostream&, const LogMessageId&);
 
 }} // qpid::ha
 #endif  /*!QPID_HA_ENUM_H*/

@@ -628,16 +628,14 @@ set (ha_default ON)
 option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
 if (BUILD_HA)
     set (ha_SOURCES
+	qpid/ha/QueueSnapshot.h
+	qpid/ha/QueueSnapshots.h
         qpid/ha/AlternateExchangeSetter.h
-	qpid/ha/BackupConnectionExcluder.h
-	qpid/ha/BrokerInfo.cpp
-	qpid/ha/BrokerInfo.h
-	qpid/ha/QueueGuard.cpp
-	qpid/ha/QueueGuard.h
-	qpid/ha/ReplicationTest.cpp
-	qpid/ha/ReplicationTest.h
         qpid/ha/Backup.cpp
         qpid/ha/Backup.h
+        qpid/ha/BackupConnectionExcluder.h
+        qpid/ha/BrokerInfo.cpp
+        qpid/ha/BrokerInfo.h
         qpid/ha/BrokerReplicator.cpp
         qpid/ha/BrokerReplicator.h
         qpid/ha/ConnectionObserver.cpp
@@ -647,26 +645,32 @@ if (BUILD_HA)
         qpid/ha/HaBroker.cpp
         qpid/ha/HaBroker.h
         qpid/ha/HaPlugin.cpp
-	qpid/ha/makeMessage.cpp
-	qpid/ha/makeMessage.h
+        qpid/ha/hash.h
+	qpid/ha/IdSetter.h
+        qpid/ha/QueueSnapshot.h
+        qpid/ha/makeMessage.cpp
+        qpid/ha/makeMessage.h
         qpid/ha/Membership.cpp
         qpid/ha/Membership.h
         qpid/ha/Primary.cpp
         qpid/ha/Primary.h
-        qpid/ha/QueueRange.h
+        qpid/ha/QueueGuard.cpp
+        qpid/ha/QueueGuard.h
         qpid/ha/QueueReplicator.cpp
         qpid/ha/QueueReplicator.h
-        qpid/ha/ReplicatingSubscription.cpp
-        qpid/ha/ReplicatingSubscription.h
-        qpid/ha/Settings.h
-	qpid/ha/StatusCheck.cpp
-	qpid/ha/StatusCheck.h
-        qpid/ha/types.cpp
-        qpid/ha/types.h
         qpid/ha/RemoteBackup.cpp
         qpid/ha/RemoteBackup.h
-	qpid/ha/Role.h
-	qpid/ha/StandAlone.h
+        qpid/ha/ReplicatingSubscription.cpp
+        qpid/ha/ReplicatingSubscription.h
+        qpid/ha/ReplicationTest.cpp
+        qpid/ha/ReplicationTest.h
+        qpid/ha/Role.h
+        qpid/ha/Settings.h
+        qpid/ha/StandAlone.h
+        qpid/ha/StatusCheck.cpp
+        qpid/ha/StatusCheck.h
+        qpid/ha/types.cpp
+        qpid/ha/types.h
     )
 
     add_library (ha MODULE ${ha_SOURCES})

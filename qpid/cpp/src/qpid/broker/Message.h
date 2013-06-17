@@ -131,6 +131,9 @@ public:
 
     QPID_BROKER_EXTERN boost::intrusive_ptr<AsyncCompletion> getIngressCompletion() const;
     QPID_BROKER_EXTERN boost::intrusive_ptr<PersistableMessage> getPersistentContext() const;
+    QPID_BROKER_EXTERN uint64_t getReplicationId() const;
+    QPID_BROKER_EXTERN void setReplicationId(framing::SequenceNumber id);
+
   private:
     boost::intrusive_ptr<Encoding> encoding;
     boost::intrusive_ptr<PersistableMessage> persistentContext;
@@ -143,6 +146,7 @@ public:
     bool isManagementMessage;
     MessageState state;
     qpid::framing::SequenceNumber sequence;
+    framing::SequenceNumber replicationId;
 
     void annotationsChanged();
 };

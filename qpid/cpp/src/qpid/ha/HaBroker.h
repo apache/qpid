@@ -54,6 +54,10 @@ class Backup;
 class ConnectionObserver;
 class Primary;
 class Role;
+class QueueSnapshot;
+class QueueSnapshots;
+class QueueReplicator;
+
 /**
  * HA state and actions associated with a HA broker. Holds all the management info.
  *
@@ -93,8 +97,11 @@ class HaBroker : public management::Manageable
 
     void setAddress(const Address&); // set self address from a self-connection
 
-  private:
+    boost::shared_ptr<QueueSnapshots> getQueueSnapshots() { return queueSnapshots; }
 
+    boost::shared_ptr<QueueReplicator> findQueueReplicator(const std::string& queueName);
+
+  private:
     void setPublicUrl(const Url&);
     void setBrokerUrl(const Url&);
     void updateClientUrl(sys::Mutex::ScopedLock&);
@@ -117,6 +124,7 @@ class HaBroker : public management::Manageable
     boost::shared_ptr<Role> role;
     Membership membership;
     boost::shared_ptr<FailoverExchange> failoverExchange;
+    boost::shared_ptr<QueueSnapshots> queueSnapshots;
 };
 }} // namespace qpid::ha
 
