@@ -62,6 +62,8 @@ class ConnectionObserver : public broker::ConnectionObserver
     void setObserver(const ObserverPtr&, const std::string& logPrefix);
     ObserverPtr getObserver();
 
+    void reset();
+
     void opened(broker::Connection& connection);
     void closed(broker::Connection& connection);
 

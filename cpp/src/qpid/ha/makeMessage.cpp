@@ -54,4 +54,9 @@ broker::Message makeMessage(const framing::Buffer& buffer,
     return broker::Message(transfer, 0);
 }
 
+broker::Message makeMessage(const std::string& content, const std::string& destination) {
+    framing::Buffer buffer(const_cast<char*>(&content[0]), content.size());
+    return makeMessage(buffer, destination);
+}
+
 }} // namespace qpid::ha

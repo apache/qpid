@@ -23,8 +23,8 @@
  */
 
 #include "BrokerInfo.h"
+#include "hash.h"
 #include "qpid/broker/Exchange.h"
-#include "qpid/framing/SequenceSet.h"
 #include <boost/enable_shared_from_this.hpp>
 #include <iosfwd>
 
@@ -57,7 +57,7 @@ class QueueReplicator : public broker::Exchange,
 {
   public:
     static const std::string DEQUEUE_EVENT_KEY;
-    static const std::string POSITION_EVENT_KEY;
+    static const std::string ID_EVENT_KEY;
     static const std::string QPID_SYNC_FREQUENCY;
 
     static std::string replicatorName(const std::string& queueName);
@@ -87,13 +87,17 @@ class QueueReplicator : public broker::Exchange,
 
     boost::shared_ptr<broker::Queue> getQueue() const { return queue; }
 
+    ReplicationId getMaxId();
+
   private:
+    typedef qpid::sys::unordered_map<ReplicationId, QueuePosition, TrivialHasher<int32_t> > PositionMap;
+
     class ErrorListener;
     class QueueObserver;
 
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void destroy();             // Called when the queue is destroyed.
-    void dequeue(framing::SequenceNumber, sys::Mutex::ScopedLock&);
+    void dequeue(const ReplicationIdSet&, sys::Mutex::ScopedLock&);
 
     HaBroker& haBroker;
     std::string logPrefix;
@@ -106,7 +110,12 @@ class QueueReplicator : public broker::Exchange,
     bool subscribed;
     const Settings& settings;
     bool destroyed;
+    PositionMap positions;
+    ReplicationIdSet idSet; // Set of replicationIds on the queue.
+    ReplicationId nextId;   // ID for next message to arrive.
+    ReplicationId maxId;    // Max ID used so far.
 };
+
 
 }} // namespace qpid::ha
 

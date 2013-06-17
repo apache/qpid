@@ -37,12 +37,17 @@ class MessageInterceptor
   public:
     virtual ~MessageInterceptor() {}
 
+    /** Modify a message before it is recorded in durable store */
+    virtual void record(Message&) {}
     /** Modify a message as it is being published onto the queue. */
-    virtual void publish(Message&) = 0;
+    virtual void publish(Message&) {}
 };
 
 class MessageInterceptors : public Observers<MessageInterceptor> {
   public:
+    void record(Message& m) {
+        each(boost::bind(&MessageInterceptor::record, _1, boost::ref(m)));
+    }
     void publish(Message& m) {
         each(boost::bind(&MessageInterceptor::publish, _1, boost::ref(m)));
     }

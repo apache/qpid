@@ -43,6 +43,7 @@ class Buffer;
 
 namespace ha {
 class QueueGuard;
+class HaBroker;
 
 /**
  * A susbcription that replicates to a remote backup.
@@ -61,30 +62,36 @@ class QueueGuard;
  *
  * Lifecycle: broker::Queue holds shared_ptrs to this as a consumer.
  *
- * Lock Hierarchy: ReplicatingSubscription MUST NOT call QueueGuard with its
- * lock held QueueGuard MAY call ReplicatingSubscription with its lock held.
+ *  ReplicatingSubscription makes calls on QueueGuard, but not vice-versa.
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 {
   public:
     typedef broker::SemanticState::ConsumerImpl ConsumerImpl;
 
-    struct Factory : public broker::ConsumerFactory {
+    class Factory : public broker::ConsumerFactory {
+      public:
+        Factory(HaBroker& hb) : haBroker(hb) {}
+
+        HaBroker& getHaBroker() const { return haBroker; }
+
         boost::shared_ptr<broker::SemanticState::ConsumerImpl> create(
             broker::SemanticState* parent,
             const std::string& name, boost::shared_ptr<broker::Queue> ,
             bool ack, bool acquire, bool exclusive, const std::string& tag,
             const std::string& resumeId, uint64_t resumeTtl,
             const framing::FieldTable& arguments);
+      private:
+        HaBroker& haBroker;
     };
 
     // Argument names for consume command.
     static const std::string QPID_REPLICATING_SUBSCRIPTION;
-    static const std::string QPID_BACK;
-    static const std::string QPID_FRONT;
     static const std::string QPID_BROKER_INFO;
+    static const std::string QPID_ID_SET;
 
-    ReplicatingSubscription(broker::SemanticState* parent,
+    ReplicatingSubscription(HaBroker& haBroker,
+                            broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,
                             const std::string& resumeId, uint64_t resumeTtl,
@@ -92,12 +99,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
     ~ReplicatingSubscription();
 
-    // Called via QueueGuard::dequeued.
-    //@return true if the message requires completion.
-    void dequeued(const broker::Message&);
-
-    // Called during initial scan for dequeues.
-    void dequeued(framing::SequenceNumber first, framing::SequenceNumber last);
 
     // Consumer overrides.
     bool deliver(const broker::QueueCursor& cursor, const broker::Message& msg);
@@ -121,19 +122,27 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     bool doDispatch();
 
   private:
+    class QueueObserver;
+  friend class QueueObserver;
+
     std::string logPrefix;
-    framing::SequenceSet dequeues;
-    framing::SequenceNumber position;
-    framing::SequenceNumber backupPosition;
+    QueuePosition position;
+    ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
+    ReplicationIdSet skip;      // Messages already on backup will be skipped.
+    ReplicationIdSet unacked;   // Replicated but un-acknowledged.
     bool ready;
+    bool cancelled;
     BrokerInfo info;
     boost::shared_ptr<QueueGuard> guard;
+    HaBroker& haBroker;
+    boost::shared_ptr<QueueObserver> observer;
 
+    bool isGuarded(sys::Mutex::ScopedLock&);
+    void dequeued(ReplicationId);
     void sendDequeueEvent(sys::Mutex::ScopedLock&);
-    void sendPositionEvent(framing::SequenceNumber, sys::Mutex::ScopedLock&);
-    void setReady();
-    void sendEvent(const std::string& key, const framing::Buffer&,
-                   sys::Mutex::ScopedLock&);
+    void sendIdEvent(ReplicationId, sys::Mutex::ScopedLock&);
+    void sendEvent(const std::string& key, const std::string& data, sys::Mutex::ScopedLock&);
+    void checkReady(sys::Mutex::ScopedLock&);
   friend struct Factory;
 };
 

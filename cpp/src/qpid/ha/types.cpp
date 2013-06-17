@@ -21,6 +21,8 @@
 
 #include "types.h"
 #include "qpid/Msg.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/Exception.h"
 #include <algorithm>
 #include <iostream>
@@ -82,5 +84,20 @@ ostream& operator<<(ostream& o, const IdSet& ids) {
     copy(ids.begin(), ids.end(), out);
     return o;
 }
+
+LogMessageId::LogMessageId(const broker::Queue& q, QueuePosition pos, ReplicationId id) :
+    queue(q.getName()), position(pos), replicationId(id) {}
+
+LogMessageId::LogMessageId(const broker::Queue& q, const broker::Message& m) :
+    queue(q.getName()), position(m.getSequence()), replicationId(m.getReplicationId()) {}
+
+LogMessageId::LogMessageId(const std::string& q, const broker::Message& m) :
+    queue(q), position(m.getSequence()), replicationId(m.getReplicationId()) {}
+
+std::ostream& operator<<(std::ostream& o, const LogMessageId& m) {
+    return o  << m.queue << "[" << m.position << "]=" << m.replicationId;
+}
+
+
 
 }} // namespace qpid::ha

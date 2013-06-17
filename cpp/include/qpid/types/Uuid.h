@@ -57,7 +57,7 @@ class QPID_TYPES_CLASS_EXTERN Uuid
     /** String value in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
     QPID_TYPES_EXTERN std::string str() const;
 
-    QPID_TYPES_EXTERN size_t size() const;
+ QPID_TYPES_EXTERN size_t size() const;
     QPID_TYPES_EXTERN const unsigned char* data() const;
 
     friend QPID_TYPES_EXTERN bool operator==(const Uuid&, const Uuid&);
@@ -68,6 +68,14 @@ class QPID_TYPES_CLASS_EXTERN Uuid
     friend QPID_TYPES_EXTERN bool operator>=(const Uuid&, const Uuid&);
     friend QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream&, Uuid);
     friend QPID_TYPES_EXTERN std::istream& operator>>(std::istream&, Uuid&);
+
+    /** Hash value suitable for use with unordered_map */
+    size_t hash() const;
+
+    /** Hasher for use with unordered_map */
+    struct Hasher {
+        size_t operator()(const Uuid& u) const { return u.hash(); }
+    };
 
   private:
     unsigned char bytes[16];
@@ -90,5 +98,6 @@ QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream&, Uuid);
 QPID_TYPES_EXTERN std::istream& operator>>(std::istream&, Uuid&);
 
 }} // namespace qpid::types
+
 
 #endif  /*!QPID_TYPES_UUID_H*/

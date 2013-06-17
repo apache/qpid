@@ -1,5 +1,5 @@
 #!/bin/sh
-#
+echo#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -26,8 +26,8 @@ REPEAT="--repeat 10"
 QUEUES="-q 6"
 SENDERS="-s 3"
 RECEIVERS="-r 3"
-BROKERS=			# Local broker
-CLIENT_HOSTS=			# No ssh, all clients are local
+BROKERS= # Local broker
+CLIENT_HOSTS= # No ssh, all clients are local
 # Connection options
 TCP_NODELAY=false
 RECONNECT=true

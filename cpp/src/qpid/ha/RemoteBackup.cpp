@@ -35,21 +35,18 @@ using boost::bind;
 
 RemoteBackup::RemoteBackup(
     const BrokerInfo& info, broker::Connection* c
-) : brokerInfo(info), replicationTest(NONE), connection(c), reportedReady(false)
+) : brokerInfo(info), replicationTest(NONE), started(false), connection(c), reportedReady(false)
 {
     std::ostringstream oss;
-    oss << "Primary: Remote backup " << info << ": ";
+    oss << "Remote backup at " << info << ": ";
     logPrefix = oss.str();
+    QPID_LOG(debug, logPrefix << "Connected");
 }
 
-void RemoteBackup::setCatchupQueues(broker::QueueRegistry& queues, bool createGuards)
-{
-    queues.eachQueue(boost::bind(&RemoteBackup::catchupQueue, this, _1, createGuards));
-    QPID_LOG(debug, logPrefix << "Set " << catchupQueues.size() << " catch-up queues"
-             << (createGuards ? " and guards" : ""));
+RemoteBackup::~RemoteBackup() {
+    // Don't cancel here, cancel must be called explicitly in a locked context
+    // where we know the connection pointer is still good.
 }
-
-RemoteBackup::~RemoteBackup() { cancel(); }
 
 void RemoteBackup::cancel() {
     QPID_LOG(debug, logPrefix << "Cancelled " << (connection? "connected":"disconnected")
@@ -64,7 +61,7 @@ void RemoteBackup::cancel() {
 }
 
 bool RemoteBackup::isReady() {
-    return connection && catchupQueues.empty();
+    return started && connection && catchupQueues.empty();
 }
 
 void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {

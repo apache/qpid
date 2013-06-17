@@ -38,6 +38,7 @@ void Lvq::push(Message& message, bool isRecovery)
     {
         qpid::sys::Mutex::ScopedLock locker(messageLock);
         message.setSequence(++sequence);
+        interceptors.publish(message);
         removed = messageMap.update(message, old);
         listeners.populate(copy);
         observeEnqueue(message, locker);

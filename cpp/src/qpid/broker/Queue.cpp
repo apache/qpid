@@ -285,9 +285,9 @@ void Queue::deliverTo(Message msg, TxBuffer* txn)
         } else {
             if (enqueue(0, msg)) {
                 push(msg);
-                QPID_LOG(debug, "Message " << msg << " enqueued on " << name);
+                QPID_LOG(debug, "Message " << msg.getSequence() << " enqueued on " << name);
             } else {
-                QPID_LOG(debug, "Message " << msg << " dropped from " << name);
+                QPID_LOG(debug, "Message " << msg.getSequence() << " dropped from " << name);
             }
         }
     }
@@ -415,7 +415,8 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
             if (c->filter(*msg)) {
                 if (c->accept(*msg)) {
                     if (c->preAcquires()) {
-                        QPID_LOG(debug, "Attempting to acquire message " << msg << " from '" << name << "' with state " << msg->getState());
+                        QPID_LOG(debug, "Attempting to acquire message " << msg->getSequence()
+                                 << " from '" << name << "' with state " << msg->getState());
                         if (allocator->acquire(c->getName(), *msg)) {
                             if (mgmtObject) {
                                 mgmtObject->inc_acquires();
@@ -825,6 +826,7 @@ void Queue::setLastNodeFailure()
  */
 bool Queue::enqueue(TransactionContext* ctxt, Message& msg)
 {
+    interceptors.record(msg);
     ScopedUse u(barrier);
     if (!u.acquired) return false;
 
