@@ -68,7 +68,7 @@ def connect(host, port):
       sock.connect(sa)
       break
     except socket.error, msg:
-      sock.close
+      sock.close()
   else:
     # If we got here then we couldn't connect (yet)
     raise
