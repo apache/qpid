@@ -60,7 +60,7 @@ public class DeliveryAnnotationsWriter extends AbstractDescribedTypeWriter<Deliv
     @Override
     protected ValueWriter createDescribedWriter()
     {
-        return getRegistry().getValueWriter(_value);
+        return getRegistry().getValueWriter(_value.getValue());
     }
 
     private static Factory<DeliveryAnnotations> FACTORY = new Factory<DeliveryAnnotations>()
