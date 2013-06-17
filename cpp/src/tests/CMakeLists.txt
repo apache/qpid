@@ -175,10 +175,15 @@ remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
 
-# FIXME aconway 2009-11-30: enable SSL
-#if SSL
-#include ssl.mk
-#endif
+if (BUILD_SASL)
+    add_custom_command(
+        OUTPUT sasl_config/qpidd.conf sasl_config/qpidd.sasldb
+        COMMAND sasl_test_setup.sh)
+
+    add_custom_target(
+        sasl_config ALL
+        DEPENDS sasl_config/qpidd.conf sasl_config/qpidd.sasldb)
+endif (BUILD_SASL)
 
 #
 # Other test programs
@@ -285,6 +290,10 @@ add_executable (msg_group_test msg_group_test.cpp ${platform_test_additions})
 target_link_libraries (msg_group_test qpidmessaging)
 remember_location(msg_group_test)
 
+if (BUILD_SASL)
+    add_executable (sasl_version sasl_version.cpp ${platform_test_additions})
+    remember_location(sasl_version)
+endif (BUILD_SASL)
 
 # qpid-perftest and qpid-latency-test are generally useful so install them
 install (TARGETS
@@ -314,15 +323,17 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix})
 
 add_test (unit_test ${test_wrap} ${unit_test_LOCATION})
-add_test (sasl_fed ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
-add_test (sasl_fed_ex_dynamic ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_dynamic${test_script_suffix})
-add_test (sasl_fed_ex_link ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_link${test_script_suffix})
-add_test (sasl_fed_ex_queue ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_queue${test_script_suffix})
-add_test (sasl_fed_ex_route ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_route${test_script_suffix})
-add_test (sasl_no_dir ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_no_dir${test_script_suffix})
-if (BUILD_SSL)
-    add_test(ssl_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ssl_test${test_script_suffix})
-endif (BUILD_SSL)
+if (BUILD_SASL)
+    add_test (sasl_fed ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
+    add_test (sasl_fed_ex_dynamic ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_dynamic${test_script_suffix})
+    add_test (sasl_fed_ex_link ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_link${test_script_suffix})
+    add_test (sasl_fed_ex_queue ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_queue${test_script_suffix})
+    add_test (sasl_fed_ex_route ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_route${test_script_suffix})
+    add_test (sasl_no_dir ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_no_dir${test_script_suffix})
+    if (BUILD_SSL)
+        add_test(ssl_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ssl_test${test_script_suffix})
+    endif (BUILD_SSL)
+endif (BUILD_SASL)
 add_test (start_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/start_broker${test_script_suffix})
 add_test (qpid-client-test ${test_wrap} ${qpid-client-test_LOCATION})
 add_test (quick_perftest ${test_wrap} ${qpid-perftest_LOCATION} --summary --count 100)
