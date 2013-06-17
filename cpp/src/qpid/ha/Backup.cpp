@@ -55,13 +55,7 @@ Backup::Backup(HaBroker& hb, const Settings& s) :
     statusCheck(
         new StatusCheck(
             logPrefix, broker.getOptions().linkHeartbeatInterval, hb.getBrokerInfo()))
-{
-    // Set link properties to tag outgoing links.
-    framing::FieldTable linkProperties = broker.getLinkClientProperties();
-    linkProperties.setTable(
-        ConnectionObserver::BACKUP_TAG, hb.getBrokerInfo().asFieldTable());
-    broker.setLinkClientProperties(linkProperties);
-}
+{}
 
 void Backup::setBrokerUrl(const Url& brokers) {
     if (brokers.empty()) return;

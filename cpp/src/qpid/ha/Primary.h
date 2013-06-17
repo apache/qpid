@@ -27,9 +27,9 @@
 #include "ReplicationTest.h"
 #include "Role.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/unordered_map.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <map>
 #include <string>
 
 namespace qpid {
@@ -64,6 +64,7 @@ class Primary : public Role
   public:
     typedef boost::shared_ptr<broker::Queue> QueuePtr;
     typedef boost::shared_ptr<broker::Exchange> ExchangePtr;
+    typedef boost::shared_ptr<RemoteBackup> RemoteBackupPtr;
 
     static Primary* get() { return instance; }
 
@@ -94,11 +95,18 @@ class Primary : public Role
     void timeoutExpectedBackups();
 
   private:
-    typedef std::map<types::Uuid, boost::shared_ptr<RemoteBackup> > BackupMap;
-    typedef std::set<boost::shared_ptr<RemoteBackup> > BackupSet;
+    typedef qpid::sys::unordered_map<
+      types::Uuid, RemoteBackupPtr, types::Uuid::Hasher > BackupMap;
 
-    void checkReady(sys::Mutex::ScopedLock&);
-    void checkReady(BackupMap::iterator, sys::Mutex::ScopedLock&);
+    typedef std::set<RemoteBackupPtr > BackupSet;
+
+    RemoteBackupPtr backupConnect(const BrokerInfo&, broker::Connection&, sys::Mutex::ScopedLock&);
+    void backupDisconnect(RemoteBackupPtr, sys::Mutex::ScopedLock&);
+
+    void initializeQueue(boost::shared_ptr<broker::Queue>);
+    void checkReady();
+    void checkReady(RemoteBackupPtr);
+    void setCatchupQueues(const RemoteBackupPtr&, bool createGuards);
 
     sys::Mutex lock;
     HaBroker& haBroker;
@@ -120,7 +128,6 @@ class Primary : public Role
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
     boost::shared_ptr<broker::ConfigurationObserver> configurationObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
-
     static Primary* instance;
 };
 }} // namespace qpid::ha

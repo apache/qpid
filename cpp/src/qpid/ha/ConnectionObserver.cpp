@@ -65,6 +65,11 @@ ConnectionObserver::ObserverPtr ConnectionObserver::getObserver() {
     return observer;
 }
 
+void ConnectionObserver::reset() {
+    sys::Mutex::ScopedLock l(lock);
+    observer.reset();
+}
+
 bool ConnectionObserver::isSelf(const broker::Connection& connection) {
     BrokerInfo info;
     return getBrokerInfo(connection, info) && info.getSystemId() == self;

@@ -360,7 +360,7 @@ bool SemanticStateConsumerImpl::deliver(const QueueCursor& cursor, const Message
 {
     allocateCredit(msg);
     boost::intrusive_ptr<const amqp_0_10::MessageTransfer> transfer = protocols.translate(msg);
-    DeliveryRecord record(cursor, msg.getSequence(), queue, getTag(),
+    DeliveryRecord record(cursor, msg.getSequence(), msg.getReplicationId(), queue, getTag(),
                           consumer, acquire, !ackExpected, credit.isWindowMode(), transfer->getRequiredCredit());
     bool sync = syncFrequency && ++deliveryCount >= syncFrequency;
     if (sync) deliveryCount = 0;//reset

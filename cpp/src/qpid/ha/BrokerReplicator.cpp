@@ -124,6 +124,8 @@ const string BROKER("broker");
 const string MEMBERS("members");
 const string AUTO_DELETE_TIMEOUT("qpid.auto_delete_timeout");
 
+const string COLON(":");
+
 void sendQuery(const string& packageName, const string& className, const string& queueName,
                SessionHandler& sessionHandler)
 {
@@ -282,6 +284,14 @@ class BrokerReplicator::UpdateTracker {
     ReplicationTest repTest;
 };
 
+namespace {
+template <class EventType> std::string key() {
+    pair<string,string> name = EventType::getFullName();
+    return name.first + COLON + name.second;
+}
+}
+
+
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
       logPrefix("Backup: "), replicationTest(NONE),
@@ -298,14 +308,14 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
     args.setString(QPID_REPLICATE, printable(NONE).str());
     setArgs(args);
 
-    dispatch[EventQueueDeclare::getFullName()] = &BrokerReplicator::doEventQueueDeclare;
-    dispatch[EventQueueDelete::getFullName()] = &BrokerReplicator::doEventQueueDelete;
-    dispatch[EventExchangeDeclare::getFullName()] = &BrokerReplicator::doEventExchangeDeclare;
-    dispatch[EventExchangeDelete::getFullName()] = &BrokerReplicator::doEventExchangeDelete;
-    dispatch[EventBind::getFullName()] = &BrokerReplicator::doEventBind;
-    dispatch[EventUnbind::getFullName()] = &BrokerReplicator::doEventUnbind;
-    dispatch[EventMembersUpdate::getFullName()] = &BrokerReplicator::doEventMembersUpdate;
-    dispatch[EventSubscribe::getFullName()] = &BrokerReplicator::doEventSubscribe;
+    dispatch[key<EventQueueDeclare>()] = &BrokerReplicator::doEventQueueDeclare;
+    dispatch[key<EventQueueDelete>()] = &BrokerReplicator::doEventQueueDelete;
+    dispatch[key<EventExchangeDeclare>()] = &BrokerReplicator::doEventExchangeDeclare;
+    dispatch[key<EventExchangeDelete>()] = &BrokerReplicator::doEventExchangeDelete;
+    dispatch[key<EventBind>()] = &BrokerReplicator::doEventBind;
+    dispatch[key<EventUnbind>()] = &BrokerReplicator::doEventUnbind;
+    dispatch[key<EventMembersUpdate>()] = &BrokerReplicator::doEventMembersUpdate;
+    dispatch[key<EventSubscribe>()] = &BrokerReplicator::doEventSubscribe;
 }
 
 void BrokerReplicator::initialize() {
@@ -402,7 +412,7 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
     peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_EVENT_HA, FieldTable());
     //subscribe to the queue
     FieldTable arguments;
-    arguments.setInt(QueueReplicator::QPID_SYNC_FREQUENCY, 1); // FIXME aconway 2012-05-22: optimize?
+    arguments.setInt(QueueReplicator::QPID_SYNC_FREQUENCY, 1); // TODO aconway 2012-05-22: optimize?
     peer.getMessage().subscribe(
         queueName, args.i_dest, 1/*accept-none*/, 0/*pre-acquired*/,
         false/*exclusive*/, "", 0, arguments);
@@ -439,7 +449,9 @@ void BrokerReplicator::route(Deliverable& msg) {
                 QPID_LOG(trace, "Broker replicator event: " << map);
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
-                EventKey key(schema[PACKAGE_NAME], schema[CLASS_NAME]);
+                std::string key = (schema[PACKAGE_NAME].asString() +
+                                   COLON +
+                                   schema[CLASS_NAME].asString());
                 EventDispatchMap::iterator j = dispatch.find(key);
                 if (j != dispatch.end()) (this->*(j->second))(values);
             }

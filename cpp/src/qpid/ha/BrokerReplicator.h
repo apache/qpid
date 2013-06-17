@@ -29,6 +29,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
 #include "qpid/management/ManagementObject.h"
+#include "qpid/sys/unordered_map.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <set>
@@ -88,11 +89,10 @@ class BrokerReplicator : public broker::Exchange,
     typedef std::pair<boost::shared_ptr<broker::Queue>, bool> CreateQueueResult;
     typedef std::pair<boost::shared_ptr<broker::Exchange>, bool> CreateExchangeResult;
 
-    typedef std::pair<std::string,std::string> EventKey;
     typedef void (BrokerReplicator::*DispatchFunction)(types::Variant::Map&);
-    typedef std::map<EventKey, DispatchFunction> EventDispatchMap;
+    typedef qpid::sys::unordered_map<std::string, DispatchFunction> EventDispatchMap;
 
-    typedef std::map<std::string, QueueReplicatorPtr> QueueReplicatorMap;
+    typedef qpid::sys::unordered_map<std::string, QueueReplicatorPtr> QueueReplicatorMap;
 
     class UpdateTracker;
     class ErrorListener;
@@ -152,7 +152,6 @@ class BrokerReplicator : public broker::Exchange,
     bool initialized;
     AlternateExchangeSetter alternates;
     qpid::Address primary;
-    typedef std::set<std::string> StringSet;
     broker::Connection* connection;
     EventDispatchMap dispatch;
     std::auto_ptr<UpdateTracker> queueTracker;

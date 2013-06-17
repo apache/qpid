@@ -33,11 +33,14 @@ ha_la_SOURCES =					\
   qpid/ha/BrokerReplicator.h			\
   qpid/ha/ConnectionObserver.cpp		\
   qpid/ha/ConnectionObserver.h			\
-  qpid/ha/FailoverExchange.cpp				\
-  qpid/ha/FailoverExchange.h				\
+  qpid/ha/FailoverExchange.cpp			\
+  qpid/ha/FailoverExchange.h			\
   qpid/ha/HaBroker.cpp				\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
+  qpid/ha/hash.h				\
+  qpid/ha/IdSetter.h				\
+  qpid/ha/QueueSnapshot.h			\
   qpid/ha/makeMessage.cpp			\
   qpid/ha/makeMessage.h				\
   qpid/ha/Membership.cpp			\
@@ -46,20 +49,21 @@ ha_la_SOURCES =					\
   qpid/ha/Primary.h				\
   qpid/ha/QueueGuard.cpp			\
   qpid/ha/QueueGuard.h				\
-  qpid/ha/QueueRange.h				\
   qpid/ha/QueueReplicator.cpp			\
   qpid/ha/QueueReplicator.h			\
+  qpid/ha/QueueSnapshot.h			\
+  qpid/ha/QueueSnapshots.h			\
+  qpid/ha/RemoteBackup.cpp			\
+  qpid/ha/RemoteBackup.h			\
   qpid/ha/ReplicatingSubscription.cpp		\
   qpid/ha/ReplicatingSubscription.h		\
   qpid/ha/ReplicationTest.cpp			\
   qpid/ha/ReplicationTest.h			\
+  qpid/ha/Role.h				\
   qpid/ha/Settings.h				\
+  qpid/ha/StandAlone.h				\
   qpid/ha/StatusCheck.cpp			\
   qpid/ha/StatusCheck.h				\
-  qpid/ha/RemoteBackup.cpp			\
-  qpid/ha/RemoteBackup.h			\
-  qpid/ha/Role.h				\
-  qpid/ha/StandAlone.h				\
   qpid/ha/types.cpp				\
   qpid/ha/types.h
 

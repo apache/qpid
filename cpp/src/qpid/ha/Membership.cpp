@@ -18,9 +18,11 @@
  * under the License.
  *
  */
-#include "Membership.h"
+#include "ConnectionObserver.h"
 #include "HaBroker.h"
+#include "Membership.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/ha/EventMembersUpdate.h"
@@ -109,11 +111,25 @@ bool Membership::get(const types::Uuid& id, BrokerInfo& result) const {
 
 void Membership::update(Mutex::ScopedLock& l) {
     QPID_LOG(info, "Membership: " <<  brokers);
-    Variant::List brokers = asList();
+    // Update managment and send update event.
+    Variant::List brokerList = asList();
     if (mgmtObject) mgmtObject->set_status(printable(getStatus(l)).str());
-    if (mgmtObject) mgmtObject->set_members(brokers);
+    if (mgmtObject) mgmtObject->set_members(brokerList);
     haBroker.getBroker().getManagementAgent()->raiseEvent(
-        _qmf::EventMembersUpdate(brokers));
+        _qmf::EventMembersUpdate(brokerList));
+
+    // Update link client properties
+    framing::FieldTable linkProperties = haBroker.getBroker().getLinkClientProperties();
+    if (isBackup(getStatus(l))) {
+        // Set backup tag on outgoing link properties.
+        linkProperties.setTable(
+            ConnectionObserver::BACKUP_TAG, brokers[types::Uuid(self)].asFieldTable());
+        haBroker.getBroker().setLinkClientProperties(linkProperties);
+    } else {
+        // Remove backup tag property from outgoing link properties.
+        linkProperties.erase(ConnectionObserver::BACKUP_TAG);
+        haBroker.getBroker().setLinkClientProperties(linkProperties);
+    }
 }
 
 void Membership::setMgmtObject(boost::shared_ptr<_qmf::HaBroker> mo) {
@@ -178,5 +194,10 @@ BrokerInfo Membership::getInfo() const  {
     return i->second;
 }
 
-// FIXME aconway 2013-01-23: move to .h?
+void Membership::setAddress(const Address& a) {
+    Mutex::ScopedLock l(lock);
+    brokers[self].setAddress(a);
+    update(l);
+}
+
 }} // namespace qpid::ha

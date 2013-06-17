@@ -25,8 +25,9 @@
 #include "ReplicationTest.h"
 #include "BrokerInfo.h"
 #include "types.h"
+#include "hash.h"
+#include "qpid/sys/unordered_map.h"
 #include <set>
-#include <map>
 
 namespace qpid {
 
@@ -58,17 +59,12 @@ class RemoteBackup
     RemoteBackup(const BrokerInfo&, broker::Connection*);
     ~RemoteBackup();
 
-    /** Set all queues in the registry as catch-up queues.
-     *@createGuards if true create guards also, if false guards are created on demand.
-     */
-    void setCatchupQueues(broker::QueueRegistry&, bool createGuards);
-
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
     GuardPtr guard(const QueuePtr&);
 
     /** Is the remote backup connected? */
     void setConnection(broker::Connection* c) { connection = c; }
-    bool isConnected() const { return connection; }
+    broker::Connection* getConnection() const { return connection; }
 
     /** ReplicatingSubscription associated with queue is ready.
      * Note: may set isReady()
@@ -90,18 +86,26 @@ class RemoteBackup
     /**Cancel all queue guards, called if we are timed out. */
     void cancel();
 
-    BrokerInfo getBrokerInfo() const { return brokerInfo; }
-  private:
-    typedef std::map<QueuePtr, GuardPtr> GuardMap;
-    typedef std::set<QueuePtr> QueueSet;
-
+    /** Set a catch-up queue for this backup.
+     *@createGuard if true create a guard immediately.
+     */
     void catchupQueue(const QueuePtr&, bool createGuard);
+
+    BrokerInfo getBrokerInfo() const { return brokerInfo; }
+
+    void startCatchup() { started = true; }
+
+  private:
+    typedef qpid::sys::unordered_map<QueuePtr, GuardPtr,
+                                     SharedPtrHasher<broker::Queue> > GuardMap;
+    typedef std::set<QueuePtr> QueueSet;
 
     std::string logPrefix;
     BrokerInfo brokerInfo;
     ReplicationTest replicationTest;
     GuardMap guards;
     QueueSet catchupQueues;
+    bool started;
     broker::Connection* connection;
     bool reportedReady;
 };

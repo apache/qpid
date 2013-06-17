@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_OBSERVERS_H
-#define QPID_BROKER_OBSERVERS_H
+#ifndef QPID_HA_IDSETOBSERVER_H
+#define QPID_HA_IDSETOBSERVER_H
 
 /*
  *
@@ -22,48 +22,47 @@
  *
  */
 
+#include "qpid/broker/Message.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/sys/Mutex.h"
-#include <boost/shared_ptr.hpp>
-#include <vector>
-#include <algorithm>
 
 namespace qpid {
-namespace broker {
+namespace ha {
 
 /**
- * Base class for collections of observers with thread-safe add/remove and traversal.
+ * A QueueObserver that maintains a ReplicationIdSet of the ReplicationIds of
+ * the messages on the queue.
+ *
+ * THREAD SAFE: Note that QueueObserver methods are called under the Queues messageLock.
+ *
  */
-template <class Observer>
-class Observers
+class  QueueSnapshot : public broker::QueueObserver
 {
   public:
-    void add(boost::shared_ptr<Observer> observer) {
+    void enqueued(const broker::Message& m) {
         sys::Mutex::ScopedLock l(lock);
-        observers.push_back(observer);
+        set += m.getReplicationId();
     }
 
-    void remove(boost::shared_ptr<Observer> observer) {
+    void dequeued(const broker::Message& m) {
         sys::Mutex::ScopedLock l(lock);
-        typename List::iterator i = std::find(observers.begin(), observers.end(), observer);
-        observers.erase(i);
+        set -= m.getReplicationId();
     }
 
-    template <class F> void each(F f) {
-        List copy;
-        {
-            sys::Mutex::ScopedLock l(lock);
-            copy = observers;
-        }
-        std::for_each(copy.begin(), copy.end(), f);
+    void acquired(const broker::Message&) {}
+
+    void requeued(const broker::Message&) {}
+
+    ReplicationIdSet snapshot() {
+        sys::Mutex::ScopedLock l(lock);
+        return set;
     }
 
-  protected:
-    typedef std::vector<boost::shared_ptr<Observer> > List;
-
+  private:
     sys::Mutex lock;
-    List observers;
+    ReplicationIdSet set;
 };
 
-}} // namespace qpid::broker
+}} // namespace qpid::ha
 
-#endif  /*!QPID_BROKER_OBSERVERS_H*/
+#endif  /*!QPID_HA_IDSETOBSERVER_H*/

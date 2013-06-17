@@ -107,7 +107,7 @@ class HaBroker(Broker):
         ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=debug+:ha::",
+                 "--log-enable=trace+:ha::", # FIXME aconway 2013-06-14: debug+
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
@@ -177,7 +177,7 @@ acl allow all all
                 self._status = self.ha_status()
                 return self._status == status;
             except ConnectionError: return False
-        assert retry(try_get_status, timeout=20), "%s expected=%r, actual=%r"%(
+        assert retry(try_get_status, timeout=5), "%s expected=%r, actual=%r"%(
             self, status, self._status)
 
     def wait_queue(self, queue, timeout=1):

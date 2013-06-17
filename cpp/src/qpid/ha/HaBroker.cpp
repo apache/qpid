@@ -27,7 +27,10 @@
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
 #include "StandAlone.h"
+#include "QueueSnapshot.h"
+#include "QueueSnapshots.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/assert.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
@@ -65,7 +68,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),
       membership(BrokerInfo(systemId, STANDALONE), *this),
-      failoverExchange(new FailoverExchange(*b.GetVhostObject(), b))
+      failoverExchange(new FailoverExchange(*b.GetVhostObject(), b)),
+      queueSnapshots(shared_ptr<QueueSnapshots>(new QueueSnapshots))
 {
     // If we are joining a cluster we must start excluding clients now,
     // otherwise there's a window for a client to connect before we get to
@@ -77,6 +81,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         broker.getConnectionObservers().add(observer);
         broker.getExchanges().registerExchange(failoverExchange);
     }
+    // QueueSnapshots are needed for standalone replication as well as cluster.
+    broker.getConfigurationObservers().add(queueSnapshots);
 }
 
 namespace {
@@ -86,8 +92,10 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 
 // Called in Plugin::initialize
 void HaBroker::initialize() {
-    if (settings.cluster) membership.setStatus(JOINING);
-    QPID_LOG(notice, "Initializing: " << membership.getInfo());
+    if (settings.cluster) {
+        membership.setStatus(JOINING);
+        QPID_LOG(notice, "Initializing HA broker: " << membership.getInfo());
+    }
 
     // Set up the management object.
     ManagementAgent* ma = broker.getManagementAgent();
@@ -103,7 +111,7 @@ void HaBroker::initialize() {
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
         shared_ptr<ReplicatingSubscription::Factory>(
-            new ReplicatingSubscription::Factory()));
+            new ReplicatingSubscription::Factory(*this)));
 
     // If we are in a cluster, start as backup in joining state.
     if (settings.cluster) {
@@ -205,9 +213,12 @@ BrokerStatus HaBroker::getStatus() const {
 
 void HaBroker::setAddress(const Address& a) {
     QPID_LOG(info, role->getLogPrefix() << "Set self address to: " << a);
-    BrokerInfo b(membership.getSelf(), membership.getStatus(), a);
-    membership.add(b);
+    membership.setAddress(a);
 }
 
+boost::shared_ptr<QueueReplicator> HaBroker::findQueueReplicator(const std::string& queueName) {
+    return boost::dynamic_pointer_cast<QueueReplicator>(
+        broker.getExchanges().find(QueueReplicator::replicatorName(queueName)));
+}
 
 }} // namespace qpid::ha

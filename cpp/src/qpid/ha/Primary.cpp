@@ -22,9 +22,11 @@
 #include "HaBroker.h"
 #include "Primary.h"
 #include "ReplicationTest.h"
+#include "IdSetter.h"
 #include "ReplicatingSubscription.h"
 #include "RemoteBackup.h"
 #include "ConnectionObserver.h"
+#include "QueueReplicator.h"
 #include "qpid/assert.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/ConfigurationObserver.h"
@@ -41,6 +43,7 @@ namespace qpid {
 namespace ha {
 
 using sys::Mutex;
+using boost::shared_ptr;
 using namespace std;
 using namespace framing;
 
@@ -87,6 +90,8 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     replicationTest(hb.getSettings().replicateDefault.get())
 {
     hb.getMembership().setStatus(RECOVERING);
+    broker::QueueRegistry& queues = hb.getBroker().getQueues();
+    queues.eachQueue(boost::bind(&Primary::initializeQueue, this, _1));
     assert(instance == 0);
     instance = this;            // Let queue replicators find us.
     if (expect.empty()) {
@@ -101,25 +106,16 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
             boost::shared_ptr<RemoteBackup> backup(new RemoteBackup(*i, 0));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
-            backup->setCatchupQueues(hb.getBroker().getQueues(), true); // Create guards
+            setCatchupQueues(backup, true); // Create guards
         }
         // Set timeout for expected brokers to connect and become ready.
         sys::AbsTime deadline(sys::now(), hb.getSettings().backupTimeout);
         timerTask = new ExpectedBackupTimerTask(*this, deadline);
         hb.getBroker().getTimer().add(timerTask);
     }
-
-
-    // Remove backup tag property from outgoing link properties.
-    framing::FieldTable linkProperties = hb.getBroker().getLinkClientProperties();
-    linkProperties.erase(ConnectionObserver::BACKUP_TAG);
-    hb.getBroker().setLinkClientProperties(linkProperties);
-
     configurationObserver.reset(new PrimaryConfigurationObserver(*this));
     haBroker.getBroker().getConfigurationObservers().add(configurationObserver);
-
-    Mutex::ScopedLock l(lock);  // We are now active as a configurationObserver
-    checkReady(l);
+    checkReady();               // Outside lock
 
     // Allow client connections
     connectionObserver.reset(new PrimaryConnectionObserver(*this));
@@ -129,29 +125,48 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
 Primary::~Primary() {
     if (timerTask) timerTask->cancel();
     haBroker.getBroker().getConfigurationObservers().remove(configurationObserver);
+    haBroker.getObserver()->reset();
 }
 
-void Primary::checkReady(Mutex::ScopedLock&) {
-    if (!active && expectedBackups.empty()) {
-        active = true;
-        Mutex::ScopedUnlock u(lock); // Don't hold lock across callback
-        QPID_LOG(notice, logPrefix << "Finished waiting for backups, primary is active.");
-        membership.setStatus(ACTIVE);
+void Primary::initializeQueue(boost::shared_ptr<broker::Queue> q) {
+    if (replicationTest.useLevel(*q) == ALL) {
+        boost::shared_ptr<QueueReplicator> qr = haBroker.findQueueReplicator(q->getName());
+        ReplicationId firstId = qr ? qr->getMaxId()+1 : ReplicationId(1);
+        q->getMessageInterceptors().add(
+            boost::shared_ptr<IdSetter>(new IdSetter(q->getName(), firstId)));
     }
 }
 
-void Primary::checkReady(BackupMap::iterator i, Mutex::ScopedLock& l)  {
-    if (i != backups.end() && i->second->reportReady()) {
-        BrokerInfo info = i->second->getBrokerInfo();
-        info.setStatus(READY);
-        membership.add(info);
-        if (expectedBackups.erase(i->second)) {
-            QPID_LOG(info, logPrefix << "Expected backup is ready: " << info);
-            checkReady(l);
-        }
+void Primary::checkReady() {
+    bool activate = false;
+    {
+        Mutex::ScopedLock l(lock);
+        if (!active && expectedBackups.empty())
+            activate = active = true;
+    }
+    if (activate) {
+        QPID_LOG(notice, logPrefix << "Finished waiting for backups, primary is active.");
+        membership.setStatus(ACTIVE); // Outside of lock.
+    }
+}
+
+void Primary::checkReady(boost::shared_ptr<RemoteBackup> backup) {
+    bool ready = false;
+    {
+        Mutex::ScopedLock l(lock);
+        if (backup->reportReady()) {
+            BrokerInfo info = backup->getBrokerInfo();
+            info.setStatus(READY);
+            membership.add(info);
+            if (expectedBackups.erase(backup)) {
+                QPID_LOG(info, logPrefix << "Expected backup is ready: " << info);
+                ready = true;
+            }
         else
             QPID_LOG(info, logPrefix << "New backup is ready: " << info);
+        }
     }
+    if (ready) checkReady(); // Outside lock
 }
 
 void Primary::timeoutExpectedBackups() {
@@ -162,35 +177,39 @@ void Primary::timeoutExpectedBackups() {
         // Allow backups that are connected to continue becoming ready.
         for (BackupSet::iterator i = expectedBackups.begin(); i != expectedBackups.end();)
         {
-            boost::shared_ptr<RemoteBackup> rb = *i;
-            if (!rb->isConnected()) {
-                BrokerInfo info = rb->getBrokerInfo();
+            // This loop erases elements of backups in backupDisconnect, so
+            // save and increment the iterator.
+            BackupSet::iterator j = i++;
+            boost::shared_ptr<RemoteBackup> backup = *j;
+            if (!backup->getConnection()) {
+                BrokerInfo info = backup->getBrokerInfo();
                 QPID_LOG(error, logPrefix << "Expected backup timed out: " << info);
-                expectedBackups.erase(i++);
-                backups.erase(info.getSystemId());
-                rb->cancel();
-                // Downgrade the broker's status to CATCHUP
+                backupDisconnect(backup, l); // Calls erase(j)
+                // Keep broker in membership but downgrade status to CATCHUP.
                 // The broker will get this status change when it eventually connects.
                 info.setStatus(CATCHUP);
                 membership.add(info);
             }
-            else ++i;
         }
-        checkReady(l);
     }
     catch(const std::exception& e) {
         QPID_LOG(error, logPrefix << "Error timing out backups: " << e.what());
         // No-where for this exception to go.
     }
+    checkReady();
 }
 
 void Primary::readyReplica(const ReplicatingSubscription& rs) {
-    sys::Mutex::ScopedLock l(lock);
-    BackupMap::iterator i = backups.find(rs.getBrokerInfo().getSystemId());
-    if (i != backups.end()) {
-        i->second->ready(rs.getQueue());
-        checkReady(i, l);
+    shared_ptr<RemoteBackup> backup;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        BackupMap::iterator i = backups.find(rs.getBrokerInfo().getSystemId());
+        if (i != backups.end()) {
+            backup = i->second;
+            backup->ready(rs.getQueue());
+        }
     }
+    if (backup) checkReady(backup);
 }
 
 // NOTE: Called with queue registry lock held.
@@ -201,23 +220,28 @@ void Primary::queueCreate(const QueuePtr& q) {
              << " replication: " << printable(level));
     q->addArgument(QPID_REPLICATE, printable(level).str());
     if (level) {
-        // Give each queue a unique id to avoid confusion of same-named queues.
+        initializeQueue(q);
+        // Give each queue a unique id. Used by backups to avoid confusion of
+        // same-named queues.
         q->addArgument(QPID_HA_UUID, types::Variant(Uuid(true)));
-        Mutex::ScopedLock l(lock);
-        for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i) {
-            i->second->queueCreate(q);
-            checkReady(i, l);
+        {
+            Mutex::ScopedLock l(lock);
+            for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
+                i->second->queueCreate(q);
         }
+        checkReady();           // Outside lock
     }
 }
 
 // NOTE: Called with queue registry lock held.
 void Primary::queueDestroy(const QueuePtr& q) {
-        QPID_LOG(debug, logPrefix << "Destroyed queue " << q->getName());
-    Mutex::ScopedLock l(lock);
-    for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
-        i->second->queueDestroy(q);
-    checkReady(l);
+    QPID_LOG(debug, logPrefix << "Destroyed queue " << q->getName());
+    {
+        Mutex::ScopedLock l(lock);
+        for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
+            i->second->queueDestroy(q);
+    }
+    checkReady();               // Outside lock
 }
 
 // NOTE: Called with exchange registry lock held.
@@ -240,55 +264,87 @@ void Primary::exchangeDestroy(const ExchangePtr& ex) {
     // Do nothing
  }
 
+// New backup connected
+shared_ptr<RemoteBackup> Primary::backupConnect(
+    const BrokerInfo& info, broker::Connection& connection, Mutex::ScopedLock&)
+{
+    shared_ptr<RemoteBackup> backup(new RemoteBackup(info, &connection));
+    backups[info.getSystemId()] = backup;
+    return backup;
+}
+
+// Remove a backup. Caller should not release the shared pointer returend till
+// outside the lock.
+void Primary::backupDisconnect(shared_ptr<RemoteBackup> backup, Mutex::ScopedLock&) {
+    types::Uuid id = backup->getBrokerInfo().getSystemId();
+    backup->cancel();
+    expectedBackups.erase(backup);
+    backups.erase(id);
+}
+
+
 void Primary::opened(broker::Connection& connection) {
     BrokerInfo info;
+    shared_ptr<RemoteBackup> backup;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
         Mutex::ScopedLock l(lock);
         BackupMap::iterator i = backups.find(info.getSystemId());
         if (i == backups.end()) {
-            QPID_LOG(info, logPrefix << "New backup connected: " << info);
-            boost::shared_ptr<RemoteBackup> backup(new RemoteBackup(info, &connection));
-            {
-                // Avoid deadlock with queue registry lock.
-                Mutex::ScopedUnlock u(lock);
-                backup->setCatchupQueues(haBroker.getBroker().getQueues(), false);
-            }
-            backups[info.getSystemId()] = backup;
-            i = backups.find(info.getSystemId());
+            QPID_LOG(info, logPrefix << "New backup connection: " << info);
+            backup = backupConnect(info, connection, l);
         }
-        else {
-            QPID_LOG(info, logPrefix << "Known backup connected: " << info);
+        else if (i->second->getConnection()) {
+            // The backup is failing over before we recieved the closed() call
+            // for its previous connection. Remove the old entry and create a new one.
+            QPID_LOG(error, logPrefix << "Known backup reconnect before disconnection: " << info);
+            backupDisconnect(i->second, l);
+            backup = backupConnect(info, connection, l);
+        } else {
+            QPID_LOG(info, logPrefix << "Known backup reconnection: " << info);
             i->second->setConnection(&connection);
         }
         if (info.getStatus() == JOINING) {
             info.setStatus(CATCHUP);
             membership.add(info);
         }
-        if (i != backups.end()) checkReady(i, l);
     }
     else
-        QPID_LOG(debug, logPrefix << "Accepted client connection "
-                 << connection.getMgmtId());
+        QPID_LOG(debug, logPrefix << "Accepted client connection " << connection.getMgmtId());
+
+    // Outside lock
+    if (backup) {
+        setCatchupQueues(backup, false);
+        checkReady(backup);
+    }
+    checkReady();
 }
 
 void Primary::closed(broker::Connection& connection) {
     BrokerInfo info;
+    shared_ptr<RemoteBackup> backup;
     if (ha::ConnectionObserver::getBrokerInfo(connection, info)) {
         Mutex::ScopedLock l(lock);
         BackupMap::iterator i = backups.find(info.getSystemId());
         // NOTE: It is possible for a backup connection to be rejected while we
         // are a backup, but closed() is called after we have become primary.
         // Checking  isConnected() lets us ignore such spurious closes.
-        if (i != backups.end() && i->second->isConnected()) {
-            QPID_LOG(info, logPrefix << "Backup disconnected: " << info);
-            membership.remove(info.getSystemId());
-            expectedBackups.erase(i->second);
-            backups.erase(i);
-            checkReady(l);
+        if (i == backups.end()) {
+            QPID_LOG(info, "Disconnect from unknown backup " << info);
+        }
+        else if (i->second->getConnection() != &connection) {
+            QPID_LOG(info, logPrefix << "Late disconnect from backup " << info);
+        }
+        else {
+            QPID_LOG(info, logPrefix << "Disconnect from "
+                     << (i->second->getConnection() ? "" : "disconnected ")
+                     << "backup " << info);
+            // Assign to shared_ptr so it will be deleted after we release the lock.
+            backup = i->second;
+            backupDisconnect(backup, l);
         }
     }
+    checkReady();
 }
-
 
 boost::shared_ptr<QueueGuard> Primary::getGuard(const QueuePtr& q, const BrokerInfo& info)
 {
@@ -300,6 +356,13 @@ boost::shared_ptr<QueueGuard> Primary::getGuard(const QueuePtr& q, const BrokerI
 Role* Primary::promote() {
     QPID_LOG(info, "Ignoring promotion, already primary: " << haBroker.getBrokerInfo());
     return 0;
+}
+
+void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards) {
+    // Do queue iteration outside the lock to avoid deadlocks with QueueRegistry.
+    haBroker.getBroker().getQueues().eachQueue(
+        boost::bind(&RemoteBackup::catchupQueue, backup, _1, createGuards));
+    backup->startCatchup();
 }
 
 }} // namespace qpid::ha

@@ -144,4 +144,12 @@ std::string Uuid::str() const
     return os.str();
 }
 
+size_t Uuid::hash() const {
+    std::size_t seed = 0;
+    for(size_t i = 0; i < SIZE; ++i)
+        seed ^= static_cast<std::size_t>(bytes[i]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
+}
+
+
 }} // namespace qpid::types
