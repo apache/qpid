@@ -178,7 +178,7 @@ add_library (shlibtest MODULE shlibtest.cpp)
 if (BUILD_SASL)
     add_custom_command(
         OUTPUT sasl_config/qpidd.conf sasl_config/qpidd.sasldb
-        COMMAND sasl_test_setup.sh)
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sasl_test_setup.sh)
 
     add_custom_target(
         sasl_config ALL
