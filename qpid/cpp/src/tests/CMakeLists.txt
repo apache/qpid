@@ -47,6 +47,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${CMAKE_CURRENT_BINARY_DIR}/test_env.sh)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
+# Copy qpidd-p0 script to build directory so tests can find it.
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/qpidd-p0 ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 # If valgrind is selected in the configuration step, set up the path to it
 # for CTest.
