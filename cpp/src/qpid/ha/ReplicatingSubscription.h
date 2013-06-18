@@ -143,7 +143,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     void sendIdEvent(ReplicationId, sys::Mutex::ScopedLock&);
     void sendEvent(const std::string& key, const std::string& data, sys::Mutex::ScopedLock&);
     void checkReady(sys::Mutex::ScopedLock&);
-  friend struct Factory;
+  friend class Factory;
 };
 
 
