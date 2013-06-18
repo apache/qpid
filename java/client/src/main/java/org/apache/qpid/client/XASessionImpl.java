@@ -75,8 +75,15 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
                boolean transacted, int ackMode, MessageFactoryRegistry registry, int defaultPrefetchHigh, int defaultPrefetchLow,
                String name)
      {
-        super(qpidConnection, con, channelId, transacted, ackMode, registry, defaultPrefetchHigh, defaultPrefetchLow, name);
-        createSession();
+        super(qpidConnection,
+              con,
+              channelId,
+              transacted,
+              ackMode,
+              registry,
+              defaultPrefetchHigh,
+              defaultPrefetchLow,
+              name);
         _xaResource = new XAResourceImpl(this);
      }
 
@@ -86,11 +93,13 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     /**
      * Create a qpid session.
      */
-    public void createSession()
+    @Override
+    public org.apache.qpid.transport.Session createSession()
     {
         _qpidDtxSession = getQpidConnection().createSession(0,true);
-        _qpidDtxSession.setSessionListener(this);
         _qpidDtxSession.dtxSelect();
+        _qpidDtxSession.setSessionListener(this);
+        return _qpidDtxSession;
     }
 
     /**
@@ -101,11 +110,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      */
     public Session getSession() throws JMSException
     {
-        if (_jmsSession == null)
-        {
-            _jmsSession = getAMQConnection().createSession(true, getAcknowledgeMode());
-        }
-        return _jmsSession;
+        return this;
     }
 
     /**
@@ -162,7 +167,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      */
     public QueueSession getQueueSession() throws JMSException
     {
-        return (QueueSession) getSession();
+        return this;
     }
 
     //    interface  XATopicSession
@@ -175,7 +180,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      */
     public TopicSession getTopicSession() throws JMSException
     {
-        return (TopicSession) getSession();
+        return this;
     }
 
     @Override
