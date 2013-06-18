@@ -19,10 +19,6 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
@@ -30,7 +26,10 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/sys/SecuritySettings.h"
+
 #include <boost/format.hpp>
+
+#include "config.h"
 
 #if HAVE_SASL
 #include <sys/stat.h>
