@@ -1526,11 +1526,6 @@ install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 #
 include (legacystore.cmake)
 
-# This is only really needed until all the trunk builds (Linux, UNIX, Windows)
-# are all on cmake only. This is because cmake builds always have a config.h
-# file whereas older builds only have config.h on autoconf-generated builds.
-add_definitions(-DHAVE_CONFIG_H)
-
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)

@@ -42,9 +42,7 @@
 #include <limits>
 #include <vector>
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 namespace qpid {
 namespace client {

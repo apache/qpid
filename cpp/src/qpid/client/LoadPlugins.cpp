@@ -21,13 +21,13 @@
 
 #include "LoadPlugins.h"
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
 #include "qpid/Modules.h"
 #include "qpid/sys/Shlib.h"
+
 #include <string>
 #include <vector>
+
+#include "config.h"
 
 using std::vector;
 using std::string;
