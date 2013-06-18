@@ -23,7 +23,9 @@ package org.apache.qpid.transport;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encodable;
 import org.apache.qpid.transport.codec.Encoder;
+import org.apache.qpid.transport.util.Functions;
 
+import java.util.Arrays;
 import java.util.Map;
 
 
@@ -131,11 +133,24 @@ public abstract class Struct implements Encodable
             }
             str.append(me.getKey());
             str.append("=");
-            str.append(me.getValue());
+            str.append(formatValue(me.getValue()));
         }
         str.append(")");
 
         return str.toString();
+    }
+
+    private Object formatValue(Object value)
+    {
+        if(value instanceof byte[])
+        {
+            return Functions.str((byte[])value);
+        }
+        else if(value instanceof Object[])
+        {
+            return Arrays.asList((Object[])value);
+        }
+        return value;
     }
 
 }
