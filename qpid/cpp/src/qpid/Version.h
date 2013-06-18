@@ -21,11 +21,7 @@
 
 #include <string>
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#else
-#  error "config.h not generated"
-#endif
+#include "config.h"
 
 namespace qpid {
   const std::string product  = PACKAGE_NAME;
