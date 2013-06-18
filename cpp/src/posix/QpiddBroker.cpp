@@ -132,8 +132,8 @@ struct QpiddDaemon : public Daemon {
     /** Code for parent process */
     void parent() {
         uint16_t port = wait(options->daemon.wait);
-        if (options->parent->broker.port == 0 || options->daemon.transport != TCP)
-            cout << port << endl;
+        if (options->parent->broker.port == 0
+        ) cout << port << endl;
     }
 
     /** Code for forked child process */
@@ -196,7 +196,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
         ScopedSetBroker ssb(brokerPtr);
         brokerPtr->accept();
-        if (options->broker.port == 0 || myOptions->daemon.transport != TCP) {
+        if (options->broker.port == 0) {
             uint16_t port = brokerPtr->getPort(myOptions->daemon.transport);
             cout << port << endl;
             if (options->broker.enableMgmt) {
