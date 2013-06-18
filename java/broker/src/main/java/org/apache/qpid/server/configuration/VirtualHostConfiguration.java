@@ -297,6 +297,6 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public String getType()
     {
-        return getStringValue("type", "STANDARD");
+        return getStringValue("type", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore".equals(getMessageStoreClass()) ? "BDB_HA": "STANDARD");
     }
 }
