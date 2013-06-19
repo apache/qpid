@@ -591,11 +591,11 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionHandler.h \
-  qpid/broker/ConnectionToken.h \
   qpid/broker/Consumer.h \
   qpid/broker/Credit.h \
   qpid/broker/Credit.cpp \
   qpid/broker/ConsumerFactory.h \
+  qpid/broker/ConnectionIdentity.h \
   qpid/broker/ConnectionObserver.h \
   qpid/broker/ConnectionObservers.h \
   qpid/broker/ConfigurationObserver.h \

@@ -234,7 +234,7 @@ void SessionAdapter::QueueHandlerImpl::destroyExclusiveQueues()
     }
 }
 
-bool SessionAdapter::QueueHandlerImpl::isLocal(const ConnectionToken* t) const
+bool SessionAdapter::QueueHandlerImpl::isLocal(const OwnershipToken* t) const
 {
     return session.isLocal(t);
 }

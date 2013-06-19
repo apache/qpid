@@ -50,7 +50,6 @@
 #include <vector>
 
 namespace qpid {
-
 namespace sys {
 class TransportAcceptor;
 class TransportConnector;
@@ -63,7 +62,6 @@ struct Url;
 namespace broker {
 
 class AclModule;
-class Connection;
 class ExpiryPolicy;
 class Message;
 struct QueueSettings;
@@ -143,7 +141,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         {}
     };
     typedef std::map<std::string, TransportInfo > TransportMap;
-    
+
     void declareStandardExchange(const std::string& name, const std::string& type);
     void setStore ();
     void setLogLevel(const std::string& level);
@@ -151,20 +149,20 @@ class Broker : public sys::Runnable, public Plugin::Target,
     void setLogHiresTimestamp(bool enabled);
     bool getLogHiresTimestamp();
     void createObject(const std::string& type, const std::string& name,
-                      const qpid::types::Variant::Map& properties, bool strict, const Connection* context);
+                      const qpid::types::Variant::Map& properties, bool strict, const ConnectionIdentity* context);
     void deleteObject(const std::string& type, const std::string& name,
-                      const qpid::types::Variant::Map& options, const Connection* context);
+                      const qpid::types::Variant::Map& options, const ConnectionIdentity* context);
     void checkDeleteQueue(boost::shared_ptr<Queue> queue, bool ifUnused, bool ifEmpty);
     Manageable::status_t queryObject(const std::string& type, const std::string& name,
-                                     qpid::types::Variant::Map& results, const Connection* context);
+                                     qpid::types::Variant::Map& results, const ConnectionIdentity* context);
     Manageable::status_t queryQueue( const std::string& name,
                                      const std::string& userId,
                                      const std::string& connectionId,
                                      qpid::types::Variant::Map& results);
     Manageable::status_t getTimestampConfig(bool& receive,
-                                            const Connection* context);
+                                            const ConnectionIdentity* context);
     Manageable::status_t setTimestampConfig(const bool receive,
-                                            const Connection* context);
+                                            const ConnectionIdentity* context);
     Manageable::status_t queueRedirect(const std::string& srcQueue, const std::string& tgtQueue);
     void queueRedirectDestroy(boost::shared_ptr<Queue> srcQ, boost::shared_ptr<Queue> tgtQ, bool moveMsgs);
     boost::shared_ptr<sys::Poller> poller;

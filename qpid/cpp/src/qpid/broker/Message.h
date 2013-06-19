@@ -39,8 +39,15 @@ namespace qpid {
 namespace amqp {
 class MapHandler;
 }
+
+namespace management {
+class ObjectId;
+class Manageable;
+}
+
 namespace broker {
-class ConnectionToken;
+class OwnershipToken;
+class ConnectionIdentity;
 
 enum MessageState
 {
@@ -78,9 +85,12 @@ public:
     int getDeliveryCount() const { return deliveryCount; }
     void resetDeliveryCount() { deliveryCount = -1; }
 
-    const ConnectionToken* getPublisher() const {  return publisher; }
-    void setPublisher(ConnectionToken* p) {  publisher = p; }
-
+    void setPublisher(const ConnectionIdentity& p) { publisher = &p; }
+    const ConnectionIdentity& getPublisher() const { return *publisher; }
+    const OwnershipToken* getPublisherOwnership() const;
+    const management::ObjectId getPublisherObjectId() const;
+    const std::string& getPublisherUserId() const;
+    const std::string& getPublisherUrl() const;
 
     QPID_BROKER_EXTERN std::string getRoutingKey() const;
     QPID_BROKER_EXTERN bool isPersistent() const;
@@ -138,7 +148,7 @@ public:
     boost::intrusive_ptr<Encoding> encoding;
     boost::intrusive_ptr<PersistableMessage> persistentContext;
     int deliveryCount;
-    ConnectionToken* publisher;
+    const ConnectionIdentity* publisher;
     qpid::sys::AbsTime expiration;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     uint64_t timestamp;
