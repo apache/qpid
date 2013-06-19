@@ -33,7 +33,7 @@ public interface DurableConfigurationStore
 
     public static interface Source
     {
-        DurableConfigurationStore getMessageStore();
+        DurableConfigurationStore getDurableConfigurationStore();
     }
 
     /**
@@ -107,11 +107,11 @@ public interface DurableConfigurationStore
      * Removes the specified queue from the persistent store.
      *
      * @param queue The queue to remove.
-     * 
+     *
      * @throws AMQStoreException If the operation fails for any reason.
      */
     void removeQueue(AMQQueue queue) throws AMQStoreException;
-    
+
     /**
      * Updates the specified queue in the persistent store, IF it is already present. If the queue
      * is not present in the store, it will not be added.

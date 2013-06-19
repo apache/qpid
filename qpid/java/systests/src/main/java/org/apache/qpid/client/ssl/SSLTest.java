@@ -26,6 +26,7 @@ import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 
 import java.util.Arrays;
+import javax.net.ssl.SSLSocket;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;

@@ -71,7 +71,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         {
             _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + exchangeName);
         }
-        
+
         synchronized(exchangeRegistry)
         {
             Exchange exchange = exchangeRegistry.getExchange(exchangeName);
@@ -106,7 +106,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
                         if (exchange.isDurable())
                         {
-                            virtualHost.getMessageStore().createExchange(exchange);
+                            virtualHost.getDurableConfigurationStore().createExchange(exchange);
                         }
                     }
                     catch(AMQUnknownExchangeType e)

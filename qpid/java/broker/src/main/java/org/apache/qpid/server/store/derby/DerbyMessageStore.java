@@ -35,6 +35,7 @@ import java.util.List;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
@@ -46,7 +47,7 @@ import org.apache.qpid.util.FileUtils;
  * mechanism.
  *
  */
-public class DerbyMessageStore extends AbstractJDBCMessageStore implements MessageStore
+public class DerbyMessageStore extends AbstractJDBCMessageStore implements MessageStore, DurableConfigurationStore
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);

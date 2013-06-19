@@ -554,7 +554,7 @@ public abstract class AbstractExchange implements Exchange
 
             if (b.isDurable())
             {
-                _virtualHost.getMessageStore().unbindQueue(b);
+                _virtualHost.getDurableConfigurationStore().unbindQueue(b);
             }
             b.logDestruction();
         }
@@ -626,7 +626,7 @@ public abstract class AbstractExchange implements Exchange
 
             if (b.isDurable() && !restore)
             {
-                _virtualHost.getMessageStore().bindQueue(b);
+                _virtualHost.getDurableConfigurationStore().bindQueue(b);
             }
 
             queue.addQueueDeleteTask(b);

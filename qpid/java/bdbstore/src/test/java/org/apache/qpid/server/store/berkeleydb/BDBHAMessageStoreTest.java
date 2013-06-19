@@ -115,6 +115,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         String vhostPrefix = "virtualhosts.virtualhost." + vhostName;
 
         _configXml.addProperty("virtualhosts.virtualhost.name", vhostName);
+        _configXml.addProperty(vhostPrefix + ".type", BDBHAVirtualHostFactory.TYPE);
         _configXml.addProperty(vhostPrefix + ".store.class", BDBHAMessageStore.class.getName());
         _configXml.addProperty(vhostPrefix + ".store.environment-path", _workDir + File.separator
                 + port);

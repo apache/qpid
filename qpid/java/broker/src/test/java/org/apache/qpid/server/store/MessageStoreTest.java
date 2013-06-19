@@ -65,7 +65,7 @@ import java.util.Map;
 /**
  * This tests the MessageStores by using the available interfaces.
  *
- * For persistent stores, it validates that Exchanges, Queues, Bindings and 
+ * For persistent stores, it validates that Exchanges, Queues, Bindings and
  * Messages are persisted and recovered correctly.
  */
 public class MessageStoreTest extends QpidTestCase
@@ -106,7 +106,7 @@ public class MessageStoreTest extends QpidTestCase
         BrokerTestHelper.setUp();
 
         String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
-        
+
         _config = new PropertiesConfiguration();
         _config.addProperty("store.class", getTestProfileMessageStoreClassName());
         _config.addProperty("store.environment-path", storePath);
@@ -224,8 +224,8 @@ public class MessageStoreTest extends QpidTestCase
 
     /**
      * Tests message persistence by running the testQueueExchangeAndBindingCreation() method above
-     * before reloading the virtual host and ensuring that the persistent messages were restored. 
-     * 
+     * before reloading the virtual host and ensuring that the persistent messages were restored.
+     *
      * More specific testing of message persistence is left to store-specific unit testing.
      */
     public void testMessagePersistence() throws Exception
@@ -238,7 +238,7 @@ public class MessageStoreTest extends QpidTestCase
         validateMessageOnQueues(2, false);
         validateMessageOnTopics(1, false);
     }
-    
+
     /**
      * Tests message removal by running the testMessagePersistence() method above before
      * clearing the queues, reloading the virtual host, and ensuring that the persistent
@@ -250,15 +250,15 @@ public class MessageStoreTest extends QpidTestCase
 
         QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
-        assertEquals("Incorrect number of queues registered after recovery", 
+        assertEquals("Incorrect number of queues registered after recovery",
                 6,  queueRegistry.getQueues().size());
 
         //clear the queue
         queueRegistry.getQueue(durableQueueName).clearQueue();
-        
+
         //check the messages are gone
         validateMessageOnQueue(durableQueueName, 0);
-        
+
         //reload and verify messages arent restored
         reloadVirtualHost();
 
@@ -284,17 +284,17 @@ public class MessageStoreTest extends QpidTestCase
 
         QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
-        assertEquals("Incorrect number of queues registered after recovery", 
+        assertEquals("Incorrect number of queues registered after recovery",
                 6,  queueRegistry.getQueues().size());
 
         //Validate the non-Durable Queues were not recovered.
-        assertNull("Non-Durable queue still registered:" + priorityQueueName, 
+        assertNull("Non-Durable queue still registered:" + priorityQueueName,
                 queueRegistry.getQueue(priorityQueueName));
-        assertNull("Non-Durable queue still registered:" + queueName, 
+        assertNull("Non-Durable queue still registered:" + queueName,
                 queueRegistry.getQueue(queueName));
-        assertNull("Non-Durable queue still registered:" + priorityTopicQueueName, 
+        assertNull("Non-Durable queue still registered:" + priorityTopicQueueName,
                 queueRegistry.getQueue(priorityTopicQueueName));
-        assertNull("Non-Durable queue still registered:" + topicQueueName, 
+        assertNull("Non-Durable queue still registered:" + topicQueueName,
                 queueRegistry.getQueue(topicQueueName));
 
         //Validate normally expected properties of Queues/Topics
@@ -320,26 +320,26 @@ public class MessageStoreTest extends QpidTestCase
                 1,  queueRegistry.getQueues().size());
 
         reloadVirtualHost();
-        
+
         queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered after first recovery",
                 1,  queueRegistry.getQueues().size());
-        
+
         //test that removing the queue means it is not recovered next time
-        getVirtualHost().getMessageStore().removeQueue(queueRegistry.getQueue(durableQueueName));
+        getVirtualHost().getDurableConfigurationStore().removeQueue(queueRegistry.getQueue(durableQueueName));
 
         reloadVirtualHost();
-        
+
         queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered after second recovery",
                 0,  queueRegistry.getQueues().size());
-        assertNull("Durable queue was not removed:" + durableQueueName, 
+        assertNull("Durable queue was not removed:" + durableQueueName,
                 queueRegistry.getQueue(durableQueueName));
     }
 
     /**
      * Tests exchange persistence by creating a selection of exchanges, both durable
-     * and non durable, and ensuring that following the recovery process the correct 
+     * and non durable, and ensuring that following the recovery process the correct
      * durable exchanges are still present.
      */
     public void testExchangePersistence() throws Exception
@@ -348,7 +348,7 @@ public class MessageStoreTest extends QpidTestCase
 
         Map<AMQShortString, Exchange> oldExchanges = createExchanges();
 
-        assertEquals("Incorrect number of exchanges registered before recovery", 
+        assertEquals("Incorrect number of exchanges registered before recovery",
                 origExchangeCount + 3, getVirtualHost().getExchangeRegistry().getExchangeNames().size());
 
         reloadVirtualHost();
@@ -367,33 +367,33 @@ public class MessageStoreTest extends QpidTestCase
         int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
 
         createExchange(DirectExchange.TYPE, directExchangeName, true);
-       
+
         ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
-        assertEquals("Incorrect number of exchanges registered before recovery", 
+        assertEquals("Incorrect number of exchanges registered before recovery",
                 origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
 
         reloadVirtualHost();
-        
+
         exchangeRegistry = getVirtualHost().getExchangeRegistry();
-        assertEquals("Incorrect number of exchanges registered after first recovery", 
+        assertEquals("Incorrect number of exchanges registered after first recovery",
                 origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
-        
+
         //test that removing the exchange means it is not recovered next time
-        getVirtualHost().getMessageStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
+        getVirtualHost().getDurableConfigurationStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
 
         reloadVirtualHost();
-        
+
         exchangeRegistry = getVirtualHost().getExchangeRegistry();
-        assertEquals("Incorrect number of exchanges registered after second recovery", 
+        assertEquals("Incorrect number of exchanges registered after second recovery",
                 origExchangeCount,  exchangeRegistry.getExchangeNames().size());
-        assertNull("Durable exchange was not removed:" + directExchangeName, 
+        assertNull("Durable exchange was not removed:" + directExchangeName,
                 exchangeRegistry.getExchange(directExchangeName));
     }
-    
+
     /**
      * Tests binding persistence by creating a selection of queues and exchanges, both durable
      * and non durable, then adding bindings with and without selectors before reloading the
-     * virtual host and verifying that following the recovery process the correct durable 
+     * virtual host and verifying that following the recovery process the correct durable
      * bindings (those for durable queues to durable exchanges) are still present.
      */
     public void testBindingPersistence() throws Exception
@@ -413,7 +413,7 @@ public class MessageStoreTest extends QpidTestCase
         bindAllQueuesToExchange(directExchange, directRouting);
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
-        assertEquals("Incorrect number of exchanges registered before recovery", 
+        assertEquals("Incorrect number of exchanges registered before recovery",
                 origExchangeCount + 3, getVirtualHost().getExchangeRegistry().getExchangeNames().size());
 
         reloadVirtualHost();
@@ -422,10 +422,10 @@ public class MessageStoreTest extends QpidTestCase
 
         validateBindingProperties();
     }
-    
+
     /**
      * Tests binding removal by creating a durable exchange, and queue, binding them together,
-     * recovering to verify the persistence, then removing it from the store, and ensuring 
+     * recovering to verify the persistence, then removing it from the store, and ensuring
      * that following the second reload process it is not recovered.
      */
     public void testDurableBindingRemoval() throws Exception
@@ -437,14 +437,14 @@ public class MessageStoreTest extends QpidTestCase
         createQueue(durableQueueName, false, true, false, false);
         bindQueueToExchange(exch, directRouting, queueRegistry.getQueue(durableQueueName), false, null);
 
-        assertEquals("Incorrect number of bindings registered before recovery", 
+        assertEquals("Incorrect number of bindings registered before recovery",
                 1, queueRegistry.getQueue(durableQueueName).getBindings().size());
 
         //verify binding is actually normally recovered
         reloadVirtualHost();
 
         queueRegistry = getVirtualHost().getQueueRegistry();
-        assertEquals("Incorrect number of bindings registered after first recovery", 
+        assertEquals("Incorrect number of bindings registered after first recovery",
                 1, queueRegistry.getQueue(durableQueueName).getBindings().size());
 
         ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
@@ -457,13 +457,13 @@ public class MessageStoreTest extends QpidTestCase
         reloadVirtualHost();
 
         queueRegistry = getVirtualHost().getQueueRegistry();
-        assertEquals("Incorrect number of bindings registered after second recovery", 
+        assertEquals("Incorrect number of bindings registered after second recovery",
                 0, queueRegistry.getQueue(durableQueueName).getBindings().size());
     }
 
     /**
      * Validates that the durable exchanges are still present, the non durable exchange is not,
-     * and that the new exchanges are not the same objects as the provided list (i.e. that the 
+     * and that the new exchanges are not the same objects as the provided list (i.e. that the
      * reload actually generated new exchange objects)
      */
     private void validateExchanges(int originalNumExchanges, Map<AMQShortString, Exchange> oldExchanges)
@@ -484,7 +484,7 @@ public class MessageStoreTest extends QpidTestCase
                 registry.getExchange(topicExchangeName) != oldExchanges.get(topicExchangeName));
 
         // There should only be the original exchanges + our 2 recovered durable exchanges
-        assertEquals("Incorrect number of exchanges available", 
+        assertEquals("Incorrect number of exchanges available",
                 originalNumExchanges + 2, registry.getExchangeNames().size());
     }
 
@@ -562,7 +562,7 @@ public class MessageStoreTest extends QpidTestCase
         {
             assertNotSame("Queues cant be both Priority and LastValue based", usePriority, lastValueQueue);
         }
-        
+
         if (usePriority)
         {
             assertEquals("Queue is no longer a Priority Queue", AMQPriorityQueue.class, queue.getClass());
@@ -705,7 +705,7 @@ public class MessageStoreTest extends QpidTestCase
     {
 
         FieldTable queueArguments = null;
-        
+
         if(usePriority || lastValueQueue)
         {
             assertNotSame("Queues cant be both Priority and LastValue based", usePriority, lastValueQueue);
@@ -716,7 +716,7 @@ public class MessageStoreTest extends QpidTestCase
             queueArguments = new FieldTable();
             queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
         }
-        
+
         if (lastValueQueue)
         {
             queueArguments = new FieldTable();
@@ -735,7 +735,7 @@ public class MessageStoreTest extends QpidTestCase
 
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                getVirtualHost().getMessageStore().createQueue(queue, queueArguments);
+                getVirtualHost().getDurableConfigurationStore().createQueue(queue, queueArguments);
             }
         }
         catch (AMQException e)
@@ -779,7 +779,7 @@ public class MessageStoreTest extends QpidTestCase
             getVirtualHost().getExchangeRegistry().registerExchange(exchange);
             if (durable)
             {
-                getVirtualHost().getMessageStore().createExchange(exchange);
+                getVirtualHost().getDurableConfigurationStore().createExchange(exchange);
             }
         }
         catch (AMQException e)
@@ -836,7 +836,7 @@ public class MessageStoreTest extends QpidTestCase
             fail(e.getMessage());
         }
     }
-    
+
     protected void unbindQueueFromExchange(Exchange exchange, AMQShortString routingKey, AMQQueue queue, boolean useSelector, FieldTable queueArguments)
     {
         FieldTable bindArguments = null;

@@ -25,19 +25,28 @@ import java.util.Map;
 import org.apache.qpid.server.management.plugin.servlet.rest.Action;
 import org.apache.qpid.server.model.Broker;
 
-public class ListMessageStoreTypes implements Action
+public class ListBrokerAttribute implements Action
 {
+
+    private final String _attributeName;
+    private final String _name;
+
+    public ListBrokerAttribute(String attributeName, String name)
+    {
+        _attributeName = attributeName;
+        _name = name;
+    }
 
     @Override
     public String getName()
     {
-        return ListMessageStoreTypes.class.getSimpleName();
+        return _name;
     }
 
     @Override
     public Object perform(Map<String, Object> request, Broker broker)
     {
-        return broker.getAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES);
+        return broker.getAttribute(_attributeName);
     }
 
 }

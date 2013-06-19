@@ -26,7 +26,7 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 
-public abstract class NullMessageStore implements MessageStore
+public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
     @Override
     public void configureConfigStore(String name,

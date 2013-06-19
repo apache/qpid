@@ -50,6 +50,12 @@ public class MessageStoreCreator
         }
     }
 
+    public boolean isValidType(String storeType)
+    {
+        return _factories.containsKey(storeType.toLowerCase());
+    }
+
+
     public MessageStore createMessageStore(String storeType)
     {
         MessageStoreFactory factory = _factories.get(storeType.toLowerCase());

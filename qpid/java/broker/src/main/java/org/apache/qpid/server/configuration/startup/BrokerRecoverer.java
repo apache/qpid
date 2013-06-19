@@ -85,10 +85,9 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
-        Map<String, Object> attributes = entry.getAttributes();
-        validateAttributes(attributes);
+        //Map<String, Object> attributes = entry.getAttributes();
+        Map<String, Object> attributesCopy = validateAttributes(entry);
 
-        Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
         attributesCopy.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
 
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
@@ -128,8 +127,10 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         return broker;
     }
 
-    private void validateAttributes(Map<String, Object> attributes)
+    private Map<String, Object> validateAttributes(ConfigurationEntry entry)
     {
+        Map<String, Object> attributes = entry.getAttributes();
+
         String modelVersion = null;
         if (attributes.containsKey(Broker.MODEL_VERSION))
         {
@@ -157,6 +158,22 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
             throw new IllegalConfigurationException("The model version '" + modelVersion
                     + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
         }
+
+        if(!Model.MODEL_VERSION.equals(modelVersion))
+        {
+            String oldVersion;
+            do
+            {
+                oldVersion = modelVersion;
+                StoreUpgrader.upgrade(entry.getStore());
+                entry = entry.getStore().getRootEntry();
+                attributes = entry.getAttributes();
+                modelVersion = MapValueConverter.getStringAttribute(Broker.MODEL_VERSION, attributes, null);
+            }
+            while(!(modelVersion.equals(oldVersion) || modelVersion.equals(Model.MODEL_VERSION)));
+        }
+
+        return new HashMap<String, Object>(attributes);
     }
 
     private void recoverType(RecovererProvider recovererProvider,

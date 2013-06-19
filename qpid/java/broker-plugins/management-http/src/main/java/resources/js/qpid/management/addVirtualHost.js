@@ -92,7 +92,7 @@ define(["dojo/_base/xhr",
                             }, "addVirtualHost.configPathDiv");
 
                             var attributesPane =  new dijit.layout.AccordionPane({
-                                title: "Store Attributes",
+                                title: "Virtual Host Attributes",
                                 selected: true
                             }, "addVirtualHost.attributesDiv");
 
@@ -112,14 +112,14 @@ define(["dojo/_base/xhr",
                                 if(theForm.validate()){
 
                                     var formValues = theForm.getValues();
-                                    if (formValues.configPath == "" && formValues.storeType == "")
+                                    if (formValues.configPath == "" && formValues["type"] == "")
                                     {
-                                        alert("Please specify either configuration or store type for the virtual host");
+                                        alert("Please specify either configuration file or type for the virtual host");
                                         return false;
                                     }
-                                    if (formValues.configPath != "" && formValues.storeType != "")
+                                    if (formValues.configPath != "" && formValues["type"] != "")
                                     {
-                                        alert("Either configuration or store type with path have to be specified!");
+                                        alert("Either configuration file or type have to be specified!");
                                         return false;
                                     }
                                     var newVirtualHost = convertToVirtualHost(formValues);
@@ -149,63 +149,51 @@ define(["dojo/_base/xhr",
                         }});
         }
 
-        addVirtualHost.show = function(virtualHostName) {
+        addVirtualHost.selectVhostType = function(type) {
+            if(type && String(type).trim() != "") {
+                require(["qpid/management/virtualhost/"+type.toLowerCase()+"/addVirtualHost"],
+                function(vhostType)
+                {
+                    vhostType.show();
+                });
+            }
+        }
+
+        addVirtualHost.show = function() {
             var that = this;
+            dom.byId("addVirtualHost.typeSpecificDiv").innerHTML = "";
             registry.byId("formAddVirtualHost").reset();
             dojo.byId("formAddVirtualHost.id").value="";
-            if (!that.hasOwnProperty("storeTypeChooser"))
+
+            if (!that.hasOwnProperty("typeChooser"))
             {
                 xhr.get({
                     sync: true,
-                    url: "rest/helper?action=ListMessageStoreTypes",
+                    url: "rest/helper?action=ListVirtualHostTypes",
                     handleAs: "json"
                 }).then(
                    function(data) {
-                       var storeTypes =  data;
-                       var storeTypesData = [];
-                       for (var i =0 ; i < storeTypes.length; i++)
+                       var vhostTypes =  data;
+                       var vhostTypesData = [];
+                       for (var i =0 ; i < vhostTypes.length; i++)
                        {
-                           storeTypesData[i]= {id: storeTypes[i], name: storeTypes[i]};
+                           vhostTypesData[i]= {id: vhostTypes[i], name: vhostTypes[i]};
                        }
-                       var storeTypesStore = new Memory({ data: storeTypesData });
-                       var storeTypesDiv = dom.byId("addVirtualHost.selectStoreType");
-                       var input = construct.create("input", {id: "addStoreType", required: false}, storeTypesDiv);
-                       that.storeTypeChooser = new FilteringSelect({ id: "addVirtualHost.storeType",
-                                                                 name: "storeType",
-                                                                 store: storeTypesStore,
-                                                                 searchAttr: "name", required: false}, input);
+                       var typesStore = new Memory({ data: vhostTypesData });
+                       var typesDiv = dom.byId("addVirtualHost.selectType");
+                       var input = construct.create("input", {id: "addType", required: false}, typesDiv);
+                       that.typeChooser = new FilteringSelect({ id: "addVirtualHost.type",
+                                                                 name: "type",
+                                                                 store: typesStore,
+                                                                 searchAttr: "name",
+                                                                 required: false,
+                                                                 onChange: that.selectVhostType }, input);
                });
             }
-            if (virtualHostName)
-            {
-                xhr.get({
-                    url: "rest/virtualhost/" + encodeURIComponent(virtualHostName),
-                    handleAs: "json"
-                }).then(
-                   function(data) {
-                       var host = data[0];
-                       var nameField = dijit.byId("formAddVirtualHost.name");
-                       nameField.set("value", host.name);
-                       dojo.byId("formAddVirtualHost.id").value=host.id;
-                       var configPath = host.configPath;
-                       if (configPath)
-                       {
-                           var configPathField = dijit.byId("formAddVirtualHost.configPath");
-                           configPathField.set("value", host.configPath);
-                       }
-                       else
-                       {
-                           that.storeTypeChooser.set("value", host.storeType.toLowerCase());
-                           var storePathField = dijit.byId("formAddVirtualHost.storePath");
-                           storePathField.set("value", host.storePath);
-                       }
-                       registry.byId("addVirtualHost").show();
-               });
-            }
-            else
-            {
-                registry.byId("addVirtualHost").show();
-            }
+
+
+            registry.byId("addVirtualHost").show();
+
         }
         return addVirtualHost;
     });

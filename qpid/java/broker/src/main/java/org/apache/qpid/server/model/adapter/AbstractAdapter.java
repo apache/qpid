@@ -54,17 +54,40 @@ abstract class AbstractAdapter implements ConfiguredObject
 
     protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, TaskExecutor taskExecutor)
     {
+        this(id, defaults, attributes, taskExecutor, true);
+    }
+
+    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes,
+                              TaskExecutor taskExecutor, boolean filterAttributes)
+
+    {
         _taskExecutor = taskExecutor;
         _id = id;
         if (attributes != null)
         {
             Collection<String> names = getAttributeNames();
-            for (String name : names)
+            if(filterAttributes)
             {
-                if (attributes.containsKey(name))
+                for (String name : names)
                 {
-                    //TODO: dont put nulls
-                    _attributes.put(name, attributes.get(name));
+                    if (attributes.containsKey(name))
+                    {
+                        final Object value = attributes.get(name);
+                        if(value != null)
+                        {
+                            _attributes.put(name, value);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for(Map.Entry<String, Object> entry : attributes.entrySet())
+                {
+                    if(entry.getValue()!=null)
+                    {
+                        _attributes.put(entry.getKey(),entry.getValue());
+                    }
                 }
             }
         }
