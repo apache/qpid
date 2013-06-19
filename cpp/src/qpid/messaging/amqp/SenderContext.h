@@ -53,7 +53,9 @@ class SenderContext
         Delivery(int32_t id);
         void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
         void send(pn_link_t*);
+        bool delivered();
         bool accepted();
+        bool rejected();
         void settle();
       private:
         int32_t id;
