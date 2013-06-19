@@ -127,7 +127,7 @@ acl allow all all
  """)
             aclf.close()
         if not "--acl-file" in args:
-            args += [ "--acl-file", acl, "--load-module", os.getenv("ACL_LIB") ]
+            args += [ "--acl-file", acl, ]
         args += ["--socket-fd=%s"%ha_port.fileno, "--listen-disable=tcp"]
         Broker.__init__(self, test, args, port=ha_port.port, **kwargs)
         self.qpid_ha_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-ha")

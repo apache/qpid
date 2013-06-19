@@ -47,7 +47,6 @@ export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
 
 # Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd
-export QPID_WATCHDOG_EXEC=$top_builddir/src/qpidd_watchdog
 
 # Test executables
 export QPID_TEST_EXEC_DIR=$builddir
@@ -61,11 +60,7 @@ export PATH=$top_builddir/src:$builddir:$srcdir:$PYTHON_COMMANDS:$QPID_TEST_EXEC
 export TEST_STORE_LIB=$testmoduledir/test_store.so
 
 exportmodule() { test -f $moduledir/$2 && eval "export $1=$moduledir/$2"; }
-exportmodule ACL_LIB acl.so
 exportmodule HA_LIB ha.so
-exportmodule SSLCONNECTOR_LIB sslconnector.so
-exportmodule SSL_LIB ssl.so
-exportmodule WATCHDOG_LIB watchdog.so
 exportmodule XML_LIB xml.so
 exportmodule STORE_LIB legacystore.so
 exportmodule AMQP_LIB amqp.so

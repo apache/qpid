@@ -30,7 +30,6 @@ start_brokers() {
              --port 0 --interface 127.0.0.1 \
              --no-module-dir \
              --data-dir $DATA_DIR \
-             --load-module $ACL_LIB \
              --acl-file policy.acl \
              --auth no \
              --log-to-file queue_redirect.log \

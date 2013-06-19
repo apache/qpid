@@ -91,7 +91,7 @@ delete_certs() {
 }
 
 # Don't need --no-module-dir or --no-data-dir as they are set as env vars in test_env.sh
-COMMON_OPTS="--daemon --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DB --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
+COMMON_OPTS="--daemon --config $CONFIG --ssl-cert-db $CERT_DB --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
 
 # Start new brokers:
 #   $1 must be integer
@@ -124,7 +124,7 @@ stop_brokers() {
 
 pick_port() {
     # We need a fixed port to set --cluster-url. Use qpidd to pick a free port.
-    PICK=`../qpidd --no-module-dir -dp0`
+    PICK=`../qpidd --no-module-dir --listen-disable ssl -dp0`
     ../qpidd --no-module-dir -qp $PICK
     echo $PICK
 }
@@ -173,7 +173,6 @@ start_ssl_broker
 PORT=${PORTS[0]}
 echo "Running SSL test on port $PORT"
 export QPID_NO_MODULE_DIR=1
-export QPID_LOAD_MODULE=$SSLCONNECTOR_LIB
 export QPID_SSL_CERT_DB=${CERT_DB}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 

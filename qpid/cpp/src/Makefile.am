@@ -144,6 +144,8 @@ BROKER_CXXFLAGS = -D_IN_QPID_BROKER
 
 ## Automake macros to build libraries and executables.
 qpidd_CXXFLAGS = $(AM_CXXFLAGS) $(BROKER_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+libqpidcommon_la_CXXFLAGS = $(AM_CXXFLAGS)
+libqpidbroker_la_CXXFLAGS = $(AM_CXXFLAGS) $(BROKER_CXXFLAGS)
 libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
@@ -227,7 +229,6 @@ dmoduleexec_LTLIBRARIES =
 cmoduleexec_LTLIBRARIES =
 
 include ha.mk
-include acl.mk
 include qmf.mk
 include qmfc.mk
 if HAVE_XML
@@ -292,10 +293,6 @@ RdmaClient_CXXFLAGS = \
 RdmaClient_LDADD = \
   librdmawrap.la libqpidcommon.la
 
-endif
-
-if SSL
-include ssl.mk
 endif
 
 EXTRA_DIST +=\
@@ -579,6 +576,20 @@ libqpidbroker_la_LIBADD = libqpidcommon.la
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   $(posix_broker_src) \
+  qpid/acl/Acl.cpp \
+  qpid/acl/Acl.h \
+  qpid/acl/AclConnectionCounter.cpp \
+  qpid/acl/AclConnectionCounter.h \
+  qpid/acl/AclData.cpp \
+  qpid/acl/AclData.h \
+  qpid/acl/AclPlugin.cpp \
+  qpid/acl/AclReader.cpp \
+  qpid/acl/AclReader.h \
+  qpid/acl/AclResourceCounter.cpp \
+  qpid/acl/AclResourceCounter.h \
+  qpid/acl/AclTopicMatch.h \
+  qpid/acl/AclValidator.cpp \
+  qpid/acl/AclValidator.h \
   qpid/amqp_0_10/Connection.cpp \
   qpid/amqp_0_10/Connection.h \
   qpid/broker/AclModule.h \
@@ -784,7 +795,6 @@ libqpidbroker_la_SOURCES = \
 
 QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
-libqpidbroker_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS)
 
 if HAVE_PROTON
 
@@ -928,6 +938,10 @@ libqpidclient_la_SOURCES =			\
 
 QPIDCLIENT_VERSION_INFO  = 2:0:0
 libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
+
+if SSL
+include ssl.mk
+endif
 
 libqpidtypes_la_LIBADD= -luuid
 libqpidtypes_la_SOURCES=			\
