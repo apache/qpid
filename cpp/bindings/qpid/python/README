@@ -1,0 +1,28 @@
+= Qpid Python Language Bindings
+
+Qpid is a cross-platform enterprise messaging system based on the open-source
+AMQP protocol.
+
+
+== Building The Bindings
+To build the Python bindings, you need to have installed:
+
+ * Qpid development libraries - http://qpid.apache.org
+ * Swig - http://www.swig.org/
+ * CMake - http://www.cmake.org/
+
+After extracting the files:
+
+ $ cmake .
+ $ make
+ $ make install
+
+
+== License
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor licensing agreements.
+
+Author:: Apache Qpid Project
+Homepage:: http://qpid.apache.org
+License:: Apache License 2.0 - http://www.apache.org/licenses/LICENSE-2.0.html
