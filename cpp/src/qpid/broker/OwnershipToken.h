@@ -24,11 +24,9 @@
 namespace qpid {
 namespace broker {
 
-class ConnectionToken;
-
 class OwnershipToken{
 public:
-    virtual bool isLocal(const ConnectionToken* t) const = 0;
+    virtual bool isLocal(const OwnershipToken* t) const { return this==t; };
     virtual ~OwnershipToken(){}
 };
 

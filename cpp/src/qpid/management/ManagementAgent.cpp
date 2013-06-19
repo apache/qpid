@@ -88,13 +88,13 @@ const string keyifyNameStr(const string& name)
 
 struct ScopedManagementContext
 {
-    ScopedManagementContext(const qpid::broker::Connection* context)
+    ScopedManagementContext(const ConnectionIdentity& p)
     {
-        setManagementExecutionContext(context);
+        setManagementExecutionContext(p);
     }
     ~ScopedManagementContext()
     {
-        setManagementExecutionContext(0);
+        resetManagementExecutionContext();
     }
 };
 
@@ -1242,7 +1242,7 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     return true;
 }
 
-void ManagementAgent::handleMethodRequest(Buffer& inBuffer, const string& replyToKey, uint32_t sequence, const ConnectionToken* connToken)
+void ManagementAgent::handleMethodRequest(Buffer& inBuffer, const string& replyToKey, uint32_t sequence, const string& userId)
 {
     moveNewObjects();
 
@@ -1286,7 +1286,6 @@ void ManagementAgent::handleMethodRequest(Buffer& inBuffer, const string& replyT
         return;
     }
 
-    string userId = ((const qpid::broker::Connection*) connToken)->getUserId();
     if (acl != 0) {
         map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = packageName;
@@ -1338,7 +1337,7 @@ void ManagementAgent::handleMethodRequest(Buffer& inBuffer, const string& replyT
 
 
 void ManagementAgent::handleMethodRequest (const string& body, const string& rte, const string& rtk,
-                                           const string& cid, const ConnectionToken* connToken, bool viaLocal)
+                                           const string& cid, const string& userId, bool viaLocal)
 {
     moveNewObjects();
 
@@ -1407,7 +1406,6 @@ void ManagementAgent::handleMethodRequest (const string& body, const string& rte
         return;
     }
 
-    string userId = ((const qpid::broker::Connection*) connToken)->getUserId();
     if (acl != 0) {
         map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = object->getPackageName();
@@ -1718,12 +1716,11 @@ void ManagementAgent::deleteOrphanedAgentsLH()
         remoteAgents.erase(*dIter);
 }
 
-void ManagementAgent::handleAttachRequest (Buffer& inBuffer, const string& replyToKey, uint32_t sequence, const ConnectionToken* connToken)
+void ManagementAgent::handleAttachRequest (Buffer& inBuffer, const string& replyToKey, uint32_t sequence, const ObjectId& connectionRef)
 {
     string   label;
     uint32_t requestedBrokerBank, requestedAgentBank;
     uint32_t assignedBank;
-    ObjectId connectionRef = ((const Connection*) connToken)->GetManagementObject()->getObjectId();
     Uuid     systemId;
 
     moveNewObjects();
@@ -2206,7 +2203,7 @@ bool ManagementAgent::authorizeAgentMessage(Message& msg)
         if (acl == 0)
             return true;
 
-        string  userId = ((const qpid::broker::Connection*) msg.getPublisher())->getUserId();
+        string  userId = msg.getUserId();
         params[acl::PROP_SCHEMAPACKAGE] = packageName;
         params[acl::PROP_SCHEMACLASS]   = className;
 
@@ -2276,7 +2273,7 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
-    ScopedManagementContext context((const qpid::broker::Connection*) msg.getPublisher());
+    ScopedManagementContext context(msg.getPublisher());
     const framing::FieldTable *headers = p ? &p->getApplicationHeaders() : 0;
     if (headers && p->getAppId() == "qmf2")
     {
@@ -2291,7 +2288,7 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
             }
 
             if (opcode == "_method_request")
-                return handleMethodRequest(body, rte, rtk, cid, msg.getPublisher(), viaLocal);
+                return handleMethodRequest(body, rte, rtk, cid, msg.getPublisherUserId(), viaLocal);
             else if (opcode == "_query_request")
                 return handleGetQuery(body, rte, rtk, cid, viaLocal);
             else if (opcode == "_agent_locate_request")
@@ -2314,9 +2311,9 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
         else if (opcode == 'q') handleClassInd       (inBuffer, rtk, sequence);
         else if (opcode == 'S') handleSchemaRequest  (inBuffer, rte, rtk, sequence);
         else if (opcode == 's') handleSchemaResponse (inBuffer, rtk, sequence);
-        else if (opcode == 'A') handleAttachRequest  (inBuffer, rtk, sequence, msg.getPublisher());
+        else if (opcode == 'A') handleAttachRequest  (inBuffer, rtk, sequence, msg.getPublisherObjectId());
         else if (opcode == 'G') handleGetQuery       (inBuffer, rtk, sequence);
-        else if (opcode == 'M') handleMethodRequest  (inBuffer, rtk, sequence, msg.getPublisher());
+        else if (opcode == 'M') handleMethodRequest  (inBuffer, rtk, sequence, msg.getPublisherUserId());
     }
 }
 
@@ -2755,16 +2752,22 @@ ManagementAgent::EventQueue::Batch::const_iterator ManagementAgent::sendEvents(
 }
 
 namespace {
-QPID_TSS const qpid::broker::Connection* executionContext = 0;
+QPID_TSS const ConnectionIdentity* currentPublisher = 0;
 }
 
-void setManagementExecutionContext(const qpid::broker::Connection* ctxt)
+void setManagementExecutionContext(const ConnectionIdentity& p)
 {
-    executionContext = ctxt;
+    currentPublisher = &p;
 }
-const qpid::broker::Connection* getManagementExecutionContext()
+
+void resetManagementExecutionContext()
 {
-    return executionContext;
+    currentPublisher = 0;
+}
+
+const ConnectionIdentity* getCurrentPublisher()
+{
+    return currentPublisher;
 }
 
 }}

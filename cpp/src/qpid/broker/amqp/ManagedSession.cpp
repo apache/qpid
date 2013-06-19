@@ -53,7 +53,7 @@ qpid::management::ManagementObject::shared_ptr ManagedSession::GetManagementObje
     return session;
 }
 
-bool ManagedSession::isLocal(const ConnectionToken* t) const
+bool ManagedSession::isLocal(const OwnershipToken* t) const
 {
     return &parent == t;
 }

@@ -30,7 +30,8 @@
 #include "qpid/broker/BrokerImportExport.h"
 
 #include "qpid/broker/ConnectionHandler.h"
-#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/ConnectionIdentity.h"
+#include "qpid/broker/OwnershipToken.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionInputHandler.h"
@@ -63,8 +64,8 @@ class SecureConnection;
 class SessionHandler;
 struct ConnectionTimeoutTask;
 
-class Connection : public sys::ConnectionInputHandler,
-                   public ConnectionToken, public management::Manageable,
+class Connection : public sys::ConnectionInputHandler, public ConnectionIdentity,
+                   public OwnershipToken, public management::Manageable,
                    public RefCounted
 {
   public:
@@ -76,9 +77,11 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
 
-    const std::string& getUserId() const { return userId; }
-
     void setUrl(const std::string& _url) { url = _url; }
+
+    const OwnershipToken* getOwnership() const { return this; };
+    const management::ObjectId getObjectId() const { return GetManagementObject()->getObjectId(); };
+    const std::string& getUserId() const { return userId; }
     const std::string& getUrl() const { return url; }
 
     void setUserProxyAuth(const bool b);

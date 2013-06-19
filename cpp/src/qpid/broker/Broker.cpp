@@ -22,7 +22,7 @@
 #include "qpid/broker/Broker.h"
 
 #include "qpid/broker/AclModule.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/ConnectionIdentity.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
@@ -101,7 +101,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
-using qpid::management::getManagementExecutionContext;
+using qpid::management::getCurrentPublisher;
 using qpid::types::Variant;
 using std::string;
 using std::make_pair;
@@ -533,33 +533,33 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     case _qmf::Broker::METHOD_CREATE :
       {
           _qmf::ArgsBrokerCreate& a = dynamic_cast<_qmf::ArgsBrokerCreate&>(args);
-          createObject(a.i_type, a.i_name, a.i_properties, a.i_strict, getManagementExecutionContext());
+          createObject(a.i_type, a.i_name, a.i_properties, a.i_strict, getCurrentPublisher());
           status = Manageable::STATUS_OK;
           break;
       }
     case _qmf::Broker::METHOD_DELETE :
       {
           _qmf::ArgsBrokerDelete& a = dynamic_cast<_qmf::ArgsBrokerDelete&>(args);
-          deleteObject(a.i_type, a.i_name, a.i_options, getManagementExecutionContext());
+          deleteObject(a.i_type, a.i_name, a.i_options, getCurrentPublisher());
           status = Manageable::STATUS_OK;
           break;
       }
     case _qmf::Broker::METHOD_QUERY :
       {
           _qmf::ArgsBrokerQuery& a = dynamic_cast<_qmf::ArgsBrokerQuery&>(args);
-          status = queryObject(a.i_type, a.i_name, a.o_results, getManagementExecutionContext());
+          status = queryObject(a.i_type, a.i_name, a.o_results, getCurrentPublisher());
           break;
       }
     case _qmf::Broker::METHOD_GETTIMESTAMPCONFIG:
         {
           _qmf::ArgsBrokerGetTimestampConfig& a = dynamic_cast<_qmf::ArgsBrokerGetTimestampConfig&>(args);
-          status = getTimestampConfig(a.o_receive, getManagementExecutionContext());
+          status = getTimestampConfig(a.o_receive, getCurrentPublisher());
           break;
         }
     case _qmf::Broker::METHOD_SETTIMESTAMPCONFIG:
         {
           _qmf::ArgsBrokerSetTimestampConfig& a = dynamic_cast<_qmf::ArgsBrokerSetTimestampConfig&>(args);
-          status = setTimestampConfig(a.i_receive, getManagementExecutionContext());
+          status = setTimestampConfig(a.i_receive, getCurrentPublisher());
           break;
         }
 
@@ -707,7 +707,7 @@ struct InvalidParameter : public qpid::Exception
 };
 
 void Broker::createObject(const std::string& type, const std::string& name,
-                          const Variant::Map& properties, bool /*strict*/, const Connection* context)
+                          const Variant::Map& properties, bool /*strict*/, const ConnectionIdentity* context)
 {
     std::string userId;
     std::string connectionId;
@@ -898,7 +898,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
 }
 
 void Broker::deleteObject(const std::string& type, const std::string& name,
-                          const Variant::Map& options, const Connection* context)
+                          const Variant::Map& options, const ConnectionIdentity* context)
 {
     std::string userId;
     std::string connectionId;
@@ -952,7 +952,7 @@ void Broker::checkDeleteQueue(Queue::shared_ptr queue, bool ifUnused, bool ifEmp
 Manageable::status_t Broker::queryObject(const std::string& type,
                                          const std::string& name,
                                          Variant::Map& results,
-                                         const Connection* context)
+                                         const ConnectionIdentity* context)
 {
     std::string userId;
     std::string connectionId;
@@ -994,7 +994,7 @@ Manageable::status_t Broker::queryQueue( const std::string& name,
 }
 
 Manageable::status_t Broker::getTimestampConfig(bool& receive,
-                                                const Connection* context)
+                                                const ConnectionIdentity* context)
 {
     std::string name;   // none needed for broker
     std::string userId = context->getUserId();
@@ -1006,7 +1006,7 @@ Manageable::status_t Broker::getTimestampConfig(bool& receive,
 }
 
 Manageable::status_t Broker::setTimestampConfig(const bool receive,
-                                                const Connection* context)
+                                                const ConnectionIdentity* context)
 {
     std::string name;   // none needed for broker
     std::string userId = context->getUserId();

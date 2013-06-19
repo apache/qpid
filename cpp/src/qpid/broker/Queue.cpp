@@ -224,7 +224,7 @@ Queue::~Queue()
 
 bool isLocalTo(const OwnershipToken* token, const Message& msg)
 {
-    return token && token->isLocal(msg.getPublisher());
+    return token && token->isLocal(msg.getPublisherOwnership());
 }
 
 bool Queue::isLocal(const Message& msg)

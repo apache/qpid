@@ -101,7 +101,7 @@ Connection& SessionState::getConnection() {
     return handler->getConnection();
 }
 
-bool SessionState::isLocal(const ConnectionToken* t) const
+bool SessionState::isLocal(const OwnershipToken* t) const
 {
     return isAttached() && &(handler->getConnection()) == t;
 }
@@ -204,7 +204,7 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
         DeliverableMessage deliverable(Message(msg, msg), semanticState.getTxBuffer());
         if (broker.isTimestamping())
             deliverable.getMessage().setTimestamp();
-        deliverable.getMessage().setPublisher(&getConnection());
+        deliverable.getMessage().setPublisher(getConnection());
 
 
         IncompleteIngressMsgXfer xfer(this, msg);

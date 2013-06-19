@@ -1,3 +1,6 @@
+#ifndef QPID_BROKER_CONNECTIONIDENTITY_H
+#define QPID_BROKER_CONNECTIONIDENTITY_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,23 +21,28 @@
  * under the License.
  *
  */
-#ifndef _ConnectionToken_
-#define _ConnectionToken_
 
-#include "qpid/broker/OwnershipToken.h"
+#include <string>
+
 namespace qpid {
-    namespace broker {
-        /**
-         * An empty interface allowing opaque implementations of some
-         * form of token to identify a connection.
-         */
-        class ConnectionToken : public OwnershipToken {
-        public:
-            virtual bool isLocal(const ConnectionToken* t) const { return this == t; }
-            virtual ~ConnectionToken(){}
-        };
-    }
+
+namespace management {
+class ObjectId;
 }
 
+namespace broker {
 
-#endif
+class OwnershipToken;
+
+// Interface used to hold Connection authentication and object details for use when authenticating
+// publihed management requests.
+class ConnectionIdentity {
+public:
+    virtual const OwnershipToken* getOwnership() const = 0;
+    virtual const management::ObjectId getObjectId() const = 0;
+    virtual const std::string& getUserId() const = 0;
+    virtual const std::string& getUrl() const = 0;
+};
+
+}}
+#endif // QPID_BROKER_CONNECTIONIDENTITY_H
