@@ -95,8 +95,8 @@ SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& mes
 
 uint32_t SenderContext::processUnsettled()
 {
-    //remove accepted messages from front of deque
-    while (!deliveries.empty() && deliveries.front().accepted()) {
+    //remove messages from front of deque once peer has confirmed receipt
+    while (!deliveries.empty() && deliveries.front().delivered()) {
         deliveries.front().settle();
         deliveries.pop_front();
     }
@@ -453,9 +453,27 @@ void SenderContext::Delivery::send(pn_link_t* sender)
     pn_link_advance(sender);
 }
 
+bool SenderContext::Delivery::delivered()
+{
+    if (pn_delivery_remote_state(token) || pn_delivery_settled(token)) {
+        //TODO: need a better means for signalling outcomes other than accepted
+        if (rejected()) {
+            QPID_LOG(warning, "delivery " << id << " was rejected by peer");
+        } else if (!accepted()) {
+            QPID_LOG(info, "delivery " << id << " was not accepted by peer");
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
 bool SenderContext::Delivery::accepted()
 {
     return pn_delivery_remote_state(token) == PN_ACCEPTED;
+}
+bool SenderContext::Delivery::rejected()
+{
+    return pn_delivery_remote_state(token) == PN_REJECTED;
 }
 void SenderContext::Delivery::settle()
 {
