@@ -36,7 +36,7 @@ class AMQP_ClientProxy;
 namespace broker {
 
 class Broker;
-class ConnectionState;
+class Connection;
 
 class SessionContext : public OwnershipToken
 {
@@ -44,7 +44,7 @@ class SessionContext : public OwnershipToken
     virtual ~SessionContext(){}
     virtual bool isLocal(const ConnectionToken* t) const = 0;
     virtual bool isAttached() const = 0;
-    virtual ConnectionState& getConnection() = 0;
+    virtual Connection& getConnection() = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
     virtual Broker& getBroker() = 0;
     virtual uint16_t getChannel() const = 0;

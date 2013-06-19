@@ -41,7 +41,6 @@ namespace qpid {
 namespace broker {
 
 class Connection;
-class ConnectionState;
 class Link;
 class LinkRegistry;
 
@@ -135,7 +134,6 @@ class Bridge : public PersistableConfig,
     std::string queueName;
     std::string altEx;
     mutable uint64_t  persistenceId;
-    ConnectionState* connState;
     Connection* conn;
     InitializeCallback initialize;
     bool detached;              // Set when session is detached.

@@ -33,7 +33,6 @@ class SessionState;
 namespace broker {
 
 class Connection;
-class ConnectionState;
 class SessionState;
 
 /**
@@ -65,8 +64,8 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
     SessionState* getSession() { return session.get(); }
     const SessionState* getSession() const { return session.get(); }
 
-    ConnectionState& getConnection();
-    const ConnectionState& getConnection() const;
+    Connection& getConnection();
+    const Connection& getConnection() const;
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }

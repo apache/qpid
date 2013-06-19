@@ -22,9 +22,10 @@
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
-#include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldValue.h"
+#include "qpid/log/Statement.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/SecuritySettings.h"
 
 #include <boost/format.hpp>

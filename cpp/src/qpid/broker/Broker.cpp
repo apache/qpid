@@ -22,7 +22,7 @@
 #include "qpid/broker/Broker.h"
 
 #include "qpid/broker/AclModule.h"
-#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
@@ -77,7 +77,6 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Timer.h"
-#include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/Address.h"
@@ -708,7 +707,7 @@ struct InvalidParameter : public qpid::Exception
 };
 
 void Broker::createObject(const std::string& type, const std::string& name,
-                          const Variant::Map& properties, bool /*strict*/, const ConnectionState* context)
+                          const Variant::Map& properties, bool /*strict*/, const Connection* context)
 {
     std::string userId;
     std::string connectionId;
@@ -899,7 +898,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
 }
 
 void Broker::deleteObject(const std::string& type, const std::string& name,
-                          const Variant::Map& options, const ConnectionState* context)
+                          const Variant::Map& options, const Connection* context)
 {
     std::string userId;
     std::string connectionId;
@@ -953,7 +952,7 @@ void Broker::checkDeleteQueue(Queue::shared_ptr queue, bool ifUnused, bool ifEmp
 Manageable::status_t Broker::queryObject(const std::string& type,
                                          const std::string& name,
                                          Variant::Map& results,
-                                         const ConnectionState* context)
+                                         const Connection* context)
 {
     std::string userId;
     std::string connectionId;
@@ -995,7 +994,7 @@ Manageable::status_t Broker::queryQueue( const std::string& name,
 }
 
 Manageable::status_t Broker::getTimestampConfig(bool& receive,
-                                                const ConnectionState* context)
+                                                const Connection* context)
 {
     std::string name;   // none needed for broker
     std::string userId = context->getUserId();
@@ -1007,7 +1006,7 @@ Manageable::status_t Broker::getTimestampConfig(bool& receive,
 }
 
 Manageable::status_t Broker::setTimestampConfig(const bool receive,
-                                                const ConnectionState* context)
+                                                const Connection* context)
 {
     std::string name;   // none needed for broker
     std::string userId = context->getUserId();

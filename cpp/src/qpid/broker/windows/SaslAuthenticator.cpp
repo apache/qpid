@@ -27,6 +27,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldValue.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 
 #include <windows.h>
 
