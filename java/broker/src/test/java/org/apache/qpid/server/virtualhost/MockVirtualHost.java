@@ -31,6 +31,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
@@ -107,6 +108,11 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public MessageStore getMessageStore()
+    {
+        return null;
+    }
+
+    public DurableConfigurationStore getDurableConfigurationStore()
     {
         return null;
     }

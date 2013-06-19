@@ -83,6 +83,7 @@ public interface VirtualHost extends ConfiguredObject
     String NAME                                 = "name";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
+    String TYPE                                 = "type";
     String UPDATED                              = "updated";
     String CONFIG_PATH                          = "configPath";
 
@@ -92,6 +93,7 @@ public interface VirtualHost extends ConfiguredObject
                     Arrays.asList(
                             ID,
                             NAME,
+                            TYPE,
                             STATE,
                             DURABLE,
                             LIFETIME_POLICY,
@@ -139,7 +141,7 @@ public interface VirtualHost extends ConfiguredObject
         void dequeue(QueueEntry entry);
 
         void copy(QueueEntry entry, Queue queue);
-        
+
         void move(QueueEntry entry, Queue queue);
 
     }
@@ -158,4 +160,6 @@ public interface VirtualHost extends ConfiguredObject
     SecurityManager getSecurityManager();
 
     MessageStore getMessageStore();
+
+    String getType();
 }

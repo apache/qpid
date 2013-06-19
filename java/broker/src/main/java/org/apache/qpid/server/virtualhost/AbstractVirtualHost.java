@@ -57,17 +57,17 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 
-public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
+public abstract class AbstractVirtualHost implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
-    private static final Logger _logger = Logger.getLogger(VirtualHostImpl.class);
+    private static final Logger _logger = Logger.getLogger(AbstractVirtualHost.class);
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
@@ -97,8 +97,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
     private final DtxRegistry _dtxRegistry;
 
-    private final MessageStore _messageStore;
-
     private volatile State _state = State.INITIALISING;
 
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
@@ -106,7 +104,10 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
     private boolean _blocked;
 
-    public VirtualHostImpl(VirtualHostRegistry virtualHostRegistry, StatisticsGatherer brokerStatisticsGatherer, SecurityManager parentSecurityManager, VirtualHostConfiguration hostConfig) throws Exception
+    public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
+                               StatisticsGatherer brokerStatisticsGatherer,
+                               SecurityManager parentSecurityManager,
+                               VirtualHostConfiguration hostConfig) throws Exception
     {
         if (hostConfig == null)
         {
@@ -141,17 +142,15 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
-        _messageStore = initialiseMessageStore(hostConfig);
-
-        configureMessageStore(hostConfig);
-
-        activateNonHAMessageStore();
-
         initialiseStatistics();
 
-        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
-        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+        initialiseStorage(hostConfig);
+
+        getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
+
+    abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig) throws Exception;
 
     public IConnectionRegistry getConnectionRegistry()
     {
@@ -187,25 +186,25 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
     }
 
-    private void shutdownHouseKeeping()
+    protected void shutdownHouseKeeping()
     {
         _houseKeepingTasks.shutdown();
 
-           try
-           {
-               if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
-               {
-                   _houseKeepingTasks.shutdownNow();
-               }
-           }
-           catch (InterruptedException e)
-           {
-               _logger.warn("Interrupted during Housekeeping shutdown:", e);
-               Thread.currentThread().interrupt();
-           }
+        try
+        {
+            if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+            {
+                _houseKeepingTasks.shutdownNow();
+            }
+        }
+        catch (InterruptedException e)
+        {
+            _logger.warn("Interrupted during Housekeeping shutdown:", e);
+            Thread.currentThread().interrupt();
+        }
     }
 
-    private void removeHouseKeepingTasks()
+    protected void removeHouseKeepingTasks()
     {
         BlockingQueue<Runnable> taskQueue = _houseKeepingTasks.getQueue();
         for (final Runnable runnable : taskQueue)
@@ -257,61 +256,12 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         return _houseKeepingTasks.getActiveCount();
     }
 
-    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
-    {
-        String storeType = hostConfig.getConfig().getString("store.type");
-        MessageStore  messageStore = null;
-        if (storeType == null)
-        {
-            final Class<?> clazz = Class.forName(hostConfig.getMessageStoreClass());
-            final Object o = clazz.newInstance();
 
-            if (!(o instanceof MessageStore))
-            {
-                throw new ClassCastException(clazz + " does not implement " + MessageStore.class);
-            }
-
-            messageStore = (MessageStore) o;
-        }
-        else
-        {
-            messageStore = new MessageStoreCreator().createMessageStore(storeType);
-        }
-
-        final MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore.getClass().getSimpleName());
-        OperationalLoggingListener.listen(messageStore, storeLogSubject);
-
-        messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
-        messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
-        messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
-        messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
-        if (messageStore instanceof HAMessageStore)
-        {
-            messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
-        }
-
-        return messageStore;
-    }
-
-    private void activateNonHAMessageStore() throws Exception
-    {
-        if (!(_messageStore instanceof HAMessageStore))
-        {
-            _messageStore.activate();
-        }
-    }
-
-    private void configureMessageStore(VirtualHostConfiguration hostConfig) throws Exception
-    {
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
-
-        _messageStore.configureConfigStore(getName(), recoveryHandler, hostConfig.getStoreConfiguration());
-        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, hostConfig.getStoreConfiguration());
-    }
-
-    private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
+    protected void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
     {
         _logger.debug("Loading configuration for virtualhost: " + config.getName());
+
+        _exchangeRegistry.initialise();
 
         List<String> exchangeNames = config.getExchanges();
 
@@ -347,7 +297,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
             if (newExchange.isDurable())
             {
-                _messageStore.createExchange(newExchange);
+                getDurableConfigurationStore().createExchange(newExchange);
             }
         }
     }
@@ -359,7 +309,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         if (queue.isDurable())
         {
-            getMessageStore().createQueue(queue);
+            getDurableConfigurationStore().createQueue(queue);
         }
 
         //get the exchange name (returns default exchange name if none was specified)
@@ -390,7 +340,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
             }
             else
             {
-
                 configureBinding(queue, exchange, routingKey, (Map) queueConfiguration.getBindingArguments(routingKey));
             }
         }
@@ -437,11 +386,6 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         return _exchangeFactory;
     }
 
-    public MessageStore getMessageStore()
-    {
-        return _messageStore;
-    }
-
     public SecurityManager getSecurityManager()
     {
         return _securityManager;
@@ -453,20 +397,8 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         _connectionRegistry.close();
         _queueRegistry.stopAllAndUnregisterMBeans();
         _dtxRegistry.close();
-
-        //Close MessageStore
-        if (_messageStore != null)
-        {
-            //Remove MessageStore Interface should not throw Exception
-            try
-            {
-                _messageStore.close();
-            }
-            catch (Exception e)
-            {
-                _logger.error("Failed to close message store", e);
-            }
-        }
+        closeStorage();
+        shutdownHouseKeeping();
 
         // clear exchange objects
         _exchangeRegistry.clearAndUnregisterMbeans();
@@ -475,6 +407,31 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
 
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
+
+    protected void closeStorage()
+    {
+        //Close MessageStore
+        if (getMessageStore() != null)
+        {
+            //Remove MessageStore Interface should not throw Exception
+            try
+            {
+                getMessageStore().close();
+            }
+            catch (Exception e)
+            {
+                _logger.error("Failed to close message store", e);
+            }
+        }
+    }
+
+
+    protected Logger getLogger()
+    {
+        return _logger;
+    }
+
+
 
     public VirtualHostRegistry getVirtualHostRegistry()
     {
@@ -618,94 +575,28 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
         }
     }
 
-    private final class BeforeActivationListener implements EventListener
-   {
-       @Override
-       public void event(Event event)
-       {
-           try
-           {
-               _exchangeRegistry.initialise();
-               initialiseModel(_vhostConfig);
-           }
-           catch (Exception e)
-           {
-               throw new RuntimeException("Failed to initialise virtual host after state change", e);
-           }
-       }
-   }
-
-   private final class AfterActivationListener implements EventListener
-   {
-       @Override
-       public void event(Event event)
-       {
-           State finalState = State.ERRORED;
-
-           try
-           {
-               initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-               finalState = State.ACTIVE;
-           }
-           finally
-           {
-               _state = finalState;
-               reportIfError(_state);
-           }
-       }
-   }
-
-    private final class BeforePassivationListener implements EventListener
+    protected void setState(State state)
     {
-        public void event(Event event)
-        {
-            State finalState = State.ERRORED;
-
-            try
-            {
-                /* the approach here is not ideal as there is a race condition where a
-                 * queue etc could be created while the virtual host is on the way to
-                 * the passivated state.  However the store state change from MASTER to UNKNOWN
-                 * is documented as exceptionally rare..
-                 */
-
-                _connectionRegistry.close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-                removeHouseKeepingTasks();
-
-                _queueRegistry.stopAllAndUnregisterMBeans();
-                _exchangeRegistry.clearAndUnregisterMbeans();
-                _dtxRegistry.close();
-
-                finalState = State.PASSIVE;
-            }
-            finally
-            {
-                _state = finalState;
-                reportIfError(_state);
-            }
-        }
-
+        _state = state;
     }
 
-    private final class AfterInitialisationListener implements EventListener
+    protected void attainActivation()
     {
-        public void event(Event event)
+        State finalState = State.ERRORED;
+
+        try
         {
-            _state = State.PASSIVE;
+            initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+            finalState = State.ACTIVE;
         }
-
-    }
-
-    private final class BeforeCloseListener implements EventListener
-    {
-        @Override
-        public void event(Event event)
+        finally
         {
-            shutdownHouseKeeping();
+            _state = finalState;
+            reportIfError(_state);
         }
     }
 
-    private void reportIfError(State state)
+    protected void reportIfError(State state)
     {
         if (state == State.ERRORED)
         {
@@ -717,7 +608,7 @@ public class VirtualHostImpl implements VirtualHost, IConnectionRegistry.Registr
     {
         public VirtualHostHouseKeepingTask()
         {
-            super(VirtualHostImpl.this);
+            super(AbstractVirtualHost.this);
         }
 
         public void execute()

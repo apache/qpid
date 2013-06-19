@@ -1,0 +1,37 @@
+<table class="tableContainer-table tableContainer-table-horiz">
+    <tr>
+        <td class="tableContainer-labelCell" style="width: 300px;"><strong>Path to store location*: </strong></td>
+        <td class="tableContainer-valueCell">
+            <input dojoType="dijit/form/ValidationTextBox" id="formAddVirtualHost.specific.storePath"
+                   required="true" name="storePath" placeholder="/path/to/message/store"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="tableContainer-labelCell" style="width: 300px;"><strong>Node Name*: </strong></td>
+        <td class="tableContainer-valueCell">
+            <input dojoType="dijit/form/ValidationTextBox" id="formAddVirtualHost.specific.nodeName"
+                   required="true" name="haNodeName" placeholder="node name"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="tableContainer-labelCell" style="width: 300px;"><strong>Replication Group*: </strong></td>
+        <td class="tableContainer-valueCell">
+            <input dojoType="dijit/form/ValidationTextBox" id="formAddVirtualHost.specific.groupName"
+                   required="true" name="haGroupName" placeholder="group name"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="tableContainer-labelCell" style="width: 300px;"><strong>Node Address*: </strong></td>
+        <td class="tableContainer-valueCell">
+            <input dojoType="dijit/form/ValidationTextBox" id="formAddVirtualHost.specific.nodeAddress"
+                   required="true" name="haNodeAddress" data-dojo-props="regExp:'([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}', invalidMessage:'Must be of the form host:port'" placeholder="host:port"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="tableContainer-labelCell" style="width: 300px;"><strong>Helper Address*: </strong></td>
+        <td class="tableContainer-valueCell">
+            <input dojoType="dijit/form/ValidationTextBox" id="formAddVirtualHost.specific.helperAddress"
+                   required="true" name="haHelperAddress" placeholder="host:port"/>
+        </td>
+    </tr>
+</table>

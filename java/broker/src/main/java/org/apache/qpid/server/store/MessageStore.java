@@ -26,7 +26,7 @@ import org.apache.commons.configuration.Configuration;
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages.
  *
  */
-public interface MessageStore extends DurableConfigurationStore
+public interface MessageStore
 {
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define

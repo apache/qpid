@@ -71,7 +71,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         applyStoreSpecificConfiguration(config);
 
         _store = createStore();
-        _store.configureConfigStore("test", null, config);
+        ((DurableConfigurationStore)_store).configureConfigStore("test", null, config);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();

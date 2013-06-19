@@ -65,7 +65,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        DurableConfigurationStore store = virtualHost.getMessageStore();
+        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
         final AMQShortString queueName;
 
@@ -80,7 +80,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         }
 
         AMQQueue queue;
-        
+
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
         AMQChannel channel = protocolConnection.getChannel(channelId);

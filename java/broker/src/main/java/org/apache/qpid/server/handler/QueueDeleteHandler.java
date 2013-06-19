@@ -62,7 +62,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        DurableConfigurationStore store = virtualHost.getMessageStore();
+        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
 
         AMQChannel channel = protocolConnection.getChannel(channelId);
@@ -110,7 +110,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
                 }
-                
+
                 int purged = queue.delete();
 
                 if (queue.isDurable())

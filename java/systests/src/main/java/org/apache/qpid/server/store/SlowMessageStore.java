@@ -35,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class SlowMessageStore implements MessageStore
+public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger _logger = Logger.getLogger(SlowMessageStore.class);
     private static final String DELAYS = "delays";

@@ -37,6 +37,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 import org.codehaus.jackson.JsonGenerationException;
@@ -564,6 +565,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         }
         else
         {
+            hostData.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
             hostData.put(VirtualHost.STORE_PATH, storePath);
             hostData.put(VirtualHost.STORE_TYPE, storeType);
         }

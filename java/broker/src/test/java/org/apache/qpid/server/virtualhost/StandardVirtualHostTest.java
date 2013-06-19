@@ -46,7 +46,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class VirtualHostImplTest extends QpidTestCase
+public class StandardVirtualHostTest extends QpidTestCase
 {
     private VirtualHostRegistry _virtualHostRegistry;
 
@@ -109,14 +109,9 @@ public class VirtualHostImplTest extends QpidTestCase
             createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
-        catch (RuntimeException e)
+        catch (ConfigurationException e)
         {
-            assertNotNull(e.getCause());
-
-            assertEquals(ConfigurationException.class, e.getCause().getClass());
-
-            Throwable configException = e.getCause();
-            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, configException.getMessage());
+            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, e.getMessage());
         }
     }
 
@@ -172,14 +167,9 @@ public class VirtualHostImplTest extends QpidTestCase
             createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
-        catch (RuntimeException e)
+        catch (ConfigurationException e)
         {
-            assertNotNull(e.getCause());
-
-            assertEquals(ConfigurationException.class, e.getCause().getClass());
-
-            Throwable configException = e.getCause();
-            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, configException.getMessage());
+            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, e.getMessage());
         }
     }
 
@@ -274,7 +264,7 @@ public class VirtualHostImplTest extends QpidTestCase
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
-        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
+        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
         _virtualHostRegistry.registerVirtualHost(host);
 
         return host;
@@ -282,7 +272,7 @@ public class VirtualHostImplTest extends QpidTestCase
 
     /**
      * Create a configuration file for testing virtualhost creation
-     * 
+     *
      * @param vhostName name of the virtualhost
      * @param queueName name of the queue
      * @param exchangeName name of a direct exchange to declare (unless dontDeclare = true) and bind the queue to (null = none)
@@ -313,6 +303,7 @@ public class VirtualHostImplTest extends QpidTestCase
             writer.write("  <virtualhost>");
             writer.write("      <name>" + vhostName + "</name>");
             writer.write("      <" + vhostName + ">");
+            writer.write("          <type>" + StandardVirtualHostFactory.TYPE + "</type>");
             writer.write("              <store>");
             writer.write("                <class>" + MemoryMessageStore.class.getName() + "</class>");
             writer.write("              </store>");
@@ -373,7 +364,7 @@ public class VirtualHostImplTest extends QpidTestCase
         Configuration config = new PropertiesConfiguration();
         config.setProperty("store.type", MemoryMessageStore.TYPE);
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
-        VirtualHost host = new VirtualHostImpl(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
+        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
         _virtualHostRegistry.registerVirtualHost(host);
         return host;
     }

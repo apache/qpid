@@ -73,7 +73,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         setUpStoreConfiguration(_storeConfiguration);
 
         _store = createMessageStore();
-        _store.configureConfigStore(getTestName(), _recoveryHandler, _storeConfiguration);
+        ((DurableConfigurationStore)_store).configureConfigStore(getTestName(), _recoveryHandler, _storeConfiguration);
         _store.configureMessageStore(getTestName(), _messageStoreRecoveryHandler, _logRecoveryHandler, _storeConfiguration);
     }
 

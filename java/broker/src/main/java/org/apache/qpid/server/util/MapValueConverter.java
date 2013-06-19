@@ -127,7 +127,13 @@ public class MapValueConverter
         }
         else if (rawValue instanceof String)
         {
-            return (T) Enum.valueOf(enumType, (String) rawValue);
+            final String stringValue = (String) rawValue;
+
+            return "null".equals(stringValue) ? null : (T) Enum.valueOf(enumType, stringValue);
+        }
+        else if(rawValue == null)
+        {
+            return null;
         }
         else
         {
@@ -281,14 +287,23 @@ public class MapValueConverter
 
     public static Map<String, Object> convert(Map<String, Object> configurationAttributes, Map<String, Type> attributeTypes)
     {
+        return convert(configurationAttributes, attributeTypes, true);
+    }
+
+    public static Map<String, Object> convert(Map<String, Object> configurationAttributes,
+                                              Map<String, Type> attributeTypes,
+                                              boolean exclusive)
+    {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        for (Map.Entry<String, Type> attributeEntry : attributeTypes.entrySet())
+        for (Map.Entry<String, Object> attribute : configurationAttributes.entrySet())
         {
-            String attributeName = attributeEntry.getKey();
-            if (configurationAttributes.containsKey(attributeName))
+            String attributeName = attribute.getKey();
+            Object rawValue = attribute.getValue();
+
+            if (attributeTypes.containsKey(attributeName))
             {
-                Type typeObject = attributeEntry.getValue();
-                Object rawValue = configurationAttributes.get(attributeName);
+                Type typeObject = attributeTypes.get(attributeName);
+
                 Object value = null;
                 if (typeObject instanceof Class)
                 {
@@ -311,16 +326,21 @@ public class MapValueConverter
                     }
                     else
                     {
-                        throw new IllegalArgumentException("Convertion into " + parameterizedType + " is not yet supported");
+                        throw new IllegalArgumentException("Conversion into " + parameterizedType + " is not yet supported");
                     }
                 }
                 else
                 {
-                    throw new IllegalArgumentException("Convertion into " + typeObject + " is not yet supported");
+                    throw new IllegalArgumentException("Conversion into " + typeObject + " is not yet supported");
                 }
                 attributes.put(attributeName, value);
             }
+            else if(!exclusive)
+            {
+                attributes.put(attributeName, rawValue);
+            }
         }
+
         return attributes;
     }
 
