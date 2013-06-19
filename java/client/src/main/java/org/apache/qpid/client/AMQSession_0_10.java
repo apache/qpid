@@ -24,7 +24,6 @@ import static org.apache.qpid.transport.Option.UNRELIABLE;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -95,6 +94,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession_0_10.class);
 
     private static Timer timer = new Timer("ack-flusher", true);
+    private final String _name;
 
     private static class Flusher extends TimerTask
     {
@@ -153,6 +153,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private boolean _isHardError = Boolean.getBoolean("qpid.session.legacy_exception_behaviour");
     //--- constructors
 
+
     /**
      * Creates a new session on a connection.
      *
@@ -173,20 +174,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
         _qpidConnection = qpidConnection;
-        if (name == null)
-        {
-            _qpidSession = _qpidConnection.createSession(1);
-        }
-        else
-        {
-            _qpidSession = _qpidConnection.createSession(name,1);
-        }
-        _qpidSession.setSessionListener(this);
-        if (isTransacted())
-        {
-            _qpidSession.txSelect();
-            _qpidSession.setTransacted(true);
-        }
+        _name = name;
+        _qpidSession = createSession();
 
         if (maxAckDelay > 0)
         {
@@ -194,6 +183,28 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             timer.schedule(flushTask, new Date(), maxAckDelay);
         }
     }
+
+    protected Session createSession()
+    {
+        Session qpidSession;
+        if (_name == null)
+        {
+            qpidSession = _qpidConnection.createSession(1);
+        }
+        else
+        {
+            qpidSession = _qpidConnection.createSession(_name,1);
+        }
+        if (isTransacted())
+        {
+            qpidSession.txSelect();
+            qpidSession.setTransacted(true);
+        }
+        qpidSession.setSessionListener(this);
+
+        return qpidSession;
+    }
+
 
     /**
      * Creates a new session on a connection with the default 0-10 message factory.

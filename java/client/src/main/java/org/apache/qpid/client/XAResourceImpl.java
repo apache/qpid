@@ -88,7 +88,7 @@ public class XAResourceImpl implements AMQXAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("commit tx branch with xid:  ", xid);
+            _logger.debug("commit tx branch with xid: {} ", xid);
         }
         Future<XaResult> future =
                 _xaSession.getQpidSession().dtxCommit(convertXid(xid), b ? Option.ONE_PHASE : Option.NONE);
@@ -132,7 +132,7 @@ public class XAResourceImpl implements AMQXAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("end tx branch with xid: ", xid);
+            _logger.debug("end tx branch with xid: {}", xid);
         }
         switch (flag)
         {
@@ -191,7 +191,7 @@ public class XAResourceImpl implements AMQXAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("forget tx branch with xid: ", xid);
+            _logger.debug("forget tx branch with xid: {}", xid);
         }
         _xaSession.getQpidSession().dtxForget(convertXid(xid));
         try
@@ -281,7 +281,7 @@ public class XAResourceImpl implements AMQXAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("prepare ", xid);
+            _logger.debug("prepare {}", xid);
         }
         Future<XaResult> future = _xaSession.getQpidSession().dtxPrepare(convertXid(xid));
         XaResult result = null;
@@ -361,7 +361,7 @@ public class XAResourceImpl implements AMQXAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("rollback tx branch with xid: ", xid);
+            _logger.debug("rollback tx branch with xid: {}", xid);
         }
 
         Future<XaResult> future = _xaSession.getQpidSession().dtxRollback(convertXid(xid));
@@ -428,7 +428,7 @@ public class XAResourceImpl implements AMQXAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("start tx branch with xid: ", xid);
+            _logger.debug("start tx branch with xid: {}", xid);
         }
         switch (flag)
         {
@@ -524,7 +524,7 @@ public class XAResourceImpl implements AMQXAResource
                 // this should not happen
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("got unexpected status value: ", status);
+                    _logger.debug("got unexpected status value: {}", status);
                 }
                 //A resource manager error has occured in the transaction branch.
                 throw new XAException(XAException.XAER_RMERR);
