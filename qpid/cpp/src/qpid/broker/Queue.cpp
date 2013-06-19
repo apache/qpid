@@ -178,8 +178,6 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
     consumerCount(0),
     browserCount(0),
     exclusive(0),
-    persistLastNode(false),
-    inLastNodeFailure(false),
     messages(new MessageDeque()),
     persistenceId(0),
     settings(b ? merge(_settings, b->getOptions()) : _settings),
@@ -795,31 +793,6 @@ bool Queue::canAutoDelete() const
     return settings.autodelete && !consumerCount && !owner;
 }
 
-void Queue::clearLastNodeFailure()
-{
-    inLastNodeFailure = false;
-}
-
-void Queue::forcePersistent(const Message& /*message*/)
-{
-    //TODO
-}
-
-void Queue::setLastNodeFailure()
-{
-    if (persistLastNode){
-        Mutex::ScopedLock locker(messageLock);
-        try {
-            messages->foreach(boost::bind(&Queue::forcePersistent, this, _1));
-        } catch (const std::exception& e) {
-            // Could not go into last node standing (for example journal not large enough)
-            QPID_LOG(error, "Unable to fail to last node standing for queue: " << name << " : " << e.what());
-        }
-        inLastNodeFailure = true;
-    }
-}
-
-
 /*
  * return true if enqueue succeeded and message should be made
  * available; returning false will result in the message being dropped
@@ -835,10 +808,6 @@ bool Queue::enqueue(TransactionContext* ctxt, Message& msg)
         if (!checkDepth(QueueDepth(1, msg.getContentSize()), msg)) {
             return false;
         }
-    }
-
-    if (inLastNodeFailure && persistLastNode){
-        forcePersistent(msg);
     }
 
     if (settings.traceId.size()) {
