@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/Connection.h"
+
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/SessionState.h"
@@ -26,6 +27,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/Timer.h"
 
@@ -80,6 +82,47 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
         connection.abort();
     }
 };
+/**
+ * A ConnectionOutputHandler that delegates to another
+ * ConnectionOutputHandler.  Allows you to inspect outputting frames
+ */
+class FrameInspector : public sys::ConnectionOutputHandler
+{
+public:
+    FrameInspector(ConnectionOutputHandler* p, framing::FrameHandler* i) :
+        next(p),
+        intercepter(i)
+    {
+        assert(next);
+        assert(intercepter);
+    }
+
+    void close() { next->close(); }
+    void abort() { next->abort(); }
+    void connectionEstablished() { next->connectionEstablished(); }
+    void activateOutput() { next->activateOutput(); }
+    void handle(framing::AMQFrame& f) { intercepter->handle(f); next->handle(f); }
+
+private:
+    ConnectionOutputHandler* next;
+    framing::FrameHandler* intercepter;
+};
+
+/**
+ * Chained ConnectionOutputHandler that allows outgoing frames to be
+ * tracked (for updating mgmt stats).
+ */
+class OutboundFrameTracker : public framing::FrameHandler
+{
+public:
+    OutboundFrameTracker(Connection& _con) : con(_con) {}
+    void handle(framing::AMQFrame& f)
+    {
+        con.sent(f);
+    }
+private:
+    Connection& con;
+};
 
 Connection::Connection(ConnectionOutputHandler* out_,
                        Broker& broker_, const
@@ -88,19 +131,24 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        bool link_,
                        uint64_t objectId_
 ) :
-    ConnectionState(out_, broker_),
+    outboundTracker(new OutboundFrameTracker(*this)),
+    out(new FrameInspector(out_, outboundTracker.get())),
+    broker(broker_),
+    framemax(65535),
+    heartbeat(0),
+    heartbeatmax(120),
+    userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links)
+    isDefaultRealm(false),
     securitySettings(external),
-    adapter(*this, link_),
     link(link_),
+    adapter(*this, link),
     mgmtClosing(false),
     mgmtId(mgmtId_),
     links(broker_.getLinks()),
     agent(0),
     timer(broker_.getTimer()),
-    objectId(objectId_),
-    outboundTracker(*this)
+    objectId(objectId_)
 {
-    outboundTracker.wrap(out);
     broker.getConnectionObservers().connection(*this);
     assert(agent == 0);
     assert(mgmtObject == 0);
@@ -112,7 +160,7 @@ Connection::Connection(ConnectionOutputHandler* out_,
             mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false, "AMQP 0-10"));
             agent->addObject(mgmtObject, objectId);
         }
-        ConnectionState::setUrl(mgmtId);
+        setUrl(mgmtId);
     }
 }
 
@@ -120,15 +168,15 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 {
     ScopedLock<Mutex> l(ioCallbackLock);
     ioCallbacks.push(callback);
-    if (isOpen()) out.activateOutput();
+    if (isOpen()) out->activateOutput();
 }
 
 Connection::~Connection()
 {
     if (mgmtObject != 0) {
         if (!link)
-            agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId(), mgmtObject->get_remoteProperties()));
-        QPID_LOG_CAT(debug, model, "Delete connection. user:" << ConnectionState::getUserId()
+            agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, getUserId(), mgmtObject->get_remoteProperties()));
+        QPID_LOG_CAT(debug, model, "Delete connection. user:" << getUserId()
             << " rhost:" << mgmtId );
         mgmtObject->resourceDestroy();
     }
@@ -260,14 +308,19 @@ void Connection::notifyConnectionForced(const string& text)
     broker.getConnectionObservers().forced(*this, text);
 }
 
-void Connection::setUserId(const string& userId)
+void Connection::setUserId(const string& uid)
 {
-    ConnectionState::setUserId(userId);
+    userId = uid;
+    size_t at = userId.find('@');
+    userName = userId.substr(0, at);
+    isDefaultRealm = (
+        at!= std::string::npos &&
+        getBroker().getOptions().realm == userId.substr(at+1,userId.size()));
 }
 
 void Connection::setUserProxyAuth(bool b)
 {
-    ConnectionState::setUserProxyAuth(b);
+    userProxyAuth = b;
     if (mgmtObject != 0)
         mgmtObject->set_userProxyAuth(b);
 }
@@ -286,7 +339,22 @@ void Connection::close(connection::CloseCode code, const string& text)
     //make sure we delete dangling pointers from outputTasks before deleting sessions
     outputTasks.removeAll();
     channels.clear();
-    getOutput().close();
+    out->close();
+}
+
+void Connection::activateOutput()
+{
+    out->activateOutput();
+}
+
+void Connection::addOutputTask(OutputTask* t)
+{
+    outputTasks.addOutputTask(t);
+}
+
+void Connection::removeOutputTask(OutputTask* t)
+{
+    outputTasks.removeOutputTask(t);
 }
 
 void Connection::closed(){ // Physically closed, suspend open sessions.
@@ -371,7 +439,7 @@ Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&, stri
     case _qmf::Connection::METHOD_CLOSE :
         mgmtClosing = true;
         if (mgmtObject != 0) mgmtObject->set_closing(1);
-        out.activateOutput();
+        out->activateOutput();
         status = Manageable::STATUS_OK;
         break;
     }
@@ -435,7 +503,7 @@ void Connection::abort()
     if (heartbeatTimer)
         heartbeatTimer->cancel();
 
-    out.abort();
+    out->abort();
 }
 
 void Connection::setHeartbeatInterval(uint16_t heartbeat)
@@ -451,7 +519,7 @@ void Connection::setHeartbeatInterval(uint16_t heartbeat)
             timer.add(timeoutTimer);
         }
     }
-    out.connectionEstablished();
+    out->connectionEstablished();
 }
 
 void Connection::startLinkHeartbeatTimeoutTask() {
@@ -459,7 +527,7 @@ void Connection::startLinkHeartbeatTimeoutTask() {
         linkHeartbeatTimer = new LinkHeartbeatTask(timer, 2 * heartbeat * TIME_SEC, *this);
         timer.add(linkHeartbeatTimer);
     }
-    out.connectionEstablished();
+    out->connectionEstablished();
 }
 
 void Connection::restartTimeout()
@@ -473,21 +541,5 @@ void Connection::restartTimeout()
 }
 
 bool Connection::isOpen() { return adapter.isOpen(); }
-
-Connection::OutboundFrameTracker::OutboundFrameTracker(Connection& _con) : con(_con), next(0) {}
-void Connection::OutboundFrameTracker::close() { next->close(); }
-void Connection::OutboundFrameTracker::abort() { next->abort(); }
-void Connection::OutboundFrameTracker::connectionEstablished() { next->connectionEstablished(); }
-void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
-void Connection::OutboundFrameTracker::handle(framing::AMQFrame& f)
-{
-    next->handle(f);
-    con.sent(f);
-}
-void Connection::OutboundFrameTracker::wrap(sys::ConnectionOutputHandlerPtr& p)
-{
-    next = p.get();
-    p.set(this);
-}
 
 }}

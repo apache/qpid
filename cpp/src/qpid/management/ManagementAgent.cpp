@@ -37,7 +37,7 @@
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/PollableQueue.h"
-#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/types/Variant.h"
 #include "qpid/types/Uuid.h"
@@ -88,7 +88,7 @@ const string keyifyNameStr(const string& name)
 
 struct ScopedManagementContext
 {
-    ScopedManagementContext(const qpid::broker::ConnectionState* context)
+    ScopedManagementContext(const qpid::broker::Connection* context)
     {
         setManagementExecutionContext(context);
     }
@@ -1286,7 +1286,7 @@ void ManagementAgent::handleMethodRequest(Buffer& inBuffer, const string& replyT
         return;
     }
 
-    string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
+    string userId = ((const qpid::broker::Connection*) connToken)->getUserId();
     if (acl != 0) {
         map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = packageName;
@@ -1407,7 +1407,7 @@ void ManagementAgent::handleMethodRequest (const string& body, const string& rte
         return;
     }
 
-    string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
+    string userId = ((const qpid::broker::Connection*) connToken)->getUserId();
     if (acl != 0) {
         map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = object->getPackageName();
@@ -1723,7 +1723,7 @@ void ManagementAgent::handleAttachRequest (Buffer& inBuffer, const string& reply
     string   label;
     uint32_t requestedBrokerBank, requestedAgentBank;
     uint32_t assignedBank;
-    ObjectId connectionRef = ((const ConnectionState*) connToken)->GetManagementObject()->getObjectId();
+    ObjectId connectionRef = ((const Connection*) connToken)->GetManagementObject()->getObjectId();
     Uuid     systemId;
 
     moveNewObjects();
@@ -2206,7 +2206,7 @@ bool ManagementAgent::authorizeAgentMessage(Message& msg)
         if (acl == 0)
             return true;
 
-        string  userId = ((const qpid::broker::ConnectionState*) msg.getPublisher())->getUserId();
+        string  userId = ((const qpid::broker::Connection*) msg.getPublisher())->getUserId();
         params[acl::PROP_SCHEMAPACKAGE] = packageName;
         params[acl::PROP_SCHEMACLASS]   = className;
 
@@ -2276,7 +2276,7 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
-    ScopedManagementContext context((const qpid::broker::ConnectionState*) msg.getPublisher());
+    ScopedManagementContext context((const qpid::broker::Connection*) msg.getPublisher());
     const framing::FieldTable *headers = p ? &p->getApplicationHeaders() : 0;
     if (headers && p->getAppId() == "qmf2")
     {
@@ -2755,14 +2755,14 @@ ManagementAgent::EventQueue::Batch::const_iterator ManagementAgent::sendEvents(
 }
 
 namespace {
-QPID_TSS const qpid::broker::ConnectionState* executionContext = 0;
+QPID_TSS const qpid::broker::Connection* executionContext = 0;
 }
 
-void setManagementExecutionContext(const qpid::broker::ConnectionState* ctxt)
+void setManagementExecutionContext(const qpid::broker::Connection* ctxt)
 {
     executionContext = ctxt;
 }
-const qpid::broker::ConnectionState* getManagementExecutionContext()
+const qpid::broker::Connection* getManagementExecutionContext()
 {
     return executionContext;
 }

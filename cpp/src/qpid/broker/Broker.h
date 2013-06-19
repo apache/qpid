@@ -63,7 +63,7 @@ struct Url;
 namespace broker {
 
 class AclModule;
-class ConnectionState;
+class Connection;
 class ExpiryPolicy;
 class Message;
 struct QueueSettings;
@@ -151,20 +151,20 @@ class Broker : public sys::Runnable, public Plugin::Target,
     void setLogHiresTimestamp(bool enabled);
     bool getLogHiresTimestamp();
     void createObject(const std::string& type, const std::string& name,
-                      const qpid::types::Variant::Map& properties, bool strict, const ConnectionState* context);
+                      const qpid::types::Variant::Map& properties, bool strict, const Connection* context);
     void deleteObject(const std::string& type, const std::string& name,
-                      const qpid::types::Variant::Map& options, const ConnectionState* context);
+                      const qpid::types::Variant::Map& options, const Connection* context);
     void checkDeleteQueue(boost::shared_ptr<Queue> queue, bool ifUnused, bool ifEmpty);
     Manageable::status_t queryObject(const std::string& type, const std::string& name,
-                                     qpid::types::Variant::Map& results, const ConnectionState* context);
+                                     qpid::types::Variant::Map& results, const Connection* context);
     Manageable::status_t queryQueue( const std::string& name,
                                      const std::string& userId,
                                      const std::string& connectionId,
                                      qpid::types::Variant::Map& results);
     Manageable::status_t getTimestampConfig(bool& receive,
-                                            const ConnectionState* context);
+                                            const Connection* context);
     Manageable::status_t setTimestampConfig(const bool receive,
-                                            const ConnectionState* context);
+                                            const Connection* context);
     Manageable::status_t queueRedirect(const std::string& srcQueue, const std::string& tgtQueue);
     void queueRedirectDestroy(boost::shared_ptr<Queue> srcQ, boost::shared_ptr<Queue> tgtQ, bool moveMsgs);
     boost::shared_ptr<sys::Poller> poller;

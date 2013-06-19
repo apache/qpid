@@ -42,6 +42,7 @@
 #include "qpid/ptr_map.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/FedOps.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -439,7 +440,7 @@ void SemanticState::disable(ConsumerImpl::shared_ptr c)
 {
     c->disableNotify();
     if (session.isAttached())
-        session.getConnection().outputTasks.removeOutputTask(c.get());
+        session.getConnection().removeOutputTask(c.get());
 }
 
 void SemanticState::cancel(ConsumerImpl::shared_ptr c)
@@ -505,8 +506,8 @@ void SemanticState::requestDispatch()
 void SemanticStateConsumerImpl::requestDispatch()
 {
     if (blocked) {
-        parent->session.getConnection().outputTasks.addOutputTask(this);
-        parent->session.getConnection().getOutput().activateOutput();
+        parent->session.getConnection().addOutputTask(this);
+        parent->session.getConnection().activateOutput();
         blocked = false;
     }
 }
@@ -735,8 +736,8 @@ void SemanticStateConsumerImpl::notify()
 {
     Mutex::ScopedLock l(lock);
     if (notifyEnabled) {
-        parent->session.getConnection().outputTasks.addOutputTask(this);
-        parent->session.getConnection().getOutput().activateOutput();
+        parent->session.getConnection().addOutputTask(this);
+        parent->session.getConnection().activateOutput();
     }
 }
 
@@ -804,16 +805,16 @@ void SemanticState::attached()
 {
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
         i->second->enableNotify();
-        session.getConnection().outputTasks.addOutputTask(i->second.get());
+        session.getConnection().addOutputTask(i->second.get());
     }
-    session.getConnection().getOutput().activateOutput();
+    session.getConnection().activateOutput();
 }
 
 void SemanticState::detached()
 {
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
         i->second->disableNotify();
-        session.getConnection().outputTasks.removeOutputTask(i->second.get());
+        session.getConnection().removeOutputTask(i->second.get());
     }
 }
 

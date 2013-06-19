@@ -23,6 +23,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 
 #include <boost/bind.hpp>
 
@@ -63,9 +64,9 @@ void SessionHandler::executionException(
         errorListener->executionException(code, msg);
 }
 
-ConnectionState& SessionHandler::getConnection() { return connection; }
+Connection& SessionHandler::getConnection() { return connection; }
 
-const ConnectionState& SessionHandler::getConnection() const { return connection; }
+const Connection& SessionHandler::getConnection() const { return connection; }
 
 void SessionHandler::handleDetach() {
     qpid::amqp_0_10::SessionHandler::handleDetach();
@@ -80,7 +81,7 @@ void SessionHandler::handleDetach() {
 void SessionHandler::setState(const std::string& name, bool force) {
     assert(!session.get());
     SessionId id(connection.getUserId(), name);
-    session = connection.broker.getSessionManager().attach(*this, id, force);
+    session = connection.getBroker().getSessionManager().attach(*this, id, force);
 }
 
 void SessionHandler::detaching()
@@ -102,7 +103,7 @@ void SessionHandler::readyToSend() {
 void SessionHandler::attachAs(const std::string& name)
 {
     SessionId id(connection.getUserId(), name);
-    SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
+    SessionState::Configuration config = connection.getBroker().getSessionManager().getSessionConfig();
     session.reset(new SessionState(connection.getBroker(), *this, id, config));
     sendAttach(false);
 }
@@ -118,7 +119,7 @@ void SessionHandler::attached(const std::string& name)
         qpid::amqp_0_10::SessionHandler::attached(name);
     } else {
         SessionId id(connection.getUserId(), name);
-        SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
+        SessionState::Configuration config = connection.getBroker().getSessionManager().getSessionConfig();
         session.reset(new SessionState(connection.getBroker(), *this, id, config));
         markReadyToSend();
     }
