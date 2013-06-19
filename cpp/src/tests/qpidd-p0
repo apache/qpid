@@ -42,5 +42,5 @@ port = s.getsockname()[1]
 print port
 sys.stdout.flush()
 if len(sys.argv) > 1:
-    cmd = sys.argv[1:] + ["--socket-fd", str(s.fileno()), "--listen-disable=tcp", "--port", str(port)]
+    cmd = sys.argv[1:] + ["--socket-fd", str(s.fileno()), "--listen-disable=tcp"]
     os.execvp(sys.argv[1], cmd)
