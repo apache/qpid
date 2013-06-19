@@ -90,7 +90,7 @@ class SessionState : public qpid::SessionState,
 
     /** @pre isAttached() */
     Connection& getConnection();
-    bool isLocal(const ConnectionToken* t) const;
+    bool isLocal(const OwnershipToken* t) const;
 
     Broker& getBroker();
 

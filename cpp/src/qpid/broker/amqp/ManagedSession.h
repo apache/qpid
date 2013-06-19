@@ -23,7 +23,6 @@
  */
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Session.h"
-#include "qpid/broker/ConnectionToken.h"
 #include "qpid/broker/OwnershipToken.h"
 
 namespace qpid {
@@ -41,7 +40,7 @@ class ManagedSession : public qpid::management::Manageable, public OwnershipToke
     ManagedSession(Broker& broker, ManagedConnection& parent, const std::string id);
     virtual ~ManagedSession();
     qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
-    bool isLocal(const ConnectionToken* t) const;
+    bool isLocal(const OwnershipToken* t) const;
     void incomingMessageReceived();
     void incomingMessageAccepted();
     void incomingMessageRejected();

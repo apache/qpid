@@ -26,7 +26,6 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/broker/ConnectionToken.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
@@ -45,6 +44,7 @@
 namespace qpid {
 namespace broker {
 class Connection;
+class ConnectionIdentity;
 }
 namespace sys {
 class Timer;
@@ -361,11 +361,11 @@ private:
     void handleClassInd       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handleSchemaRequest  (framing::Buffer& inBuffer, const std::string& replyToEx, const std::string& replyToKey, uint32_t sequence);
     void handleSchemaResponse (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleAttachRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleAttachRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const ObjectId& objectId);
     void handleGetQuery       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleMethodRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleMethodRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const std::string& userId);
     void handleGetQuery       (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, bool viaLocal);
-    void handleMethodRequest  (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken, bool viaLocal);
+    void handleMethodRequest  (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const std::string& userId, bool viaLocal);
     void handleLocateRequest  (const std::string& body, const std::string& replyToEx, const std::string &replyToKey, const std::string& cid);
 
 
@@ -379,8 +379,9 @@ private:
     std::auto_ptr<EventQueue> sendQueue;
 };
 
-void setManagementExecutionContext(const qpid::broker::Connection*);
-const qpid::broker::Connection* getManagementExecutionContext();
+void setManagementExecutionContext(const broker::ConnectionIdentity&);
+void resetManagementExecutionContext();
+const broker::ConnectionIdentity* getCurrentPublisher();
 }}
 
 #endif  /*!_ManagementAgent_*/

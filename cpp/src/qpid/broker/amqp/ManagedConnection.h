@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/management/Manageable.h"
-#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/OwnershipToken.h"
 #include "qmf/org/apache/qpid/broker/Connection.h"
 
 namespace qpid {
@@ -34,7 +34,7 @@ namespace broker {
 class Broker;
 namespace amqp {
 
-class ManagedConnection : public qpid::management::Manageable, public ConnectionToken
+class ManagedConnection : public qpid::management::Manageable, public OwnershipToken
 {
   public:
     ManagedConnection(Broker& broker, const std::string id);
@@ -47,7 +47,7 @@ class ManagedConnection : public qpid::management::Manageable, public Connection
     void setContainerId(const std::string&);
     const std::string& getContainerId() const;
     qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
-    bool isLocal(const ConnectionToken* t) const;
+    bool isLocal(const OwnershipToken* t) const;
     void incomingMessageReceived();
     void outgoingMessageSent();
   private:

@@ -100,7 +100,7 @@ qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementO
 std::string ManagedConnection::getId() const { return id; }
 std::string ManagedConnection::getUserid() const { return userid; }
 
-bool ManagedConnection::isLocal(const ConnectionToken* t) const
+bool ManagedConnection::isLocal(const OwnershipToken* t) const
 {
     return this == t;
 }
