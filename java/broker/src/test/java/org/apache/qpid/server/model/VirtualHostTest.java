@@ -23,7 +23,6 @@ package org.apache.qpid.server.model;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,14 +38,10 @@ import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.EventManager;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.NullMessageStore;
-import org.apache.qpid.server.store.StateManager;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 
 public class VirtualHostTest extends TestCase
 {
@@ -96,6 +91,7 @@ public class VirtualHostTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
         attributes.put(VirtualHost.STORE_TYPE, MemoryMessageStore.TYPE);
         attributes.put(VirtualHost.STATE, State.QUIESCED);
 
@@ -130,36 +126,11 @@ public class VirtualHostTest extends TestCase
         assertEquals("Unexpected state", State.DELETED, host.getAttribute(VirtualHost.STATE));
     }
 
-    public void testReplicaState()
-    {
-        String hostName = getName();
-        File configPath = TestFileUtils.createTempFile(this, ".xml", "<virtualhosts><virtualhost><" + hostName
-                + "><store><class>" + ReplicaMessageStore.class.getName() + "</class></store></" + hostName
-                + "></virtualhost></virtualhosts>");
-        try
-        {
-            Map<String, Object> attributes = new HashMap<String, Object>();
-            attributes.put(VirtualHost.NAME, hostName);
-            attributes.put(VirtualHost.CONFIG_PATH, configPath.getAbsolutePath());
-
-            VirtualHost host = createHost(attributes);
-
-            assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
-
-            host.setDesiredState(State.INITIALISING, State.ACTIVE);
-
-            assertEquals("Unexpected state", State.REPLICA, host.getAttribute(VirtualHost.STATE));
-        }
-        finally
-        {
-            configPath.delete();
-        }
-    }
-
     private VirtualHost createHost()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
         attributes.put(VirtualHost.STORE_TYPE, MemoryMessageStore.TYPE);
 
         VirtualHost host = createHost(attributes);
@@ -172,36 +143,6 @@ public class VirtualHostTest extends TestCase
                 Collections.<UUID> emptySet(), null);
 
         return new VirtualHostRecoverer(_statisticsGatherer).create(_recovererProvider, entry, _broker);
-    }
-
-    public static final class ReplicaMessageStore extends NullMessageStore
-    {
-        private final EventManager _eventManager = new EventManager();
-        private final StateManager _stateManager = new StateManager(_eventManager);
-
-        @Override
-        public void activate() throws Exception
-        {
-            _stateManager.attainState(org.apache.qpid.server.store.State.INITIALISING);
-            _stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
-            _stateManager.attainState(org.apache.qpid.server.store.State.ACTIVATING);
-            _stateManager.attainState(org.apache.qpid.server.store.State.ACTIVE);
-
-            // this should change the virtual host state to PASSIVE
-            _stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
-        }
-
-        @Override
-        public void addEventListener(EventListener eventListener, Event... events)
-        {
-            _eventManager.addEventListener(eventListener, events);
-        }
-
-        @Override
-        public String getStoreType()
-        {
-            return ReplicaMessageStore.class.getSimpleName();
-        }
     }
 
 }

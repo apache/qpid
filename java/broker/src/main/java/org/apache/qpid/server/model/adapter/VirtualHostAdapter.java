@@ -79,7 +79,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
@@ -91,6 +91,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
+        put(TYPE, String.class);
         put(STORE_PATH, String.class);
         put(STORE_TYPE, String.class);
         put(CONFIG_PATH, String.class);
@@ -114,7 +115,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
-        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
+        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         validateAttributes();
@@ -130,18 +131,23 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
 
         String configurationFile = (String) getAttribute(CONFIG_PATH);
-        String storeType = (String) getAttribute(STORE_TYPE);
+        String type = (String) getAttribute(TYPE);
+
         boolean invalidAttributes = false;
         if (configurationFile == null)
         {
-            if (storeType == null)
+            if (type == null)
             {
                 invalidAttributes = true;
+            }
+            else
+            {
+                validateAttributes(type);
             }
         }
         else
         {
-            if (storeType != null)
+            if (type != null)
             {
                 invalidAttributes = true;
             }
@@ -149,7 +155,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         if (invalidAttributes)
         {
-            throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or 'storeType' and 'storePath' attributes");
+            throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or 'type' attributes");
         }
 
         // pre-load the configuration in order to validate
@@ -161,6 +167,17 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new IllegalConfigurationException("Failed to validate configuration", e);
         }
+    }
+
+    private void validateAttributes(String type)
+    {
+        final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
+        if(factory == null)
+        {
+            throw new IllegalArgumentException("Unknown virtual host type '"+ type +"'.  Valid types are: " + VirtualHostFactory.TYPES.get());
+        }
+        factory.validateAttributes(getActualAttributes());
+
     }
 
     private void populateExchanges()
@@ -295,7 +312,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 _virtualHost.getExchangeRegistry().registerExchange(exchange);
                 if(durable)
                 {
-                    _virtualHost.getMessageStore().createExchange(exchange);
+                    _virtualHost.getDurableConfigurationStore().createExchange(exchange);
                 }
                 synchronized (_exchangeAdapters)
                 {
@@ -417,7 +434,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
                 if(durable)
                 {
-                    _virtualHost.getMessageStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
+                    _virtualHost.getDurableConfigurationStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
                 }
                 synchronized (_queueAdapters)
                 {
@@ -443,6 +460,19 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         throw new IllegalStateException();
     }
+
+
+    public String getType()
+    {
+        return (String)getAttribute(TYPE);
+    }
+
+    public String setType(final String currentType, final String desiredType)
+            throws IllegalStateException, AccessControlException
+    {
+        throw new IllegalStateException();
+    }
+
 
     @Override
     public State getActualState()
@@ -1070,7 +1100,19 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         try
         {
             VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName);
-            _virtualHost = new VirtualHostImpl(_broker.getVirtualHostRegistry(), _brokerStatisticsGatherer, _broker.getSecurityManager(), configuration);
+            String type = configuration.getType();
+            final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
+            if(factory == null)
+            {
+                throw new IllegalArgumentException("Unknown virtual host type: " + type);
+            }
+            else
+            {
+                _virtualHost = factory.createVirtualHost(_broker.getVirtualHostRegistry(),
+                        _brokerStatisticsGatherer,
+                        _broker.getSecurityManager(),
+                        configuration);
+            }
         }
         catch (Exception e)
         {
@@ -1106,8 +1148,16 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             final MyConfiguration basicConfiguration = new MyConfiguration();
             PropertiesConfiguration config = new PropertiesConfiguration();
-            config.addProperty("store.type", (String)getAttribute(STORE_TYPE));
-            config.addProperty("store.environment-path", (String)getAttribute(STORE_PATH));
+            final String type = (String) getAttribute(TYPE);
+            config.addProperty("type", type);
+            VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
+            if(factory != null)
+            {
+                for(Map.Entry<String,Object> entry : factory.createVirtualHostConfiguration(this).entrySet())
+                {
+                    config.addProperty(entry.getKey(), entry.getValue());
+                }
+            }
             basicConfiguration.addConfiguration(config);
 
             CompositeConfiguration compositeConfiguration = new CompositeConfiguration();

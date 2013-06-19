@@ -55,7 +55,7 @@ import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecovery
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
 
-abstract public class AbstractJDBCMessageStore implements MessageStore
+abstract public class AbstractJDBCMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final String DB_VERSION_TABLE_NAME = "QPID_DB_VERSION";
 

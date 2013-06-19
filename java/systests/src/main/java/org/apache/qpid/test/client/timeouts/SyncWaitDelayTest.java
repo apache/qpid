@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.test.client.timeouts;
 
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,8 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
 
+        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".type",
+                StandardVirtualHostFactory.TYPE);
         setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.class", "org.apache.qpid.server.store.SlowMessageStore");
         setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.delays.commitTran.post", String.valueOf(POST_COMMIT_DELAY));
 
@@ -64,7 +67,7 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
 
         _connection = getConnection();
 
-        //Create Queue        
+        //Create Queue
         _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Consumer

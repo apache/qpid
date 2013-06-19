@@ -60,6 +60,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
+import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -770,6 +771,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         else if(SUPPORTED_VIRTUALHOST_STORE_TYPES.equals(name))
         {
             return _supportedVirtualHostStoreTypes;
+        }
+        else if(SUPPORTED_VIRTUALHOST_TYPES.equals(name))
+        {
+            return VirtualHostFactory.TYPES.get();
         }
         else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
         {

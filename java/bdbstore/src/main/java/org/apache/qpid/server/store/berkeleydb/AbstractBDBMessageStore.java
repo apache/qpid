@@ -75,7 +75,7 @@ import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
 import org.apache.qpid.util.FileUtils;
 
-public abstract class AbstractBDBMessageStore implements MessageStore
+public abstract class AbstractBDBMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractBDBMessageStore.class);
 

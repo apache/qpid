@@ -55,8 +55,10 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.plugin.VirtualHostFactory;
+import org.apache.qpid.server.virtualhost.VirtualHostFactoryRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerTestHelper
@@ -96,14 +98,24 @@ public class BrokerTestHelper
             throws Exception
     {
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
-        VirtualHost host = new VirtualHostImpl(virtualHostRegistry, statisticsGatherer, new SecurityManager(mock(Broker.class), false), virtualHostConfiguration);
+        final VirtualHostFactory factory =
+                        virtualHostConfiguration == null ? new StandardVirtualHostFactory()
+                                                         : VirtualHostFactory.FACTORIES.get(virtualHostConfiguration.getType());
+        VirtualHost host = factory.createVirtualHost(virtualHostRegistry,
+                statisticsGatherer,
+                new SecurityManager(mock(Broker.class), false),
+                virtualHostConfiguration);
         virtualHostRegistry.registerVirtualHost(host);
         return host;
     }
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration) throws Exception
     {
-        return new VirtualHostImpl(null, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), virtualHostConfiguration);
+        final VirtualHostFactory factory =
+                virtualHostConfiguration == null ? new StandardVirtualHostFactory()
+                                                 : VirtualHostFactory.FACTORIES.get(virtualHostConfiguration.getType());
+
+        return factory.createVirtualHost(null, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), virtualHostConfiguration);
     }
 
     public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception

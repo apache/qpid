@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.TestFileUtils;
 
 public class VirtualHostRecovererTest extends TestCase
@@ -75,6 +76,8 @@ public class VirtualHostRecovererTest extends TestCase
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+
         attributes.put(VirtualHost.STORE_PATH, "/path/to/virtualhost/store");
         attributes.put(VirtualHost.STORE_TYPE, "DERBY");
         when(entry.getAttributes()).thenReturn(attributes);

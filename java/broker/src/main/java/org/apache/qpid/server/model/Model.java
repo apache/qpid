@@ -31,9 +31,13 @@ public class Model
 {
     /*
      * API version for the broker model
+     *
+     * 1.0 Initial version
+     * 1.1 Addition of mandatory virtual host type / different types of virtual host
+     *
      */
     public static final int MODEL_MAJOR_VERSION = 1;
-    public static final int MODEL_MINOR_VERSION = 0;
+    public static final int MODEL_MINOR_VERSION = 1;
     public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
 
     private static final Model MODEL_INSTANCE = new Model();
