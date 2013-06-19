@@ -39,14 +39,16 @@ namespace sys {
 SocketAddress::SocketAddress(const std::string& host0, const std::string& port0) :
     host(host0),
     port(port0),
-    addrInfo(0)
+    addrInfo(0),
+    currentAddrInfo(0)
 {
 }
 
 SocketAddress::SocketAddress(const SocketAddress& sa) :
     host(sa.host),
     port(sa.port),
-    addrInfo(0)
+    addrInfo(0),
+    currentAddrInfo(0)
 {
 }
 
@@ -104,22 +106,16 @@ std::string SocketAddress::asString(bool numeric) const
     return asString(ai.ai_addr, ai.ai_addrlen);
 }
 
+std::string SocketAddress::getHost() const
+{
+    return host;
+}
+
 bool SocketAddress::nextAddress() {
     bool r = currentAddrInfo->ai_next != 0;
     if (r)
         currentAddrInfo = currentAddrInfo->ai_next;
     return r;
-}
-
-void SocketAddress::setAddrInfoPort(uint16_t port) {
-    if (!currentAddrInfo) return;
-
-    ::addrinfo& ai = *currentAddrInfo;
-    switch (ai.ai_family) {
-    case AF_INET: ((::sockaddr_in*)ai.ai_addr)->sin_port = htons(port); return;
-    case AF_INET6:((::sockaddr_in6*)ai.ai_addr)->sin6_port = htons(port); return;
-    default: throw Exception(QPID_MSG("Unexpected socket type"));
-    }
 }
 
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
