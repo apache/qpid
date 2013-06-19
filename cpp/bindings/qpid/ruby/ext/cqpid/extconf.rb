@@ -25,8 +25,16 @@
 
 require 'mkmf'
 
+(rver, rrev, rmin) = RUBY_VERSION.split('.')
+
+old_ruby = (rver == "1" && rrev < "9") # pre-1.9
+
 # Setup the build environment.
-$CFLAGS = "-fPIC -fno-inline -x c++ -lstdc++"
+if old_ruby
+  $CFLAGS = "-fPIC -fno-inline -x c++ -lstdc++"
+else
+  $CFLAGS = "-fPIC -fno-inline"
+end
 
 REQUIRED_LIBRARIES = [
                       'stdc++',
@@ -68,7 +76,7 @@ have_library('stdc++')
 
 REQUIRED_LIBRARIES.each {|library| require_library library}
 
-REQUIRED_HEADERS.each {|header| require_header header}
+REQUIRED_HEADERS.each {|header| require_header header} if old_ruby
 
 create_makefile('cqpid')
 
