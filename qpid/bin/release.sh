@@ -208,6 +208,20 @@ fi
 
 if [ "PYTHON" == "$PYTHON" ] ; then
   tar -czf artifacts/qpid-python-${VER}.tar.gz qpid-${VER}/python qpid-${VER}/specs
+
+  # create the swigged python sources
+  mkdir qpid-${VER}/python-qpid_messaging-${VER}
+  cp qpid-${VER}/cpp/bindings/qpid/python/python.i \
+     qpid-${VER}/cpp/bindings/qpid/python/LICENSE \
+     qpid-${VER}/cpp/bindings/qpid/python/README \
+     qpid-${VER}/cpp/bindings/qpid/python/ChangeLog \
+     qpid-${VER}/cpp/bindings/qpid/python/extra_dist/CMakeLists.txt \
+     qpid-${VER}/python-qpid_messaging-${VER}
+  # TODO: copy python examples into the directory as well
+  pushd qpid-${VER}
+  tar -czf ../artifacts/python-qpid_messaging-${VER}.tar.gz \
+      python-qpid_messaging-${VER}
+  popd
 fi
 
 if [ "WCF" == "$WCF" ] ; then
