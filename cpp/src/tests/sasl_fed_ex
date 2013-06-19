@@ -122,12 +122,9 @@ DST_TCP_PORT=5807
 SRC_TCP_PORT_2=5802
 DST_TCP_PORT_2=5803
 
-SSL_LIB=${moduledir}/ssl.so
-
 export QPID_SSL_CERT_NAME=${TEST_HOSTNAME}
 
 export QPID_NO_MODULE_DIR=1
-export QPID_LOAD_MODULE=$SSLCONNECTOR_LIB
 export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 export QPID_SSL_CERT_NAME=${TEST_HOSTNAME}
@@ -161,7 +158,6 @@ COMMON_BROKER_OPTIONS="                          \
       --ssl-cert-name $TEST_HOSTNAME             \
       --no-data-dir                              \
       --no-module-dir                            \
-      --load-module ${SSL_LIB}                   \
       --mgmt-enable=yes                          \
       --log-enable info+                         \
       --log-source yes                           \

@@ -581,7 +581,7 @@ acl deny all all
         cluster = HaCluster(
             self, 2,
             args=["--auth", "yes", "--sasl-config", sasl_config,
-                  "--acl-file", acl, "--load-module", os.getenv("ACL_LIB"),
+                  "--acl-file", acl,
                   "--ha-username=zag", "--ha-password=zag", "--ha-mechanism=PLAIN"
                   ],
             client_credentials=Credentials("zag", "zag", "PLAIN"))

@@ -29,13 +29,13 @@ DATA_DIRQ=`pwd`/data_dirq
 trap stop_brokers INT TERM QUIT
 
 start_brokers() {
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIR --load-module $ACL_LIB --acl-file policy.acl --auth no --log-enable trace+:acl  --log-to-file local.log > qpidd.port
+    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIR --acl-file policy.acl --auth no --log-enable trace+:acl  --log-to-file local.log > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRI --load-module $ACL_LIB --acl-file policy.acl --auth no --connection-limit-per-ip 2   --log-to-file locali.log > qpiddi.port
+    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRI --acl-file policy.acl --auth no --connection-limit-per-ip 2   --log-to-file locali.log > qpiddi.port
     LOCAL_PORTI=`cat qpiddi.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRU --load-module $ACL_LIB --acl-file policy.acl --auth no --connection-limit-per-user 2 --log-to-file localu.log > qpiddu.port
+    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRU --acl-file policy.acl --auth no --connection-limit-per-user 2 --log-to-file localu.log > qpiddu.port
     LOCAL_PORTU=`cat qpiddu.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRQ --load-module $ACL_LIB --acl-file policy.acl --auth no --max-queues-per-user 2      --log-to-file localq.log > qpiddq.port
+    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRQ --acl-file policy.acl --auth no --max-queues-per-user 2      --log-to-file localq.log > qpiddq.port
     LOCAL_PORTQ=`cat qpiddq.port`
 }
 
@@ -104,7 +104,7 @@ populate_directories() {
 test_loading_acl_from_absolute_path(){
     POLICY_FILE=$srcdir/policy.acl
     rm -f temp.log
-    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module $ACL_LIB --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
+    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
     ACL_FILE=`grep "notice ACL: Read file" temp.log | sed 's/^.*Read file //'`
    $QPIDD_EXEC --no-module-dir -q --port $PORT
    if test "$ACL_FILE" != "\"$POLICY_FILE\""; then
