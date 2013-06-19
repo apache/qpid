@@ -129,8 +129,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     uint32_t consumerCount;     // Actually a count of all subscriptions, acquiring or not.
     uint32_t browserCount;      // Count of non-acquiring subscriptions.
     OwnershipToken* exclusive;
-    bool persistLastNode;
-    bool inLastNodeFailure;
     std::vector<std::string> traceExclude;
     QueueListeners listeners;
     std::auto_ptr<Messages> messages;
@@ -200,7 +198,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     bool acquire(const qpid::framing::SequenceNumber& position, Message& msg,
                  const qpid::sys::Mutex::ScopedLock& locker);
 
-    void forcePersistent(const Message& msg);
     int getEventMode();
     void dequeueFromStore(boost::intrusive_ptr<PersistableMessage>);
     void abandoned(const Message& message);
@@ -312,12 +309,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     inline bool isAutoDelete() const { return settings.autodelete; }
     QPID_BROKER_EXTERN bool canAutoDelete() const;
     const QueueBindings& getBindings() const { return bindings; }
-
-    /**
-     * used to take messages from in memory and flush down to disk.
-     */
-    QPID_BROKER_EXTERN void setLastNodeFailure();
-    QPID_BROKER_EXTERN void clearLastNodeFailure();
 
     /**
      * dequeue from store (only done once messages is acknowledged)
