@@ -37,6 +37,9 @@ class OwnershipToken;
 // Interface used to hold Connection authentication and object details for use when authenticating
 // publihed management requests.
 class ConnectionIdentity {
+protected:
+    virtual ~ConnectionIdentity() {}
+
 public:
     virtual const OwnershipToken* getOwnership() const = 0;
     virtual const management::ObjectId getObjectId() const = 0;
