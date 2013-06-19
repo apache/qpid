@@ -166,12 +166,12 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
             {
                 oldVersion = modelVersion;
                 StoreUpgrader.upgrade(entry.getStore());
+                entry = entry.getStore().getRootEntry();
+                attributes = entry.getAttributes();
                 modelVersion = MapValueConverter.getStringAttribute(Broker.MODEL_VERSION, attributes, null);
             }
             while(!(modelVersion.equals(oldVersion) || modelVersion.equals(Model.MODEL_VERSION)));
         }
-
-        attributes.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
 
         return new HashMap<String, Object>(attributes);
     }
