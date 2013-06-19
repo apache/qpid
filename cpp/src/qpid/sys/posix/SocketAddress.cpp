@@ -115,17 +115,6 @@ bool SocketAddress::nextAddress() {
     return r;
 }
 
-void SocketAddress::setAddrInfoPort(uint16_t port) {
-    if (!currentAddrInfo) return;
-
-    ::addrinfo& ai = *currentAddrInfo;
-    switch (ai.ai_family) {
-    case AF_INET: ((::sockaddr_in*)(void*)ai.ai_addr)->sin_port = htons(port); return;
-    case AF_INET6:((::sockaddr_in6*)(void*)ai.ai_addr)->sin6_port = htons(port); return;
-    default: throw Exception(QPID_MSG("Unexpected socket type"));
-    }
-}
-
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
 {
     if (!sa.addrInfo) {

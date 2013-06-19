@@ -47,7 +47,7 @@ static class TCPIOPlugin : public Plugin {
             if (broker->shouldListen("tcp")) {
                 SocketAcceptor* aa = new SocketAcceptor(opts.tcpNoDelay, false, opts.maxNegotiateTime, broker->getTimer());
                 ta.reset(aa);
-                port = aa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(opts.port), opts.connectionBacklog, &createSocket);
+                port = aa->listen(opts.listenInterfaces, opts.port, opts.connectionBacklog, &createSocket);
                 if ( port!=0 ) {
                     QPID_LOG(notice, "Listening on TCP/TCP6 port " << port);
                 }
