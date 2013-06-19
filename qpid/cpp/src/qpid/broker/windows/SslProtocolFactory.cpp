@@ -125,7 +125,7 @@ static struct SslPlugin : public Plugin {
                 boost::shared_ptr<SslProtocolFactory> protocol(new SslProtocolFactory(opts, options, broker->getTimer()));
                 uint16_t port =
                     protocol->listen(opts.listenInterfaces,
-                                     boost::lexical_cast<std::string>(options.port), opts.connectionBacklog,
+                                     options.port, opts.connectionBacklog,
                                      &createSocket);
                 QPID_LOG(notice, "Listening for SSL connections on TCP port " << port);
                 broker->registerTransport("ssl", protocol, protocol, port);

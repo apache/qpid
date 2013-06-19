@@ -265,7 +265,7 @@ class Broker(Popen):
             if BrokerTest.sql_clfs_store_lib:
                 args = args + ['--load-module', BrokerTest.sql_clfs_store_lib]
                 args = args + ['--catalog', BrokerTest.sql_catalog]
-        cmd = [BrokerTest.qpidd_exec, "--port", port, "--no-module-dir"] + args
+        cmd = [BrokerTest.qpidd_exec, "--port", port, "--interface", "127.0.0.1", "--no-module-dir"] + args
         if not "--auth" in args: cmd.append("--auth=no")
         if wait != None:
             cmd += ["--wait", str(wait)]
