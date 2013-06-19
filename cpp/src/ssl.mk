@@ -19,7 +19,7 @@
 #
 # Makefile fragment, conditionally included in Makefile.am
 #
-libsslcommon_la_SOURCES = \
+libqpidcommon_la_SOURCES += \
   qpid/sys/ssl/check.h \
   qpid/sys/ssl/check.cpp \
   qpid/sys/ssl/util.h \
@@ -27,41 +27,21 @@ libsslcommon_la_SOURCES = \
   qpid/sys/ssl/SslSocket.h \
   qpid/sys/ssl/SslSocket.cpp
 
-SSLCOMMON_VERSION_INFO  = 2:0:0
-libsslcommon_la_LDFLAGS = -version-info $(SSLCOMMON_VERSION_INFO)
-libsslcommon_la_LIBADD= -lnss3 -lssl3 -lnspr4 libqpidcommon.la
-libsslcommon_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
+libqpidcommon_la_LIBADD += -lnss3 -lssl3 -lnspr4
+libqpidcommon_la_CXXFLAGS += $(SSL_CFLAGS)
 
-lib_LTLIBRARIES +=  libsslcommon.la
-
-ssl_la_SOURCES = \
+libqpidbroker_la_SOURCES += \
   qpid/sys/SslPlugin.cpp
 
-ssl_la_LIBADD= libqpidbroker.la libsslcommon.la
+libqpidbroker_la_CXXFLAGS += $(SSL_CFLAGS)
 
-ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS) -D_IN_QPID_BROKER
-
-ssl_la_LDFLAGS = $(PLUGINLDFLAGS)
-
-dmoduleexec_LTLIBRARIES += ssl.la
-
-sslconnector_la_SOURCES = \
+libqpidclient_la_SOURCES += \
   qpid/client/SslConnector.cpp
 
+libqpidclient_la_CXXFLAGS += $(SSL_CFLAGS)
+
 if HAVE_PROTON
-sslconnector_la_SOURCES += \
+libqpidclient_la_SOURCES += \
   qpid/messaging/amqp/SslTransport.cpp \
   qpid/messaging/amqp/SslTransport.h
 endif #HAVE_PROTON
-
-
-sslconnector_la_LIBADD = \
-  libqpidclient.la \
-  libsslcommon.la
-
-sslconnector_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"  $(SSL_CFLAGS)
-
-sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
-
-cmoduleexec_LTLIBRARIES += \
-  sslconnector.la

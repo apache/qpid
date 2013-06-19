@@ -34,6 +34,7 @@ include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(FindBoost)
 include(FindDoxygen)
+include(FindPkgConfig)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
@@ -296,6 +297,44 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (HIDE_SYMBOL_FLAGS "")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  # Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
+  set (win32_winnt_default OFF)
+    if (MSVC)
+      set (win32_winnt_default ON)
+    endif (MSVC)
+  option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+if (MSVC)
+  add_definitions(
+    /D "_CRT_NONSTDC_NO_WARNINGS"
+    /D "NOMINMAX"
+    /D "WIN32_LEAN_AND_MEAN"
+    /wd4244
+    /wd4800
+    /wd4355
+    /wd4267
+  )
+
+  if (SET_WIN32_WINNT)
+    add_definitions(/D "_WIN32_WINNT=0x0502")
+  endif (SET_WIN32_WINNT)
+
+  # set the RelWithDebInfo compile/link switches to equal Release
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
+  set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
+
+  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src)
+    # Set the windows version for the .NET Binding cpp project
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/org.apache.qpid.messaging.template.rc
+                   ${CMAKE_CURRENT_BINARY_DIR}/windows/resources/org.apache.qpid.messaging.rc)
+    # Set the windows version for the .NET Binding sessionreceiver project
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/sessionreceiver/properties/sessionreceiver-AssemblyInfo-template.cs
+                   ${CMAKE_CURRENT_BINARY_DIR}/windows/generated_src/sessionreceiver-AssemblyInfo.cs)
+  endif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src)
+endif (MSVC)
+
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
 if (NOT ENABLE_WARNINGS)
   set (WARNING_FLAGS "")
@@ -523,6 +562,7 @@ if (HAVE_SASL AND HAVE_SASL_H)
 endif (HAVE_SASL AND HAVE_SASL_H)
 
 option(BUILD_SASL "Build with Cyrus SASL support" ${sasl_default})
+
 if (BUILD_SASL)
   if (NOT HAVE_SASL)
     message(FATAL_ERROR "Cyrus SASL support requested but libsasl2 not found")
@@ -539,6 +579,78 @@ if (BUILD_SASL)
      )
   set(qpidcommon_sasl_lib sasl2)
 endif (BUILD_SASL)
+
+# Optional SSL/TLS support. Requires Netscape Portable Runtime on Linux.
+
+# According to some cmake docs this is not a reliable way to detect
+# pkg-configed libraries, but it's no worse than what we did under
+# autotools
+pkg_check_modules(NSS nss)
+
+set (ssl_default ${ssl_force})
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (ssl_default ON)
+else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  if (NSS_FOUND)
+    set (ssl_default ON)
+  endif (NSS_FOUND)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+option(BUILD_SSL "Build with support for SSL" ${ssl_default})
+
+if (BUILD_SSL)
+  if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+    set (sslcommon_SOURCES
+         qpid/sys/windows/SslAsynchIO.cpp
+    )
+    set (ssl_SOURCES
+         qpid/broker/windows/SslProtocolFactory.cpp
+    )
+    set (sslconnector_SOURCES
+         qpid/client/windows/SslConnector.cpp
+    )
+    set (windows_ssl_libs Secur32.lib)
+    set (windows_ssl_server_libs Crypt32.lib)
+  else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+    if (NOT NSS_FOUND)
+      message(FATAL_ERROR "nss/nspr not found, required for ssl support")
+    endif (NOT NSS_FOUND)
+
+    foreach(f ${NSS_CFLAGS})
+      set (NSS_COMPILE_FLAGS "${NSS_COMPILE_FLAGS} ${f}")
+    endforeach(f)
+
+    foreach(f ${NSS_LDFLAGS})
+      set (NSS_LINK_FLAGS "${NSS_LINK_FLAGS} ${f}")
+    endforeach(f)
+
+    set (sslcommon_SOURCES
+         qpid/sys/ssl/check.h
+         qpid/sys/ssl/check.cpp
+         qpid/sys/ssl/util.h
+         qpid/sys/ssl/util.cpp
+         qpid/sys/ssl/SslSocket.h
+         qpid/sys/ssl/SslSocket.cpp
+    )
+
+    set (ssl_SOURCES
+         qpid/sys/SslPlugin.cpp
+    )
+
+    set (sslconnector_SOURCES
+         qpid/client/SslConnector.cpp
+         qpid/messaging/amqp/SslTransport.cpp
+    )
+
+    set_source_files_properties (
+      ${sslcommon_SOURCES}
+      ${ssl_SOURCES}
+      ${sslconnector_SOURCES}
+      PROPERTIES
+      COMPILE_FLAGS "${NSS_COMPILE_FLAGS}"
+    )
+  endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+endif (BUILD_SSL)
 
 # See if XML Exchange is desired and prerequisites are available
 CHECK_LIBRARY_EXISTS (xerces-c _init "" HAVE_XERCES)
@@ -557,6 +669,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_XML "Build with XML Exchange" ${xml_default})
+
 if (BUILD_XML)
   if (NOT HAVE_XERCES)
     message(FATAL_ERROR "XML Exchange support requested but xerces-c library not found")
@@ -591,7 +704,9 @@ endif (BUILD_XML)
 
 # Build the ACL plugin
 set (acl_default ON)
+
 option(BUILD_ACL "Build ACL enforcement broker plugin" ${acl_default})
+
 if (BUILD_ACL)
   set (acl_SOURCES
        qpid/acl/Acl.cpp
@@ -608,24 +723,12 @@ if (BUILD_ACL)
        qpid/acl/AclValidator.cpp
        qpid/acl/AclValidator.h
       )
-  # Windows builds the ACL code into the qpidbroker library; see QPID-1842
-  # for history and rationale. If this is changed, remove the acl_SOURCES from
-  # the qpidbroker platform-specific source list.
-  if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
-    add_library (acl MODULE ${acl_SOURCES})
-    target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-    set_target_properties (acl PROPERTIES
-                           PREFIX ""
-                           COMPILE_DEFINITIONS _IN_QPID_BROKER
-                           LINK_FLAGS "${CATCH_UNDEFINED}")
-    install (TARGETS acl
-             DESTINATION ${QPIDD_MODULE_DIR}
-             COMPONENT ${QPID_COMPONENT_BROKER})
-  endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (BUILD_ACL)
 
 set (ha_default ON)
+
 option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
+
 if (BUILD_HA)
     set (ha_SOURCES
 	qpid/ha/QueueSnapshot.h
@@ -689,9 +792,6 @@ endif (BUILD_HA)
 # Check for optional RDMA support requirements
 include (rdma.cmake)
 
-# Check for optional SSL support requirements
-include (ssl.cmake)
-
 # Check for optional AMQP 1.0 support requirements
 include (amqp.cmake)
 
@@ -704,44 +804,7 @@ set (qpid_memstat_module
   qpid/sys/MemStat.cpp
 )
 
-# Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
-set (win32_winnt_default OFF)
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    if (MSVC)
-        set (win32_winnt_default ON)
-    endif (MSVC)
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
-
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  if (MSVC)
-    add_definitions(
-      /D "_CRT_NONSTDC_NO_WARNINGS"
-      /D "NOMINMAX"
-      /D "WIN32_LEAN_AND_MEAN"
-      /wd4244
-      /wd4800
-      /wd4355
-      /wd4267
-    )
-    if (SET_WIN32_WINNT)
-        add_definitions(/D "_WIN32_WINNT=0x0502")
-    endif (SET_WIN32_WINNT)
-
-    # set the RelWithDebInfo compile/link switches to equal Release
-    set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
-    set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
-
-    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src)
-        # Set the windows version for the .NET Binding cpp project
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/org.apache.qpid.messaging.template.rc
-                       ${CMAKE_CURRENT_BINARY_DIR}/windows/resources/org.apache.qpid.messaging.rc)
-        # Set the windows version for the .NET Binding sessionreceiver project
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/sessionreceiver/properties/sessionreceiver-AssemblyInfo-template.cs
-                       ${CMAKE_CURRENT_BINARY_DIR}/windows/generated_src/sessionreceiver-AssemblyInfo.cs)
-    endif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src)
-  endif (MSVC)
-
   set (qpidtypes_platform_SOURCES
     qpid/sys/windows/uuid.cpp
   )
@@ -767,7 +830,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/Thread.cpp
     qpid/sys/windows/Time.cpp
     qpid/client/windows/SaslFactory.cpp
-    ${sslcommon_windows_SOURCES}
   )
 
   set (qpidcommon_platform_LIBS
@@ -775,14 +837,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
-    ${acl_SOURCES}
-    ${sslbroker_windows_SOURCES}
   )
   set (qpidbroker_platform_LIBS
     ${windows_ssl_libs} ${windows_ssl_server_libs}
   )
   set (qpidclient_platform_SOURCES
-    ${sslclient_windows_SOURCES}
     qpid/client/windows/ClientDllMain.cpp
   )
   set (qpidclient_platform_LIBS
@@ -903,6 +962,7 @@ set (qpidcommon_SOURCES
      ${rgen_framing_srcs}
      ${qpidcommon_platform_SOURCES}
      ${qpidcommon_sasl_source}
+     ${sslcommon_SOURCES}
      qpid/assert.cpp
      qpid/Address.cpp
      qpid/DataDir.cpp
@@ -1005,7 +1065,8 @@ target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
                        VERSION ${qpidcommon_version} 
-                       SOVERSION ${qpidcommon_version_major})
+                       SOVERSION ${qpidcommon_version_major}
+                       LINK_FLAGS ${NSS_LINK_FLAGS})
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
@@ -1031,6 +1092,7 @@ install_pdb (qpidtypes ${QPID_COMPONENT_COMMON})
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
      ${qpidclient_platform_SOURCES}
+     ${sslconnector_SOURCES}
      qpid/client/Bounds.cpp
      qpid/client/Completion.cpp
      qpid/client/Connection.cpp
@@ -1173,6 +1235,8 @@ endif (MSVC)
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
      ${qpidbroker_platform_SOURCES}
+     ${acl_SOURCES}
+     ${ssl_SOURCES}
      qpid/amqp_0_10/Connection.h
      qpid/amqp_0_10/Connection.cpp
      qpid/broker/Broker.cpp

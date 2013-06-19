@@ -62,7 +62,6 @@ $QPIDD_EXEC                                  \
   --log-source yes                           \
   --log-to-file $tmp_root/qpidd_1.log        \
   --sasl-config=$sasl_config_file            \
-  --load-module acl.so                       \
   --acl-file $tmp_root/sasl_fed.acl          \
   -d > $tmp_root/broker_1_port
 
@@ -81,7 +80,6 @@ $QPIDD_EXEC                                  \
   --log-source yes                           \
   --log-to-file $tmp_root/qpidd_2.log        \
   --sasl-config=$sasl_config_file            \
-  --load-module acl.so                       \
   --acl-file $tmp_root/sasl_fed.acl          \
   -d > $tmp_root/broker_2_port
 
