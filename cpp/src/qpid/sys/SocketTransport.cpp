@@ -35,6 +35,7 @@
 #include "qpid/sys/SystemInfo.h"
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace qpid {
 namespace sys {
@@ -130,9 +131,11 @@ void SocketAcceptor::addListener(Socket* socket)
     listeners.push_back(socket);
 }
 
-uint16_t SocketAcceptor::listen(const std::vector<std::string>& interfaces, const std::string& port, int backlog, const SocketFactory& factory)
+uint16_t SocketAcceptor::listen(const std::vector<std::string>& interfaces, uint16_t port, int backlog, const SocketFactory& factory)
 {
     std::vector<std::string> addresses = expandInterfaces(interfaces);
+    std::string sport(boost::lexical_cast<std::string>(port));
+
     if (addresses.empty()) {
         // We specified some interfaces, but couldn't find addresses for them
         QPID_LOG(warning, "TCP/TCP6: No specified network interfaces found: Not Listening");
@@ -142,7 +145,7 @@ uint16_t SocketAcceptor::listen(const std::vector<std::string>& interfaces, cons
     int listeningPort = 0;
     for (unsigned i = 0; i<addresses.size(); ++i) {
         QPID_LOG(debug, "Using interface: " << addresses[i]);
-        SocketAddress sa(addresses[i], port);
+        SocketAddress sa(addresses[i], sport);
 
         // We must have at least one resolved address
         QPID_LOG(info, "Listening to: " << sa.asString())
@@ -153,10 +156,18 @@ uint16_t SocketAcceptor::listen(const std::vector<std::string>& interfaces, cons
 
         listeningPort = lport;
 
+        // If we were told to figure out the port then only allow listening to one address
+        if (port==0) {
+            // Print warning if the user specified more than one interface
+            // or there if is another address for this one
+            if (sa.nextAddress() || addresses.size()>1 ) {
+                QPID_LOG(warning, "Specified port=0: Only listened to: " << sa.asString());
+            }
+            break;
+        }
+
         // Try any other resolved addresses
         while (sa.nextAddress()) {
-            // Hack to ensure that all listening connections are on the same port
-            sa.setAddrInfoPort(listeningPort);
             QPID_LOG(info, "Listening to: " << sa.asString())
             Socket* s = factory();
             uint16_t lport = s->listen(sa, backlog);

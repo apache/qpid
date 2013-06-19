@@ -123,7 +123,7 @@ static struct SslPlugin : public Plugin {
             if (broker->shouldListen("ssl")) {
                 SocketAcceptor* sa =
                     new SocketAcceptor(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer());
-                    port = sa->listen(opts.listenInterfaces, boost::lexical_cast<std::string>(options.port), opts.connectionBacklog,
+                    port = sa->listen(opts.listenInterfaces, options.port, opts.connectionBacklog,
                                         multiplex ?
                                             boost::bind(&createServerSSLMuxSocket, options) :
                                             boost::bind(&createServerSSLSocket, options));

@@ -63,7 +63,7 @@ public:
     SocketAcceptor(bool tcpNoDelay, bool nodict, uint32_t maxNegotiateTime, Timer& timer, const EstablishedCallback& established);
 
     // Create sockets from list of interfaces and listen to them
-    uint16_t listen(const std::vector<std::string>& interfaces, const std::string& port, int backlog, const SocketFactory& factory);
+    uint16_t listen(const std::vector<std::string>& interfaces, uint16_t port, int backlog, const SocketFactory& factory);
 
     // Import sockets that are already being listened to
     void addListener(Socket* socket);

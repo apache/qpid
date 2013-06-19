@@ -44,7 +44,7 @@ trap cleanup EXIT
 error() { echo $*; exit 1; }
 
 # Don't need --no-module-dir or --no-data-dir as they are set as env vars in test_env.sh
-COMMON_OPTS="--daemon --auth no --config $CONFIG"
+COMMON_OPTS="--interface [::1] --daemon --auth no --config $CONFIG"
 
 # Record all broker ports started
 unset PORTS
