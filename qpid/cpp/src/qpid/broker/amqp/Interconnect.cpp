@@ -84,6 +84,7 @@ void Interconnect::process()
             QPID_LOG_CAT(debug, model, id << " interconnect opened");
             pn_connection_set_container(connection, broker.getFederationTag().c_str());
             pn_connection_open(connection);
+            out.connectionEstablished();
 
             pn_session_t* s = pn_session(connection);
             pn_session_open(s);
