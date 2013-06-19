@@ -22,7 +22,6 @@
 
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/FedOps.h"
-#include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
@@ -73,7 +72,7 @@ Bridge::Bridge(const std::string& _name, Link* _link, framing::ChannelId _id,
     queueName(_queueName.empty() ? "qpid.bridge_queue_" + name + "_" + link->getBroker()->getFederationTag()
               : _queueName),
     altEx(ae), persistenceId(0),
-    connState(0), conn(0), initialize(init), detached(false),
+    conn(0), initialize(init), detached(false),
     useExistingQueue(!_queueName.empty()),
     sessionName("qpid.bridge_session_" + name + "_" + link->getBroker()->getFederationTag())
 {
@@ -104,7 +103,6 @@ Bridge::~Bridge()
 void Bridge::create(Connection& c)
 {
     detached = false;           // Reset detached in case we are recovering.
-    connState = &c;
     conn = &c;
 
     SessionHandler& sessionHandler = c.getChannel(channel);
@@ -363,7 +361,7 @@ void Bridge::propagateBinding(const string& key, const string& tagList,
                               qpid::framing::FieldTable* extra_args)
 {
     const string& localTag = link->getBroker()->getFederationTag();
-    const string& peerTag  = connState->getFederationPeerTag();
+    const string& peerTag  = conn->getFederationPeerTag();
 
     if (tagList.find(peerTag) == tagList.npos) {
          FieldTable bindArgs;

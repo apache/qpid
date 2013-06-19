@@ -44,7 +44,7 @@
 
 namespace qpid {
 namespace broker {
-class ConnectionState;
+class Connection;
 }
 namespace sys {
 class Timer;
@@ -379,8 +379,8 @@ private:
     std::auto_ptr<EventQueue> sendQueue;
 };
 
-void setManagementExecutionContext(const qpid::broker::ConnectionState*);
-const qpid::broker::ConnectionState* getManagementExecutionContext();
+void setManagementExecutionContext(const qpid::broker::Connection*);
+const qpid::broker::Connection* getManagementExecutionContext();
 }}
 
 #endif  /*!_ManagementAgent_*/

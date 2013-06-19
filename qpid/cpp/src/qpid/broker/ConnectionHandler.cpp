@@ -33,6 +33,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/sys/Time.h"
 #include "qpid/broker/AclModule.h"
@@ -254,7 +255,7 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
-    std::vector<Url> urls = connection.broker.getKnownBrokers();
+    std::vector<Url> urls = connection.getBroker().getKnownBrokers();
     framing::Array array(0x95); // str16 array
     for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i)
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));

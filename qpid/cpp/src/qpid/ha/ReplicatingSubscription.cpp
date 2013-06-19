@@ -31,7 +31,6 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/SessionContext.h"
-#include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"

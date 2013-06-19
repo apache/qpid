@@ -28,23 +28,29 @@
 #include <queue>
 
 #include "qpid/broker/BrokerImportExport.h"
+
 #include "qpid/broker/ConnectionHandler.h"
-#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/ConnectionToken.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/RefCounted.h"
+#include "qpid/Url.h"
 #include "qpid/ptr_map.h"
 
 #include "qmf/org/apache/qpid/broker/Connection.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
 
 #include <algorithm>
 
 namespace qpid {
 namespace sys {
+class ConnectionOutputHandler;
 class Timer;
 class TimerTask;
 }
@@ -58,10 +64,45 @@ class SessionHandler;
 struct ConnectionTimeoutTask;
 
 class Connection : public sys::ConnectionInputHandler,
-                   public ConnectionState,
+                   public ConnectionToken, public management::Manageable,
                    public RefCounted
 {
   public:
+    uint32_t getFrameMax() const { return framemax; }
+    uint16_t getHeartbeat() const { return heartbeat; }
+    uint16_t getHeartbeatMax() const { return heartbeatmax; }
+
+    void setFrameMax(uint32_t fm) { framemax = std::max(fm, (uint32_t) 4096); }
+    void setHeartbeat(uint16_t hb) { heartbeat = hb; }
+    void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
+
+    const std::string& getUserId() const { return userId; }
+
+    void setUrl(const std::string& _url) { url = _url; }
+    const std::string& getUrl() const { return url; }
+
+    void setUserProxyAuth(const bool b);
+    bool isUserProxyAuth() const { return userProxyAuth || federationPeerTag.size() > 0; } // links can proxy msgs with non-matching auth ids
+    bool isFederationLink() const { return federationPeerTag.size() > 0; }
+    void setFederationPeerTag(const std::string& tag) { federationPeerTag = std::string(tag); }
+    const std::string& getFederationPeerTag() const { return federationPeerTag; }
+    std::vector<Url>& getKnownHosts() { return knownHosts; }
+
+    /**@return true if user is the authenticated user on this connection.
+     * If id has the default realm will also compare plain username.
+     */
+    bool isAuthenticatedUser(const std::string& id) const {
+        return (id == userId || (isDefaultRealm && id == userName));
+    }
+
+    Broker& getBroker() { return broker; }
+
+    sys::ConnectionOutputHandler& getOutput() { return *out; }
+    void activateOutput();
+    void addOutputTask(OutputTask*);
+    void removeOutputTask(OutputTask*);
+    framing::ProtocolVersion getVersion() const { return version; }
+
     Connection(sys::ConnectionOutputHandler* out,
                Broker& broker,
                const std::string& mgmtId,
@@ -111,10 +152,8 @@ class Connection : public sys::ConnectionInputHandler,
     void setUserId(const std::string& uid);
 
     // credentials for connected client
-    const std::string& getUserId() const { return ConnectionState::getUserId(); }
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
-    void setUserProxyAuth(bool b);
 
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
@@ -137,18 +176,39 @@ class Connection : public sys::ConnectionInputHandler,
     const framing::FieldTable& getClientProperties() const { return clientProperties; }
 
   private:
+    // Management object is used in the constructor so must be early
+    qmf::org::apache::qpid::broker::Connection::shared_ptr mgmtObject;
+
+    //contained output tasks
+    sys::AggregateOutput outputTasks;
+
+    boost::scoped_ptr<framing::FrameHandler> outboundTracker;
+    boost::scoped_ptr<sys::ConnectionOutputHandler> out;
+
+    Broker& broker;
+
+    framing::ProtocolVersion version;
+    uint32_t framemax;
+    uint16_t heartbeat;
+    uint16_t heartbeatmax;
+    std::string userId;
+    std::string url;
+    bool userProxyAuth;
+    std::string federationPeerTag;
+    std::vector<Url> knownHosts;
+    std::string userName;
+    bool isDefaultRealm;
+
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
-    typedef std::vector<boost::shared_ptr<Queue> >::iterator queue_iterator;
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
-    ConnectionHandler adapter;
     const bool link;
+    ConnectionHandler adapter;
     bool mgmtClosing;
     const std::string mgmtId;
     sys::Mutex ioCallbackLock;
     std::queue<boost::function0<void> > ioCallbacks;
-    qmf::org::apache::qpid::broker::Connection::shared_ptr mgmtObject;
     LinkRegistry& links;
     management::ManagementAgent* agent;
     sys::Timer& timer;
@@ -157,25 +217,7 @@ class Connection : public sys::ConnectionInputHandler,
     uint64_t objectId;
     framing::FieldTable clientProperties;
 
-    /**
-     * Chained ConnectionOutputHandler that allows outgoing frames to be
-     * tracked (for updating mgmt stats).
-     */
-    class OutboundFrameTracker : public sys::ConnectionOutputHandler
-    {
-      public:
-        OutboundFrameTracker(Connection&);
-        void close();
-        void abort();
-        void connectionEstablished();
-        void activateOutput();
-        void handle(framing::AMQFrame&);
-        void wrap(sys::ConnectionOutputHandlerPtr&);
-      private:
-        Connection& con;
-        sys::ConnectionOutputHandler* next;
-    };
-    OutboundFrameTracker outboundTracker;
+friend class OutboundFrameTracker;
 
     void sent(const framing::AMQFrame& f);
     void doIoCallbacks();

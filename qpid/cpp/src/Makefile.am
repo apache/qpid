@@ -482,7 +482,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/ConnectionInputHandler.h		\
   qpid/sys/ConnectionInputHandlerFactory.h	\
   qpid/sys/ConnectionOutputHandler.h		\
-  qpid/sys/ConnectionOutputHandlerPtr.h		\
   qpid/sys/CopyOnWriteArray.h			\
   qpid/sys/DeletionManager.h			\
   qpid/sys/DispatchHandle.cpp			\
@@ -592,8 +591,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionHandler.h \
-  qpid/broker/ConnectionState.cpp \
-  qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionToken.h \
   qpid/broker/Consumer.h \
   qpid/broker/Credit.h \

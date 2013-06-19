@@ -20,7 +20,6 @@
  */
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/SessionManager.h"
@@ -97,7 +96,7 @@ uint16_t SessionState::getChannel() const {
     return handler->getChannel();
 }
 
-ConnectionState& SessionState::getConnection() {
+Connection& SessionState::getConnection() {
     assert(isAttached());
     return handler->getConnection();
 }
