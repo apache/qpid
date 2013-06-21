@@ -26,6 +26,8 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 
+import org.apache.qpid.server.model.Broker;
+
 /**
  * This tests the behaviour of transactional sessions when the {@code transactionTimeout} configuration
  * is set for a virtual host.
@@ -39,6 +41,9 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 
     protected void configure() throws Exception
     {
+        // switch off connection close in order to test timeout on publishing of unroutable messages
+        getBrokerConfiguration().setBrokerAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, false);
+
         // Setup housekeeping every 100ms
         setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
 

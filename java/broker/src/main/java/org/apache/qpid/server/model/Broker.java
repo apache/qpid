@@ -73,6 +73,7 @@ public interface Broker extends ConfiguredObject
 
     String CONNECTION_SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
+    String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
 
     String VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD            = "virtualhost.housekeepingCheckPeriod";
     String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "virtualhost.storeTransactionIdleTimeoutClose";
@@ -113,6 +114,7 @@ public interface Broker extends ConfiguredObject
                               VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD,
                               CONNECTION_SESSION_COUNT_LIMIT,
                               CONNECTION_HEART_BEAT_DELAY,
+                              CONNECTION_CLOSE_WHEN_NO_ROUTE,
                               STATISTICS_REPORTING_PERIOD,
                               STATISTICS_REPORTING_RESET_ENABLED,
                               STORE_TYPE,

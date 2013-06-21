@@ -14,6 +14,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -39,6 +40,9 @@ public class ExchangeManagementTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         getBrokerConfiguration().addJmxManagementConfiguration();
+
+        // to test exchange selectors the publishing of unroutable messages should be allowed
+        getBrokerConfiguration().setBrokerAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, false);
 
         _jmxUtils = new JMXTestUtils(this);
 

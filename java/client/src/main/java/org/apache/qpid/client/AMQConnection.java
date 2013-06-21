@@ -844,7 +844,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    public void     close() throws JMSException
+    public void close() throws JMSException
     {
         close(DEFAULT_TIMEOUT);
     }
@@ -859,9 +859,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (!setClosed())
         {
             setClosing(true);
-            try{
+            try
+            {
                 doClose(sessions, timeout);
-            }finally{
+            }
+            finally
+            {
                 setClosing(false);
             }
         }
@@ -1593,5 +1596,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public boolean validateQueueOnSend()
     {
         return _validateQueueOnSend;
+    }
+
+    @Override
+    protected boolean setClosed()
+    {
+        return super.setClosed();
     }
 }

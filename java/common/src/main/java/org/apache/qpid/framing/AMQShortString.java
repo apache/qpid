@@ -794,9 +794,30 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return false;  //To change body of created methods use File | Settings | File Templates.
     }
 
+    public static AMQShortString valueOf(Object obj, boolean truncate, boolean nullAsEmptyString)
+    {
+        if (obj == null)
+        {
+            if (nullAsEmptyString)
+            {
+                return EMPTY_STRING;
+            }
+            return null;
+        }
+        else
+        {
+            String value = String.valueOf(obj);
+            if (truncate && value.length() > AMQShortString.MAX_LENGTH)
+            {
+                value = value.substring(0, AMQShortString.MAX_LENGTH - 3) + "...";
+            }
+            return valueOf(value);
+        }
+    }
+
     public static AMQShortString valueOf(Object obj)
     {
-        return obj == null ? null : AMQShortString.valueOf(String.valueOf(obj));
+        return valueOf(obj, false, false);
     }
 
     public static AMQShortString valueOf(String obj)
