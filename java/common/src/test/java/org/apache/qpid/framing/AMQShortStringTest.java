@@ -300,6 +300,32 @@ public class AMQShortStringTest extends TestCase
         assertEquals("join result differs from expected", expected.toString(), result.asString());
     }
 
+    public void testValueOf()
+    {
+        String string = buildString('a', 255);
+        AMQShortString shortString = AMQShortString.valueOf(string, true, true);
+        assertEquals("Unexpected string from valueOf", string, shortString.asString());
+    }
+
+    public void testValueOfTruncated()
+    {
+        String string = buildString('a', 256);
+        AMQShortString shortString = AMQShortString.valueOf(string, true, true);
+        assertEquals("Unexpected truncated string from valueOf", string.substring(0, AMQShortString.MAX_LENGTH -3) + "...", shortString.asString());
+    }
+
+    public void testValueOfNulAsEmptyString()
+    {
+        AMQShortString shortString = AMQShortString.valueOf(null, true, true);
+        assertEquals("Unexpected empty string from valueOf", AMQShortString.EMPTY_STRING, shortString);
+    }
+
+    public void testValueOfNullAsNull()
+    {
+        AMQShortString shortString = AMQShortString.valueOf(null, true, false);
+        assertEquals("Unexpected null string from valueOf", null, shortString);
+    }
+
     /**
      * A helper method to generate a string with given length containing given
      * character

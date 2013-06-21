@@ -19,6 +19,8 @@
 package org.apache.qpid.server.security.acl;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -306,7 +308,11 @@ public class ExternalACLTest extends AbstractACLTestCase
 
         conn.start();
 
-        MessageProducer sender = sess.createProducer(sess.createQueue("example.RequestQueue"));
+        Queue queue = sess.createQueue("example.RequestQueue");
+
+        ((AMQSession<?,?>)sess).declareAndBind((AMQDestination)queue);
+
+        MessageProducer sender = sess.createProducer(queue);
 
         sender.send(sess.createTextMessage("test"));
 
@@ -315,7 +321,6 @@ public class ExternalACLTest extends AbstractACLTestCase
 
         conn.close();
     }
-
 
     public void setUpRequestResponseSuccess() throws Exception
     {

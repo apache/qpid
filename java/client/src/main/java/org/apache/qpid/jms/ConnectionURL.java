@@ -57,6 +57,19 @@ public interface ConnectionURL
      * the DLQ (or dropped) when delivery count exceeds the maximum.
      */
     public static final String OPTIONS_REJECT_BEHAVIOUR = "rejectbehaviour";
+
+    /**
+     * <p>
+     * This option is only applicable for 0-8/0-9/0-9-1 protocol connections.
+     * </p>
+     * <p>
+     * It tells the client to request whether the broker should close the
+     * connection when a mandatory message isn't routable, rather than return
+     * the message to the client as it normally would.
+     * </p>
+     */
+    public static final String OPTIONS_CLOSE_WHEN_NO_ROUTE = "closeWhenNoRoute";
+
     public static final String OPTIONS_DEFAULT_TOPIC_EXCHANGE = "defaultTopicExchange";
     public static final String OPTIONS_DEFAULT_QUEUE_EXCHANGE = "defaultQueueExchange";
     public static final String OPTIONS_TEMPORARY_TOPIC_EXCHANGE = "temporaryTopicExchange";

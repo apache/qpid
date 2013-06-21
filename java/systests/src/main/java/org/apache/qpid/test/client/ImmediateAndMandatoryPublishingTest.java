@@ -18,34 +18,34 @@
  */
 package org.apache.qpid.test.client;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.Destination;
-import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
-import org.apache.qpid.client.AMQNoConsumersException;
-import org.apache.qpid.client.AMQNoRouteException;
+
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase implements ExceptionListener
+/**
+ * @see CloseOnNoRouteForMandatoryMessageTest for related tests
+ */
+public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase
 {
     private Connection _connection;
-    private BlockingQueue<JMSException> _exceptions;
+    private UnroutableMessageTestExceptionListener _testExceptionListener = new UnroutableMessageTestExceptionListener();
 
+    @Override
     public void setUp() throws Exception
     {
+        getBrokerConfiguration().setBrokerAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, false);
         super.setUp();
-        _exceptions = new ArrayBlockingQueue<JMSException>(1);
         _connection = getConnection();
-        _connection.setExceptionListener(this);
+        _connection.setExceptionListener(_testExceptionListener);
     }
 
     public void testPublishP2PWithNoConsumerAndImmediateOnAndAutoAck() throws Exception
@@ -103,14 +103,7 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
         consumerCreateAndClose(true, false);
 
         Message message = produceMessage(Session.AUTO_ACKNOWLEDGE, true, false, true);
-
-        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
-        assertNotNull("JMSException is expected", exception);
-        AMQNoRouteException noRouteException = (AMQNoRouteException) exception.getLinkedException();
-        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
-        Message bounceMessage = (Message) noRouteException.getUndeliveredMessage();
-        assertNotNull("Bounced Message is expected", bounceMessage);
-        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+        _testExceptionListener.assertReceivedNoRouteWithReturnedMessage(message, getTestQueueName());
     }
 
     private void publishIntoExistingDestinationWithNoConsumerAndImmediateOn(int acknowledgeMode, boolean pubSub)
@@ -120,27 +113,14 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
 
         Message message = produceMessage(acknowledgeMode, pubSub, false, true);
 
-        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
-        assertNotNull("JMSException is expected", exception);
-        AMQNoConsumersException noConsumerException = (AMQNoConsumersException) exception.getLinkedException();
-        assertNotNull("AMQNoConsumersException should be linked to JMSEXception", noConsumerException);
-        Message bounceMessage = (Message) noConsumerException.getUndeliveredMessage();
-        assertNotNull("Bounced Message is expected", bounceMessage);
-        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+        _testExceptionListener.assertReceivedNoConsumersWithReturnedMessage(message);
     }
 
     private void publishWithMandatoryOnImmediateOff(int acknowledgeMode, boolean pubSub) throws JMSException,
             InterruptedException
     {
         Message message = produceMessage(acknowledgeMode, pubSub, true, false);
-
-        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
-        assertNotNull("JMSException is expected", exception);
-        AMQNoRouteException noRouteException = (AMQNoRouteException) exception.getLinkedException();
-        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
-        Message bounceMessage = (Message) noRouteException.getUndeliveredMessage();
-        assertNotNull("Bounced Message is expected", bounceMessage);
-        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+        _testExceptionListener.assertReceivedNoRouteWithReturnedMessage(message, getTestQueueName());
     }
 
     private void publishWithMandatoryOffImmediateOff(int acknowledgeMode, boolean pubSub) throws JMSException,
@@ -148,8 +128,7 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
     {
         produceMessage(acknowledgeMode, pubSub, false, false);
 
-        JMSException exception = _exceptions.poll(1, TimeUnit.SECONDS);
-        assertNull("Unexpected JMSException", exception);
+        _testExceptionListener.assertNoException();
     }
 
     private void consumerCreateAndClose(boolean pubSub, boolean durable) throws JMSException
@@ -210,41 +189,26 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
         Message message = session.createMessage();
         producer.send(message);
 
-        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
-        assertNotNull("JMSException is expected", exception);
-        AMQNoRouteException noRouteException = (AMQNoRouteException) exception.getLinkedException();
-        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
-        Message bounceMessage = (Message) noRouteException.getUndeliveredMessage();
-        assertNotNull("Bounced Message is expected", bounceMessage);
-        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+        _testExceptionListener.assertReceivedNoRouteWithReturnedMessage(message, getTestQueueName());
 
         producer = session.createProducer(null);
         message = session.createMessage();
         producer.send(session.createQueue(getTestQueueName()), message);
 
-        exception = _exceptions.poll(10, TimeUnit.SECONDS);
-        assertNotNull("JMSException is expected", exception);
-        noRouteException = (AMQNoRouteException) exception.getLinkedException();
-        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
-        bounceMessage = (Message) noRouteException.getUndeliveredMessage();
-        assertNotNull("Bounced Message is expected", bounceMessage);
-        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
-
+        _testExceptionListener.assertReceivedNoRouteWithReturnedMessage(message, getTestQueueName());
 
         // publish to non-existent topic - should get no failure
         producer = session.createProducer(session.createTopic(getTestQueueName()));
         message = session.createMessage();
         producer.send(message);
 
-        exception = _exceptions.poll(1, TimeUnit.SECONDS);
-        assertNull("Unexpected JMSException", exception);
+        _testExceptionListener.assertNoException();
 
         producer = session.createProducer(null);
         message = session.createMessage();
         producer.send(session.createTopic(getTestQueueName()), message);
 
-        exception = _exceptions.poll(1, TimeUnit.SECONDS);
-        assertNull("Unexpected JMSException", exception);
+        _testExceptionListener.assertNoException();
 
         session.close();
     }
@@ -260,13 +224,7 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
         Message message = session.createMessage();
         producer.send(message);
 
-        JMSException exception = _exceptions.poll(10, TimeUnit.SECONDS);
-        assertNotNull("JMSException is expected", exception);
-        AMQNoRouteException noRouteException = (AMQNoRouteException) exception.getLinkedException();
-        assertNotNull("AMQNoRouteException should be linked to JMSEXception", noRouteException);
-        Message bounceMessage = (Message) noRouteException.getUndeliveredMessage();
-        assertNotNull("Bounced Message is expected", bounceMessage);
-        assertEquals("Unexpected message is bounced", message.getJMSMessageID(), bounceMessage.getJMSMessageID());
+        _testExceptionListener.assertReceivedNoRouteWithReturnedMessage(message, getTestQueueName());
 
         // now set topic specific system property to false - should no longer get mandatory failure on new producer
         setTestClientSystemProperty("qpid.default_mandatory_topic","false");
@@ -274,17 +232,6 @@ public class ImmediateAndMandatoryPublishingTest extends QpidBrokerTestCase impl
         message = session.createMessage();
         producer.send(session.createTopic(getTestQueueName()), message);
 
-        exception = _exceptions.poll(1, TimeUnit.SECONDS);
-        if(exception != null)
-        {
-            exception.printStackTrace();
-        }
-        assertNull("Unexpected JMSException", exception);
-
-    }
-
-    public void onException(JMSException exception)
-    {
-        _exceptions.add(exception);
+        _testExceptionListener.assertNoException();
     }
 }

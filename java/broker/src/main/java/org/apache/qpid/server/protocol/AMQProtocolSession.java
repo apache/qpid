@@ -218,4 +218,11 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     public Principal getPeerPrincipal();
 
     Lock getReceivedLock();
+
+    /**
+     * Used for 0-8/0-9/0-9-1 connections to choose to close
+     * the connection when a transactional session receives a 'mandatory' message which
+     * can't be routed rather than returning the message.
+     */
+    boolean isCloseWhenNoRoute();
 }

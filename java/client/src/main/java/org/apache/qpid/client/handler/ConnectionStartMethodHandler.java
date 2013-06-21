@@ -37,6 +37,7 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.properties.ConnectionStartProperties;
 
 import javax.security.sasl.Sasl;
@@ -51,6 +52,8 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
 
     private static final ConnectionStartMethodHandler _instance = new ConnectionStartMethodHandler();
 
+    private final CloseWhenNoRouteSettingsHelper _closeWhenNoRouteHelper = new CloseWhenNoRouteSettingsHelper();
+
     public static ConnectionStartMethodHandler getInstance()
     {
         return _instance;
@@ -59,6 +62,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
     private ConnectionStartMethodHandler()
     { }
 
+    @Override
     public void methodReceived(AMQProtocolSession session, ConnectionStartBody body, int channelId)
             throws AMQException
     {
@@ -147,6 +151,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
                 }
 
                 session.getStateManager().changeState(AMQState.CONNECTION_NOT_TUNED);
+
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
                 clientProperties.setString(ConnectionStartProperties.CLIENT_ID_0_8,
@@ -162,12 +167,16 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
                 clientProperties.setInteger(ConnectionStartProperties.PID,
                         ConnectionStartProperties.getPID());
 
+                FieldTable serverProperties = body.getServerProperties();
+                ConnectionURL url = getConnectionURL(session);
+                _closeWhenNoRouteHelper.setClientProperties(clientProperties, url, serverProperties);
+
                 ConnectionStartOkBody connectionStartOkBody = session.getMethodRegistry().createConnectionStartOkBody(clientProperties,new AMQShortString(mechanism),saslResponse,new AMQShortString(locales));
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 session.writeFrame(connectionStartOkBody.generateFrame(channelId));
-                        
+
             }
             catch (UnsupportedEncodingException e)
             {
@@ -195,7 +204,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
         try
         {
             AMQCallbackHandler instance = CallbackHandlerRegistry.getInstance().createCallbackHandler(mechanism);
-            instance.initialise(protocolSession.getAMQConnection().getConnectionURL());
+            instance.initialise(getConnectionURL(protocolSession));
 
             return instance;
         }
@@ -205,4 +214,8 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
         }
     }
 
+    private ConnectionURL getConnectionURL(AMQProtocolSession protocolSession)
+    {
+        return protocolSession.getAMQConnection().getConnectionURL();
+    }
 }

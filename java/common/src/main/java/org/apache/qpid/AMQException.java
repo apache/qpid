@@ -149,10 +149,6 @@ public class AMQException extends Exception
     public AMQShortString getMessageAsShortString()
     {
         String message = getMessage();
-        if (message != null && message.length() > AMQShortString.MAX_LENGTH)
-        {
-            message = message.substring(0, AMQShortString.MAX_LENGTH - 3) + "...";
-        }
-        return new AMQShortString(message);
+        return AMQShortString.valueOf(message, true, true);
     }
 }
