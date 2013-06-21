@@ -43,6 +43,7 @@ Membership::Membership(const BrokerInfo& info, HaBroker& b)
     : haBroker(b), self(info.getSystemId())
 {
     brokers[self] = info;
+    oldStatus = info.getStatus();
 }
 
 void Membership::clear() {
@@ -54,6 +55,7 @@ void Membership::clear() {
 
 void Membership::add(const BrokerInfo& b) {
     Mutex::ScopedLock l(lock);
+    assert(b.getSystemId() != self);
     brokers[b.getSystemId()] = b;
     update(l);
 }
@@ -86,6 +88,10 @@ void Membership::assign(const types::Variant::List& list) {
 
 types::Variant::List Membership::asList() const {
     Mutex::ScopedLock l(lock);
+    return asList(l);
+}
+
+types::Variant::List Membership::asList(sys::Mutex::ScopedLock&) const {
     types::Variant::List list;
     for (BrokerInfo::Map::const_iterator i = brokers.begin(); i != brokers.end(); ++i)
         list.push_back(i->second.asMap());
@@ -109,36 +115,6 @@ bool Membership::get(const types::Uuid& id, BrokerInfo& result) const {
     return true;
 }
 
-void Membership::update(Mutex::ScopedLock& l) {
-    QPID_LOG(info, "Membership: " <<  brokers);
-    // Update managment and send update event.
-    Variant::List brokerList = asList();
-    if (mgmtObject) mgmtObject->set_status(printable(getStatus(l)).str());
-    if (mgmtObject) mgmtObject->set_members(brokerList);
-    haBroker.getBroker().getManagementAgent()->raiseEvent(
-        _qmf::EventMembersUpdate(brokerList));
-
-    // Update link client properties
-    framing::FieldTable linkProperties = haBroker.getBroker().getLinkClientProperties();
-    if (isBackup(getStatus(l))) {
-        // Set backup tag on outgoing link properties.
-        linkProperties.setTable(
-            ConnectionObserver::BACKUP_TAG, brokers[types::Uuid(self)].asFieldTable());
-        haBroker.getBroker().setLinkClientProperties(linkProperties);
-    } else {
-        // Remove backup tag property from outgoing link properties.
-        linkProperties.erase(ConnectionObserver::BACKUP_TAG);
-        haBroker.getBroker().setLinkClientProperties(linkProperties);
-    }
-}
-
-void Membership::setMgmtObject(boost::shared_ptr<_qmf::HaBroker> mo) {
-    Mutex::ScopedLock l(lock);
-    mgmtObject = mo;
-    update(l);
-}
-
-
 namespace {
 bool checkTransition(BrokerStatus from, BrokerStatus to) {
     // Legal state transitions. Initial state is JOINING, ACTIVE is terminal.
@@ -160,19 +136,54 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 }
 } // namespace
 
-void Membership::setStatus(BrokerStatus newStatus) {
-    BrokerStatus status = getStatus();
-    QPID_LOG(info, "Status change: "
-             << printable(status) << " -> " << printable(newStatus));
-    bool legal = checkTransition(status, newStatus);
-    if (!legal) {
-        haBroker.shutdown(QPID_MSG("Illegal state transition: " << printable(status)
-                                 << " -> " << printable(newStatus)));
+
+void Membership::update(Mutex::ScopedLock& l) {
+    QPID_LOG(info, "Membership: " <<  brokers);
+    // Update managment and send update event.
+    BrokerStatus newStatus = getStatus(l);
+    Variant::List brokerList = asList(l);
+    if (mgmtObject) {
+        mgmtObject->set_status(printable(newStatus).str());
+        mgmtObject->set_members(brokerList);
+    }
+    haBroker.getBroker().getManagementAgent()->raiseEvent(
+        _qmf::EventMembersUpdate(brokerList));
+
+    // Update link client properties
+    framing::FieldTable linkProperties = haBroker.getBroker().getLinkClientProperties();
+    if (isBackup(newStatus)) {
+        // Set backup tag on outgoing link properties.
+        linkProperties.setTable(
+            ConnectionObserver::BACKUP_TAG, brokers[types::Uuid(self)].asFieldTable());
+        haBroker.getBroker().setLinkClientProperties(linkProperties);
+    } else {
+        // Remove backup tag property from outgoing link properties.
+        linkProperties.erase(ConnectionObserver::BACKUP_TAG);
+        haBroker.getBroker().setLinkClientProperties(linkProperties);
     }
 
+    // Check status transitions
+    if (oldStatus != newStatus) {
+        QPID_LOG(info, "Status change: "
+                 << printable(oldStatus) << " -> " << printable(newStatus));
+        if (!checkTransition(oldStatus, newStatus)) {
+            haBroker.shutdown(QPID_MSG("Illegal state transition: " << printable(oldStatus)
+                                       << " -> " << printable(newStatus)));
+        }
+        oldStatus = newStatus;
+    }
+}
+
+void Membership::setMgmtObject(boost::shared_ptr<_qmf::HaBroker> mo) {
+    Mutex::ScopedLock l(lock);
+    mgmtObject = mo;
+    update(l);
+}
+
+
+void Membership::setStatus(BrokerStatus newStatus) {
     Mutex::ScopedLock l(lock);
     brokers[self].setStatus(newStatus);
-    if (mgmtObject) mgmtObject->set_status(printable(newStatus).str());
     update(l);
 }
 

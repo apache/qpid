@@ -64,6 +64,9 @@ class BrokerInfo
     // So it can be put in a set.
     bool operator<(const BrokerInfo x) const { return systemId < x.systemId; }
 
+    // Print just the identifying information, not the status.
+    std::ostream& printId(std::ostream& o) const;
+
   private:
     Address address;
     types::Uuid systemId;

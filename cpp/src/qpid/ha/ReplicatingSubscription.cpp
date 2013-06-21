@@ -121,7 +121,8 @@ ReplicatingSubscription::ReplicatingSubscription(
 
         // Set a log prefix message that identifies the remote broker.
         ostringstream os;
-        os << "Subscription to " << queue->getName() << " at " << info << ": ";
+        os << "Subscription to " << queue->getName() << " at ";
+        info.printId(os) << ": ";
         logPrefix = os.str();
 
         // If this is a non-cluster standalone replication then we need to
