@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -324,14 +325,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 {
                     if(destinationQueues == null || destinationQueues.isEmpty())
                     {
-                        if (_currentMessage.isMandatory() || _currentMessage.isImmediate())
-                        {
-                            _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message", _currentMessage));
-                        }
-                        else
-                        {
-                            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
-                        }
+                        handleUnroutableMessage();
                     }
                     else
                     {
@@ -376,6 +370,61 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             }
         }
 
+    }
+
+    /**
+     * Either throws a {@link AMQConnectionException} or returns the message
+     *
+     * Pre-requisite: the current message is judged to have no destination queues.
+     *
+     * @throws AMQConnectionException if the message is mandatoryclose-on-no-route
+     * @see AMQProtocolSession#isCloseWhenNoRoute()
+     */
+    private void handleUnroutableMessage() throws AMQConnectionException
+    {
+        boolean mandatory = _currentMessage.isMandatory();
+        String description = currentMessageDescription();
+        boolean closeOnNoRoute = _session.isCloseWhenNoRoute();
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug(String.format(
+                    "Unroutable message %s, mandatory=%s, transactionalSession=%s, closeOnNoRoute=%s",
+                    description, mandatory, isTransactional(), closeOnNoRoute));
+        }
+
+        if (mandatory && isTransactional() && _session.isCloseWhenNoRoute())
+        {
+            throw new AMQConnectionException(
+                    AMQConstant.NO_ROUTE,
+                    "No route for message " + currentMessageDescription(),
+                    0, 0, // default class and method ids
+                    getProtocolSession().getProtocolVersion().getMajorVersion(),
+                    getProtocolSession().getProtocolVersion().getMinorVersion(),
+                    (Throwable) null);
+        }
+
+        if (mandatory || _currentMessage.isImmediate())
+        {
+            _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message " + currentMessageDescription(), _currentMessage));
+        }
+        else
+        {
+            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
+        }
+    }
+
+    private String currentMessageDescription()
+    {
+        if(_currentMessage == null || !_currentMessage.allContentReceived())
+        {
+            throw new IllegalStateException("Cannot create message description for message: " + _currentMessage);
+        }
+
+        return String.format(
+                "[Exchange: %s, Routing key: %s]",
+                _currentMessage.getExchange(),
+                _currentMessage.getRoutingKey());
     }
 
     public void publishContentBody(ContentBody contentBody) throws AMQException
@@ -522,6 +571,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      *
      * @throws AMQException if there is an error during closure
      */
+    @Override
     public void close() throws AMQException
     {
         if(!_closing.compareAndSet(false, true))
@@ -1344,7 +1394,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                                               _message,
                                                               _channelId,
                                                               _errorCode.getCode(),
-                                                             new AMQShortString(_description));
+                                                              AMQShortString.valueOf(_description, true, true));
             }
             catch (AMQException e)
             {

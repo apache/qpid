@@ -26,12 +26,19 @@ import java.lang.management.RuntimeMXBean;
 import org.apache.qpid.transport.util.Logger;
 
 /**
- * Constants for the various properties 0-10 clients can
+ * Constants for the various properties clients can
  * set values for during the ConnectionStartOk reply.
  */
 public class ConnectionStartProperties
 {
     private static final Logger LOGGER = Logger.get(ConnectionStartProperties.class);
+
+    /**
+     * Used for 0-8/0-9/0-9-1 connections to choose to close
+     * the connection when a transactional session receives a 'mandatory' message which
+     * can't be routed rather than returning the message.
+     */
+    public static final String QPID_CLOSE_WHEN_NO_ROUTE = "qpid.close_when_no_route";
 
     public static final String CLIENT_ID_0_10 = "clientName";
     public static final String CLIENT_ID_0_8 = "instance";

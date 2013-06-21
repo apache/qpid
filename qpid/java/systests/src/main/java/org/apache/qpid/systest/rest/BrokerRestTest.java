@@ -27,6 +27,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import javax.jms.Connection;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.model.Broker;
@@ -35,7 +40,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.client.UnroutableMessageTestExceptionListener;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestTest extends QpidRestTestCase
@@ -158,6 +163,33 @@ public class BrokerRestTest extends QpidRestTestCase
         brokerAttributes.put(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, 2000);
         int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
         assertEquals("Unexpected update response for flow resume size > flow size", 409, response);
+    }
+
+    public void testSetCloseOnNoRoute() throws Exception
+    {
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        assertTrue("closeOnNoRoute should be true", (Boolean)brokerDetails.get(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE));
+
+        Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        brokerAttributes.put(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, false);
+
+        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
+        assertEquals("Unexpected update response", 200, response);
+
+        brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        assertFalse("closeOnNoRoute should be false", (Boolean)brokerDetails.get(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE));
+
+        Connection connection = getConnection();
+        UnroutableMessageTestExceptionListener exceptionListener = new UnroutableMessageTestExceptionListener();
+        connection.setExceptionListener(exceptionListener);
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageProducer producer = session.createProducer(getTestQueue());
+        TextMessage message = session.createTextMessage("Test");
+        producer.send(message);
+
+        session.commit();
+
+        exceptionListener.assertReceivedNoRouteWithReturnedMessage(message, getTestQueueName());
     }
 
     private Map<String, Object> getValidBrokerAttributes()

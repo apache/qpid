@@ -92,6 +92,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
         put(CONNECTION_SESSION_COUNT_LIMIT, Integer.class);
         put(CONNECTION_HEART_BEAT_DELAY, Integer.class);
+        put(CONNECTION_CLOSE_WHEN_NO_ROUTE, Boolean.class);
         put(STATISTICS_REPORTING_PERIOD, Integer.class);
 
         put(NAME, String.class);
@@ -124,6 +125,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
+    public static final boolean DEFAULT_CONNECTION_CLOSE_WHEN_NO_ROUTE = true;
 
     @SuppressWarnings("serial")
     private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
@@ -141,6 +143,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, DEFAULT_HOUSEKEEPING_CHECK_PERIOD);
         put(Broker.CONNECTION_HEART_BEAT_DELAY, DEFAULT_HEART_BEAT_DELAY);
         put(Broker.CONNECTION_SESSION_COUNT_LIMIT, DEFAULT_SESSION_COUNT_LIMIT);
+        put(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, DEFAULT_CONNECTION_CLOSE_WHEN_NO_ROUTE);
         put(Broker.NAME, DEFAULT_NAME);
         put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
         put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);

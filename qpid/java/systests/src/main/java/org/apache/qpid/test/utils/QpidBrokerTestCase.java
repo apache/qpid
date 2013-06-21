@@ -1123,7 +1123,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public Connection getConnection(ConnectionURL url) throws JMSException
     {
-        _logger.info(url.getURL());
+        _logger.debug("get connection for " + url.getURL());
         Connection connection = new AMQConnectionFactory(url).createConnection(url.getUsername(), url.getPassword());
 
         _connections.add(connection);
@@ -1143,20 +1143,33 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public Connection getConnection(String username, String password) throws JMSException, NamingException
     {
-        _logger.info("get connection");
+        _logger.debug("get connection for username " + username);
         Connection con = getConnectionFactory().createConnection(username, password);
         //add the connection in the list of connections
         _connections.add(con);
         return con;
     }
 
-    public Connection getClientConnection(String username, String password, String id) throws JMSException, URLSyntaxException, AMQException, NamingException
+    protected Connection getClientConnection(String username, String password, String id) throws JMSException, URLSyntaxException, AMQException, NamingException
     {
-        _logger.info("get Connection");
+        _logger.debug("get connection for id " + id);
         Connection con = getConnectionFactory().createConnection(username, password, id);
         //add the connection in the list of connections
         _connections.add(con);
         return con;
+    }
+
+    /**
+     * Useful, for example, to avoid the connection being automatically closed in {@link #tearDown()}
+     * if it has deliberately been put into an error state already.
+     */
+    protected void forgetConnection(Connection connection)
+    {
+        _logger.debug("Forgetting about connection " + connection);
+        boolean removed = _connections.remove(connection);
+        assertTrue(
+                "The supplied connection " + connection + " should have been one that I already know about",
+                removed);
     }
 
     /**
@@ -1190,6 +1203,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, getTestQueueName());
     }
 
+    @Override
     protected void tearDown() throws java.lang.Exception
     {
         super.tearDown();
