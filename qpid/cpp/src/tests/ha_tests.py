@@ -1121,13 +1121,10 @@ class RecoveryTests(HaBrokerTest):
         but can still rejoin.
         """
         cluster = HaCluster(self, 3, args=["--ha-backup-timeout=0.5"]);
-        cluster[0].wait_status("active") # Primary ready
-        for b in cluster[1:3]: b.wait_status("ready") # Backups ready
         for i in [0,1]: cluster.kill(i, False)
-        cluster[2].promote()    # New primary, expected backup will 1
-        cluster[2].wait_status("recovering")
+        cluster[2].promote()    # New primary, expected backup will be 1
         # Should not go active till the expected backup connects or times out.
-        self.assertEqual(cluster[2].ha_status(), "recovering")
+        cluster[2].wait_status("recovering")
         # Messages should be held till expected backup times out
         s = cluster[2].connect().session().sender("q;{create:always}")
         s.send("foo", sync=False)
@@ -1135,7 +1132,7 @@ class RecoveryTests(HaBrokerTest):
         try: s.sync(timeout=.01); self.fail("Expected Timeout exception")
         except Timeout: pass
         s.sync(timeout=1)       # And released after the timeout.
-        self.assertEqual(cluster[2].ha_status(), "active")
+        cluster[2].wait_status("active")
 
     def test_join_ready_cluster(self):
         """If we join a cluster where the primary is dead, the new primary is
