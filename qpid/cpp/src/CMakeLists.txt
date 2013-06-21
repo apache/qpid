@@ -1060,13 +1060,17 @@ add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
 if (CLOCK_GETTIME_IN_RT)
   set (qpidcommon_platform_LIBS ${qpidcommon_platform_LIBS} rt)
 endif (CLOCK_GETTIME_IN_RT)
+# Not all platforms have NSS_LINK_FLAGS
+if (NSS_LINK_FLAGS)
+  set (qpidcommon_LINK_FLAGS LINK_FLAGS ${NSS_LINK_FLAGS})
+endif (NSS_LINK_FLAGS)
 target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
                        VERSION ${qpidcommon_version} 
                        SOVERSION ${qpidcommon_version_major}
-                       LINK_FLAGS ${NSS_LINK_FLAGS})
+                       ${qpidcommon_LINK_FLAGS})
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
