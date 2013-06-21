@@ -91,11 +91,14 @@ void BrokerInfo::assign(const Variant::Map& m) {
     status = BrokerStatus(get(m, STATUS).asUint8());
 }
 
-std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
-    o  << b.getSystemId().str().substr(0,8);
-    if (b.getAddress() != empty) o << "@" << b.getAddress();
-    o << "(" << printable(b.getStatus()) << ")";
+std::ostream& BrokerInfo::printId(std::ostream& o) const {
+    o  << getSystemId().str().substr(0,8);
+    if (getAddress() != empty) o << "@" << getAddress();
     return o;
+}
+
+std::ostream& operator<<(std::ostream& o, const BrokerInfo& b) {
+    return b.printId(o) << "(" << printable(b.getStatus()) << ")";
 }
 
 std::ostream& operator<<(std::ostream& o, const BrokerInfo::Set& infos) {

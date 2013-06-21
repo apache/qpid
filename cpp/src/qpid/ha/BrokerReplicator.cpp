@@ -902,24 +902,7 @@ void BrokerReplicator::disconnected() {
 }
 
 void BrokerReplicator::setMembership(const Variant::List& brokers) {
-    Membership& membership(haBroker.getMembership());
-    membership.assign(brokers);
-    // Check if the primary has signalled a change in my status:
-    // from CATCHUP to READY when we are caught up.
-    // from READY TO CATCHUP if we are timed out during fail-over.
-    BrokerInfo info;
-    if (membership.get(membership.getSelf(), info)) {
-        BrokerStatus oldStatus = haBroker.getStatus();
-        BrokerStatus newStatus = info.getStatus();
-        if (oldStatus == CATCHUP && newStatus == READY) {
-            QPID_LOG(info, logPrefix << logPrefix << "Caught-up and ready");
-            haBroker.getMembership().setStatus(READY);
-        }
-        else if (oldStatus == READY && newStatus == CATCHUP) {
-            QPID_LOG(info, logPrefix << logPrefix << "No longer ready, catching up");
-            haBroker.getMembership().setStatus(CATCHUP);
-        }
-    }
+    haBroker.getMembership().assign(brokers);
 }
 
 }} // namespace broker

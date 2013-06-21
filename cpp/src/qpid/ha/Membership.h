@@ -83,12 +83,14 @@ class Membership
   private:
     void update(sys::Mutex::ScopedLock&);
     BrokerStatus getStatus(sys::Mutex::ScopedLock&) const;
+    types::Variant::List asList(sys::Mutex::ScopedLock&) const;
 
     mutable sys::Mutex lock;
     HaBroker& haBroker;
     boost::shared_ptr<qmf::org::apache::qpid::ha::HaBroker> mgmtObject;
     const types::Uuid self;
     BrokerInfo::Map brokers;
+    BrokerStatus oldStatus;
 };
 
 }} // namespace qpid::ha
