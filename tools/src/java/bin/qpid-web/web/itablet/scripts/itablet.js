@@ -159,9 +159,9 @@ var iTablet = new function() {
      * resize. It runs fine on every other browser. I've not noticed any obvious inefficiencies but IE6 is weird..
      *
      * @param list jQuery object representing the html list (ul) we wish to populate.
-     * @param maxlength the maximum number of items that we wish to populate.
      * @param contents a function to populate the list contents, this function should take an index as a parameter.
      *        and return an <li> with the required contents or false to skip (useful if filtering is needed).
+     * @param maxlength the maximum number of items that we wish to populate (default is 1).
      */
     this.renderList = function(list, contents, maxlength) {
         // For IE 6 get the width. Have to use .main or .popup-container because list.innerWidth() may not be set yet.
