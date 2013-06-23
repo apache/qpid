@@ -111,6 +111,44 @@ qmfui.Statistics = function(description) {
     };
 };
 
+//-------------------------------------------------------------------------------------------------------------------
+//                      Helper Methods to provide a consistent way to render the UI lists.  
+//-------------------------------------------------------------------------------------------------------------------
+
+/**
+ * This helper method renders the specified properties of the specifed JavaScript object to the specified html list.
+ * @param list jQuery object representing the html list (ul) we wish to populate.
+ * @param object the object whose properties we wish to render.
+ * @param props an array of properties that we wish to render.
+ * @param href optional string specifying URL fragment to e.g. "#graphs?connectionId=" + connectionId.
+ */
+qmfui.renderObject = function(list, object, props, href, useIndex) {
+    iTablet.renderList(list, function(i) {
+        var key = props[i];
+        var value = object[key];
+        if (value == null) { // Only show properties that are actually available.
+            return false;
+        } else {
+            if (href) {
+                var anchor = href + "&property=" + i;
+                return "<li class='arrow'><a href='" + anchor + "'>" + key + "<p>" + value + "</p></a></li>";
+            } else {
+                return "<li><a href='#'>" + key + "<p>" + value + "</p></a></li>";
+            }
+        }
+    }, props.length);
+};
+
+/**
+ * This helper method renders the specified list of html list items (li) to the specified html list.
+ * @param list jQuery object representing the html list (ul) we wish to populate.
+ * @param array the array of html list items (li) that we wish to render.
+ */
+qmfui.renderArray = function(list, array) {
+    iTablet.renderList(list, function(i) {
+        return array[i];
+    }, array.length);
+};
 
 //-------------------------------------------------------------------------------------------------------------------
 //                                            Main Console Class                                             
@@ -777,24 +815,12 @@ qmfui.Broker = new function() {
 
     this.update = function() {
         var broker = qmfui.Console.getBroker();
+        broker.uptime = convertTime(broker.uptime); // Convert uptime to a more human readable value.
 
-        // Render the selected broker properties to #broker-list.
-        var keys = ["name", "version", "uptime", "port", "maxConns", "connBacklog", "dataDir",
-                    "mgmtPublish", "mgmtPubInterval", "workerThreads",
-                    /* 0.20 publishes many more stats so include them if available */
-                    "queueCount", "acquires", "releases", "abandoned", "abandonedViaAlt"];
-        iTablet.renderList($("#broker-list"), function(i) {
-            var key = keys[i];
-            var value = broker[key];
-            if (value == null) { // Only show statistics that are actually available (later brokers publish more stats)
-                return false;
-            } else {
-                if (key == "uptime") {
-                    value = convertTime(value); // Convert uptime to a more human readable value
-                }
-                return "<li><a href='#'>" + key + "<p>" + value + "</p></a></li>";
-            }
-        }, keys.length);
+        qmfui.renderObject($("#broker-list"), broker, ["name", "version", "uptime", "port", "maxConns", "connBacklog", 
+                           "dataDir", "mgmtPublish", "mgmtPubInterval", "workerThreads",
+                           /* 0.20 publishes many more stats so include them if available */
+                           "queueCount", "acquires", "releases", "abandoned", "abandonedViaAlt"]);
 
         // Render a number of 0.20 statistics in their own subsections to improve readability.
 
@@ -803,11 +829,7 @@ qmfui.Broker = new function() {
             $("#broker-msgio-container").hide();
         } else {
             $("#broker-msgio-container").show();
-            keys = ["msgDepth", "msgTotalEnqueues", "msgTotalDequeues"];
-            iTablet.renderList($("#broker-msgio"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + broker[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#broker-msgio"), broker, ["msgDepth", "msgTotalEnqueues", "msgTotalDequeues"]);
         }
 
         // Render the Byte Input Output Statistics.
@@ -815,11 +837,7 @@ qmfui.Broker = new function() {
             $("#broker-byteio-container").hide();
         } else {
             $("#broker-byteio-container").show();
-            keys = ["byteDepth", "byteTotalEnqueues", "byteTotalDequeues"];
-            iTablet.renderList($("#broker-byteio"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + broker[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#broker-byteio"), broker, ["byteDepth", "byteTotalEnqueues", "byteTotalDequeues"]);
         }
 
         var hideDetails = $("#settings-hide-details")[0].checked;
@@ -829,12 +847,8 @@ qmfui.Broker = new function() {
             $("#broker-flow-to-disk-container").hide();
         } else {
             $("#broker-flow-to-disk-container").show();
-            keys = ["msgFtdDepth", "msgFtdEnqueues", "msgFtdDequeues",
-                    "byteFtdDepth", "byteFtdEnqueues", "byteFtdDequeues"];
-            iTablet.renderList($("#broker-flow-to-disk"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + broker[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#broker-flow-to-disk"), broker, ["msgFtdDepth", "msgFtdEnqueues", "msgFtdDequeues",
+                               "byteFtdDepth", "byteFtdEnqueues", "byteFtdDequeues"]);
         }
 
         // Render the Dequeue Details.
@@ -842,12 +856,8 @@ qmfui.Broker = new function() {
             $("#broker-dequeue-container").hide();
         } else {
             $("#broker-dequeue-container").show();
-            keys = ["discardsTtl", "discardsRing", "discardsLvq", "discardsOverflow",
-                    "discardsSubscriber", "discardsPurge", "reroutes"];
-            iTablet.renderList($("#broker-dequeue"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + broker[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#broker-dequeue"), broker, ["discardsTtl", "discardsRing", "discardsLvq",       
+                               "discardsOverflow", "discardsSubscriber", "discardsPurge", "reroutes"]);
         }
     };
 
@@ -1063,48 +1073,30 @@ qmfui.SelectedConnection = new function() {
             $("#selected-connection .header a")[0].firstChild.nodeValue = backText;
 
             // Render the connection message statistics to #selected-connection-msgio
-            var keys = ["msgsFromClient", "msgsToClient"];
-            iTablet.renderList($("#selected-connection-msgio"), function(i) {
-                var key = keys[i];
-                return "<li class='arrow'><a href='#graphs?connectionId=" + connectionId + "&property=" + i + "'>" + 
-                        key + "<p>" + connection[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-connection-msgio"), connection, ["msgsFromClient", "msgsToClient"], 
+                               "#graphs?connectionId=" + connectionId);
 
             // Render the connection byte statistics to #selected-connection-byteio
-            keys = ["bytesFromClient", "bytesToClient"];
-            iTablet.renderList($("#selected-connection-byteio"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + connection[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-connection-byteio"), connection, ["bytesFromClient", "bytesToClient"]);
 
             // Render the connection frame statistics to #selected-connection-frameio
-            keys = ["framesFromClient", "framesToClient"];
-            iTablet.renderList($("#selected-connection-frameio"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + connection[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-connection-frameio"), connection, ["framesFromClient", "framesToClient"]);
 
             // Render selected general connection properties to #selected-connection-general.
-            keys = ["federationLink","SystemConnection","incoming", "authIdentity", "userProxyAuth",
-                    "saslMechanism", "saslSsf", "remotePid", "shadow", "closing", "protocol"];
-            iTablet.renderList($("#selected-connection-general"), function(i) {
-                var key = keys[i];
-                var value = connection[key];
-                if (value == null) {
-                    return false;
-                } else {
-                    return "<li><a href='#'>" + key + "<p>" + value + "</p></a></li>";
-                }
-            }, keys.length);
+            qmfui.renderObject($("#selected-connection-general"), connection, ["federationLink", "SystemConnection",
+                               "incoming", "authIdentity", "userProxyAuth", "saslMechanism", "saslSsf", "remotePid", 
+                               "shadow", "closing", "protocol"]);
 
             // Render links to the sessions associated with this connection.
             _sessions = connection._sessions;
+            var subscribedSessions = $("#selected-connection-subscribed-sessions");
+            var unsubscribedSessions = $("#selected-connection-unsubscribed-sessions");
             if (_sessions.length == 0) { // Show a message if there are no sessions at all
-                $("#selected-connection-subscribed-sessions").hide();
-                $("#selected-connection-subscribed-sessions").prev().hide();
-                $("#selected-connection-unsubscribed-sessions").show();
-                $("#selected-connection-unsubscribed-sessions").prev().show();
-                iTablet.renderList($("#selected-connection-unsubscribed-sessions"), function(i) {
+                subscribedSessions.hide();
+                subscribedSessions.prev().hide();
+                unsubscribedSessions.show();
+                unsubscribedSessions.prev().show();
+                iTablet.renderList(unsubscribedSessions, function(i) {
                     return "<li class='grey'><a href='#'>There are currently no sessions attached to " + 
                             name + "</a></li>";
                 });
@@ -1125,25 +1117,21 @@ qmfui.SelectedConnection = new function() {
                 }
 
                 if (subscribed.length > 0) {
-                    $("#selected-connection-subscribed-sessions").show();
-                    $("#selected-connection-subscribed-sessions").prev().show();
-                    iTablet.renderList($("#selected-connection-subscribed-sessions"), function(i) {
-                        return subscribed[i];
-                    }, subscribed.length);
+                    subscribedSessions.show();
+                    subscribedSessions.prev().show();
+                    qmfui.renderArray(subscribedSessions, subscribed);
                 } else {
-                    $("#selected-connection-subscribed-sessions").hide();
-                    $("#selected-connection-subscribed-sessions").prev().hide();
+                    subscribedSessions.hide();
+                    subscribedSessions.prev().hide();
                 }
 
                 if (unsubscribed.length > 0) {
-                    $("#selected-connection-unsubscribed-sessions").show();
-                    $("#selected-connection-unsubscribed-sessions").prev().show();
-                    iTablet.renderList($("#selected-connection-unsubscribed-sessions"), function(i) {
-                        return unsubscribed[i];
-                    }, unsubscribed.length);
+                    unsubscribedSessions.show();
+                    unsubscribedSessions.prev().show();
+                    qmfui.renderArray(unsubscribedSessions, unsubscribed);
                 } else {
-                    $("#selected-connection-unsubscribed-sessions").hide();
-                    $("#selected-connection-unsubscribed-sessions").prev().hide();
+                    unsubscribedSessions.hide();
+                    unsubscribedSessions.prev().hide();
                 }
             }
         }
@@ -1204,7 +1192,7 @@ qmfui.ConnectionSubscriptions = new function() {
                 // Render the associated queue name to #connection-subscription-name.
                 var isQmfQueue = queue._isQmfQueue;
                 iTablet.renderList(name, function(i) {
-                    // If the associated Queue is a QNF Queue and hideQmfObjects has been selected render the
+                    // If the associated Queue is a QMF Queue and hideQmfObjects has been selected render the
                     // Queue name grey and make it non-navigable otherwise render normally.
                     if (isQmfQueue && hideQmfObjects) {
                         return "<li class='grey'><a href='#selected-queue?id=" + id + "&fromSubscriptions=true'>" + 
@@ -1221,11 +1209,8 @@ qmfui.ConnectionSubscriptions = new function() {
                 page.append(list);
 
                 // Render the useful subscription properties to #connection-subscriptions-list.
-                var keys = ["delivered", "browsing", "acknowledged", "exclusive", "creditMode"];
-                iTablet.renderList(list, function(i) {
-                    var key = keys[i];
-                    return "<li><a href='#'>" + key + "<p>" + subscription[key] + "</p></a></li>";
-                }, keys.length);
+                qmfui.renderObject(list, subscription, 
+                                   ["delivered", "browsing", "acknowledged", "exclusive", "creditMode"]);
             }
 
             $("#connection-subscriptions").trigger("refresh"); // Make sure touch scroller is up-to-date.
@@ -1438,10 +1423,7 @@ qmfui.ExchangeSelector = new function() {
             }
         }
 
-        iTablet.renderList($("#exchange-selector-list"), function(i) {
-            return filteredExchanges[i];
-        }, filteredExchanges.length);
-
+        qmfui.renderArray($("#exchange-selector-list"), filteredExchanges);
         $("#exchange-selector-list input").change(changeExchange);
     };
 
@@ -1558,19 +1540,11 @@ qmfui.SelectedExchange = new function() {
             }
 
             // Render the exchange statistics to #selected-exchange-msgio
-            var keys = ["msgReceives", "msgRoutes", "msgDrops"];
-            iTablet.renderList($("#selected-exchange-msgio"), function(i) {
-                var key = keys[i];
-                return "<li class='arrow'><a href='#graphs?exchangeId=" + exchangeId + "&property=" + i + "'>" + 
-                        key + "<p>" + exchange[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-exchange-msgio"), exchange, ["msgReceives", "msgRoutes", "msgDrops"], 
+                               "#graphs?exchangeId=" + exchangeId);
 
             // Render the exchange statistics to #selected-exchange-byteio
-            keys = ["byteReceives", "byteRoutes", "byteDrops"];
-            iTablet.renderList($("#selected-exchange-byteio"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + exchange[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-exchange-byteio"), exchange, ["byteReceives", "byteRoutes", "byteDrops"]);
 
             // Render selected general exchange properties and exchange.declare arguments to #selected-exchange-general.
             keys = ["durable", "autoDelete", "producerCount"];
@@ -1590,10 +1564,7 @@ qmfui.SelectedExchange = new function() {
             for (var i in exchange.arguments) { // Populate with arguments.
                 general.push("<li><a href='#'>" + i + "<p>" + exchange.arguments[i] + "</p></a></li>");
             }
-
-            iTablet.renderList($("#selected-exchange-general"), function(i) {
-                return general[i];
-            }, general.length);
+            qmfui.renderArray($("#selected-exchange-general"), general);
         }
     };
 
@@ -1983,19 +1954,12 @@ qmfui.SelectedQueue = new function() {
             });
 
             // Render the queue statistics to #selected-queue-msgio
-            var keys = ["msgDepth", "msgTotalEnqueues", "msgTotalDequeues"];
-            iTablet.renderList($("#selected-queue-msgio"), function(i) {
-                var key = keys[i];
-                return "<li class='arrow'><a href='#graphs?queueId=" + queueId + "&property=" + i + "'>" + key + 
-                        "<p>" + queue[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-queue-msgio"), queue, ["msgDepth", "msgTotalEnqueues", "msgTotalDequeues"], 
+                               "#graphs?queueId=" + queueId);
 
             // Render the queue statistics to #selected-queue-byteio
-            keys = ["byteDepth", "byteTotalEnqueues", "byteTotalDequeues"];
-            iTablet.renderList($("#selected-queue-byteio"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + queue[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#selected-queue-byteio"), queue, ["byteDepth", "byteTotalEnqueues",       
+                               "byteTotalDequeues"]);
 
             // Render selected general queue properties and queue.declare arguments to #selected-queue-general.
             keys = ["durable", "autoDelete", "exclusive", "unackedMessages", "acquires", "releases", 
@@ -2019,10 +1983,7 @@ qmfui.SelectedQueue = new function() {
             for (var i in queue.arguments) { // Populate with arguments.
                 general.push("<li><a href='#'>" + i + "<p>" + queue.arguments[i] + "</p></a></li>");
             }
-
-            iTablet.renderList($("#selected-queue-general"), function(i) {
-                return general[i];
-            }, general.length);
+            qmfui.renderArray($("#selected-queue-general"), general);
 
             var hideDetails = $("#settings-hide-details")[0].checked;
 
@@ -2031,12 +1992,8 @@ qmfui.SelectedQueue = new function() {
                 $("#selected-queue-flow-to-disk-container").hide();
             } else {
                 $("#selected-queue-flow-to-disk-container").show();
-                keys = ["msgFtdDepth", "msgFtdEnqueues", "msgFtdDequeues",
-                        "byteFtdDepth", "byteFtdEnqueues", "byteFtdDequeues"];
-                iTablet.renderList($("#selected-queue-flow-to-disk"), function(i) {
-                    var key = keys[i];
-                    return "<li><a href='#'>" + key + "<p>" + queue[key] + "</p></a></li>";
-                }, keys.length);
+                qmfui.renderObject($("#selected-queue-flow-to-disk"), queue, ["msgFtdDepth", "msgFtdEnqueues", 
+                                   "msgFtdDequeues", "byteFtdDepth", "byteFtdEnqueues", "byteFtdDequeues"]);
             }
 
             // Render the Dequeue Details.
@@ -2044,12 +2001,8 @@ qmfui.SelectedQueue = new function() {
                 $("#selected-queue-dequeue-container").hide();
             } else {
                 $("#selected-queue-dequeue-container").show();
-                keys = ["discardsTtl", "discardsRing", "discardsLvq", "discardsOverflow",
-                        "discardsSubscriber", "discardsPurge", "reroutes"];
-                iTablet.renderList($("#selected-queue-dequeue"), function(i) {
-                    var key = keys[i];
-                    return "<li><a href='#'>" + key + "<p>" + queue[key] + "</p></a></li>";
-                }, keys.length);
+                qmfui.renderObject($("#selected-queue-dequeue"), queue, ["discardsTtl", "discardsRing", "discardsLvq", 
+                                   "discardsOverflow", "discardsSubscriber", "discardsPurge", "reroutes"]);
             }
 
             // Render links to the subscriptions associated with this queue to #selected-queue-subscriptions.
@@ -2083,11 +2036,7 @@ qmfui.SelectedQueue = new function() {
             admin.push("<li class='arrow pop'><a href='#purge-queue?queueId=" + queueId + "'>Purge</a></li>");
             admin.push("<li class='arrow pop'><a href='#reroute-messages?queueId=" + queueId + "'>Reroute Messages</a></li>");
             admin.push("<li class='arrow pop'><a href='#move-messages?queueId=" + queueId + "'>Move Messages</a></li>");
-
-            iTablet.renderList($("#selected-queue-admin"), function(i) {
-                return admin[i];
-            }, admin.length);
-
+            qmfui.renderArray($("#selected-queue-admin"), admin);
         }
     };
 
@@ -2146,17 +2095,8 @@ qmfui.QueueSubscriptions = new function() {
             // so we need to do some defensive code to check if it's set and if not render "Session is Unknown".
             if (subscription.sessionRef) {
                 // Render the useful session properties to #queue-subscriptions-session
-                var keys = ["name", "framesOutstanding", "unackedMessages", "channelId",
-                            "maxClientRate", "clientCredit"];
-                iTablet.renderList($("#queue-subscriptions-session"), function(i) {
-                    var key = keys[i];
-                    var value = session[key];
-                    if (value == null) {
-                        return false;
-                    } else {
-                        return "<li><a href='#'>" + key + "<p>" + value + "</p></a></li>";
-                    }
-                }, keys.length);
+                qmfui.renderObject($("#queue-subscriptions-session"), session, ["name", "framesOutstanding", 
+                                   "unackedMessages", "channelId", "maxClientRate", "clientCredit"]);
             } else {
                 iTablet.renderList($("#queue-subscriptions-session"), function(i) {
                     return "<li><a href='#'>Session is Unknown</a></li>";
@@ -2164,11 +2104,8 @@ qmfui.QueueSubscriptions = new function() {
             }
 
             // Render the useful subscription properties to #queue-subscriptions-subscription
-            keys = ["name", "delivered", "browsing", "acknowledged", "exclusive", "creditMode"];
-            iTablet.renderList($("#queue-subscriptions-subscription"), function(i) {
-                var key = keys[i];
-                return "<li><a href='#'>" + key + "<p>" + subscription[key] + "</p></a></li>";
-            }, keys.length);
+            qmfui.renderObject($("#queue-subscriptions-subscription"), subscription, ["name", "delivered", "browsing", 
+                               "acknowledged", "exclusive", "creditMode"]);
         }
     };
 
@@ -2644,9 +2581,7 @@ qmfui.Bindings = new function() {
                     return "<li class='grey'><a href='#'>There are currently no bindings to " + name + "</a></li>";
                 });
             } else {
-                iTablet.renderList($("#bindings-list"), function(i) {
-                    return binding[i];
-                }, binding.length);
+                qmfui.renderArray($("#bindings-list"), binding);
 
                 // If _highlightedObject has been set by qmfui.SelectedQueue or qmfui.SelectedExchange search for
                 // the list item that would have caused navigation to that page and set it active, which causes
@@ -2832,10 +2767,7 @@ qmfui.AddBinding = new function() {
             }
 
             list.push("<li class='arrow'><a href='#add-header-match'>Add...</a></li>");
-
-            iTablet.renderList($("#add-headers-binding"), function(i) {
-                return list[i];
-            }, list.length);
+            qmfui.renderArray($("#add-headers-binding"), list);
         } else if (_exchangeType == "xml") {
             $("#add-binding div.page h1").show().text("XML");
             $("#add-xml-binding").show();
@@ -2998,10 +2930,7 @@ qmfui.QueueSelector = new function() {
             }
         }
 
-        iTablet.renderList($("#queue-selector-list"), function(i) {
-            return filteredQueues[i];
-        }, filteredQueues.length);
-
+        qmfui.renderArray($("#queue-selector-list"), filteredQueues);
         $("#queue-selector-list input").change(changeQueue);
     };
 
@@ -3373,10 +3302,7 @@ qmfui.SelectedEvent = new function() {
             var timestamp = new Date(event._timestamp/1000000).toLocaleString();
             general.push("<li><a href='#'>timestamp<p>" + timestamp + "</p></a></li>");
             general.push("<li><a href='#'>severity<p>" + _severities[event._severity] + "</p></a></li>");
-
-            iTablet.renderList($("#selected-event-list"), function(i) {
-                return general[i];
-            }, general.length);
+            qmfui.renderArray($("#selected-event-list"), general);
 
             var values = [];
             for (var i in event._values) { // Populate with event _values properties.
@@ -3386,10 +3312,7 @@ qmfui.SelectedEvent = new function() {
                 }
                 values.push("<li><a href='#'>" + i + "<p>" + value + "</p></a></li>");
             }
-
-            iTablet.renderList($("#selected-event-values"), function(i) {
-                return values[i];
-            }, values.length);
+            qmfui.renderArray($("#selected-event-values"), values);
         }
     };
 
