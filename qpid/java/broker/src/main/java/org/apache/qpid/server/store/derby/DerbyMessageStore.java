@@ -67,6 +67,8 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
     private long _persistentSizeLowThreshold;
     private long _persistentSizeHighThreshold;
 
+    protected String _connectionURL;
+
     private String _storeLocation;
     private Class<Driver> _driverClass;
 
@@ -444,5 +446,10 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
                 }
             }
         }
+    }
+
+    protected Connection getConnection() throws SQLException
+    {
+        return DriverManager.getConnection(_connectionURL);
     }
 }

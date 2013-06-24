@@ -93,6 +93,14 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
         Map<String,Object> convertedMap = new LinkedHashMap<String, Object>();
         convertedMap.put("store.type", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE));
         convertedMap.put("store.environment-path", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH));
+
+        // TODO - this should all be inverted to populate vhost from xml and then pass model object to the store
+
+        convertedMap.put("store.pool.type",virtualHostAdapter.getAttribute("connectionPool"));
+        convertedMap.put("store.pool.minConnectionsPerPartition",virtualHostAdapter.getAttribute("minConnectionsPerPartition"));
+        convertedMap.put("store.pool.maxConnectionsPerPartition",virtualHostAdapter.getAttribute("maxConnectionsPerPartition"));
+        convertedMap.put("store.pool.partitionCount",virtualHostAdapter.getAttribute("partitionCount"));
+
         return convertedMap;
     }
 }
