@@ -22,9 +22,12 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <getopt.h>
+#include "config.h"
 
 static int            exit_with_sigint = 0;
 static dx_dispatch_t *dispatch;
+
 
 /**
  * The thread_start_handler is invoked once for each server thread at thread startup.
@@ -84,9 +87,39 @@ static void startup(void *context)
 
 int main(int argc, char **argv)
 {
+    const char *config_path = DEFAULT_CONFIG_PATH;
+
+    static struct option long_options[] = {
+    {"config", required_argument, 0, 'c'},
+    {"help",   no_argument,       0, 'h'},
+    {0,        0,                 0,  0}
+    };
+
+    while (1) {
+        int c = getopt_long(argc, argv, "c:h", long_options, 0);
+        if (c == -1)
+            break;
+
+        switch (c) {
+        case 'c' :
+            config_path = optarg;
+            break;
+
+        case 'h' :
+            printf("Usage: %s [OPTION]\n\n", argv[0]);
+            printf("  -c, --config=PATH (%s)\n", DEFAULT_CONFIG_PATH);
+            printf("                             Load configuration from file at PATH\n");
+            printf("  -h, --help                 Print this help\n");
+            exit(0);
+
+        case '?' :
+            exit(1);
+        }
+    }
+
     dx_log_set_mask(LOG_INFO | LOG_TRACE | LOG_ERROR);
 
-    dispatch = dx_dispatch("../etc/qpid-dispatch.conf");
+    dispatch = dx_dispatch(config_path);
 
     dx_server_set_signal_handler(dispatch, server_signal_handler, 0);
     dx_server_set_start_handler(dispatch, thread_start_handler, 0);
