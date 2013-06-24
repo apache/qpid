@@ -118,6 +118,11 @@ csvjdbc.jar=lib/csvjdbc/csvjdbc-1.0.8.jar
 perftests-visualisation-jfc.libs=${jfreechart.jar} ${jcommon.jar} ${csvjdbc.jar} ${derby-db}
 perftests-visualisation-jfc.test.libs=${test.libs}
 
+# optional libs for the boneCP jdbc connection pool
+bonecp=lib/bonecp/bonecp-0.7.1.RELEASE.jar
+guava=lib/bonecp/guava-14.0.1.jar
+broker-plugins-jdbc-provider-bone.libs=${bonecp} ${guava}
+
 # Libraries used only within the build
 bnd=lib/required/bnd-0.0.384.jar
 jython=lib/required/jython-standalone-2.5.2.jar

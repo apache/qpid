@@ -22,6 +22,7 @@ package org.apache.qpid.server.store.jdbc;
 
 
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
@@ -49,6 +51,9 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
 
     public static final String TYPE = "JDBC";
+
+    protected String _connectionURL;
+    private ConnectionProvider _connectionProvider;
 
 
     private static class JDBCDetails
@@ -253,18 +258,34 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             RecordedJDBCTransaction txn = _transactions.get(0);
             txn.abortTran();
         }
+        try
+        {
+            _connectionProvider.close();
+        }
+        catch (SQLException e)
+        {
+            throw new AMQStoreException("Unable to close connection provider ", e);
+        }
     }
 
+
+    protected Connection getConnection() throws SQLException
+    {
+        return _connectionProvider.getConnection();
+    }
+
+
     protected void implementationSpecificConfiguration(String name, Configuration storeConfiguration)
-            throws ClassNotFoundException
+        throws ClassNotFoundException, SQLException
     {
 
-        _connectionURL = storeConfiguration.getString("connectionUrl",
+
+        String connectionURL = storeConfiguration.getString("connectionUrl",
                 storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
 
         JDBCDetails details = null;
 
-        String[] components = _connectionURL.split(":",3);
+        String[] components = connectionURL.split(":",3);
         if(components.length >= 2)
         {
             String vendor = components[1];
@@ -273,11 +294,24 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
         if(details == null)
         {
-            getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL);
+            getLogger().info("Do not recognize vendor from connection URL: " + connectionURL);
 
             // TODO - is there a better default than derby
             details = DERBY_DETAILS;
         }
+
+
+        Configuration poolConfig = storeConfiguration.subset("pool");
+        String connectionPoolType = poolConfig.getString("type", "DEFAULT");
+        JDBCConnectionProviderFactory connectionProviderFactory =
+                JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
+        if(connectionProviderFactory == null)
+        {
+            _logger.warn("Unknown connection pool type: " + connectionPoolType + ".  no connection pooling will be used");
+            connectionProviderFactory = new DefaultConnectionProviderFactory();
+        }
+
+        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, poolConfig);
 
         _blobType = storeConfiguration.getString("sqlBlobType",details.getBlobType());
         _varBinaryType = storeConfiguration.getString("sqlVarbinaryType",details.getVarBinaryType());
