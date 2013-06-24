@@ -19,11 +19,13 @@
  * under the License.
  */
 
+#include <stdint.h>
 
 typedef struct dx_config_t dx_config_t;
 
 int dx_config_item_count(const dx_config_t *config, const char *section);
 const char *dx_config_item_value_string(const dx_config_t *config, const char *section, int index, const char* key);
 uint32_t dx_config_item_value_int(const dx_config_t *config, const char *section, int index, const char* key);
+int dx_config_item_value_bool(const dx_config_t *config, const char *section, int index, const char* key);
 
 #endif

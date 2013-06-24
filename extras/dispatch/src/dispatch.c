@@ -40,24 +40,13 @@ void            dx_router_free(dx_router_t *router);
 dx_agent_t     *dx_agent(dx_dispatch_t *dx);
 void            dx_agent_free(dx_agent_t *agent);
 
-
-static const char *CONF_CONTAINER = "container";
-static const char *CONF_ROUTER    = "router";
-static const char *CONF_LISTENER  = "listener";
-
-
-typedef struct dx_config_listener_t {
-    DEQ_LINKS(struct dx_config_listener_t);
-    dx_server_config_t  configuration;
-    dx_listener_t      *listener;
-} dx_config_listener_t;
-
-
-ALLOC_DECLARE(dx_config_listener_t);
 ALLOC_DEFINE(dx_config_listener_t);
-DEQ_DECLARE(dx_config_listener_t, listener_list_t);
+ALLOC_DEFINE(dx_config_connector_t);
 
-listener_list_t listeners;
+static const char *CONF_CONTAINER   = "container";
+static const char *CONF_ROUTER      = "router";
+static const char *CONF_LISTENER    = "listener";
+static const char *CONF_CONNECTOR   = "connector";
 
 
 dx_dispatch_t *dx_dispatch(const char *config_path)
@@ -69,14 +58,16 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
     const char *router_area    = 0;
     const char *router_id      = 0;
 
+    DEQ_INIT(dx->config_listeners);
+    DEQ_INIT(dx->config_connectors);
+
     dx_python_initialize();
     dx_log_initialize();
     dx_alloc_initialize();
 
-    DEQ_INIT(listeners);
-
     dx_config_initialize();
     dx->config = dx_config(config_path);
+    dx_config_read(dx->config);
 
     if (dx->config) {
         int count = dx_config_item_count(dx->config, CONF_CONTAINER);
@@ -130,7 +121,33 @@ void dx_dispatch_free(dx_dispatch_t *dx)
 }
 
 
-static void configure_connections(dx_dispatch_t *dx)
+static void load_server_config(dx_dispatch_t *dx, dx_server_config_t *config, const char *section, int i)
+{
+    config->host = dx_config_item_value_string(dx->config, section, i, "addr");
+    config->port = dx_config_item_value_string(dx->config, section, i, "port");
+    config->sasl_mechanisms =
+        dx_config_item_value_string(dx->config, section, i, "sasl-mechanisms");
+    config->ssl_enabled =
+        dx_config_item_value_bool(dx->config, section, i, "ssl-profile");
+    if (config->ssl_enabled) {
+        config->ssl_server = 1;
+        config->ssl_allow_unsecured_client =
+            dx_config_item_value_bool(dx->config, section, i, "allow-unsecured");
+        config->ssl_certificate_file =
+            dx_config_item_value_string(dx->config, section, i, "cert-file");
+        config->ssl_private_key_file =
+            dx_config_item_value_string(dx->config, section, i, "key-file");
+        config->ssl_password =
+            dx_config_item_value_string(dx->config, section, i, "password");
+        config->ssl_trusted_certificate_db =
+            dx_config_item_value_string(dx->config, section, i, "cert-db");
+        config->ssl_require_peer_authentication =
+            dx_config_item_value_bool(dx->config, section, i, "require-peer-auth");
+    }
+}
+
+
+static void configure_listeners(dx_dispatch_t *dx)
 {
     int count;
 
@@ -139,22 +156,59 @@ static void configure_connections(dx_dispatch_t *dx)
 
     count = dx_config_item_count(dx->config, CONF_LISTENER);
     for (int i = 0; i < count; i++) {
-        dx_config_listener_t *l = new_dx_config_listener_t();
-        memset(l, 0, sizeof(dx_config_listener_t));
+        dx_config_listener_t *cl = new_dx_config_listener_t();
+        load_server_config(dx, &cl->configuration, CONF_LISTENER, i);
 
-        l->configuration.host = dx_config_item_value_string(dx->config, CONF_LISTENER, i, "addr");
-        l->configuration.port = dx_config_item_value_string(dx->config, CONF_LISTENER, i, "port");
-        l->configuration.sasl_mechanisms =
-            dx_config_item_value_string(dx->config, CONF_LISTENER, i, "sasl-mechansism");
-        l->configuration.ssl_enabled = 0;
+        printf("\nListener   : %s:%s\n", cl->configuration.host, cl->configuration.port);
+        printf("       SASL: %s\n", cl->configuration.sasl_mechanisms);
+        printf("        SSL: %d\n", cl->configuration.ssl_enabled);
+        if (cl->configuration.ssl_enabled) {
+            printf("      unsec: %d\n", cl->configuration.ssl_allow_unsecured_client);
+            printf("  cert-file: %s\n", cl->configuration.ssl_certificate_file);
+            printf("   key-file: %s\n", cl->configuration.ssl_private_key_file);
+            printf("    cert-db: %s\n", cl->configuration.ssl_trusted_certificate_db);
+            printf("  peer-auth: %d\n", cl->configuration.ssl_require_peer_authentication);
+        }
 
-        l->listener = dx_server_listen(dx, &l->configuration, l);
+        cl->listener = dx_server_listen(dx, &cl->configuration, cl);
+        DEQ_ITEM_INIT(cl);
+        DEQ_INSERT_TAIL(dx->config_listeners, cl);
+    }
+}
+
+
+static void configure_connectors(dx_dispatch_t *dx)
+{
+    int count;
+
+    if (!dx->config)
+        return;
+
+    count = dx_config_item_count(dx->config, CONF_CONNECTOR);
+    for (int i = 0; i < count; i++) {
+        dx_config_connector_t *cc = new_dx_config_connector_t();
+        load_server_config(dx, &cc->configuration, CONF_CONNECTOR, i);
+
+        printf("\nConnector  : %s:%s\n", cc->configuration.host, cc->configuration.port);
+        printf("       SASL: %s\n", cc->configuration.sasl_mechanisms);
+        printf("        SSL: %d\n", cc->configuration.ssl_enabled);
+        if (cc->configuration.ssl_enabled) {
+            printf("  cert-file: %s\n", cc->configuration.ssl_certificate_file);
+            printf("   key-file: %s\n", cc->configuration.ssl_private_key_file);
+            printf("    cert-db: %s\n", cc->configuration.ssl_trusted_certificate_db);
+            printf("  peer-auth: %d\n", cc->configuration.ssl_require_peer_authentication);
+        }
+
+        cc->connector = dx_server_connect(dx, &cc->configuration, cc);
+        DEQ_ITEM_INIT(cc);
+        DEQ_INSERT_TAIL(dx->config_connectors, cc);
     }
 }
 
 
 void dx_dispatch_configure(dx_dispatch_t *dx)
 {
-    configure_connections(dx);
+    configure_listeners(dx);
+    configure_connectors(dx);
 }
 
