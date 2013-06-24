@@ -32,8 +32,6 @@ void dx_server_timer_cancel_LH(dx_timer_t *timer);
 
 typedef enum {
     CONN_STATE_CONNECTING = 0,
-    CONN_STATE_SASL_CLIENT,
-    CONN_STATE_SASL_SERVER,
     CONN_STATE_OPENING,
     CONN_STATE_OPERATIONAL,
     CONN_STATE_FAILED,

@@ -24,7 +24,6 @@
 #include "timer_private.h"
 #include "alloc_private.h"
 #include "dispatch_private.h"
-#include "auth.h"
 #include "work_queue.h"
 #include <stdio.h>
 #include <time.h>
@@ -102,7 +101,7 @@ static void thread_process_listeners(pn_driver_t *driver)
         dx_log(module, LOG_TRACE, "Accepting Connection");
         cxtr = pn_listener_accept(listener);
         ctx = new_dx_connection_t();
-        ctx->state        = CONN_STATE_SASL_SERVER;
+        ctx->state        = CONN_STATE_OPENING;
         ctx->owner_thread = CONTEXT_NO_OWNER;
         ctx->enqueued     = 0;
         ctx->pn_cxtr      = cxtr;
@@ -111,6 +110,40 @@ static void thread_process_listeners(pn_driver_t *driver)
         ctx->connector    = 0;
         ctx->context      = ctx->listener->context;
         ctx->ufd          = 0;
+
+        //
+        // Get a pointer to the transport so we can insert security components into it
+        //
+        pn_transport_t           *tport  = pn_connector_transport(cxtr);
+        const dx_server_config_t *config = ctx->listener->config;
+
+        //
+        // Set up SSL if appropriate
+        //
+        if (config->ssl_enabled) {
+            pn_ssl_domain_t *domain = pn_ssl_domain(PN_SSL_MODE_SERVER);
+            pn_ssl_domain_set_credentials(domain,
+                                          config->ssl_certificate_file,
+                                          config->ssl_private_key_file,
+                                          config->ssl_password);
+            if (config->ssl_allow_unsecured_client)
+                pn_ssl_domain_allow_unsecured_client(domain);
+
+            if (config->ssl_require_peer_authentication)
+                pn_ssl_domain_set_peer_authentication(domain, PN_SSL_VERIFY_PEER_NAME, config->ssl_trusted_certificate_db);
+
+            pn_ssl_t *ssl = pn_ssl(tport);
+            pn_ssl_init(ssl, domain, 0);
+            pn_ssl_domain_free(domain);
+        }
+
+        //
+        // Set up SASL
+        //
+        pn_sasl_t *sasl = pn_sasl(tport);
+        pn_sasl_mechanisms(sasl, config->sasl_mechanisms);
+        pn_sasl_server(sasl);
+        pn_sasl_done(sasl, PN_SASL_OK);  // TODO - This needs to go away
 
         pn_connector_set_context(cxtr, ctx);
         listener = pn_driver_listener(driver);
@@ -148,9 +181,8 @@ static void block_if_paused_LH(dx_server_t *dx_server)
 static int process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
 {
     dx_connection_t *ctx = pn_connector_context(cxtr);
-    int events      = 0;
-    int auth_passes = 0;
-    int passes      = 0;
+    int events = 0;
+    int passes = 0;
 
     if (ctx->state == CONN_STATE_USER) {
         dx_server->ufd_handler(ctx->ufd->context, ctx->ufd);
@@ -171,32 +203,12 @@ static int process_connector(dx_server_t *dx_server, pn_connector_t *cxtr)
         switch (ctx->state) {
         case CONN_STATE_CONNECTING:
             if (!pn_connector_closed(cxtr)) {
-                ctx->state = CONN_STATE_SASL_CLIENT;
+                //ctx->state = CONN_STATE_SASL_CLIENT;
                 assert(ctx->connector);
                 ctx->connector->state = CXTR_STATE_OPEN;
                 events = 1;
             } else {
                 ctx->state = CONN_STATE_FAILED;
-                events = 0;
-            }
-            break;
-
-        case CONN_STATE_SASL_CLIENT:
-            if (auth_passes == 0) {
-                auth_client_handler(cxtr);
-                events = 1;
-            } else {
-                auth_passes++;
-                events = 0;
-            }
-            break;
-
-        case CONN_STATE_SASL_SERVER:
-            if (auth_passes == 0) {
-                auth_server_handler(cxtr);
-                events = 1;
-            } else {
-                auth_passes++;
                 events = 0;
             }
             break;

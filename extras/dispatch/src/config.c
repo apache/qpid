@@ -95,6 +95,36 @@ dx_config_t *dx_config(const char *filename)
 }
 
 
+void dx_config_read(dx_config_t *config)
+{
+    PyObject *pMethod;
+    PyObject *pArgs;
+    PyObject *pResult;
+
+    if (!config)
+        return;
+
+    pMethod = PyObject_GetAttrString(config->pObject, "read_file");
+    if (!pMethod || !PyCallable_Check(pMethod)) {
+        dx_log(log_module, LOG_ERROR, "Problem with configuration module: No callable 'item_count'");
+        if (pMethod) {
+            Py_DECREF(pMethod);
+        }
+        return;
+    }
+
+    pArgs = PyTuple_New(0);
+    pResult = PyObject_CallObject(pMethod, pArgs);
+    Py_DECREF(pArgs);
+    if (pResult) {
+        Py_DECREF(pResult);
+    } else {
+        PyErr_Print();
+    }
+    Py_DECREF(pMethod);
+}
+
+
 void dx_config_free(dx_config_t *config)
 {
     if (config) {
@@ -112,6 +142,9 @@ int dx_config_item_count(const dx_config_t *config, const char *section)
     PyObject *pArgs;
     PyObject *pResult;
     int       result = 0;
+
+    if (!config)
+        return 0;
 
     pMethod = PyObject_GetAttrString(config->pObject, "item_count");
     if (!pMethod || !PyCallable_Check(pMethod)) {
@@ -146,6 +179,9 @@ static PyObject *item_value(const dx_config_t *config, const char *section, int 
     PyObject *pMethod;
     PyObject *pArgs;
     PyObject *pResult;
+
+    if (!config)
+        return 0;
 
     pMethod = PyObject_GetAttrString(config->pObject, method);
     if (!pMethod || !PyCallable_Check(pMethod)) {
@@ -197,6 +233,22 @@ uint32_t dx_config_item_value_int(const dx_config_t *config, const char *section
 
     if (pResult && PyLong_Check(pResult))
         value = (uint32_t) PyLong_AsLong(pResult);
+
+    if (pResult) {
+        Py_DECREF(pResult);
+    }
+
+    return value;
+}
+
+
+int dx_config_item_value_bool(const dx_config_t *config, const char *section, int index, const char* key)
+{
+    PyObject *pResult = item_value(config, section, index, key, "value_bool");
+    int       value   = 0;
+
+    if (pResult && pResult != Py_None)
+        value = 1;
 
     if (pResult) {
         Py_DECREF(pResult);

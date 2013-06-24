@@ -17,4 +17,4 @@
 # under the License.
 #
 
-from config.configparse import DXConfig
+from config.parser import DXConfig
