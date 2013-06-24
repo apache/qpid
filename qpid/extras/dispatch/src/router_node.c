@@ -239,9 +239,9 @@ static void router_disp_handler(void* context, dx_link_t *link, pn_delivery_t *d
     pn_link_t *pn_link = pn_delivery_link(delivery);
 
     if (pn_link_is_sender(pn_link)) {
-        pn_disposition_t  disp     = pn_delivery_remote_state(delivery);
-        dx_message_t     *msg      = pn_delivery_get_context(delivery);
-        pn_delivery_t    *activate = 0;
+        uint64_t       disp     = pn_delivery_remote_state(delivery);
+        dx_message_t  *msg      = pn_delivery_get_context(delivery);
+        pn_delivery_t *activate = 0;
 
         if (msg) {
             assert(delivery == dx_message_out_delivery(msg));
