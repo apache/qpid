@@ -80,9 +80,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private final AtomicLong _messageId = new AtomicLong(0);
     private AtomicBoolean _closed = new AtomicBoolean(false);
 
-    protected String _connectionURL;
-
-
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+ DB_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+ DB_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
 
@@ -217,7 +214,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    protected abstract void implementationSpecificConfiguration(String name, Configuration storeConfiguration) throws ClassNotFoundException;
+    protected abstract void implementationSpecificConfiguration(String name, Configuration storeConfiguration) throws ClassNotFoundException, SQLException;
 
     abstract protected Logger getLogger();
 
@@ -696,7 +693,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
      */
     protected Connection newConnection() throws SQLException
     {
-        final Connection connection = DriverManager.getConnection(_connectionURL);
+        final Connection connection = getConnection();
         try
         {
             connection.setAutoCommit(false);
@@ -715,6 +712,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         return connection;
     }
+
+    protected abstract Connection getConnection() throws SQLException;
 
     @Override
     public void removeQueue(final AMQQueue queue) throws AMQStoreException
