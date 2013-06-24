@@ -17,6 +17,13 @@
 ## under the License.
 ##
 
+
+set(DEFAULT_CONFIG_PATH "/etc/qpid-dispatch.conf" CACHE string "Default Config File Path")
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 ##
 ## Build the router application
 ##
