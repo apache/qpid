@@ -23,6 +23,7 @@
  */
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/OutputControl.h"
+#include "qpid/broker/amqp/Authorise.h"
 #include "qpid/broker/amqp/ManagedSession.h"
 #include "qpid/broker/amqp/NodeProperties.h"
 #include <deque>
@@ -75,6 +76,8 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     void accepted(pn_delivery_t*, bool sync);
 
     void wakeup();
+
+    Authorise& getAuthorise();
   private:
     typedef std::map<pn_link_t*, boost::shared_ptr<Outgoing> > OutgoingLinks;
     typedef std::map<pn_link_t*, boost::shared_ptr<Incoming> > IncomingLinks;
@@ -88,6 +91,8 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     bool deleted;
     qpid::sys::Mutex lock;
     std::set< boost::shared_ptr<Queue> > exclusiveQueues;
+    Authorise authorise;
+
     struct ResolvedNode
     {
         boost::shared_ptr<qpid::broker::Exchange> exchange;

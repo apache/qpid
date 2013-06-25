@@ -45,8 +45,10 @@ namespace broker {
 
 class LinkRegistry;
 class Broker;
-class Connection;
 class LinkExchange;
+namespace amqp_0_10 {
+class Connection;
+}
 
 class Link : public PersistableConfig, public management::Manageable {
   private:
@@ -83,7 +85,7 @@ class Link : public PersistableConfig, public management::Manageable {
     Bridges cancellations;    // Bridges pending cancellation
     framing::ChannelId nextFreeChannel;
     RangeSet<framing::ChannelId> freeChannels;
-    Connection* connection;
+    amqp_0_10::Connection* connection;
     management::ManagementAgent* agent;
     boost::function<void(Link*)> listener;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
@@ -109,7 +111,7 @@ class Link : public PersistableConfig, public management::Manageable {
     void reconnectLH(const Address&); //called by LinkRegistry
 
     // connection management (called by LinkRegistry)
-    void established(Connection*); // Called when connection is created
+    void established(amqp_0_10::Connection*); // Called when connection is created
     void opened();      // Called when connection is open (after create)
     void closed(int, std::string);   // Called when connection goes away
     void notifyConnectionForced(const std::string text);
@@ -194,7 +196,7 @@ class Link : public PersistableConfig, public management::Manageable {
     /** The current connction for this link. Note returns 0 if the link is not
      * presently connected.
      */
-    Connection* getConnection() { return connection; }
+    amqp_0_10::Connection* getConnection() { return connection; }
 };
 }
 }

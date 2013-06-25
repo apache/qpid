@@ -22,7 +22,7 @@
 
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/FedOps.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
 #include "qpid/broker/SessionState.h"
@@ -100,7 +100,7 @@ Bridge::~Bridge()
     mgmtObject->resourceDestroy();
 }
 
-void Bridge::create(Connection& c)
+void Bridge::create(amqp_0_10::Connection& c)
 {
     detached = false;           // Reset detached in case we are recovering.
     conn = &c;
@@ -200,7 +200,7 @@ void Bridge::create(Connection& c)
     if (args.i_srcIsLocal) sessionHandler.getSession()->enableReceiverTracking();
 }
 
-void Bridge::cancel(Connection&)
+void Bridge::cancel(amqp_0_10::Connection&)
 {
     if (resetProxy()) {
         peer->getMessage().cancel(args.i_dest);

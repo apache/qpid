@@ -22,7 +22,7 @@
 #include "qpid/broker/SessionState.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/DtxAck.h"
 #include "qpid/broker/DtxTimeout.h"
@@ -83,7 +83,7 @@ SemanticState::SemanticState(SessionState& ss)
       authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isUserProxyAuth()),
       userID(getSession().getConnection().getUserId()),
       closeComplete(false),
-      connectionId(getSession().getConnection().getUrl())
+      connectionId(getSession().getConnection().getMgmtId())
 {}
 
 SemanticState::~SemanticState() {

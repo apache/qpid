@@ -18,7 +18,7 @@
 #include "qpid/broker/SessionAdapter.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/Exception.h"
@@ -96,14 +96,14 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
         try{
             std::pair<Exchange::shared_ptr, bool> response =
                 getBroker().createExchange(exchange, type, durable, alternateExchange, args,
-                                           getConnection().getUserId(), getConnection().getUrl());
+                                           getConnection().getUserId(), getConnection().getMgmtId());
             if (!response.second) {
                 //exchange already there, not created
                 checkType(response.first, type);
                 checkAlternate(response.first, alternate);
                 QPID_LOG_CAT(debug, model, "Create exchange. name:" << exchange
                     << " user:" << getConnection().getUserId()
-                    << " rhost:" << getConnection().getUrl()
+                    << " rhost:" << getConnection().getMgmtId()
                     << " type:" << type
                     << " alternateExchange:" << alternateExchange
                     << " durable:" << (durable ? "T" : "F"));
@@ -134,7 +134,7 @@ void SessionAdapter::ExchangeHandlerImpl::checkAlternate(Exchange::shared_ptr ex
 void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifUnused*/)
 {
     //TODO: implement if-unused
-    getBroker().deleteExchange(name, getConnection().getUserId(), getConnection().getUrl());
+    getBroker().deleteExchange(name, getConnection().getUserId(), getConnection().getMgmtId());
 }
 
 ExchangeQueryResult SessionAdapter::ExchangeHandlerImpl::query(const string& name)
@@ -156,7 +156,7 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
                                                const FieldTable& arguments)
 {
     getBroker().bind(queueName, exchangeName, routingKey, arguments,
-                     getConnection().getUserId(), getConnection().getUrl());
+                     getConnection().getUserId(), getConnection().getMgmtId());
     state.addBinding(queueName, exchangeName, routingKey, arguments);
 }
 
@@ -166,7 +166,7 @@ void SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
 {
     state.removeBinding(queueName, exchangeName, routingKey);
     getBroker().unbind(queueName, exchangeName, routingKey,
-                       getConnection().getUserId(), getConnection().getUrl());
+                       getConnection().getUserId(), getConnection().getMgmtId());
 }
 
 ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string& exchangeName,
@@ -209,7 +209,7 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
 SessionAdapter::QueueHandlerImpl::QueueHandlerImpl(SemanticState& session)
     : HandlerHelper(session), broker(getBroker()),
       //record connection id and userid for deleting exclsuive queues after session has ended:
-      connectionId(getConnection().getUrl()), userId(getConnection().getUserId())
+      connectionId(getConnection().getMgmtId()), userId(getConnection().getUserId())
 {}
 
 
@@ -302,7 +302,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
                                     exclusive ? &session : 0,
                                     alternateExchange,
                                     getConnection().getUserId(),
-                                    getConnection().getUrl());
+                                    getConnection().getMgmtId());
         queue = queue_created.first;
         assert(queue);
         if (queue_created.second) { // This is a new queue
@@ -316,7 +316,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             }
             QPID_LOG_CAT(debug, model, "Create queue. name:" << name
                 << " user:" << getConnection().getUserId()
-                << " rhost:" << getConnection().getUrl()
+                << " rhost:" << getConnection().getMgmtId()
                 << " durable:" << (durable ? "T" : "F")
                 << " exclusive:" << (exclusive ? "T" : "F")
                 << " autodelete:" << (autoDelete ? "T" : "F")
@@ -363,7 +363,7 @@ void SessionAdapter::QueueHandlerImpl::checkDelete(Queue::shared_ptr queue, bool
 
 void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnused, bool ifEmpty)
 {
-    getBroker().deleteQueue(queue, getConnection().getUserId(), getConnection().getUrl(),
+    getBroker().deleteQueue(queue, getConnection().getUserId(), getConnection().getMgmtId(),
                             boost::bind(&SessionAdapter::QueueHandlerImpl::checkDelete, this, _1, ifUnused, ifEmpty));
 }
 
@@ -429,12 +429,12 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
 
     ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
-        agent->raiseEvent(_qmf::EventSubscribe(getConnection().getUrl(), getConnection().getUserId(),
+        agent->raiseEvent(_qmf::EventSubscribe(getConnection().getMgmtId(), getConnection().getUserId(),
                                                queueName, destination, exclusive, ManagementAgent::toMap(arguments)));
     QPID_LOG_CAT(debug, model, "Create subscription. queue:" << queueName
         << " destination:" << destination
         << " user:" << getConnection().getUserId()
-        << " rhost:" << getConnection().getUrl()
+        << " rhost:" << getConnection().getMgmtId()
         << " exclusive:" << (exclusive ? "T" : "F")
     );
 }
@@ -448,10 +448,10 @@ SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
 
     ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
-        agent->raiseEvent(_qmf::EventUnsubscribe(getConnection().getUrl(), getConnection().getUserId(), destination));
+        agent->raiseEvent(_qmf::EventUnsubscribe(getConnection().getMgmtId(), getConnection().getUserId(), destination));
     QPID_LOG_CAT(debug, model, "Delete subscription. destination:" << destination
         << " user:" << getConnection().getUserId()
-        << " rhost:" << getConnection().getUrl() );
+        << " rhost:" << getConnection().getMgmtId() );
 }
 
 void

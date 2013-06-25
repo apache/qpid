@@ -19,8 +19,10 @@
  *
  */
 #include "Incoming.h"
+#include "Exception.h"
 #include "Message.h"
 #include "Session.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/broker/AsyncCompletion.h"
 #include "qpid/broker/Message.h"
 
@@ -60,6 +62,30 @@ void Incoming::wakeup()
 {
     session.wakeup();
 }
+
+void Incoming::verify(const std::string& u, const std::string& r)
+{
+    userid.init(u, r);
+}
+
+Incoming::UserId::UserId() : inDefaultRealm(false) {}
+void Incoming::UserId::init(const std::string& u, const std::string& defaultRealm)
+{
+    userid = u;
+    size_t at = userid.find('@');
+    if (at != std::string::npos) {
+        unqualified = userid.substr(0, at);
+        inDefaultRealm = defaultRealm == userid.substr(at+1);
+    }
+}
+void Incoming::UserId::verify(const std::string& claimed)
+{
+    if(!userid.empty() && !claimed.empty() && userid != claimed && !(inDefaultRealm && claimed == unqualified)) {
+        throw Exception(qpid::amqp::error_conditions::NOT_ALLOWED, QPID_MSG("Authenticated user id is " << userid << " but user id in message declared as " << claimed));
+    }
+}
+
+
 namespace {
     class Transfer : public qpid::broker::AsyncCompletion::Callback
     {
@@ -89,7 +115,7 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
     pn_link_advance(link);
 
     qpid::broker::Message message(received, received);
-
+    userid.verify(message.getUserId());
     handle(message);
     --window;
     received->begin();

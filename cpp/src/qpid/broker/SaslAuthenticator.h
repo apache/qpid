@@ -34,7 +34,9 @@
 namespace qpid {
 namespace broker {
 
+namespace amqp_0_10 {
 class Connection;
+}
 
 class SaslAuthenticator
 {
@@ -54,7 +56,7 @@ public:
     static void init(const std::string& saslName, std::string const & saslConfigPath );
     static void fini(void);
 
-    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection);
+    static std::auto_ptr<SaslAuthenticator> createAuthenticator(amqp_0_10::Connection& connection);
 
     virtual void callUserIdCallbacks() { }
 };

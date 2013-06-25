@@ -21,7 +21,7 @@
 
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/SessionContext.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 
 namespace qpid {
 namespace broker {
@@ -40,7 +40,7 @@ class HandlerImpl {
     HandlerImpl(SemanticState& s) : state(s), session(s.getSession()) {}
 
     framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
-    Connection& getConnection() { return session.getConnection(); }
+    amqp_0_10::Connection& getConnection() { return session.getConnection(); }
     Broker& getBroker() { return session.getConnection().getBroker(); }
 };
 

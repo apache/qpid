@@ -35,10 +35,11 @@
 
 namespace qpid {
 namespace broker {
-
+namespace amqp_0_10 {
+    class Connection;
+}
     class Link;
     class Broker;
-    class Connection;
     class LinkRegistry {
         typedef std::map<std::string, boost::shared_ptr<Link> > LinkMap;
         typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
@@ -58,7 +59,7 @@ namespace broker {
         boost::shared_ptr<Link> findLink(const std::string& key);
 
         // Methods called by the connection observer, key is connection identifier
-        void notifyConnection (const std::string& key, Connection* c);
+        void notifyConnection (const std::string& key, amqp_0_10::Connection* c);
         void notifyOpened     (const std::string& key);
         void notifyClosed     (const std::string& key);
         void notifyConnectionForced    (const std::string& key, const std::string& text);

@@ -150,6 +150,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     std::size_t writeProtocolHeader(char* buffer, std::size_t size);
     std::string getError();
     bool useSasl();
+    void setProperties();
 };
 
 }}} // namespace qpid::messaging::amqp
