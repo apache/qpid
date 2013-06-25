@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include <string>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
