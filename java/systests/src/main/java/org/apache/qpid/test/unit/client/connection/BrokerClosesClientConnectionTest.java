@@ -23,6 +23,11 @@ package org.apache.qpid.test.unit.client.connection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.naming.NamingException;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.AMQConnection;
@@ -45,6 +50,7 @@ public class BrokerClosesClientConnectionTest extends QpidBrokerTestCase
     private Connection _connection;
     private boolean _isExternalBroker;
     private final RecordingExceptionListener _recordingExceptionListener = new RecordingExceptionListener();
+    private Session _session;
 
     @Override
     protected void setUp() throws Exception
@@ -52,7 +58,7 @@ public class BrokerClosesClientConnectionTest extends QpidBrokerTestCase
         super.setUp();
 
         _connection = getConnection();
-        _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _connection.setExceptionListener(_recordingExceptionListener);
 
         _isExternalBroker = isExternalBroker();
@@ -139,5 +145,71 @@ public class BrokerClosesClientConnectionTest extends QpidBrokerTestCase
             _exceptionReceivedLatch.await(timeoutInMillis, TimeUnit.MILLISECONDS);
             return _exception;
         }
+    }
+
+
+    private class Listener implements MessageListener
+    {
+        int _messageCount;
+
+        @Override
+        public synchronized void onMessage(Message message)
+        {
+            _messageCount++;
+        }
+
+        public synchronized int getCount()
+        {
+            return _messageCount;
+        }
+    }
+
+    public void testNoDeliveryAfterBrokerClose() throws JMSException, NamingException, InterruptedException
+    {
+
+        Listener listener = new Listener();
+
+        Session session = _connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer consumer1 = session.createConsumer(getTestQueue());
+        consumer1.setMessageListener(listener);
+
+        MessageProducer producer = _session.createProducer(getTestQueue());
+        producer.send(_session.createTextMessage("test message"));
+
+        _connection.start();
+
+
+        synchronized (listener)
+        {
+            long currentTime = System.currentTimeMillis();
+            long until = currentTime + 2000l;
+            while(listener.getCount() == 0 && currentTime < until)
+            {
+                listener.wait(until - currentTime);
+                currentTime = System.currentTimeMillis();
+            }
+        }
+        assertEquals(1, listener.getCount());
+
+        Connection connection2 = getConnection();
+        Session session2 = connection2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer consumer2 = session2.createConsumer(getTestQueue());
+        consumer2.setMessageListener(listener);
+        connection2.start();
+
+
+        Connection connection3 = getConnection();
+        Session session3 = connection3.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer consumer3 = session3.createConsumer(getTestQueue());
+        consumer3.setMessageListener(listener);
+        connection3.start();
+
+        assertEquals(1, listener.getCount());
+
+        stopBroker();
+
+        assertEquals(1, listener.getCount());
+
+
     }
 }

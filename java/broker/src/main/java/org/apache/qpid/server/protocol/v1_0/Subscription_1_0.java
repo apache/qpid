@@ -163,7 +163,7 @@ class Subscription_1_0 implements Subscription
 
     public boolean isSuspended()
     {
-        return !isActive();// || !getEndpoint().hasCreditToSend();
+        return _link.getSession().getConnectionModel().isStopped() || !isActive();// || !getEndpoint().hasCreditToSend();
 
     }
 

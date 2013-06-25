@@ -74,6 +74,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private Principal _peerPrincipal;
     private NetworkConnection _networkConnection;
     private Transport _transport;
+    private volatile boolean _stopped;
 
     public ServerConnection(final long connectionId)
     {
@@ -167,6 +168,18 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public Transport getTransport()
     {
         return _transport;
+    }
+
+    @Override
+    public void stop()
+    {
+        _stopped = true;
+    }
+
+    @Override
+    public boolean isStopped()
+    {
+        return _stopped;
     }
 
     public void setTransport(Transport transport)

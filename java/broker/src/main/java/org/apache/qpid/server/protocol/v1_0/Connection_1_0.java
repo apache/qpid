@@ -149,6 +149,8 @@ public class Connection_1_0 implements ConnectionEventListener
             }
         };
 
+        private volatile boolean _stopped;
+
         @Override
         public void close(AMQConstant cause, String message) throws AMQException
         {
@@ -249,6 +251,18 @@ public class Connection_1_0 implements ConnectionEventListener
         public Transport getTransport()
         {
             return _transport;
+        }
+
+        @Override
+        public void stop()
+        {
+            _stopped = true;
+        }
+
+        @Override
+        public boolean isStopped()
+        {
+            return _stopped;
         }
 
         @Override
