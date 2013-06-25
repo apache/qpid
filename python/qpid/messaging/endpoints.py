@@ -89,24 +89,28 @@ class Connection(Endpoint):
     @type password: str
     @param password: the password for authentication (overriden by url)
 
+     * - sasl_min_ssf: the minimum acceptable security strength factor
+     * - sasl_max_ssf: the minimum acceptable security strength factor
+     * - sasl_service: the service name if needed by the SASL mechanism in use
+
     @type sasl_mechanisms: str
     @param sasl_mechanisms: space separated list of permitted sasl mechanisms
     @type sasl_service: str
-    @param sasl_service: ???
-    @type sasl_min_ssf: ???
-    @param sasl_min_ssf: ???
-    @type sasl_max_ssf: ???
-    @param sasl_max_ssf: ???
+    @param sasl_service: the service name if needed by the SASL mechanism in use
+    @type sasl_min_ssf: int
+    @param sasl_min_ssf: the minimum acceptable security strength factor
+    @type sasl_max_ssf: int
+    @param sasl_max_ssf: the minimum acceptable security strength factor
 
     @type reconnect: bool
     @param reconnect: enable/disable automatic reconnect
     @type reconnect_timeout: float
     @param reconnect_timeout: total time to attempt reconnect
-    @type reconnect_internal_min: float
-    @param reconnect_internal_min: minimum interval between reconnect attempts
-    @type reconnect_internal_max: float
-    @param reconnect_internal_max: maximum interval between reconnect attempts
-    @type reconnect_internal: float
+    @type reconnect_interval_min: float
+    @param reconnect_interval_min: minimum interval between reconnect attempts
+    @type reconnect_interval_max: float
+    @param reconnect_interval_max: maximum interval between reconnect attempts
+    @type reconnect_interval: float
     @param reconnect_interval: set both min and max reconnect intervals
     @type reconnect_limit: int
     @param reconnect_limit: limit the total number of reconnect attempts
