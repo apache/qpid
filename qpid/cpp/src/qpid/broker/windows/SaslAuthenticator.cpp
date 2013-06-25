@@ -22,7 +22,7 @@
 // This source is only used on Windows; SSPI is the Windows mechanism for
 // accessing authentication mechanisms, analogous to Cyrus SASL.
 
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -41,10 +41,10 @@ namespace broker {
 
 class NullAuthenticator : public SaslAuthenticator
 {
-    Connection& connection;
+    qpid::broker::amqp_0_10::Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
 public:
-    NullAuthenticator(Connection& connection);
+    NullAuthenticator(qpid::broker::amqp_0_10::Connection& connection);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string* response);
@@ -55,11 +55,11 @@ public:
 class SspiAuthenticator : public SaslAuthenticator
 {
     HANDLE userToken;
-    Connection& connection;
+    qpid::broker::amqp_0_10::Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
 
 public:
-    SspiAuthenticator(Connection& connection);
+    SspiAuthenticator(qpid::broker::amqp_0_10::Connection& connection);
     ~SspiAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string* response);
@@ -83,7 +83,7 @@ void SaslAuthenticator::fini(void)
     return;
 }
 
-std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c)
+std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(qpid::broker::amqp_0_10::Connection& c)
 {
     if (c.getBroker().getOptions().auth) {
         return std::auto_ptr<SaslAuthenticator>(new SspiAuthenticator(c));
@@ -92,7 +92,7 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connecti
     }
 }
 
-NullAuthenticator::NullAuthenticator(Connection& c) : connection(c), client(c.getOutput()) {}
+NullAuthenticator::NullAuthenticator(qpid::broker::amqp_0_10::Connection& c) : connection(c), client(c.getOutput()) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)
@@ -125,7 +125,7 @@ std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
 }
 
 
-SspiAuthenticator::SspiAuthenticator(Connection& c) : userToken(INVALID_HANDLE_VALUE), connection(c), client(c.getOutput()) 
+SspiAuthenticator::SspiAuthenticator(qpid::broker::amqp_0_10::Connection& c) : userToken(INVALID_HANDLE_VALUE), connection(c), client(c.getOutput()) 
 {
 }
 
