@@ -443,6 +443,7 @@ Broker::~Broker() {
     if (config.auth)
         SaslAuthenticator::fini();
     timer->stop();
+    managementAgent.reset();
     QPID_LOG(notice, "Shut down");
 }
 
