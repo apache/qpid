@@ -89,6 +89,15 @@ const uint64_t SELECTOR_FILTER_CODE(0x0000468C00000004ULL);
 const uint64_t XQUERY_FILTER_CODE(0x0000468C00000005ULL);
 }
 
+namespace error_conditions {
+//note these are not actually descriptors
+const std::string INTERNAL_ERROR("amqp:internal-error");
+const std::string NOT_FOUND("amqp:not-found");
+const std::string UNAUTHORIZED_ACCESS("amqp:unauthorized-access");
+const std::string DECODE_ERROR("amqp:decode-error");
+const std::string NOT_ALLOWED("amqp:not-allowed");
+const std::string RESOURCE_LIMIT_EXCEEDED("amqp:resource-limit-exceeded");
+}
 }} // namespace qpid::amqp
 
 #endif  /*!QPID_AMQP_DESCRIPTORS_H*/

@@ -22,7 +22,7 @@
 
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/SecureConnection.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
@@ -35,7 +35,7 @@ using framing::ProtocolVersion;
 using qpid::sys::SecuritySettings;
 typedef std::auto_ptr<qpid::amqp_0_10::Connection> CodecPtr;
 typedef std::auto_ptr<SecureConnection> SecureConnectionPtr;
-typedef std::auto_ptr<Connection> ConnectionPtr;
+typedef std::auto_ptr<qpid::broker::amqp_0_10::Connection> ConnectionPtr;
 typedef std::auto_ptr<sys::ConnectionInputHandler> InputPtr;
 
 SecureConnectionFactory::SecureConnectionFactory(Broker& b) : broker(b) {}
@@ -64,7 +64,7 @@ SecureConnectionFactory::create_0_10(sys::OutputControl& out, const std::string&
 {
     SecureConnectionPtr sc(new SecureConnection());
     CodecPtr c(new qpid::amqp_0_10::Connection(out, id, brokerActsAsClient));
-    ConnectionPtr i(new broker::Connection(c.get(), broker, id, external, brokerActsAsClient));
+    ConnectionPtr i(new broker::amqp_0_10::Connection(c.get(), broker, id, external, brokerActsAsClient));
     i->setSecureConnection(sc.get());
     c->setInputHandler(InputPtr(i.release()));
     sc->setCodec(std::auto_ptr<sys::ConnectionCodec>(c));

@@ -19,9 +19,12 @@
  *
  */
 #include "Connection.h"
+#include "DataReader.h"
 #include "Session.h"
-#include "qpid/Exception.h"
+#include "Exception.h"
+#include "qpid/broker/AclModule.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
@@ -36,7 +39,6 @@ extern "C" {
 namespace qpid {
 namespace broker {
 namespace amqp {
-
 Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::broker::Broker& b, Interconnects& interconnects_, bool saslInUse, const std::string& d)
     : ManagedConnection(b, i),
       connection(pn_connection()),
@@ -52,6 +54,7 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::
     QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
     if (enableTrace) pn_transport_trace(transport, PN_TRACE_FRM);
 
+    broker.getConnectionObservers().connection(*this);
     if (!saslInUse) {
         //feed in a dummy AMQP 1.0 header as engine expects one, but
         //we already read it (if sasl is in use we read the sasl
@@ -62,15 +65,14 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::
         pi.encode(buffer);
         pn_transport_input(transport, &protocolHeader[0], protocolHeader.size());
 
-        //wont get a userid, so set a dummy one on the ManagedConnection to trigger event
-        setUserid("no authentication used");
+        setUserId("none");
     }
 }
 
 
 Connection::~Connection()
 {
-
+    broker.getConnectionObservers().closed(*this);
     pn_transport_free(transport);
     pn_connection_free(connection);
 }
@@ -97,8 +99,17 @@ size_t Connection::decode(const char* buffer, size_t size)
         QPID_LOG_CAT(debug, network, id << " decoded " << n << " bytes from " << size);
         try {
             process();
+        } catch (const Exception& e) {
+            QPID_LOG(error, id << ": " << e.what());
+            pn_condition_t* error = pn_connection_condition(connection);
+            pn_condition_set_name(error, e.symbol());
+            pn_condition_set_description(error, e.what());
+            close();
         } catch (const std::exception& e) {
             QPID_LOG(error, id << ": " << e.what());
+            pn_condition_t* error = pn_connection_condition(connection);
+            pn_condition_set_name(error, qpid::amqp::error_conditions::INTERNAL_ERROR.c_str());
+            pn_condition_set_description(error, e.what());
             close();
         }
         pn_transport_tick(transport, 0);
@@ -108,7 +119,7 @@ size_t Connection::decode(const char* buffer, size_t size)
         }
         return n;
     } else if (n == PN_ERR) {
-        throw qpid::Exception(QPID_MSG("Error on input: " << getError()));
+        throw Exception(qpid::amqp::error_conditions::DECODE_ERROR, QPID_MSG("Error on input: " << getError()));
     } else {
         return 0;
     }
@@ -126,7 +137,7 @@ size_t Connection::encode(char* buffer, size_t size)
         haveOutput = size;
         return size;//Is this right?
     } else if (n == PN_ERR) {
-        throw qpid::Exception(QPID_MSG("Error on output: " << getError()));
+        throw Exception(qpid::amqp::error_conditions::INTERNAL_ERROR, QPID_MSG("Error on output: " << getError()));
     } else {
         haveOutput = false;
         return 0;
@@ -139,8 +150,17 @@ bool Connection::canEncode()
             if (i->second->dispatch()) haveOutput = true;
         }
         process();
+    } catch (const Exception& e) {
+        QPID_LOG(error, id << ": " << e.what());
+        pn_condition_t* error = pn_connection_condition(connection);
+        pn_condition_set_name(error, e.symbol());
+        pn_condition_set_description(error, e.what());
+        close();
     } catch (const std::exception& e) {
         QPID_LOG(error, id << ": " << e.what());
+        pn_condition_t* error = pn_connection_condition(connection);
+        pn_condition_set_name(error, qpid::amqp::error_conditions::INTERNAL_ERROR.c_str());
+        pn_condition_set_description(error, e.what());
         close();
     }
     //TODO: proper handling of time in and out of tick
@@ -148,6 +168,28 @@ bool Connection::canEncode()
     QPID_LOG_CAT(trace, network, id << " canEncode(): " << haveOutput)
     return haveOutput;
 }
+
+void Connection::open()
+{
+    readPeerProperties();
+
+    pn_connection_set_container(connection, broker.getFederationTag().c_str());
+    pn_connection_open(connection);
+    out.connectionEstablished();
+    opened();
+    broker.getConnectionObservers().opened(*this);
+}
+
+void Connection::readPeerProperties()
+{
+    /**
+     * TODO: enable when proton 0.5 has been released:
+    qpid::types::Variant::Map properties;
+    DataReader::read(pn_connection_remote_properties(connection), properties);
+    setPeerProperties(properties);
+    */
+}
+
 void Connection::closed()
 {
     for (Sessions::iterator i = sessions.begin(); i != sessions.end(); ++i) {
@@ -178,10 +220,8 @@ void Connection::process()
     QPID_LOG(trace, id << " process()");
     if ((pn_connection_state(connection) & REQUIRES_OPEN) == REQUIRES_OPEN) {
         QPID_LOG_CAT(debug, model, id << " connection opened");
-        pn_connection_set_container(connection, broker.getFederationTag().c_str());
+        open();
         setContainerId(pn_connection_remote_container(connection));
-        pn_connection_open(connection);
-        out.connectionEstablished();
     }
 
     for (pn_session_t* s = pn_session_head(connection, REQUIRES_OPEN); s; s = pn_session_next(s, REQUIRES_OPEN)) {
@@ -200,9 +240,17 @@ void Connection::process()
             try {
                 session->second->attach(l);
                 QPID_LOG_CAT(debug, protocol, id << " link " << l << " attached on " << pn_link_session(l));
+            } catch (const Exception& e) {
+                QPID_LOG_CAT(error, protocol, "Error on attach: " << e.what());
+                pn_condition_t* error = pn_link_condition(l);
+                pn_condition_set_name(error, e.symbol());
+                pn_condition_set_description(error, e.what());
+                pn_link_close(l);
             } catch (const std::exception& e) {
                 QPID_LOG_CAT(error, protocol, "Error on attach: " << e.what());
-                //TODO: set error details on detach when that is exposed via engine API
+                pn_condition_t* error = pn_link_condition(l);
+                pn_condition_set_name(error, qpid::amqp::error_conditions::INTERNAL_ERROR.c_str());
+                pn_condition_set_description(error, e.what());
                 pn_link_close(l);
             }
         }
@@ -214,7 +262,15 @@ void Connection::process()
         if (pn_link_is_receiver(link)) {
             Sessions::iterator i = sessions.find(pn_link_session(link));
             if (i != sessions.end()) {
-                i->second->readable(link, delivery);
+                try {
+                    i->second->readable(link, delivery);
+                } catch (const Exception& e) {
+                    QPID_LOG_CAT(error, protocol, "Error on publish: " << e.what());
+                    pn_condition_t* error = pn_link_condition(link);
+                    pn_condition_set_name(error, e.symbol());
+                    pn_condition_set_description(error, e.what());
+                    pn_link_close(link);
+                }
             } else {
                 pn_delivery_update(delivery, PN_REJECTED);
             }
@@ -270,5 +326,20 @@ std::string Connection::getError()
 std::string Connection::getDomain() const
 {
     return domain;
+}
+
+void Connection::abort()
+{
+    out.abort();
+}
+
+void Connection::setUserId(const std::string& user)
+{
+    ManagedConnection::setUserId(user);
+    AclModule* acl = broker.getAcl();
+    if (acl && !acl->approveConnection(*this))
+    {
+        throw Exception(qpid::amqp::error_conditions::RESOURCE_LIMIT_EXCEEDED, "User connection denied by configured limit");
+    }
 }
 }}} // namespace qpid::broker::amqp

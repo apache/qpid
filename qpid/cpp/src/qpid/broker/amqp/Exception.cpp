@@ -1,6 +1,3 @@
-#ifndef QPID_BROKER_CONNECTIONIDENTITY_H
-#define QPID_BROKER_CONNECTIONIDENTITY_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,31 +18,13 @@
  * under the License.
  *
  */
-
-#include <string>
+#include "Exception.h"
 
 namespace qpid {
-
-namespace management {
-class ObjectId;
-}
-
 namespace broker {
-
-class OwnershipToken;
-
-// Interface used to hold Connection authentication and object details for use when authenticating
-// publihed management requests.
-class ConnectionIdentity {
-protected:
-    virtual ~ConnectionIdentity() {}
-
-public:
-    virtual const OwnershipToken* getOwnership() const = 0;
-    virtual const management::ObjectId getObjectId() const = 0;
-    virtual const std::string& getUserId() const = 0;
-    virtual const std::string& getUrl() const = 0;
-};
-
-}}
-#endif // QPID_BROKER_CONNECTIONIDENTITY_H
+namespace amqp {
+Exception::Exception(const std::string& n, const std::string& d) : name(n), description(d) {}
+Exception::~Exception() throw() {}
+const char* Exception::what() const throw() { return description.c_str(); }
+const char* Exception::symbol() const throw() { return name.c_str(); }
+}}} // namespace qpid::broker::amqp

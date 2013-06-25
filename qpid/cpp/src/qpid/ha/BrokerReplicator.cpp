@@ -22,7 +22,7 @@
 #include "HaBroker.h"
 #include "QueueReplicator.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueSettings.h"
@@ -378,7 +378,7 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
     connection = link->getConnection();
     assert(connection);
     userId = link->getConnection()->getUserId();
-    remoteHost = link->getConnection()->getUrl();
+    remoteHost = link->getConnection()->getMgmtId();
 
     link->getRemoteAddress(primary);
     string queueName = bridge.getQueueName();

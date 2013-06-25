@@ -22,7 +22,9 @@
  *
  */
 #include "qpid/management/Manageable.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/OwnershipToken.h"
+#include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/Connection.h"
 
 namespace qpid {
@@ -34,28 +36,38 @@ namespace broker {
 class Broker;
 namespace amqp {
 
-class ManagedConnection : public qpid::management::Manageable, public OwnershipToken
+class ManagedConnection : public qpid::management::Manageable, public OwnershipToken, public qpid::broker::Connection
 {
   public:
     ManagedConnection(Broker& broker, const std::string id);
     virtual ~ManagedConnection();
-    void setUserid(const std::string&);
+    virtual void setUserId(const std::string&);
     std::string getId() const;
-    std::string getUserid() const;
     void setSaslMechanism(const std::string&);
     void setSaslSsf(int);
     void setContainerId(const std::string&);
     const std::string& getContainerId() const;
+    void setPeerProperties(std::map<std::string, types::Variant>&);
     qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
     bool isLocal(const OwnershipToken* t) const;
     void incomingMessageReceived();
     void outgoingMessageSent();
+
+    //ConnectionIdentity
+    const OwnershipToken* getOwnership() const;
+    const management::ObjectId getObjectId() const;
+    const std::string& getUserId() const;
+    const std::string& getMgmtId() const;
+    const std::map<std::string, types::Variant>& getClientProperties() const;
+    virtual bool isLink() const;
+    void opened();
   private:
     const std::string id;
     std::string userid;
     std::string containerid;
     qmf::org::apache::qpid::broker::Connection::shared_ptr connection;
     qpid::management::ManagementAgent* agent;
+    std::map<std::string, types::Variant> peerProperties;
 };
 }}} // namespace qpid::broker::amqp
 

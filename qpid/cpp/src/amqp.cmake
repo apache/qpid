@@ -53,12 +53,16 @@ if (BUILD_AMQP)
 
 
     set (amqp_SOURCES
+         qpid/broker/amqp/Authorise.h
+         qpid/broker/amqp/Authorise.cpp
          qpid/broker/amqp/Connection.h
          qpid/broker/amqp/Connection.cpp
          qpid/broker/amqp/DataReader.h
          qpid/broker/amqp/DataReader.cpp
          qpid/broker/amqp/Domain.h
          qpid/broker/amqp/Domain.cpp
+         qpid/broker/amqp/Exception.h
+         qpid/broker/amqp/Exception.cpp
          qpid/broker/amqp/Filter.h
          qpid/broker/amqp/Filter.cpp
          qpid/broker/amqp/Header.h

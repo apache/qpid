@@ -22,7 +22,7 @@
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/sys/Timer.h"
 #include "qmf/org/apache/qpid/broker/EventBrokerLinkUp.h"
 #include "qmf/org/apache/qpid/broker/EventBrokerLinkDown.h"
@@ -233,7 +233,7 @@ void Link::startConnectionLH ()
     }
 }
 
-void Link::established(Connection* c)
+void Link::established(qpid::broker::amqp_0_10::Connection* c)
 {
     stringstream addr;
     addr << host << ":" << port;

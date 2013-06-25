@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/SessionOutputException.h"
@@ -59,6 +59,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {
+namespace amqp_0_10 {
 
 struct ConnectionTimeoutTask : public sys::TimerTask {
     sys::Timer& timer;
@@ -160,7 +161,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
             mgmtObject = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, mgmtId, !link, false, "AMQP 0-10"));
             agent->addObject(mgmtObject, objectId);
         }
-        setUrl(mgmtId);
     }
 }
 
@@ -542,4 +542,4 @@ void Connection::restartTimeout()
 
 bool Connection::isOpen() { return adapter.isOpen(); }
 
-}}
+}}}

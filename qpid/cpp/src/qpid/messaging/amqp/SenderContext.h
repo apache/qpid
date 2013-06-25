@@ -74,6 +74,7 @@ class SenderContext
     Delivery* send(const qpid::messaging::Message& message);
     void configure();
     void verify(pn_terminus_t*);
+    void check();
     bool settled();
     Address getAddress() const;
   private:

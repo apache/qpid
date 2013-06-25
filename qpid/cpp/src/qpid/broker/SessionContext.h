@@ -36,14 +36,16 @@ class AMQP_ClientProxy;
 namespace broker {
 
 class Broker;
+namespace amqp_0_10 {
 class Connection;
+}
 
 class SessionContext : public OwnershipToken
 {
   public:
     virtual ~SessionContext(){}
     virtual bool isAttached() const = 0;
-    virtual Connection& getConnection() = 0;
+    virtual amqp_0_10::Connection& getConnection() = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
     virtual Broker& getBroker() = 0;
     virtual uint16_t getChannel() const = 0;

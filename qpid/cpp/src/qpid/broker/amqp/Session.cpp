@@ -120,14 +120,16 @@ class IncomingToQueue : public DecodingIncoming
 class IncomingToExchange : public DecodingIncoming
 {
   public:
-    IncomingToExchange(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l, const std::string& source) : DecodingIncoming(l, b, p, source, e->getName(), pn_link_name(l)), exchange(e) {}
+    IncomingToExchange(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l, const std::string& source)
+        : DecodingIncoming(l, b, p, source, e->getName(), pn_link_name(l)), exchange(e), authorise(p.getAuthorise()) {}
     void handle(qpid::broker::Message& m);
   private:
     boost::shared_ptr<qpid::broker::Exchange> exchange;
+    Authorise& authorise;
 };
 
 Session::Session(pn_session_t* s, qpid::broker::Broker& b, Connection& c, qpid::sys::OutputControl& o)
-    : ManagedSession(b, c, (boost::format("%1%") % s).str()), session(s), broker(b), connection(c), out(o), deleted(false) {}
+    : ManagedSession(b, c, (boost::format("%1%") % s).str()), session(s), broker(b), connection(c), out(o), deleted(false), authorise(connection.getUserId(), broker.getAcl()) {}
 
 
 Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus, bool incoming)
@@ -140,11 +142,11 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
             //is it a queue or an exchange?
             node.properties.read(pn_terminus_properties(terminus));
             if (node.properties.isQueue()) {
-                node.queue = broker.createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserid(), connection.getId()).first;
+                node.queue = broker.createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
             } else {
                 qpid::framing::FieldTable args;
                 node.exchange = broker.createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
-                                                      args, connection.getUserid(), connection.getId()).first;
+                                                      args, connection.getUserId(), connection.getId()).first;
             }
         } else {
             size_t i = name.find('@');
@@ -236,8 +238,13 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
 {
     ResolvedNode node = resolve(name, target, true);
     //set capabilities
-    if (node.queue) setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.queue);
-    else if (node.exchange) setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.exchange);
+    if (node.queue) {
+        setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.queue);
+        authorise.incoming(node.queue);
+    } else if (node.exchange) {
+        setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.exchange);
+        authorise.incoming(node.exchange);
+    }
 
     const char* sourceAddress = pn_terminus_get_address(pn_link_remote_source(link));
     if (!sourceAddress) {
@@ -260,6 +267,7 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
         throw qpid::Exception("Node not found: " + name);/*not-found*/
     }
+    if (broker.getOptions().auth && !connection.isLink()) incoming[link]->verify(connection.getUserId(), broker.getOptions().realm);
     QPID_LOG(debug, "Incoming link attached");
 }
 
@@ -282,11 +290,13 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
 
 
     if (node.queue) {
+        authorise.outgoing(node.queue);
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, node.queue, link, *this, out, false));
         q->init();
         filter.apply(q);
         outgoing[link] = q;
     } else if (node.exchange) {
+        authorise.access(node.exchange);//do separate access check before trying to create the queue
         bool shared = is_capability_requested(SHARED, pn_terminus_capabilities(source));
         bool durable = pn_terminus_get_durability(source);
         QueueSettings settings(durable, !durable);
@@ -295,7 +305,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         std::stringstream queueName;
         if (shared) {
             //just use link name (TODO: could allow this to be
-            //overridden when acces to link properties is provided
+            //overridden when access to link properties is provided
             //(PROTON-335))
             queueName << pn_link_name(link);
         } else {
@@ -303,9 +313,9 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             queueName << connection.getContainerId() << "_" << pn_link_name(link);
         }
         boost::shared_ptr<qpid::broker::Queue> queue
-            = broker.createQueue(queueName.str(), settings, this, "", connection.getUserid(), connection.getId()).first;
+            = broker.createQueue(queueName.str(), settings, this, "", connection.getUserId(), connection.getId()).first;
         if (!shared) queue->setExclusiveOwner(this);
-
+        authorise.outgoing(node.exchange, queue, filter);
         filter.bind(node.exchange, queue);
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, queue, link, *this, out, !shared));
         outgoing[link] = q;
@@ -460,6 +470,11 @@ void Session::wakeup()
     out.activateOutput();
 }
 
+Authorise& Session::getAuthorise()
+{
+    return authorise;
+}
+
 void IncomingToQueue::handle(qpid::broker::Message& message)
 {
     queue->deliver(message);
@@ -467,6 +482,7 @@ void IncomingToQueue::handle(qpid::broker::Message& message)
 
 void IncomingToExchange::handle(qpid::broker::Message& message)
 {
+    authorise.route(exchange, message);
     DeliverableMessage deliverable(message, 0);
     exchange->route(deliverable);
 }

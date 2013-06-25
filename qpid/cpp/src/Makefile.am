@@ -536,6 +536,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/amqp/MapEncoder.cpp                      \
   qpid/amqp/MapSizeCalculator.h                 \
   qpid/amqp/MapSizeCalculator.cpp               \
+  qpid/amqp/MapBuilder.h                       	\
+  qpid/amqp/MapBuilder.cpp                      \
   qpid/amqp/MapReader.h                       	\
   qpid/amqp/MapReader.cpp                       \
   qpid/amqp/MessageEncoder.h                    \
@@ -598,15 +600,15 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/Broker.h \
   qpid/broker/BrokerImportExport.h \
-  qpid/broker/Connection.cpp \
-  qpid/broker/Connection.h \
+  qpid/broker/amqp_0_10/Connection.cpp \
+  qpid/broker/amqp_0_10/Connection.h \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionHandler.h \
   qpid/broker/Consumer.h \
   qpid/broker/Credit.h \
   qpid/broker/Credit.cpp \
   qpid/broker/ConsumerFactory.h \
-  qpid/broker/ConnectionIdentity.h \
+  qpid/broker/Connection.h \
   qpid/broker/ConnectionObserver.h \
   qpid/broker/ConnectionObservers.h \
   qpid/broker/ConfigurationObserver.h \
@@ -801,12 +803,16 @@ if HAVE_PROTON
 dmoduleexec_LTLIBRARIES += amqp.la
 amqp_la_LIBADD = libqpidcommon.la
 amqp_la_SOURCES = \
+  qpid/broker/amqp/Authorise.h \
+  qpid/broker/amqp/Authorise.cpp \
   qpid/broker/amqp/Connection.h \
   qpid/broker/amqp/Connection.cpp \
   qpid/broker/amqp/DataReader.h \
   qpid/broker/amqp/DataReader.cpp \
   qpid/broker/amqp/Domain.h \
   qpid/broker/amqp/Domain.cpp \
+  qpid/broker/amqp/Exception.h \
+  qpid/broker/amqp/Exception.cpp \
   qpid/broker/amqp/Filter.h \
   qpid/broker/amqp/Filter.cpp \
   qpid/broker/amqp/Header.h \

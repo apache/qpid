@@ -89,7 +89,7 @@ class SessionState : public qpid::SessionState,
     uint16_t getChannel() const;
 
     /** @pre isAttached() */
-    Connection& getConnection();
+    amqp_0_10::Connection& getConnection();
     bool isLocal(const OwnershipToken* t) const;
 
     Broker& getBroker();

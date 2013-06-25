@@ -88,10 +88,27 @@ const string keyifyNameStr(const string& name)
 
 struct ScopedManagementContext
 {
-    ScopedManagementContext(const ConnectionIdentity& p)
+    const Connection* context;
+
+    ScopedManagementContext(const Connection* p) : context(p)
     {
-        setManagementExecutionContext(p);
+        if (p) setManagementExecutionContext(*p);
     }
+
+    management::ObjectId getObjectId() const
+    {
+        return context ? context->getObjectId() : management::ObjectId();
+    }
+    std::string getUserId() const
+    {
+        return context ? context->getUserId() : std::string();
+    }
+    std::string getMgmtId() const
+    {
+        return context ? context->getMgmtId() : std::string();
+    }
+
+
     ~ScopedManagementContext()
     {
         resetManagementExecutionContext();
@@ -2288,7 +2305,7 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
             }
 
             if (opcode == "_method_request")
-                return handleMethodRequest(body, rte, rtk, cid, msg.getPublisherUserId(), viaLocal);
+                return handleMethodRequest(body, rte, rtk, cid, context.getUserId(), viaLocal);
             else if (opcode == "_query_request")
                 return handleGetQuery(body, rte, rtk, cid, viaLocal);
             else if (opcode == "_agent_locate_request")
@@ -2311,9 +2328,9 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
         else if (opcode == 'q') handleClassInd       (inBuffer, rtk, sequence);
         else if (opcode == 'S') handleSchemaRequest  (inBuffer, rte, rtk, sequence);
         else if (opcode == 's') handleSchemaResponse (inBuffer, rtk, sequence);
-        else if (opcode == 'A') handleAttachRequest  (inBuffer, rtk, sequence, msg.getPublisherObjectId());
+        else if (opcode == 'A') handleAttachRequest  (inBuffer, rtk, sequence, context.getObjectId());
         else if (opcode == 'G') handleGetQuery       (inBuffer, rtk, sequence);
-        else if (opcode == 'M') handleMethodRequest  (inBuffer, rtk, sequence, msg.getPublisherUserId());
+        else if (opcode == 'M') handleMethodRequest  (inBuffer, rtk, sequence, context.getMgmtId());
     }
 }
 
@@ -2752,10 +2769,10 @@ ManagementAgent::EventQueue::Batch::const_iterator ManagementAgent::sendEvents(
 }
 
 namespace {
-QPID_TSS const ConnectionIdentity* currentPublisher = 0;
+QPID_TSS const Connection* currentPublisher = 0;
 }
 
-void setManagementExecutionContext(const ConnectionIdentity& p)
+void setManagementExecutionContext(const Connection& p)
 {
     currentPublisher = &p;
 }
@@ -2765,7 +2782,7 @@ void resetManagementExecutionContext()
     currentPublisher = 0;
 }
 
-const ConnectionIdentity* getCurrentPublisher()
+const Connection* getCurrentPublisher()
 {
     return currentPublisher;
 }

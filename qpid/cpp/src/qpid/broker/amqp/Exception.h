@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_AMQP_INTERCONNECT_H
-#define QPID_BROKER_AMQP_INTERCONNECT_H
+#ifndef QPID_BROKER_AMQP_EXCEPTION_H
+#define QPID_BROKER_AMQP_EXCEPTION_H
 
 /*
  *
@@ -21,44 +21,25 @@
  * under the License.
  *
  */
-#include "Connection.h"
+#include <string>
 
 namespace qpid {
-struct Address;
 namespace broker {
 namespace amqp {
-class Domain;
-class Interconnects;
-class Relay;
-
 /**
- *
+ * Exception to signal various AMQP 1.0 defined conditions
  */
-class Interconnect : public Connection
+class Exception : public std::exception
 {
   public:
-    Interconnect(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, bool saslInUse,
-                 bool incoming, const std::string& name, const std::string& source, const std::string& target, Domain&, Interconnects&);
-    void setRelay(boost::shared_ptr<Relay>);
-    ~Interconnect();
-    size_t encode(char* buffer, size_t size);
-    void deletedFromRegistry();
-    void transportDeleted();
-    bool isLink() const;
+    Exception(const std::string& name, const std::string& description);
+    virtual ~Exception() throw();
+    const char* what() const throw();
+    const char* symbol() const throw();
   private:
-    bool incoming;
     std::string name;
-    std::string source;
-    std::string target;
-    Domain& domain;
-    Interconnects& registry;
-    bool headerDiscarded;
-    boost::shared_ptr<Relay> relay;
-    bool closeRequested;
-    bool isTransportDeleted;
-
-    void process();
+    std::string description;
 };
 }}} // namespace qpid::broker::amqp
 
-#endif  /*!QPID_BROKER_AMQP_INTERCONNECT_H*/
+#endif  /*!QPID_BROKER_AMQP_EXCEPTION_H*/

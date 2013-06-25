@@ -23,7 +23,8 @@
 
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/MapHandler.h"
-#include "qpid/broker/ConnectionIdentity.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/broker/OwnershipToken.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/StringUtils.h"
@@ -203,10 +204,10 @@ uint8_t Message::getPriority() const
 bool Message::getIsManagementMessage() const { return isManagementMessage; }
 void Message::setIsManagementMessage(bool b) { isManagementMessage = b; }
 
-const OwnershipToken* Message::getPublisherOwnership() const {  return publisher->getOwnership(); }
-const management::ObjectId Message::getPublisherObjectId() const { return publisher->getObjectId(); }
-const std::string& Message::getPublisherUserId() const { return publisher->getUserId(); }
-const std::string& Message::getPublisherUrl() const { return publisher->getUrl(); }
+const Connection* Message::getPublisher() const { return publisher; }
+void Message::setPublisher(const Connection& p) { publisher = &p; }
+bool Message::isLocalTo(const OwnershipToken* token) const { return token && publisher && token->isLocal(publisher->getOwnership()); }
+
 
 qpid::framing::SequenceNumber Message::getSequence() const
 {
