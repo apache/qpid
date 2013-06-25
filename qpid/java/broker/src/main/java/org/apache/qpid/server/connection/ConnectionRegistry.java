@@ -52,6 +52,13 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
 
     public void close(final String replyText)
     {
+        synchronized(this)
+        {
+            for(AMQConnectionModel conn : _registry)
+            {
+                conn.stop();
+            }
+        }
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Closing connection registry :" + _registry.size() + " connections.");

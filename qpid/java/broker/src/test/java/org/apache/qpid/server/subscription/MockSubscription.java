@@ -553,5 +553,16 @@ public class MockSubscription implements Subscription
         {
             return null;
         }
+
+        @Override
+        public void stop()
+        {
+        }
+
+        @Override
+        public boolean isStopped()
+        {
+            return false;
+        }
     }
 }

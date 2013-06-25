@@ -190,6 +190,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private final Transport _transport;
 
     private volatile boolean _closeWhenNoRoute;
+    private volatile boolean _stopped;
 
     public AMQProtocolEngine(Broker broker,
                              NetworkConnection network,
@@ -1302,6 +1303,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public Transport getTransport()
     {
         return _transport;
+    }
+
+    @Override
+    public void stop()
+    {
+        _stopped = true;
+    }
+
+    @Override
+    public boolean isStopped()
+    {
+        return _stopped;
     }
 
     public long getLastReceivedTime()
