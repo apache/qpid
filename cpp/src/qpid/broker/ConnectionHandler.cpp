@@ -109,10 +109,10 @@ void ConnectionHandler::setSecureConnection(SecureConnection* secured)
     handler->secured = secured;
 }
 
-ConnectionHandler::ConnectionHandler(amqp_0_10::Connection& connection, bool isClient)  :
+ConnectionHandler::ConnectionHandler(qpid::broker::amqp_0_10::Connection& connection, bool isClient)  :
     handler(new Handler(connection, isClient)) {}
 
-ConnectionHandler::Handler::Handler(amqp_0_10::Connection& c, bool isClient) :
+ConnectionHandler::Handler::Handler(qpid::broker::amqp_0_10::Connection& c, bool isClient) :
     proxy(c.getOutput()),
     connection(c), serverMode(!isClient), secured(0),
     isOpen(false)
