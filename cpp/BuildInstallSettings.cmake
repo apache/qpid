@@ -180,7 +180,6 @@ if (UNIX)
   set (QPID_INSTALL_LIBDIR ${LIB_INSTALL_DIR})
   set (QPID_LOCALSTATE_DIR var) # Directory to store local state data
   set (QPID_MAN_DIR share/man) # Directory to install manual files
-  set (QPID_INSTALL_SYSTEMDDIR usr/lib/systemd/system) # Systemd service files
 
   set_absolute_install_path (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client) # Directory to load client plug-in modules from
   set_absolute_install_path (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon) # Directory to load broker plug-in modules from
