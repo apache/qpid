@@ -61,9 +61,9 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
      *
      * - username: the username to authenticate as
      * - password: the password to use if required by the selected authentication mechanism
-     * - sasl_mechanisms: a space separate dlist of acceptable SASL mechanisms
+     * - sasl_mechanisms: a space separated list of acceptable SASL mechanisms
      * - sasl_min_ssf: the minimum acceptable security strength factor
-     * - sasl_max_ssf: the minimum acceptable security strength factor
+     * - sasl_max_ssf: the maximum acceptable security strength factor
      * - sasl_service: the service name if needed by the SASL mechanism in use
      *
      * Reconnect behaviour can be controlled through the following options:
