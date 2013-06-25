@@ -21,6 +21,7 @@
 #include "DataReader.h"
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/Descriptor.h"
+#include "qpid/amqp/MapBuilder.h"
 #include "qpid/log/Statement.h"
 #include <string>
 extern "C" {
@@ -52,11 +53,6 @@ DataReader::DataReader(qpid::amqp::Reader& r) : reader(r) {}
 
 void DataReader::read(pn_data_t* data)
 {
-    /*
-    while (pn_data_next(data)) {
-        readOne(data);
-    }
-    */
     do {
         readOne(data);
     } while (pn_data_next(data));
@@ -183,5 +179,13 @@ void DataReader::readMap(pn_data_t* data, const qpid::amqp::Descriptor* descript
     }
     pn_data_exit(data);
     reader.onEndMap(count, descriptor);
+}
+
+void DataReader::read(pn_data_t* data, std::map<std::string, qpid::types::Variant>& out)
+{
+    qpid::amqp::MapBuilder builder;
+    DataReader reader(builder);
+    reader.read(data);
+    out = builder.getMap();
 }
 }}} // namespace qpid::broker::amqp

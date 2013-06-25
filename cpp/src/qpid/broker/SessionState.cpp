@@ -96,7 +96,7 @@ uint16_t SessionState::getChannel() const {
     return handler->getChannel();
 }
 
-Connection& SessionState::getConnection() {
+amqp_0_10::Connection& SessionState::getConnection() {
     assert(isAttached());
     return handler->getConnection();
 }

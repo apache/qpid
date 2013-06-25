@@ -21,7 +21,7 @@
 
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
@@ -54,12 +54,12 @@ namespace broker {
 
 class NullAuthenticator : public SaslAuthenticator
 {
-    Connection& connection;
+    amqp_0_10::Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
     std::string realm;
     const bool encrypt;
 public:
-    NullAuthenticator(Connection& connection, bool encrypt);
+    NullAuthenticator(amqp_0_10::Connection& connection, bool encrypt);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string* response);
@@ -74,7 +74,7 @@ public:
 class CyrusAuthenticator : public SaslAuthenticator
 {
     sasl_conn_t *sasl_conn;
-    Connection& connection;
+    amqp_0_10::Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
     const bool encrypt;
 
@@ -82,7 +82,7 @@ class CyrusAuthenticator : public SaslAuthenticator
     bool getUsername(std::string& uid);
 
 public:
-    CyrusAuthenticator(Connection& connection, bool encrypt);
+    CyrusAuthenticator(amqp_0_10::Connection& connection, bool encrypt);
     ~CyrusAuthenticator();
     void init();
     void getMechanisms(framing::Array& mechanisms);
@@ -167,7 +167,7 @@ void SaslAuthenticator::fini(void)
 
 #endif
 
-std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c )
+std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(amqp_0_10::Connection& c )
 {
     if (c.getBroker().getOptions().auth) {
         return std::auto_ptr<SaslAuthenticator>(
@@ -179,7 +179,7 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connecti
 }
 
 
-NullAuthenticator::NullAuthenticator(Connection& c, bool e) : connection(c), client(c.getOutput()),
+NullAuthenticator::NullAuthenticator(amqp_0_10::Connection& c, bool e) : connection(c), client(c.getOutput()),
                                                               realm(c.getBroker().getOptions().realm), encrypt(e) {}
 NullAuthenticator::~NullAuthenticator() {}
 
@@ -246,7 +246,7 @@ std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
 
 #if HAVE_SASL
 
-CyrusAuthenticator::CyrusAuthenticator(Connection& c, bool _encrypt) :
+CyrusAuthenticator::CyrusAuthenticator(amqp_0_10::Connection& c, bool _encrypt) :
     sasl_conn(0), connection(c), client(c.getOutput()), encrypt(_encrypt)
 {
     init();

@@ -47,7 +47,7 @@ class Manageable;
 
 namespace broker {
 class OwnershipToken;
-class ConnectionIdentity;
+class Connection;
 
 enum MessageState
 {
@@ -85,12 +85,9 @@ public:
     int getDeliveryCount() const { return deliveryCount; }
     void resetDeliveryCount() { deliveryCount = -1; }
 
-    void setPublisher(const ConnectionIdentity& p) { publisher = &p; }
-    const ConnectionIdentity& getPublisher() const { return *publisher; }
-    const OwnershipToken* getPublisherOwnership() const;
-    const management::ObjectId getPublisherObjectId() const;
-    const std::string& getPublisherUserId() const;
-    const std::string& getPublisherUrl() const;
+    void setPublisher(const Connection& p);
+    const Connection* getPublisher() const;
+    bool isLocalTo(const OwnershipToken*) const;
 
     QPID_BROKER_EXTERN std::string getRoutingKey() const;
     QPID_BROKER_EXTERN bool isPersistent() const;
@@ -148,7 +145,7 @@ public:
     boost::intrusive_ptr<Encoding> encoding;
     boost::intrusive_ptr<PersistableMessage> persistentContext;
     int deliveryCount;
-    const ConnectionIdentity* publisher;
+    const Connection* publisher;
     qpid::sys::AbsTime expiration;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     uint64_t timestamp;

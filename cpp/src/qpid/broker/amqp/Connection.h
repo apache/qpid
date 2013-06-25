@@ -58,6 +58,9 @@ class Connection : public sys::ConnectionCodec, public ManagedConnection
     pn_transport_t* getTransport();
     Interconnects& getInterconnects();
     std::string getDomain() const;
+    void setUserId(const std::string&);
+    void abort();
+
   protected:
     typedef std::map<pn_session_t*, boost::shared_ptr<Session> > Sessions;
     pn_connection_t* connection;
@@ -73,6 +76,8 @@ class Connection : public sys::ConnectionCodec, public ManagedConnection
     virtual void process();
     std::string getError();
     void close();
+    void open();
+    void readPeerProperties();
 };
 }}} // namespace qpid::broker::amqp
 

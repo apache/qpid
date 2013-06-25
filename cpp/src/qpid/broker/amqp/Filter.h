@@ -43,6 +43,7 @@ class Filter : qpid::amqp::MapReader
     Filter();
     void read(pn_data_t*);
     void write(pn_data_t*);
+    std::string getBindingKey(boost::shared_ptr<Exchange> exchange) const;
 
     /**
      * Apply filters where source is a queue
@@ -57,6 +58,11 @@ class Filter : qpid::amqp::MapReader
      * Bind subscription queue for case where source is an exchange
      */
     void bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue);
+
+    /**
+     * Not really the ideal place for this, but the logic is already implemented here...
+     */
+    static void write(std::map<std::string, qpid::types::Variant> source, pn_data_t* target);
   private:
     struct FilterBase
     {

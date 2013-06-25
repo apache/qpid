@@ -1034,6 +1034,8 @@ set (qpidcommon_SOURCES
      qpid/amqp/MapEncoder.cpp
      qpid/amqp/MapSizeCalculator.h
      qpid/amqp/MapSizeCalculator.cpp
+     qpid/amqp/MapBuilder.h
+     qpid/amqp/MapBuilder.cpp
      qpid/amqp/MapReader.h
      qpid/amqp/MapReader.cpp
      qpid/amqp/MessageEncoder.h
@@ -1261,7 +1263,7 @@ set (qpidbroker_SOURCES
      qpid/broker/MessageGroupManager.cpp
      qpid/broker/PersistableMessage.cpp
      qpid/broker/Bridge.cpp
-     qpid/broker/Connection.cpp
+     qpid/broker/amqp_0_10/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
      qpid/broker/DeliverableMessage.cpp
      qpid/broker/DeliveryRecord.cpp

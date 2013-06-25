@@ -23,7 +23,7 @@
 #include "BrokerInfo.h"
 #include "HaBroker.h"
 #include "qpid/Url.h"
-#include "qpid/framing/FieldTable.h"
+#include "qpid/types/Variant.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 
@@ -34,21 +34,23 @@ ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
     : haBroker(hb), logPrefix("Backup: "), self(uuid) {}
 
 bool ConnectionObserver::getBrokerInfo(const broker::Connection& connection, BrokerInfo& info) {
-    framing::FieldTable ft;
-    if (connection.getClientProperties().getTable(ConnectionObserver::BACKUP_TAG, ft)) {
-        info = BrokerInfo(ft);
+    qpid::types::Variant::Map::const_iterator i = connection.getClientProperties().find(ConnectionObserver::BACKUP_TAG);
+    if (i != connection.getClientProperties().end() && i->second.getType() == qpid::types::VAR_MAP) {
+        info = BrokerInfo(i->second.asMap());
         return true;
     }
     return false;
 }
 
 bool ConnectionObserver::getAddress(const broker::Connection& connection, Address& addr) {
-    Url url;
-    url.parseNoThrow(
-        connection.getClientProperties().getAsString(ConnectionObserver::ADDRESS_TAG).c_str());
-    if (!url.empty()) {
-        addr = url[0];
-        return true;
+    qpid::types::Variant::Map::const_iterator i = connection.getClientProperties().find(ConnectionObserver::ADDRESS_TAG);
+    if (i != connection.getClientProperties().end()) {
+        Url url;
+        url.parseNoThrow(i->second.asString().c_str());
+        if (!url.empty()) {
+            addr = url[0];
+            return true;
+        }
     }
     return false;
 }
@@ -86,7 +88,7 @@ void ConnectionObserver::opened(broker::Connection& connection) {
             return;
         }
         if (connection.isLink()) return; // Allow outgoing links.
-        if (connection.getClientProperties().isSet(ADMIN_TAG)) {
+        if (connection.getClientProperties().find(ADMIN_TAG) != connection.getClientProperties().end()) {
             QPID_LOG(debug, logPrefix << "Accepted admin connection: "
                      << connection.getMgmtId());
             return;                 // No need to call observer, always allow admins.

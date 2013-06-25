@@ -20,7 +20,7 @@
 
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
@@ -33,7 +33,7 @@ using namespace framing;
 using namespace std;
 using namespace qpid::sys;
 
-SessionHandler::SessionHandler(Connection& c, ChannelId ch)
+SessionHandler::SessionHandler(amqp_0_10::Connection& c, ChannelId ch)
     : qpid::amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c),
       proxy(out)
@@ -64,9 +64,9 @@ void SessionHandler::executionException(
         errorListener->executionException(code, msg);
 }
 
-Connection& SessionHandler::getConnection() { return connection; }
+amqp_0_10::Connection& SessionHandler::getConnection() { return connection; }
 
-const Connection& SessionHandler::getConnection() const { return connection; }
+const amqp_0_10::Connection& SessionHandler::getConnection() const { return connection; }
 
 void SessionHandler::handleDetach() {
     qpid::amqp_0_10::SessionHandler::handleDetach();

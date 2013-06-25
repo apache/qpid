@@ -43,12 +43,28 @@ class Incoming : public ManagedIncomingLink
     virtual bool haveWork();//called when handling input to see whether any output work is needed
     virtual void detached();
     virtual void readable(pn_delivery_t* delivery) = 0;
+    void verify(const std::string& userid, const std::string& defaultRealm);
     void wakeup();
   protected:
+    class UserId
+    {
+      public:
+        UserId();
+        void init(const std::string& userid, const std::string& defaultRealm);
+        void verify(const std::string& claimed);
+      private:
+        std::string userid;
+        bool inDefaultRealm;
+        std::string unqualified;
+    };
+
     const uint32_t credit;
     uint32_t window;
+
+
     pn_link_t* link;
     Session& session;
+    UserId userid;
     virtual uint32_t getCredit();
 };
 

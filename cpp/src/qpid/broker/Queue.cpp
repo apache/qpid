@@ -220,18 +220,13 @@ Queue::~Queue()
 {
 }
 
-bool isLocalTo(const OwnershipToken* token, const Message& msg)
-{
-    return token && token->isLocal(msg.getPublisherOwnership());
-}
-
 bool Queue::isLocal(const Message& msg)
 {
     //message is considered local if it was published on the same
     //connection as that of the session which declared this queue
     //exclusive (owner) or which has an exclusive subscription
     //(exclusive)
-    return settings.noLocal && (isLocalTo(owner, msg) || isLocalTo(exclusive, msg));
+    return settings.noLocal && (msg.isLocalTo(owner) || msg.isLocalTo(exclusive));
 }
 
 bool Queue::isExcluded(const Message& msg)

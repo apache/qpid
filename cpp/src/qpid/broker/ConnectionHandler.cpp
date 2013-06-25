@@ -24,7 +24,7 @@
 
 #include "qpid/SaslFactory.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/SecureConnection.h"
 #include "qpid/Url.h"
 #include "qpid/framing/AllInvoker.h"
@@ -109,10 +109,10 @@ void ConnectionHandler::setSecureConnection(SecureConnection* secured)
     handler->secured = secured;
 }
 
-ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  :
+ConnectionHandler::ConnectionHandler(amqp_0_10::Connection& connection, bool isClient)  :
     handler(new Handler(connection, isClient)) {}
 
-ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
+ConnectionHandler::Handler::Handler(amqp_0_10::Connection& c, bool isClient) :
     proxy(c.getOutput()),
     connection(c), serverMode(!isClient), secured(0),
     isOpen(false)
@@ -153,14 +153,14 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
 {
     const framing::FieldTable& clientProperties = body.getClientProperties();
     qmf::org::apache::qpid::broker::Connection::shared_ptr mgmtObject = connection.getMgmtObject();
+    types::Variant::Map properties;
+    qpid::amqp_0_10::translate(clientProperties, properties);
 
     if (mgmtObject != 0) {
         string procName = clientProperties.getAsString(CLIENT_PROCESS_NAME);
         uint32_t pid = clientProperties.getAsInt(CLIENT_PID);
         uint32_t ppid = clientProperties.getAsInt(CLIENT_PPID);
 
-        types::Variant::Map properties;
-        qpid::amqp_0_10::translate(clientProperties, properties);
         mgmtObject->set_remoteProperties(properties);
         if (!procName.empty())
             mgmtObject->set_remoteProcessName(procName);
@@ -192,7 +192,7 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
         throw;
     }
 
-    connection.setClientProperties(clientProperties);
+    connection.setClientProperties(properties);
     if (clientProperties.isSet(QPID_FED_TAG)) {
         connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     }

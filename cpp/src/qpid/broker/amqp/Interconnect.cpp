@@ -82,9 +82,7 @@ void Interconnect::process()
     } else {
         if ((pn_connection_state(connection) & UNINIT) == UNINIT) {
             QPID_LOG_CAT(debug, model, id << " interconnect opened");
-            pn_connection_set_container(connection, broker.getFederationTag().c_str());
-            pn_connection_open(connection);
-            out.connectionEstablished();
+            open();
 
             pn_session_t* s = pn_session(connection);
             pn_session_open(s);
@@ -114,6 +112,11 @@ void Interconnect::transportDeleted()
 {
     isTransportDeleted = true;
     registry.remove(name);
+}
+
+bool Interconnect::isLink() const
+{
+    return true;
 }
 
 }}} // namespace qpid::broker::amqp

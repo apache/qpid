@@ -31,8 +31,9 @@ namespace qpid {
 class SessionState;
 
 namespace broker {
-
+namespace amqp_0_10 {
 class Connection;
+}
 class SessionState;
 
 /**
@@ -57,15 +58,15 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
 
     /**
      *@param e must not be deleted until ErrorListener::detach has been called */
-    SessionHandler(Connection&, framing::ChannelId);
+    SessionHandler(amqp_0_10::Connection&, framing::ChannelId);
     ~SessionHandler();
 
     /** Get broker::SessionState */
     SessionState* getSession() { return session.get(); }
     const SessionState* getSession() const { return session.get(); }
 
-    Connection& getConnection();
-    const Connection& getConnection() const;
+    amqp_0_10::Connection& getConnection();
+    const amqp_0_10::Connection& getConnection() const;
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
@@ -93,7 +94,7 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
             : framing::AMQP_ClientProxy(setChannel), setChannel(ch, out) {}
     };
 
-    Connection& connection;
+    amqp_0_10::Connection& connection;
     framing::AMQP_ClientProxy proxy;
     std::auto_ptr<SessionState> session;
     boost::shared_ptr<ErrorListener> errorListener;

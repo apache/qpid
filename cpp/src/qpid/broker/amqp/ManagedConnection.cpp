@@ -54,11 +54,17 @@ ManagedConnection::~ManagedConnection()
     QPID_LOG_CAT(debug, model, "Delete connection. user:" << userid << " rhost:" << id);
 }
 
-void ManagedConnection::setUserid(const std::string& uid)
+void ManagedConnection::setUserId(const std::string& uid)
 {
     userid = uid;
-    if (agent && connection) {
+    if (connection) {
         connection->set_authIdentity(userid);
+    }
+}
+
+void ManagedConnection::opened()
+{
+    if (agent) {
         agent->raiseEvent(_qmf::EventClientConnect(id, userid, connection->get_remoteProperties()));
     }
     QPID_LOG_CAT(debug, model, "Create connection. user:" << userid << " rhost:" << id );
@@ -78,13 +84,20 @@ void ManagedConnection::setSaslSsf(int ssf)
     }
 }
 
+void ManagedConnection::setPeerProperties(std::map<std::string, types::Variant>& p)
+{
+    peerProperties = p;
+    if (connection) {
+        connection->set_remoteProperties(peerProperties);
+    }
+}
+
 void ManagedConnection::setContainerId(const std::string& container)
 {
     containerid = container;
+    peerProperties["container-id"] = containerid;
     if (connection) {
-        qpid::types::Variant::Map props;
-        props["container-id"] = containerid;
-        connection->set_remoteProperties(props);
+        connection->set_remoteProperties(peerProperties);
     }
 }
 const std::string& ManagedConnection::getContainerId() const
@@ -98,7 +111,31 @@ qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementO
 }
 
 std::string ManagedConnection::getId() const { return id; }
-std::string ManagedConnection::getUserid() const { return userid; }
+
+const OwnershipToken* ManagedConnection::getOwnership() const
+{
+    return this;
+}
+const management::ObjectId ManagedConnection::getObjectId() const
+{
+    return GetManagementObject()->getObjectId();
+}
+const std::string& ManagedConnection::getUserId() const
+{
+    return userid;
+}
+const std::string& ManagedConnection::getMgmtId() const
+{
+    return id;
+}
+const std::map<std::string, types::Variant>& ManagedConnection::getClientProperties() const
+{
+    return connection->get_remoteProperties();
+}
+bool ManagedConnection::isLink() const
+{
+    return false;
+}
 
 bool ManagedConnection::isLocal(const OwnershipToken* t) const
 {

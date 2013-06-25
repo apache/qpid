@@ -39,8 +39,9 @@
 
 namespace qpid {
 namespace broker {
-
+namespace amqp_0_10 {
 class Connection;
+}
 class Link;
 class LinkRegistry;
 
@@ -115,9 +116,9 @@ class Bridge : public PersistableConfig,
     void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }
   private:
     struct PushHandler : framing::FrameHandler {
-        PushHandler(Connection* c) { conn = c; }
+        PushHandler(amqp_0_10::Connection* c) { conn = c; }
         void handle(framing::AMQFrame& frame);
-        Connection* conn;
+        amqp_0_10::Connection* conn;
     };
 
     std::auto_ptr<PushHandler>                        pushHandler;
@@ -134,14 +135,14 @@ class Bridge : public PersistableConfig,
     std::string queueName;
     std::string altEx;
     mutable uint64_t  persistenceId;
-    Connection* conn;
+    amqp_0_10::Connection* conn;
     InitializeCallback initialize;
     bool detached;              // Set when session is detached.
     bool resetProxy();
 
     // connection Management (called by owning Link)
-    void create(Connection& c);
-    void cancel(Connection& c);
+    void create(amqp_0_10::Connection& c);
+    void cancel(amqp_0_10::Connection& c);
     void closed();
     friend class Link; // to call create, cancel, closed()
     boost::shared_ptr<ErrorListener> errorListener;

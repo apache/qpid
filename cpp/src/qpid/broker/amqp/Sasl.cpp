@@ -139,7 +139,7 @@ void Sasl::respond(qpid::SaslServer::Status status, const std::string& chllnge)
 {
     switch (status) {
       case qpid::SaslServer::OK:
-        connection.setUserid(authenticator->getUserid());
+        connection.setUserId(authenticator->getUserid());
         completed(true);
         //can't set authenticated & failed until we have actually sent the outcome
         state = SUCCESS_PENDING;

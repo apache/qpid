@@ -34,6 +34,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Time.h"
 #include <vector>
 extern "C" {
@@ -125,6 +126,7 @@ void ConnectionContext::open()
     }
 
     QPID_LOG(debug, id << " Opening...");
+    setProperties();
     pn_connection_open(connection);
     wakeupDriver(); //want to write
     while (pn_connection_state(connection) & PN_REMOTE_UNINIT) {
@@ -148,7 +150,7 @@ void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
     //wait for outstanding sends to settle
     while (!ssn->settled()) {
         QPID_LOG(debug, "Waiting for sends to settle before closing");
-        wait();//wait until message has been confirmed
+        wait(ssn);//wait until message has been confirmed
     }
 
     pn_session_close(ssn->session);
@@ -165,7 +167,7 @@ void ConnectionContext::close()
             //wait for outstanding sends to settle
             while (!i->second->settled()) {
                 QPID_LOG(debug, "Waiting for sends to settle before closing");
-                wait();//wait until message has been confirmed
+                wait(i->second);//wait until message has been confirmed
             }
 
 
@@ -304,6 +306,7 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
         QPID_LOG(debug, "Dynamic target name set to " << lnk->address.getName());
     }
     lnk->verify(t);
+    checkClosed(ssn, lnk);
     QPID_LOG(debug, "Attach succeeded to " << lnk->getTarget());
 }
 
@@ -322,6 +325,7 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
         QPID_LOG(debug, "Dynamic source name set to " << lnk->address.getName());
     }
     lnk->verify(s);
+    checkClosed(ssn, lnk);
     QPID_LOG(debug, "Attach succeeded from " << lnk->getSource());
 }
 
@@ -471,8 +475,15 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn, pn_li
 {
     checkClosed(ssn);
     if ((pn_link_state(lnk) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
+        pn_condition_t* error = pn_link_remote_condition(lnk);
+        std::stringstream text;
+        if (pn_condition_is_set(error)) {
+            text << "Link detached by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
+        } else {
+            text << "Link detached by peer";
+        }
         pn_link_close(lnk);
-        throw qpid::messaging::LinkError("Link detached by peer");
+        throw qpid::messaging::LinkError(text.str());
     } else if ((pn_link_state(lnk) & IS_CLOSED) == IS_CLOSED) {
         throw qpid::messaging::LinkError("Link is not attached");
     }
@@ -692,5 +703,39 @@ bool ConnectionContext::CodecSwitch::canEncode()
     return parent.canEncode();
 }
 
+namespace {
+const std::string CLIENT_PROCESS_NAME("qpid.client_process");
+const std::string CLIENT_PID("qpid.client_pid");
+const std::string CLIENT_PPID("qpid.client_ppid");
+pn_bytes_t convert(const std::string& s)
+{
+    pn_bytes_t result;
+    result.start = const_cast<char*>(s.data());
+    result.size = s.size();
+    return result;
+}
+}
+void ConnectionContext::setProperties()
+{
+    /**
+     * Enable when proton 0.5 is released and qpidc has been updated
+     * to use it
+     *
+    pn_data_t* data = pn_connection_properties(connection);
+    pn_data_put_map(data);
+    pn_data_enter(data);
+
+    pn_data_put_symbol(data, convert(CLIENT_PROCESS_NAME));
+    std::string processName = sys::SystemInfo::getProcessName();
+    pn_data_put_string(data, convert(processName));
+
+    pn_data_put_symbol(data, convert(CLIENT_PID));
+    pn_data_put_int(data, sys::SystemInfo::getProcessId());
+
+    pn_data_put_symbol(data, convert(CLIENT_PPID));
+    pn_data_put_int(data, sys::SystemInfo::getParentProcessId());
+    pn_data_exit(data);
+    **/
+}
 
 }}} // namespace qpid::messaging::amqp

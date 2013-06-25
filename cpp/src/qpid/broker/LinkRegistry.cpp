@@ -21,7 +21,7 @@
 #include "qpid/broker/LinkRegistry.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/log/Statement.h"
 #include <iostream>
@@ -53,10 +53,26 @@ class LinkRegistryConnectionObserver : public ConnectionObserver {
     LinkRegistry& links;
   public:
     LinkRegistryConnectionObserver(LinkRegistry& l) : links(l) {}
-    void connection(Connection& c) { links.notifyConnection(c.getMgmtId(), &c); }
-    void opened(Connection& c) { links.notifyOpened(c.getMgmtId()); }
-    void closed(Connection& c) { links.notifyClosed(c.getMgmtId()); }
-    void forced(Connection& c, const string& text) { links.notifyConnectionForced(c.getMgmtId(), text); }
+    void connection(Connection& in)
+    {
+        amqp_0_10::Connection* c = dynamic_cast<amqp_0_10::Connection*>(&in);
+        if (c) links.notifyConnection(c->getMgmtId(), c);
+    }
+    void opened(Connection& in)
+    {
+        amqp_0_10::Connection* c = dynamic_cast<amqp_0_10::Connection*>(&in);
+        if (c) links.notifyOpened(c->getMgmtId());
+    }
+    void closed(Connection& in)
+    {
+        amqp_0_10::Connection* c = dynamic_cast<amqp_0_10::Connection*>(&in);
+        if (c) links.notifyClosed(c->getMgmtId());
+    }
+    void forced(Connection& in, const string& text)
+    {
+        amqp_0_10::Connection* c = dynamic_cast<amqp_0_10::Connection*>(&in);
+        if (c) links.notifyConnectionForced(c->getMgmtId(), text);
+    }
 };
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
@@ -287,7 +303,7 @@ Link::shared_ptr LinkRegistry::findLink(const std::string& connId)
     return Link::shared_ptr();
 }
 
-void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
+void LinkRegistry::notifyConnection(const std::string& key, amqp_0_10::Connection* c)
 {
     // find a link that is attempting to connect to the remote, and
     // create a mapping from connection id to link

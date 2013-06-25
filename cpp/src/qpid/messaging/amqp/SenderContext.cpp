@@ -93,8 +93,24 @@ SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& mes
     }
 }
 
+void SenderContext::check()
+{
+    if (pn_link_state(sender) & PN_REMOTE_CLOSED && !(pn_link_state(sender) & PN_LOCAL_CLOSED)) {
+        pn_condition_t* error = pn_link_remote_condition(sender);
+        std::stringstream text;
+        if (pn_condition_is_set(error)) {
+            text << "Link detached by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
+        } else {
+            text << "Link detached by peer";
+        }
+        pn_link_close(sender);
+        throw qpid::messaging::LinkError(text.str());
+    }
+}
+
 uint32_t SenderContext::processUnsettled()
 {
+    check();
     //remove messages from front of deque once peer has confirmed receipt
     while (!deliveries.empty() && deliveries.front().delivered()) {
         deliveries.front().settle();

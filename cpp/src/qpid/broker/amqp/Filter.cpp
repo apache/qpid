@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/amqp/Filter.h"
+#include "qpid/broker/amqp/Authorise.h"
 #include "qpid/broker/amqp/DataReader.h"
 #include "qpid/broker/amqp/Outgoing.h"
 #include "qpid/broker/DirectExchange.h"
@@ -235,6 +236,15 @@ void Filter::configure(QueueSettings& settings)
     }
 }
 
+std::string Filter::getBindingKey(boost::shared_ptr<Exchange> exchange) const
+{
+    if (subjectFilter.value.empty() && exchange->getType() == TopicExchange::typeName) {
+        return WILDCARD;
+    } else {
+        return subjectFilter.value;
+    }
+}
+
 void Filter::bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue> queue)
 {
     qpid::framing::FieldTable bindingArgs;
@@ -377,6 +387,13 @@ void Filter::MapFilter::writeValue(pn_data_t* data)
         pn_data_put_string(data, convert(i->second));//TODO: other types?
     }
     pn_data_exit(data);
+}
+
+void Filter::write(std::map<std::string, qpid::types::Variant> source, pn_data_t* target)
+{
+    MapFilter dummy;
+    dummy.value = source;
+    dummy.writeValue(target);
 }
 
 

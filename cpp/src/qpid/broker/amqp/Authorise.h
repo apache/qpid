@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_AMQP_DATAREADER_H
-#define QPID_BROKER_AMQP_DATAREADER_H
+#ifndef QPID_BROKER_AMQP_AUTHORISE_H
+#define QPID_BROKER_AMQP_AUTHORISE_H
 
 /*
  *
@@ -21,39 +21,37 @@
  * under the License.
  *
  */
-#include "qpid/amqp/Reader.h"
-#include <map>
-#include <string>
-
-struct pn_data_t;
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
-namespace types {
-class Variant;
-}
-namespace amqp {
-struct Descriptor;
-}
 namespace broker {
+class AclModule;
+class Exchange;
+class Message;
+class Queue;
 namespace amqp {
+class Filter;
 
 /**
- * Allows use of Reader interface to read pn_data_t* data.
+ * Class to handle authorisation requests (and hide the ACL mess behind)
  */
-class DataReader
+class Authorise
 {
   public:
-    DataReader(qpid::amqp::Reader& reader);
-    void read(pn_data_t*);
-    static void read(pn_data_t*, std::map<std::string, qpid::types::Variant>&);
+    Authorise(const std::string& user, AclModule*);
+    void access(boost::shared_ptr<Exchange>);
+    void access(boost::shared_ptr<Queue>);
+    void incoming(boost::shared_ptr<Exchange>);
+    void incoming(boost::shared_ptr<Queue>);
+    void outgoing(boost::shared_ptr<Exchange>, boost::shared_ptr<Queue>, const Filter&);
+    void outgoing(boost::shared_ptr<Queue>);
+    void route(boost::shared_ptr<Exchange>, const Message&);
+    void interlink();
   private:
-    qpid::amqp::Reader& reader;
+    const std::string user;
+    AclModule* const acl;
 
-    void readOne(pn_data_t*);
-    void readMap(pn_data_t*, const qpid::amqp::Descriptor*);
-    void readList(pn_data_t*, const qpid::amqp::Descriptor*);
-    void readArray(pn_data_t*, const qpid::amqp::Descriptor*);
 };
 }}} // namespace qpid::broker::amqp
 
-#endif  /*!QPID_BROKER_AMQP_DATAREADER_H*/
+#endif  /*!QPID_BROKER_AMQP_AUTHORISE_H*/

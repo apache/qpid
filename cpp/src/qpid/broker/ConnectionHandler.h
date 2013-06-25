@@ -47,7 +47,9 @@ struct SecuritySettings;
 
 namespace broker {
 
+namespace amqp_0_10 {
 class Connection;
+}
 class SecureConnection;
 
 class ConnectionHandler : public framing::FrameHandler
@@ -55,13 +57,13 @@ class ConnectionHandler : public framing::FrameHandler
     struct Handler : public framing::AMQP_AllOperations::ConnectionHandler
     {
         framing::AMQP_AllProxy::Connection proxy;
-        Connection& connection;
+        amqp_0_10::Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
         SecureConnection* secured;
         bool isOpen;
 
-        Handler(Connection& connection, bool isClient);
+        Handler(amqp_0_10::Connection& connection, bool isClient);
         ~Handler();
         void startOk(const qpid::framing::ConnectionStartOkBody& body);
         void startOk(const qpid::framing::FieldTable& clientProperties,
@@ -99,7 +101,7 @@ class ConnectionHandler : public framing::FrameHandler
 
     bool handle(const qpid::framing::AMQMethodBody& method);
   public:
-    ConnectionHandler(Connection& connection, bool isClient );
+    ConnectionHandler(amqp_0_10::Connection& connection, bool isClient );
     void close(framing::connection::CloseCode code, const std::string& text);
     void heartbeat();
     void handle(framing::AMQFrame& frame);
