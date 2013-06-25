@@ -641,7 +641,7 @@ class Session:
     return "QMF Console Session Manager (brokers: %d)" % len(self.brokers)
 
 
-  def addBroker(self, target="localhost", timeout=None, mechanisms=None, **connectArgs):
+  def addBroker(self, target="localhost", timeout=None, mechanisms=None, sessTimeout=None, **connectArgs):
     """ Connect to a Qpid broker.  Returns an object of type Broker.
     Will raise an exception if the session is not managing the connection and
     the connection setup to the broker fails.
@@ -651,7 +651,7 @@ class Session:
     else:
       url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, mechanisms, url.authName, url.authPass,
-                    ssl = url.scheme == URL.AMQPS, connTimeout=timeout, **connectArgs)
+                    ssl = url.scheme == URL.AMQPS, connTimeout=timeout, sessTimeout=sessTimeout, **connectArgs)
 
     self.brokers.append(broker)
     return broker
@@ -2241,7 +2241,7 @@ class Broker(Thread):
       self.data = data
 
   def __init__(self, session, host, port, authMechs, authUser, authPass,
-               ssl=False, connTimeout=None, **connectArgs):
+               ssl=False, connTimeout=None, sessTimeout=None, **connectArgs):
     """ Create a broker proxy and setup a connection to the broker.  Will raise
     an exception if the connection fails and the session is not configured to
     retry connection setup (manageConnections = False).
@@ -2256,8 +2256,13 @@ class Broker(Thread):
     self.mechanisms = authMechs
     self.ssl = ssl
     if connTimeout is not None:
-	connTimeout = float(connTimeout)
+        connTimeout = float(connTimeout)
     self.connTimeout = connTimeout
+    if sessTimeout is not None:
+        sessTimeout = float(sessTimeout)
+    else:
+        sessTimeout = self.SYNC_TIME
+    self.sessTimeout = sessTimeout
     self.authUser = authUser
     self.authPass = authPass
     self.saslUser = None
@@ -2467,7 +2472,7 @@ class Broker(Thread):
 
       self.replyName = "reply-%s" % self.amqpSessionId
       self.amqpSession = self.conn.session(self.amqpSessionId)
-      self.amqpSession.timeout = self.SYNC_TIME
+      self.amqpSession.timeout = self.sessTimeout
       self.amqpSession.auto_sync = True
       self.amqpSession.queue_declare(queue=self.replyName, exclusive=True, auto_delete=True)
       self.amqpSession.exchange_bind(exchange="amq.direct",
