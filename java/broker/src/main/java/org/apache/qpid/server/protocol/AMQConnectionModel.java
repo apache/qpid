@@ -89,4 +89,7 @@ public interface AMQConnectionModel extends StatisticsGatherer
 
     Transport getTransport();
 
+    void stop();
+
+    boolean isStopped();
 }

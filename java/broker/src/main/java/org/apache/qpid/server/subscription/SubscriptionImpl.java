@@ -463,7 +463,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public boolean isSuspended()
     {
-        return !isActive() || _channel.isSuspended() || _deleted.get();
+        return !isActive() || _channel.isSuspended() || _deleted.get() || _channel.getConnectionModel().isStopped();
     }
 
     /**
