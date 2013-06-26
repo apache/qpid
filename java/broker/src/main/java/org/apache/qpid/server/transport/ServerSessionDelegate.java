@@ -835,7 +835,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         session.invoke(ex);
 
-        session.close();
+        ((ServerSession)session).close(errorCode.getValue(), description);
     }
 
     private Exchange getExchange(Session session, String exchangeName)

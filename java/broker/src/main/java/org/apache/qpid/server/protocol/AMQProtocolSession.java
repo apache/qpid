@@ -33,6 +33,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
@@ -118,6 +119,8 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
      * @throws IllegalArgumentException     if the channel id is not valid
      */
     void closeChannel(int channelId) throws AMQException;
+
+    void closeChannel(int channelId, AMQConstant cause, String message) throws AMQException;
 
     /**
      * Markes the specific channel as closed. This will release the lock for that channel id so a new channel can be

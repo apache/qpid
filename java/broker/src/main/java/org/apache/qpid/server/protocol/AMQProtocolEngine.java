@@ -450,12 +450,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             }
             catch (AMQException e)
             {
-                closeChannel(channelId);
+                closeChannel(channelId, e.getErrorCode() == null ? AMQConstant.INTERNAL_ERROR : e.getErrorCode(), e.getMessage());
                 throw e;
             }
             catch (TransportException e)
             {
-                closeChannel(channelId);
+                closeChannel(channelId, AMQConstant.CHANNEL_ERROR, e.getMessage());
                 throw e;
             }
 
@@ -601,7 +601,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                     }
 
                     writeFrame(e.getCloseFrame(channelId));
-                    closeChannel(channelId);
+                    closeChannel(channelId, e.getErrorCode() == null ? AMQConstant.INTERNAL_ERROR : e.getErrorCode(), e.getMessage());
                 }
                 else
                 {
@@ -824,6 +824,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     @Override
     public void closeChannel(int channelId) throws AMQException
     {
+        closeChannel(channelId, null, null);
+    }
+
+    public void closeChannel(int channelId, AMQConstant cause, String message) throws AMQException
+    {
         final AMQChannel channel = getChannel(channelId);
         if (channel == null)
         {
@@ -833,7 +838,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         {
             try
             {
-                channel.close();
+                channel.close(cause, message);
                 markChannelAwaitingCloseOk(channelId);
             }
             finally
@@ -1490,7 +1495,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
         int channelId = ((AMQChannel)session).getChannelId();
-        closeChannel(channelId);
+        closeChannel(channelId, cause, message);
 
         MethodRegistry methodRegistry = getMethodRegistry();
         ChannelCloseBody responseBody =
