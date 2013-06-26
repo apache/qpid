@@ -521,7 +521,7 @@ struct DeletePolicyFixture : public MessagingFixture
 
     void test(Mode mode)
     {
-        qpid::messaging::Address address("#; " + getPolicy(mode));
+        qpid::messaging::Address address("testqueue#; " + getPolicy(mode));
         create(address);
 
         Sender s = session.createSender(address);
@@ -1264,6 +1264,29 @@ QPID_AUTO_TEST_CASE(testConcurrentFetch)
     fix.session.createSender("amq.fanout").send(out);
     runner.join();
     BOOST_CHECK(fetcher.result);
+}
+
+QPID_AUTO_TEST_CASE(testSimpleRequestResponse)
+{
+    QueueFixture fix;
+    //create receiver on temp queue for responses (using shorthand for temp queue)
+    Receiver r1 = fix.session.createReceiver("#");
+    //send request
+    Sender s1 = fix.session.createSender(fix.queue);
+    Message original("test-message");
+    original.setSubject("test-subject");
+    original.setReplyTo(r1.getAddress());
+    s1.send(original);
+
+    //receive request and send response
+    Receiver r2 = fix.session.createReceiver(fix.queue);
+    Message m = r2.fetch(Duration::SECOND * 5);
+    Sender s2 = fix.session.createSender(m.getReplyTo());
+    s2.send(m);
+    m = r1.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(m.getContent(), original.getContent());
+    BOOST_CHECK_EQUAL(m.getSubject(), original.getSubject());
 }
 
 QPID_AUTO_TEST_SUITE_END()
