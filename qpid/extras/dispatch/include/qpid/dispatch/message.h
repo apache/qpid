@@ -24,6 +24,7 @@
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/iterator.h>
 #include <qpid/dispatch/buffer.h>
+#include <qpid/dispatch/compose.h>
 
 // Callback for status change (confirmed persistent, loaded-in-memory, etc.)
 
@@ -121,46 +122,6 @@ pn_delivery_t *dx_message_inbound_delivery(dx_message_t *qm);
 
 // Convenience Functions
 void dx_message_compose_1(dx_message_t *msg, const char *to, dx_buffer_list_t *buffers);
-void dx_message_copy_header(dx_message_t *msg); // Copy received header into send-header (prior to adding annotations)
-void dx_message_copy_message_annotations(dx_message_t *msg);
-
-// Raw Functions
-void dx_message_begin_header(dx_message_t *msg);
-void dx_message_end_header(dx_message_t *msg);
-
-void dx_message_begin_delivery_annotations(dx_message_t *msg);
-void dx_message_end_delivery_annotations(dx_message_t *msg);
-
-void dx_message_begin_message_annotations(dx_message_t *msg);
-void dx_message_end_message_annotations(dx_message_t *msg);
-
-void dx_message_begin_message_properties(dx_message_t *msg);
-void dx_message_end_message_properties(dx_message_t *msg);
-
-void dx_message_begin_application_properties(dx_message_t *msg);
-void dx_message_end_application_properties(dx_message_t *msg);
-
-void dx_message_append_body_data(dx_message_t *msg, dx_buffer_list_t *buffers);
-
-void dx_message_begin_body_sequence(dx_message_t *msg);
-void dx_message_end_body_sequence(dx_message_t *msg);
-
-void dx_message_begin_footer(dx_message_t *msg);
-void dx_message_end_footer(dx_message_t *msg);
-
-void dx_message_insert_null(dx_message_t *msg);
-void dx_message_insert_boolean(dx_message_t *msg, int value);
-void dx_message_insert_ubyte(dx_message_t *msg, uint8_t value);
-void dx_message_insert_uint(dx_message_t *msg, uint32_t value);
-void dx_message_insert_ulong(dx_message_t *msg, uint64_t value);
-void dx_message_insert_binary(dx_message_t *msg, const uint8_t *start, size_t len);
-void dx_message_insert_string(dx_message_t *msg, const char *str);
-void dx_message_insert_uuid(dx_message_t *msg, const uint8_t *value);
-void dx_message_insert_symbol(dx_message_t *msg, const char *start, size_t len);
-void dx_message_insert_timestamp(dx_message_t *msg, uint64_t value);
-void dx_message_begin_list(dx_message_t* msg);
-void dx_message_end_list(dx_message_t* msg);
-void dx_message_begin_map(dx_message_t* msg);
-void dx_message_end_map(dx_message_t* msg);
+void dx_message_compose_2(dx_message_t *msg, dx_composed_field_t *content);
 
 #endif
