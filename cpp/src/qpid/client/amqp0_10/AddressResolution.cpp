@@ -24,6 +24,7 @@
 #include "qpid/client/amqp0_10/MessageSink.h"
 #include "qpid/client/amqp0_10/OutgoingMessage.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/types/Variant.h"
 #include "qpid/messaging/exceptions.h"
@@ -193,8 +194,8 @@ class Queue : protected Node
     void checkDelete(qpid::client::AsyncSession&, CheckMode);
   private:
     const bool durable;
-    const bool autoDelete;
-    const bool exclusive;
+    bool autoDelete;
+    bool exclusive;
     const std::string alternateExchange;
     FieldTable arguments;
 };
@@ -709,6 +710,11 @@ Queue::Queue(const Address& a) : Node(a),
     (Opt(a)/NODE/X_DECLARE/ARGUMENTS).collect(arguments);
     nodeBindings.setDefaultQueue(name);
     linkBindings.setDefaultQueue(name);
+    if (qpid::messaging::AddressImpl::isTemporary(a) && createPolicy.isVoid()) {
+        createPolicy = "always";
+        autoDelete = true;
+        exclusive = true;
+    }
 }
 
 void Queue::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
