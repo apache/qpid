@@ -573,9 +573,25 @@ void dx_router_unregister_address(dx_address_t *ad)
 }
 
 
-void dx_router_send(dx_dispatch_t *dx,
-                    const char    *address,
-                    dx_message_t  *msg)
+void dx_router_send(dx_dispatch_t       *dx,
+                    dx_field_iterator_t *address,
+                    dx_message_t        *msg)
 {
+    dx_router_t  *router = dx->router;
+    dx_address_t *addr;
+
+    dx_field_iterator_reset_view(address, ITER_VIEW_ADDRESS_HASH);
+    sys_mutex_lock(router->lock);
+    hash_retrieve(router->out_hash, address, (void*) &addr);
+    if (addr) {
+        if (addr->rlink) {
+            pn_link_t    *pn_outlink = dx_link_pn(addr->rlink->link);
+            dx_message_t *copy       = dx_message_copy(msg);
+            DEQ_INSERT_TAIL(addr->rlink->out_fifo, copy);
+            pn_link_offered(pn_outlink, DEQ_SIZE(addr->rlink->out_fifo));
+            dx_link_activate(addr->rlink->link);
+        }
+    }
+    sys_mutex_unlock(router->lock); // TOINVESTIGATE Move this higher?
 }
 

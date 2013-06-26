@@ -190,6 +190,16 @@ static void dx_compose_end_composite(dx_composed_field_t *field)
     dx_overwrite_32(&comp->count_location,  comp->count);
 
     DEQ_REMOVE_HEAD(field->fieldStack);
+
+    //
+    // If there is an enclosing composite, update its length and count
+    //
+    dx_composite_t *enclosing = DEQ_HEAD(field->fieldStack);
+    if (enclosing) {
+        enclosing->length += 4 + comp->length;
+        enclosing->count++;
+    }
+
     free_dx_composite_t(comp);
 }
 
@@ -336,10 +346,10 @@ void dx_compose_insert_timestamp(dx_composed_field_t *field, uint64_t value)
 }
 
 
-void dx_compose_insert_uuid(dx_composed_field_t *field, const char *value)
+void dx_compose_insert_uuid(dx_composed_field_t *field, const uint8_t *value)
 {
     dx_insert_8(field, 0x98);  // uuid
-    dx_insert(field, (const uint8_t*) value, 16);
+    dx_insert(field, value, 16);
     bump_count(field);
 }
 
@@ -406,6 +416,34 @@ void dx_compose_insert_string(dx_composed_field_t *field, const char *value)
         dx_insert_32(field, len);
     }
     dx_insert(field, (const uint8_t*) value, len);
+    bump_count(field);
+}
+
+
+void dx_compose_insert_string_iterator(dx_composed_field_t *field, dx_field_iterator_t *iter)
+{
+    uint32_t len = 0;
+
+    while (!dx_field_iterator_end(iter)) {
+        dx_field_iterator_octet(iter);
+        len++;
+    }
+
+    dx_field_iterator_reset(iter);
+
+    if (len < 256) {
+        dx_insert_8(field, 0xa1);  // str8-utf8
+        dx_insert_8(field, (uint8_t) len);
+    } else {
+        dx_insert_8(field, 0xb1);  // str32-utf8
+        dx_insert_32(field, len);
+    }
+
+    while (!dx_field_iterator_end(iter)) {
+        uint8_t octet = dx_field_iterator_octet(iter);
+        dx_insert_8(field, octet);
+    }
+
     bump_count(field);
 }
 

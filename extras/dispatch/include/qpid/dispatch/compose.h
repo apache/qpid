@@ -20,6 +20,7 @@
  */
 
 #include <qpid/dispatch/buffer.h>
+#include <qpid/dispatch/iterator.h>
 
 typedef struct dx_composed_field_t dx_composed_field_t;
 
@@ -144,7 +145,7 @@ void dx_compose_insert_timestamp(dx_composed_field_t *field, uint64_t value);
  * @param field A field created by dx_compose.
  * @param value The pointer to the first octet in the UUID to be inserted.
  */
-void dx_compose_insert_uuid(dx_composed_field_t *field, const char *value);
+void dx_compose_insert_uuid(dx_composed_field_t *field, const uint8_t *value);
 
 /**
  * Insert a binary blob into the field.
@@ -171,6 +172,14 @@ void dx_compose_insert_binary_buffers(dx_composed_field_t *field, dx_buffer_list
  * @param value A pointer to a null-terminated string.
  */
 void dx_compose_insert_string(dx_composed_field_t *field, const char *value);
+
+/**
+ * Insert a utf8-encoded string into the field from an iterator
+ *
+ * @param field A field created by dx_compose.
+ * @param value A pointer to a null-terminated string.
+ */
+void dx_compose_insert_string_iterator(dx_composed_field_t *field, dx_field_iterator_t *iter);
 
 /**
  * Insert a symbol into the field.
