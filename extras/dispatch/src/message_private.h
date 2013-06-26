@@ -73,6 +73,7 @@ typedef struct {
     dx_field_location_t  section_footer;                  // The footer
     dx_field_location_t  field_user_id;                   // The string value of the user-id
     dx_field_location_t  field_to;                        // The string value of the to field
+    dx_field_location_t  field_reply_to;                  // The string value of the reply_to field
     dx_field_location_t  body;                            // The body of the message
     dx_buffer_t         *parse_buffer;
     unsigned char       *parse_cursor;

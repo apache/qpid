@@ -29,11 +29,12 @@
 #include <qpid/dispatch/timer.h>
 #include <qpid/dispatch/router.h>
 #include <qpid/dispatch/log.h>
+#include <qpid/dispatch/compose.h>
 #include <string.h>
 #include <stdio.h>
 
 struct dx_agent_t {
-    dx_server_t       *server;
+    dx_dispatch_t     *dx;
     hash_t            *class_hash;
     dx_message_list_t  in_fifo;
     dx_message_list_t  out_fifo;
@@ -52,15 +53,15 @@ struct dx_agent_class_t {
 
 
 typedef struct {
-    dx_agent_t   *agent;
-    dx_message_t *response_msg;
+    dx_agent_t          *agent;
+    dx_composed_field_t *response;
 } dx_agent_request_t;
 
 
 static char *log_module = "AGENT";
 
 
-static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map)
+static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map, dx_field_iterator_t *reply_to)
 {
     dx_field_iterator_t *cls = dx_field_map_by_key(map, "class");
     if (cls == 0)
@@ -74,11 +75,73 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map)
 
     dx_log(log_module, LOG_TRACE, "Received GET request for class: %s", cls_record->fqname);
 
+    //
+    // Compose the header
+    //
+    dx_composed_field_t *field = dx_compose(DX_PERFORMATIVE_HEADER, 0);
+    dx_compose_start_list(field);
+    dx_compose_insert_bool(field, 0);     // durable
+    dx_compose_end_list(field);
+
+    //
+    // Compose the Properties
+    //
+    field = dx_compose(DX_PERFORMATIVE_PROPERTIES, field);
+    dx_compose_start_list(field);
+    dx_compose_insert_null(field);                       // message-id
+    dx_compose_insert_null(field);                       // user-id
+    dx_compose_insert_string_iterator(field, reply_to);  // to
+    dx_compose_insert_null(field);                       // subject
+    dx_compose_insert_null(field);                       // reply-to
+    dx_compose_insert_string(field, "1");                // correlation-id   // TODO - fix
+    dx_compose_end_list(field);
+
+    //
+    // Compose the Application Properties
+    //
+    field = dx_compose(DX_PERFORMATIVE_APPLICATION_PROPERTIES, field);
+    dx_compose_start_map(field);
+    dx_compose_insert_string(field, "operation");
+    dx_compose_insert_string(field, "get");
+
+    dx_compose_insert_string(field, "status-code");
+    dx_compose_insert_uint(field, 200);
+
+    dx_compose_insert_string(field, "status-descriptor");
+    dx_compose_insert_string(field, "OK");
+    dx_compose_end_map(field);
+
+    //
+    // Open the Body (AMQP Value) to be filled in by the handler.
+    //
+    field = dx_compose(DX_PERFORMATIVE_BODY_AMQP_VALUE, field);
+    dx_compose_start_list(field);
+    dx_compose_start_map(field);
+
+    //
+    // The request record is allocated locally because the entire processing of the request
+    // will be done synchronously.
+    //
     dx_agent_request_t request;
-    request.agent        = agent;
-    request.response_msg = 0;
+    request.agent    = agent;
+    request.response = field;
 
     cls_record->query_handler(cls_record->context, 0, &request);
+
+    //
+    // The response is complete, close the list.
+    //
+    dx_compose_end_list(field);
+
+    //
+    // Create a message and send it.
+    //
+    dx_message_t *msg = dx_allocate_message();
+    dx_message_compose_2(msg, field);
+    dx_router_send(agent->dx, reply_to, msg);
+
+    dx_free_message(msg);
+    dx_compose_free(field);
 }
 
 
@@ -95,6 +158,13 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
     //
     dx_field_iterator_t *body = dx_message_field_iterator(msg, DX_FIELD_BODY);
     if (body == 0)
+        return;
+
+    //
+    // Get an iterator for the reply-to.  Exit if not found.
+    //
+    dx_field_iterator_t *reply_to = dx_message_field_iterator(msg, DX_FIELD_REPLY_TO);
+    if (reply_to == 0)
         return;
 
     //
@@ -121,15 +191,16 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
     //
     dx_field_iterator_t *opcode_string = dx_field_raw(opcode);
     if (dx_field_iterator_equal(opcode_string, (unsigned char*) "get"))
-        dx_agent_process_get(agent, map);
+        dx_agent_process_get(agent, map, reply_to);
 
     dx_field_iterator_free(opcode_string);
     dx_field_map_free(map);
     dx_field_iterator_free(body);
+    dx_field_iterator_free(reply_to);
 }
 
 
-static void dx_agent_timer_handler(void *context)
+static void dx_agent_deferred_handler(void *context)
 {
     dx_agent_t   *agent = (dx_agent_t*) context;
     dx_message_t *msg;
@@ -165,12 +236,12 @@ static void dx_agent_rx_handler(void *context, dx_message_t *msg)
 dx_agent_t *dx_agent(dx_dispatch_t *dx)
 {
     dx_agent_t *agent = NEW(dx_agent_t);
-    agent->server     = dx->server;
+    agent->dx         = dx;
     agent->class_hash = hash(6, 10, 1);
     DEQ_INIT(agent->in_fifo);
     DEQ_INIT(agent->out_fifo);
     agent->lock    = sys_mutex();
-    agent->timer   = dx_timer(dx, dx_agent_timer_handler, agent);
+    agent->timer   = dx_timer(dx, dx_agent_deferred_handler, agent);
     agent->address = dx_router_register_address(dx, true, "agent", dx_agent_rx_handler, agent);
 
     return agent;
@@ -225,41 +296,66 @@ dx_agent_class_t *dx_agent_register_event(dx_dispatch_t        *dx,
 
 void dx_agent_value_string(void *correlator, const char *key, const char *value)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_string(request->response, value);
 }
 
 
 void dx_agent_value_uint(void *correlator, const char *key, uint64_t value)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_uint(request->response, value);
 }
 
 
 void dx_agent_value_null(void *correlator, const char *key)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_null(request->response);
 }
 
 
 void dx_agent_value_boolean(void *correlator, const char *key, bool value)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_bool(request->response, value);
 }
 
 
 void dx_agent_value_binary(void *correlator, const char *key, const uint8_t *value, size_t len)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_binary(request->response, value, len);
 }
 
 
 void dx_agent_value_uuid(void *correlator, const char *key, const uint8_t *value)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_uuid(request->response, value);
 }
 
 
 void dx_agent_value_timestamp(void *correlator, const char *key, uint64_t value)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_insert_string(request->response, key);
+    dx_compose_insert_timestamp(request->response, value);
 }
 
 
 void dx_agent_value_complete(void *correlator, bool more)
 {
+    dx_agent_request_t *request = (dx_agent_request_t*) correlator;
+    dx_compose_end_map(request->response);
+    if (more)
+        dx_compose_start_map(request->response);
 }
 
 

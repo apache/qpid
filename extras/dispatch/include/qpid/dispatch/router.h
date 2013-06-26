@@ -21,6 +21,7 @@
 
 #include <qpid/dispatch/dispatch.h>
 #include <qpid/dispatch/message.h>
+#include <qpid/dispatch/iterator.h>
 #include <stdbool.h>
 
 typedef struct dx_address_t dx_address_t;
@@ -38,9 +39,9 @@ dx_address_t *dx_router_register_address(dx_dispatch_t        *dx,
 void dx_router_unregister_address(dx_address_t *address);
 
 
-void dx_router_send(dx_dispatch_t *dx,
-                    const char    *address,
-                    dx_message_t  *msg);
+void dx_router_send(dx_dispatch_t       *dx,
+                    dx_field_iterator_t *address,
+                    dx_message_t        *msg);
 
 
 #endif
