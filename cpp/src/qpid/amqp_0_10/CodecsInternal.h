@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/CommonImportExport.h"
 #include "qpid/types/Variant.h"
 
 namespace qpid {
@@ -28,13 +29,13 @@ namespace framing {
 class Buffer;
 }
 namespace amqp_0_10 {
-void encode(const qpid::types::Variant::Map& map, uint32_t len, qpid::framing::Buffer& buffer);
-void encode(const qpid::types::Variant::List& list, uint32_t len, qpid::framing::Buffer& buffer);
-void encode(const qpid::types::Variant& value, qpid::framing::Buffer& buffer);
-void encode(const std::string& value, const std::string& encoding, qpid::framing::Buffer& buffer);
-uint32_t encodedSize(const qpid::types::Variant::Map& values);
-uint32_t encodedSize(const qpid::types::Variant::List& values);
-uint32_t encodedSize(const std::string& value);
+QPID_COMMON_EXTERN void encode(const qpid::types::Variant::Map& map, uint32_t len, qpid::framing::Buffer& buffer);
+QPID_COMMON_EXTERN void encode(const qpid::types::Variant::List& list, uint32_t len, qpid::framing::Buffer& buffer);
+QPID_COMMON_EXTERN void encode(const qpid::types::Variant& value, qpid::framing::Buffer& buffer);
+QPID_COMMON_EXTERN void encode(const std::string& value, const std::string& encoding, qpid::framing::Buffer& buffer);
+QPID_COMMON_EXTERN uint32_t encodedSize(const qpid::types::Variant::Map& values);
+QPID_COMMON_EXTERN uint32_t encodedSize(const qpid::types::Variant::List& values);
+QPID_COMMON_EXTERN uint32_t encodedSize(const std::string& value);
 
 }} // namespace qpid::amqp_0_10
 
