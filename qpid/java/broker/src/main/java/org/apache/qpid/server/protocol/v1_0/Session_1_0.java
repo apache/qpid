@@ -36,6 +36,7 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InboundMessage;
@@ -477,6 +478,13 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
         // TODO - required for AMQSessionModel / management initiated closing
     }
 
+
+    @Override
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
+        // TODO - required for AMQSessionModel
+    }
+
     @Override
     public LogSubject getLogSubject()
     {
@@ -603,4 +611,5 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     {
         return _connection;
     }
+
 }

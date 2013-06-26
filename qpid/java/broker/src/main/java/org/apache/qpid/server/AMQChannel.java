@@ -60,6 +60,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPChannelActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -574,13 +575,21 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     @Override
     public void close() throws AMQException
     {
+        close(null, null);
+    }
+
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
         if(!_closing.compareAndSet(false, true))
         {
             //Channel is already closing
             return;
         }
 
-        CurrentActor.get().message(_logSubject, ChannelMessages.CLOSE());
+        LogMessage operationalLogMessage = cause == null ?
+                ChannelMessages.CLOSE() :
+                ChannelMessages.CLOSE_FORCED(cause.getCode(), message);
+        CurrentActor.get().message(_logSubject, operationalLogMessage);
 
         unsubscribeAllConsumers();
         _transaction.rollback();
