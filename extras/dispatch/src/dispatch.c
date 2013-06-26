@@ -100,6 +100,7 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
     dx->router    = dx_router(dx, router_area, router_id);
     dx->agent     = dx_agent(dx);
 
+    dx_alloc_setup_agent(dx);
     dx_server_setup_agent(dx);
     dx_container_setup_agent(dx);
     dx_router_setup_agent(dx);

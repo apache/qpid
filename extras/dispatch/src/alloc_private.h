@@ -20,7 +20,9 @@
  */
 
 #include <qpid/dispatch/alloc.h>
+#include <qpid/dispatch/dispatch.h>
 
 void dx_alloc_initialize(void);
+void dx_alloc_setup_agent(dx_dispatch_t *dx);
 
 #endif
