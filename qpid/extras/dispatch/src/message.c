@@ -287,6 +287,36 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
         }
         break;
 
+    case DX_FIELD_REPLY_TO:
+        while (1) {
+            if (content->field_reply_to.parsed)
+                return &content->field_reply_to;
+
+            if (content->section_message_properties.parsed == 0)
+                break;
+
+            dx_buffer_t   *buffer = content->section_message_properties.buffer;
+            unsigned char *cursor = dx_buffer_base(buffer) + content->section_message_properties.offset;
+
+            int count = start_list(&cursor, &buffer);
+            int result;
+
+            if (count < 3)
+                break;
+
+            result = traverse_field(&cursor, &buffer, 0); // message_id
+            if (!result) return 0;
+            result = traverse_field(&cursor, &buffer, 0); // user_id
+            if (!result) return 0;
+            result = traverse_field(&cursor, &buffer, 0); // to
+            if (!result) return 0;
+            result = traverse_field(&cursor, &buffer, 0); // subject
+            if (!result) return 0;
+            result = traverse_field(&cursor, &buffer, &content->field_reply_to); // reply_to
+            if (!result) return 0;
+        }
+        break;
+
     case DX_FIELD_BODY:
         if (content->section_body.parsed)
             return &content->section_body;
@@ -711,7 +741,7 @@ void dx_message_compose_1(dx_message_t *msg, const char *to, dx_buffer_list_t *b
 
     field = dx_compose(DX_PERFORMATIVE_PROPERTIES, field);
     dx_compose_start_list(field);
-    dx_compose_insert_null(field);          // compose-id
+    dx_compose_insert_null(field);          // message-id
     dx_compose_insert_null(field);          // user-id
     dx_compose_insert_string(field, to);    // to
     //dx_compose_insert_null(field);          // subject
@@ -736,5 +766,15 @@ void dx_message_compose_1(dx_message_t *msg, const char *to, dx_buffer_list_t *b
     DEQ_INIT(*field_buffers); // Zero out the linkage to the now moved buffers.
 
     dx_compose_free(field);
+}
+
+
+void dx_message_compose_2(dx_message_t *msg, dx_composed_field_t *field)
+{
+    dx_message_content_t *content       = MSG_CONTENT(msg);
+    dx_buffer_list_t     *field_buffers = dx_compose_buffers(field);
+
+    content->buffers = *field_buffers;
+    DEQ_INIT(*field_buffers); // Zero out the linkage to the now moved buffers.
 }
 
