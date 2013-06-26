@@ -26,6 +26,7 @@
 #include "Domain.h"
 #include "Interconnects.h"
 #include "Relay.h"
+#include "Topic.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Exchange.h"
@@ -128,24 +129,27 @@ class IncomingToExchange : public DecodingIncoming
     Authorise& authorise;
 };
 
-Session::Session(pn_session_t* s, qpid::broker::Broker& b, Connection& c, qpid::sys::OutputControl& o)
-    : ManagedSession(b, c, (boost::format("%1%") % s).str()), session(s), broker(b), connection(c), out(o), deleted(false), authorise(connection.getUserId(), broker.getAcl()) {}
+Session::Session(pn_session_t* s, Connection& c, qpid::sys::OutputControl& o)
+    : ManagedSession(c.getBroker(), c, (boost::format("%1%") % s).str()), session(s), connection(c), out(o), deleted(false),
+      authorise(connection.getUserId(), connection.getBroker().getAcl()) {}
 
 
 Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus, bool incoming)
 {
     ResolvedNode node;
-    node.exchange = broker.getExchanges().find(name);
-    node.queue = broker.getQueues().find(name);
+    node.exchange = connection.getBroker().getExchanges().find(name);
+    node.queue = connection.getBroker().getQueues().find(name);
+    node.topic = connection.getTopics().get(name);
+    if (node.topic) node.exchange = node.topic->getExchange();
     if (!node.queue && !node.exchange) {
         if (pn_terminus_is_dynamic(terminus)  || is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
             //is it a queue or an exchange?
             node.properties.read(pn_terminus_properties(terminus));
             if (node.properties.isQueue()) {
-                node.queue = broker.createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
+                node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
             } else {
                 qpid::framing::FieldTable args;
-                node.exchange = broker.createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
+                node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
                                                       args, connection.getUserId(), connection.getId()).first;
             }
         } else {
@@ -159,13 +163,16 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 if (d) {
                     node.relay = boost::shared_ptr<Relay>(new Relay(1000));
                     if (incoming) {
-                        d->connect(false, id, name, local, connection.getInterconnects(), node.relay);
+                        d->connect(false, id, name, local, connection, node.relay);
                     } else {
-                        d->connect(true, id, local, name, connection.getInterconnects(), node.relay);
+                        d->connect(true, id, local, name, connection, node.relay);
                     }
                 }
             }
         }
+    } else if (node.queue && node.topic) {
+        QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or topic, assuming topic");
+        node.queue.reset();
     } else if (node.queue && node.exchange) {
         QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
         node.exchange.reset();
@@ -255,19 +262,20 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         source = sourceAddress;
     }
     if (node.queue) {
-        boost::shared_ptr<Incoming> q(new IncomingToQueue(broker, *this, node.queue, link, source));
+        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source));
         incoming[link] = q;
     } else if (node.exchange) {
-        boost::shared_ptr<Incoming> e(new IncomingToExchange(broker, *this, node.exchange, link, source));
+        boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source));
         incoming[link] = e;
     } else if (node.relay) {
-        boost::shared_ptr<Incoming> in(new IncomingToRelay(link, broker, *this, source, name, pn_link_name(link), node.relay));
+        boost::shared_ptr<Incoming> in(new IncomingToRelay(link, connection.getBroker(), *this, source, name, pn_link_name(link), node.relay));
         incoming[link] = in;
     } else {
         pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
         throw qpid::Exception("Node not found: " + name);/*not-found*/
     }
-    if (broker.getOptions().auth && !connection.isLink()) incoming[link]->verify(connection.getUserId(), broker.getOptions().realm);
+    if (connection.getBroker().getOptions().auth && !connection.isLink())
+        incoming[link]->verify(connection.getUserId(), connection.getBroker().getOptions().realm);
     QPID_LOG(debug, "Incoming link attached");
 }
 
@@ -291,7 +299,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
 
     if (node.queue) {
         authorise.outgoing(node.queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, node.queue, link, *this, out, false));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, false));
         q->init();
         filter.apply(q);
         outgoing[link] = q;
@@ -300,6 +308,11 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         bool shared = is_capability_requested(SHARED, pn_terminus_capabilities(source));
         bool durable = pn_terminus_get_durability(source);
         QueueSettings settings(durable, !durable);
+        if (node.topic) {
+            settings = node.topic->getPolicy();
+            settings.durable = durable;
+            settings.autodelete = !durable;
+        }
         filter.configure(settings);
         //TODO: populate settings from source details when available from engine
         std::stringstream queueName;
@@ -313,15 +326,15 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             queueName << connection.getContainerId() << "_" << pn_link_name(link);
         }
         boost::shared_ptr<qpid::broker::Queue> queue
-            = broker.createQueue(queueName.str(), settings, this, "", connection.getUserId(), connection.getId()).first;
+            = connection.getBroker().createQueue(queueName.str(), settings, this, "", connection.getUserId(), connection.getId()).first;
         if (!shared) queue->setExclusiveOwner(this);
         authorise.outgoing(node.exchange, queue, filter);
         filter.bind(node.exchange, queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(broker, name, target, queue, link, *this, out, !shared));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, queue, link, *this, out, !shared));
         outgoing[link] = q;
         q->init();
     } else if (node.relay) {
-        boost::shared_ptr<Outgoing> out(new OutgoingFromRelay(link, broker, *this, name, target, pn_link_name(link), node.relay));
+        boost::shared_ptr<Outgoing> out(new OutgoingFromRelay(link, connection.getBroker(), *this, name, target, pn_link_name(link), node.relay));
         outgoing[link] = out;
         out->init();
     } else {
@@ -344,11 +357,11 @@ void Session::attach(pn_link_t* link, const std::string& src, const std::string&
 
     if (relay) {
         if (pn_link_is_sender(link)) {
-            boost::shared_ptr<Outgoing> out(new OutgoingFromRelay(link, broker, *this, src, tgt, pn_link_name(link), relay));
+            boost::shared_ptr<Outgoing> out(new OutgoingFromRelay(link, connection.getBroker(), *this, src, tgt, pn_link_name(link), relay));
             outgoing[link] = out;
             out->init();
         } else {
-            boost::shared_ptr<Incoming> in(new IncomingToRelay(link, broker, *this, src, tgt, pn_link_name(link), relay));
+            boost::shared_ptr<Incoming> in(new IncomingToRelay(link, connection.getBroker(), *this, src, tgt, pn_link_name(link), relay));
             incoming[link] = in;
         }
     } else {

@@ -35,6 +35,7 @@
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/ExpiryPolicy.h"
+#include "qpid/broker/PersistableObject.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/broker/MessageGroupManager.h"
@@ -295,9 +296,10 @@ Broker::Broker(const Broker::Options& conf) :
     // Default exchnge is not replicated.
     exchanges.declare(empty, DirectExchange::typeName, false, noReplicateArgs());
 
+    RecoveredObjects objects;
     if (store.get() != 0) {
         RecoveryManagerImpl recoverer(
-            queues, exchanges, links, dtxManager, protocolRegistry);
+            queues, exchanges, links, dtxManager, protocolRegistry, objects);
         recoveryInProgress = true;
         store->recover(recoverer);
         recoveryInProgress = false;
@@ -349,6 +351,8 @@ Broker::Broker(const Broker::Options& conf) :
 
     // Initialize plugins
     Plugin::initializeAll(*this);
+    //recover any objects via object factories
+    objects.restore(*this);
 
     if(conf.enableMgmt) {
         if (getAcl()) {

@@ -415,7 +415,7 @@
   </class>
   <!--
   ===============================================================
-  Domain
+  AMQP 1.0 Domain
   ===============================================================
   -->
   <class name="Domain">
@@ -426,6 +426,18 @@
     <property name="username"       type="sstr"   access="RO"/>
     <property name="password"       type="sstr"   access="RO"/>
   </class>
+  <!--
+  ===============================================================
+  AMQP 1.0 Topic
+  ===============================================================
+  -->
+  <class name="Topic">
+    <property name="name"           type="sstr"     access="RC" index="y"/>
+    <property name="exchangeRef"    type="objId"    references="Exchange" access="RC"/>
+    <property name="durable"        type="bool"     access="RC"/>
+    <property name="properties"     type="map"      access="RO"/>
+  </class>
+
 
   <!--
   ===============================================================

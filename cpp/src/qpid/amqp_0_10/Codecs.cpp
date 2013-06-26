@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/amqp_0_10/CodecsInternal.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h"
@@ -188,10 +189,6 @@ template <class T, class U, class F> void _decode(const std::string& data, U& va
     convert(t, value, f);
 }
 
-uint32_t encodedSize(const Variant::Map& values);
-uint32_t encodedSize(const Variant::List& values);
-uint32_t encodedSize(const std::string& value);
-
 uint32_t encodedSize(const Variant& value)
 {
     switch (value.getType()) {
@@ -289,9 +286,6 @@ void encode(const std::string& value, const std::string& encoding, qpid::framing
         buffer.putRawData(value);
     }
 }
-
-void encode(const Variant::Map& map, uint32_t len, qpid::framing::Buffer& buffer);
-void encode(const Variant::List& list, uint32_t len, qpid::framing::Buffer& buffer);
 
 void encode(const Variant& value, qpid::framing::Buffer& buffer)
 {

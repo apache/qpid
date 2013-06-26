@@ -50,6 +50,7 @@ const std::string SASL_MECHANISMS("sasl_mechanisms");
 const std::string SASL_SERVICE("sasl_service");
 const std::string MIN_SSF("min_ssf");
 const std::string MAX_SSF("max_ssf");
+const std::string DURABLE("durable");
 class Wrapper : public qpid::sys::ConnectionCodec
 {
   public:
@@ -119,14 +120,23 @@ bool get(qpid::Url& url, const std::string& key, const qpid::types::Variant::Map
         return false;
     }
 }
+bool get(const std::string& key, const qpid::types::Variant::Map& map)
+{
+    qpid::types::Variant::Map::const_iterator i = map.find(key);
+    if (i != map.end()) {
+        return i->second.asBool();
+    } else {
+        return false;
+    }
+}
 }
 
-class InterconnectFactory : public qpid::sys::ConnectionCodec::Factory, public boost::enable_shared_from_this<InterconnectFactory>
+class InterconnectFactory : public BrokerContext, public qpid::sys::ConnectionCodec::Factory, public boost::enable_shared_from_this<InterconnectFactory>
 {
   public:
-    InterconnectFactory(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, Domain&, Broker&, Interconnects&);
+    InterconnectFactory(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, Domain&, BrokerContext&);
     InterconnectFactory(bool incoming, const std::string& name, const std::string& source, const std::string& target,
-                        Domain&, Broker&, Interconnects&, boost::shared_ptr<Relay>);
+                        Domain&, BrokerContext&, boost::shared_ptr<Relay>);
     qpid::sys::ConnectionCodec* create(framing::ProtocolVersion, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     qpid::sys::ConnectionCodec* create(qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     bool connect();
@@ -140,14 +150,12 @@ class InterconnectFactory : public qpid::sys::ConnectionCodec::Factory, public b
     qpid::Url::iterator next;
     std::string hostname;
     Domain& domain;
-    Broker& broker;
-    Interconnects& registry;
     qpid::Address address;
     boost::shared_ptr<Relay> relay;
 };
 
-InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const qpid::types::Variant::Map& properties, Domain& d, Broker& b, Interconnects& r)
-    : incoming(i), name(n), url(d.getUrl()), domain(d), broker(b), registry(r)
+InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const qpid::types::Variant::Map& properties, Domain& d, BrokerContext& c)
+    : BrokerContext(c), incoming(i), name(n), url(d.getUrl()), domain(d)
 {
     get(source, SOURCE, properties);
     get(target, TARGET, properties);
@@ -155,8 +163,8 @@ InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const qpi
 }
 
 InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const std::string& source_, const std::string& target_,
-                                         Domain& d, Broker& b, Interconnects& r, boost::shared_ptr<Relay> relay_)
-    : incoming(i), name(n), source(source_), target(target_), url(d.getUrl()), domain(d), broker(b), registry(r), relay(relay_)
+                                         Domain& d, BrokerContext& c, boost::shared_ptr<Relay> relay_)
+    : BrokerContext(c), incoming(i), name(n), source(source_), target(target_), url(d.getUrl()), domain(d), relay(relay_)
 {
     next = url.begin();
 }
@@ -168,8 +176,8 @@ qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::framing::ProtocolV
 qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::sys::OutputControl& out, const std::string& id, const qpid::sys::SecuritySettings& t)
 {
     bool useSasl = domain.getMechanisms() != NONE;
-    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, broker, useSasl, incoming, name, source, target, domain, registry));
-    if (!relay) registry.add(name, connection);
+    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, *this, useSasl, incoming, name, source, target, domain));
+    if (!relay) getInterconnects().add(name, connection);
     else connection->setRelay(relay);
 
     std::auto_ptr<qpid::sys::ConnectionCodec> codec;
@@ -191,7 +199,7 @@ bool InterconnectFactory::connect()
     next++;
     hostname = address.host;
     QPID_LOG (info, "Inter-broker connection initiated (" << address << ")");
-    broker.connect(name, address.host, boost::lexical_cast<std::string>(address.port), address.protocol, this, boost::bind(&InterconnectFactory::failed, this, _1, _2));
+    getBroker().connect(name, address.host, boost::lexical_cast<std::string>(address.port), address.protocol, this, boost::bind(&InterconnectFactory::failed, this, _1, _2));
     return true;
 }
 
@@ -204,7 +212,7 @@ void InterconnectFactory::failed(int, std::string text)
 }
 
 Domain::Domain(const std::string& n, const qpid::types::Variant::Map& properties, Broker& b)
-    : name(n), durable(false), broker(b), mechanisms("ANONYMOUS"), service(qpid::saslName), minSsf(0), maxSsf(0), agent(b.getManagementAgent())
+    : PersistableObject(n, "domain", properties), name(n), durable(get(DURABLE, properties)), broker(b), mechanisms("ANONYMOUS"), service(qpid::saslName), minSsf(0), maxSsf(0), agent(b.getManagementAgent())
 {
     if (!get(url, URL, properties)) {
         QPID_LOG(error, "No URL specified for domain " << name << "!");
@@ -212,7 +220,6 @@ Domain::Domain(const std::string& n, const qpid::types::Variant::Map& properties
     } else {
         QPID_LOG(notice, "Created domain " << name << " with url " << url << " from " << properties);
     }
-    //TODO: durable
     get(username, USERNAME, properties);
     get(password, PASSWORD, properties);
     get(mechanisms, SASL_MECHANISMS, properties);
@@ -249,21 +256,26 @@ qpid::Url Domain::getUrl() const
     return url;
 }
 
+bool Domain::isDurable() const
+{
+    return durable;
+}
+
 std::auto_ptr<qpid::Sasl> Domain::sasl(const std::string& hostname)
 {
     return qpid::SaslFactory::getInstance().create(username, password, service, hostname, minSsf, maxSsf, false);
 }
 
-void Domain::connect(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, Interconnects& registry)
+void Domain::connect(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, BrokerContext& context)
 {
-    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, properties, *this, broker, registry));
+    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, properties, *this, context));
     factory->connect();
     addPending(factory);
 }
 
-void Domain::connect(bool incoming, const std::string& name, const std::string& source, const std::string& target, Interconnects& registry, boost::shared_ptr<Relay> relay)
+void Domain::connect(bool incoming, const std::string& name, const std::string& source, const std::string& target, BrokerContext& context, boost::shared_ptr<Relay> relay)
 {
-    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, source, target, *this, broker, registry, relay));
+    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, source, target, *this, context, relay));
     factory->connect();
     addPending(factory);
 }

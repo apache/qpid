@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_AMQP_INTERCONNECTS_H
-#define QPID_BROKER_AMQP_INTERCONNECTS_H
+#ifndef QPID_BROKER_AMQP_TOPIC_H
+#define QPID_BROKER_AMQP_TOPIC_H
 
 /*
  *
@@ -22,21 +22,47 @@
  *
  */
 #include "qpid/broker/ObjectFactory.h"
+#include "qpid/broker/PersistableObject.h"
+#include "qpid/broker/QueueSettings.h"
 #include "qpid/sys/Mutex.h"
-#include <string>
-#include <map>
+#include "qpid/types/Variant.h"
+#include "qpid/management/Manageable.h"
+#include "qmf/org/apache/qpid/broker/Exchange.h"
+#include "qmf/org/apache/qpid/broker/Topic.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
+class Broker;
+class Exchange;
+class QueueDepth;
+
 namespace amqp {
-class BrokerContext;
-class Domain;
-class Interconnect;
+
 /**
- *
+ * A topic is a node supporting a pub-sub style. It is at present
+ * implemented by an exchange with an additional policy for handling
+ * subscription queues.
  */
-class Interconnects : public ObjectFactory
+class Topic : public PersistableObject, public management::Manageable
+{
+  public:
+    Topic(Broker&, const std::string& name, const qpid::types::Variant::Map& properties);
+    ~Topic();
+    const std::string& getName() const;
+    const QueueSettings& getPolicy() const;
+    boost::shared_ptr<Exchange> getExchange();
+    bool isDurable() const;
+    boost::shared_ptr<qpid::management::ManagementObject> GetManagementObject() const;
+  private:
+    std::string name;
+    bool durable;
+    boost::shared_ptr<Exchange> exchange;
+    QueueSettings policy;
+    qmf::org::apache::qpid::broker::Topic::shared_ptr topic;
+};
+
+class TopicRegistry : public ObjectFactory
 {
   public:
     bool createObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,
@@ -46,21 +72,17 @@ class Interconnects : public ObjectFactory
     bool recoverObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,
                        uint64_t persistenceId);
 
-    bool add(const std::string&, boost::shared_ptr<Interconnect>);
-    boost::shared_ptr<Interconnect> get(const std::string&);
-    bool remove(const std::string&);
-
-    boost::shared_ptr<Domain> findDomain(const std::string&);
-    void setContext(BrokerContext&);
-    Interconnects();
+    bool add(boost::shared_ptr<Topic> topic);
+    boost::shared_ptr<Topic> remove(const std::string& name);
+    boost::shared_ptr<Topic> get(const std::string& name);
   private:
-    typedef std::map<std::string, boost::shared_ptr<Interconnect> > InterconnectMap;
-    typedef std::map<std::string, boost::shared_ptr<Domain> > DomainMap;
-    InterconnectMap interconnects;
-    DomainMap domains;
+    typedef std::map<std::string, boost::shared_ptr<Topic> > Topics;
     qpid::sys::Mutex lock;
-    BrokerContext* context;
+    Topics topics;
+
+    boost::shared_ptr<Topic> createTopic(Broker&, const std::string& name, const qpid::types::Variant::Map& properties);
 };
+
 }}} // namespace qpid::broker::amqp
 
-#endif  /*!QPID_BROKER_AMQP_INTERCONNECTS_H*/
+#endif  /*!QPID_BROKER_AMQP_TOPIC_H*/

@@ -25,6 +25,7 @@
 #include "qpid/types/Variant.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
+#include "qpid/broker/PersistableObject.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/Mutex.h"
 #include "qmf/org/apache/qpid/broker/Domain.h"
@@ -42,19 +43,20 @@ namespace broker {
 class Broker;
 namespace amqp {
 class InterconnectFactory;
-class Interconnects;
+class BrokerContext;
 class Relay;
 
-class Domain : public qpid::management::Manageable
+class Domain : public PersistableObject, public qpid::management::Manageable
 {
   public:
     Domain(const std::string& name, const qpid::types::Variant::Map& properties, Broker&);
     ~Domain();
-    void connect(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, Interconnects&);
-    void connect(bool incoming, const std::string& name, const std::string& source, const std::string& target, Interconnects&, boost::shared_ptr<Relay>);
+    void connect(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, BrokerContext&);
+    void connect(bool incoming, const std::string& name, const std::string& source, const std::string& target, BrokerContext&, boost::shared_ptr<Relay>);
     std::auto_ptr<qpid::Sasl> sasl(const std::string& hostname);
     const std::string& getMechanisms() const;
     qpid::Url getUrl() const;
+    bool isDurable() const;
     void addPending(boost::shared_ptr<InterconnectFactory>);
     void removePending(boost::shared_ptr<InterconnectFactory>);
     boost::shared_ptr<qpid::management::ManagementObject> GetManagementObject() const;

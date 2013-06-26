@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_AMQP_INTERCONNECT_H
-#define QPID_BROKER_AMQP_INTERCONNECT_H
+#ifndef QPID_BROKER_AMQP_BROKERCONTEXT_H
+#define QPID_BROKER_AMQP_BROKERCONTEXT_H
 
 /*
  *
@@ -21,43 +21,32 @@
  * under the License.
  *
  */
-#include "Connection.h"
+#include <string>
 
 namespace qpid {
-struct Address;
 namespace broker {
+class Broker;
 namespace amqp {
-class Domain;
 class Interconnects;
-class Relay;
-
+class TopicRegistry;
 /**
- *
+ * Context providing access to broker scoped entities.
  */
-class Interconnect : public Connection
+class BrokerContext
 {
   public:
-    Interconnect(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& broker, bool saslInUse,
-                 bool incoming, const std::string& name, const std::string& source, const std::string& target, Domain&);
-    void setRelay(boost::shared_ptr<Relay>);
-    ~Interconnect();
-    size_t encode(char* buffer, size_t size);
-    void deletedFromRegistry();
-    void transportDeleted();
-    bool isLink() const;
+    BrokerContext(Broker&, Interconnects&, TopicRegistry&, const std::string&);
+    BrokerContext(BrokerContext&);
+    Broker& getBroker();
+    Interconnects& getInterconnects();
+    TopicRegistry& getTopics();
+    std::string getDomain();
   private:
-    bool incoming;
-    std::string name;
-    std::string source;
-    std::string target;
-    Domain& domain;
-    bool headerDiscarded;
-    boost::shared_ptr<Relay> relay;
-    bool closeRequested;
-    bool isTransportDeleted;
-
-    void process();
+    Broker& broker;
+    Interconnects& interconnects;
+    TopicRegistry& topics;
+    std::string domain;
 };
 }}} // namespace qpid::broker::amqp
 
-#endif  /*!QPID_BROKER_AMQP_INTERCONNECT_H*/
+#endif  /*!QPID_BROKER_AMQP_BROKERCONTEXT_H*/

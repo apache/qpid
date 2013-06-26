@@ -39,9 +39,9 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
-Interconnect::Interconnect(qpid::sys::OutputControl& out, const std::string& id, qpid::broker::Broker& broker, bool saslInUse,
-                           bool i, const std::string& n, const std::string& s, const std::string& t, Domain& d, Interconnects& r)
-    : Connection(out, id, broker, r, true, std::string()), incoming(i), name(n), source(s), target(t), domain(d), registry(r), headerDiscarded(saslInUse),
+Interconnect::Interconnect(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& broker, bool saslInUse,
+                           bool i, const std::string& n, const std::string& s, const std::string& t, Domain& d)
+    : Connection(out, id, broker, true), incoming(i), name(n), source(s), target(t), domain(d), headerDiscarded(saslInUse),
       closeRequested(false), isTransportDeleted(false)
 {}
 
@@ -83,10 +83,9 @@ void Interconnect::process()
         if ((pn_connection_state(connection) & UNINIT) == UNINIT) {
             QPID_LOG_CAT(debug, model, id << " interconnect opened");
             open();
-
             pn_session_t* s = pn_session(connection);
             pn_session_open(s);
-            boost::shared_ptr<Session> ssn(new Session(s, broker, *this, out));
+            boost::shared_ptr<Session> ssn(new Session(s, *this, out));
             sessions[s] = ssn;
 
             pn_link_t* l = incoming ? pn_receiver(s, name.c_str()) : pn_sender(s, name.c_str());
@@ -111,7 +110,7 @@ void Interconnect::deletedFromRegistry()
 void Interconnect::transportDeleted()
 {
     isTransportDeleted = true;
-    registry.remove(name);
+    getInterconnects().remove(name);
 }
 
 bool Interconnect::isLink() const
