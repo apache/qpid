@@ -517,6 +517,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Waitable.h				\
   qpid/sys/uuid.h				\
   qpid/sys/unordered_map.h			\
+  qpid/amqp_0_10/CodecsInternal.h		\
   qpid/amqp_0_10/Codecs.cpp			\
   qpid/amqp/CharSequence.h                      \
   qpid/amqp/CharSequence.cpp                    \
@@ -691,6 +692,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/PersistableExchange.h \
   qpid/broker/PersistableMessage.cpp \
   qpid/broker/PersistableMessage.h \
+  qpid/broker/PersistableObject.h \
+  qpid/broker/PersistableObject.cpp \
   qpid/broker/PersistableQueue.h \
   qpid/broker/Queue.cpp \
   qpid/broker/Queue.h \
@@ -805,6 +808,8 @@ amqp_la_LIBADD = libqpidcommon.la
 amqp_la_SOURCES = \
   qpid/broker/amqp/Authorise.h \
   qpid/broker/amqp/Authorise.cpp \
+  qpid/broker/amqp/BrokerContext.h \
+  qpid/broker/amqp/BrokerContext.cpp \
   qpid/broker/amqp/Connection.h \
   qpid/broker/amqp/Connection.cpp \
   qpid/broker/amqp/DataReader.h \
@@ -846,6 +851,8 @@ amqp_la_SOURCES = \
   qpid/broker/amqp/SaslClient.cpp \
   qpid/broker/amqp/Session.h \
   qpid/broker/amqp/Session.cpp \
+  qpid/broker/amqp/Topic.h \
+  qpid/broker/amqp/Topic.cpp \
   qpid/broker/amqp/Translation.h \
   qpid/broker/amqp/Translation.cpp
 

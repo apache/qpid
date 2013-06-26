@@ -30,6 +30,7 @@
 #include "qpid/sys/OutputControl.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
+#include <assert.h>
 
 namespace qpid {
 namespace broker {
@@ -50,6 +51,7 @@ bool Interconnects::createObject(Broker& broker, const std::string& type, const 
         if (i == domains.end()) {
             boost::shared_ptr<Domain> domain(new Domain(name, properties, broker));
             domains[name] = domain;
+            if (domain->isDurable()) broker.getStore().create(*domain);
             return true;
         } else {
             return false;
@@ -72,20 +74,23 @@ bool Interconnects::createObject(Broker& broker, const std::string& type, const 
                 throw qpid::Exception(QPID_MSG("Domain must be specified"));
             }
         }
-        domain->connect(type == INCOMING_TYPE, name, properties, *this);
+        domain->connect(type == INCOMING_TYPE, name, properties, *context);
         return true;
     } else {
         return false;
     }
 }
-bool Interconnects::deleteObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& /*properties*/,
+bool Interconnects::deleteObject(Broker& broker, const std::string& type, const std::string& name, const qpid::types::Variant::Map& /*properties*/,
                                  const std::string& /*userId*/, const std::string& /*connectionId*/)
 {
     if (type == DOMAIN_TYPE) {
+        boost::shared_ptr<Domain> domain;
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
         DomainMap::iterator i = domains.find(name);
         if (i != domains.end()) {
+            domain = i->second;
             domains.erase(i);
+            if (domain->isDurable()) broker.getStore().destroy(*domain);
             return true;
         } else {
             throw qpid::Exception(QPID_MSG("No such domain: " << name));
@@ -103,6 +108,20 @@ bool Interconnects::deleteObject(Broker&, const std::string& type, const std::st
             }
         }
         if (interconnect) interconnect->deletedFromRegistry();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Interconnects::recoverObject(Broker& broker, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,
+                   uint64_t persistenceId)
+{
+    if (type == DOMAIN_TYPE) {
+        boost::shared_ptr<Domain> domain(new Domain(name, properties, broker));
+        domain->setPersistenceId(persistenceId);
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
+        domains[name] = domain;
         return true;
     } else {
         return false;
@@ -145,7 +164,13 @@ boost::shared_ptr<Domain> Interconnects::findDomain(const std::string& name)
     } else {
         return i->second;
     }
-
 }
+void Interconnects::setContext(BrokerContext& c)
+{
+    context = &c;
+    assert(&(context->getInterconnects()) == this);
+}
+
+Interconnects::Interconnects() : context(0) {}
 
 }}} // namespace qpid::broker::amqp

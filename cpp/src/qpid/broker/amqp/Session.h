@@ -50,13 +50,14 @@ class Connection;
 class Incoming;
 class Outgoing;
 class Relay;
+class Topic;
 /**
  *
  */
 class Session : public ManagedSession, public boost::enable_shared_from_this<Session>
 {
   public:
-    Session(pn_session_t*, qpid::broker::Broker&, Connection&, qpid::sys::OutputControl&);
+    Session(pn_session_t*, Connection&, qpid::sys::OutputControl&);
     /**
      * called for links initiated by the peer
      */
@@ -82,7 +83,6 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     typedef std::map<pn_link_t*, boost::shared_ptr<Outgoing> > OutgoingLinks;
     typedef std::map<pn_link_t*, boost::shared_ptr<Incoming> > IncomingLinks;
     pn_session_t* session;
-    qpid::broker::Broker& broker;
     Connection& connection;
     qpid::sys::OutputControl& out;
     IncomingLinks incoming;
@@ -97,6 +97,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     {
         boost::shared_ptr<qpid::broker::Exchange> exchange;
         boost::shared_ptr<qpid::broker::Queue> queue;
+        boost::shared_ptr<qpid::broker::amqp::Topic> topic;
         boost::shared_ptr<Relay> relay;
         NodeProperties properties;
     };

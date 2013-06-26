@@ -39,11 +39,12 @@ extern "C" {
 namespace qpid {
 namespace broker {
 namespace amqp {
-Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::broker::Broker& b, Interconnects& interconnects_, bool saslInUse, const std::string& d)
-    : ManagedConnection(b, i),
+
+Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, BrokerContext& b, bool saslInUse)
+    : BrokerContext(b), ManagedConnection(getBroker(), i),
       connection(pn_connection()),
       transport(pn_transport()),
-      out(o), id(i), broker(b), haveOutput(true), interconnects(interconnects_), domain(d)
+      out(o), id(i), haveOutput(true)
 {
     if (pn_transport_bind(transport, connection)) {
         //error
@@ -54,7 +55,7 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::
     QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
     if (enableTrace) pn_transport_trace(transport, PN_TRACE_FRM);
 
-    broker.getConnectionObservers().connection(*this);
+    getBroker().getConnectionObservers().connection(*this);
     if (!saslInUse) {
         //feed in a dummy AMQP 1.0 header as engine expects one, but
         //we already read it (if sasl is in use we read the sasl
@@ -72,15 +73,11 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, qpid::
 
 Connection::~Connection()
 {
-    broker.getConnectionObservers().closed(*this);
+    getBroker().getConnectionObservers().closed(*this);
     pn_transport_free(transport);
     pn_connection_free(connection);
 }
 
-Interconnects& Connection::getInterconnects()
-{
-    return interconnects;
-}
 pn_transport_t* Connection::getTransport()
 {
     return transport;
@@ -173,11 +170,11 @@ void Connection::open()
 {
     readPeerProperties();
 
-    pn_connection_set_container(connection, broker.getFederationTag().c_str());
+    pn_connection_set_container(connection, getBroker().getFederationTag().c_str());
     pn_connection_open(connection);
     out.connectionEstablished();
     opened();
-    broker.getConnectionObservers().opened(*this);
+    getBroker().getConnectionObservers().opened(*this);
 }
 
 void Connection::readPeerProperties()
@@ -227,7 +224,7 @@ void Connection::process()
     for (pn_session_t* s = pn_session_head(connection, REQUIRES_OPEN); s; s = pn_session_next(s, REQUIRES_OPEN)) {
         QPID_LOG_CAT(debug, model, id << " session begun");
         pn_session_open(s);
-        boost::shared_ptr<Session> ssn(new Session(s, broker, *this, out));
+        boost::shared_ptr<Session> ssn(new Session(s, *this, out));
         sessions[s] = ssn;
     }
     for (pn_link_t* l = pn_link_head(connection, REQUIRES_OPEN); l; l = pn_link_next(l, REQUIRES_OPEN)) {
@@ -323,11 +320,6 @@ std::string Connection::getError()
     return text.str();
 }
 
-std::string Connection::getDomain() const
-{
-    return domain;
-}
-
 void Connection::abort()
 {
     out.abort();
@@ -336,7 +328,7 @@ void Connection::abort()
 void Connection::setUserId(const std::string& user)
 {
     ManagedConnection::setUserId(user);
-    AclModule* acl = broker.getAcl();
+    AclModule* acl = getBroker().getAcl();
     if (acl && !acl->approveConnection(*this))
     {
         throw Exception(qpid::amqp::error_conditions::RESOURCE_LIMIT_EXCEEDED, "User connection denied by configured limit");

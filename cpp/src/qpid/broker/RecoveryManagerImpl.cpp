@@ -22,6 +22,7 @@
 
 #include "qpid/broker/Message.h"
 #include "qpid/broker/PersistableMessage.h"
+#include "qpid/broker/PersistableObject.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Bridge.h"
@@ -40,8 +41,8 @@ namespace qpid {
 namespace broker {
 
 RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, LinkRegistry& _links,
-                                         DtxManager& _dtxMgr, ProtocolRegistry& p)
-    : queues(_queues), exchanges(_exchanges), links(_links), dtxMgr(_dtxMgr), protocols(p) {}
+                                         DtxManager& _dtxMgr, ProtocolRegistry& p, RecoveredObjects& o)
+    : queues(_queues), exchanges(_exchanges), links(_links), dtxMgr(_dtxMgr), protocols(p), objects(o) {}
 
 RecoveryManagerImpl::~RecoveryManagerImpl() {}
 
@@ -145,7 +146,7 @@ RecoverableConfig::shared_ptr RecoveryManagerImpl::recoverConfig(framing::Buffer
     else if (Bridge::isEncodedBridge(kind))
         return RecoverableConfig::shared_ptr(new RecoverableConfigImpl(Bridge::decode (links, buffer)));
 
-    return RecoverableConfig::shared_ptr(); // TODO: raise an exception instead
+    return objects.recover(buffer);
 }
 
 void RecoveryManagerImpl::recoveryComplete()
