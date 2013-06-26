@@ -63,6 +63,39 @@ class BrokerStatsTests(Base):
     def setup_access(self):
         return BrokerAgent(self.conn)
 
+    def test_exchange_stats(self):
+        agent = self.setup_access()
+        start_broker = agent.getBroker()
+
+        agent.addExchange("direct", "stats-test-exchange")
+        sess = self.setup_session()
+        tx_a = sess.sender("stats-test-exchange/a")
+        tx_b = sess.sender("stats-test-exchange/b")
+        rx_a = sess.receiver("stats-test-exchange/a")
+
+        exchange = agent.getExchange("stats-test-exchange")
+        self.failUnless(exchange, "expected a valid exchange object")
+        self.assertEqual(exchange.msgReceives, 0, "msgReceives")
+        self.assertEqual(exchange.msgDrops, 0, "msgDrops")
+        self.assertEqual(exchange.msgRoutes, 0, "msgRoutes")
+        self.assertEqual(exchange.byteReceives, 0, "byteReceives")
+        self.assertEqual(exchange.byteDrops, 0, "byteDrops")
+        self.assertEqual(exchange.byteRoutes, 0, "byteRoutes")
+
+        tx_a.send("0123456789")
+        tx_b.send("01234567890123456789")
+        tx_a.send("012345678901234567890123456789")
+        tx_b.send("0123456789012345678901234567890123456789")
+
+        exchange.update()
+        self.assertEqual(exchange.msgReceives, 4, "msgReceives")
+        self.assertEqual(exchange.msgDrops, 2, "msgDrops")
+        self.assertEqual(exchange.msgRoutes, 2, "msgRoutes")
+        self.assertEqual(exchange.byteReceives, 100, "byteReceives")
+        self.assertEqual(exchange.byteDrops, 60, "byteDrops")
+        self.assertEqual(exchange.byteRoutes, 40, "byteRoutes")
+
+        agent.delExchange("stats-test-exchange")
 
     def test_enqueues_dequeues(self):
         agent = self.setup_access()
