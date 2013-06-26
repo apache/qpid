@@ -20,6 +20,7 @@
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/threading.h>
 #include "message_private.h"
+#include "compose_private.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -252,134 +253,6 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
     *cursor = test_cursor;
     *buffer = test_buffer;
     return 1;
-}
-
-
-static void dx_insert(dx_message_content_t *msg, const uint8_t *seq, size_t len)
-{
-    dx_buffer_t *buf = DEQ_TAIL(msg->buffers);
-
-    while (len > 0) {
-        if (buf == 0 || dx_buffer_capacity(buf) == 0) {
-            buf = dx_allocate_buffer();
-            if (buf == 0)
-                return;
-            DEQ_INSERT_TAIL(msg->buffers, buf);
-        }
-
-        size_t to_copy = dx_buffer_capacity(buf);
-        if (to_copy > len)
-            to_copy = len;
-        memcpy(dx_buffer_cursor(buf), seq, to_copy);
-        dx_buffer_insert(buf, to_copy);
-        len -= to_copy;
-        seq += to_copy;
-        msg->length += to_copy;
-    }
-}
-
-
-static void dx_insert_8(dx_message_content_t *msg, uint8_t value)
-{
-    dx_insert(msg, &value, 1);
-}
-
-
-static void dx_insert_32(dx_message_content_t *msg, uint32_t value)
-{
-    uint8_t buf[4];
-    buf[0] = (uint8_t) ((value & 0xFF000000) >> 24);
-    buf[1] = (uint8_t) ((value & 0x00FF0000) >> 16);
-    buf[2] = (uint8_t) ((value & 0x0000FF00) >> 8);
-    buf[3] = (uint8_t)  (value & 0x000000FF);
-    dx_insert(msg, buf, 4);
-}
-
-
-static void dx_insert_64(dx_message_content_t *msg, uint64_t value)
-{
-    uint8_t buf[8];
-    buf[0] = (uint8_t) ((value & 0xFF00000000000000L) >> 56);
-    buf[1] = (uint8_t) ((value & 0x00FF000000000000L) >> 48);
-    buf[2] = (uint8_t) ((value & 0x0000FF0000000000L) >> 40);
-    buf[3] = (uint8_t) ((value & 0x000000FF00000000L) >> 32);
-    buf[4] = (uint8_t) ((value & 0x00000000FF000000L) >> 24);
-    buf[5] = (uint8_t) ((value & 0x0000000000FF0000L) >> 16);
-    buf[6] = (uint8_t) ((value & 0x000000000000FF00L) >> 8);
-    buf[7] = (uint8_t)  (value & 0x00000000000000FFL);
-    dx_insert(msg, buf, 8);
-}
-
-
-static void dx_overwrite(dx_buffer_t **buf, size_t *cursor, uint8_t value)
-{
-    while (*buf) {
-        if (*cursor >= dx_buffer_size(*buf)) {
-            *buf = (*buf)->next;
-            *cursor = 0;
-        } else {
-            dx_buffer_base(*buf)[*cursor] = value;
-            (*cursor)++;
-            return;
-        }
-    }
-}
-
-
-static void dx_overwrite_32(dx_field_location_t *field, uint32_t value)
-{
-    dx_buffer_t *buf    = field->buffer;
-    size_t       cursor = field->offset;
-
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0xFF000000) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x00FF0000) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x0000FF00) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t)  (value & 0x000000FF));
-}
-
-
-static void dx_start_list_performative(dx_message_content_t *msg, uint8_t code)
-{
-    //
-    // Insert the short-form performative tag
-    //
-    dx_insert(msg, (const uint8_t*) "\x00\x53", 2);
-    dx_insert_8(msg, code);
-
-    //
-    // Open the list with a list32 tag
-    //
-    dx_insert_8(msg, 0xd0);
-
-    //
-    // Mark the current location to later overwrite the length
-    //
-    msg->compose_length.buffer = DEQ_TAIL(msg->buffers);
-    msg->compose_length.offset = dx_buffer_size(msg->compose_length.buffer);
-    msg->compose_length.length = 4;
-    msg->compose_length.parsed = 1;
-
-    dx_insert(msg, (const uint8_t*) "\x00\x00\x00\x00", 4);
-
-    //
-    // Mark the current location to later overwrite the count
-    //
-    msg->compose_count.buffer = DEQ_TAIL(msg->buffers);
-    msg->compose_count.offset = dx_buffer_size(msg->compose_count.buffer);
-    msg->compose_count.length = 4;
-    msg->compose_count.parsed = 1;
-
-    dx_insert(msg, (const uint8_t*) "\x00\x00\x00\x00", 4);
-
-    msg->length = 4; // Include the length of the count field
-    msg->count = 0;
-}
-
-
-static void dx_end_list(dx_message_content_t *msg)
-{
-    dx_overwrite_32(&msg->compose_length, msg->length);
-    dx_overwrite_32(&msg->compose_count,  msg->count);
 }
 
 
@@ -825,302 +698,43 @@ ssize_t dx_message_field_copy(dx_message_t *msg, dx_message_field_t field, void 
 
 void dx_message_compose_1(dx_message_t *msg, const char *to, dx_buffer_list_t *buffers)
 {
-    dx_message_begin_header(msg);
-    dx_message_insert_boolean(msg, 0);  // durable
-    //dx_message_insert_null(msg);        // priority
-    //dx_message_insert_null(msg);        // ttl
-    //dx_message_insert_boolean(msg, 0);  // first-acquirer
-    //dx_message_insert_uint(msg, 0);     // delivery-count
-    dx_message_end_header(msg);
-
-    dx_message_begin_message_properties(msg);
-    dx_message_insert_null(msg);          // message-id
-    dx_message_insert_null(msg);          // user-id
-    dx_message_insert_string(msg, to);    // to
-    //dx_message_insert_null(msg);          // subject
-    //dx_message_insert_null(msg);          // reply-to
-    //dx_message_insert_null(msg);          // correlation-id
-    //dx_message_insert_null(msg);          // content-type
-    //dx_message_insert_null(msg);          // content-encoding
-    //dx_message_insert_timestamp(msg, 0);  // absolute-expiry-time
-    //dx_message_insert_timestamp(msg, 0);  // creation-time
-    //dx_message_insert_null(msg);          // group-id
-    //dx_message_insert_uint(msg, 0);       // group-sequence
-    //dx_message_insert_null(msg);          // reply-to-group-id
-    dx_message_end_message_properties(msg);
-
-    if (buffers)
-        dx_message_append_body_data(msg, buffers);
-}
-
-
-void dx_message_begin_header(dx_message_t *msg)
-{
-    dx_start_list_performative(MSG_CONTENT(msg), 0x70);
-}
-
-
-void dx_message_end_header(dx_message_t *msg)
-{
-    dx_end_list(MSG_CONTENT(msg));
-}
-
-
-void dx_message_begin_delivery_annotations(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_end_delivery_annotations(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_begin_message_annotations(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_end_message_annotations(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_begin_message_properties(dx_message_t *msg)
-{
-    dx_start_list_performative(MSG_CONTENT(msg), 0x73);
-}
-
-
-void dx_message_end_message_properties(dx_message_t *msg)
-{
-    dx_end_list(MSG_CONTENT(msg));
-}
-
-
-void dx_message_begin_application_properties(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_end_application_properties(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_append_body_data(dx_message_t *msg, dx_buffer_list_t *buffers)
-{
+    dx_composed_field_t  *field   = dx_compose(DX_PERFORMATIVE_HEADER, 0);
     dx_message_content_t *content = MSG_CONTENT(msg);
-    dx_buffer_t          *buf     = DEQ_HEAD(*buffers);
-    uint32_t              len     = 0;
 
-    //
-    // Calculate the size of the body to be appended.
-    //
-    while (buf) {
-        len += dx_buffer_size(buf);
-        buf = DEQ_NEXT(buf);
+    dx_compose_start_list(field);
+    dx_compose_insert_bool(field, 0);     // durable
+    //dx_compose_insert_null(field);        // priority
+    //dx_compose_insert_null(field);        // ttl
+    //dx_compose_insert_boolean(field, 0);  // first-acquirer
+    //dx_compose_insert_uint(field, 0);     // delivery-count
+    dx_compose_end_list(field);
+
+    field = dx_compose(DX_PERFORMATIVE_PROPERTIES, field);
+    dx_compose_start_list(field);
+    dx_compose_insert_null(field);          // compose-id
+    dx_compose_insert_null(field);          // user-id
+    dx_compose_insert_string(field, to);    // to
+    //dx_compose_insert_null(field);          // subject
+    //dx_compose_insert_null(field);          // reply-to
+    //dx_compose_insert_null(field);          // correlation-id
+    //dx_compose_insert_null(field);          // content-type
+    //dx_compose_insert_null(field);          // content-encoding
+    //dx_compose_insert_timestamp(field, 0);  // absolute-expiry-time
+    //dx_compose_insert_timestamp(field, 0);  // creation-time
+    //dx_compose_insert_null(field);          // group-id
+    //dx_compose_insert_uint(field, 0);       // group-sequence
+    //dx_compose_insert_null(field);          // reply-to-group-id
+    dx_compose_end_list(field);
+
+    if (buffers) {
+        field = dx_compose(DX_PERFORMATIVE_BODY_DATA, field);
+        dx_compose_insert_binary_buffers(field, buffers);
     }
 
-    //
-    // Insert a DATA section performative header.
-    //
-    dx_insert(content, (const uint8_t*) "\x00\x53\x75", 3);
-    if (len < 256) {
-        dx_insert_8(content, 0xa0);  // vbin8
-        dx_insert_8(content, (uint8_t) len);
-    } else {
-        dx_insert_8(content, 0xb0);  // vbin32
-        dx_insert_32(content, len);
-    }
+    dx_buffer_list_t *field_buffers = dx_compose_buffers(field);
+    content->buffers = *field_buffers;
+    DEQ_INIT(*field_buffers); // Zero out the linkage to the now moved buffers.
 
-    //
-    // Move the supplied buffers to the tail of the message's buffer list.
-    //
-    buf = DEQ_HEAD(*buffers);
-    while (buf) {
-        DEQ_REMOVE_HEAD(*buffers);
-        DEQ_INSERT_TAIL(content->buffers, buf);
-        buf = DEQ_HEAD(*buffers);
-    }
-}
-
-
-void dx_message_begin_body_sequence(dx_message_t *msg)
-{
-}
-
-
-void dx_message_end_body_sequence(dx_message_t *msg)
-{
-}
-
-
-void dx_message_begin_footer(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_end_footer(dx_message_t *msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_insert_null(dx_message_t *msg)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    dx_insert_8(content, 0x40);
-    content->count++;
-}
-
-
-void dx_message_insert_boolean(dx_message_t *msg, int value)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    if (value)
-        dx_insert(content, (const uint8_t*) "\x56\x01", 2);
-    else
-        dx_insert(content, (const uint8_t*) "\x56\x00", 2);
-    content->count++;
-}
-
-
-void dx_message_insert_ubyte(dx_message_t *msg, uint8_t value)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    dx_insert_8(content, 0x50);
-    dx_insert_8(content, value);
-    content->count++;
-}
-
-
-void dx_message_insert_uint(dx_message_t *msg, uint32_t value)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    if (value == 0) {
-        dx_insert_8(content, 0x43);  // uint0
-    } else if (value < 256) {
-        dx_insert_8(content, 0x52);  // smalluint
-        dx_insert_8(content, (uint8_t) value);
-    } else {
-        dx_insert_8(content, 0x70);  // uint
-        dx_insert_32(content, value);
-    }
-    content->count++;
-}
-
-
-void dx_message_insert_ulong(dx_message_t *msg, uint64_t value)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    if (value == 0) {
-        dx_insert_8(content, 0x44);  // ulong0
-    } else if (value < 256) {
-        dx_insert_8(content, 0x53);  // smallulong
-        dx_insert_8(content, (uint8_t) value);
-    } else {
-        dx_insert_8(content, 0x80);  // ulong
-        dx_insert_64(content, value);
-    }
-    content->count++;
-}
-
-
-void dx_message_insert_binary(dx_message_t *msg, const uint8_t *start, size_t len)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    if (len < 256) {
-        dx_insert_8(content, 0xa0);  // vbin8
-        dx_insert_8(content, (uint8_t) len);
-    } else {
-        dx_insert_8(content, 0xb0);  // vbin32
-        dx_insert_32(content, len);
-    }
-    dx_insert(content, start, len);
-    content->count++;
-}
-
-
-void dx_message_insert_string(dx_message_t *msg, const char *str)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    uint32_t len = strlen(str);
-
-    if (len < 256) {
-        dx_insert_8(content, 0xa1);  // str8-utf8
-        dx_insert_8(content, (uint8_t) len);
-        dx_insert(content, (const uint8_t*) str, len);
-    } else {
-        dx_insert_8(content, 0xb1);  // str32-utf8
-        dx_insert_32(content, len);
-        dx_insert(content, (const uint8_t*) str, len);
-    }
-    content->count++;
-}
-
-
-void dx_message_insert_uuid(dx_message_t *msg, const uint8_t *value)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    dx_insert_8(content, 0x98);  // uuid
-    dx_insert(content, value, 16);
-    content->count++;
-}
-
-
-void dx_message_insert_symbol(dx_message_t *msg, const char *start, size_t len)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    if (len < 256) {
-        dx_insert_8(content, 0xa3);  // sym8
-        dx_insert_8(content, (uint8_t) len);
-        dx_insert(content, (const uint8_t*) start, len);
-    } else {
-        dx_insert_8(content, 0xb3);  // sym32
-        dx_insert_32(content, len);
-        dx_insert(content, (const uint8_t*) start, len);
-    }
-    content->count++;
-}
-
-
-void dx_message_insert_timestamp(dx_message_t *msg, uint64_t value)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    dx_insert_8(content, 0x83);  // timestamp
-    dx_insert_64(content, value);
-    content->count++;
-}
-
-
-void dx_message_begin_list(dx_message_t* msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_end_list(dx_message_t* msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_begin_map(dx_message_t* msg)
-{
-    assert(0); // Not Implemented
-}
-
-
-void dx_message_end_map(dx_message_t* msg)
-{
-    assert(0); // Not Implemented
+    dx_compose_free(field);
 }
 
