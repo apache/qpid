@@ -20,6 +20,7 @@
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/log.h>
+#include <qpid/dispatch/agent.h>
 #include <memory.h>
 #include <stdio.h>
 
@@ -39,8 +40,8 @@ struct dx_alloc_pool_t {
 dx_alloc_config_t dx_alloc_default_config_big   = {16,  32, 0};
 dx_alloc_config_t dx_alloc_default_config_small = {64, 128, 0};
 
-sys_mutex_t *init_lock;
-item_list_t  type_list;
+static sys_mutex_t *init_lock;
+static item_list_t  type_list;
 
 static void dx_alloc_init(dx_alloc_type_desc_t *desc)
 {
@@ -206,5 +207,38 @@ void dx_alloc_initialize(void)
 {
     init_lock = sys_mutex();
     DEQ_INIT(type_list);
+}
+
+
+static void alloc_schema_handler(void *context, void *correlator)
+{
+}
+
+
+static void alloc_query_handler(void* context, const char *id, void *cor)
+{
+    item_t *item = DEQ_HEAD(type_list);
+
+    while (item) {
+        dx_agent_value_string(cor, "name", item->desc->type_name);
+        dx_agent_value_uint(cor, "type_size", item->desc->total_size);
+        dx_agent_value_uint(cor, "transfer_batch_size", item->desc->config->transfer_batch_size);
+        dx_agent_value_uint(cor, "local_free_list_max", item->desc->config->local_free_list_max);
+        dx_agent_value_uint(cor, "global_free_list_max", item->desc->config->global_free_list_max);
+        dx_agent_value_uint(cor, "total_alloc_from_heap", item->desc->stats->total_alloc_from_heap);
+        dx_agent_value_uint(cor, "total_free_to_heap", item->desc->stats->total_free_to_heap);
+        dx_agent_value_uint(cor, "held_by_threads", item->desc->stats->held_by_threads);
+        dx_agent_value_uint(cor, "batches_rebalanced_to_threads", item->desc->stats->batches_rebalanced_to_threads);
+        dx_agent_value_uint(cor, "batches_rebalanced_to_global", item->desc->stats->batches_rebalanced_to_global);
+
+        item = DEQ_NEXT(item);
+        dx_agent_value_complete(cor, item != 0);
+    }
+}
+
+
+void dx_alloc_setup_agent(dx_dispatch_t *dx)
+{
+    dx_agent_register_class(dx, "org.apache.qpid.dispatch.allocator", 0, alloc_schema_handler, alloc_query_handler);
 }
 
