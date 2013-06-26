@@ -208,7 +208,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         ex.setDescription(message);
         ((ServerSession)session).invoke(ex);
 
-        ((ServerSession)session).close();
+        ((ServerSession)session).close(cause, message);
     }
 
     public LogSubject getLogSubject()

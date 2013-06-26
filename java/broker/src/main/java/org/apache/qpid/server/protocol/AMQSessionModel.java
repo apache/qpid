@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -43,6 +44,8 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
     public String getClientID();
 
     public void close() throws AMQException;
+
+    public void close(AMQConstant cause, String message) throws AMQException;
 
     public LogSubject getLogSubject();
 

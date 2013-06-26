@@ -38,6 +38,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
@@ -45,6 +47,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
@@ -140,6 +143,7 @@ public class ServerSession extends Session
 
     private final TransactionTimeoutHelper _transactionTimeoutHelper;
 
+    private AtomicReference<LogMessage> _forcedCloseLogMessage = new AtomicReference<LogMessage>();
 
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
@@ -380,7 +384,12 @@ public class ServerSession extends Session
             task.doTask(this);
         }
 
-        CurrentActor.get().message(getLogSubject(), ChannelMessages.CLOSE());
+        LogMessage operationalLoggingMessage = _forcedCloseLogMessage.get();
+        if (operationalLoggingMessage == null)
+        {
+            operationalLoggingMessage = ChannelMessages.CLOSE();
+        }
+        CurrentActor.get().message(getLogSubject(), operationalLoggingMessage);
     }
 
     @Override
@@ -784,6 +793,25 @@ public class ServerSession extends Session
                                    getVirtualHost().getName(),
                                    getChannel())
             + "] ";
+    }
+
+    @Override
+    public void close(AMQConstant cause, String message)
+    {
+        if (cause == null)
+        {
+            close();
+        }
+        else
+        {
+            close(cause.getCode(), message);
+        }
+    }
+
+    void close(int cause, String message)
+    {
+        _forcedCloseLogMessage.compareAndSet(null, ChannelMessages.CLOSE_FORCED(cause, message));
+        close();
     }
 
     @Override

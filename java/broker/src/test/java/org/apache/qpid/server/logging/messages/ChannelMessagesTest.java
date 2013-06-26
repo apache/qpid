@@ -61,4 +61,13 @@ public class ChannelMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "CHN-1003", expected);
     }
 
+    public void testChannelCloseForced()
+    {
+        _logMessage = ChannelMessages.CLOSE_FORCED(1, "Test");
+        List<Object> log = performLog();
+
+        String[] expected = {"Close : 1 - Test"};
+
+        validateLogMessage(log, "CHN-1003", expected);
+    }
 }

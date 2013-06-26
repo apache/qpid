@@ -405,6 +405,11 @@ public class MockSubscription implements Subscription
         {
             return getId().compareTo(o.getId());
         }
+
+        @Override
+        public void close(AMQConstant cause, String message) throws AMQException
+        {
+        }
     }
 
     private static class MockConnectionModel implements AMQConnectionModel

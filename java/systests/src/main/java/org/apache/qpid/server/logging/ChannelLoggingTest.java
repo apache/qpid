@@ -20,16 +20,22 @@
  */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.AMQChannelClosedException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class ChannelLoggingTest extends AbstractTestLogging
 {
+    private static final String CHANNEL_CLOSE_FORCED_MESSAGE_PATTERN = "CHN-1003 : Close : \\d* - .*";
     private static final String CHANNEL_PREFIX = "CHN-";
 
     // No explicit startup configuration is required for this test
@@ -298,6 +304,102 @@ public class ChannelLoggingTest extends AbstractTestLogging
         validateChannelClose(results);
     }
 
+    public void testChannelClosedOnQueueArgumentsMismatch() throws Exception
+    {
+        assertLoggingNotYetOccured(CHANNEL_PREFIX);
+
+        Connection connection = getConnection();
+
+        // Create a session and then close it
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        waitForMessage("CHN-1001");
+
+        String testQueueName = getTestQueueName();
+
+        Queue nonDurableQueue = (Queue) session.createQueue("direct://amq.direct/" + testQueueName + "/" + testQueueName
+                + "?durable='false'");
+
+        ((AMQSession<?,?>)session).declareAndBind((AMQDestination)nonDurableQueue);
+
+        Queue durableQueue = (Queue) session.createQueue("direct://amq.direct/" + testQueueName + "/" + testQueueName
+                + "?durable='true'");
+        try
+        {
+            ((AMQSession<?,?>)session).declareAndBind((AMQDestination) durableQueue);
+            fail("Exception not thrown");
+        }
+        catch (AMQChannelClosedException acce)
+        {
+            // pass
+        }
+        catch (Exception e)
+        {
+            fail("Wrong exception thrown " + e);
+        }
+        waitForMessage("CHN-1003");
+
+        List<String> results = findMatches(CHANNEL_PREFIX);
+        assertTrue("No CHN messages logged", results.size() > 0);
+
+        String closeLog = results.get(results.size() -1);
+        int closeMessageID = closeLog.indexOf("CHN-1003");
+        assertFalse("CHN-1003 is not found", closeMessageID == -1);
+
+        String closeMessage = closeLog.substring(closeMessageID);
+        assertTrue("Unexpected close channel message :" + closeMessage, Pattern.matches(CHANNEL_CLOSE_FORCED_MESSAGE_PATTERN, closeMessage));
+
+        session.close();
+        connection.close();
+    }
+
+    public void testChannelClosedOnExclusiveQueueDeclaredOnDifferentSession() throws Exception
+    {
+        assertLoggingNotYetOccured(CHANNEL_PREFIX);
+
+        Connection connection = getConnection();
+
+        // Create a session and then close it
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        waitForMessage("CHN-1001");
+
+        Session session2 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        waitForMessage("CHN-1001");
+
+        String testQueueName = getTestQueueName();
+
+        Queue queue = (Queue) session.createQueue("direct://amq.direct/" + testQueueName + "/" + testQueueName
+                + "?exclusive='true'");
+
+        ((AMQSession<?,?>)session).declareAndBind((AMQDestination)queue);
+
+        try
+        {
+            ((AMQSession<?,?>)session2).declareAndBind((AMQDestination) queue);
+            fail("Exception not thrown");
+        }
+        catch (AMQException acce)
+        {
+            // pass
+        }
+        catch (Exception e)
+        {
+            fail("Wrong exception thrown " + e);
+        }
+        waitForMessage("CHN-1003");
+
+        List<String> results = findMatches(CHANNEL_PREFIX);
+        assertTrue("No CHN messages logged", results.size() > 0);
+
+        String closeLog = results.get(results.size() -1);
+        int closeMessageID = closeLog.indexOf("CHN-1003");
+        assertFalse("CHN-1003 is not found", closeMessageID == -1);
+
+        String closeMessage = closeLog.substring(closeMessageID);
+        assertTrue("Unexpected close channel message :" + closeMessage, Pattern.matches(CHANNEL_CLOSE_FORCED_MESSAGE_PATTERN, closeMessage));
+
+        session.close();
+        connection.close();
+    }
     private void validateChannelClose(List<String> results)
     {
         String open = getLogMessage(results, 0);
