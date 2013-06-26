@@ -74,10 +74,6 @@ typedef struct {
     dx_field_location_t  field_user_id;                   // The string value of the user-id
     dx_field_location_t  field_to;                        // The string value of the to field
     dx_field_location_t  body;                            // The body of the message
-    dx_field_location_t  compose_length;
-    dx_field_location_t  compose_count;
-    uint32_t             length;
-    uint32_t             count;
     dx_buffer_t         *parse_buffer;
     unsigned char       *parse_cursor;
     dx_message_depth_t   parse_depth;
