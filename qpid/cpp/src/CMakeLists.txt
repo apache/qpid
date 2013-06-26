@@ -1262,6 +1262,7 @@ set (qpidbroker_SOURCES
      qpid/broker/FifoDistributor.cpp
      qpid/broker/MessageGroupManager.cpp
      qpid/broker/PersistableMessage.cpp
+     qpid/broker/PersistableObject.cpp
      qpid/broker/Bridge.cpp
      qpid/broker/amqp_0_10/Connection.cpp
      qpid/broker/ConnectionHandler.cpp

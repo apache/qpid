@@ -41,6 +41,7 @@ class ObjectFactory
                               const std::string& userId, const std::string& connectionId) = 0;
     virtual bool deleteObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,
                               const std::string& userId, const std::string& connectionId) = 0;
+    virtual bool recoverObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,  uint64_t persistenceId) = 0;
     virtual ~ObjectFactory() {}
   private:
 };
@@ -52,6 +53,7 @@ class ObjectFactoryRegistry : public ObjectFactory
                       const std::string& userId, const std::string& connectionId);
     bool deleteObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,
                       const std::string& userId, const std::string& connectionId);
+    bool recoverObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,  uint64_t persistenceId);
 
     ~ObjectFactoryRegistry();
     void add(ObjectFactory*);

@@ -30,6 +30,7 @@
 #include "qpid/broker/amqp/Interconnects.h"
 #include "qpid/broker/amqp/Message.h"
 #include "qpid/broker/amqp/Sasl.h"
+#include "qpid/broker/amqp/Topic.h"
 #include "qpid/broker/amqp/Translation.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/Buffer.h"
@@ -50,20 +51,20 @@ struct Options : public qpid::Options {
     }
 };
 
-class ProtocolImpl : public Protocol
+class ProtocolImpl : public BrokerContext, public Protocol
 {
   public:
-    ProtocolImpl(Interconnects* i, Broker& b, const std::string& d) : interconnects(i), broker(b), domain(d)
+    ProtocolImpl(Interconnects* interconnects, TopicRegistry* topics, Broker& broker, const std::string& domain)
+        : BrokerContext(broker, *interconnects, *topics, domain)
     {
+        interconnects->setContext(*this);
         broker.getObjectFactoryRegistry().add(interconnects);//registry deletes on shutdown
+        broker.getObjectFactoryRegistry().add(topics);//registry deletes on shutdown
     }
     qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const qpid::broker::Message&);
     boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
   private:
-    Interconnects* interconnects;
-    Broker& broker;
-    std::string domain;
 };
 
 struct ProtocolPlugin : public Plugin
@@ -76,7 +77,7 @@ struct ProtocolPlugin : public Plugin
         //need to register protocol before recovery from store
         broker::Broker* broker = dynamic_cast<qpid::broker::Broker*>(&target);
         if (broker) {
-            ProtocolImpl* impl = new ProtocolImpl(new Interconnects(), *broker, options.domain);
+            ProtocolImpl* impl = new ProtocolImpl(new Interconnects(), new TopicRegistry(), *broker, options.domain);
             broker->getProtocolRegistry().add("AMQP 1.0", impl);//registry deletes on shutdown
         }
     }
@@ -90,22 +91,21 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
 {
     if (v == qpid::framing::ProtocolVersion(1, 0)) {
         if (v.getProtocol() == qpid::framing::ProtocolVersion::SASL) {
-            if (broker.getOptions().auth) {
+            if (getBroker().getOptions().auth) {
                 QPID_LOG(info, "Using AMQP 1.0 (with SASL layer)");
-                return new qpid::broker::amqp::Sasl(out, id, broker, *interconnects,
-                                                    qpid::SaslFactory::getInstance().createServer(broker.getOptions().realm,broker.getOptions().requireEncrypted, external),
-                                                    domain);
+                return new qpid::broker::amqp::Sasl(out, id, *this,
+                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getOptions().realm,getBroker().getOptions().requireEncrypted, external));
             } else {
-                std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(broker.getOptions().realm));
+                std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(getBroker().getOptions().realm));
                 QPID_LOG(info, "Using AMQP 1.0 (with dummy SASL layer)");
-                return new qpid::broker::amqp::Sasl(out, id, broker, *interconnects, authenticator, domain);
+                return new qpid::broker::amqp::Sasl(out, id, *this, authenticator);
             }
         } else {
-            if (broker.getOptions().auth) {
+            if (getBroker().getOptions().auth) {
                 throw qpid::Exception("SASL layer required!");
             } else {
                 QPID_LOG(info, "Using AMQP 1.0 (no SASL layer)");
-                return new qpid::broker::amqp::Connection(out, id, broker, *interconnects, false, domain);
+                return new qpid::broker::amqp::Connection(out, id, *this, false);
             }
         }
     }
@@ -114,7 +114,7 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
 
 boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> ProtocolImpl::translate(const qpid::broker::Message& m)
 {
-    qpid::broker::amqp::Translation t(m, &broker);
+    qpid::broker::amqp::Translation t(m, &getBroker());
     return t.getTransfer();
 }
 

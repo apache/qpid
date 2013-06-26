@@ -55,6 +55,8 @@ if (BUILD_AMQP)
     set (amqp_SOURCES
          qpid/broker/amqp/Authorise.h
          qpid/broker/amqp/Authorise.cpp
+         qpid/broker/amqp/BrokerContext.h
+         qpid/broker/amqp/BrokerContext.cpp
          qpid/broker/amqp/Connection.h
          qpid/broker/amqp/Connection.cpp
          qpid/broker/amqp/DataReader.h
@@ -96,6 +98,8 @@ if (BUILD_AMQP)
          qpid/broker/amqp/SaslClient.cpp
          qpid/broker/amqp/Session.h
          qpid/broker/amqp/Session.cpp
+         qpid/broker/amqp/Topic.h
+         qpid/broker/amqp/Topic.cpp
          qpid/broker/amqp/Translation.h
          qpid/broker/amqp/Translation.cpp
         )

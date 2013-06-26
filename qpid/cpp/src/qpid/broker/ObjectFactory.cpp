@@ -44,6 +44,16 @@ bool ObjectFactoryRegistry::deleteObject(Broker& broker, const std::string& type
     return false;
 }
 
+bool ObjectFactoryRegistry::recoverObject(Broker& broker, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,
+                                          uint64_t persistenceId)
+{
+    for (Factories::iterator i = factories.begin(); i != factories.end(); ++i)
+    {
+        if ((*i)->recoverObject(broker, type, name, properties, persistenceId)) return true;
+    }
+    return false;
+}
+
 ObjectFactoryRegistry::~ObjectFactoryRegistry()
 {
     for (Factories::iterator i = factories.begin(); i != factories.end(); ++i)
