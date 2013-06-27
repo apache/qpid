@@ -76,7 +76,7 @@ cleanup
 
 # Start another broker with --log-disable settings and make sure the management string receives them
 rm -rf $LOG_FILE
-PORT=$($QPIDD_EXEC --auth=no --no-module-dir --daemon --port=0 --log-to-file $LOG_FILE --log-enable debug:foo --log-disable debug:bar) || error "Could not start broker"
+PORT=$($QPIDD_EXEC --auth=no --no-module-dir --daemon --port=0  --interface 127.0.0.1 --log-to-file $LOG_FILE --log-enable debug:foo --log-disable debug:bar) || error "Could not start broker"
 echo Broker for log level test started on $PORT, pid is $($QPIDD_EXEC --no-module-dir --check --port $PORT)
 
 $srcdir/qpid-ctrl -b localhost:$PORT getLogLevel > dynamic_log_level.tmp
