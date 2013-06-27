@@ -300,7 +300,6 @@ EXTRA_DIST +=\
   config.h.cmake \
   amqp.cmake \
   rdma.cmake \
-  ssl.cmake \
   legacystore.cmake \
   managementgen.cmake \
   rubygen.cmake \
