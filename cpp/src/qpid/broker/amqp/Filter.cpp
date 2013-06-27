@@ -267,7 +267,7 @@ void Filter::bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue>
         active.push_back(&subjectFilter);
         active.push_back(&xqueryFilter);
     }
-    exchange->bind(queue, subjectFilter.value, &bindingArgs);
+    queue->bind(exchange, subjectFilter.value, bindingArgs);
 }
 
 void Filter::setDefaultXQueryFilter()
