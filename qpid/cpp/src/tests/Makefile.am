@@ -374,25 +374,20 @@ EXTRA_DIST+=						\
 	topic_perftest					\
 	sasl_test_setup.sh                              \
 	run_msg_group_tests_soak			\
-	qpidd-empty.conf
+	qpidd-empty.conf				\
+	qpidd-p0
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
 
 # Things that should be built before the check target runs.
-check-am: python_prep test_env.sh install_env.sh sasl_config qpidd-p0
+check-am: python_prep test_env.sh install_env.sh sasl_config
 
 PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
 PYTHON_BLD_DIR=$(abs_builddir)/python
 
-# Copy qpidd-p0 to build directory so tests can find it easily.
-qpidd-p0: force
-	cp $(abs_srcdir)/qpidd-p0 .
-
-force:
-
 # Generate python client as part of the all-am target so it gets built before tests.
-all-am: python_prep qpidd-p0
+all-am: python_prep
 
 python_prep:
 	if test -d $(PYTHON_SRC_DIR); \
