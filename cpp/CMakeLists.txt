@@ -60,8 +60,8 @@ if (WIN32)
   set (CPACK_PACKAGE_EXECUTABLES "")
 endif (WIN32)
 
-set_absolute_install_path (QPIDC_CONF_PATH ${QPID_INSTALL_CONFDIR}/qpidc.conf)
-set_absolute_install_path (QPIDD_CONF_PATH ${QPID_INSTALL_CONFDIR}/qpidd.conf)
+set_absolute_install_path (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf)
+set_absolute_install_path (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf)
 
 install(FILES  LICENSE NOTICE  DESTINATION ${QPID_INSTALL_DOCDIR})
 install(FILES  include/qmf/qmfengine.i
