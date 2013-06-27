@@ -63,7 +63,7 @@ static char *log_module = "AGENT";
 
 static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map, dx_field_iterator_t *reply_to)
 {
-    dx_field_iterator_t *cls = dx_field_map_by_key(map, "class");
+    dx_field_iterator_t *cls = dx_field_map_by_key(map, "type");
     if (cls == 0)
         return;
 
@@ -73,7 +73,7 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map, dx_fiel
     if (cls_record == 0)
         return;
 
-    dx_log(log_module, LOG_TRACE, "Received GET request for class: %s", cls_record->fqname);
+    dx_log(log_module, LOG_TRACE, "Received GET request for type: %s", cls_record->fqname);
 
     //
     // Compose the header
@@ -102,7 +102,7 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map, dx_fiel
     field = dx_compose(DX_PERFORMATIVE_APPLICATION_PROPERTIES, field);
     dx_compose_start_map(field);
     dx_compose_insert_string(field, "operation");
-    dx_compose_insert_string(field, "get");
+    dx_compose_insert_string(field, "GET");
 
     dx_compose_insert_string(field, "status-code");
     dx_compose_insert_uint(field, 200);
@@ -154,10 +154,10 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
         return;
 
     //
-    // Get an iterator for the message body.  Exit if the message has no body.
+    // Get an iterator for the application-properties.  Exit if the message has none.
     //
-    dx_field_iterator_t *body = dx_message_field_iterator(msg, DX_FIELD_BODY);
-    if (body == 0)
+    dx_field_iterator_t *ap = dx_message_field_iterator(msg, DX_FIELD_APPLICATION_PROPERTIES);
+    if (ap == 0)
         return;
 
     //
@@ -168,34 +168,34 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
         return;
 
     //
-    // Try to get a map-view of the body.  Exit if the body is not a map-value.
+    // Try to get a map-view of the application-properties.  Exit if the it is not a map-value.
     //
-    dx_field_map_t *map = dx_field_map(body, 1);
+    dx_field_map_t *map = dx_field_map(ap, 1);
     if (map == 0) {
-        dx_field_iterator_free(body);
+        dx_field_iterator_free(ap);
         return;
     }
 
     //
-    // Get an iterator for the "opcode" field in the map.  Exit if the key is not found.
+    // Get an iterator for the "operation" field in the map.  Exit if the key is not found.
     //
-    dx_field_iterator_t *opcode = dx_field_map_by_key(map, "opcode");
-    if (opcode == 0) {
+    dx_field_iterator_t *operation = dx_field_map_by_key(map, "operation");
+    if (operation == 0) {
         dx_field_map_free(map);
-        dx_field_iterator_free(body);
+        dx_field_iterator_free(ap);
         return;
     }
 
     //
-    // Dispatch the opcode to the appropriate handler
+    // Dispatch the operation to the appropriate handler
     //
-    dx_field_iterator_t *opcode_string = dx_field_raw(opcode);
-    if (dx_field_iterator_equal(opcode_string, (unsigned char*) "get"))
+    dx_field_iterator_t *operation_string = dx_field_raw(operation);
+    if (dx_field_iterator_equal(operation_string, (unsigned char*) "GET"))
         dx_agent_process_get(agent, map, reply_to);
 
-    dx_field_iterator_free(opcode_string);
+    dx_field_iterator_free(operation_string);
     dx_field_map_free(map);
-    dx_field_iterator_free(body);
+    dx_field_iterator_free(ap);
     dx_field_iterator_free(reply_to);
 }
 
