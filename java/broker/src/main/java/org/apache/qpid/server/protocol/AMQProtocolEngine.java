@@ -1085,10 +1085,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _clientProperties = clientProperties;
         if (_clientProperties != null)
         {
-            Boolean closeWhenNoRoute = _clientProperties.getBoolean(ConnectionStartProperties.QPID_CLOSE_WHEN_NO_ROUTE);
+            String closeWhenNoRoute = _clientProperties.getString(ConnectionStartProperties.QPID_CLOSE_WHEN_NO_ROUTE);
             if (closeWhenNoRoute != null)
             {
-                _closeWhenNoRoute = closeWhenNoRoute;
+                _closeWhenNoRoute = Boolean.parseBoolean(closeWhenNoRoute);
                 if(_logger.isDebugEnabled())
                 {
                     _logger.debug("Client set closeWhenNoRoute=" + _closeWhenNoRoute + " for protocol engine " + this);
