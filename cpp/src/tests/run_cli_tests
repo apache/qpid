@@ -56,9 +56,9 @@ start_brokers() {
 	targs="--ignore=*xml*"
     fi
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
+    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
+    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
     REMOTE_PORT=`cat qpidd.port`
 }
 
