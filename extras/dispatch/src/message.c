@@ -317,6 +317,11 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
         }
         break;
 
+    case DX_FIELD_APPLICATION_PROPERTIES:
+        if (content->section_application_properties.parsed)
+            return &content->section_application_properties;
+        break;
+
     case DX_FIELD_BODY:
         if (content->section_body.parsed)
             return &content->section_body;
