@@ -105,6 +105,12 @@ pn_bytes_t convert(const std::string& s)
     result.size = s.size();
     return result;
 }
+
+std::string convert(pn_bytes_t in)
+{
+    return std::string(in.start, in.size);
+}
+
 bool hasWildcards(const std::string& key)
 {
     return key.find('*') != std::string::npos || key.find('#') != std::string::npos;
@@ -356,9 +362,9 @@ void AddressHelper::addFilter(const qpid::types::Variant::Map& f)
 
 }
 
-AddressHelper::Filter::Filter() : descriptorCode(0){}
-AddressHelper::Filter::Filter(const std::string& n, uint64_t d, const qpid::types::Variant& v) : name(n), descriptorCode(d), value(v) {}
-AddressHelper::Filter::Filter(const std::string& n, const std::string& d, const qpid::types::Variant& v) : name(n), descriptorSymbol(d), descriptorCode(0), value(v) {}
+AddressHelper::Filter::Filter() : descriptorCode(0), confirmed(false) {}
+AddressHelper::Filter::Filter(const std::string& n, uint64_t d, const qpid::types::Variant& v) : name(n), descriptorCode(d), value(v), confirmed(false) {}
+AddressHelper::Filter::Filter(const std::string& n, const std::string& d, const qpid::types::Variant& v) : name(n), descriptorSymbol(d), descriptorCode(0), value(v), confirmed(false) {}
 
 void AddressHelper::addFilter(const std::string& name, uint64_t descriptor, const qpid::types::Variant& value)
 {
@@ -373,7 +379,7 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
 {
     if (assertEnabled(mode)) {
         QPID_LOG(debug, "checking assertions: " << capabilities);
-        //ensure all desired capabilities have been offerred
+        //ensure all desired capabilities have been offered
         std::set<std::string> desired;
         if (type.size()) desired.insert(type);
         if (durableNode) desired.insert(DURABLE);
@@ -398,6 +404,57 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
             }
             throw qpid::messaging::AssertionFailed(missing.str());
         }
+
+        //ensure all desired filters are in use
+        data = pn_terminus_filter(terminus);
+        if (pn_data_next(data)) {
+            size_t count = pn_data_get_map(data);
+            pn_data_enter(data);
+            for (size_t i = 0; i < count && pn_data_next(data); ++i) {
+                //skip key:
+                if (!pn_data_next(data)) break;
+                //expecting described value:
+                if (pn_data_is_described(data)) {
+                    pn_data_enter(data);
+                    pn_data_next(data);
+                    if (pn_data_type(data) == PN_ULONG) {
+                        confirmFilter(pn_data_get_ulong(data));
+                    } else if (pn_data_type(data) == PN_SYMBOL) {
+                        confirmFilter(convert(pn_data_get_symbol(data)));
+                    }
+                    pn_data_exit(data);
+                }
+            }
+            pn_data_exit(data);
+        }
+        std::stringstream missing;
+        missing << "Desired filters not in use: ";
+        bool first(true);
+        for (std::vector<Filter>::iterator i = filters.begin(); i != filters.end(); ++i) {
+            if (!i->confirmed) {
+                if (first) first = false;
+                else missing << ", ";
+                missing << i->name << "(";
+                if (i->descriptorSymbol.empty()) missing << "0x" << std::hex << i->descriptorCode;
+                else missing << i->descriptorSymbol;
+                missing << ")";
+            }
+        }
+        if (!first) throw qpid::messaging::AssertionFailed(missing.str());
+    }
+}
+
+void AddressHelper::confirmFilter(const std::string& descriptor)
+{
+    for (std::vector<Filter>::iterator i = filters.begin(); i != filters.end(); ++i) {
+        if (descriptor == i->descriptorSymbol) i->confirmed = true;
+    }
+}
+
+void AddressHelper::confirmFilter(uint64_t descriptor)
+{
+    for (std::vector<Filter>::iterator i = filters.begin(); i != filters.end(); ++i) {
+        if (descriptor == i->descriptorCode) i->confirmed = true;
     }
 }
 
