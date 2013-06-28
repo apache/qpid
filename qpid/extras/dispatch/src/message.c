@@ -95,7 +95,7 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
         break;
     }
 
-    if (field) {
+    if (field && !field->parsed) {
         field->buffer = *buffer;
         field->offset = *cursor - dx_buffer_base(*buffer);
         field->length = consume;
@@ -280,7 +280,7 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
 
             result = traverse_field(&cursor, &buffer, 0); // message_id
             if (!result) return 0;
-            result = traverse_field(&cursor, &buffer, 0); // user_id
+            result = traverse_field(&cursor, &buffer, &content->field_user_id); // user_id
             if (!result) return 0;
             result = traverse_field(&cursor, &buffer, &content->field_to); // to
             if (!result) return 0;
@@ -301,14 +301,14 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
             int count = start_list(&cursor, &buffer);
             int result;
 
-            if (count < 3)
+            if (count < 5)
                 break;
 
             result = traverse_field(&cursor, &buffer, 0); // message_id
             if (!result) return 0;
-            result = traverse_field(&cursor, &buffer, 0); // user_id
+            result = traverse_field(&cursor, &buffer, &content->field_user_id); // user_id
             if (!result) return 0;
-            result = traverse_field(&cursor, &buffer, 0); // to
+            result = traverse_field(&cursor, &buffer, &content->field_to); // to
             if (!result) return 0;
             result = traverse_field(&cursor, &buffer, 0); // subject
             if (!result) return 0;
