@@ -135,10 +135,15 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     };
     CodecSwitch codecSwitch;
 
+    void check();
     void wait();
+    void waitUntil(qpid::sys::AbsTime until);
     void wait(boost::shared_ptr<SessionContext>);
+    void waitUntil(boost::shared_ptr<SessionContext>, qpid::sys::AbsTime until);
     void wait(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void wait(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
+    void waitUntil(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>, qpid::sys::AbsTime until);
+    void waitUntil(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>, qpid::sys::AbsTime until);
     void checkClosed(boost::shared_ptr<SessionContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
