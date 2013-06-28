@@ -49,6 +49,7 @@ class AddressHelper
         std::string descriptorSymbol;
         uint64_t descriptorCode;
         qpid::types::Variant value;
+        bool confirmed;
 
         Filter();
         Filter(const std::string& name, uint64_t descriptor, const qpid::types::Variant& value);
@@ -79,6 +80,8 @@ class AddressHelper
     void addFilter(const std::string& name, uint64_t descriptor, const qpid::types::Variant& value);
     void addFilter(const std::string& name, const std::string& descriptor, const qpid::types::Variant& value);
     void addFilters(const qpid::types::Variant::List&);
+    void confirmFilter(const std::string& descriptor);
+    void confirmFilter(uint64_t descriptor);
 };
 }}} // namespace qpid::messaging::amqp
 
