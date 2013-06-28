@@ -205,6 +205,20 @@ public:
 
 private:
 
+    inline bool lookupMatchRule(
+        const ruleSetItr&                rsItr,
+        const std::string&               id,
+        const std::string&               name,
+        const std::map<Property, std::string>* params,
+        AclResult&                       aclresult);
+
+    inline bool lookupMatchPublishExchangeRule(
+        const ruleSetItr&                      rsItr,
+        const std::string&               id,
+        const std::string&               name,
+        const std::string&               routingKey,
+        AclResult&                       aclresult);
+
     bool compareInt(const qpid::acl::SpecProperty theProperty,
                     const std::string             theAclValue,
                     const std::string             theLookupValue,
