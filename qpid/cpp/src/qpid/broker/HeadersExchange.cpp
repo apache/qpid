@@ -198,6 +198,17 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
             throw InternalErrorException(QPID_MSG("Invalid or missing x-match value binding to headers exchange. Must be a string [\"all\" or \"any\"]"));
         }
 
+        Bindings::ConstPtr p = bindings.snapshot();
+        if (p.get()) {
+            for (std::vector<BoundKey>::const_iterator i = p->begin(); i != p->end(); ++i) {
+                if (queue == i->binding->queue && bindingKey == i->binding->key) {
+                    throw InternalErrorException(QPID_MSG("Exchange: " << getName()
+                        << ", binding key: " << bindingKey
+                        << " Duplicate binding key not allowed." ));
+                }
+            }
+        }
+
         {
             Mutex::ScopedLock l(lock);
             //NOTE: do not include the fed op/tags/origin in the
