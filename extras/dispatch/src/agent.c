@@ -168,7 +168,7 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
         return;
 
     //
-    // Try to get a map-view of the application-properties.  Exit if the it is not a map-value.
+    // Try to get a map-view of the application-properties.  Exit if it is not a map-value.
     //
     dx_field_map_t *map = dx_field_map(ap, 1);
     if (map == 0) {
