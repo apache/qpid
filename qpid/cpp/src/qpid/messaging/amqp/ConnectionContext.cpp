@@ -270,7 +270,7 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
             pn_link_advance(lnk->receiver);
             return true;
         } else if (until > qpid::sys::now()) {
-            wait(ssn, lnk);
+            waitUntil(ssn, lnk, until);
         } else {
             return false;
         }
@@ -427,9 +427,8 @@ pn_state_t REQUIRES_CLOSE = PN_LOCAL_ACTIVE | PN_REMOTE_CLOSED;
 pn_state_t IS_CLOSED = PN_LOCAL_CLOSED | PN_REMOTE_CLOSED;
 }
 
-void ConnectionContext::wait()
+void ConnectionContext::check()
 {
-    lock.wait();
     if (state == DISCONNECTED) {
         throw qpid::messaging::TransportFailure("Disconnected");
     }
@@ -437,6 +436,17 @@ void ConnectionContext::wait()
         pn_connection_close(connection);
         throw qpid::messaging::ConnectionError("Connection closed by peer");
     }
+}
+
+void ConnectionContext::wait()
+{
+    lock.wait();
+    check();
+}
+void ConnectionContext::waitUntil(qpid::sys::AbsTime until)
+{
+    lock.wait(until);
+    check();
 }
 void ConnectionContext::wait(boost::shared_ptr<SessionContext> ssn)
 {
@@ -451,6 +461,21 @@ void ConnectionContext::wait(boost::shared_ptr<SessionContext> ssn, boost::share
 void ConnectionContext::wait(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
 {
     wait();
+    checkClosed(ssn, lnk);
+}
+void ConnectionContext::waitUntil(boost::shared_ptr<SessionContext> ssn, qpid::sys::AbsTime until)
+{
+    waitUntil(until);
+    checkClosed(ssn);
+}
+void ConnectionContext::waitUntil(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::sys::AbsTime until)
+{
+    waitUntil(until);
+    checkClosed(ssn, lnk);
+}
+void ConnectionContext::waitUntil(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk, qpid::sys::AbsTime until)
+{
+    waitUntil(until);
     checkClosed(ssn, lnk);
 }
 void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn)
