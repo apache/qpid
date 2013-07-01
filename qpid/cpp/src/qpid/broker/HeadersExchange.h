@@ -48,7 +48,7 @@ class HeadersExchange : public virtual Exchange {
         const Queue::shared_ptr queue;        
         const qpid::framing::FieldTable* args;
         MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a);
-        bool operator()(BoundKey & bk);
+        bool operator()(const BoundKey & bk);
     };
     
     struct MatchKey
@@ -56,7 +56,7 @@ class HeadersExchange : public virtual Exchange {
         const Queue::shared_ptr queue;
         const std::string& key;
         MatchKey(Queue::shared_ptr q, const std::string& k);
-        bool operator()(BoundKey & bk);
+        bool operator()(const BoundKey & bk);
     };
 
     struct FedUnbindModifier

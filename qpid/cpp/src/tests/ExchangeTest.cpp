@@ -138,7 +138,7 @@ QPID_AUTO_TEST_CASE(testIsBound)
     args3.setInt("b", 6);
 
     headers.bind(a, "", &args1);
-    headers.bind(a, "", &args3);
+    headers.bind(a, "other", &args3);//need to use different binding key to correctly identify second binding
     headers.bind(b, "", &args2);
     headers.bind(c, "", &args1);
 
