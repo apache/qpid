@@ -200,8 +200,10 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
 
         Bindings::ConstPtr p = bindings.snapshot();
         if (p.get()) {
+            MatchArgs matchArgs(queue, &extra_args);
+            MatchKey matchKey(queue, bindingKey);
             for (std::vector<BoundKey>::const_iterator i = p->begin(); i != p->end(); ++i) {
-                if (queue == i->binding->queue && bindingKey == i->binding->key) {
+                if (matchKey(*i) && !matchArgs(*i)) {
                     throw InternalErrorException(QPID_MSG("Exchange: " << getName()
                         << ", binding key: " << bindingKey
                         << " Duplicate binding key not allowed." ));
@@ -372,7 +374,7 @@ bool HeadersExchange::equal(const FieldTable& a, const FieldTable& b) {
 //---------
 HeadersExchange::MatchArgs::MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a) : queue(q), args(a) {}
 
-bool HeadersExchange::MatchArgs::operator()(BoundKey & bk)
+bool HeadersExchange::MatchArgs::operator()(const BoundKey & bk)
 {
     return bk.binding->queue == queue && bk.binding->args == *args;
 }
@@ -380,7 +382,7 @@ bool HeadersExchange::MatchArgs::operator()(BoundKey & bk)
 //---------
 HeadersExchange::MatchKey::MatchKey(Queue::shared_ptr q, const std::string& k) : queue(q), key(k) {}
 
-bool HeadersExchange::MatchKey::operator()(BoundKey & bk)
+bool HeadersExchange::MatchKey::operator()(const BoundKey & bk)
 {
     return bk.binding->queue == queue && bk.binding->key == key;
 }
