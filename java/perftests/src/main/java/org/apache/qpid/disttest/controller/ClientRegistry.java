@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.disttest.controller;
 
+import static java.lang.String.valueOf;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -43,7 +45,10 @@ public class ClientRegistry
             throw new DistributedTestException("Duplicate client name " + clientName);
         }
 
-        notifyAllWaiters();
+        synchronized (_lock)
+        {
+            _lock.notifyAll();
+        }
 
         if (LOGGER.isInfoEnabled())
         {
@@ -62,13 +67,14 @@ public class ClientRegistry
      */
     public int awaitClients(final int numberOfClientsToAwait, final long idleTimeout)
     {
+        long startTime = System.currentTimeMillis();
         long deadlineForNextRegistration = deadline(idleTimeout);
 
-        int numberOfClientsAbsent = numberAbsent(numberOfClientsToAwait);
-
-        while(numberOfClientsAbsent > 0 && System.currentTimeMillis() < deadlineForNextRegistration)
+        synchronized (_lock)
         {
-            synchronized (_lock)
+            int numberOfClientsAbsent = numberAbsent(numberOfClientsToAwait);
+
+            while(numberOfClientsAbsent > 0 && System.currentTimeMillis() < deadlineForNextRegistration)
             {
                 try
                 {
@@ -76,24 +82,38 @@ public class ClientRegistry
                 }
                 catch (InterruptedException e)
                 {
-                   Thread.currentThread().interrupt();
-                   return numberOfClientsAbsent;
+                    Thread.currentThread().interrupt();
+                    return numberOfClientsAbsent;
                 }
+
+                int newNumberAbsent = numberAbsent(numberOfClientsToAwait);
+                if(newNumberAbsent < numberOfClientsAbsent)
+                {
+                    // a registration was received since the last loop, so reset the timeout
+                    deadlineForNextRegistration = deadline(idleTimeout);
+                }
+
+                numberOfClientsAbsent = newNumberAbsent;
             }
 
-            int newNumberAbsent = numberAbsent(numberOfClientsToAwait);
-            if(newNumberAbsent < numberOfClientsAbsent)
-            {
-                // a registration was received since the last loop, so reset the timeout
-                deadlineForNextRegistration = deadline(idleTimeout);
-            }
-
-            numberOfClientsAbsent = newNumberAbsent;
+            int retVal = numberOfClientsAbsent < 0 ? 0 : numberOfClientsAbsent;
+            logAwaitClients(numberOfClientsToAwait, idleTimeout, startTime, retVal);
+            return retVal;
         }
-
-        return numberOfClientsAbsent < 0 ? 0 : numberOfClientsAbsent;
     }
 
+
+    private void logAwaitClients(int numberOfClientsToAwait, long idleTimeout, long startTime, int retVal)
+    {
+        LOGGER.debug(
+                "awaitClients(numberOfClientsToAwait={}, idleTimeout={}) " +
+                "returning numberOfClientsAbsent={} after {} ms",
+                new Object[] {
+                        valueOf(numberOfClientsToAwait),
+                        valueOf(idleTimeout),
+                        valueOf(retVal),
+                        valueOf(System.currentTimeMillis() - startTime)});
+    }
 
     private long deadline(final long idleTimeout)
     {
@@ -104,13 +124,4 @@ public class ClientRegistry
     {
         return numberOfClientsToAwait - _registeredClientNames.size();
     }
-
-    private void notifyAllWaiters()
-    {
-        synchronized (_lock)
-        {
-            _lock.notifyAll();
-        }
-    }
-
 }
