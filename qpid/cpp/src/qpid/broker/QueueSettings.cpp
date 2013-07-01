@@ -99,6 +99,8 @@ QueueSettings::QueueSettings(bool d, bool a) :
     isBrowseOnly(false),
     autoDeleteDelay(0),
     alertRepeatInterval(60),
+    maxFileSize(0),
+    maxFileCount(0),
     sequencing(false)
 {}
 
