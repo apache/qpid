@@ -39,6 +39,7 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
@@ -121,17 +122,17 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private Map<String, String> _repConfig;
 
     @Override
-    public void configure(String name, Configuration storeConfig) throws Exception
+    public void configure(String name, VirtualHost virtualHost) throws Exception
     {
         //Mandatory configuration
-        _groupName = getValidatedPropertyFromConfig("highAvailability.groupName", storeConfig);
-        _nodeName = getValidatedPropertyFromConfig("highAvailability.nodeName", storeConfig);
-        _nodeHostPort = getValidatedPropertyFromConfig("highAvailability.nodeHostPort", storeConfig);
-        _helperHostPort = getValidatedPropertyFromConfig("highAvailability.helperHostPort", storeConfig);
+        _groupName = getValidatedStringAttribute(virtualHost, "haGroupName");
+        _nodeName = getValidatedStringAttribute(virtualHost, "haNodeName");
+        _nodeHostPort = getValidatedStringAttribute(virtualHost, "haNodeAddress");
+        _helperHostPort = getValidatedStringAttribute(virtualHost, "haHelperAddress");
         _name = name;
 
         //Optional configuration
-        String durabilitySetting = storeConfig.getString("highAvailability.durability");
+        String durabilitySetting = getStringAttribute(virtualHost,"haDurability",null);
         if (durabilitySetting == null)
         {
             _durability = DEFAULT_DURABILITY;
@@ -140,9 +141,15 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         {
             _durability = Durability.parse(durabilitySetting);
         }
-        _designatedPrimary = storeConfig.getBoolean("highAvailability.designatedPrimary", Boolean.FALSE);
-        _coalescingSync = storeConfig.getBoolean("highAvailability.coalescingSync", Boolean.TRUE);
-        _repConfig = getConfigMap(REPCONFIG_DEFAULTS, storeConfig, "repConfig");
+        _designatedPrimary = getBooleanAttribute(virtualHost, "haDesignatedPrimary", Boolean.FALSE);
+        _coalescingSync = getBooleanAttribute(virtualHost, "haCoalescingSync", Boolean.TRUE);
+
+        _repConfig = new HashMap<String, String>(REPCONFIG_DEFAULTS);
+        Object repConfigAttr = virtualHost.getAttribute("haReplicationConfig");
+        if(repConfigAttr instanceof Map)
+        {
+            _repConfig.putAll((Map)repConfigAttr);
+        }
 
         if (_coalescingSync && _durability.getLocalSync() == SyncPolicy.SYNC)
         {
@@ -150,8 +157,53 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        super.configure(name, storeConfig);
+        super.configure(name, virtualHost);
     }
+
+
+    private String getValidatedStringAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName)
+            throws ConfigurationException
+    {
+        Object attrValue = virtualHost.getAttribute(attributeName);
+        if(attrValue != null)
+        {
+            return attrValue.toString();
+        }
+        else
+        {
+            throw new ConfigurationException("BDB HA configuration key not found. Please specify configuration attribute: "
+                                                            + attributeName);
+        }
+    }
+
+    private String getStringAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName, String defaultVal)
+    {
+        Object attrValue = virtualHost.getAttribute(attributeName);
+        if(attrValue != null)
+        {
+            return attrValue.toString();
+        }
+        return defaultVal;
+    }
+
+    private boolean getBooleanAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName, boolean defaultVal)
+    {
+        Object attrValue = virtualHost.getAttribute(attributeName);
+        if(attrValue != null)
+        {
+            if(attrValue instanceof Boolean)
+            {
+                return ((Boolean) attrValue).booleanValue();
+            }
+            else if(attrValue instanceof String)
+            {
+                return Boolean.parseBoolean((String)attrValue);
+            }
+
+        }
+        return defaultVal;
+    }
+
 
     @Override
     protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
@@ -209,10 +261,9 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
     @Override
     public void configureMessageStore(String name, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                        TransactionLogRecoveryHandler tlogRecoveryHandler,
-                                        Configuration config) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
-        super.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler, config);
+        super.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler);
 
         final ReplicatedEnvironment replicatedEnvironment = getReplicatedEnvironment();
 

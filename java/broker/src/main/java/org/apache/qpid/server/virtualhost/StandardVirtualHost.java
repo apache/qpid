@@ -19,12 +19,11 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
@@ -36,18 +35,19 @@ public class StandardVirtualHost extends AbstractVirtualHost
     private DurableConfigurationStore _durableConfigurationStore;
 
     StandardVirtualHost(VirtualHostRegistry virtualHostRegistry,
-                               StatisticsGatherer brokerStatisticsGatherer,
-                               org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                               VirtualHostConfiguration hostConfig) throws Exception
+                        StatisticsGatherer brokerStatisticsGatherer,
+                        org.apache.qpid.server.security.SecurityManager parentSecurityManager,
+                        VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig);
+        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }
 
 
 
-    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
+    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
-        String storeType = hostConfig.getConfig().getString("store.type");
+        final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.STORE_TYPE);
+        String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
         MessageStore  messageStore = null;
         if (storeType == null)
         {
@@ -74,7 +74,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
         return messageStore;
     }
 
-    private DurableConfigurationStore initialiseConfigurationStore(VirtualHostConfiguration hostConfig) throws Exception
+    private DurableConfigurationStore initialiseConfigurationStore(VirtualHost virtualHost) throws Exception
     {
         DurableConfigurationStore configurationStore;
         if(getMessageStore() instanceof DurableConfigurationStore)
@@ -90,19 +90,17 @@ public class StandardVirtualHost extends AbstractVirtualHost
     }
 
 
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig) throws Exception
+    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
-        _messageStore = initialiseMessageStore(hostConfig);
+        _messageStore = initialiseMessageStore(hostConfig, virtualHost);
 
-        _durableConfigurationStore = initialiseConfigurationStore(hostConfig);
+        _durableConfigurationStore = initialiseConfigurationStore(virtualHost);
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
 
-        final Configuration storeConfiguration = hostConfig.getStoreConfiguration();
+        _durableConfigurationStore.configureConfigStore(getName(), recoveryHandler, virtualHost);
 
-        _durableConfigurationStore.configureConfigStore(getName(), recoveryHandler, storeConfiguration);
-
-        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler, storeConfiguration);
+        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler);
 
         initialiseModel(hostConfig);
 

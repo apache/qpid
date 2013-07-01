@@ -25,6 +25,7 @@ import com.jolbox.bonecp.BoneCPConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
 public class BoneCPConnectionProvider implements ConnectionProvider
@@ -34,15 +35,41 @@ public class BoneCPConnectionProvider implements ConnectionProvider
     public static final int DEFAULT_PARTITION_COUNT = 4;
     private final BoneCP _connectionPool;
 
-    public BoneCPConnectionProvider(String connectionUrl, Configuration storeConfiguration) throws SQLException
+    public BoneCPConnectionProvider(String connectionUrl, VirtualHost virtualHost) throws SQLException
     {
         BoneCPConfig config = new BoneCPConfig();
         config.setJdbcUrl(connectionUrl);
 
-        config.setMinConnectionsPerPartition(storeConfiguration.getInteger("minConnectionsPerPartition", DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
-        config.setMaxConnectionsPerPartition(storeConfiguration.getInteger("maxConnectionsPerPartition", DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
-        config.setPartitionCount(storeConfiguration.getInteger("partitionCount",DEFAULT_PARTITION_COUNT));
+
+        config.setMinConnectionsPerPartition(getIntegerAttribute(virtualHost, "minConnectionsPerPartition", DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
+        config.setMaxConnectionsPerPartition(getIntegerAttribute(virtualHost, "maxConnectionsPerPartition", DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
+        config.setPartitionCount(getIntegerAttribute(virtualHost, "partitionCount",DEFAULT_PARTITION_COUNT));
         _connectionPool = new BoneCP(config);
+    }
+
+    private int getIntegerAttribute(VirtualHost virtualHost, String attributeName, int defaultVal)
+    {
+        Object attrValue = virtualHost.getAttribute(attributeName);
+        if(attrValue != null)
+        {
+            if(attrValue instanceof Number)
+            {
+                return ((Number) attrValue).intValue();
+            }
+            else if(attrValue instanceof String)
+            {
+                try
+                {
+                    return Integer.parseInt((String)attrValue);
+                }
+                catch (NumberFormatException e)
+                {
+                    return defaultVal;
+                }
+            }
+
+        }
+        return defaultVal;
     }
 
     @Override

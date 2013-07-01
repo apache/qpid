@@ -58,7 +58,6 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
-import org.apache.qpid.server.virtualhost.VirtualHostFactoryRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerTestHelper
@@ -98,6 +97,12 @@ public class BrokerTestHelper
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration, VirtualHostRegistry virtualHostRegistry)
             throws Exception
     {
+        return createVirtualHost(virtualHostConfiguration, virtualHostRegistry, mock(org.apache.qpid.server.model.VirtualHost.class));
+    }
+
+    public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration, VirtualHostRegistry virtualHostRegistry, org.apache.qpid.server.model.VirtualHost modelVHost)
+            throws Exception
+    {
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         final VirtualHostFactory factory =
                         virtualHostConfiguration == null ? new StandardVirtualHostFactory()
@@ -105,18 +110,18 @@ public class BrokerTestHelper
         VirtualHost host = factory.createVirtualHost(virtualHostRegistry,
                 statisticsGatherer,
                 new SecurityManager(mock(Broker.class), false),
-                virtualHostConfiguration);
-        virtualHostRegistry.registerVirtualHost(host);
+                virtualHostConfiguration,
+                modelVHost);
+        if(virtualHostRegistry != null)
+        {
+            virtualHostRegistry.registerVirtualHost(host);
+        }
         return host;
     }
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration) throws Exception
     {
-        final VirtualHostFactory factory =
-                virtualHostConfiguration == null ? new StandardVirtualHostFactory()
-                                                 : VirtualHostFactory.FACTORIES.get(virtualHostConfiguration.getType());
-
-        return factory.createVirtualHost(null, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), virtualHostConfiguration);
+        return createVirtualHost(virtualHostConfiguration, null);
     }
 
     public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception

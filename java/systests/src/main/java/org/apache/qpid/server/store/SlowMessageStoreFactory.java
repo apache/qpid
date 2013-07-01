@@ -1,4 +1,4 @@
-/*
+package org.apache.qpid.server.store;/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,58 +18,61 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
-import org.apache.qpid.server.store.MessageStore;
 
-public class BDBMessageStoreFactory implements MessageStoreFactory
+public class SlowMessageStoreFactory implements MessageStoreFactory
 {
-
     @Override
     public String getType()
     {
-        return BDBMessageStore.TYPE;
+        return "SLOW";
     }
 
     @Override
     public MessageStore createMessageStore()
     {
-        return new BDBMessageStore();
+        return new SlowMessageStore();
     }
 
     @Override
     public Map<String, Object> convertStoreConfiguration(Configuration storeConfiguration)
     {
-        final List<Object> argumentNames = storeConfiguration.getList("envConfig.name");
-        final List<Object> argumentValues = storeConfiguration.getList("envConfig.value");
-        final int initialSize = argumentNames.size();
+        Map<String, Object> convertedMap = new HashMap<String, Object>();
+        Configuration delaysConfig = storeConfiguration.subset("delays");
 
-        final Map<String,String> attributes = new HashMap<String,String>(initialSize);
+        @SuppressWarnings("unchecked")
+        Iterator<String> delays = delaysConfig.getKeys();
 
-        for (int i = 0; i < argumentNames.size(); i++)
+        Map<String,Long> delaysMap = new HashMap<String, Long>();
+
+        while (delays.hasNext())
         {
-            final String argName = argumentNames.get(i).toString();
-            final String argValue = argumentValues.get(i).toString();
+            String key = delays.next();
 
-            attributes.put(argName, argValue);
+            if (key.endsWith("pre"))
+            {
+                delaysMap.put("pre"+key.substring(0, key.length() - 4), delaysConfig.getLong(key));
+            }
+            else if (key.endsWith("post"))
+            {
+                delaysMap.put("post"+key.substring(0, key.length() - 5), delaysConfig.getLong(key));
+            }
         }
 
-        if(initialSize != 0)
+        if(!delaysMap.isEmpty())
         {
-            return Collections.singletonMap("bdbEnvironmentConfig", (Object)attributes);
-        }
-        else
-        {
-            return Collections.emptyMap();
+            convertedMap.put("slowMessageStoreDelays",delaysMap);
         }
 
 
+        convertedMap.put("realStore", storeConfiguration.getString("realStore", null));
+
+
+        return convertedMap;
     }
-
 }

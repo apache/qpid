@@ -21,18 +21,20 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import static org.mockito.Mockito.mock;
 
 public class HAMessageStoreSmokeTest extends QpidTestCase
 {
     private final BDBHAMessageStore _store = new BDBHAMessageStore();
-    private final XMLConfiguration _config = new XMLConfiguration();
 
     public void testMissingHAConfigThrowsException() throws Exception
     {
         try
         {
-            _store.configure("test", _config);
+            _store.configure("test", mock(VirtualHost.class));
             fail("Expected an exception to be thrown");
         }
         catch (ConfigurationException ce)

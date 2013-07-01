@@ -45,7 +45,6 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -57,12 +56,8 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 
 public abstract class AbstractVirtualHost implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
@@ -107,7 +102,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
                                SecurityManager parentSecurityManager,
-                               VirtualHostConfiguration hostConfig) throws Exception
+                               VirtualHostConfiguration hostConfig,
+                               org.apache.qpid.server.model.VirtualHost virtualHost) throws Exception
     {
         if (hostConfig == null)
         {
@@ -144,13 +140,14 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         initialiseStatistics();
 
-        initialiseStorage(hostConfig);
+        initialiseStorage(hostConfig, virtualHost);
 
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
 
-    abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig) throws Exception;
+    abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig,
+                                              org.apache.qpid.server.model.VirtualHost virtualHost) throws Exception;
 
     public IConnectionRegistry getConnectionRegistry()
     {

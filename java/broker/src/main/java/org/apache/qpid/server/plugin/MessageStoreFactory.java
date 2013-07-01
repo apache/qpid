@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.plugin;
 
+import java.util.Map;
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.store.MessageStore;
 
 public interface MessageStoreFactory
@@ -27,4 +29,7 @@ public interface MessageStoreFactory
     String getType();
 
     MessageStore createMessageStore();
+
+    public Map<String, Object> convertStoreConfiguration(Configuration configuration);
+
 }

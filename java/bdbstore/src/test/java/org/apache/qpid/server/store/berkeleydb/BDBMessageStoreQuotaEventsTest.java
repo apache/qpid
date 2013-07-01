@@ -20,10 +20,18 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -54,14 +62,15 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
     }
 
     @Override
-    protected void applyStoreSpecificConfiguration(XMLConfiguration config)
+    protected void applyStoreSpecificConfiguration(VirtualHost virtualHost)
     {
         _logger.debug("Applying store specific config. overfull-sze=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
 
-        config.addProperty("envConfig(-1).name", "je.log.fileMax");
-        config.addProperty("envConfig.value", MAX_BDB_LOG_SIZE);
-        config.addProperty("overfull-size", OVERFULL_SIZE);
-        config.addProperty("underfull-size", UNDERFULL_SIZE);
+        Map<String,String> envMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
+        when(virtualHost.getAttribute(eq("bdbEnvironmentConfig"))).thenReturn(envMap);
+        when(virtualHost.getAttribute(eq(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE))).thenReturn(OVERFULL_SIZE);
+        when(virtualHost.getAttribute(eq(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE))).thenReturn(UNDERFULL_SIZE);
+
     }
 
     @Override

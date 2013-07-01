@@ -144,7 +144,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 validateAttributes(type);
             }
-        }
+        }/*
         else
         {
             if (type != null)
@@ -152,7 +152,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 invalidAttributes = true;
             }
 
-        }
+        }*/
         if (invalidAttributes)
         {
             throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or 'type' attributes");
@@ -1109,9 +1109,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             else
             {
                 _virtualHost = factory.createVirtualHost(_broker.getVirtualHostRegistry(),
-                        _brokerStatisticsGatherer,
-                        _broker.getSecurityManager(),
-                        configuration);
+                                                         _brokerStatisticsGatherer,
+                                                         _broker.getSecurityManager(),
+                                                         configuration,
+                                                         this);
             }
         }
         catch (Exception e)
@@ -1172,6 +1173,17 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 throw new IllegalConfigurationException("Configuration file '" + configurationFile + "' does not exist");
             }
             configuration = new VirtualHostConfiguration(virtualHostName, new File(configurationFile) , _broker);
+            String type = configuration.getType();
+            changeAttribute(TYPE,null,type);
+            VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
+            if(factory != null)
+            {
+                for(Map.Entry<String,Object> entry : factory.convertVirtualHostConfiguration(configuration.getConfig()).entrySet())
+                {
+                    changeAttribute(entry.getKey(), getAttribute(entry.getKey()), entry.getValue());
+                }
+            }
+
         }
         return configuration;
     }

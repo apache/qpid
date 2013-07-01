@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQStoreException;
@@ -29,11 +30,11 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {
@@ -51,19 +52,22 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     // ***** MessageStore Interface.
 
     public void configureConfigStore(String name,
-                          ConfigurationRecoveryHandler recoveryHandler,
-                          Configuration config) throws Exception
+                                     ConfigurationRecoveryHandler recoveryHandler,
+                                     VirtualHost virtualHost) throws Exception
     {
         _logger.info("Starting SlowMessageStore on Virtualhost:" + name);
-        Configuration delays = config.subset(DELAYS);
 
+        Object delaysAttr = virtualHost.getAttribute("slowMessageStoreDelays");
+
+        Map delays = (delaysAttr instanceof Map) ? (Map) delaysAttr : Collections.emptyMap();
         configureDelays(delays);
 
-        String messageStoreClass = config.getString("realStore");
+        final Object realStoreAttr = virtualHost.getAttribute("realStore");
+        String messageStoreClass = realStoreAttr == null ? null : realStoreAttr.toString();
 
         if (delays.containsKey(DEFAULT_DELAY))
         {
-            _defaultDelay = delays.getLong(DEFAULT_DELAY);
+            _defaultDelay = Long.parseLong(String.valueOf(delays.get(DEFAULT_DELAY)));
         }
 
         if (messageStoreClass != null)
@@ -83,25 +87,23 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
                 _durableConfigurationStore = (DurableConfigurationStore)o;
             }
         }
-        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, config);
+        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, virtualHost);
 
     }
 
-    private void configureDelays(Configuration config)
+    private void configureDelays(Map<Object, Object> config)
     {
-        @SuppressWarnings("unchecked")
-        Iterator<String> delays = config.getKeys();
 
-        while (delays.hasNext())
+        for(Map.Entry<Object, Object> entry : config.entrySet())
         {
-            String key = (String) delays.next();
-            if (key.endsWith(PRE))
+            String key = String.valueOf(entry.getKey());
+            if (key.startsWith(PRE))
             {
-                _preDelays.put(key.substring(0, key.length() - PRE.length() - 1), config.getLong(key));
+                _preDelays.put(key.substring(PRE.length()), Long.parseLong(String.valueOf(entry.getValue())));
             }
-            else if (key.endsWith(POST))
+            else if (key.startsWith(POST))
             {
-                _postDelays.put(key.substring(0, key.length() - POST.length() - 1), config.getLong(key));
+                _postDelays.put(key.substring(POST.length()), Long.parseLong(String.valueOf(entry.getValue())));
             }
         }
     }
@@ -156,10 +158,9 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
     public void configureMessageStore(String name,
                                       MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
-                                      Configuration config) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
-        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler, config);
+        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler);
     }
 
     public void close() throws Exception

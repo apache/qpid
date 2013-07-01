@@ -19,11 +19,11 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
@@ -31,7 +31,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     @Override
     public void configureConfigStore(String name,
                                      ConfigurationRecoveryHandler recoveryHandler,
-                                     Configuration config) throws Exception
+                                     VirtualHost virtualHost) throws Exception
     {
     }
 
@@ -77,8 +77,8 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
 
     @Override
     public void configureMessageStore(String name,
-            MessageStoreRecoveryHandler recoveryHandler,
-            TransactionLogRecoveryHandler tlogRecoveryHandler, Configuration config) throws Exception
+                                      MessageStoreRecoveryHandler recoveryHandler,
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
     }
 

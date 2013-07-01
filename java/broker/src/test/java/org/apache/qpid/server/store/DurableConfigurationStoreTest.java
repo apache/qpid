@@ -49,6 +49,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
@@ -67,6 +68,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
     private String _storeName;
     private MessageStore _messageStore;
     private Configuration _configuration;
+    private VirtualHost _virtualHost;
 
     private ConfigurationRecoveryHandler _recoveryHandler;
     private QueueRecoveryHandler _queueRecoveryHandler;
@@ -107,6 +109,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _messageStoreRecoveryHandler = mock(MessageStoreRecoveryHandler.class);
         _queueEntryRecoveryHandler = mock(TransactionLogRecoveryHandler.QueueEntryRecoveryHandler.class);
         _dtxRecordRecoveryHandler = mock(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler.class);
+        _virtualHost = mock(VirtualHost.class);
 
         when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
         when(_recoveryHandler.begin(isA(MessageStore.class))).thenReturn(_exchangeRecoveryHandler);
@@ -118,6 +121,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
                 _storePath);
+        when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
 
         _bindingArgs = new FieldTable();
         AMQShortString argKey = AMQPFilterTypes.JMS_SELECTOR.getValue();
@@ -314,8 +318,8 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _messageStore = createMessageStore();
         _configStore = createConfigStore();
 
-        _configStore.configureConfigStore(_storeName, _recoveryHandler, _configuration);
-        _messageStore.configureMessageStore(_storeName, _messageStoreRecoveryHandler, _logRecoveryHandler, _configuration);
+        _configStore.configureConfigStore(_storeName, _recoveryHandler, _virtualHost);
+        _messageStore.configureMessageStore(_storeName, _messageStoreRecoveryHandler, _logRecoveryHandler);
         _messageStore.activate();
     }
 
