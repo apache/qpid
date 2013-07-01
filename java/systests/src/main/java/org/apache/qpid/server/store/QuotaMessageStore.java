@@ -23,10 +23,10 @@ package org.apache.qpid.server.store;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.model.VirtualHost;
 
 public class QuotaMessageStore extends NullMessageStore
 {
@@ -47,12 +47,27 @@ public class QuotaMessageStore extends NullMessageStore
     }
 
     @Override
-    public void configureConfigStore(String name, ConfigurationRecoveryHandler recoveryHandler, Configuration config)
+    public void configureConfigStore(String name,
+                                     ConfigurationRecoveryHandler recoveryHandler,
+                                     VirtualHost virtualHost)
             throws Exception
     {
-        _persistentSizeHighThreshold = config.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, Long.MAX_VALUE);
-        _persistentSizeLowThreshold = config.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY,
-                _persistentSizeHighThreshold);
+        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
+        _persistentSizeHighThreshold = overfullAttr == null
+                                       ? Long.MAX_VALUE
+                                       : overfullAttr instanceof Number
+                                         ? ((Number)overfullAttr).longValue()
+                                         : Long.parseLong(overfullAttr.toString());
+
+        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+
+        _persistentSizeLowThreshold =  overfullAttr == null
+                                       ? _persistentSizeHighThreshold
+                                       : underfullAttr instanceof Number
+                                         ? ((Number)underfullAttr).longValue()
+                                         : Long.parseLong(underfullAttr.toString());
+
+
         if (_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
@@ -62,7 +77,7 @@ public class QuotaMessageStore extends NullMessageStore
 
     @Override
     public void configureMessageStore(String name, MessageStoreRecoveryHandler recoveryHandler,
-            TransactionLogRecoveryHandler tlogRecoveryHandler, Configuration config) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISED);
     }

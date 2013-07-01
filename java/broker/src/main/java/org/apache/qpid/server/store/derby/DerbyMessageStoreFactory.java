@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import java.util.Collections;
+import java.util.Map;
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
 
@@ -36,6 +39,12 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory
     public MessageStore createMessageStore()
     {
         return new DerbyMessageStore();
+    }
+
+    @Override
+    public Map<String, Object> convertStoreConfiguration(Configuration configuration)
+    {
+        return Collections.emptyMap();
     }
 
 }

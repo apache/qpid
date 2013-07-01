@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
@@ -43,15 +44,16 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
     BDBHAVirtualHost(VirtualHostRegistry virtualHostRegistry,
                      StatisticsGatherer brokerStatisticsGatherer,
                      org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                     VirtualHostConfiguration hostConfig)
+                     VirtualHostConfiguration hostConfig,
+                     VirtualHost virtualHost)
             throws Exception
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig);
+        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }
 
 
 
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig) throws Exception
+    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
         _messageStore = new BDBHAMessageStore();
 
@@ -72,12 +74,12 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
         _messageStore.configureConfigStore(getName(),
                 recoveryHandler,
-                hostConfig.getStoreConfiguration());
+                virtualHost);
 
         _messageStore.configureMessageStore(getName(),
                 recoveryHandler,
-                recoveryHandler,
-                hostConfig.getStoreConfiguration());
+                recoveryHandler
+        );
     }
 
 

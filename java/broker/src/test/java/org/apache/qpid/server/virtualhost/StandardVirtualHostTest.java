@@ -264,7 +264,8 @@ public class StandardVirtualHostTest extends QpidTestCase
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
-        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
+        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
+                mock(org.apache.qpid.server.model.VirtualHost.class));
         _virtualHostRegistry.registerVirtualHost(host);
 
         return host;
@@ -364,7 +365,8 @@ public class StandardVirtualHostTest extends QpidTestCase
         Configuration config = new PropertiesConfiguration();
         config.setProperty("store.type", MemoryMessageStore.TYPE);
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
-        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration);
+        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
+                mock(org.apache.qpid.server.model.VirtualHost.class));
         _virtualHostRegistry.registerVirtualHost(host);
         return host;
     }

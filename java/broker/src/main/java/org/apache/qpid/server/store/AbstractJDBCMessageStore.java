@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,7 +40,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
@@ -50,6 +48,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
@@ -170,21 +169,20 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     @Override
     public void configureConfigStore(String name,
-                          ConfigurationRecoveryHandler configRecoveryHandler,
-                          Configuration storeConfiguration) throws Exception
+                                     ConfigurationRecoveryHandler configRecoveryHandler,
+                                     VirtualHost virtualHost) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
         _configRecoveryHandler = configRecoveryHandler;
 
-        commonConfiguration(name, storeConfiguration);
+        commonConfiguration(name, virtualHost);
 
     }
 
     @Override
     public void configureMessageStore(String name,
-                          MessageStoreRecoveryHandler recoveryHandler,
-                          TransactionLogRecoveryHandler tlogRecoveryHandler,
-                          Configuration storeConfiguration) throws Exception
+                                      MessageStoreRecoveryHandler recoveryHandler,
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _messageRecoveryHandler = recoveryHandler;
@@ -206,15 +204,16 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         _stateManager.attainState(State.ACTIVE);
     }
 
-    private void commonConfiguration(String name, Configuration storeConfiguration)
+    private void commonConfiguration(String name, VirtualHost virtualHost)
             throws ClassNotFoundException, SQLException
     {
-        implementationSpecificConfiguration(name, storeConfiguration);
+        implementationSpecificConfiguration(name, virtualHost);
         createOrOpenDatabase();
 
     }
 
-    protected abstract void implementationSpecificConfiguration(String name, Configuration storeConfiguration) throws ClassNotFoundException, SQLException;
+    protected abstract void implementationSpecificConfiguration(String name,
+                                                                VirtualHost virtualHost) throws ClassNotFoundException, SQLException;
 
     abstract protected Logger getLogger();
 

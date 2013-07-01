@@ -28,10 +28,13 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.server.store.derby.DerbyMessageStore;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class JDBCMessageStoreTest extends MessageStoreTestCase
 {
@@ -61,10 +64,11 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
     }
 
     @Override
-    protected void setUpStoreConfiguration(Configuration storeConfiguration) throws Exception
+    protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
     {
         _connectionURL = "jdbc:derby:memory:/" + getTestName() + ";create=true";
-        storeConfiguration.addProperty("connectionUrl", _connectionURL);
+
+        when(virtualHost.getAttribute(eq("connectionURL"))).thenReturn(_connectionURL);
     }
 
     @Override

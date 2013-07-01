@@ -32,8 +32,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
@@ -123,15 +123,20 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
     }
 
     @Override
-    protected void implementationSpecificConfiguration(String name, Configuration storeConfiguration)
+    protected void implementationSpecificConfiguration(String name,
+                                                       VirtualHost virtualHost)
             throws ClassNotFoundException
     {
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
 
         _driverClass = (Class<Driver>) Class.forName(SQL_DRIVER_NAME);
 
-        final String databasePath = storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")
-                + File.separator + "derbyDB");
+        String defaultPath = System.getProperty("QPID_WORK") + File.separator + "derbyDB";
+        String databasePath = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+        if(databasePath == null)
+        {
+            databasePath = defaultPath;
+        }
 
         if(!MEMORY_STORE_LOCATION.equals(databasePath))
         {
@@ -148,8 +153,14 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
 
         _storeLocation = databasePath;
 
-        _persistentSizeHighThreshold = storeConfiguration.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, -1l);
-        _persistentSizeLowThreshold = storeConfiguration.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
+        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
+        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+
+        _persistentSizeHighThreshold = overfullAttr == null ? -1l :
+                                       overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
+        _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
+                                       underfullAttr instanceof Number ? ((Number) underfullAttr).longValue() : Long.parseLong(underfullAttr.toString());
+
         if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;

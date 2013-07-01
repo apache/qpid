@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.server.store.derby;
 
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -46,12 +50,12 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
     }
 
     @Override
-    protected void applyStoreSpecificConfiguration(XMLConfiguration config)
+    protected void applyStoreSpecificConfiguration(VirtualHost vhost)
     {
         _logger.debug("Applying store specific config. overfull-sze=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
 
-        config.addProperty("overfull-size", OVERFULL_SIZE);
-        config.addProperty("underfull-size", UNDERFULL_SIZE);
+        when(vhost.getAttribute(eq(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE))).thenReturn(OVERFULL_SIZE);
+        when(vhost.getAttribute(eq(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE))).thenReturn(UNDERFULL_SIZE);
     }
 
     @Override

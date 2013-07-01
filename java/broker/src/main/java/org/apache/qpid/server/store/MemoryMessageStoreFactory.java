@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Collections;
+import java.util.Map;
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 public class MemoryMessageStoreFactory implements MessageStoreFactory
@@ -35,6 +38,12 @@ public class MemoryMessageStoreFactory implements MessageStoreFactory
     public MessageStore createMessageStore()
     {
         return new MemoryMessageStore();
+    }
+
+    @Override
+    public Map<String, Object> convertStoreConfiguration(Configuration configuration)
+    {
+        return Collections.emptyMap();
     }
 
 }

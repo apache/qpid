@@ -22,10 +22,13 @@ package org.apache.qpid.server.store.derby;
 
 import java.io.File;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.util.FileUtils;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreTest extends MessageStoreTestCase
 {
@@ -57,10 +60,10 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
     }
 
     @Override
-    protected void setUpStoreConfiguration(Configuration storeConfiguration) throws Exception
+    protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
     {
         _storeLocation = TMP_FOLDER + File.separator + getTestName();
-        storeConfiguration.setProperty("environment-path", _storeLocation);
+        when(virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation);
         deleteStoreIfExists();
     }
 
