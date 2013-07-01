@@ -19,13 +19,21 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreCreator;
 
 public class StandardVirtualHostFactory implements VirtualHostFactory
@@ -43,9 +51,10 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
     public VirtualHost createVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                          StatisticsGatherer brokerStatisticsGatherer,
                                          org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                                         VirtualHostConfiguration hostConfig) throws Exception
+                                         VirtualHostConfiguration hostConfig,
+                                         org.apache.qpid.server.model.VirtualHost virtualHost) throws Exception
     {
-        return new StandardVirtualHost(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig);
+        return new StandardVirtualHost(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }
 
 
@@ -94,13 +103,26 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
         convertedMap.put("store.type", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE));
         convertedMap.put("store.environment-path", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH));
 
-        // TODO - this should all be inverted to populate vhost from xml and then pass model object to the store
+        return convertedMap;
+    }
 
-        convertedMap.put("store.pool.type",virtualHostAdapter.getAttribute("connectionPool"));
-        convertedMap.put("store.pool.minConnectionsPerPartition",virtualHostAdapter.getAttribute("minConnectionsPerPartition"));
-        convertedMap.put("store.pool.maxConnectionsPerPartition",virtualHostAdapter.getAttribute("maxConnectionsPerPartition"));
-        convertedMap.put("store.pool.partitionCount",virtualHostAdapter.getAttribute("partitionCount"));
+    @Override
+    public Map<String, Object> convertVirtualHostConfiguration(Configuration configuration)
+    {
+        Map<String,Object> convertedMap = new LinkedHashMap<String, Object>();
+        Configuration storeConfiguration = configuration.subset("store");
+        convertedMap.put(org.apache.qpid.server.model.VirtualHost.STORE_TYPE, storeConfiguration.getString("type"));
+        convertedMap.put(org.apache.qpid.server.model.VirtualHost.STORE_PATH, storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
+
+        convertedMap.put(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE, storeConfiguration.getString(MessageStoreConstants.OVERFULL_SIZE_PROPERTY));
+        convertedMap.put(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE, storeConfiguration.getString(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY));
+
+        for(MessageStoreFactory mf : new MessageStoreCreator().getFactories())
+        {
+            convertedMap.putAll(mf.convertStoreConfiguration(storeConfiguration));
+        }
 
         return convertedMap;
+
     }
 }

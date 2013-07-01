@@ -25,8 +25,7 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.ExchangeRecoveryHandler;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.QueueRecoveryHandler;
@@ -44,9 +43,9 @@ public abstract class MessageStoreTestCase extends QpidTestCase
     private TransactionLogRecoveryHandler _logRecoveryHandler;
     private TransactionLogRecoveryHandler.QueueEntryRecoveryHandler _queueEntryRecoveryHandler;
     private TransactionLogRecoveryHandler.DtxRecordRecoveryHandler _dtxRecordRecoveryHandler;
+    private VirtualHost _virtualHost;
 
     private MessageStore _store;
-    private Configuration _storeConfiguration;
 
     public void setUp() throws Exception
     {
@@ -61,6 +60,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         _messageStoreRecoveryHandler = mock(MessageStoreRecoveryHandler.class);
         _queueEntryRecoveryHandler = mock(TransactionLogRecoveryHandler.QueueEntryRecoveryHandler.class);
         _dtxRecordRecoveryHandler = mock(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler.class);
+        _virtualHost = mock(VirtualHost.class);
 
         when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
         when(_recoveryHandler.begin(isA(MessageStore.class))).thenReturn(_exchangeRecoveryHandler);
@@ -69,15 +69,15 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
         when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
 
-        _storeConfiguration = new PropertiesConfiguration();
-        setUpStoreConfiguration(_storeConfiguration);
+        setUpStoreConfiguration(_virtualHost);
 
         _store = createMessageStore();
-        ((DurableConfigurationStore)_store).configureConfigStore(getTestName(), _recoveryHandler, _storeConfiguration);
-        _store.configureMessageStore(getTestName(), _messageStoreRecoveryHandler, _logRecoveryHandler, _storeConfiguration);
+        ((DurableConfigurationStore)_store).configureConfigStore(getTestName(), _recoveryHandler, _virtualHost);
+
+        _store.configureMessageStore(getTestName(), _messageStoreRecoveryHandler, _logRecoveryHandler);
     }
 
-    protected abstract void setUpStoreConfiguration(Configuration storeConfiguration) throws Exception;
+    protected abstract void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception;
 
     protected abstract MessageStore createMessageStore();
 
@@ -86,8 +86,4 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         return _store;
     }
 
-    public Configuration getStoreConfiguration()
-    {
-        return _storeConfiguration;
-    }
 }

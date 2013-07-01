@@ -26,6 +26,7 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 
 public interface DurableConfigurationStore
@@ -40,14 +41,16 @@ public interface DurableConfigurationStore
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
      *
+     *
+     *
      * @param name             The name to be used by this store
      * @param recoveryHandler  Handler to be called as the store recovers on start up
-     * @param config           The apache commons configuration object.
+     * @param virtualHost
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
     void configureConfigStore(String name,
                               ConfigurationRecoveryHandler recoveryHandler,
-                              Configuration config) throws Exception;
+                              VirtualHost virtualHost) throws Exception;
     /**
      * Makes the specified exchange persistent.
      *

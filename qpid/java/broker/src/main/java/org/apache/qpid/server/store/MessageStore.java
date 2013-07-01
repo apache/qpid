@@ -32,16 +32,15 @@ public interface MessageStore
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
      *
+     *
      * @param name             The name to be used by this store
      * @param messageRecoveryHandler  Handler to be called as the store recovers on start up
      * @param tlogRecoveryHandler
-     * @param config           The apache commons configuration object.
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
     void configureMessageStore(String name,
                                MessageStoreRecoveryHandler messageRecoveryHandler,
-                               TransactionLogRecoveryHandler tlogRecoveryHandler,
-                               Configuration config) throws Exception;
+                               TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception;
 
     void activate() throws Exception;
 

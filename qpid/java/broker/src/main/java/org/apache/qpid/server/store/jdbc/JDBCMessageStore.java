@@ -29,13 +29,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
 
@@ -275,13 +274,15 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     }
 
 
-    protected void implementationSpecificConfiguration(String name, Configuration storeConfiguration)
+    protected void implementationSpecificConfiguration(String name,
+                                                       VirtualHost virtualHost)
         throws ClassNotFoundException, SQLException
     {
 
 
-        String connectionURL = storeConfiguration.getString("connectionUrl",
-                storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
+        String connectionURL = virtualHost.getAttribute("connectionURL") == null
+                               ? String.valueOf(virtualHost.getAttribute(VirtualHost.STORE_PATH))
+                               : String.valueOf(virtualHost.getAttribute("connectionURL"));
 
         JDBCDetails details = null;
 
@@ -301,8 +302,9 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
 
 
-        Configuration poolConfig = storeConfiguration.subset("pool");
-        String connectionPoolType = poolConfig.getString("type", "DEFAULT");
+        Object poolAttribute = virtualHost.getAttribute("connectionPool");
+        String connectionPoolType = poolAttribute == null ? "DEFAULT" : String.valueOf(poolAttribute);
+
         JDBCConnectionProviderFactory connectionProviderFactory =
                 JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
         if(connectionProviderFactory == null)
@@ -311,13 +313,43 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             connectionProviderFactory = new DefaultConnectionProviderFactory();
         }
 
-        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, poolConfig);
+        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, virtualHost);
 
-        _blobType = storeConfiguration.getString("sqlBlobType",details.getBlobType());
-        _varBinaryType = storeConfiguration.getString("sqlVarbinaryType",details.getVarBinaryType());
-        _useBytesMethodsForBlob = storeConfiguration.getBoolean("useBytesForBlob",details.isUseBytesMethodsForBlob());
-        _bigIntType = storeConfiguration.getString("sqlBigIntType", details.getBigintType());
+        _blobType = getStringAttribute(virtualHost, "jdbcBlobType",details.getBlobType());
+        _varBinaryType = getStringAttribute(virtualHost, "jdbcVarbinaryType",details.getVarBinaryType());
+        _useBytesMethodsForBlob = getBooleanAttribute(virtualHost, "jdbcBytesForBlob",details.isUseBytesMethodsForBlob());
+        _bigIntType = getStringAttribute(virtualHost, "jdbcBigIntType", details.getBigintType());
     }
+
+
+    private String getStringAttribute(VirtualHost virtualHost, String attributeName, String defaultVal)
+    {
+        Object attrValue = virtualHost.getAttribute(attributeName);
+        if(attrValue != null)
+        {
+            return attrValue.toString();
+        }
+        return defaultVal;
+    }
+
+    private boolean getBooleanAttribute(VirtualHost virtualHost, String attributeName, boolean defaultVal)
+    {
+        Object attrValue = virtualHost.getAttribute(attributeName);
+        if(attrValue != null)
+        {
+            if(attrValue instanceof Boolean)
+            {
+                return ((Boolean) attrValue).booleanValue();
+            }
+            else if(attrValue instanceof String)
+            {
+                return Boolean.parseBoolean((String)attrValue);
+            }
+
+        }
+        return defaultVal;
+    }
+
 
     protected void storedSizeChange(int contentSize)
     {

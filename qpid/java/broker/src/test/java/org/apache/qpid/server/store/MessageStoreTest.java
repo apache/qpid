@@ -62,6 +62,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * This tests the MessageStores by using the available interfaces.
  *
@@ -98,24 +102,40 @@ public class MessageStoreTest extends QpidTestCase
     private PropertiesConfiguration _config;
 
     private VirtualHost _virtualHost;
+    private org.apache.qpid.server.model.VirtualHost _virtualHostModel;
     private Broker _broker;
+    private String _storePath;
 
     public void setUp() throws Exception
     {
         super.setUp();
         BrokerTestHelper.setUp();
 
-        String storePath = System.getProperty("QPID_WORK") + File.separator + getName();
+        _storePath = System.getProperty("QPID_WORK") + File.separator + getName();
 
         _config = new PropertiesConfiguration();
         _config.addProperty("store.class", getTestProfileMessageStoreClassName());
-        _config.addProperty("store.environment-path", storePath);
+        _config.addProperty("store.environment-path", _storePath);
+        _virtualHostModel = mock(org.apache.qpid.server.model.VirtualHost.class);
+        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_PATH))).thenReturn(_storePath);
 
-        cleanup(new File(storePath));
+
+
+        cleanup(new File(_storePath));
 
         _broker = BrokerTestHelper.createBrokerMock();
 
         reloadVirtualHost();
+    }
+
+    protected String getStorePath()
+    {
+        return _storePath;
+    }
+
+    protected org.apache.qpid.server.model.VirtualHost getVirtualHostModel()
+    {
+        return _virtualHostModel;
     }
 
     @Override
@@ -164,7 +184,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker));
+            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker),null,getVirtualHostModel());
         }
         catch (Exception e)
         {

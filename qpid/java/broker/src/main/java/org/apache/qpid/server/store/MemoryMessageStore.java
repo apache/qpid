@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.server.model.VirtualHost;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 public class MemoryMessageStore extends NullMessageStore
@@ -82,13 +82,17 @@ public class MemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void configureConfigStore(String name, ConfigurationRecoveryHandler recoveryHandler, Configuration config) throws Exception
+    public void configureConfigStore(String name,
+                                     ConfigurationRecoveryHandler recoveryHandler,
+                                     VirtualHost virtualHost) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
     }
 
     @Override
-    public void configureMessageStore(String name, MessageStoreRecoveryHandler recoveryHandler, TransactionLogRecoveryHandler tlogRecoveryHandler, Configuration config) throws Exception
+    public void configureMessageStore(String name,
+                                      MessageStoreRecoveryHandler recoveryHandler,
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISED);
     }
@@ -97,7 +101,7 @@ public class MemoryMessageStore extends NullMessageStore
     public void activate() throws Exception
     {
         _stateManager.attainState(State.ACTIVATING);
-        
+
         _stateManager.attainState(State.ACTIVE);
     }
 

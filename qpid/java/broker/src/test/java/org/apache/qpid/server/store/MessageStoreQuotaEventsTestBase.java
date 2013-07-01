@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -37,8 +36,13 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase implements EventListener, TransactionLogResource
 {
@@ -54,7 +58,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
     protected abstract MessageStore createStore() throws Exception;
 
-    protected abstract void applyStoreSpecificConfiguration(XMLConfiguration config);
+    protected abstract void applyStoreSpecificConfiguration(VirtualHost virtualHost);
 
     protected abstract int getNumberOfMessagesToFillStore();
 
@@ -66,12 +70,13 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         _storeLocation = new File(new File(TMP_FOLDER), getTestName());
         FileUtils.delete(_storeLocation, true);
 
-        XMLConfiguration config = new XMLConfiguration();
-        config.addProperty("environment-path", _storeLocation.getAbsolutePath());
-        applyStoreSpecificConfiguration(config);
+
+        VirtualHost vhost = mock(VirtualHost.class);
+        when(vhost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation.getAbsolutePath());
+        applyStoreSpecificConfiguration(vhost);
 
         _store = createStore();
-        ((DurableConfigurationStore)_store).configureConfigStore("test", null, config);
+        ((DurableConfigurationStore)_store).configureConfigStore("test", null, vhost);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();

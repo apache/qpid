@@ -23,6 +23,8 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 import java.net.InetAddress;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -34,6 +36,10 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class BDBHAMessageStoreTest extends QpidTestCase
@@ -48,6 +54,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
     private String _host;
     private XMLConfiguration _configXml;
     private VirtualHost _virtualHost;
+    private org.apache.qpid.server.model.VirtualHost _modelVhost;
 
     public void setUp() throws Exception
     {
@@ -60,6 +67,8 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         FileUtils.delete(new File(_workDir), true);
         _configXml = new XMLConfiguration();
+        _modelVhost = mock(org.apache.qpid.server.model.VirtualHost.class);
+
 
         BrokerTestHelper.setUp();
      }
@@ -87,7 +96,8 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         addVirtualHostConfiguration();
         String vhostName = "test" + _masterPort;
         VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), BrokerTestHelper.createBrokerMock());
-        _virtualHost = BrokerTestHelper.createVirtualHost(configuration);
+
+        _virtualHost = BrokerTestHelper.createVirtualHost(configuration,null,_modelVhost);
         BDBHAMessageStore store = (BDBHAMessageStore) _virtualHost.getMessageStore();
 
         // test whether JVM system settings were applied
@@ -116,27 +126,25 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         _configXml.addProperty("virtualhosts.virtualhost.name", vhostName);
         _configXml.addProperty(vhostPrefix + ".type", BDBHAVirtualHostFactory.TYPE);
-        _configXml.addProperty(vhostPrefix + ".store.class", BDBHAMessageStore.class.getName());
-        _configXml.addProperty(vhostPrefix + ".store.environment-path", _workDir + File.separator
-                + port);
-        _configXml.addProperty(vhostPrefix + ".store.highAvailability.groupName", _groupName);
-        _configXml.addProperty(vhostPrefix + ".store.highAvailability.nodeName", nodeName);
-        _configXml.addProperty(vhostPrefix + ".store.highAvailability.nodeHostPort",
-                getNodeHostPortForNodeAt(port));
-        _configXml.addProperty(vhostPrefix + ".store.highAvailability.helperHostPort",
-                getHelperHostPort());
 
-        _configXml.addProperty(vhostPrefix + ".store.envConfig(-1).name", EnvironmentConfig.CLEANER_THREADS);
-        _configXml.addProperty(vhostPrefix + ".store.envConfig.value", TEST_NUMBER_OF_THREADS);
+        when(_modelVhost.getAttribute(eq(_modelVhost.STORE_PATH))).thenReturn(_workDir + File.separator
+                                                                                        + port);
+        when(_modelVhost.getAttribute(eq("haGroupName"))).thenReturn(_groupName);
+        when(_modelVhost.getAttribute(eq("haNodeName"))).thenReturn(nodeName);
+        when(_modelVhost.getAttribute(eq("haNodeAddress"))).thenReturn(getNodeHostPortForNodeAt(port));
+        when(_modelVhost.getAttribute(eq("haHelperAddress"))).thenReturn(getHelperHostPort());
 
-        _configXml.addProperty(vhostPrefix + ".store.envConfig(-1).name", EnvironmentConfig.LOG_FILE_MAX);
-        _configXml.addProperty(vhostPrefix + ".store.envConfig.value", TEST_LOG_FILE_MAX);
+        Map<String,String> bdbEnvConfig = new HashMap<String,String>();
+        bdbEnvConfig.put(EnvironmentConfig.CLEANER_THREADS, TEST_NUMBER_OF_THREADS);
+        bdbEnvConfig.put(EnvironmentConfig.LOG_FILE_MAX, TEST_LOG_FILE_MAX);
 
-        _configXml.addProperty(vhostPrefix + ".store.repConfig(-1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
-        _configXml.addProperty(vhostPrefix + ".store.repConfig.value", TEST_ELECTION_RETRIES);
+        when(_modelVhost.getAttribute(eq("bdbEnvironmentConfig"))).thenReturn(bdbEnvConfig);
 
-        _configXml.addProperty(vhostPrefix + ".store.repConfig(-1).name", ReplicationConfig.ENV_CONSISTENCY_TIMEOUT);
-        _configXml.addProperty(vhostPrefix + ".store.repConfig.value", TEST_ENV_CONSISTENCY_TIMEOUT);
+        Map<String,String> repConfig = new HashMap<String,String>();
+        repConfig.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, TEST_ELECTION_RETRIES);
+        repConfig.put(ReplicationConfig.ENV_CONSISTENCY_TIMEOUT, TEST_ENV_CONSISTENCY_TIMEOUT);
+        when(_modelVhost.getAttribute(eq("haReplicationConfig"))).thenReturn(repConfig);
+
     }
 
     private String getNodeNameForNodeAt(final int bdbPort)

@@ -55,10 +55,10 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
 
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".type",
-                StandardVirtualHostFactory.TYPE);
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.class", "org.apache.qpid.server.store.SlowMessageStore");
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.delays.commitTran.post", String.valueOf(POST_COMMIT_DELAY));
+        final String prefix = "virtualhosts.virtualhost." + VIRTUALHOST;
+        setVirtualHostConfigurationProperty(prefix + ".type", StandardVirtualHostFactory.TYPE);
+        setVirtualHostConfigurationProperty(prefix + ".store.class", "org.apache.qpid.server.store.SlowMessageStore");
+        setVirtualHostConfigurationProperty(prefix + ".store.delays.commitTran.post", String.valueOf(POST_COMMIT_DELAY));
 
         super.setUp();
 

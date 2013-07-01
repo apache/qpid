@@ -55,6 +55,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.*;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler.BindingRecoveryHandler;
@@ -166,19 +167,18 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     public void configureConfigStore(String name,
                                      ConfigurationRecoveryHandler recoveryHandler,
-                                     Configuration storeConfiguration) throws Exception
+                                     VirtualHost virtualHost) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
 
         _configRecoveryHandler = recoveryHandler;
 
-        configure(name, storeConfiguration);
+        configure(name, virtualHost);
     }
 
     public void configureMessageStore(String name,
                                       MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler,
-                                      Configuration storeConfiguration) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
@@ -205,18 +205,35 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     /**
      * Called after instantiation in order to configure the message store.
      *
+     *
      * @param name The name of the virtual host using this store
+     * @param virtualHost
      * @return whether a new store environment was created or not (to indicate whether recovery is necessary)
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    public void configure(String name, Configuration storeConfig) throws Exception
+    public void configure(String name, VirtualHost virtualHost) throws Exception
     {
-        final String storeLocation = storeConfig.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY,
-                System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name);
 
-        _persistentSizeHighThreshold = storeConfig.getLong(MessageStoreConstants.OVERFULL_SIZE_PROPERTY, Long.MAX_VALUE);
-        _persistentSizeLowThreshold = storeConfig.getLong(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY, _persistentSizeHighThreshold);
+
+        final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
+
+
+        String storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+        if(storeLocation == null)
+        {
+            storeLocation = defaultPath;
+        }
+
+        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
+        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+
+        _persistentSizeHighThreshold = overfullAttr == null ? -1l :
+                                       overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
+        _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
+                                       underfullAttr instanceof Number ? ((Number) underfullAttr).longValue() : Long.parseLong(underfullAttr.toString());
+
+
         if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
@@ -234,7 +251,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
         _storeLocation = storeLocation;
 
-        _envConfigMap = getConfigMap(ENVCONFIG_DEFAULTS, storeConfig, "envConfig");
+        _envConfigMap = new HashMap<String, String>();
+        _envConfigMap.putAll(ENVCONFIG_DEFAULTS);
+
+        Object bdbEnvConfigAttr = virtualHost.getAttribute("bdbEnvironmentConfig");
+        if(bdbEnvConfigAttr instanceof Map)
+        {
+            _envConfigMap.putAll((Map)bdbEnvConfigAttr);
+        }
 
         LOGGER.info("Configuring BDB message store");
 
