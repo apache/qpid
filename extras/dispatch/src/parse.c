@@ -190,9 +190,9 @@ uint32_t dx_parse_as_uint(dx_parsed_field_t *field)
     switch (field->tag) {
     case DX_AMQP_UINT:
         result |= ((uint32_t) dx_field_iterator_octet(field->raw_iter)) << 24;
+        result |= ((uint32_t) dx_field_iterator_octet(field->raw_iter)) << 16;
 
     case DX_AMQP_USHORT:
-        result |= ((uint32_t) dx_field_iterator_octet(field->raw_iter)) << 16;
         result |= ((uint32_t) dx_field_iterator_octet(field->raw_iter)) << 8;
         // Fall Through...
 
@@ -249,9 +249,9 @@ int32_t dx_parse_as_int(dx_parsed_field_t *field)
     switch (field->tag) {
     case DX_AMQP_INT:
         result |= ((int32_t) dx_field_iterator_octet(field->raw_iter)) << 24;
+        result |= ((int32_t) dx_field_iterator_octet(field->raw_iter)) << 16;
 
     case DX_AMQP_SHORT:
-        result |= ((int32_t) dx_field_iterator_octet(field->raw_iter)) << 16;
         result |= ((int32_t) dx_field_iterator_octet(field->raw_iter)) << 8;
         // Fall Through...
 

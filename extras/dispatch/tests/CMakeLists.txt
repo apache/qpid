@@ -22,6 +22,7 @@
 ##
 set(unit_test_SOURCES
     alloc_test.c
+    parse_test.c
     run_unit_tests.c
     server_test.c
     timer_test.c
