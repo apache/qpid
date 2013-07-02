@@ -20,38 +20,75 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Map;
+import java.util.UUID;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class ConfiguredObjectBinding extends TupleBinding<ConfiguredObjectRecord>
 {
-    private static final ConfiguredObjectBinding INSTANCE = new ConfiguredObjectBinding();
+    private static final ConfiguredObjectBinding INSTANCE = new ConfiguredObjectBinding(null);
+    private final UUID _uuid;
+
 
     public static ConfiguredObjectBinding getInstance()
     {
         return INSTANCE;
     }
 
-    /** non-public constructor forces getInstance instead */
-    private ConfiguredObjectBinding()
+    public ConfiguredObjectBinding(UUID uuid)
     {
+        _uuid = uuid;
     }
 
     public ConfiguredObjectRecord entryToObject(TupleInput tupleInput)
     {
         String type = tupleInput.readString();
         String json = tupleInput.readString();
-        ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(null, type, json);
-        return configuredObject;
+        ObjectMapper mapper = new ObjectMapper();
+        try
+        {
+            Map<String,Object> value = mapper.readValue(json, Map.class);
+            ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(_uuid, type, value);
+            return configuredObject;
+        }
+        catch (IOException e)
+        {
+            //should never happen
+            throw new RuntimeException(e);
+        }
+
     }
 
     public void objectToEntry(ConfiguredObjectRecord object, TupleOutput tupleOutput)
     {
-        tupleOutput.writeString(object.getType());
-        tupleOutput.writeString(object.getAttributes());
+        try
+        {
+            StringWriter writer = new StringWriter();
+            new ObjectMapper().writeValue(writer, object.getAttributes());
+            tupleOutput.writeString(object.getType());
+            tupleOutput.writeString(writer.toString());
+        }
+        catch (JsonMappingException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (JsonGenerationException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 }

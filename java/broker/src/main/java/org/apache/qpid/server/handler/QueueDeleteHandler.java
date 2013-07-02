@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
@@ -115,7 +116,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
                 if (queue.isDurable())
                 {
-                    store.removeQueue(queue);
+                    DurableConfigurationStoreHelper.removeQueue(store, queue);
                 }
 
                 MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();

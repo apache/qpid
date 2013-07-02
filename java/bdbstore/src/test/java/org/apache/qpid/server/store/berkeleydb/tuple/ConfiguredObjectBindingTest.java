@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuple;
 
+import java.util.Collections;
+import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -33,7 +35,9 @@ public class ConfiguredObjectBindingTest extends TestCase
 
     private ConfiguredObjectRecord _object;
 
-    private static final String DUMMY_ATTRIBUTES_STRING = "dummyAttributes";
+    private static final Map<String, Object> DUMMY_ATTRIBUTES_MAP =
+            Collections.singletonMap("dummy",(Object) "attributes");
+
     private static final String DUMMY_TYPE_STRING = "dummyType";
     private ConfiguredObjectBinding _configuredObjectBinding;
 
@@ -42,7 +46,8 @@ public class ConfiguredObjectBindingTest extends TestCase
     {
         super.setUp();
         _configuredObjectBinding = ConfiguredObjectBinding.getInstance();
-        _object = new ConfiguredObjectRecord(UUIDGenerator.generateRandomUUID(), DUMMY_TYPE_STRING, DUMMY_ATTRIBUTES_STRING);
+        _object = new ConfiguredObjectRecord(UUIDGenerator.generateRandomUUID(), DUMMY_TYPE_STRING,
+                DUMMY_ATTRIBUTES_MAP);
     }
 
     public void testObjectToEntryAndEntryToObject()
@@ -55,7 +60,7 @@ public class ConfiguredObjectBindingTest extends TestCase
         TupleInput tupleInput = new TupleInput(entryAsBytes);
 
         ConfiguredObjectRecord storedObject = _configuredObjectBinding.entryToObject(tupleInput);
-        assertEquals("Unexpected attributes", DUMMY_ATTRIBUTES_STRING, storedObject.getAttributes());
+        assertEquals("Unexpected attributes", DUMMY_ATTRIBUTES_MAP, storedObject.getAttributes());
         assertEquals("Unexpected type", DUMMY_TYPE_STRING, storedObject.getType());
     }
 }

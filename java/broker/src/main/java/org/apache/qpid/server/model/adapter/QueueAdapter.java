@@ -46,6 +46,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -195,7 +196,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
                 _queue.delete();
                 if (_queue.isDurable())
                 {
-                    _queue.getVirtualHost().getDurableConfigurationStore().removeQueue(_queue);
+                    DurableConfigurationStoreHelper.removeQueue(_queue.getVirtualHost().getDurableConfigurationStore(), _queue);
                 }
             }
         }
@@ -365,7 +366,8 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             {
                 try
                 {
-                    _queue.getVirtualHost().getDurableConfigurationStore().updateQueue(_queue);
+                    DurableConfigurationStoreHelper.updateQueue(_queue.getVirtualHost().getDurableConfigurationStore(),
+                            _queue);
                 }
                 catch (AMQStoreException e)
                 {

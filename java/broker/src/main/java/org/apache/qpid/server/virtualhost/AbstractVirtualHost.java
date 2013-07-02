@@ -56,6 +56,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.txn.DtxRegistry;
@@ -294,7 +295,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
             if (newExchange.isDurable())
             {
-                getDurableConfigurationStore().createExchange(newExchange);
+                DurableConfigurationStoreHelper.createExchange(getDurableConfigurationStore(), newExchange);
             }
         }
     }
@@ -306,7 +307,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         if (queue.isDurable())
         {
-            getDurableConfigurationStore().createQueue(queue);
+            DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue, null);
         }
 
         //get the exchange name (returns default exchange name if none was specified)

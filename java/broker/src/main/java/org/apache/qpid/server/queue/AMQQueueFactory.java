@@ -37,6 +37,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQQueueFactory
@@ -315,7 +316,8 @@ public class AMQQueueFactory
                     exchangeRegistry.registerExchange(dlExchange);
 
                     //enter the dle in the persistent store
-                    virtualHost.getDurableConfigurationStore().createExchange(dlExchange);
+                    DurableConfigurationStoreHelper.createExchange(virtualHost.getDurableConfigurationStore(),
+                            dlExchange);
                 }
             }
 
@@ -335,7 +337,9 @@ public class AMQQueueFactory
                     dlQueue = createAMQQueueImpl(UUIDGenerator.generateQueueUUID(dlQueueName, virtualHost.getName()), dlQueueName, true, owner, false, exclusive, virtualHost, args);
 
                     //enter the dlq in the persistent store
-                    virtualHost.getDurableConfigurationStore().createQueue(dlQueue, FieldTable.convertToFieldTable(args));
+                    DurableConfigurationStoreHelper.createQueue(virtualHost.getDurableConfigurationStore(),
+                            dlQueue,
+                            FieldTable.convertToFieldTable(args));
                 }
             }
 

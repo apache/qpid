@@ -40,6 +40,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -554,7 +555,7 @@ public abstract class AbstractExchange implements Exchange
 
             if (b.isDurable())
             {
-                _virtualHost.getDurableConfigurationStore().unbindQueue(b);
+                DurableConfigurationStoreHelper.removeBinding(_virtualHost.getDurableConfigurationStore(), b);
             }
             b.logDestruction();
         }
@@ -626,7 +627,7 @@ public abstract class AbstractExchange implements Exchange
 
             if (b.isDurable() && !restore)
             {
-                _virtualHost.getDurableConfigurationStore().bindQueue(b);
+                DurableConfigurationStoreHelper.createBinding(_virtualHost.getDurableConfigurationStore(), b);
             }
 
             queue.addQueueDeleteTask(b);

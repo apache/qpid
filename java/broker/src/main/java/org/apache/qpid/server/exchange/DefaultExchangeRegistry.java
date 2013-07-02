@@ -29,6 +29,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             if (e.isDurable())
             {
-                getDurableConfigurationStore().removeExchange(e);
+                DurableConfigurationStoreHelper.removeExchange(getDurableConfigurationStore(), e);
             }
             e.close();
 

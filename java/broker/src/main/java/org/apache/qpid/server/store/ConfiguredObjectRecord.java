@@ -20,20 +20,23 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class ConfiguredObjectRecord
 {
     private UUID _id;
     private String _type;
-    private String _attributes;
+    private Map<String,Object> _attributes;
 
-    public ConfiguredObjectRecord(UUID id, String type, String attributes)
+    public ConfiguredObjectRecord(UUID id, String type, Map<String,Object> attributes)
     {
         super();
         _id = id;
         _type = type;
-        _attributes = attributes;
+        _attributes = Collections.unmodifiableMap(new LinkedHashMap<String,Object>(attributes));
     }
 
     public UUID getId()
@@ -41,17 +44,12 @@ public class ConfiguredObjectRecord
         return _id;
     }
 
-    public void setId(UUID id)
-    {
-        _id = id;
-    }
-
     public String getType()
-    {
+   {
         return _type;
     }
 
-    public String getAttributes()
+    public Map<String,Object> getAttributes()
     {
         return _attributes;
     }

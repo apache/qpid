@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Map;
+import java.util.UUID;
 import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQStoreException;
@@ -51,77 +53,42 @@ public interface DurableConfigurationStore
     void configureConfigStore(String name,
                               ConfigurationRecoveryHandler recoveryHandler,
                               VirtualHost virtualHost) throws Exception;
+
+
+
     /**
-     * Makes the specified exchange persistent.
+     * Makes the specified object persistent.
      *
-     * @param exchange The exchange to persist.
+     * @param id The id of the object to persist.
+     * @param type The type of the object to persist
+     * @param attributes the attributes of the object to persist
      *
      * @throws AMQStoreException If the operation fails for any reason.
      */
-    void createExchange(Exchange exchange) throws AMQStoreException;
+    void create(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException;
 
     /**
-     * Removes the specified persistent exchange.
+     * Removes the specified persistent configured object.
      *
-     * @param exchange The exchange to remove.
+     * @param id The id of the object to remove.
+     * @param type The type of the object to remove
      *
      * @throws AMQStoreException If the operation fails for any reason.
      */
-    void removeExchange(Exchange exchange) throws AMQStoreException;
+    void remove(UUID id, String type) throws AMQStoreException;
+
 
     /**
-     * Store the queue binding.
-     *
-     * @param binding queue binding
-     *
-     * @throws AMQStoreException if the operation fails for any reason.
-     */
-    void bindQueue(Binding binding) throws AMQStoreException;
-
-    /**
-     * Removes queue binding
-     *
-     * @param binding queue binding to remove
-     *
-     * @throws AMQStoreException If the operation fails for any reason.
-     */
-    void unbindQueue(Binding binding) throws AMQStoreException;
-
-    /**
-     * Makes the specified queue persistent.
-     *
-     * @param queue The queue to store.
-     *
-     * @throws AMQStoreException If the operation fails for any reason.
-     */
-    void createQueue(AMQQueue queue) throws AMQStoreException;
-
-    /**
-     * Makes the specified queue persistent.
-     *
-     * @param queue The queue to store.
-     * @param arguments The additional arguments to the binding
-     *
-     * @throws AMQStoreException If the operation fails for any reason.
-     */
-    void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException;
-
-    /**
-     * Removes the specified queue from the persistent store.
-     *
-     * @param queue The queue to remove.
-     *
-     * @throws AMQStoreException If the operation fails for any reason.
-     */
-    void removeQueue(AMQQueue queue) throws AMQStoreException;
-
-    /**
-     * Updates the specified queue in the persistent store, IF it is already present. If the queue
+     * Updates the specified object in the persistent store, IF it is already present. If the object
      * is not present in the store, it will not be added.
      *
-     * @param queue The queue to update the entry for.
+     * @param id The id of the object to update.
+     * @param type The type of the object to update
+     * @param attributes the updated attributes
+     *
      * @throws AMQStoreException If the operation fails for any reason.
      */
-    void updateQueue(AMQQueue queue) throws AMQStoreException;
+    void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException;
+
 
 }

@@ -28,25 +28,10 @@ import java.util.UUID;
 
 public interface ConfigurationRecoveryHandler
 {
-    ExchangeRecoveryHandler begin(MessageStore store);
+    void beginConfigurationRecovery(DurableConfigurationStore store);
 
-    public static interface ExchangeRecoveryHandler
-    {
-        void exchange(UUID id, String exchangeName, String type, boolean autoDelete);
-        QueueRecoveryHandler completeExchangeRecovery();
-    }
+    void configuredObject(UUID id, String type, Map<String, Object> attributes);
 
-    public static interface QueueRecoveryHandler
-    {
-        void queue(UUID id, String queueName, String owner, boolean exclusive, FieldTable arguments, UUID alternateExchangeId);
-        BindingRecoveryHandler completeQueueRecovery();
-    }
-
-
-    public static interface BindingRecoveryHandler
-    {
-        void binding(UUID bindingId, UUID exchangeId, UUID queueId, String bindingName, ByteBuffer buf);
-        void completeBindingRecovery();
-    }
+    void completeConfigurationRecovery();
 
 }
