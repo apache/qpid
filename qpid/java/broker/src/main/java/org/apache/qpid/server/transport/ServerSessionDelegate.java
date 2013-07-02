@@ -46,6 +46,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -763,7 +764,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                 if (exchange.isDurable())
                                 {
                                     DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                                    store.createExchange(exchange);
+                                    DurableConfigurationStoreHelper.createExchange(store, exchange);
                                 }
                                 exchangeRegistry.registerExchange(exchange);
                             }
@@ -918,7 +919,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 if (exchange.isDurable() && !exchange.isAutoDelete())
                 {
                     DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                    store.removeExchange(exchange);
+                    DurableConfigurationStoreHelper.removeExchange(store, exchange);
                 }
             }
         }
@@ -1300,11 +1301,11 @@ public class ServerSessionDelegate extends SessionDelegate
                                 {
                                     ftArgs.put(new AMQShortString(entry.getKey()), entry.getValue());
                                 }
-                                store.createQueue(queue, ftArgs);
+                                DurableConfigurationStoreHelper.createQueue(store, queue, ftArgs);
                             }
                             else
                             {
-                                store.createQueue(queue);
+                                DurableConfigurationStoreHelper.createQueue(store, queue, null);
                             }
                         }
                         queueRegistry.registerQueue(queue);
@@ -1469,7 +1470,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         if (queue.isDurable() && !queue.isAutoDelete())
                         {
                             DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
-                            store.removeQueue(queue);
+                            DurableConfigurationStoreHelper.removeQueue(store,queue);
                         }
                     }
                     catch (AMQException e)

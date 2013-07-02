@@ -19,12 +19,9 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
+import java.util.Map;
+import java.util.UUID;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
@@ -36,42 +33,17 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void createExchange(Exchange exchange) throws AMQStoreException
+    public void update(UUID id, String type, Map<String, Object> attributes)
     {
     }
 
     @Override
-    public void removeExchange(Exchange exchange) throws AMQStoreException
+    public void remove(UUID id, String type)
     {
     }
 
     @Override
-    public void bindQueue(Binding binding) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void unbindQueue(Binding binding) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void createQueue(AMQQueue queue) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void removeQueue(AMQQueue queue) throws AMQStoreException
-    {
-    }
-
-    @Override
-    public void updateQueue(AMQQueue queue) throws AMQStoreException
+    public void create(UUID id, String type, Map<String, Object> attributes)
     {
     }
 

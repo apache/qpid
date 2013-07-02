@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Map;
+import java.util.UUID;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
 

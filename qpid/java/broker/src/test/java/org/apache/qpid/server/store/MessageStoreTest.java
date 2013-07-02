@@ -346,7 +346,8 @@ public class MessageStoreTest extends QpidTestCase
                 1,  queueRegistry.getQueues().size());
 
         //test that removing the queue means it is not recovered next time
-        getVirtualHost().getDurableConfigurationStore().removeQueue(queueRegistry.getQueue(durableQueueName));
+        final AMQQueue queue = queueRegistry.getQueue(durableQueueName);
+        DurableConfigurationStoreHelper.removeQueue(getVirtualHost().getDurableConfigurationStore(),queue);
 
         reloadVirtualHost();
 
@@ -399,7 +400,8 @@ public class MessageStoreTest extends QpidTestCase
                 origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
 
         //test that removing the exchange means it is not recovered next time
-        getVirtualHost().getDurableConfigurationStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
+        final Exchange exchange = exchangeRegistry.getExchange(directExchangeName);
+        DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), exchange);
 
         reloadVirtualHost();
 
@@ -755,7 +757,9 @@ public class MessageStoreTest extends QpidTestCase
 
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                getVirtualHost().getDurableConfigurationStore().createQueue(queue, queueArguments);
+                DurableConfigurationStoreHelper.createQueue(getVirtualHost().getDurableConfigurationStore(),
+                        queue,
+                        queueArguments);
             }
         }
         catch (AMQException e)
@@ -799,7 +803,8 @@ public class MessageStoreTest extends QpidTestCase
             getVirtualHost().getExchangeRegistry().registerExchange(exchange);
             if (durable)
             {
-                getVirtualHost().getDurableConfigurationStore().createExchange(exchange);
+                DurableConfigurationStoreHelper.createExchange(getVirtualHost().getDurableConfigurationStore(),
+                        exchange);
             }
         }
         catch (AMQException e)

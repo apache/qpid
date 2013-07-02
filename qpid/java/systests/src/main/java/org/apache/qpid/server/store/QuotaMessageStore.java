@@ -28,7 +28,8 @@ import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.VirtualHost;
 
-public class QuotaMessageStore extends NullMessageStore
+public class
+        QuotaMessageStore extends NullMessageStore
 {
     private final AtomicLong _messageId = new AtomicLong(1);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
