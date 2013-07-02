@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char *log_module = "FIELD";
+//static const char *log_module = "FIELD";
 
 typedef enum {
     MODE_TO_END,
@@ -47,33 +47,10 @@ struct dx_field_iterator_t {
     unsigned char       prefix;
     int                 at_prefix;
     int                 view_prefix;
-    unsigned char       tag;
 };
 
 ALLOC_DECLARE(dx_field_iterator_t);
 ALLOC_DEFINE(dx_field_iterator_t);
-
-
-typedef struct dx_field_pair_t {
-    DEQ_LINKS(struct dx_field_pair_t);
-    dx_field_iterator_t *key_iter;
-    dx_field_iterator_t *value_iter;
-} dx_field_pair_t;
-
-DEQ_DECLARE(dx_field_pair_t, dx_field_pair_list_t);
-
-ALLOC_DECLARE(dx_field_pair_t);
-ALLOC_DEFINE(dx_field_pair_t);
-
-
-struct dx_field_map_t {
-    dx_field_iterator_t  *outer;
-    int                   key_count;
-    dx_field_pair_list_t  pairs;
-};
-
-ALLOC_DECLARE(dx_field_map_t);
-ALLOC_DEFINE(dx_field_map_t);
 
 
 typedef enum {
@@ -263,7 +240,6 @@ dx_field_iterator_t* dx_field_iterator_string(const char *text, dx_iterator_view
     if (!iter)
         return 0;
 
-    iter->tag                  = 0;
     iter->start_pointer.buffer = 0;
     iter->start_pointer.cursor = (unsigned char*) text;
     iter->start_pointer.length = strlen(text);
@@ -280,7 +256,6 @@ dx_field_iterator_t *dx_field_iterator_buffer(dx_buffer_t *buffer, int offset, i
     if (!iter)
         return 0;
 
-    iter->tag                  = 0;
     iter->start_pointer.buffer = buffer;
     iter->start_pointer.cursor = dx_buffer_base(buffer) + offset;
     iter->start_pointer.length = length;
@@ -354,6 +329,33 @@ int dx_field_iterator_end(dx_field_iterator_t *iter)
 }
 
 
+dx_field_iterator_t *dx_field_iterator_sub(dx_field_iterator_t *iter, uint32_t length)
+{
+    dx_field_iterator_t *sub = new_dx_field_iterator_t();
+    if (!sub)
+        return 0;
+
+    sub->start_pointer        = iter->pointer;
+    sub->start_pointer.length = length;
+    sub->view_start_pointer   = sub->start_pointer;
+    sub->pointer              = sub->start_pointer;
+    sub->view                 = iter->view;
+    sub->mode                 = iter->mode;
+    sub->at_prefix            = 0;
+    sub->view_prefix          = 0;
+
+    return sub;
+}
+
+
+void dx_field_iterator_advance(dx_field_iterator_t *iter, uint32_t length)
+{
+    // TODO - Make this more efficient.
+    for (uint8_t idx = 0; idx < length; idx++)
+        dx_field_iterator_octet(iter);
+}
+
+
 int dx_field_iterator_equal(dx_field_iterator_t *iter, const unsigned char *string)
 {
     dx_field_iterator_reset(iter);
@@ -387,81 +389,6 @@ int dx_field_iterator_prefix(dx_field_iterator_t *iter, const char *prefix)
 }
 
 
-static dx_field_iterator_t *dx_field_parse_amqp_value(dx_field_iterator_t *iter, unsigned int *available)
-{
-    if (*available < 1)
-        return 0;
-
-    unsigned int         start = *available;
-    dx_field_iterator_t *value = new_dx_field_iterator_t();
-    value->start_pointer = iter->pointer;
-    value->view          = ITER_VIEW_ALL;
-    value->mode          = MODE_TO_END;
-    value->at_prefix     = 0;
-    value->view_prefix   = 0;
-
-    unsigned char tag = dx_field_iterator_octet(iter);
-    unsigned int  length      = 0;
-    unsigned int  length_size = 0;
-
-    (*available)--;
-
-    switch (tag & 0xF0) {
-    case 0x40: length = 0;  break;
-    case 0x50: length = 1;  break;
-    case 0x60: length = 2;  break;
-    case 0x70: length = 4;  break;
-    case 0x80: length = 8;  break;
-    case 0x90: length = 16; break;
-    case 0xA0:
-    case 0xC0:
-    case 0xE0: length_size = 1; break;
-    case 0xB0:
-    case 0xD0:
-    case 0xF0: length_size = 4; break;
-    default:
-        free_dx_field_iterator_t(value);
-        return 0;
-    }
-
-    if (*available < length_size) {
-        free_dx_field_iterator_t(value);
-        return 0;
-    }
-
-    if (length_size == 1) {
-        length = (unsigned int) dx_field_iterator_octet(iter);
-    } else if (length_size == 4) {
-        length  = ((unsigned int) dx_field_iterator_octet(iter)) << 24;
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 16;
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 8;
-        length +=  (unsigned int) dx_field_iterator_octet(iter);
-    }
-
-    if (*available < length) {
-        free_dx_field_iterator_t(value);
-        return 0;
-    }
-
-    for (unsigned int idx = 0; idx < length; idx++)
-        (void) dx_field_iterator_octet(iter);
-    (*available) -= (length + length_size);
-
-    value->start_pointer.length = start - *available;
-    value->view_start_pointer   = value->start_pointer;
-    value->pointer              = value->start_pointer;
-    value->tag                  = tag;
-
-    return value;
-}
-
-
-static int dx_tag_is_string(unsigned char tag)
-{
-    return (tag == 0xa1 || tag == 0xb1);
-}
-
-
 unsigned char *dx_field_iterator_copy(dx_field_iterator_t *iter)
 {
     int            length = 0;
@@ -481,186 +408,6 @@ unsigned char *dx_field_iterator_copy(dx_field_iterator_t *iter)
     copy[idx] = '\0';
 
     return copy;
-}
-
-
-dx_field_map_t *dx_field_map(dx_field_iterator_t *iter, int string_keys_only)
-{
-    dx_field_iterator_reset(iter);
-    unsigned char tag = dx_field_iterator_octet(iter);
-
-    //
-    // If this field is not a map, return 0;
-    //
-    if (tag != 0xc1 && tag != 0xd1) {
-        dx_log(log_module, LOG_TRACE, "dx_field_map - Invalid Map, Unexpected tag: %02x", tag);
-        return 0;
-    }
-
-    //
-    // Validate the map.  Ensure the following:
-    //   - There are an even number of fields in the compound structure
-    //   - There are anough octets in the field to account for all of the contents
-    //   - The field count matches the number of fields present
-    //   - The keys are strings (if string_keys_only)
-    //
-    unsigned int length;
-    unsigned int count;
-
-    if (tag == 0xc1) {
-        length  =  (unsigned int) dx_field_iterator_octet(iter);
-        count   =  (unsigned int) dx_field_iterator_octet(iter);
-        length -= 1; // Account for the 'count' octet
-    } else {
-        length  = ((unsigned int) dx_field_iterator_octet(iter)) << 24;
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 16;
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 8;
-        length +=  (unsigned int) dx_field_iterator_octet(iter);
-
-        count   = ((unsigned int) dx_field_iterator_octet(iter)) << 24;
-        count  += ((unsigned int) dx_field_iterator_octet(iter)) << 16;
-        count  += ((unsigned int) dx_field_iterator_octet(iter)) << 8;
-        count  +=  (unsigned int) dx_field_iterator_octet(iter);
-
-        length -= 4; // Account for the 'count' octets
-    }
-
-    //
-    // The map is not valid if count is not an even number.
-    //
-    if (count & 1) {
-        dx_log(log_module, LOG_TRACE, "dx_field_map - Invalid Map, odd number of fields: %d", count);
-        return 0;
-    }
-
-    dx_field_map_t *map = new_dx_field_map_t();
-    if (!map)
-        return 0;
-
-    map->outer     = iter;
-    map->key_count = count >> 1;
-    DEQ_INIT(map->pairs);
-
-    unsigned int idx;
-    for (idx = 0; idx < map->key_count; idx++) {
-        dx_field_iterator_t *key   = dx_field_parse_amqp_value(iter, &length);
-        dx_field_iterator_t *value = dx_field_parse_amqp_value(iter, &length);
-
-        if (key == 0 || value == 0) {
-            dx_field_map_free(map);
-            return 0;
-        }
-
-        if (string_keys_only && !dx_tag_is_string(key->tag)) {
-            dx_log(log_module, LOG_TRACE, "dx_field_map - Invalid Map, key tag is not a string: %02x", key->tag);
-            dx_field_map_free(map);
-            return 0;
-        }
-
-        dx_field_pair_t *pair = new_dx_field_pair_t();
-        if (!pair) {
-            dx_field_map_free(map);
-            return 0;
-        }
-
-        DEQ_ITEM_INIT(pair);
-        pair->key_iter   = key;
-        pair->value_iter = value;
-        DEQ_INSERT_TAIL(map->pairs, pair);
-    }
-
-    return map;
-}
-
-
-void dx_field_map_free(dx_field_map_t *map)
-{
-    if (!map)
-        return;
-
-    dx_field_pair_t *pair = DEQ_HEAD(map->pairs);
-    while (pair) {
-        DEQ_REMOVE_HEAD(map->pairs);
-        free_dx_field_iterator_t(pair->key_iter);
-        free_dx_field_iterator_t(pair->value_iter);
-        free_dx_field_pair_t(pair);
-        pair = DEQ_HEAD(map->pairs);
-    }
-
-    free_dx_field_map_t(map);
-}
-
-
-dx_field_iterator_t *dx_field_map_by_key(dx_field_map_t *map, const char *key)
-{
-    dx_field_iterator_t *key_string;
-    dx_field_iterator_t *value = 0;
-    dx_field_pair_t     *pair  = DEQ_HEAD(map->pairs);
-
-    while (pair && !value) {
-        key_string = dx_field_raw(pair->key_iter);
-        if (dx_field_iterator_equal(key_string, (const unsigned char*) key))
-            value = pair->value_iter;
-        free_dx_field_iterator_t(key_string);
-        pair = DEQ_NEXT(pair);
-    }
-
-    return value;
-}
-
-
-static unsigned int dx_field_get_length(dx_field_iterator_t *iter, unsigned char tag) {
-    unsigned long length = 0;
-
-    switch (tag & 0xF0) {
-    case 0x40: return 0;
-    case 0x50: return 1;
-    case 0x60: return 2;
-    case 0x70: return 4;
-    case 0x80: return 8;
-    case 0x90: return 16;
-    case 0xB0:
-    case 0xD0:
-    case 0xF0:
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 24;
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 16;
-        length += ((unsigned int) dx_field_iterator_octet(iter)) << 8;
-        // fall through to the next case
-        
-    case 0xA0:
-    case 0xC0:
-    case 0xE0:
-        length += (unsigned int) dx_field_iterator_octet(iter);
-        break;
-
-    default:
-        return 0;
-    }
-
-    return length;
-}
-
-
-dx_field_iterator_t *dx_field_raw(dx_field_iterator_t *iter)
-{
-    dx_field_iterator_reset(iter);
-    unsigned char tag   = dx_field_iterator_octet(iter);
-    unsigned int length = dx_field_get_length(iter, tag);
-
-    dx_field_iterator_t *result = new_dx_field_iterator_t();
-    if (!result)
-        return 0;
-    result->start_pointer        = iter->pointer;
-    result->start_pointer.length = length;
-    result->view_start_pointer   = result->start_pointer;
-    result->pointer              = result->start_pointer;
-    result->view                 = ITER_VIEW_ALL;
-    result->mode                 = MODE_TO_END;
-    result->at_prefix            = 0;
-    result->view_prefix          = 0;
-    result->tag                  = 0;
-
-    return result;
 }
 
 
