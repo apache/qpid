@@ -101,6 +101,11 @@ void dx_field_iterator_set_address(const char *area, const char *router);
 dx_field_iterator_t* dx_field_iterator_string(const char         *text,
                                               dx_iterator_view_t  view);
 
+dx_field_iterator_t* dx_field_iterator_binary(const char         *text,
+                                              int                 length,
+                                              dx_iterator_view_t  view);
+
+
 /**
  * Create an iterator from a field in a buffer chain
  */
