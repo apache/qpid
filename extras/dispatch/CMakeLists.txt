@@ -86,6 +86,7 @@ set(server_SOURCES
     src/iterator.c
     src/log.c
     src/message.c
+    src/parse.c
     src/posix/threading.c
     src/python_embedded.c
     src/router_node.c

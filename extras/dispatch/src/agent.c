@@ -30,6 +30,8 @@
 #include <qpid/dispatch/router.h>
 #include <qpid/dispatch/log.h>
 #include <qpid/dispatch/compose.h>
+#include <qpid/dispatch/parse.h>
+#include <qpid/dispatch/amqp.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -61,13 +63,13 @@ typedef struct {
 static char *log_module = "AGENT";
 
 
-static void dx_agent_process_get(dx_agent_t *agent, dx_field_map_t *map, dx_field_iterator_t *reply_to)
+static void dx_agent_process_get(dx_agent_t *agent, dx_parsed_field_t *map, dx_field_iterator_t *reply_to)
 {
-    dx_field_iterator_t *cls = dx_field_map_by_key(map, "type");
+    dx_parsed_field_t *cls = dx_parse_value_by_key(map, "type");
     if (cls == 0)
         return;
 
-    dx_field_iterator_t    *cls_string = dx_field_raw(cls);
+    dx_field_iterator_t    *cls_string = dx_parse_raw(cls);
     const dx_agent_class_t *cls_record;
     hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
     if (cls_record == 0)
@@ -168,20 +170,39 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
         return;
 
     //
-    // Try to get a map-view of the application-properties.  Exit if it is not a map-value.
+    // Try to get a map-view of the application-properties.
     //
-    dx_field_map_t *map = dx_field_map(ap, 1);
+    dx_parsed_field_t *map = dx_parse(ap);
     if (map == 0) {
         dx_field_iterator_free(ap);
         return;
     }
 
     //
+    // Exit if there was a parsing error.
+    //
+    if (!dx_parse_ok(map)) {
+        dx_log(log_module, LOG_TRACE, "Received unparsable App Properties: %s", dx_parse_error(map));
+        dx_field_iterator_free(ap);
+        dx_parse_free(map);
+        return;
+    }
+
+    //
+    // Exit if it is not a map.
+    //
+    if (!dx_parse_is_map(map)) {
+        dx_field_iterator_free(ap);
+        dx_parse_free(map);
+        return;
+    }
+
+    //
     // Get an iterator for the "operation" field in the map.  Exit if the key is not found.
     //
-    dx_field_iterator_t *operation = dx_field_map_by_key(map, "operation");
+    dx_parsed_field_t *operation = dx_parse_value_by_key(map, "operation");
     if (operation == 0) {
-        dx_field_map_free(map);
+        dx_parse_free(map);
         dx_field_iterator_free(ap);
         return;
     }
@@ -189,12 +210,11 @@ static void dx_agent_process_request(dx_agent_t *agent, dx_message_t *msg)
     //
     // Dispatch the operation to the appropriate handler
     //
-    dx_field_iterator_t *operation_string = dx_field_raw(operation);
+    dx_field_iterator_t *operation_string = dx_parse_raw(operation);
     if (dx_field_iterator_equal(operation_string, (unsigned char*) "GET"))
         dx_agent_process_get(agent, map, reply_to);
 
-    dx_field_iterator_free(operation_string);
-    dx_field_map_free(map);
+    dx_parse_free(map);
     dx_field_iterator_free(ap);
     dx_field_iterator_free(reply_to);
 }

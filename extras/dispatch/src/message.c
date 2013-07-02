@@ -18,6 +18,7 @@
  */
 
 #include <qpid/dispatch/ctools.h>
+#include <qpid/dispatch/amqp.h>
 #include <qpid/dispatch/threading.h>
 #include "message_private.h"
 #include "compose_private.h"
