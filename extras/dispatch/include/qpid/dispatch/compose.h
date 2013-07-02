@@ -24,16 +24,6 @@
 
 typedef struct dx_composed_field_t dx_composed_field_t;
 
-#define DX_PERFORMATIVE_HEADER                  0x70
-#define DX_PERFORMATIVE_DELIVERY_ANNOTATIONS    0x71
-#define DX_PERFORMATIVE_MESSAGE_ANNOTATIONS     0x72  
-#define DX_PERFORMATIVE_PROPERTIES              0x73
-#define DX_PERFORMATIVE_APPLICATION_PROPERTIES  0x74
-#define DX_PERFORMATIVE_BODY_DATA               0x75
-#define DX_PERFORMATIVE_BODY_AMQP_SEQUENCE      0x76
-#define DX_PERFORMATIVE_BODY_AMQP_VALUE         0x77
-#define DX_PERFORMATIVE_FOOTER                  0x78
-
 /**
  * Begin composing a new field for a message.  The new field can be standalone or
  * appended onto an existing field.
@@ -43,7 +33,7 @@ typedef struct dx_composed_field_t dx_composed_field_t;
  *        create a standalone field.
  * @return A pointer to the newly created field.
  */
-dx_composed_field_t *dx_compose(uint8_t performative, dx_composed_field_t *extend);
+dx_composed_field_t *dx_compose(uint64_t performative, dx_composed_field_t *extend);
 
 /**
  * Free the resources associated with a composed field.

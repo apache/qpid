@@ -20,6 +20,7 @@
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/buffer.h>
+#include <qpid/dispatch/amqp.h>
 #include "message_private.h"
 #include "compose_private.h"
 #include <memory.h>
@@ -143,9 +144,9 @@ static void dx_overwrite_32(dx_field_location_t *field, uint32_t value)
 static void dx_compose_start_composite(dx_composed_field_t *field, int isMap)
 {
     if (isMap)
-        dx_insert_8(field, 0xd1);  // map32
+        dx_insert_8(field, DX_AMQP_MAP32);
     else
-        dx_insert_8(field, 0xd0);  // list32
+        dx_insert_8(field, DX_AMQP_LIST32);
 
     //
     // Push a composite descriptor on the field stack
@@ -204,7 +205,7 @@ static void dx_compose_end_composite(dx_composed_field_t *field)
 }
 
 
-dx_composed_field_t *dx_compose(uint8_t performative, dx_composed_field_t *extend)
+dx_composed_field_t *dx_compose(uint64_t performative, dx_composed_field_t *extend)
 {
     dx_composed_field_t *field = extend;
 
@@ -219,8 +220,8 @@ dx_composed_field_t *dx_compose(uint8_t performative, dx_composed_field_t *exten
         DEQ_INIT(field->fieldStack);
     }
 
-    dx_insert(field, (const uint8_t*) "\x00\x53", 2);
-    dx_insert_8(field, performative);
+    dx_insert_8(field, 0x00);
+    dx_compose_insert_ulong(field, performative);
 
     return field;
 }
@@ -270,14 +271,14 @@ void dx_compose_end_map(dx_composed_field_t *field)
 
 void dx_compose_insert_null(dx_composed_field_t *field)
 {
-    dx_insert_8(field, 0x40);
+    dx_insert_8(field, DX_AMQP_NULL);
     bump_count(field);
 }
 
 
 void dx_compose_insert_bool(dx_composed_field_t *field, int value)
 {
-    dx_insert_8(field, value ? 0x41 : 0x42);
+    dx_insert_8(field, value ? DX_AMQP_TRUE : DX_AMQP_FALSE);
     bump_count(field);
 }
 
@@ -285,12 +286,12 @@ void dx_compose_insert_bool(dx_composed_field_t *field, int value)
 void dx_compose_insert_uint(dx_composed_field_t *field, uint32_t value)
 {
     if (value == 0) {
-        dx_insert_8(field, 0x43);  // uint0
+        dx_insert_8(field, DX_AMQP_UINT0);
     } else if (value < 256) {
-        dx_insert_8(field, 0x52);  // smalluint
+        dx_insert_8(field, DX_AMQP_SMALLUINT);
         dx_insert_8(field, (uint8_t) value);
     } else {
-        dx_insert_8(field, 0x70);  // uint
+        dx_insert_8(field, DX_AMQP_UINT);
         dx_insert_32(field, value);
     }
     bump_count(field);
@@ -300,12 +301,12 @@ void dx_compose_insert_uint(dx_composed_field_t *field, uint32_t value)
 void dx_compose_insert_ulong(dx_composed_field_t *field, uint64_t value)
 {
     if (value == 0) {
-        dx_insert_8(field, 0x44);  // ulong0
+        dx_insert_8(field, DX_AMQP_ULONG0);
     } else if (value < 256) {
-        dx_insert_8(field, 0x53);  // smallulong
+        dx_insert_8(field, DX_AMQP_SMALLULONG);
         dx_insert_8(field, (uint8_t) value);
     } else {
-        dx_insert_8(field, 0x80);  // ulong
+        dx_insert_8(field, DX_AMQP_ULONG);
         dx_insert_64(field, value);
     }
     bump_count(field);
@@ -315,10 +316,10 @@ void dx_compose_insert_ulong(dx_composed_field_t *field, uint64_t value)
 void dx_compose_insert_int(dx_composed_field_t *field, int32_t value)
 {
     if (value >= -128 && value <= 127) {
-        dx_insert_8(field, 0x54);  // smallint
+        dx_insert_8(field, DX_AMQP_SMALLINT);
         dx_insert_8(field, (uint8_t) value);
     } else {
-        dx_insert_8(field, 0x71);  // int
+        dx_insert_8(field, DX_AMQP_INT);
         dx_insert_32(field, (uint32_t) value);
     }
     bump_count(field);
@@ -328,10 +329,10 @@ void dx_compose_insert_int(dx_composed_field_t *field, int32_t value)
 void dx_compose_insert_long(dx_composed_field_t *field, int64_t value)
 {
     if (value >= -128 && value <= 127) {
-        dx_insert_8(field, 0x55);  // smalllong
+        dx_insert_8(field, DX_AMQP_SMALLLONG);
         dx_insert_8(field, (uint8_t) value);
     } else {
-        dx_insert_8(field, 0x81);  // long
+        dx_insert_8(field, DX_AMQP_LONG);
         dx_insert_64(field, (uint64_t) value);
     }
     bump_count(field);
@@ -340,7 +341,7 @@ void dx_compose_insert_long(dx_composed_field_t *field, int64_t value)
 
 void dx_compose_insert_timestamp(dx_composed_field_t *field, uint64_t value)
 {
-    dx_insert_8(field, 0x83);  // timestamp
+    dx_insert_8(field, DX_AMQP_TIMESTAMP);
     dx_insert_64(field, value);
     bump_count(field);
 }
@@ -348,7 +349,7 @@ void dx_compose_insert_timestamp(dx_composed_field_t *field, uint64_t value)
 
 void dx_compose_insert_uuid(dx_composed_field_t *field, const uint8_t *value)
 {
-    dx_insert_8(field, 0x98);  // uuid
+    dx_insert_8(field, DX_AMQP_UUID);
     dx_insert(field, value, 16);
     bump_count(field);
 }
@@ -357,10 +358,10 @@ void dx_compose_insert_uuid(dx_composed_field_t *field, const uint8_t *value)
 void dx_compose_insert_binary(dx_composed_field_t *field, const uint8_t *value, uint32_t len)
 {
     if (len < 256) {
-        dx_insert_8(field, 0xa0);  // vbin8
+        dx_insert_8(field, DX_AMQP_VBIN8);
         dx_insert_8(field, (uint8_t) len);
     } else {
-        dx_insert_8(field, 0xb0);  // vbin32
+        dx_insert_8(field, DX_AMQP_VBIN32);
         dx_insert_32(field, len);
     }
     dx_insert(field, value, len);
@@ -385,10 +386,10 @@ void dx_compose_insert_binary_buffers(dx_composed_field_t *field, dx_buffer_list
     // Supply the appropriate binary tag for the length.
     //
     if (len < 256) {
-        dx_insert_8(field, 0xa0);  // vbin8
+        dx_insert_8(field, DX_AMQP_VBIN8);
         dx_insert_8(field, (uint8_t) len);
     } else {
-        dx_insert_8(field, 0xb0);  // vbin32
+        dx_insert_8(field, DX_AMQP_VBIN32);
         dx_insert_32(field, len);
     }
 
@@ -409,10 +410,10 @@ void dx_compose_insert_string(dx_composed_field_t *field, const char *value)
     uint32_t len = strlen(value);
 
     if (len < 256) {
-        dx_insert_8(field, 0xa1);  // str8-utf8
+        dx_insert_8(field, DX_AMQP_STR8_UTF8);
         dx_insert_8(field, (uint8_t) len);
     } else {
-        dx_insert_8(field, 0xb1);  // str32-utf8
+        dx_insert_8(field, DX_AMQP_STR32_UTF8);
         dx_insert_32(field, len);
     }
     dx_insert(field, (const uint8_t*) value, len);
@@ -432,10 +433,10 @@ void dx_compose_insert_string_iterator(dx_composed_field_t *field, dx_field_iter
     dx_field_iterator_reset(iter);
 
     if (len < 256) {
-        dx_insert_8(field, 0xa1);  // str8-utf8
+        dx_insert_8(field, DX_AMQP_STR8_UTF8);
         dx_insert_8(field, (uint8_t) len);
     } else {
-        dx_insert_8(field, 0xb1);  // str32-utf8
+        dx_insert_8(field, DX_AMQP_STR32_UTF8);
         dx_insert_32(field, len);
     }
 
@@ -453,10 +454,10 @@ void dx_compose_insert_symbol(dx_composed_field_t *field, const char *value)
     uint32_t len = strlen(value);
 
     if (len < 256) {
-        dx_insert_8(field, 0xa3);  // sym8
+        dx_insert_8(field, DX_AMQP_SYM8);
         dx_insert_8(field, (uint8_t) len);
     } else {
-        dx_insert_8(field, 0xb3);  // sym32
+        dx_insert_8(field, DX_AMQP_SYM32);
         dx_insert_32(field, len);
     }
     dx_insert(field, (const uint8_t*) value, len);

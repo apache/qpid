@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <stdint.h>
 #include <qpid/dispatch/buffer.h>
 #include <qpid/dispatch/iovec.h>
 
@@ -132,6 +133,14 @@ unsigned char dx_field_iterator_octet(dx_field_iterator_t *iter);
 int dx_field_iterator_end(dx_field_iterator_t *iter);
 
 /**
+ * Return a sub-iterator that equals the supplied iterator except that it
+ * starts at the supplied iterator's current position.
+ */
+dx_field_iterator_t *dx_field_iterator_sub(dx_field_iterator_t *iter, uint32_t length);
+
+void dx_field_iterator_advance(dx_field_iterator_t *iter, uint32_t length);
+
+/**
  * Compare an input string to the iterator's view.  Return true iff they are equal.
  */
 int dx_field_iterator_equal(dx_field_iterator_t *iter, const unsigned char *string);
@@ -149,15 +158,14 @@ int dx_field_iterator_prefix(dx_field_iterator_t *iter, const char *prefix);
  */
 unsigned char *dx_field_iterator_copy(dx_field_iterator_t *iter);
 
-
+/**
+ * Return the contents of this iter into an iovec structure.  This is used in a
+ * scatter/gather IO mechanism.  If the iterator spans multiple physical buffers,
+ * the iovec structure will contain one pointer per buffer.
+ *
+ * @param iter A field iterator
+ * @return An iovec structure that references the data in the iterator's buffers.
+ */
 dx_iovec_t *dx_field_iterator_iovec(const dx_field_iterator_t *iter);
-
-typedef struct dx_field_map_t dx_field_map_t;
-
-dx_field_map_t *dx_field_map(dx_field_iterator_t *iter, int string_keys_only);
-void dx_field_map_free(dx_field_map_t *map);
-dx_field_iterator_t *dx_field_map_by_key(dx_field_map_t *map, const char *key);
-
-dx_field_iterator_t *dx_field_raw(dx_field_iterator_t *iter);
 
 #endif
