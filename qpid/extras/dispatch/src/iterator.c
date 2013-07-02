@@ -250,6 +250,22 @@ dx_field_iterator_t* dx_field_iterator_string(const char *text, dx_iterator_view
 }
 
 
+dx_field_iterator_t* dx_field_iterator_binary(const char *text, int length, dx_iterator_view_t view)
+{
+    dx_field_iterator_t *iter = new_dx_field_iterator_t();
+    if (!iter)
+        return 0;
+
+    iter->start_pointer.buffer = 0;
+    iter->start_pointer.cursor = (unsigned char*) text;
+    iter->start_pointer.length = length;
+
+    dx_field_iterator_reset_view(iter, view);
+
+    return iter;
+}
+
+
 dx_field_iterator_t *dx_field_iterator_buffer(dx_buffer_t *buffer, int offset, int length, dx_iterator_view_t view)
 {
     dx_field_iterator_t *iter = new_dx_field_iterator_t();
