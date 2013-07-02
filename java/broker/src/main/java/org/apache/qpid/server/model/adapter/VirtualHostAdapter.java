@@ -75,6 +75,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -312,7 +313,8 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 _virtualHost.getExchangeRegistry().registerExchange(exchange);
                 if(durable)
                 {
-                    _virtualHost.getDurableConfigurationStore().createExchange(exchange);
+                    DurableConfigurationStoreHelper.createExchange(_virtualHost.getDurableConfigurationStore(),
+                            exchange);
                 }
                 synchronized (_exchangeAdapters)
                 {
@@ -434,7 +436,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
                 if(durable)
                 {
-                    _virtualHost.getDurableConfigurationStore().createQueue(queue, FieldTable.convertToFieldTable(attributes));
+                    DurableConfigurationStoreHelper.createQueue(_virtualHost.getDurableConfigurationStore(),
+                            queue,
+                            FieldTable.convertToFieldTable(attributes));
                 }
                 synchronized (_queueAdapters)
                 {

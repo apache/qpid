@@ -30,7 +30,6 @@ import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -40,10 +39,10 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -114,7 +113,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     queue.setAuthorizationHolder(protocolConnection);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
-                        store.createQueue(queue, body.getArguments());
+                        DurableConfigurationStoreHelper.createQueue(store, queue, body.getArguments());
                     }
                     if(body.getAutoDelete())
                     {

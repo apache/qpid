@@ -22,16 +22,13 @@ package org.apache.qpid.server.store;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -176,51 +173,28 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
-    public void createExchange(Exchange exchange) throws AMQStoreException
+    @Override
+    public void create(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
     {
-        doPreDelay("createExchange");
-        _durableConfigurationStore.createExchange(exchange);
-        doPostDelay("createExchange");
+        doPreDelay("create");
+        _durableConfigurationStore.create(id, type, attributes);
+        doPostDelay("create");
     }
 
-    public void removeExchange(Exchange exchange) throws AMQStoreException
+    @Override
+    public void remove(UUID id, String type) throws AMQStoreException
     {
-        doPreDelay("removeExchange");
-        _durableConfigurationStore.removeExchange(exchange);
-        doPostDelay("removeExchange");
+        doPreDelay("remove");
+        _durableConfigurationStore.remove(id, type);
+        doPostDelay("remove");
     }
 
-    public void bindQueue(Binding binding) throws AMQStoreException
+    @Override
+    public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
     {
-        doPreDelay("bindQueue");
-        _durableConfigurationStore.bindQueue(binding);
-        doPostDelay("bindQueue");
-    }
-
-    public void unbindQueue(Binding binding) throws AMQStoreException
-    {
-        doPreDelay("unbindQueue");
-        _durableConfigurationStore.unbindQueue(binding);
-        doPostDelay("unbindQueue");
-    }
-
-    public void createQueue(AMQQueue queue) throws AMQStoreException
-    {
-        createQueue(queue, null);
-    }
-
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
-    {
-        doPreDelay("createQueue");
-        _durableConfigurationStore.createQueue(queue, arguments);
-        doPostDelay("createQueue");
-    }
-
-    public void removeQueue(AMQQueue queue) throws AMQStoreException
-    {
-        doPreDelay("removeQueue");
-        _durableConfigurationStore.removeQueue(queue);
-        doPostDelay("removeQueue");
+        doPreDelay("update");
+        _durableConfigurationStore.update(id, type, attributes);
+        doPostDelay("update");
     }
 
     public Transaction newTransaction()
@@ -312,13 +286,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         {
             _underlying.recordXid(format, globalId, branchId, enqueues, dequeues);
         }
-    }
-
-    public void updateQueue(AMQQueue queue) throws AMQStoreException
-    {
-        doPreDelay("updateQueue");
-        _durableConfigurationStore.updateQueue(queue);
-        doPostDelay("updateQueue");
     }
 
     @Override

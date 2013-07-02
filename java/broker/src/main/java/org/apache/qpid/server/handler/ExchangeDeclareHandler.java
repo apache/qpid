@@ -37,6 +37,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ExchangeDeclareHandler implements StateAwareMethodListener<ExchangeDeclareBody>
@@ -106,7 +107,8 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
                         if (exchange.isDurable())
                         {
-                            virtualHost.getDurableConfigurationStore().createExchange(exchange);
+                            DurableConfigurationStoreHelper.createExchange(virtualHost.getDurableConfigurationStore(),
+                                    exchange);
                         }
                     }
                     catch(AMQUnknownExchangeType e)
