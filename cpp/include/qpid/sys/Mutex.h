@@ -30,7 +30,7 @@ template <class L>
 class ScopedLock
 {
   public:
-    ScopedLock(L& l) : mutex(l) { l.lock(); }
+    ScopedLock(L& l) : mutex(l) { mutex.lock(); }
     ~ScopedLock() { mutex.unlock(); }
   private:
     L& mutex;
@@ -40,7 +40,7 @@ template <class L>
 class ScopedUnlock
 {
   public:
-    ScopedUnlock(L& l) : mutex(l) { l.unlock(); }
+    ScopedUnlock(L& l) : mutex(l) { mutex.unlock(); }
     ~ScopedUnlock() { mutex.lock(); }
   private:
     L& mutex;
@@ -50,7 +50,7 @@ template <class L>
 class ScopedRlock
 {
   public:
-    ScopedRlock(L& l) : mutex(l) { l.rlock(); }
+    ScopedRlock(L& l) : mutex(l) { mutex.rlock(); }
     ~ScopedRlock() { mutex.unlock(); }
   private:
     L& mutex;
@@ -60,7 +60,7 @@ template <class L>
 class ScopedWlock
 {
   public:
-    ScopedWlock(L& l) : mutex(l) { l.wlock(); }
+    ScopedWlock(L& l) : mutex(l) { mutex.wlock(); }
     ~ScopedWlock() { mutex.unlock(); }
   private:
     L& mutex;
@@ -70,7 +70,7 @@ template <class L>
 class ConditionalScopedLock
 {
   public:
-    ConditionalScopedLock(L& l) : mutex(l) { acquired = l.trylock(); }
+    ConditionalScopedLock(L& l) : mutex(l) { acquired = mutex.trylock(); }
     ~ConditionalScopedLock() { if (acquired) mutex.unlock(); }
     bool lockAcquired() { return acquired; }
   private:
