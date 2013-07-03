@@ -7,19 +7,10 @@
           "_messageSize": 256
         },
         {
-          "_messageSize": 512
-        },
-        {
           "_messageSize": 1024
         },
         {
-          "_messageSize": 2048
-        },
-        {
           "_messageSize": 4096
-        },
-        {
-          "_messageSize": 8192
         },
         {
           "_messageSize": 16384

@@ -32,6 +32,6 @@ java -cp "${BASE_DIR}:${BASE_DIR}/../../build/lib/*" \
   -Dqpid.disttest.duration=$DURATION \
   org.apache.qpid.disttest.ControllerRunner \
   jndi-config=${BASE_DIR}/perftests-jndi.properties \
-  test-config=${BASE_DIR}/testdefs \
+  test-config=${BASE_DIR}/testdefs/VaryingNumberOfParticipants.js \
   distributed=false \
   writeToDb=true
