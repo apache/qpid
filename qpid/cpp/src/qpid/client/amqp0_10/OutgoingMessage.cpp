@@ -52,7 +52,8 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
     //TODO: need to avoid copying as much as possible
     message.setData(from.getContent());
     message.getMessageProperties().setContentType(from.getContentType());
-    message.getMessageProperties().setCorrelationId(from.getCorrelationId());
+    if ( !from.getCorrelationId().empty() )
+        message.getMessageProperties().setCorrelationId(from.getCorrelationId());
     message.getMessageProperties().setUserId(from.getUserId());
     const Address& address = from.getReplyTo();
     if (address) {
