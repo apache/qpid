@@ -316,8 +316,8 @@ bool ConnectionImpl::resetSessions(const sys::Mutex::ScopedLock& )
             getImplPtr(i->second)->setSession(connection.newSession(i->first));
         }
         return true;
-    } catch (const qpid::TransportFailure&) {
-        QPID_LOG(debug, "Connection failed while re-initialising sessions");
+    } catch (const qpid::TransportFailure& e) {
+        QPID_LOG(debug, "Connection Failed to re-initialize sessions: " << e.what());
         return false;
     } catch (const qpid::framing::ResourceLimitExceededException& e) {
         if (reconnectOnLimitExceeded) {

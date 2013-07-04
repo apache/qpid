@@ -168,7 +168,6 @@ ReplicatingSubscription::ReplicatingSubscription(
 
             QPID_LOG(debug, logPrefix << "Subscribed: front " << front
                      << ", back " << back
-                     << ", start " << position
                      << ", guarded " << guard->getFirst()
                      << ", on backup " << skip);
             checkReady(l);
@@ -218,6 +217,8 @@ bool ReplicatingSubscription::deliver(
         bool result = false;
         if (skip.contains(id)) {
             skip -= id;
+            QPID_LOG(trace, logPrefix << "On backup, skip " <<
+                     LogMessageId(*getQueue(), m));
             guard->complete(id); // This will never be acknowledged.
             result = false;
         }
@@ -269,7 +270,7 @@ void ReplicatingSubscription::acknowledged(const broker::DeliveryRecord& r) {
     // Finish completion of message, it has been acknowledged by the backup.
     ReplicationId id = r.getReplicationId();
     QPID_LOG(trace, logPrefix << "Acknowledged " <<
-             LogMessageId(*getQueue(), r.getMessageId(), r.getReplicationId()));
+             LogMessageId(*getQueue(), r.getMessageId(), id));
     guard->complete(id);
     {
         Mutex::ScopedLock l(lock);

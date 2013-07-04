@@ -949,7 +949,8 @@ class LongTests(HaBrokerTest):
             def check():
                 r.check()       # Verify no exceptions
                 return r.received > n + 100
-            assert retry(check), "Stalled %s at %s"%(r.queue, n)
+            assert retry(check), "Stalled %s waiting for %s, sent %s"%(
+                r.queue, n, [s for s in senders if s.queue==r.queue][0].sent)
 
         for r in receivers: wait_passed(r, 0)
 

@@ -70,9 +70,9 @@ QueueGuard::~QueueGuard() { cancel(); }
 void QueueGuard::enqueued(const Message& m) {
     // Delay completion
     ReplicationId id = m.getReplicationId();
-    QPID_LOG(trace, logPrefix << "Delayed completion of " << LogMessageId(queue, m));
     Mutex::ScopedLock l(lock);
     if (cancelled) return;  // Don't record enqueues after we are cancelled.
+    QPID_LOG(trace, logPrefix << "Delayed completion of " << LogMessageId(queue, m));
     delayed[id] = m.getIngressCompletion();
     m.getIngressCompletion()->startCompleter();
 }
@@ -89,6 +89,7 @@ void QueueGuard::cancel() {
     queue.removeObserver(observer);
     Mutex::ScopedLock l(lock);
     if (cancelled) return;
+    QPID_LOG(debug, logPrefix << "Cancelled");
     cancelled = true;
     while (!delayed.empty()) complete(delayed.begin(), l);
 }
@@ -111,7 +112,7 @@ bool QueueGuard::complete(ReplicationId id, Mutex::ScopedLock& l) {
 }
 
 void QueueGuard::complete(Delayed::iterator i, Mutex::ScopedLock&) {
-    QPID_LOG(trace, logPrefix << "Completed " << i->first);
+    QPID_LOG(trace, logPrefix << "Completed " << queue.getName() << " =" << i->first);
     i->second->finishCompleter();
     delayed.erase(i);
 }
