@@ -33,7 +33,7 @@
 namespace qpid {
 namespace ha {
 
-// FIXME aconway 2012-12-21: This solution is incomplete. It will only protect
+// TODO aconway 2012-12-21: This solution is incomplete. It will only protect
 // against bad promotion if there are READY brokers when this broker starts.
 // It will not help the situation where brokers became READY after this one starts.
 //

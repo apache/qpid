@@ -578,7 +578,7 @@ class NumberedReceiver(Thread):
     """
     def __init__(self, broker, sender=None, queue="test-queue",
                  connection_options=RECONNECT_OPTIONS,
-                 failover_updates=True, url=None):
+                 failover_updates=True, url=None, args=[]):
         """
         sender: enable flow control. Call sender.received(n) for each message received.
         """
@@ -591,6 +591,7 @@ class NumberedReceiver(Thread):
                "--forever"
                ]
         if failover_updates: cmd += [ "--failover-updates" ]
+        cmd += args
         self.receiver = self.test.popen(
             cmd, expect=EXPECT_RUNNING, stdout=PIPE)
         self.lock = Lock()
