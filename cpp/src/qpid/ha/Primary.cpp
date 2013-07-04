@@ -329,7 +329,7 @@ void Primary::closed(broker::Connection& connection) {
         // are a backup, but closed() is called after we have become primary.
         // Checking  isConnected() lets us ignore such spurious closes.
         if (i == backups.end()) {
-            QPID_LOG(info, "Disconnect from unknown backup " << info);
+            QPID_LOG(info, logPrefix << "Disconnect from unknown backup " << info);
         }
         else if (i->second->getConnection() != &connection) {
             QPID_LOG(info, logPrefix << "Late disconnect from backup " << info);

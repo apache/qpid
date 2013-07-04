@@ -534,6 +534,7 @@ class NumberedSender(Thread):
         self.received = 0
         self.stopped = False
         self.error = None
+        self.queue = queue
 
     def write_message(self, n):
         self.sender.stdin.write(str(n)+"\n")

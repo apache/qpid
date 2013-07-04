@@ -44,13 +44,10 @@ class IdSetter : public broker::MessageInterceptor
 {
   public:
     IdSetter(const std::string& q, ReplicationId firstId) : nextId(firstId), name(q) {
-        QPID_LOG(trace, "Initial replication ID for " << name << " is " << nextId.get());
+        QPID_LOG(trace, "Initial replication ID for " << name << " =" << nextId.get());
     }
 
-    void record(broker::Message& m) {
-        m.setReplicationId(nextId++);
-        QPID_LOG(trace, "Recorded replication ID " << m.getReplicationId() << " on " << name);
-    }
+    void record(broker::Message& m) { m.setReplicationId(nextId++); }
 
   private:
     sys::AtomicValue<uint32_t> nextId;
