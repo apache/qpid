@@ -38,7 +38,7 @@ class Settings
   public:
     Settings() : cluster(false), queueReplication(false),
                  replicateDefault(NONE), backupTimeout(10*sys::TIME_SEC),
-                 flowMessages(100), flowBytes(0)
+                 flowMessages(1000), flowBytes(0)
     {}
 
     bool cluster;               // True if we are a cluster member.

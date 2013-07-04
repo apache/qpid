@@ -129,7 +129,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     QueuePosition position;
     ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
     ReplicationIdSet skip;      // Messages already on backup will be skipped.
-    ReplicationIdSet unacked;   // Replicated but un-acknowledged.
+    ReplicationIdSet unready;   // Unguarded, replicated and un-acknowledged.
     bool ready;
     bool cancelled;
     BrokerInfo info;
