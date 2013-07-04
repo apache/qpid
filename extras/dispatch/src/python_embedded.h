@@ -20,10 +20,16 @@
  */
 
 #include <Python.h>
+#include <qpid/dispatch/compose.h>
+#include <qpid/dispatch/parse.h>
+#include <qpid/dispatch/iterator.h>
 
 void dx_python_initialize();
 void dx_python_finalize();
 void dx_python_start();
 void dx_python_stop();
+
+void dx_py_to_composed(PyObject *value, dx_composed_field_t *field);
+PyObject *dx_field_to_py(dx_parsed_field_t *field);
 
 #endif
