@@ -372,6 +372,12 @@ void dx_field_iterator_advance(dx_field_iterator_t *iter, uint32_t length)
 }
 
 
+uint32_t dx_field_iterator_remaining(dx_field_iterator_t *iter)
+{
+    return iter->pointer.length;
+}
+
+
 int dx_field_iterator_equal(dx_field_iterator_t *iter, const unsigned char *string)
 {
     dx_field_iterator_reset(iter);

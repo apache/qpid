@@ -146,6 +146,18 @@ dx_field_iterator_t *dx_field_iterator_sub(dx_field_iterator_t *iter, uint32_t l
 void dx_field_iterator_advance(dx_field_iterator_t *iter, uint32_t length);
 
 /**
+ * Return the remaining length (in octets) for the iterator.
+ *
+ * IMPORTANT:  This function returns the limit of the remaining length.
+ *             The actual length *may* be less than indicated, but will
+ *             never be more.  This function is safe for allocating memory.
+ *
+ * @param iter A field iterator
+ * @return The number of octets remaining in the view (or more)
+ */
+uint32_t dx_field_iterator_remaining(dx_field_iterator_t *iter);
+
+/**
  * Compare an input string to the iterator's view.  Return true iff they are equal.
  */
 int dx_field_iterator_equal(dx_field_iterator_t *iter, const unsigned char *string);

@@ -219,6 +219,7 @@ uint64_t dx_parse_as_ulong(dx_parsed_field_t *field)
 
     switch (field->tag) {
     case DX_AMQP_ULONG:
+    case DX_AMQP_TIMESTAMP:
         result |= ((uint64_t) dx_field_iterator_octet(field->raw_iter)) << 56;
         result |= ((uint64_t) dx_field_iterator_octet(field->raw_iter)) << 48;
         result |= ((uint64_t) dx_field_iterator_octet(field->raw_iter)) << 40;
