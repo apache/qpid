@@ -927,9 +927,7 @@ class LongTests(HaBrokerTest):
         if d: return float(d)*60
         else: return 3                  # Default is to be quick
 
-    # FIXME aconway 2013-06-27: skip this test pending a fix for
-    # https://issues.apache.org/jira/browse/QPID-4944
-    def skip_test_failover_send_receive(self):
+    def test_failover_send_receive(self):
         """Test failover with continuous send-receive"""
         brokers = HaCluster(self, 3)
 
@@ -937,7 +935,7 @@ class LongTests(HaBrokerTest):
         n = 10
         senders = [NumberedSender(brokers[0], url=brokers.url,
                                   max_depth=1024, failover_updates=False,
-                                 queue="test%s"%(i)) for i in xrange(n)]
+                                  queue="test%s"%(i)) for i in xrange(n)]
         receivers = [NumberedReceiver(brokers[0], url=brokers.url, sender=senders[i],
                                       failover_updates=False,
                                       queue="test%s"%(i)) for i in xrange(n)]
@@ -966,7 +964,7 @@ class LongTests(HaBrokerTest):
                     # one or two backups are running,
                     for s in senders: s.sender.assert_running()
                     for r in receivers: r.receiver.assert_running()
-                    checkpoint = [ r.received+100 for r in receivers ]
+                    checkpoint = [ r.received+10 for r in receivers ]
                     victim = random.choice([0,1,2,primary]) # Give the primary a better chance.
                     if victim == primary:
                         # Don't kill primary till it is active and the next
@@ -982,7 +980,7 @@ class LongTests(HaBrokerTest):
                     # Make sure we are not stalled
                     map(wait_passed, receivers, checkpoint)
                     # Run another checkpoint to ensure things work in this configuration
-                    checkpoint = [ r.received+100 for r in receivers ]
+                    checkpoint = [ r.received+10 for r in receivers ]
                     map(wait_passed, receivers, checkpoint)
                     i += 1
             except:
