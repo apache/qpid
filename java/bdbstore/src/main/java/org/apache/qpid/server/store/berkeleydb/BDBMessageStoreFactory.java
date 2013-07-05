@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
 
@@ -72,4 +73,15 @@ public class BDBMessageStoreFactory implements MessageStoreFactory
 
     }
 
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+        Object storePath = attributes.get(VirtualHost.STORE_PATH);
+        if(!(storePath instanceof String))
+        {
+            throw new IllegalArgumentException("Attribute '"+ VirtualHost.STORE_PATH
+                                                           +"' is required and must be of type String.");
+
+        }
+    }
 }

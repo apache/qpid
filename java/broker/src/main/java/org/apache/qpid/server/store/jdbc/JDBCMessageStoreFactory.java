@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.jdbc;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
 
@@ -60,6 +61,23 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory
         convertedMap.put("partitionCount", storeConfiguration.getInteger("pool.partitionCount", null));
 
         return convertedMap;
+    }
+
+
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+        Object connectionURL = attributes.get(JDBCMessageStore.CONNECTION_URL);
+        if(!(connectionURL instanceof String))
+        {
+            Object storePath = attributes.get(VirtualHost.STORE_PATH);
+            if(!(storePath instanceof String))
+            {
+                throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONNECTION_URL
+                                                               +"' is required and must be of type String.");
+
+            }
+        }
     }
 
 }

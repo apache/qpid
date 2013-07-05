@@ -50,6 +50,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
 
     public static final String TYPE = "JDBC";
+    public static final String CONNECTION_URL = "connectionURL";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -280,9 +281,9 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     {
 
 
-        String connectionURL = virtualHost.getAttribute("connectionURL") == null
+        String connectionURL = virtualHost.getAttribute(CONNECTION_URL) == null
                                ? String.valueOf(virtualHost.getAttribute(VirtualHost.STORE_PATH))
-                               : String.valueOf(virtualHost.getAttribute("connectionURL"));
+                               : String.valueOf(virtualHost.getAttribute(CONNECTION_URL));
 
         JDBCDetails details = null;
 

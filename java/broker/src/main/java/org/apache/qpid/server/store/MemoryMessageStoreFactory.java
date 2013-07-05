@@ -46,4 +46,8 @@ public class MemoryMessageStoreFactory implements MessageStoreFactory
         return Collections.emptyMap();
     }
 
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+    }
 }
