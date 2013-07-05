@@ -75,4 +75,9 @@ public class SlowMessageStoreFactory implements MessageStoreFactory
 
         return convertedMap;
     }
+
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+    }
 }

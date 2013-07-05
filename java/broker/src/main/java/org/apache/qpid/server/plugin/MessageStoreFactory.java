@@ -32,4 +32,5 @@ public interface MessageStoreFactory
 
     public Map<String, Object> convertStoreConfiguration(Configuration configuration);
 
+    void validateAttributes(Map<String, Object> attributes);
 }

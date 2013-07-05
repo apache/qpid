@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.derby;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
 
@@ -45,6 +46,19 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory
     public Map<String, Object> convertStoreConfiguration(Configuration configuration)
     {
         return Collections.emptyMap();
+    }
+
+
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+        Object storePath = attributes.get(VirtualHost.STORE_PATH);
+        if(!(storePath instanceof String))
+        {
+            throw new IllegalArgumentException("Attribute '"+ VirtualHost.STORE_PATH
+                                                           +"' is required and must be of type String.");
+
+        }
     }
 
 }
